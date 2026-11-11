@@ -1,5 +1,13 @@
 import { Type } from "class-transformer";
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from "class-validator";
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from "class-validator";
 import { ApplicationStage } from "@haihire/shared";
 
 export { ApplicationStage };
@@ -13,4 +21,13 @@ export class UpdateStageDto {
   @IsNumber()
   @IsOptional()
   orderIndex?: number;
+
+  @IsString()
+  @MaxLength(1000)
+  @IsOptional()
+  rejectionReason?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  sendRejectionEmail?: boolean;
 }

@@ -165,6 +165,14 @@ export function CandidateDrawerHeader({
               {t("applications.applied")} {formatDate(currentApp.createdAt)}
             </span>
           </p>
+          {currentApp.stage === "REJECTED" && currentApp.rejectionReason && (
+            <div className="mt-2 rounded-lg border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/30 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300">
+              <span className="font-medium">
+                {t("applications.rejectionReasonLabel")}:{" "}
+              </span>
+              <span>{currentApp.rejectionReason}</span>
+            </div>
+          )}
         </div>
       </div>
     </>

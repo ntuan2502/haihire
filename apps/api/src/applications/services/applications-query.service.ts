@@ -1,5 +1,10 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  APPLICATION_STAGES,
+  type ApplicationStage,
+  type ApplicationStats,
+} from "@haihire/shared";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -8,6 +13,16 @@ import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
+
+function createEmptyStageCounts(): Record<ApplicationStage, number> {
+  return APPLICATION_STAGES.reduce(
+    (acc, stage) => {
+      acc[stage] = 0;
+      return acc;
+    },
+    {} as Record<ApplicationStage, number>,
+  );
+}
 
 @Injectable()
 export class ApplicationsQueryService {
@@ -25,7 +40,7 @@ export class ApplicationsQueryService {
     options?: { limit?: number; offset?: number },
   ) {
     const job = await this.prisma.job.findFirst({
-      where: { id: jobId },
+      where: { id: jobId, deletedAt: null },
       select: {
         id: true,
         title: true,
@@ -52,13 +67,31 @@ export class ApplicationsQueryService {
       );
     }
 
+    // Pipeline Kanban loads all job applications unless caller explicitly limits pagination
     const take =
-      options?.limit && options.limit > 0 ? Math.min(options.limit, 100) : 100;
+      options?.limit && options.limit > 0
+        ? Math.min(options.limit, 1000)
+        : undefined;
     const skip =
       options?.offset && options.offset > 0 ? options.offset : undefined;
 
+    const orgCandidates = await this.prisma.candidate.findMany({
+      where: {
+        organizationId: job.organizationId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    const activeCandidateIds = orgCandidates.map((c) => c.id);
+    if (activeCandidateIds.length === 0) {
+      return [];
+    }
+
     const applications = await this.prisma.application.findMany({
-      where: { jobId },
+      where: {
+        jobId,
+        candidateId: { in: activeCandidateIds },
+      },
       take,
       skip,
     });
@@ -74,6 +107,7 @@ export class ApplicationsQueryService {
             where: {
               id: { in: candidateIds },
               organizationId: job.organizationId,
+              deletedAt: null,
             },
           })
         : [];
@@ -147,18 +181,25 @@ export class ApplicationsQueryService {
       };
     }
 
-    const jobs = await this.prisma.job.findMany({
-      where: { organizationId: targetOrgId },
-      select: {
-        id: true,
-        title: true,
-        department: true,
-        location: true,
-      },
-    });
+    const [jobs, activeCandidates] = await Promise.all([
+      this.prisma.job.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          department: true,
+          location: true,
+        },
+      }),
+      this.prisma.candidate.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
 
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
-    if (jobMap.size === 0) {
+    const activeCandidateIds = activeCandidates.map((c) => c.id);
+    if (jobMap.size === 0 || activeCandidateIds.length === 0) {
       return {
         data: [],
         total: 0,
@@ -184,6 +225,7 @@ export class ApplicationsQueryService {
 
     const appWhere: Record<string, unknown> = {
       jobId: { in: jobIds },
+      candidateId: { in: activeCandidateIds },
     };
 
     if (options?.stage) {
@@ -198,6 +240,7 @@ export class ApplicationsQueryService {
       const matchedCandidates = await this.prisma.candidate.findMany({
         where: {
           organizationId: targetOrgId,
+          deletedAt: null,
           OR: [
             { name: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
@@ -248,6 +291,7 @@ export class ApplicationsQueryService {
             where: {
               id: { in: neededCandidateIds },
               organizationId: targetOrgId,
+              deletedAt: null,
             },
           })
         : [];
@@ -296,6 +340,86 @@ export class ApplicationsQueryService {
     };
   }
 
+  async getStats(
+    organizationId?: string,
+    tenantOrgId?: string | null,
+  ): Promise<ApplicationStats> {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: cannot access applications from another organization.",
+        { organizationId },
+      );
+    }
+
+    const targetOrgId = tenantOrgId || organizationId || undefined;
+    const byStage = createEmptyStageCounts();
+    if (!targetOrgId) {
+      return {
+        totalApplications: 0,
+        byStage,
+        byJob: {},
+      };
+    }
+
+    const [activeJobs, activeCandidates] = await Promise.all([
+      this.prisma.job.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+      this.prisma.candidate.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
+
+    const jobIds = activeJobs.map((j) => j.id);
+    const candidateIds = activeCandidates.map((c) => c.id);
+    if (jobIds.length === 0 || candidateIds.length === 0) {
+      return {
+        totalApplications: 0,
+        byStage,
+        byJob: {},
+      };
+    }
+
+    const grouped = await this.prisma.application.groupBy({
+      by: ["jobId", "stage"],
+      where: {
+        jobId: { in: jobIds },
+        candidateId: { in: candidateIds },
+      },
+      _count: { _all: true },
+    });
+
+    const byJob: ApplicationStats["byJob"] = {};
+    let totalApplications = 0;
+
+    for (const row of grouped) {
+      const stageKey = row.stage as ApplicationStage;
+      const count = row._count._all;
+      if (!(stageKey in byStage)) continue;
+
+      totalApplications += count;
+      byStage[stageKey] += count;
+
+      if (!byJob[row.jobId]) {
+        byJob[row.jobId] = {
+          total: 0,
+          byStage: createEmptyStageCounts(),
+        };
+      }
+      byJob[row.jobId].total += count;
+      byJob[row.jobId].byStage[stageKey] += count;
+    }
+
+    return {
+      totalApplications,
+      byStage,
+      byJob,
+    };
+  }
+
   async findOne(id: string, tenantOrgId?: string | null) {
     const app = await this.prisma.application.findFirst({
       where: { id },
@@ -309,20 +433,21 @@ export class ApplicationsQueryService {
       );
     }
 
-    const job = await this.prisma.job.findFirst({
-      where: { id: app.jobId },
-      select: {
-        id: true,
-        title: true,
-        department: true,
-        location: true,
-        organizationId: true,
-      },
-    });
-
-    const candidate = await this.prisma.candidate.findFirst({
-      where: { id: app.candidateId },
-    });
+    const [job, candidate] = await Promise.all([
+      this.prisma.job.findFirst({
+        where: { id: app.jobId, deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          department: true,
+          location: true,
+          organizationId: true,
+        },
+      }),
+      this.prisma.candidate.findFirst({
+        where: { id: app.candidateId, deletedAt: null },
+      }),
+    ]);
 
     const appOrgId = job?.organizationId || candidate?.organizationId;
     if (tenantOrgId && appOrgId && tenantOrgId !== appOrgId) {
@@ -330,6 +455,14 @@ export class ApplicationsQueryService {
         APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
         { id, organizationId: appOrgId },
+      );
+    }
+
+    if (!job || !candidate) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+        `Application with ID ${id} not found`,
+        { id },
       );
     }
 

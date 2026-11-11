@@ -304,8 +304,10 @@ model Application {
   candidate      Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobId          String
   job            Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  stage          ApplicationStage @default(APPLIED)
-  matchScore     Int?
+  stage           ApplicationStage @default(APPLIED)
+  rejectionReason String?
+  rejectedAt      DateTime?
+  matchScore      Int?
   resumeUrl      String?
   resumeFileName String?
   resumeFileSize Int?

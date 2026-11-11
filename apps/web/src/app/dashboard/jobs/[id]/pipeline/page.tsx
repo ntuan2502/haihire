@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { getCandidateDisplayName } from "@/lib/utils";
@@ -123,6 +124,24 @@ function JobPipelinePageContent() {
           candidateName={getCandidateDisplayName(pipeline.selectedCandidate)}
           jobTitle={pipeline.job.title}
           isDeleting={pipeline.isDeletingApp}
+        />
+      )}
+
+      {/* Reject Application Confirmation Modal */}
+      {pipeline.pendingRejectCandidate && (
+        <RejectApplicationModal
+          isOpen={!!pipeline.pendingRejectCandidate}
+          onClose={() => pipeline.setPendingRejectCandidate(null)}
+          onConfirm={pipeline.handleConfirmRejectCandidate}
+          candidateName={getCandidateDisplayName(
+            pipeline.pendingRejectCandidate,
+          )}
+          candidateEmail={
+            pipeline.pendingRejectCandidate.candidateEmail ??
+            pipeline.pendingRejectCandidate.candidate?.email
+          }
+          jobTitle={pipeline.job.title}
+          isSubmitting={pipeline.isMovingStage}
         />
       )}
 

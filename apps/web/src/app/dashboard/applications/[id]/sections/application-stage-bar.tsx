@@ -9,6 +9,7 @@ interface ApplicationStageBarProps {
   isUpdatingStage: boolean;
   isDeleting: boolean;
   onSelectStage: (stage: ApplicationStage) => void;
+  onOpenScheduleModal?: () => void;
   onOpenDeleteModal: () => void;
 }
 
@@ -17,10 +18,12 @@ export function ApplicationStageBar({
   isUpdatingStage,
   isDeleting,
   onSelectStage,
+  onOpenScheduleModal,
   onOpenDeleteModal,
 }: ApplicationStageBarProps) {
   const { t } = useI18n();
   const canUpdateStage = useHasPermission("application:update_stage");
+  const canCreateInterview = useHasPermission("interview:create");
   const canDeleteApplication = useHasPermission("application:delete");
 
   return (
@@ -39,15 +42,17 @@ export function ApplicationStageBar({
 
       {/* Right Action Buttons */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          disabled
-          className="h-8 px-3 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs flex items-center gap-1.5 opacity-50 cursor-not-allowed transition-colors"
-          title={`${t("applications.scheduleInterview")} (Coming soon)`}
-        >
-          <Calendar className="h-3.5 w-3.5 text-slate-400" />
-          <span>{t("applications.scheduleInterview")}</span>
-        </button>
+        {canCreateInterview && onOpenScheduleModal && (
+          <button
+            type="button"
+            onClick={onOpenScheduleModal}
+            className="h-8 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            title={t("applications.scheduleInterview")}
+          >
+            <Calendar className="h-3.5 w-3.5 text-blue-500" />
+            <span>{t("applications.scheduleInterview")}</span>
+          </button>
+        )}
 
         {canDeleteApplication && (
           <button

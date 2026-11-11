@@ -26,6 +26,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import type {
   Job,
   Application,
@@ -62,6 +63,9 @@ export function useCandidateDrawer({
   const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
+  const [pendingRejectApp, setPendingRejectApp] = useState<Application | null>(
+    null,
+  );
 
   // Current selected application with fresh state from latest applications
   const currentApp = useMemo(() => {
@@ -106,6 +110,43 @@ export function useCandidateDrawer({
     }
   };
 
+  const executeStageChange = async (
+    targetApp: Application,
+    newStage: ApplicationStage,
+    options?: RejectApplicationConfirmPayload,
+  ) => {
+    try {
+      const updated = await updateStageMutation.mutateAsync({
+        id: targetApp.id,
+        stage: newStage,
+        ...(options?.rejectionReason !== undefined
+          ? { rejectionReason: options.rejectionReason }
+          : {}),
+        ...(options?.sendRejectionEmail !== undefined
+          ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
+      });
+      setSelectedApp((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: updated?.stage || newStage,
+              rejectionReason:
+                updated?.rejectionReason ??
+                (newStage === "REJECTED"
+                  ? options?.rejectionReason || null
+                  : null),
+            }
+          : null,
+      );
+    } catch (err) {
+      console.error("Failed to update stage:", err);
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    }
+  };
+
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!currentApp) return;
     if (!canTransition(currentApp.stage, newStage)) {
@@ -113,18 +154,20 @@ export function useCandidateDrawer({
       toast.error(reason);
       return;
     }
-    try {
-      await updateStageMutation.mutateAsync({
-        id: currentApp.id,
-        stage: newStage,
-      });
-      setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
-    } catch (err) {
-      console.error("Failed to update stage:", err);
-      const errorMsg = getApiErrorMessage(err, t);
-      toast.error(errorMsg);
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    if (newStage === "REJECTED" && currentApp.stage !== "REJECTED") {
+      setPendingRejectApp(currentApp);
+      return;
     }
+    await executeStageChange(currentApp, newStage);
+  };
+
+  const handleConfirmReject = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!pendingRejectApp) return;
+    const target = pendingRejectApp;
+    await executeStageChange(target, "REJECTED", payload);
+    setPendingRejectApp(null);
   };
 
   const handleDownloadDoc = async (
@@ -202,6 +245,9 @@ export function useCandidateDrawer({
     setDrawerTab,
     handleCancelInterview,
     handleStageChange,
+    pendingRejectApp,
+    setPendingRejectApp,
+    handleConfirmReject,
     handleDownloadDoc,
     drawerOverviewSections,
     setDrawerOverviewSections,

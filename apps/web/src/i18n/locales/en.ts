@@ -555,7 +555,8 @@ export const en: TranslationSchema = {
     tooltips: {
       invalidTransition: "Cannot transition from {from} to {to}",
       cannotMoveHired: "Candidate is HIRED and cannot transition to {to}",
-      cannotMoveRejected: "Candidate is REJECTED and cannot transition to {to}",
+      cannotMoveRejected:
+        "Candidate is REJECTED. Reopen to Applied, Screening, or Interview before moving to {to}",
       dragNotAllowed: "Cannot drag candidate to this stage",
     },
   },
@@ -1013,6 +1014,19 @@ export const en: TranslationSchema = {
     status: "Status",
     score: "Score",
     matchScore: "Match score",
+    matchScoreUnrated: "Not evaluated",
+    rejectionReasonLabel: "Rejection reason",
+    rejectModal: {
+      title: "Reject Candidate",
+      description: "Confirm moving {name} ({job}) to Rejected.",
+      reasonLabel: "Rejection reason (optional)",
+      reasonPlaceholder:
+        "e.g. Lacking required experience, compensation mismatch...",
+      sendEmailLabel: "Send automated rejection email to {email}",
+      noEmailHint:
+        "Candidate has no email on file; automated email cannot be sent.",
+      confirmButton: "Confirm Reject",
+    },
     applied: "Applied",
     actions: "Actions",
     noApplicationsFound: "No applications found",

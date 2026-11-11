@@ -8,7 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import {
   useAllJobs,
   useApplications,
-  useAllApplications,
+  useApplicationStats,
   useCandidates,
 } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
@@ -47,27 +47,19 @@ function ApplicationsPageContent() {
     jobId: jobId || undefined,
   });
 
-  const { data: allApplications = [] } = useAllApplications(
-    user?.organizationId,
-  );
+  const { data: appStats } = useApplicationStats(user?.organizationId);
 
   const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      ALL: allApplications.length,
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
+    return {
+      ALL: appStats?.totalApplications ?? 0,
+      APPLIED: appStats?.byStage.APPLIED ?? 0,
+      SCREENING: appStats?.byStage.SCREENING ?? 0,
+      INTERVIEW: appStats?.byStage.INTERVIEW ?? 0,
+      OFFER: appStats?.byStage.OFFER ?? 0,
+      HIRED: appStats?.byStage.HIRED ?? 0,
+      REJECTED: appStats?.byStage.REJECTED ?? 0,
     };
-    for (const app of allApplications) {
-      if (app.stage && counts[app.stage] !== undefined) {
-        counts[app.stage]++;
-      }
-    }
-    return counts;
-  }, [allApplications]);
+  }, [appStats]);
 
   const { data: candidatesData } = useCandidates(user?.organizationId);
 

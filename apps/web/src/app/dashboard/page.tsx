@@ -15,11 +15,15 @@ import {
 import { useAuth } from "@/context/auth-context";
 import {
   useAllJobs,
-  useAllApplications,
+  useApplicationStats,
+  useApplications,
+  useCandidates,
   useCreateJobMutation,
+  useInterviews,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { getInterviewsFromApplication } from "@/lib/interviews";
+import type { ScheduledInterviewInfo } from "@/lib/interviews";
+import type { Application } from "@/types";
 import { useI18n } from "@/i18n";
 
 function DashboardContent() {
@@ -31,29 +35,41 @@ function DashboardContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications(user?.organizationId);
+  const { data: appStats, isLoading: statsLoading } = useApplicationStats(
+    user?.organizationId,
+  );
+  const { data: recentAppsData, isLoading: recentAppsLoading } =
+    useApplications({
+      organizationId: user?.organizationId,
+      page: 1,
+      limit: 25,
+    });
+  const { data: candidatesData, isLoading: candidatesLoading } = useCandidates(
+    user?.organizationId,
+    { limit: 1 },
+  );
+  const { data: upcomingInterviewsData, isLoading: interviewsLoading } =
+    useInterviews({
+      organizationId: user?.organizationId,
+      tab: "UPCOMING",
+      limit: 25,
+    });
   const createJobMutation = useCreateJobMutation();
 
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const loading = jobsLoading || appsLoading;
+  const loading =
+    jobsLoading ||
+    statsLoading ||
+    recentAppsLoading ||
+    candidatesLoading ||
+    interviewsLoading;
 
-  // Real database metrics computation
+  // Real database metrics computation (server SQL stats + total counts, never truncated to 100)
   const openJobsCount = jobs.filter((j) => j.status === "PUBLISHED").length;
   const draftJobsCount = jobs.filter((j) => j.status === "DRAFT").length;
-  const totalCandidatesCount = new Set(
-    applications.map((a) =>
-      (a.candidateEmail || a.candidateName).toLowerCase().trim(),
-    ),
-  ).size;
-  const totalApplicationsCount = applications.filter((a) =>
-    Boolean(a.jobId && String(a.jobId).trim() !== ""),
-  ).length;
-  const toReviewCount = applications.filter(
-    (a) =>
-      Boolean(a.jobId && String(a.jobId).trim() !== "") &&
-      a.stage === "APPLIED",
-  ).length;
+  const totalCandidatesCount = candidatesData?.total ?? 0;
+  const totalApplicationsCount = appStats?.totalApplications ?? 0;
+  const toReviewCount = appStats?.byStage.APPLIED ?? 0;
 
   // Jobs to show in Hiring Pipeline (only published / open jobs)
   const pipelineJobs = useMemo(() => {
@@ -67,23 +83,52 @@ function DashboardContent() {
       });
   }, [jobs]);
 
-  // Upcoming interviews across all applications (sorted earliest first)
+  // Upcoming interviews from paginated server query
   const upcomingInterviews = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
     const results: DashboardInterviewItem[] = [];
 
-    for (const app of applications) {
-      const all = getInterviewsFromApplication(app);
-      const job = jobs.find((j) => j.id === app.jobId);
-      for (const intv of all) {
-        if (intv.date >= todayStr) {
-          results.push({
-            application: app,
-            interview: intv,
-            job,
-          });
-        }
-      }
+    for (const intv of upcomingInterviewsData?.data ?? []) {
+      const app: Application = intv.application ?? {
+        id: intv.applicationId,
+        candidateId: "",
+        jobId: intv.jobId || "",
+        candidateName: intv.candidateName || "",
+        candidateEmail: intv.candidateEmail || "",
+        resumeUrl: "",
+        resumeFileName: "",
+        stage: "INTERVIEW",
+        orderIndex: 0,
+        createdAt: intv.createdAt,
+        updatedAt: intv.updatedAt,
+      };
+      const job = jobs.find((j) => j.id === (app.jobId || intv.jobId));
+      const fallbackDate = intv.scheduledAt ? new Date(intv.scheduledAt) : null;
+      const date =
+        intv.date ||
+        (fallbackDate ? fallbackDate.toISOString().split("T")[0] : "");
+      const time =
+        intv.time ||
+        (fallbackDate ? fallbackDate.toTimeString().slice(0, 5) : "00:00");
+
+      const scheduledInfo: ScheduledInterviewInfo = {
+        id: intv.id,
+        applicationId: intv.applicationId,
+        date,
+        time,
+        type: intv.type,
+        format: intv.format,
+        linkOrLocation: intv.linkOrLocation,
+        interviewer: intv.interviewer,
+        notes: intv.notes ?? undefined,
+        round: intv.round,
+        scorecard: intv.scorecard ?? undefined,
+      };
+
+      results.push({
+        application: app,
+        interview: scheduledInfo,
+        job,
+      });
     }
 
     results.sort((a, b) => {
@@ -93,19 +138,14 @@ function DashboardContent() {
     });
 
     return results;
-  }, [applications, jobs]);
+  }, [upcomingInterviewsData?.data, jobs]);
 
-  // Recent applications (only active job applications) sorted by createdAt descending
+  // Recent applications (only active job applications)
   const recentApplications = useMemo(() => {
-    return applications
-      .filter((a) => Boolean(a.jobId && String(a.jobId).trim() !== ""))
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime(),
-      )
-      .slice(0, 25);
-  }, [applications]);
+    return (recentAppsData?.data ?? []).filter((a) =>
+      Boolean(a.jobId && String(a.jobId).trim() !== ""),
+    );
+  }, [recentAppsData?.data]);
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
@@ -172,7 +212,7 @@ function DashboardContent() {
                       {/* COLUMN 1: HIRING PIPELINE */}
                       <DashboardPipeline
                         pipelineJobs={pipelineJobs}
-                        applications={applications}
+                        statsByJob={appStats?.byJob}
                       />
 
                       {/* COLUMN 2: RECENT APPLICATIONS */}

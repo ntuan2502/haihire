@@ -7,8 +7,6 @@ import {
   Check,
   Plus,
   Settings,
-  Sparkles,
-  MessageSquareWarning,
   LogOut,
   Building2,
 } from "lucide-react";
@@ -197,34 +195,6 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
             <span>{t("nav.settings")}</span>
           </button>
         )}
-
-        {/* Updates & changelog (Coming Soon) */}
-        <div
-          aria-disabled="true"
-          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
-        >
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="h-4 w-4 text-slate-400" />
-            <span>{t("nav.updatesChangelog")}</span>
-          </div>
-          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-            {t("common.soon")}
-          </span>
-        </div>
-
-        {/* Report issue (Coming Soon) */}
-        <div
-          aria-disabled="true"
-          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
-        >
-          <div className="flex items-center gap-2.5">
-            <MessageSquareWarning className="h-4 w-4 text-slate-400" />
-            <span>{t("nav.reportIssue")}</span>
-          </div>
-          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-            {t("common.soon")}
-          </span>
-        </div>
 
         {/* Divider */}
         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />

@@ -4,8 +4,8 @@ export const queryKeys = {
   application: (id?: string | null) => ["applications", "detail", id] as const,
   applicationNotes: (applicationId?: string | null) =>
     ["applications", "notes", applicationId] as const,
-  allApplications: (orgId?: string | null) =>
-    ["applications", "all", { orgId }] as const,
+  applicationStats: (orgId?: string | null) =>
+    ["applications", "stats", { orgId }] as const,
   paginatedApplications: (params?: Record<string, unknown>) =>
     ["applications", "paginated", params] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,

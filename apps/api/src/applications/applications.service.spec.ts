@@ -29,6 +29,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     createActivity: ReturnType<typeof vi.fn>;
     findByCandidate: ReturnType<typeof vi.fn>;
   };
+  let mockEmailService: {
+    getTemplateByType: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
+  };
 
   interface MockJob {
     id: string;
@@ -37,6 +41,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     department?: string;
     location?: string;
     status?: string;
+    deletedAt?: Date | null;
   }
 
   interface MockCandidate {
@@ -51,6 +56,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     resumeFileName?: string | null;
     resumeFileSize?: number | null;
     resumeMimeType?: string | null;
+    deletedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
   }
@@ -242,8 +248,14 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       findByCandidate: vi.fn().mockResolvedValue([]),
     };
 
-    const mockEmailService = {
-      getTemplateByType: vi.fn().mockResolvedValue(null),
+    mockEmailService = {
+      getTemplateByType: vi.fn().mockResolvedValue({
+        id: "tpl-rej",
+        type: "REJECTION",
+        enabled: true,
+        subject: "Application Update",
+        body: "Hello {{candidateName}}",
+      }),
       sendEmail: vi.fn().mockResolvedValue({}),
     };
 
@@ -655,6 +667,120 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("should reject findByJob if job belongs to another organization", async () => {
       // job-org2-c belongs to org-2
       await expect(service.findByJob("job-org2-c", "org-1")).rejects.toThrow();
+    });
+  });
+
+  describe("Rejection, Reopening, Soft-Delete & Stats Integrity", () => {
+    it("saves rejectionReason & rejectedAt and suppresses automated email when sendRejectionEmail=false", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "  Missing Go experience  ",
+        sendRejectionEmail: false,
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(updated.rejectionReason).toBe("Missing Go experience");
+      expect(updated.rejectedAt).toBeInstanceOf(Date);
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("sends automated rejection email when sendRejectionEmail=true", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Role filled",
+        sendRejectionEmail: true,
+      });
+
+      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows reopening REJECTED application to SCREENING and clears rejection metadata", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Initial mismatch",
+        sendRejectionEmail: false,
+      });
+
+      const reopened = await service.updateStage("app-1", {
+        stage: "SCREENING",
+      });
+
+      expect(reopened.stage).toBe("SCREENING");
+      expect(reopened.rejectionReason).toBeNull();
+      expect(reopened.rejectedAt).toBeNull();
+      expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "STAGE_CHANGED",
+          metadata: expect.objectContaining({
+            fromStage: "REJECTED",
+            toStage: "SCREENING",
+            reopened: true,
+          }),
+        }),
+      );
+    });
+
+    it("excludes soft-deleted jobs and candidates from findAll, findByJob, findOne, and getStats", async () => {
+      mockJobs[1].deletedAt = new Date();
+      mockCandidates[0].deletedAt = new Date();
+
+      const all = await service.findAll("org-1");
+      expect(all.data).toHaveLength(0);
+
+      await expect(service.findByJob("job-org1-b", "org-1")).rejects.toThrow();
+      await expect(service.findOne("app-1", "org-1")).rejects.toThrow();
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(0);
+    });
+
+    it("returns more than 100 applications from findByJob without silent 100-item truncation", async () => {
+      const manyApps = Array.from({ length: 120 }, (_, i) => ({
+        id: `bulk-app-${i}`,
+        candidateId: "cand-1",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        orderIndex: i,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      mockApps.splice(0, mockApps.length, ...manyApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(120);
+    });
+
+    it("aggregates SQL groupBy stage stats across multiple jobs cleanly", async () => {
+      mockApps.push(
+        {
+          id: "app-4",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "SCREENING",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-5",
+          candidateId: "cand-2",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 2,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      );
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(4);
+      expect(stats.byStage.APPLIED).toBe(2);
+      expect(stats.byStage.SCREENING).toBe(1);
+      expect(stats.byStage.INTERVIEW).toBe(1);
+      expect(stats.byJob["job-org1-a"]?.total).toBe(3);
+      expect(stats.byJob["job-org1-a"]?.byStage.APPLIED).toBe(2);
+      expect(stats.byJob["job-org1-a"]?.byStage.SCREENING).toBe(1);
+      expect(stats.byJob["job-org1-b"]?.total).toBe(1);
     });
   });
 });

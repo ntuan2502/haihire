@@ -3,6 +3,7 @@
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import type { ApplicationsDataTableProps } from "./types";
 import { useApplicationsTable } from "./hooks/use-applications-table";
@@ -148,6 +149,23 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
               : t("applications.applyingForPosition")
           }
           isDeleting={table.isDeleting}
+        />
+      )}
+
+      {/* Reject Application Confirmation Modal */}
+      {drawer.pendingRejectApp && (
+        <RejectApplicationModal
+          isOpen={!!drawer.pendingRejectApp}
+          onClose={() => drawer.setPendingRejectApp(null)}
+          onConfirm={drawer.handleConfirmReject}
+          candidateName={drawer.pendingRejectApp.candidateName}
+          candidateEmail={drawer.pendingRejectApp.candidateEmail}
+          jobTitle={
+            table.jobMap.get(drawer.pendingRejectApp.jobId)?.title ||
+            drawer.selectedJobTitle ||
+            ""
+          }
+          isSubmitting={drawer.isStageUpdatePending}
         />
       )}
 

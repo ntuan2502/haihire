@@ -47,10 +47,13 @@ describe("Application Stage State Machine (canTransition)", () => {
     expect(canTransition("HIRED", "INTERVIEW")).toBe(false);
   });
 
-  it("blocks transition from terminal REJECTED stage to OFFER (false)", async () => {
+  it("allows reopening REJECTED into early pipeline stages but blocks OFFER/HIRED", async () => {
     const { canTransition } = await import("./stages");
+    expect(canTransition("REJECTED", "APPLIED")).toBe(true);
+    expect(canTransition("REJECTED", "SCREENING")).toBe(true);
+    expect(canTransition("REJECTED", "INTERVIEW")).toBe(true);
     expect(canTransition("REJECTED", "OFFER")).toBe(false);
-    expect(canTransition("REJECTED", "SCREENING")).toBe(false);
+    expect(canTransition("REJECTED", "HIRED")).toBe(false);
   });
 
   it("allows no-op same-stage transition (true)", async () => {

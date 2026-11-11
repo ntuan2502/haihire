@@ -27,6 +27,7 @@ describe("ApplicationsController", () => {
 
   const mockService = {
     findAll: vi.fn(),
+    getStats: vi.fn(),
     findByJob: vi.fn(),
     findOne: vi.fn(),
     uploadDocument: vi.fn(),
@@ -221,6 +222,39 @@ describe("ApplicationsController", () => {
       expect(() => rolesGuard.canActivate(forbiddenContext)).toThrow(
         AppForbiddenException,
       );
+    });
+
+    it("getStats: delegates tenant stats lookup and requires application:view permission", async () => {
+      const allowedContext = createMockContext(
+        recruiterReq,
+        controller.getStats,
+      );
+      expect(rolesGuard.canActivate(allowedContext)).toBe(true);
+
+      const unauthContext = createMockContext(
+        unauthenticatedReq,
+        controller.getStats,
+      );
+      expect(() => rolesGuard.canActivate(unauthContext)).toThrow(
+        AppUnauthorizedException,
+      );
+
+      mockService.getStats.mockResolvedValueOnce({
+        totalApplications: 150,
+        byStage: {
+          APPLIED: 50,
+          SCREENING: 40,
+          INTERVIEW: 30,
+          OFFER: 20,
+          HIRED: 5,
+          REJECTED: 5,
+        },
+        byJob: {},
+      });
+
+      const stats = await controller.getStats(recruiterReq as never, "org-1");
+      expect(mockService.getStats).toHaveBeenCalledWith("org-1", "org-1");
+      expect(stats.totalApplications).toBe(150);
     });
   });
 });

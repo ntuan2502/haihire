@@ -357,6 +357,12 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
 
   describe("ApplicationsService::remove", () => {
     it("deletes application and interviews atomically inside transaction", async () => {
+      mockDbState.candidates.push({
+        id: "cand-100",
+        organizationId: "org-1",
+        name: "Test Candidate",
+        email: "cand100@example.com",
+      });
       mockDbState.applications.push({
         id: "app-100",
         jobId: "job-1",

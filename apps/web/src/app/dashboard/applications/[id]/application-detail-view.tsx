@@ -102,6 +102,10 @@ export function ApplicationDetailView() {
           isUpdatingStage={actions.isUpdatingStage}
           isDeleting={actions.isDeleting}
           onSelectStage={actions.handleStageChange}
+          onOpenScheduleModal={() => {
+            state.setEditingInterview(null);
+            state.setScheduleModalOpen(true);
+          }}
           onOpenDeleteModal={() => state.setIsDeleteModalOpen(true)}
         />
 
@@ -110,6 +114,7 @@ export function ApplicationDetailView() {
           initials={state.initials}
           candidateName={state.candidateName}
           stage={state.app?.stage}
+          rejectionReason={state.app?.rejectionReason}
           candidateEmail={state.candidateEmail}
           candidatePhone={state.candidatePhone}
           jobTitle={state.jobTitle}
@@ -164,6 +169,10 @@ export function ApplicationDetailView() {
         onCloseDeleteModal={() => state.setIsDeleteModalOpen(false)}
         onConfirmDelete={actions.handleConfirmDelete}
         isDeleting={actions.isDeleting}
+        isRejectModalOpen={actions.isRejectModalOpen}
+        onCloseRejectModal={() => actions.setIsRejectModalOpen(false)}
+        onConfirmReject={actions.handleConfirmReject}
+        isUpdatingStage={actions.isUpdatingStage}
         scheduleModalOpen={state.scheduleModalOpen}
         onCloseScheduleModal={() => {
           state.setScheduleModalOpen(false);

@@ -1,5 +1,11 @@
 import { api } from "./client";
-import type { Application, ApplicationNote, PaginatedResult } from "@/types";
+import type {
+  Application,
+  ApplicationNote,
+  ApplicationStats,
+  PaginatedResult,
+  UpdateApplicationStageInput,
+} from "@/types";
 
 export const applicationsApi = {
   getAll: async (params?: {
@@ -14,6 +20,13 @@ export const applicationsApi = {
       "/applications",
       { params },
     );
+    return response.data;
+  },
+
+  getStats: async (organizationId?: string): Promise<ApplicationStats> => {
+    const response = await api.get<ApplicationStats>("/applications/stats", {
+      params: organizationId ? { organizationId } : undefined,
+    });
     return response.data;
   },
 
@@ -48,13 +61,26 @@ export const applicationsApi = {
 
   updateStage: async (
     id: string,
-    stage: string,
+    stageOrOptions: string | UpdateApplicationStageInput,
     orderIndex = 0,
   ): Promise<Application> => {
-    const response = await api.patch<Application>(`/applications/${id}/stage`, {
-      stage,
-      orderIndex,
-    });
+    const payload =
+      typeof stageOrOptions === "string"
+        ? { stage: stageOrOptions, orderIndex }
+        : {
+            stage: stageOrOptions.stage,
+            orderIndex: stageOrOptions.orderIndex ?? orderIndex,
+            ...(stageOrOptions.rejectionReason !== undefined
+              ? { rejectionReason: stageOrOptions.rejectionReason }
+              : {}),
+            ...(stageOrOptions.sendRejectionEmail !== undefined
+              ? { sendRejectionEmail: stageOrOptions.sendRejectionEmail }
+              : {}),
+          };
+    const response = await api.patch<Application>(
+      `/applications/${id}/stage`,
+      payload,
+    );
     return response.data;
   },
 

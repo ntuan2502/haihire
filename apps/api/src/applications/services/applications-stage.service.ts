@@ -60,6 +60,14 @@ export class ApplicationsStageService {
       }
     }
 
+    const isRejecting = dto.stage === "REJECTED";
+    const isReopeningFromRejected =
+      oldStage === "REJECTED" && dto.stage !== "REJECTED";
+    const trimmedReason =
+      typeof dto.rejectionReason === "string"
+        ? dto.rejectionReason.trim()
+        : undefined;
+
     const updateResult = await this.prisma.application.updateMany({
       where: {
         id,
@@ -68,6 +76,18 @@ export class ApplicationsStageService {
       data: {
         stage: dto.stage,
         ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
+        ...(isRejecting
+          ? {
+              rejectionReason: trimmedReason || null,
+              rejectedAt: new Date(),
+            }
+          : {}),
+        ...(isReopeningFromRejected
+          ? {
+              rejectionReason: null,
+              rejectedAt: null,
+            }
+          : {}),
       },
     });
 
@@ -85,27 +105,42 @@ export class ApplicationsStageService {
     const orgId =
       updated.job?.organizationId || updated.candidate?.organizationId;
     if (orgId && updated.candidate && oldStage !== dto.stage) {
+      const shouldSendRejectionEmail =
+        isRejecting && dto.sendRejectionEmail !== false;
+      const descriptionParts = [
+        `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
+      ];
+      if (isRejecting && trimmedReason) {
+        descriptionParts.push(`Reason: ${trimmedReason}`);
+      }
+
       await this.activitiesService.createActivity({
         organizationId: orgId,
         candidateId: updated.candidate.id,
         applicationId: updated.id,
         type: "STAGE_CHANGED",
         title: `Stage Changed: ${oldStage} → ${dto.stage}`,
-        description: `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
+        description: descriptionParts.join(" — "),
         actorId: currentUser?.id,
         actorName: currentUser?.name || "HR Team",
         actorRole: currentUser?.role || "ADMIN",
         metadata: {
           fromStage: oldStage,
           toStage: dto.stage,
+          reopened: isReopeningFromRejected || undefined,
+          rejectionReason:
+            isRejecting && trimmedReason ? trimmedReason : undefined,
+          sendRejectionEmail: isRejecting
+            ? shouldSendRejectionEmail
+            : undefined,
           jobTitle: updated.job?.title || "",
           actorName: currentUser?.name || "HR Team",
           actorRole: currentUser?.role || "ADMIN",
         },
       });
 
-      // If rejected and rejection template enabled, send rejection email
-      if (dto.stage === "REJECTED" && updated.candidate.email) {
+      // Only dispatch automated rejection email if explicitly enabled
+      if (shouldSendRejectionEmail && updated.candidate.email) {
         try {
           const template = await this.emailService.getTemplateByType(
             orgId,

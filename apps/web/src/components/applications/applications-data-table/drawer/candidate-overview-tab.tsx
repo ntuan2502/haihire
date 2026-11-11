@@ -46,7 +46,10 @@ export function CandidateOverviewTab({
               {t("applications.matchScore")}:
             </span>
             <span className="font-bold text-sm text-slate-900 dark:text-white">
-              {currentApp.matchScore ? `${currentApp.matchScore}%` : "N/A"}
+              {currentApp.matchScore !== null &&
+              currentApp.matchScore !== undefined
+                ? `${currentApp.matchScore}%`
+                : t("applications.matchScoreUnrated")}
             </span>
           </div>
           <button

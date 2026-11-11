@@ -900,6 +900,17 @@ export interface TranslationSchema {
     status: string;
     score: string;
     matchScore: string;
+    matchScoreUnrated: string;
+    rejectionReasonLabel: string;
+    rejectModal: {
+      title: string;
+      description: string;
+      reasonLabel: string;
+      reasonPlaceholder: string;
+      sendEmailLabel: string;
+      noEmailHint: string;
+      confirmButton: string;
+    };
     applied: string;
     actions: string;
     noApplicationsFound: string;

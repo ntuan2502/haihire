@@ -558,7 +558,8 @@ export const vi: TranslationSchema = {
     tooltips: {
       invalidTransition: "Không thể chuyển từ {from} sang {to}",
       cannotMoveHired: "Ứng viên đã HIRED không thể quay lại {to}",
-      cannotMoveRejected: "Ứng viên đã REJECTED không thể chuyển sang {to}",
+      cannotMoveRejected:
+        "Ứng viên đã REJECTED. Mở lại sang Ứng tuyển, Sơ loại hoặc Phỏng vấn trước khi chuyển sang {to}",
       dragNotAllowed: "Không thể kéo ứng viên sang giai đoạn này",
     },
   },
@@ -1018,6 +1019,20 @@ export const vi: TranslationSchema = {
     status: "Trạng thái",
     score: "Điểm đánh giá",
     matchScore: "Điểm tương thích",
+    matchScoreUnrated: "Chưa đánh giá",
+    rejectionReasonLabel: "Lý do từ chối",
+    rejectModal: {
+      title: "Từ chối ứng viên",
+      description:
+        "Xác nhận chuyển hồ sơ {name} ({job}) sang trạng thái Từ chối.",
+      reasonLabel: "Lý do từ chối (tùy chọn)",
+      reasonPlaceholder:
+        "VD: Chưa đáp ứng kinh nghiệm chuyên môn, không phù hợp mức lương...",
+      sendEmailLabel: "Gửi email thông báo từ chối tới {email}",
+      noEmailHint:
+        "Ứng viên chưa có địa chỉ email nên không thể gửi email tự động.",
+      confirmButton: "Xác nhận từ chối",
+    },
     applied: "Ngày ứng tuyển",
     actions: "Hành động",
     noApplicationsFound: "Không tìm thấy hồ sơ ứng tuyển nào",

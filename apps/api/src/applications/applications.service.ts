@@ -63,6 +63,10 @@ export class ApplicationsService {
     return this.query.findAll(organizationId, options, tenantOrgId);
   }
 
+  getStats(organizationId?: string, tenantOrgId?: string | null) {
+    return this.query.getStats(organizationId, tenantOrgId);
+  }
+
   findOne(id: string, tenantOrgId?: string | null) {
     return this.query.findOne(id, tenantOrgId);
   }

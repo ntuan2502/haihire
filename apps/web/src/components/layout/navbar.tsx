@@ -9,28 +9,16 @@ import {
   Briefcase,
   Users,
   FileText,
-  Inbox,
   Calendar,
-  MessageSquare,
   Settings,
-  ChevronDown,
   Plus,
   ShieldCheck,
   Menu,
   X,
-  Clock,
   Radio,
-  Bot,
-  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -142,16 +130,6 @@ export function Navbar({
     { id: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
-  // Features inside "More" (Coming Soon)
-  const moreItems = [
-    { label: t("nav.inbox"), icon: Inbox },
-    { label: t("nav.assistant"), icon: MessageSquare },
-    { label: t("nav.features.analyticsReports"), icon: BarChart3 },
-    { label: t("nav.features.talentPools"), icon: Users },
-    { label: t("nav.features.aiAnalysis"), icon: Bot },
-    { label: t("nav.features.timeline"), icon: Clock },
-  ];
-
   const handleNavClick = (tab: NavTab) => {
     if (tab === "jobs") {
       router.push("/dashboard/jobs");
@@ -229,40 +207,6 @@ export function Navbar({
                   </button>
                 );
               })}
-
-              {/* More dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer transition-colors">
-                  <span>{t("nav.more")}</span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5"
-                >
-                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    {t("common.comingSoon")}
-                  </div>
-                  {moreItems.map((item, idx) => {
-                    const Icon = item.icon;
-                    return (
-                      <DropdownMenuItem
-                        key={idx}
-                        disabled
-                        className="flex items-center justify-between px-2.5 py-2 text-xs opacity-60 cursor-not-allowed rounded-lg"
-                      >
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <Icon className="h-3.5 w-3.5 text-slate-400" />
-                          <span>{item.label}</span>
-                        </div>
-                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                          {t("common.soon")}
-                        </span>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
             </nav>
           </div>
 
@@ -367,28 +311,6 @@ export function Navbar({
               </button>
             );
           })}
-
-        {/* More (Coming Soon) */}
-        <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          {t("nav.moreComingSoon")}
-        </div>
-        {moreItems.map((item, idx) => {
-          const Icon = item.icon;
-          return (
-            <div
-              key={idx}
-              className="flex h-9 w-full items-center justify-between rounded-lg px-3 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
-            >
-              <div className="flex items-center gap-3">
-                <Icon className="h-4 w-4 shrink-0 text-slate-400" />
-                <span>{item.label}</span>
-              </div>
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                {t("common.soon")}
-              </span>
-            </div>
-          );
-        })}
 
         {/* Divider */}
         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />

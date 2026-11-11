@@ -12,6 +12,7 @@ import type {
   Application,
   ApplicationNote,
   ApplicationStage,
+  ApplicationStats,
   PaginatedResult,
 } from "@/types";
 import { queryKeys } from "./query-keys";
@@ -64,20 +65,29 @@ export function useApplications(params?: {
   });
 }
 
-export function useAllApplications(organizationId?: string | null) {
+export function useApplicationStats(organizationId?: string | null) {
   const { user } = useAuth();
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
-  return useQuery<Application[]>({
-    queryKey: queryKeys.allApplications(effectiveOrgId),
-    queryFn: async () => {
-      if (!effectiveOrgId) return [];
-      const res = await applicationsApi.getAll({
-        organizationId: effectiveOrgId,
-        limit: 100,
-      });
-      return res.data;
+  return useQuery<ApplicationStats>({
+    queryKey: queryKeys.applicationStats(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) {
+        return {
+          totalApplications: 0,
+          byStage: {
+            APPLIED: 0,
+            SCREENING: 0,
+            INTERVIEW: 0,
+            OFFER: 0,
+            HIRED: 0,
+            REJECTED: 0,
+          },
+          byJob: {},
+        };
+      }
+      return applicationsApi.getStats(effectiveOrgId);
     },
     enabled: Boolean(effectiveOrgId),
   });
@@ -127,11 +137,21 @@ export function useUpdateStageMutation() {
       id,
       stage,
       orderIndex,
+      rejectionReason,
+      sendRejectionEmail,
     }: {
       id: string;
       stage: ApplicationStage;
       orderIndex?: number;
-    }) => applicationsApi.updateStage(id, stage, orderIndex),
+      rejectionReason?: string;
+      sendRejectionEmail?: boolean;
+    }) =>
+      applicationsApi.updateStage(id, {
+        stage,
+        orderIndex,
+        rejectionReason,
+        sendRejectionEmail,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },

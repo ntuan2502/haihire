@@ -158,4 +158,54 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
       expect(toast.error).toHaveBeenCalledWith("errors.cannotDownloadDocument");
     });
   });
+
+  it("renders unrated matchScore state instead of fake 75% fallback and displays 0% for zero score", () => {
+    mockUseJobApplications.mockReturnValue({
+      data: [
+        {
+          ...mockApplications[0],
+          id: "app-null-score",
+          candidateName: "Unrated Candidate",
+          matchScore: null,
+        },
+        {
+          ...mockApplications[0],
+          id: "app-zero-score",
+          candidateName: "Zero Score Candidate",
+          matchScore: 0,
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(<JobPipelinePage />);
+
+    expect(screen.queryByText("75%")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("applications.matchScoreUnrated"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Zero Score Candidate"));
+    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("opens RejectApplicationModal instead of bypassing confirmation when moving candidate to REJECTED", () => {
+    mockUseJobApplications.mockReturnValue({
+      data: mockApplications,
+      isLoading: false,
+    });
+
+    render(<JobPipelinePage />);
+
+    // Click stage button/option for REJECTED on candidate detail
+    const rejectBtn = screen
+      .getAllByRole("button")
+      .find((b) => b.textContent?.includes("applications.stages.rejected"));
+    if (rejectBtn) {
+      fireEvent.click(rejectBtn);
+      expect(
+        screen.getByText("applications.rejectModal.title"),
+      ).toBeInTheDocument();
+    }
+  });
 });

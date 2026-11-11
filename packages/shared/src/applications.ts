@@ -41,7 +41,11 @@ export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<
   ],
   [ApplicationStage.OFFER]: [ApplicationStage.HIRED, ApplicationStage.REJECTED],
   [ApplicationStage.HIRED]: [],
-  [ApplicationStage.REJECTED]: [],
+  [ApplicationStage.REJECTED]: [
+    ApplicationStage.APPLIED,
+    ApplicationStage.SCREENING,
+    ApplicationStage.INTERVIEW,
+  ],
 };
 
 export interface Application {
@@ -53,6 +57,8 @@ export interface Application {
   candidateEmail: string;
   candidatePhone?: string | null;
   stage: ApplicationStage;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
   resumeUrl: string;
   resumeFileName: string;
   resumeFileSize?: number | null;
@@ -92,4 +98,22 @@ export interface ApplicationNote {
   isEdited: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdateApplicationStageInput {
+  stage: ApplicationStage;
+  orderIndex?: number;
+  rejectionReason?: string;
+  sendRejectionEmail?: boolean;
+}
+
+export interface ApplicationJobStats {
+  total: number;
+  byStage: Record<ApplicationStage, number>;
+}
+
+export interface ApplicationStats {
+  totalApplications: number;
+  byStage: Record<ApplicationStage, number>;
+  byJob: Record<string, ApplicationJobStats>;
 }

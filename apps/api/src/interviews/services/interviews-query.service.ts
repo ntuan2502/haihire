@@ -116,11 +116,11 @@ export class InterviewsQueryService {
     } else if (targetOrgId) {
       const [orgCandidates, orgJobs] = await Promise.all([
         this.prisma.candidate.findMany({
-          where: { organizationId: targetOrgId },
+          where: { organizationId: targetOrgId, deletedAt: null },
           select: { id: true },
         }),
         this.prisma.job.findMany({
-          where: { organizationId: targetOrgId },
+          where: { organizationId: targetOrgId, deletedAt: null },
           select: { id: true },
         }),
       ]);
@@ -172,6 +172,7 @@ export class InterviewsQueryService {
         this.prisma.candidate.findMany({
           where: {
             ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+            deletedAt: null,
             OR: [
               { name: { contains: q, mode: "insensitive" } },
               { email: { contains: q, mode: "insensitive" } },
@@ -182,6 +183,7 @@ export class InterviewsQueryService {
         this.prisma.job.findMany({
           where: {
             ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+            deletedAt: null,
             title: { contains: q, mode: "insensitive" },
           },
           select: { id: true },

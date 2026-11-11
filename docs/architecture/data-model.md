@@ -125,6 +125,8 @@ Candidate submission to a specific Job opening.
 - `candidateId` (`String`, `onDelete: Cascade`)
 - `jobId` (`String`, `onDelete: Cascade`)
 - `stage` (`String`, defaults to `APPLIED`)
+- `rejectionReason` (`String?`, optional reason captured when rejecting a candidate)
+- `rejectedAt` (`DateTime?`, timestamp when application was rejected; cleared if reopened)
 - `status` (`ApplicationStatus` Enum: `ACTIVE`, `HIRED`, `REJECTED`)
 - `trackingLinkId` (`String?`, `onDelete: SetNull`)
 - **Key Indices:** `@@unique([candidateId, jobId])`, `@@index([jobId, stage])`

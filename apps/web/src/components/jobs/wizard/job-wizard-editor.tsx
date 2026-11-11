@@ -74,16 +74,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       implemented: true,
     },
     {
-      id: 2 as StepId,
-      label: t("jobs.wizard.steps.applicationForm"),
-      implemented: false,
-    },
-    {
-      id: 3 as StepId,
-      label: t("jobs.wizard.steps.aiScoring"),
-      implemented: false,
-    },
-    {
       id: 4 as StepId,
       label:
         mode === "create"

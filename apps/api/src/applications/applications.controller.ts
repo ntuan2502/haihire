@@ -64,6 +64,19 @@ export class ApplicationsController {
     );
   }
 
+  @Get("stats")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
+  getStats(
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.applicationsService.getStats(
+      organizationId,
+      req?.user?.organizationId,
+    );
+  }
+
   @Get("job/:jobId")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")

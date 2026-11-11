@@ -319,7 +319,7 @@ export function getTransitionDisabledReason(
         // Fallback
       }
     }
-    return `Ứng viên đã REJECTED không thể chuyển sang ${toStage}`;
+    return `Ứng viên đã REJECTED. Mở lại sang APPLIED, SCREENING hoặc INTERVIEW trước khi chuyển sang ${toStage}`;
   }
 
   if (t) {

@@ -66,6 +66,11 @@ export interface MockTable<T = MockRecord> {
     where?: Record<string, unknown>;
   }): Promise<T>;
   count(args?: { where?: unknown }): Promise<number>;
+  groupBy(args: {
+    by: string[];
+    where?: unknown;
+    _count?: boolean | Record<string, boolean>;
+  }): Promise<Array<Record<string, unknown>>>;
   store: T[];
   // Canonical Prisma Client methods
   findMany(args?: {
@@ -558,6 +563,38 @@ export function createMockTable<T = MockRecord>(
         matchPrismaWhere(item as MockRecord, args.where),
       ).length;
     }),
+    groupBy: vi.fn(
+      async (args: {
+        by: string[];
+        where?: unknown;
+        _count?: boolean | Record<string, boolean>;
+      }): Promise<Array<Record<string, unknown>>> => {
+        const filtered = args.where
+          ? store.filter((item) =>
+              matchPrismaWhere(item as MockRecord, args.where),
+            )
+          : store;
+        const groups = new Map<string, Record<string, unknown>>();
+        for (const item of filtered) {
+          const rec = item as MockRecord;
+          const keyParts = args.by.map((field) => String(rec[field] ?? ""));
+          const compositeKey = keyParts.join("\u0000");
+          const existing = groups.get(compositeKey);
+          if (existing) {
+            const countObj = existing._count as Record<string, number>;
+            countObj._all += 1;
+          } else {
+            const entry: Record<string, unknown> = {};
+            for (const field of args.by) {
+              entry[field] = rec[field];
+            }
+            entry._count = { _all: 1 };
+            groups.set(compositeKey, entry);
+          }
+        }
+        return Array.from(groups.values());
+      },
+    ),
     findMany: vi.fn(
       async (args?: {
         where?: unknown;

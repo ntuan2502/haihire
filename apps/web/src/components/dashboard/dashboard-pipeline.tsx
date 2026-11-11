@@ -6,15 +6,18 @@ import { Activity, Briefcase, ArrowRight } from "lucide-react";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import type { Job, Application, ApplicationStage } from "@/types";
+import type { ApplicationStats } from "@haihire/shared";
 
 interface DashboardPipelineProps {
   pipelineJobs: Job[];
-  applications: Application[];
+  applications?: Application[];
+  statsByJob?: ApplicationStats["byJob"];
 }
 
 export function DashboardPipeline({
   pipelineJobs,
-  applications,
+  applications = [],
+  statsByJob,
 }: DashboardPipelineProps) {
   const router = useRouter();
   const { t } = useI18n();
@@ -59,19 +62,24 @@ export function DashboardPipeline({
       ) : (
         <div className="flex-1 overflow-y-auto pt-3 pr-1.5 -mr-1.5 space-y-3">
           {pipelineJobs.map((job) => {
-            const jobApps = applications.filter((a) => a.jobId === job.id);
-            const totalPipeline = jobApps.length;
+            const jobStats = statsByJob?.[job.id];
             const stageCounts: Record<ApplicationStage, number> = {
-              APPLIED: 0,
-              SCREENING: 0,
-              INTERVIEW: 0,
-              OFFER: 0,
-              HIRED: 0,
-              REJECTED: 0,
+              APPLIED: jobStats?.byStage.APPLIED ?? 0,
+              SCREENING: jobStats?.byStage.SCREENING ?? 0,
+              INTERVIEW: jobStats?.byStage.INTERVIEW ?? 0,
+              OFFER: jobStats?.byStage.OFFER ?? 0,
+              HIRED: jobStats?.byStage.HIRED ?? 0,
+              REJECTED: jobStats?.byStage.REJECTED ?? 0,
             };
-            for (const a of jobApps) {
-              if (stageCounts[a.stage] !== undefined) {
-                stageCounts[a.stage]++;
+            let totalPipeline = jobStats?.total ?? 0;
+
+            if (!statsByJob) {
+              const jobApps = applications.filter((a) => a.jobId === job.id);
+              totalPipeline = jobApps.length;
+              for (const a of jobApps) {
+                if (stageCounts[a.stage] !== undefined) {
+                  stageCounts[a.stage]++;
+                }
               }
             }
 

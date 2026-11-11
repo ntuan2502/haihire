@@ -153,5 +153,27 @@ describe("StageSelector Component", () => {
       fireEvent.click(buttons[0]);
       expect(onSelectStage).not.toHaveBeenCalled();
     });
+
+    it("shows APPLIED, SCREENING, and INTERVIEW as enabled reopen options when currentStage is REJECTED", () => {
+      render(
+        <StageSelector
+          currentStage="REJECTED"
+          onSelectStage={vi.fn()}
+          variant="buttons"
+        />,
+      );
+
+      const appliedBtn = screen.getByRole("button", { name: /^APPLIED/i });
+      const screeningBtn = screen.getByRole("button", { name: /^SCREENING/i });
+      const interviewBtn = screen.getByRole("button", { name: /^INTERVIEW/i });
+      const offerBtn = screen.getByRole("button", { name: /^OFFER/i });
+      const hiredBtn = screen.getByRole("button", { name: /^HIRED/i });
+
+      expect(appliedBtn).not.toBeDisabled();
+      expect(screeningBtn).not.toBeDisabled();
+      expect(interviewBtn).not.toBeDisabled();
+      expect(offerBtn).toBeDisabled();
+      expect(hiredBtn).toBeDisabled();
+    });
   });
 });

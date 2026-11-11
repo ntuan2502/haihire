@@ -189,6 +189,16 @@ export function PipelineCandidateDetail({
                       </span>
                     </span>
                   </div>
+
+                  {selectedCandidate.stage === "REJECTED" &&
+                    selectedCandidate.rejectionReason && (
+                      <p className="mt-2 rounded-lg border border-rose-200/80 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/30 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300">
+                        <span className="font-semibold">
+                          {t("applications.rejectionReasonLabel")}:
+                        </span>{" "}
+                        {selectedCandidate.rejectionReason}
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -343,18 +353,28 @@ export function PipelineCandidateDetail({
                         <Sparkles className="h-4 w-4 text-emerald-500" />
                         <span>{t("applications.matchScore")}</span>
                       </div>
-                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        {selectedCandidate.matchScore || 75}%
-                      </span>
+                      {selectedCandidate.matchScore !== null &&
+                      selectedCandidate.matchScore !== undefined ? (
+                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                          {selectedCandidate.matchScore}%
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                          {t("applications.matchScoreUnrated")}
+                        </span>
+                      )}
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${selectedCandidate.matchScore || 75}%`,
-                        }}
-                      />
-                    </div>
+                    {selectedCandidate.matchScore !== null &&
+                      selectedCandidate.matchScore !== undefined && (
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, selectedCandidate.matchScore))}%`,
+                            }}
+                          />
+                        </div>
+                      )}
                   </div>
                 )}
 

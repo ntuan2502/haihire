@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export function useApplicationStageActions({
   const queryClient = useQueryClient();
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -43,6 +45,10 @@ export function useApplicationStageActions({
       toast.error(reason);
       return;
     }
+    if (newStage === "REJECTED") {
+      setIsRejectModalOpen(true);
+      return;
+    }
     try {
       await updateStageMutation.mutateAsync({
         id: app.id,
@@ -52,6 +58,26 @@ export function useApplicationStageActions({
       console.error("Failed to update stage:", err);
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+    }
+  };
+
+  const handleConfirmReject = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!app) return;
+    try {
+      await updateStageMutation.mutateAsync({
+        id: app.id,
+        stage: "REJECTED",
+        rejectionReason: payload.rejectionReason,
+        sendRejectionEmail: payload.sendRejectionEmail,
+      });
+      setIsRejectModalOpen(false);
+    } catch (err) {
+      console.error("Failed to reject application:", err);
+      toast.error(getApiErrorMessage(err, t));
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
     }
@@ -135,7 +161,10 @@ export function useApplicationStageActions({
   return {
     isDeleting,
     isUpdatingStage: updateStageMutation.isPending,
+    isRejectModalOpen,
+    setIsRejectModalOpen,
     handleStageChange,
+    handleConfirmReject,
     handleCancelInterview,
     handleConfirmDelete,
     handleDownloadDoc,

@@ -15,7 +15,8 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import type { ApplicationStage, CandidateDocument } from "@/types";
+import type { Application, ApplicationStage, CandidateDocument } from "@/types";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import {
   PIPELINE_STAGES,
   usePipelineStages,
@@ -352,25 +353,24 @@ export function usePipelineKanban(jobId: string) {
     return allDocs;
   }, [selectedCandidate, jobApplications]);
 
-  const handleMoveCandidateStage = async (
+  const [pendingRejectCandidate, setPendingRejectCandidate] =
+    useState<Application | null>(null);
+
+  const executeMoveCandidateStage = async (
+    candidate: Application,
     newStage: ApplicationStage,
-    overrideCandidateId?: string,
+    options?: RejectApplicationConfirmPayload,
   ) => {
-    const activeAppId = overrideCandidateId || selectedCandidate?.id;
-    const candidate =
-      jobApplications.find((a) => a.id === activeAppId) || selectedCandidate;
-    if (!candidate) return;
-
-    if (!canTransition(candidate.stage, newStage)) {
-      const reason = getTransitionDisabledReason(candidate.stage, newStage, t);
-      toast.error(reason);
-      return;
-    }
-
     try {
       await updateStageMutation.mutateAsync({
         id: candidate.id,
         stage: newStage,
+        ...(options?.rejectionReason !== undefined
+          ? { rejectionReason: options.rejectionReason }
+          : {}),
+        ...(options?.sendRejectionEmail !== undefined
+          ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
       });
       setSelectedStage(newStage);
       const newParams = new URLSearchParams(searchParams.toString());
@@ -388,6 +388,42 @@ export function usePipelineKanban(jobId: string) {
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
+    }
+  };
+
+  const handleMoveCandidateStage = async (
+    newStage: ApplicationStage,
+    overrideCandidateId?: string,
+  ) => {
+    const activeAppId = overrideCandidateId || selectedCandidate?.id;
+    const candidate =
+      jobApplications.find((a) => a.id === activeAppId) || selectedCandidate;
+    if (!candidate) return;
+
+    if (!canTransition(candidate.stage, newStage)) {
+      const reason = getTransitionDisabledReason(candidate.stage, newStage, t);
+      toast.error(reason);
+      return;
+    }
+
+    if (newStage === "REJECTED" && candidate.stage !== "REJECTED") {
+      setPendingRejectCandidate(candidate);
+      return;
+    }
+
+    await executeMoveCandidateStage(candidate, newStage);
+  };
+
+  const handleConfirmRejectCandidate = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!pendingRejectCandidate) return;
+    const target = pendingRejectCandidate;
+    try {
+      await executeMoveCandidateStage(target, "REJECTED", payload);
+      setPendingRejectCandidate(null);
+    } catch {
+      // Error already surfaced via executeMoveCandidateStage
     }
   };
 
@@ -483,6 +519,9 @@ export function usePipelineKanban(jobId: string) {
     isMovingStage: updateStageMutation.isPending,
     handleMoveCandidateStage,
     handleDropCandidate,
+    pendingRejectCandidate,
+    setPendingRejectCandidate,
+    handleConfirmRejectCandidate,
     deleteAppModalOpen,
     setDeleteAppModalOpen,
     isDeletingApp,

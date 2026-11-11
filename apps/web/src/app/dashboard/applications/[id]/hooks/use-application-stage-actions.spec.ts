@@ -112,4 +112,22 @@ describe("useApplicationStageActions (Caller #3)", () => {
     expect(downloadAuthenticatedFile).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("errors.cannotDownloadDocument");
   });
+
+  it("opens reject modal on REJECTED transition instead of mutating immediately and forwards payload on confirm", async () => {
+    const { result } = renderHook(() =>
+      useApplicationStageActions({
+        app: mockApp,
+        appIdStr: "app-3",
+        setIsDeleteModalOpen: vi.fn(),
+      }),
+    );
+
+    expect(result.current.isRejectModalOpen).toBe(false);
+
+    await act(async () => {
+      await result.current.handleStageChange("REJECTED");
+    });
+
+    expect(result.current.isRejectModalOpen).toBe(true);
+  });
 });

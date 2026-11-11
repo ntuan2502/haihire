@@ -11,9 +11,12 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { OrganizationsService } from "./organizations.service";
+import { setHasOrgCookie } from "../auth/auth-cookies";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
@@ -39,21 +42,27 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
+  async create(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(CreateOrgDto)) dto: CreateOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.create(req.user.id, dto);
+    const org = await this.orgsService.create(req.user.id, dto);
+    setHasOrgCookie(res, true);
+    return org;
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("join")
   @HttpCode(HttpStatus.OK)
-  join(
+  async join(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(JoinOrgDto)) dto: JoinOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.join(req.user.id, dto);
+    const result = await this.orgsService.join(req.user.id, dto);
+    setHasOrgCookie(res, true);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -71,11 +80,17 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post("switch")
   @HttpCode(HttpStatus.OK)
-  switchOrg(
+  async switchOrg(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(SwitchOrgDto)) body: SwitchOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.switchOrg(req.user.id, body.organizationId);
+    const result = await this.orgsService.switchOrg(
+      req.user.id,
+      body.organizationId,
+    );
+    setHasOrgCookie(res, true);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -194,8 +209,13 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @RequirePermission("org:delete")
   @Delete("my")
-  deleteMyOrg(@Request() req: { user: { id: string } }) {
-    return this.orgsService.deleteMyOrg(req.user.id);
+  async deleteMyOrg(
+    @Request() req: { user: { id: string } },
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const result = await this.orgsService.deleteMyOrg(req.user.id);
+    setHasOrgCookie(res, false);
+    return result;
   }
 
   // ==========================================
@@ -237,11 +257,14 @@ export class OrganizationsController {
   // Auth endpoint to accept invite and join org
   @UseGuards(JwtAuthGuard)
   @Post("invite-links/join/:token")
-  joinByToken(
+  async joinByToken(
     @Request() req: { user: { id: string } },
     @Param("token") token: string,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.joinByToken(req.user.id, token);
+    const result = await this.orgsService.joinByToken(req.user.id, token);
+    setHasOrgCookie(res, true);
+    return result;
   }
 
   // Public endpoint to view organization profile by slug (no auth needed)

@@ -72,6 +72,42 @@ function clearClientAuthCookies() {
   document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
 
+function hasClientSessionState(): boolean {
+  if (typeof window === "undefined") return false;
+  const pathname = window.location.pathname || "";
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/auth/onboarding")
+  ) {
+    return true;
+  }
+  return Boolean(
+    document.cookie.includes("haihire_has_org=") ||
+    document.cookie.includes("haihire_token=") ||
+    localStorage.getItem("haihire_recruiter_token") ||
+    localStorage.getItem("haihire_recruiter_user"),
+  );
+}
+
+async function clearServerAndClientSession(): Promise<void> {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("haihire_recruiter_token");
+    localStorage.removeItem("haihire_recruiter_refresh_token");
+    localStorage.removeItem("haihire_recruiter_user");
+    delete api.defaults.headers.common.Authorization;
+    try {
+      await axios.post(
+        `${getApiBaseUrl()}/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
+    } catch {
+      // Best-effort cleanup of HttpOnly session cookies
+    }
+  }
+  clearClientAuthCookies();
+}
+
 // Silent Token Refresh Queue & Handling
 interface QueueItem {
   resolve: (token: string) => void;
@@ -109,6 +145,7 @@ api.interceptors.response.use(
         url.includes("/auth/login") ||
         url.includes("/auth/register") ||
         url.includes("/auth/refresh") ||
+        url.includes("/auth/logout") ||
         url.includes("/auth/change-password")
       ) {
         return Promise.reject(error);
@@ -122,7 +159,11 @@ api.interceptors.response.use(
         "haihire_recruiter_refresh_token",
       );
       if (!refreshToken) {
-        clearClientAuthCookies();
+        if (hasClientSessionState()) {
+          await clearServerAndClientSession();
+        } else {
+          clearClientAuthCookies();
+        }
         return Promise.reject(error);
       }
 
@@ -147,6 +188,7 @@ api.interceptors.response.use(
         const refreshRes = await axios.post<{
           accessToken: string;
           refreshToken?: string;
+          hasOrg?: boolean;
         }>(
           `${getApiBaseUrl()}/auth/refresh`,
           { refreshToken },
@@ -167,6 +209,9 @@ api.interceptors.response.use(
         const maxAge = 60 * 60 * 24 * 7;
         const secure = window.location.protocol === "https:" ? "; Secure" : "";
         document.cookie = `haihire_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+        if (typeof refreshRes.data.hasOrg === "boolean") {
+          document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+        }
 
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
         if (originalRequest.headers) {
@@ -177,11 +222,7 @@ api.interceptors.response.use(
         return api.request(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        localStorage.removeItem("haihire_recruiter_token");
-        localStorage.removeItem("haihire_recruiter_refresh_token");
-        localStorage.removeItem("haihire_recruiter_user");
-        clearClientAuthCookies();
-        delete api.defaults.headers.common.Authorization;
+        await clearServerAndClientSession();
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

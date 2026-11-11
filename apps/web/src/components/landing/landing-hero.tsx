@@ -58,6 +58,7 @@ export const LandingHero: React.FC = () => {
             <>
               <Link
                 href="/auth/register"
+                prefetch={false}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 text-xs sm:text-sm font-bold shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
               >
                 <span>{t("landing.startFree")}</span>

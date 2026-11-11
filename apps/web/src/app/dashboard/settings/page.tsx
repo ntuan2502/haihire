@@ -23,7 +23,7 @@ import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
-  const { user, updateUserOrg, logout, canEdit, isOwner } = useAuth();
+  const { user, updateUserOrg, refreshUser, canEdit, isOwner } = useAuth();
   const { t } = useI18n();
   const { data: org, isLoading: isOrgLoading } = useMyOrg();
   const updateOrgMutation = useUpdateMyOrgMutation();
@@ -96,8 +96,8 @@ export default function GeneralSettingsPage() {
     try {
       await deleteOrgMutation.mutateAsync();
       setDeleteModalOpen(false);
-      logout();
-      router.push("/auth/onboarding");
+      await refreshUser();
+      router.replace("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
       setSaveError(getApiErrorMessage(err, t));

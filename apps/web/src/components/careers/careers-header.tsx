@@ -206,6 +206,7 @@ export function CareersHeader({
             ) : (
               <Link
                 href="/auth/login"
+                prefetch={false}
                 className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors"
               >
                 <span>{t("careers.forEmployers")}</span>
@@ -254,6 +255,7 @@ export function CareersHeader({
         {!isAuthenticated && (
           <Link
             href="/auth/login"
+            prefetch={false}
             onClick={() => setMobileMenuOpen(false)}
             className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
           >

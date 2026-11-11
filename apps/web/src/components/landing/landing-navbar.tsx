@@ -63,6 +63,7 @@ export const LandingNavbar = () => {
               <div className="hidden md:flex items-center gap-2 sm:gap-3">
                 <Link
                   href="/auth/login"
+                  prefetch={false}
                   className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors px-3 py-2 cursor-pointer"
                 >
                   <LogIn className="h-4 w-4 text-slate-500 dark:text-slate-400" />
@@ -70,6 +71,7 @@ export const LandingNavbar = () => {
                 </Link>
                 <Link
                   href="/auth/register"
+                  prefetch={false}
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -109,6 +111,7 @@ export const LandingNavbar = () => {
             <div className="flex flex-col gap-2">
               <Link
                 href="/auth/login"
+                prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-10 rounded-xl transition-colors cursor-pointer"
               >
@@ -117,6 +120,7 @@ export const LandingNavbar = () => {
               </Link>
               <Link
                 href="/auth/register"
+                prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
               >

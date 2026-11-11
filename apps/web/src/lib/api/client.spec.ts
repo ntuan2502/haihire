@@ -138,4 +138,73 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
       expect(postSpy).not.toHaveBeenCalled();
     }
   });
+
+  it("clears server HttpOnly cookies via /auth/logout when refresh fails on 401", async () => {
+    localStorage.setItem(
+      "haihire_recruiter_refresh_token",
+      "expired-refresh-token",
+    );
+    localStorage.setItem("haihire_recruiter_token", "expired-access-token");
+
+    const postSpy = vi
+      .spyOn(axios, "post")
+      .mockRejectedValueOnce(new Error("Refresh rejected"))
+      .mockResolvedValueOnce({ data: { success: true } });
+
+    const interceptor = (
+      api.interceptors.response as unknown as {
+        handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
+      }
+    ).handlers[0]?.rejected;
+
+    if (interceptor) {
+      const apiError = {
+        response: { status: 401 },
+        config: { url: "/auth/me", headers: {} },
+      };
+
+      await expect(interceptor(apiError)).rejects.toThrow("Refresh rejected");
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/refresh"),
+        { refreshToken: "expired-refresh-token" },
+        { withCredentials: true },
+      );
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/logout"),
+        {},
+        { withCredentials: true },
+      );
+      expect(localStorage.getItem("haihire_recruiter_token")).toBeNull();
+      expect(
+        localStorage.getItem("haihire_recruiter_refresh_token"),
+      ).toBeNull();
+    }
+  });
+
+  it("clears server HttpOnly cookies when 401 occurs without local refreshToken on /auth/onboarding", async () => {
+    window.history.pushState({}, "", "/auth/onboarding");
+    const postSpy = vi
+      .spyOn(axios, "post")
+      .mockResolvedValueOnce({ data: { success: true } });
+
+    const interceptor = (
+      api.interceptors.response as unknown as {
+        handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
+      }
+    ).handlers[0]?.rejected;
+
+    if (interceptor) {
+      const apiError = {
+        response: { status: 401 },
+        config: { url: "/auth/me", headers: {} },
+      };
+
+      await expect(interceptor(apiError)).rejects.toEqual(apiError);
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/auth/logout"),
+        {},
+        { withCredentials: true },
+      );
+    }
+  });
 });

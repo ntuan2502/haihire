@@ -31,9 +31,16 @@ import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, updateUserOrg, loading: authLoading } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    updateUserOrg,
+    loading: authLoading,
+  } = useAuth();
   const { t } = useI18n();
-  const { data: myOrgs = [], isLoading: orgsLoading } = useMyOrgs();
+  const { data: myOrgs = [], isLoading: orgsLoading } = useMyOrgs({
+    enabled: isAuthenticated,
+  });
   const switchOrgMutation = useSwitchOrgMutation();
   const [displayHost, setDisplayHost] = useState("");
 

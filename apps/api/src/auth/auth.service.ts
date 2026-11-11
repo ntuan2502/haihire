@@ -399,6 +399,7 @@ export class AuthService {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
+      hasOrg: Boolean(user.organizationId),
     };
   }
 

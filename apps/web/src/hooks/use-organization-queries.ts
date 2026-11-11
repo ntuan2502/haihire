@@ -15,10 +15,11 @@ export function useMyOrg() {
   });
 }
 
-export function useMyOrgs() {
+export function useMyOrgs(options?: { enabled?: boolean }) {
   return useQuery<Organization[]>({
     queryKey: queryKeys.myOrgs(),
     queryFn: () => organizationsApi.getMyOrgs(),
+    enabled: options?.enabled ?? true,
   });
 }
 

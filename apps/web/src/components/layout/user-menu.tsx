@@ -32,7 +32,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
   const router = useRouter();
   const { user, logout, isOwner, isAdmin } = useAuth();
   const { t } = useI18n();
-  const { data: myOrgs = [] } = useMyOrgs();
+  const { data: myOrgs = [] } = useMyOrgs({ enabled: Boolean(user) });
   const switchOrgMutation = useSwitchOrgMutation();
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 

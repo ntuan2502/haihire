@@ -19,7 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void> | void;
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
   refreshUser: () => Promise<User | null>;
   setSession: (accessToken: string, refreshToken?: string, user?: User) => void;
@@ -36,10 +36,21 @@ const TOKEN_KEY = "haihire_recruiter_token";
 const REFRESH_TOKEN_KEY = "haihire_recruiter_refresh_token";
 const USER_KEY = "haihire_recruiter_user";
 
+function setHasOrgCookie(hasOrg: boolean) {
+  if (typeof document === "undefined") return;
+  const maxAge = 60 * 60 * 24 * 7; // 7 days
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:"
+      ? "; Secure"
+      : "";
+  document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+}
+
 function setAuthCookies(token: string | null | undefined, hasOrg: boolean) {
   if (typeof document === "undefined") return;
+  // Always sync org membership cookie even when access token lives solely in HttpOnly cookie
+  setHasOrgCookie(hasOrg);
   if (!token || token === "null" || token === "undefined") {
-    clearAuthCookies();
     return;
   }
   const maxAge = 60 * 60 * 24 * 7; // 7 days
@@ -48,7 +59,6 @@ function setAuthCookies(token: string | null | undefined, hasOrg: boolean) {
       ? "; Secure"
       : "";
   document.cookie = `haihire_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
-  document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 function clearAuthCookies() {
@@ -101,17 +111,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    clearAuthCookies();
     queryClient?.clear();
-    api.post("/auth/logout").catch(() => {});
     delete api.defaults.headers.common.Authorization;
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Best-effort cleanup of HttpOnly session cookies
+    }
+    clearAuthCookies();
     router.replace("/auth/login");
+    router.refresh?.();
   }, [queryClient, router]);
 
   // Synchronize user profile with backend in real-time
@@ -144,20 +159,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
+        const hadClientSession = Boolean(
+          typeof document !== "undefined" &&
+          (document.cookie.includes("haihire_has_org=") ||
+            document.cookie.includes("haihire_token=") ||
+            localStorage.getItem(TOKEN_KEY) ||
+            localStorage.getItem(USER_KEY)),
+        );
+        const onSessionRoute =
+          typeof window !== "undefined" &&
+          isSessionRequiredRoute(window.location.pathname);
+
         setToken(null);
         setUser(null);
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        clearAuthCookies();
         queryClient?.clear();
         delete api.defaults.headers.common.Authorization;
 
-        if (
-          typeof window !== "undefined" &&
-          isSessionRequiredRoute(window.location.pathname)
-        ) {
+        if (hadClientSession || onSessionRoute) {
+          try {
+            await api.post("/auth/logout");
+          } catch {
+            // Best-effort cleanup of HttpOnly session cookies
+          }
+        }
+        clearAuthCookies();
+
+        if (onSessionRoute) {
           router.replace("/auth/login");
+          router.refresh?.();
         }
       }
       return null;
@@ -166,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state from localStorage and verify with backend
   useEffect(() => {
+    let hasOptimisticSession = false;
     try {
       const savedToken = localStorage.getItem(TOKEN_KEY);
       const savedUser = localStorage.getItem(USER_KEY);
@@ -176,20 +209,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(parsedUser);
         api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
         setAuthCookies(savedToken, Boolean(parsedUser.organizationId));
+        hasOptimisticSession = true;
       }
     } catch (err) {
       console.error("Failed to parse stored auth user:", err);
     } finally {
-      setLoading(false);
+      if (hasOptimisticSession) {
+        setLoading(false);
+      }
     }
 
-    refreshUser();
+    refreshUser().finally(() => {
+      setLoading(false);
+    });
   }, [refreshUser]);
 
   // SSE Real-Time Sync & Background Visibility Wake-Up
   const currentUserId = user?.id;
   useEffect(() => {
-    if (!token || !currentUserId) return;
+    if (!currentUserId || typeof EventSource === "undefined") return;
 
     const sseBaseUrl = getApiBaseUrl();
     const eventSource = new EventSource(`${sseBaseUrl}/events/sse`, {
@@ -345,9 +383,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(updated));
-    if (token) {
-      setAuthCookies(token, true);
-    }
+    setAuthCookies(token, true);
   };
 
   const isOwner = Boolean(
@@ -396,7 +432,7 @@ export function useAuth(): AuthContextType {
       register: async () => {
         throw new Error("useAuth must be used within an AuthProvider");
       },
-      logout: () => {},
+      logout: async () => {},
       updateUserOrg: () => {},
       refreshUser: async () => null,
       setSession: () => {},

@@ -198,6 +198,46 @@ describe("CandidatesController", () => {
         AppUnauthorizedException,
       );
     });
+
+    it("Case 4: allows dynamic organization owner (isOwner: true) to preview inline documents", async () => {
+      const ownerReq = {
+        user: {
+          id: "owner-1",
+          email: "owner@haihire.local",
+          role: Role.MEMBER,
+          isOwner: true,
+          organizationId: "org-1",
+        },
+      };
+      const context = createMockContext(ownerReq);
+      mockService.prepareDocumentDownload.mockResolvedValue({
+        asciiFallback: "owner-cand.pdf",
+        encodedFileName: "owner-cand.pdf",
+        mimeType: "application/pdf",
+        stream: mockStream,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      await controller.downloadDocument(
+        "cand-1",
+        "/haihire-resumes/tenants/org-1/resumes/owner-cand.pdf",
+        "owner-cand.pdf",
+        mockRes,
+        ownerReq,
+        "inline",
+      );
+
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        "inline; filename=\"owner-cand.pdf\"; filename*=UTF-8''owner-cand.pdf",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "application/pdf",
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
   });
 
   describe("GET /candidates/:id (candidate:view permission)", () => {

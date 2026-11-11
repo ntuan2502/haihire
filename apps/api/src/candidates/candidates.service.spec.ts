@@ -438,6 +438,42 @@ describe("CandidatesService (Characterization Tests)", () => {
         }),
       );
     });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const candRow = candidateTable.store.find((c) => c.id === "cand-1");
+      if (candRow) {
+        candRow.resumeMimeType = null;
+      }
+
+      const inferred = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+        "resume-1.pdf",
+        "org-1",
+      );
+      expect(inferred.mimeType).toBe("application/pdf");
+
+      await candidateDocTable.create({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://minio.local/resumes/org-1/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
+    });
   });
 
   describe("A.1.5: remove", () => {

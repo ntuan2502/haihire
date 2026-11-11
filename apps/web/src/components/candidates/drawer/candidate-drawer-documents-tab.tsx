@@ -11,13 +11,14 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { CustomSelect } from "@/components/shared/custom-select";
-import { getDocumentUrl } from "@/lib/api";
+import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
 import { formatDate } from "@/lib/utils";
 import type { CandidateDocument } from "@/types";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerDocumentsTabProps {
+  candidateId?: string;
   canEdit: boolean;
   docFilter: string;
   onDocFilterChange: (filter: string) => void;
@@ -35,6 +36,7 @@ export interface CandidateDrawerDocumentsTabProps {
 }
 
 export function CandidateDrawerDocumentsTab({
+  candidateId,
   canEdit: _canEdit,
   docFilter,
   onDocFilterChange,
@@ -101,12 +103,10 @@ export function CandidateDrawerDocumentsTab({
         </div>
 
         <div className="w-full h-[500px] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
-          <iframe
-            src={getDocumentUrl(previewDoc.url)}
-            className="w-full h-full border-0"
-            sandbox="allow-scripts allow-same-origin"
-            referrerPolicy="no-referrer"
-            title={previewDoc.name}
+          <AuthenticatedDocumentViewer
+            document={previewDoc}
+            candidateId={candidateId}
+            onDownload={onDownloadDoc}
           />
         </div>
       </div>

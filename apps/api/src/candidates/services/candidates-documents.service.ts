@@ -11,7 +11,7 @@ import { MinioService } from "../../minio/minio.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { CandidatesProfileService } from "./candidates-profile.service";
-import { fixUtf8String } from "../../common/doc-utils";
+import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import {
   validateUploadedFile,
   sanitizeFilename,
@@ -128,36 +128,49 @@ export class CandidatesDocumentsService {
     }
 
     // SSRF prevention: Verify that targetUrl belongs to this candidate
+    let matchedDocMimeType: string | null | undefined =
+      candidate.resumeMimeType;
     if (targetUrl) {
-      const allowedUrls: string[] = [];
-      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const allowedEntries: Array<{ url: string; mimeType?: string | null }> =
+        [];
+      if (candidate.resumeUrl) {
+        allowedEntries.push({
+          url: candidate.resumeUrl,
+          mimeType: candidate.resumeMimeType,
+        });
+      }
       if (Array.isArray(candidate.allDocuments)) {
         for (const doc of candidate.allDocuments) {
           if (doc && typeof doc.url === "string") {
-            allowedUrls.push(doc.url);
+            allowedEntries.push({ url: doc.url, mimeType: doc.mimeType });
           }
         }
       }
 
-      const targetObj = this.minioService.extractObjectName(targetUrl);
-      const isAllowed = allowedUrls.some(
-        (u) =>
-          u === targetUrl ||
-          this.minioService.extractObjectName(u) === targetObj,
+      const matchedEntry = allowedEntries.find(
+        (entry) =>
+          entry.url === targetUrl ||
+          this.minioService.extractObjectName(entry.url) === targetObj,
       );
-      if (!isAllowed) {
+      if (!matchedEntry) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this candidate.",
           { id },
         );
       }
+      matchedDocMimeType = matchedEntry.mimeType ?? matchedDocMimeType;
     }
 
     const rawName = targetName || candidate.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+    const resolvedMimeType = resolveDocumentMimeType(
+      matchedDocMimeType,
+      cleanFileName || downloadUrl,
+    );
 
     let stream: NodeJS.ReadableStream;
     try {
@@ -202,7 +215,7 @@ export class CandidatesDocumentsService {
       cleanFileName,
       asciiFallback,
       encodedFileName,
-      mimeType: candidate.resumeMimeType,
+      mimeType: resolvedMimeType,
       stream,
     };
   }

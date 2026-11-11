@@ -61,11 +61,21 @@ vi.mock("sonner", () => ({
 }));
 
 const mockDownloadAuthenticatedFile = vi.fn().mockResolvedValue(undefined);
-vi.mock("@/lib/api", () => ({
-  downloadAuthenticatedFile: (...args: unknown[]) =>
-    mockDownloadAuthenticatedFile(...args),
-  getDocumentUrl: (url: string) => url,
-}));
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/app-doc-preview",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    downloadAuthenticatedFile: (...args: unknown[]) =>
+      mockDownloadAuthenticatedFile(...args),
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
+  };
+});
 
 const mockUpdateStage = vi
   .fn()
@@ -661,7 +671,7 @@ describe("ApplicationsDataTable Component", () => {
       expect(screen.getByText("Nguyen_Van_An_CV.pdf")).toBeInTheDocument();
     });
 
-    it("opens document preview modal on preview click", () => {
+    it("opens document preview modal on preview click", async () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
@@ -671,7 +681,13 @@ describe("ApplicationsDataTable Component", () => {
       });
       fireEvent.click(previewBtn);
 
-      expect(screen.getByTitle("Nguyen_Van_An_CV.pdf")).toBeInTheDocument();
+      const previewIframe = await screen.findByTitle("Nguyen_Van_An_CV.pdf");
+      expect(previewIframe).toBeInTheDocument();
+      expect(previewIframe).toHaveAttribute(
+        "src",
+        "blob:http://localhost/app-doc-preview",
+      );
+      expect(previewIframe).not.toHaveAttribute("sandbox");
     });
 
     it("triggers authenticated file download when clicking download button", async () => {

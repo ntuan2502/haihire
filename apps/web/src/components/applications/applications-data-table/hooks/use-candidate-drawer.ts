@@ -219,7 +219,7 @@ export function useCandidateDrawer({
       for (const d of docs) {
         if (d.url && !seenUrls.has(d.url)) {
           seenUrls.add(d.url);
-          allDocs.push(d);
+          allDocs.push({ ...d, sourceApplicationId: a.id });
         }
       }
     }

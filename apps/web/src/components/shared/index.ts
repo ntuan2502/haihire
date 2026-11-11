@@ -17,3 +17,4 @@ export * from "./slide-over";
 export * from "./confirm-destructive-modal";
 export * from "./custom-modal";
 export * from "./error-fallback";
+export * from "./authenticated-document-viewer";

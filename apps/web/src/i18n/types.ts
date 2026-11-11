@@ -874,6 +874,10 @@ export interface TranslationSchema {
     allStages: string;
     backToDocuments: string;
     clickToPreview: string;
+    loadingPreview: string;
+    previewUnavailable: string;
+    previewUnsupportedFormat: string;
+    retryPreview: string;
     uploadDocHint: string;
     noApplicationsYet: string;
     noApplicationsMatchingStage: string;

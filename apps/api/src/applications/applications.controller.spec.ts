@@ -140,6 +140,46 @@ describe("ApplicationsController", () => {
         AppUnauthorizedException,
       );
     });
+
+    it("Case 4: allows dynamic organization owner (isOwner: true) to preview inline documents", async () => {
+      const ownerReq = {
+        user: {
+          id: "owner-1",
+          email: "owner@haihire.local",
+          role: Role.MEMBER,
+          isOwner: true,
+          organizationId: "org-1",
+        },
+      };
+      const context = createMockContext(ownerReq);
+      mockService.prepareDocumentDownload.mockResolvedValue({
+        asciiFallback: "owner-preview.pdf",
+        encodedFileName: "owner-preview.pdf",
+        mimeType: "application/pdf",
+        stream: mockStream,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      await controller.downloadDocument(
+        "app-1",
+        "/haihire-resumes/tenants/org-1/resumes/owner-preview.pdf",
+        "owner-preview.pdf",
+        mockRes,
+        ownerReq,
+        "inline",
+      );
+
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        "inline; filename=\"owner-preview.pdf\"; filename*=UTF-8''owner-preview.pdf",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "application/pdf",
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
   });
 
   describe("Application Read Endpoints RBAC Guards (F02)", () => {

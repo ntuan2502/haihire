@@ -111,12 +111,20 @@ const mockNotesList = [
   },
 ];
 
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/app-detail-preview.pdf",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
+
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
     downloadAuthenticatedFile: (...args: unknown[]) =>
       mockDownloadAuthenticatedFile(...args),
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
   };
 });
 

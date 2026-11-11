@@ -142,6 +142,7 @@ export function CandidateDrawer({
             {/* Documents Tab */}
             {drawerTab === "documents" && (
               <CandidateDrawerDocumentsTab
+                candidateId={candidate.id}
                 canEdit={canEdit}
                 docFilter={drawerDocFilter}
                 onDocFilterChange={setDrawerDocFilter}

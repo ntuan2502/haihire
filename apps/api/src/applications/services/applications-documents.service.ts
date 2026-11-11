@@ -14,7 +14,7 @@ import {
   validateUploadedFile,
   sanitizeFilename,
 } from "../../common/upload-utils";
-import { fixUtf8String } from "../../common/doc-utils";
+import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import { ApplicationsQueryService } from "./applications-query.service";
 
@@ -141,40 +141,56 @@ export class ApplicationsDocumentsService {
     }
 
     // SSRF prevention: Verify that targetUrl belongs to this application
+    let matchedDocMimeType: string | null | undefined = app.resumeMimeType;
     if (targetUrl) {
-      const allowedUrls: string[] = [];
-      if (app.resumeUrl) allowedUrls.push(app.resumeUrl);
-      if (app.candidate?.resumeUrl) allowedUrls.push(app.candidate.resumeUrl);
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const allowedEntries: Array<{ url: string; mimeType?: string | null }> =
+        [];
+      if (app.resumeUrl) {
+        allowedEntries.push({
+          url: app.resumeUrl,
+          mimeType: app.resumeMimeType,
+        });
+      }
+      if (app.candidate?.resumeUrl) {
+        allowedEntries.push({ url: app.candidate.resumeUrl });
+      }
       if (app.candidateId) {
         try {
           const candDocs = await this.getCandidateDocuments(app.candidateId);
           for (const doc of candDocs) {
-            if (doc?.url) allowedUrls.push(doc.url);
+            if (doc?.url) {
+              allowedEntries.push({ url: doc.url, mimeType: doc.mimeType });
+            }
           }
         } catch {
           // ignore
         }
       }
 
-      const targetObj = this.minioService.extractObjectName(targetUrl);
-      const isAllowed = allowedUrls.some(
-        (u) =>
-          u === targetUrl ||
-          this.minioService.extractObjectName(u) === targetObj,
+      const matchedEntry = allowedEntries.find(
+        (entry) =>
+          entry.url === targetUrl ||
+          this.minioService.extractObjectName(entry.url) === targetObj,
       );
-      if (!isAllowed) {
+      if (!matchedEntry) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this application.",
           { id },
         );
       }
+      matchedDocMimeType = matchedEntry.mimeType ?? matchedDocMimeType;
     }
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+    const resolvedMimeType = resolveDocumentMimeType(
+      matchedDocMimeType,
+      cleanFileName || downloadUrl,
+    );
 
     const appOrgId =
       app?.job?.organizationId ||
@@ -226,7 +242,7 @@ export class ApplicationsDocumentsService {
       cleanFileName,
       asciiFallback,
       encodedFileName,
-      mimeType: app.resumeMimeType,
+      mimeType: resolvedMimeType,
       stream,
     };
   }

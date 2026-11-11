@@ -984,6 +984,11 @@ export const en: TranslationSchema = {
     allStages: "All stages",
     backToDocuments: "Back to documents",
     clickToPreview: "Click to preview",
+    loadingPreview: "Loading document preview...",
+    previewUnavailable: "Unable to load document preview.",
+    previewUnsupportedFormat:
+      "Inline preview is not supported for this file format. Please download the file to view it.",
+    retryPreview: "Retry",
     uploadDocHint:
       "Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).",
     noApplicationsYet: "No applications yet.",

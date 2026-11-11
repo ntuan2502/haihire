@@ -989,6 +989,11 @@ export const vi: TranslationSchema = {
     allStages: "Tất cả giai đoạn",
     backToDocuments: "Quay lại danh sách tài liệu",
     clickToPreview: "Nhấn để xem trước",
+    loadingPreview: "Đang tải bản xem trước tài liệu...",
+    previewUnavailable: "Không thể tải bản xem trước tài liệu.",
+    previewUnsupportedFormat:
+      "Định dạng tệp này không hỗ trợ xem trực tiếp. Vui lòng tải xuống để xem.",
+    retryPreview: "Thử lại",
     uploadDocHint:
       "Tải lên CV, thư giới thiệu hoặc tài liệu khác (PDF, DOC, DOCX — tối đa 10 MB).",
     noApplicationsYet: "Chưa có hồ sơ ứng tuyển nào.",

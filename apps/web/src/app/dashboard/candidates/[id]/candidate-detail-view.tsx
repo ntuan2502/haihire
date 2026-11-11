@@ -250,6 +250,7 @@ export function CandidateDetailView() {
               {docActions.previewDoc ? (
                 <CandidateDocumentPreview
                   previewDoc={docActions.previewDoc}
+                  candidateId={state.candidate?.id || state.candidateIdStr}
                   onClose={() => docActions.setPreviewDoc(null)}
                   onDownload={() =>
                     docActions.handleDownloadDoc(

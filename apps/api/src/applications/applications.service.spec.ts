@@ -614,8 +614,44 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       );
 
       expect(download.cleanFileName).toBe("bob.pdf");
+      expect(download.mimeType).toBe("application/pdf");
       expect(download.stream).toBeDefined();
       expect(mockMinioService.getObjectStream).toHaveBeenCalled();
+    });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const targetApp = mockApps.find((a) => a.id === "app-2");
+      if (targetApp) {
+        targetApp.resumeMimeType = null;
+      }
+
+      const inferredDownload = await service.prepareDocumentDownload(
+        "app-2",
+        "https://s3.local/resumes/bob.pdf",
+        "bob.pdf",
+        "org-1",
+      );
+      expect(inferredDownload.mimeType).toBe("application/pdf");
+
+      mockCandidateDocs.push({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://s3.local/resumes/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: new Date(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "app-1",
+        "https://s3.local/resumes/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
     });
 
     it("should block document download if targetUrl does not belong to application (SSRF guard)", async () => {

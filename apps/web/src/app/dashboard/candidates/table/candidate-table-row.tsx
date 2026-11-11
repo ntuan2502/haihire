@@ -87,16 +87,23 @@ export function CandidateTableRow({
         </td>
       )}
 
-      {/* Quick notes */}
+      {/* Latest note */}
       {visibleColumns.quickNotes && (
         <td className="py-4 px-5 max-w-xs">
-          {candidate.notes ? (
-            <span
-              className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[220px]"
-              title={candidate.notes}
-            >
-              {candidate.notes}
-            </span>
+          {candidate.latestNote?.content ? (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[190px]"
+                title={candidate.latestNote.content}
+              >
+                {candidate.latestNote.content}
+              </span>
+              {(candidate.notesCount ?? 0) > 1 && (
+                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                  +{candidate.notesCount! - 1}
+                </span>
+              )}
+            </div>
           ) : (
             <span className="text-slate-300 dark:text-slate-600">—</span>
           )}

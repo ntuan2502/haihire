@@ -23,10 +23,51 @@ vi.mock("@/lib/api", () => ({
     mockDownloadAuthenticatedFile(...args),
 }));
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: {
+      id: "user-1",
+      name: "Recruiter Admin",
+      role: "ADMIN",
+      organizationId: "org-1",
+      isOwner: true,
+    },
+  }),
+}));
+
 vi.mock("@/hooks/use-queries", () => ({
   useCandidate: () => ({
     data: null,
     isLoading: false,
+  }),
+  useCandidateNotes: () => ({
+    data: [
+      {
+        id: "cnote-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Admin",
+        authorRole: "ADMIN",
+        content: "Ứng viên có nền tảng hệ thống tốt",
+        isEdited: false,
+        createdAt: "2026-03-01T10:00:00.000Z",
+        updatedAt: "2026-03-01T10:00:00.000Z",
+      },
+    ],
+    isLoading: false,
+  }),
+  useAddCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
+  }),
+  useUpdateCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
+  }),
+  useDeleteCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
   }),
   useUploadCandidateDocumentMutation: () => ({
     mutateAsync: mockUploadDocMutateAsync,
@@ -536,5 +577,26 @@ describe("CandidateDrawer Component", () => {
         url: "https://minio.local/cv.pdf",
       });
     });
+  });
+
+  it("switches to notes tab right next to documents and renders CandidateNotesStream", () => {
+    render(
+      <CandidateDrawer
+        candidate={mockCandidate}
+        onClose={vi.fn()}
+        jobs={mockJobs}
+        canEdit={true}
+        onApplyToJob={vi.fn()}
+        onScheduleInterview={vi.fn()}
+      />,
+    );
+
+    const notesTabBtn = screen.getByRole("button", { name: /Ghi chú \(1\)/i });
+    expect(notesTabBtn).toBeInTheDocument();
+    fireEvent.click(notesTabBtn);
+
+    expect(
+      screen.getByText("Ứng viên có nền tảng hệ thống tốt"),
+    ).toBeInTheDocument();
   });
 });

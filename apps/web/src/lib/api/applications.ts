@@ -64,7 +64,6 @@ export const applicationsApi = {
       candidateName?: string;
       candidateEmail?: string;
       candidatePhone?: string;
-      notes?: string;
       resumeUrl?: string;
       resumeFileName?: string;
     },

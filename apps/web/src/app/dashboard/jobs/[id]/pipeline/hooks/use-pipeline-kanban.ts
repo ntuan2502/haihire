@@ -334,7 +334,7 @@ export function usePipelineKanban(jobId: string) {
       relatedApps.length > 0 ? relatedApps : [selectedCandidate];
 
     for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.candidate?.notes, {
+      const docs = parseCandidateDocuments({
         id: a.id,
         resumeUrl: a.resumeUrl,
         resumeFileName: a.resumeFileName,

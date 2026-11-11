@@ -2,6 +2,7 @@ import type {
   Application,
   Candidate,
   CandidateDocument,
+  CandidateLatestNoteSummary,
   Gender,
 } from "@/types";
 import { inferCandidateName } from "@haihire/shared";
@@ -82,8 +83,10 @@ export function getInitials(name?: string | null): string {
 /**
  * Parse metadata fields (gender, dob, firstName, lastName, displayName) from candidate notes
  */
-export function parseCandidateNotes(
-  notes?: string | null,
+/**
+ * Resolve structured candidate profile fields (name parts, gender, date of birth)
+ */
+export function resolveCandidateProfile(
   candidateName?: string | null,
   structured?: {
     firstName?: string | null;
@@ -98,9 +101,8 @@ export function parseCandidateNotes(
   lastName: string;
   displayName: string;
   effectiveName: string;
-  customNotes: string;
 } {
-  if (!notes && !candidateName && !structured) {
+  if (!candidateName && !structured) {
     return {
       gender: "—",
       dob: "—",
@@ -108,15 +110,8 @@ export function parseCandidateNotes(
       lastName: "",
       displayName: "",
       effectiveName: "—",
-      customNotes: "",
     };
   }
-
-  // Clean candidate notes
-  const rawCustom = (notes || "")
-    .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
-    .replace(/\|\s*\|/g, "|")
-    .trim();
 
   const parsedFirst = structured?.firstName?.trim() || "";
   const parsedLast = structured?.lastName?.trim() || "";
@@ -147,7 +142,6 @@ export function parseCandidateNotes(
     lastName: inferredLast,
     displayName: "",
     effectiveName,
-    customNotes: /^[{}|\s]+$/.test(rawCustom) ? "" : rawCustom,
   };
 }
 
@@ -171,10 +165,9 @@ export function fixUtf8String(str?: string | null): string {
 }
 
 /**
- * Parse candidate documents list from candidate notes and fallback application
+ * Build candidate document entry from an application's attached resume.
  */
 export function parseCandidateDocuments(
-  _notes?: string | null,
   fallbackApp?: {
     id: string;
     resumeUrl: string;
@@ -182,7 +175,7 @@ export function parseCandidateDocuments(
     resumeFileSize?: number | null;
     resumeMimeType?: string | null;
     createdAt: string;
-  },
+  } | null,
 ): CandidateDocument[] {
   if (
     fallbackApp &&
@@ -203,46 +196,6 @@ export function parseCandidateDocuments(
   }
 
   return [];
-}
-
-/**
- * Build packed metadata string for candidate notes
- */
-export function buildCandidateNotes(params: {
-  firstName?: string;
-  lastName?: string;
-  displayName?: string;
-  gender?: string;
-  dob?: string;
-  customNotes?: string;
-}): string | undefined {
-  const segments: string[] = [];
-
-  if (params.firstName?.trim()) {
-    segments.push(`FirstName: ${params.firstName.trim()}`);
-  }
-  if (params.lastName?.trim()) {
-    segments.push(`LastName: ${params.lastName.trim()}`);
-  }
-  if (params.displayName?.trim()) {
-    segments.push(`DisplayName: ${params.displayName.trim()}`);
-  }
-  if (
-    params.gender &&
-    params.gender !== "Not specified" &&
-    params.gender !== "NOT_SPECIFIED" &&
-    params.gender !== "—"
-  ) {
-    segments.push(`Gender: ${params.gender.trim()}`);
-  }
-  if (params.dob?.trim() && params.dob !== "—") {
-    segments.push(`DOB: ${params.dob.trim()}`);
-  }
-  if (params.customNotes?.trim()) {
-    segments.push(params.customNotes.trim());
-  }
-
-  return segments.length > 0 ? segments.join(" | ") : undefined;
 }
 
 /**
@@ -268,7 +221,7 @@ export function getGenderLabel(
 }
 
 /**
- * Get unified candidate display name from candidate application or notes
+ * Get unified candidate display name from candidate profile or application
  */
 export function getCandidateDisplayName(
   candidate?: {
@@ -276,7 +229,6 @@ export function getCandidateDisplayName(
     candidateName?: string | null;
     firstName?: string | null;
     lastName?: string | null;
-    notes?: string | null;
   } | null,
 ): string {
   if (!candidate) return "—";
@@ -288,8 +240,7 @@ export function getCandidateDisplayName(
   }
   if (candidate.candidateName) return candidate.candidateName;
   if (candidate.name) return candidate.name;
-  const { effectiveName } = parseCandidateNotes(
-    candidate.notes,
+  const { effectiveName } = resolveCandidateProfile(
     candidate.candidateName,
     candidate,
   );
@@ -343,7 +294,8 @@ export interface CandidateItem {
   applicationsCount: number;
   createdAt: string;
   updatedAt?: string;
-  notes: string;
+  latestNote?: CandidateLatestNoteSummary | null;
+  notesCount?: number;
   resumeUrl?: string | null;
   resumeFileName?: string | null;
   resumeFileSize?: number | null;
@@ -374,7 +326,8 @@ export function aggregateCandidates(
         applicationsCount: hasJob ? 1 : 0,
         createdAt: app.createdAt,
         updatedAt: app.updatedAt,
-        notes: app.candidate?.notes || "",
+        latestNote: app.candidate?.latestNote ?? null,
+        notesCount: app.candidate?.notesCount ?? 0,
         rawApp: app,
       });
     } else {
@@ -388,8 +341,9 @@ export function aggregateCandidates(
       if (!existing.phone && app.candidatePhone) {
         existing.phone = app.candidatePhone;
       }
-      if (app.candidate?.notes) {
-        existing.notes = app.candidate.notes;
+      if (app.candidate?.latestNote) {
+        existing.latestNote = app.candidate.latestNote;
+        existing.notesCount = app.candidate.notesCount ?? existing.notesCount;
         existing.name = effectiveName;
       }
     }

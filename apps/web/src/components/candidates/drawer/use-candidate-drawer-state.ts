@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   useCandidate,
+  useCandidateNotes,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
@@ -12,8 +13,7 @@ import {
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   formatDate,
-  parseCandidateNotes,
-  parseCandidateDocuments,
+  resolveCandidateProfile,
   fixUtf8String,
   getGenderLabel,
   type CandidateItem,
@@ -35,13 +35,14 @@ export function useCandidateDrawerState({
 }: UseCandidateDrawerStateProps) {
   const { t } = useI18n();
 
-  // Fetch full details of the candidate
+  // Fetch full details and notes count of the candidate
   const { data: fullCandidate } = useCandidate(candidate?.id || null);
+  const { data: candidateNotesList } = useCandidateNotes(candidate?.id);
 
   // Drawer Tabs State
-  const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
-    "applications",
-  );
+  const [drawerTab, setDrawerTab] = useState<
+    "applications" | "documents" | "notes"
+  >("applications");
   const [drawerStageFilter, setDrawerStageFilter] = useState<string>("ALL");
   const [drawerDocFilter, setDrawerDocFilter] = useState<string>("All");
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
@@ -65,14 +66,10 @@ export function useCandidateDrawerState({
         firstName: "",
         lastName: "",
         displayName: "",
-        customNotes: "",
       };
     }
     const cand = fullCandidate || candidate.candidate;
-    const notesParsed = parseCandidateNotes(
-      cand?.notes,
-      cand?.name || candidate.name,
-    );
+    const profile = resolveCandidateProfile(cand?.name || candidate.name, cand);
     const genderLabel = getGenderLabel(cand?.gender, t);
     const dobFormatted = cand?.dateOfBirth
       ? formatDate(cand.dateOfBirth, "short")
@@ -80,10 +77,9 @@ export function useCandidateDrawerState({
     return {
       gender: genderLabel,
       dob: dobFormatted,
-      firstName: cand?.firstName || "",
-      lastName: cand?.lastName || "",
+      firstName: cand?.firstName || profile.firstName || "",
+      lastName: cand?.lastName || profile.lastName || "",
       displayName: cand?.name || candidate.name || "",
-      customNotes: notesParsed.customNotes || cand?.notes || "",
     };
   }, [candidate, fullCandidate, t]);
 
@@ -107,8 +103,7 @@ export function useCandidateDrawerState({
       return fullCandidate.allDocuments;
     }
     const cand = fullCandidate || candidate.candidate;
-    const docs = parseCandidateDocuments(cand?.notes);
-    if (docs.length === 0 && cand?.resumeUrl) {
+    if (cand?.resumeUrl) {
       return [
         {
           id: `resume-${cand.id}`,
@@ -121,8 +116,12 @@ export function useCandidateDrawerState({
         },
       ];
     }
-    return docs;
+    return [];
   }, [candidate, fullCandidate]);
+
+  const drawerNotesCount = candidateNotesList
+    ? candidateNotesList.length
+    : (candidate?.notesCount ?? candidate?.candidate?.notesCount ?? 0);
 
   const filteredDrawerDocuments = useMemo(() => {
     if (drawerDocFilter === "All") return drawerCandidateDocuments;
@@ -258,6 +257,7 @@ export function useCandidateDrawerState({
     filteredDrawerApps,
     drawerCandidateDocuments,
     filteredDrawerDocuments,
+    drawerNotesCount,
     handleDownloadDoc,
     handleUploadDoc,
     handleConfirmDeleteDrawerDoc,

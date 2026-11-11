@@ -44,10 +44,6 @@ export class CreateCandidateDto {
 
   @IsString()
   @IsOptional()
-  notes?: string;
-
-  @IsString()
-  @IsOptional()
   resumeUrl?: string;
 
   @IsString()

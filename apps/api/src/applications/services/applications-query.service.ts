@@ -372,7 +372,6 @@ export class ApplicationsQueryService {
         candidateUpdate.email = dto.candidateEmail.toLowerCase();
       if (dto.candidatePhone !== undefined)
         candidateUpdate.phone = dto.candidatePhone;
-      if (dto.notes !== undefined) candidateUpdate.notes = dto.notes;
       if (dto.resumeUrl !== undefined)
         candidateUpdate.resumeUrl = dto.resumeUrl;
       if (dto.resumeFileName !== undefined)

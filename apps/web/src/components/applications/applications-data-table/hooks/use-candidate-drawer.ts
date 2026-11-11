@@ -165,7 +165,7 @@ export function useCandidateDrawer({
     const appsToScan = relatedApps.length > 0 ? relatedApps : [currentApp];
 
     for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.candidate?.notes, {
+      const docs = parseCandidateDocuments({
         id: a.id,
         resumeUrl: a.resumeUrl,
         resumeFileName: a.resumeFileName,

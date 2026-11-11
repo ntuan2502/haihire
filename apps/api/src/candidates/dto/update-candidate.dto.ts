@@ -32,10 +32,6 @@ export class UpdateCandidateDto {
 
   @IsString()
   @IsOptional()
-  notes?: string;
-
-  @IsString()
-  @IsOptional()
   resumeUrl?: string;
 
   @IsString()

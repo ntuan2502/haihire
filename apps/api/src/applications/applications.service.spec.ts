@@ -47,7 +47,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     lastName?: string;
     email: string;
     phone: string;
-    notes?: string | null;
     resumeUrl?: string | null;
     resumeFileName?: string | null;
     resumeFileSize?: number | null;
@@ -123,7 +122,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "alice.pdf",
         resumeFileSize: 1024,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -137,7 +135,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "bob.pdf",
         resumeFileSize: 2048,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -151,7 +148,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "charlie.pdf",
         resumeFileSize: 3072,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },

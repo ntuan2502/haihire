@@ -10,7 +10,6 @@ export const createCandidateSchema = z.object({
   dateOfBirth: z.string().optional(),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
-  notes: z.string().optional(),
   resumeUrl: z.string().optional(),
   resumeFileName: z.string().optional(),
 });

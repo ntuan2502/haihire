@@ -2,6 +2,7 @@
 
 import { SlideOver } from "@/components/shared/slide-over";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
+import { CandidateNotesStream } from "./candidate-notes-stream";
 import {
   CandidateDrawerHeader,
   CandidateDrawerDetails,
@@ -54,6 +55,7 @@ export function CandidateDrawer({
     filteredDrawerApps,
     drawerCandidateDocuments,
     filteredDrawerDocuments,
+    drawerNotesCount,
     handleDownloadDoc,
     handleUploadDoc,
     handleConfirmDeleteDrawerDoc,
@@ -107,6 +109,17 @@ export function CandidateDrawer({
                   {t("candidates.documentsTab")} (
                   {drawerCandidateDocuments.length})
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setDrawerTab("notes")}
+                  className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    drawerTab === "notes"
+                      ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
+                      : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                  }`}
+                >
+                  {t("candidates.notes")} ({drawerNotesCount})
+                </button>
               </div>
             </div>
 
@@ -139,6 +152,15 @@ export function CandidateDrawer({
                 onDeleteDoc={setDrawerDocToDelete}
                 onUploadDoc={handleUploadDoc}
                 isUploading={isUploadingDrawerDoc}
+              />
+            )}
+
+            {/* Notes Tab */}
+            {drawerTab === "notes" && (
+              <CandidateNotesStream
+                candidateId={candidate.id}
+                compact
+                showHeader={false}
               />
             )}
           </div>

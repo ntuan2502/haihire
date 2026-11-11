@@ -939,7 +939,7 @@ export const vi: TranslationSchema = {
       phone: "Số điện thoại",
       applications: "Hồ sơ ứng tuyển",
       added: "Ngày thêm",
-      quickNotes: "Ghi chú nhanh",
+      quickNotes: "Ghi chú",
     },
     filters: "Bộ lọc",
     withCv: "Có CV",

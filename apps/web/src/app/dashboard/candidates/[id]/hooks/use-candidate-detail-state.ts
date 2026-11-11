@@ -1,11 +1,15 @@
 import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useAllJobs, useCandidate } from "@/hooks/use-queries";
+import {
+  useAllJobs,
+  useCandidate,
+  useCandidateNotes,
+} from "@/hooks/use-queries";
 import {
   isValidUuid,
   formatDate,
-  parseCandidateNotes,
+  resolveCandidateProfile,
   parseCandidateDocuments,
 } from "@/lib/utils";
 
@@ -17,6 +21,9 @@ export function useCandidateDetailState() {
   const isCandidateIdValid = isValidUuid(candidateIdStr);
   const { data: candidate, isLoading: candidateLoading } = useCandidate(
     isCandidateIdValid ? candidateIdStr : null,
+  );
+  const { data: candidateNotesList } = useCandidateNotes(
+    isCandidateIdValid ? candidateIdStr : undefined,
   );
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
@@ -42,7 +49,7 @@ export function useCandidateDetailState() {
     if (candidate.allDocuments && candidate.allDocuments.length > 0) {
       return candidate.allDocuments;
     }
-    const directDocs = parseCandidateDocuments(candidate.notes, {
+    const directDocs = parseCandidateDocuments({
       id: candidate.id,
       resumeUrl: candidate.resumeUrl || "",
       resumeFileName: candidate.resumeFileName || "Resume.pdf",
@@ -54,7 +61,7 @@ export function useCandidateDetailState() {
     const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
 
     for (const app of candidateApps) {
-      const appDocs = parseCandidateDocuments(app.candidate?.notes, {
+      const appDocs = parseCandidateDocuments({
         id: app.id,
         resumeUrl: app.resumeUrl || "",
         resumeFileName: app.resumeFileName || "Application_Resume.pdf",
@@ -84,7 +91,7 @@ export function useCandidateDetailState() {
     );
   }, [candidateDocuments, documentFilter]);
 
-  const parsedNotes = parseCandidateNotes(candidate?.notes, candidate?.name);
+  const parsedNotes = resolveCandidateProfile(candidate?.name, candidate);
   const gender = candidate?.gender || parsedNotes.gender;
   const dob = candidate?.dateOfBirth
     ? formatDate(candidate.dateOfBirth)
@@ -97,6 +104,9 @@ export function useCandidateDetailState() {
     candidate?.updatedAt || candidate?.createdAt,
   );
 
+  const notesCount = candidateNotesList
+    ? candidateNotesList.length
+    : (candidate?.notesCount ?? 0);
   const loading = candidateLoading || jobsLoading;
 
   return {
@@ -106,6 +116,7 @@ export function useCandidateDetailState() {
     jobs,
     canEdit,
     loading,
+    notesCount,
     activeTab,
     setActiveTab,
     stageFilter,

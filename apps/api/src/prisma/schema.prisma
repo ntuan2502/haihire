@@ -279,7 +279,6 @@ model Candidate {
   dateOfBirth    DateTime?
   email          String
   phone          String?
-  notes          String?
   resumeUrl      String?
   resumeFileName String?
   resumeFileSize Int?

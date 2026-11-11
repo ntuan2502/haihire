@@ -195,9 +195,9 @@ describe("ApplicationsSagaService", () => {
 
   it("returns only an acknowledgement for anonymous applications against existing candidates", async () => {
     Object.assign(candidateTable.store[0], {
-      notes: "Confidential recruiter assessment",
       dateOfBirth: new Date("1990-01-01"),
       resumeUrl: "https://storage.example/private-resume.pdf",
+      phone: "+84909998888",
     });
     const result = await service.create({
       jobId: "job-1",
@@ -210,7 +210,8 @@ describe("ApplicationsSagaService", () => {
       "jobId",
       "stage",
     ]);
-    expect(JSON.stringify(result)).not.toContain("Confidential");
+    expect(JSON.stringify(result)).not.toContain("+84909998888");
+    expect(JSON.stringify(result)).not.toContain("1990-01-01");
     expect(result).not.toHaveProperty("candidate");
     expect(result).not.toHaveProperty("resumeUrl");
   });

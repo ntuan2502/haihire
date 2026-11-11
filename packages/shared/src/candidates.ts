@@ -34,6 +34,13 @@ export interface CandidateDocument {
   jobTitle?: string;
 }
 
+export interface CandidateLatestNoteSummary {
+  id: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export interface Candidate {
   id: string;
   organizationId: string;
@@ -44,7 +51,6 @@ export interface Candidate {
   dateOfBirth?: string | null;
   email: string;
   phone?: string | null;
-  notes?: string | null;
   resumeUrl?: string | null;
   resumeFileName?: string | null;
   resumeFileSize?: number | null;
@@ -56,6 +62,8 @@ export interface Candidate {
   applications?: Application[];
   allDocuments?: CandidateDocument[];
   candidateNotes?: CandidateNote[];
+  latestNote?: CandidateLatestNoteSummary | null;
+  notesCount?: number;
 }
 
 export interface CandidateNote {
@@ -79,7 +87,6 @@ export interface CreateCandidateInput {
   dateOfBirth?: string;
   email: string;
   phone?: string;
-  notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
   resumeFile?: unknown;
@@ -94,7 +101,6 @@ export interface UpdateCandidateInput {
   dateOfBirth?: string;
   email?: string;
   phone?: string;
-  notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
 }

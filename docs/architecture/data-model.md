@@ -24,12 +24,14 @@ erDiagram
   Organization ||--o{ TrackingLink : "sourcing_links (Cascade)"
   Organization ||--o{ OrganizationWebhookSetting : "webhooks (Cascade)"
   Organization ||--o{ ApplicationNote : "application_notes (Cascade)"
+  Organization ||--o{ CandidateNote : "candidate_notes (Cascade)"
 
   User ||--o{ Organization : "owns (Restrict)"
   Job ||--o{ Application : "applications (Cascade)"
   Job ||--o{ TrackingLink : "sourcing (SetNull)"
   Candidate ||--o{ Application : "submissions (Cascade)"
   Candidate ||--o{ CandidateDocument : "documents (Cascade)"
+  Candidate ||--o{ CandidateNote : "notes (Cascade)"
   Candidate ||--o{ ActivityLog : "history (Cascade)"
   Application ||--o{ Interview : "interviews (Cascade)"
   Application ||--o{ EmailLog : "messages (Cascade)"
@@ -198,12 +200,12 @@ Tenant notification webhook targets (Discord, Telegram, Generic HTTP).
 
 ## 3. Database Cascade & Deletion Policies
 
-| Parent Entity  | Dependent Entity                                           | Relation FK      | `onDelete` Policy       | Behavioral Rationale                                                                                     |
-| :------------- | :--------------------------------------------------------- | :--------------- | :---------------------- | :------------------------------------------------------------------------------------------------------- |
-| `Organization` | `Job`, `Candidate`, `CandidateDocument`, `ApplicationNote` | `organizationId` | `Cascade`               | Deleting tenant purges all operational recruitment data and notes streams.                               |
-| `Organization` | `User`                                                     | `organizationId` | `NoAction` / `Restrict` | Prevents deleting a tenant from silently deleting user accounts. `deleteMyOrg` explicitly unlinks users. |
-| `User` (Owner) | `Organization`                                             | `ownerId`        | `Restrict`              | A user cannot be deleted while registered as an organization owner. Ownership must be transferred first. |
-| `Job`          | `Application`                                              | `jobId`          | `Cascade`               | Deleting a job purges its active applications and interview rounds.                                      |
-| `Candidate`    | `Application`, `CandidateDocument`, `ActivityLog`          | `candidateId`    | `Cascade`               | Purging candidate purges all submissions, documents, and logs.                                           |
-| `Application`  | `Interview`, `EmailLog`, `ApplicationNote`                 | `applicationId`  | `Cascade`               | Purging application purges interview rounds, message logs, and comment notes.                            |
-| `TrackingLink` | `Application`                                              | `trackingLinkId` | `SetNull`               | Deleting a tracking link preserves the candidate's application while unlinking attribution source.       |
+| Parent Entity  | Dependent Entity                                                            | Relation FK      | `onDelete` Policy       | Behavioral Rationale                                                                                     |
+| :------------- | :-------------------------------------------------------------------------- | :--------------- | :---------------------- | :------------------------------------------------------------------------------------------------------- |
+| `Organization` | `Job`, `Candidate`, `CandidateDocument`, `CandidateNote`, `ApplicationNote` | `organizationId` | `Cascade`               | Deleting tenant purges all operational recruitment data and notes streams.                               |
+| `Organization` | `User`                                                                      | `organizationId` | `NoAction` / `Restrict` | Prevents deleting a tenant from silently deleting user accounts. `deleteMyOrg` explicitly unlinks users. |
+| `User` (Owner) | `Organization`                                                              | `ownerId`        | `Restrict`              | A user cannot be deleted while registered as an organization owner. Ownership must be transferred first. |
+| `Job`          | `Application`                                                               | `jobId`          | `Cascade`               | Deleting a job purges its active applications and interview rounds.                                      |
+| `Candidate`    | `Application`, `CandidateDocument`, `CandidateNote`, `ActivityLog`          | `candidateId`    | `Cascade`               | Purging candidate purges all submissions, documents, notes, and logs.                                    |
+| `Application`  | `Interview`, `EmailLog`, `ApplicationNote`                                  | `applicationId`  | `Cascade`               | Purging application purges interview rounds, message logs, and comment notes.                            |
+| `TrackingLink` | `Application`                                                               | `trackingLinkId` | `SetNull`               | Deleting a tracking link preserves the candidate's application while unlinking attribution source.       |

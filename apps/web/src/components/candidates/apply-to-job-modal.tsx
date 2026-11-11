@@ -78,9 +78,6 @@ export function ApplyToJobModal({
       if (candidate.phone) {
         formData.append("candidatePhone", candidate.phone);
       }
-      if (candidate.notes) {
-        formData.append("notes", candidate.notes);
-      }
 
       const effectiveResumeUrl =
         candidate.resumeUrl || candidate.rawApp?.resumeUrl;

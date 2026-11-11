@@ -206,6 +206,9 @@ export function useAddCandidateNoteMutation() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.candidateNotes(variables.candidateId),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.candidateId),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
@@ -229,6 +232,9 @@ export function useUpdateCandidateNoteMutation() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.candidateNotes(variables.candidateId),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.candidateId),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
@@ -248,6 +254,9 @@ export function useDeleteCandidateNoteMutation() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.candidateNotes(variables.candidateId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.candidateId),
       });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },

@@ -934,7 +934,7 @@ export const en: TranslationSchema = {
       phone: "Phone",
       applications: "Applications",
       added: "Added",
-      quickNotes: "Quick notes",
+      quickNotes: "Notes",
     },
     filters: "Filters",
     withCv: "With CV",

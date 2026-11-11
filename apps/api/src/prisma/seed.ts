@@ -1709,7 +1709,6 @@ export async function runSeed(): Promise<void> {
     dateOfBirth: Date;
     email: string;
     phone: string;
-    notes: string;
     resumeUrl: string;
     resumeFileName: string;
     resumeFileSize: number;
@@ -1746,6 +1745,19 @@ export async function runSeed(): Promise<void> {
     id: string;
     organizationId: string;
     applicationId: string;
+    authorId: string;
+    authorName: string;
+    authorRole: string;
+    content: string;
+    isEdited: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
+  const candidateNotesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    candidateId: string;
     authorId: string;
     authorName: string;
     authorRole: string;
@@ -1877,11 +1889,23 @@ export async function runSeed(): Promise<void> {
       dateOfBirth: toInstant(dateOfBirth),
       email: candidate.email,
       phone: candidate.phone,
-      notes: "Ứng viên tiềm năng trong Talent Pool.",
       resumeUrl,
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
+      createdAt: toInstant(candidateCreatedAt),
+      updatedAt: toInstant(candidateCreatedAt),
+    });
+
+    candidateNotesToInsert.push({
+      id: crypto.randomUUID(),
+      organizationId: adminOrgId,
+      candidateId,
+      authorId: adminUserId,
+      authorName: DEMO_ACCOUNTS.ADMIN.name,
+      authorRole: "ADMIN",
+      content: "Ứng viên tiềm năng trong Talent Pool.",
+      isEdited: false,
       createdAt: toInstant(candidateCreatedAt),
       updatedAt: toInstant(candidateCreatedAt),
     });
@@ -2125,11 +2149,22 @@ export async function runSeed(): Promise<void> {
     dateOfBirth: toInstant(new Date("1995-05-15T00:00:00Z")),
     email: "test-applicant@tun.io.vn",
     phone: "0901234567",
-    notes: "Ứng viên mẫu phục vụ automated tests.",
     resumeUrl: "/haihire-resumes/sample-resume.pdf",
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
+    createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+  });
+  candidateNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000501",
+    organizationId: adminOrgId,
+    candidateId: testCandidateId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Ứng viên mẫu phục vụ automated tests.",
+    isEdited: false,
     createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
   });
@@ -2144,11 +2179,22 @@ export async function runSeed(): Promise<void> {
     dateOfBirth: toInstant(new Date("1996-08-20T00:00:00Z")),
     email: "kanban-candidate@tun.io.vn",
     phone: "0908765432",
-    notes: "Ứng viên mẫu cho Kanban drag & drop test.",
     resumeUrl: "/haihire-resumes/sample-resume.pdf",
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
+  candidateNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000502",
+    organizationId: adminOrgId,
+    candidateId: kanbanCandidateId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Ứng viên mẫu cho Kanban drag & drop test.",
+    isEdited: false,
     createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
   });
@@ -2275,6 +2321,22 @@ export async function runSeed(): Promise<void> {
     await Promise.all(
       chunk.map((note) =>
         prisma.applicationNote.upsert({
+          create: note,
+          update: {},
+          where: { id: note.id },
+        }),
+      ),
+    );
+  }
+
+  console.log(
+    `\n⏳ Saving ${candidateNotesToInsert.length} candidate notes to database (batched)...`,
+  );
+  for (let b = 0; b < candidateNotesToInsert.length; b += BATCH_SIZE) {
+    const chunk = candidateNotesToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((note) =>
+        prisma.candidateNote.upsert({
           create: note,
           update: {},
           where: { id: note.id },

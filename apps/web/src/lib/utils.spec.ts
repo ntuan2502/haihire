@@ -9,7 +9,7 @@ import {
   normalizeDateForInput,
   fixUtf8String,
   parseCandidateDocuments,
-  parseCandidateNotes,
+  resolveCandidateProfile,
 } from "./utils";
 
 describe("Frontend utils", () => {
@@ -20,7 +20,7 @@ describe("Frontend utils", () => {
   ])(
     "infers candidate names consistently for %j",
     (name, firstName, lastName) => {
-      expect(parseCandidateNotes(undefined, name)).toMatchObject({
+      expect(resolveCandidateProfile(name)).toMatchObject({
         firstName,
         lastName,
       });
@@ -29,10 +29,10 @@ describe("Frontend utils", () => {
 
   it("keeps explicit candidate name fields instead of inferring missing parts", () => {
     expect(
-      parseCandidateNotes(undefined, "Tran Van Minh", { firstName: " Minh " }),
+      resolveCandidateProfile("Tran Van Minh", { firstName: " Minh " }),
     ).toMatchObject({ firstName: "Minh", lastName: "" });
     expect(
-      parseCandidateNotes(undefined, "Tran Van Minh", {
+      resolveCandidateProfile("Tran Van Minh", {
         lastName: " Tran Van ",
       }),
     ).toMatchObject({ firstName: "", lastName: "Tran Van" });
@@ -165,11 +165,11 @@ describe("Frontend utils", () => {
 
   describe("parseCandidateDocuments", () => {
     it("returns empty array when fallback has no resumeUrl", () => {
-      expect(parseCandidateDocuments("some notes", undefined)).toEqual([]);
+      expect(parseCandidateDocuments(undefined)).toEqual([]);
     });
 
     it("returns formatted document when fallbackApp provides resumeUrl", () => {
-      const docs = parseCandidateDocuments("notes", {
+      const docs = parseCandidateDocuments({
         id: "app-1",
         resumeUrl: "/uploads/resume.pdf",
         resumeFileName: "My_Resume.pdf",

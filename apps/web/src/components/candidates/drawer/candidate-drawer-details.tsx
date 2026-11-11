@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Clock, Mail, MessageSquare, Phone } from "lucide-react";
+import { Calendar, Clock, Mail, Phone } from "lucide-react";
 import { formatDate, type CandidateItem } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
@@ -12,7 +12,6 @@ export interface CandidateDrawerDetailsProps {
     firstName: string;
     lastName: string;
     displayName: string;
-    customNotes: string;
   };
 }
 
@@ -131,17 +130,6 @@ export function CandidateDrawerDetails({
             <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
               {formatDate(candidate.updatedAt || candidate.createdAt, "short")}
             </span>
-          </div>
-
-          {/* Notes */}
-          <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
-              <MessageSquare className="h-3 w-3" />
-              {t("candidates.notes")}
-            </span>
-            <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
-              {details.customNotes || candidate.notes || "—"}
-            </p>
           </div>
         </div>
       </div>

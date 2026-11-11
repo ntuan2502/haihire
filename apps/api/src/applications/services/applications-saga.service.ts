@@ -214,7 +214,6 @@ export class ApplicationsSagaService {
                 lastName,
                 email,
                 phone: dto.candidatePhone?.trim() || null,
-                notes: dto.notes || null,
                 resumeUrl: uploadResult.url || null,
                 resumeFileName: uploadResult.originalName || null,
                 resumeFileSize: uploadResult.size || null,

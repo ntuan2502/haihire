@@ -181,7 +181,6 @@ export function CandidateDetailView() {
           candidateName={state.candidateName}
           candidateEmail={state.candidateEmail}
           candidatePhone={state.candidatePhone}
-          candidateNotes={state.candidate?.notes}
           gender={state.gender}
           dob={state.dob}
           candidateCreated={state.candidateCreated}
@@ -189,7 +188,7 @@ export function CandidateDetailView() {
           parsedNotes={state.parsedNotes}
         />
 
-        {/* Card 2: Tabs (Applications / Documents) */}
+        {/* Card 2: Tabs (Applications / Documents / Notes) */}
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-6 text-xs font-bold -mb-px">
@@ -225,7 +224,7 @@ export function CandidateDetailView() {
                     : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
                 }`}
               >
-                {t("candidates.notes")}
+                {t("candidates.notes")} ({state.notesCount})
               </button>
             </div>
           </div>

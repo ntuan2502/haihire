@@ -55,7 +55,7 @@ export function useApplicationDetailState() {
 
   const candidateDocuments = useMemo(() => {
     if (!app) return [];
-    return parseCandidateDocuments(app.candidate?.notes, {
+    return parseCandidateDocuments({
       id: app.id,
       resumeUrl: app.resumeUrl,
       resumeFileName: app.resumeFileName,

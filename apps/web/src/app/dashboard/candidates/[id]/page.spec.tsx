@@ -59,7 +59,6 @@ const defaultCandidateData = {
   phone: "0901234567",
   gender: "MALE",
   dateOfBirth: "1995-05-15T00:00:00.000Z",
-  notes: "Experienced full-stack engineer",
   resumeUrl: "https://minio.local/cv/nguyen-van-a.pdf",
   resumeFileName: "nguyen-van-a-cv.pdf",
   resumeFileSize: 102400,
@@ -130,6 +129,23 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
     }),
     useCandidateActivities: () => ({
       data: { data: [] },
+      isLoading: false,
+    }),
+    useCandidateNotes: () => ({
+      data: [
+        {
+          id: "cnote-1",
+          organizationId: "org-1",
+          candidateId: VALID_CANDIDATE_ID,
+          authorId: "user-1",
+          authorName: "Recruiter Admin",
+          authorRole: "ADMIN",
+          content: "Experienced full-stack engineer",
+          isEdited: false,
+          createdAt: "2026-03-01T10:00:00.000Z",
+          updatedAt: "2026-03-01T10:00:00.000Z",
+        },
+      ],
       isLoading: false,
     }),
     useEmailTemplates: () => ({
@@ -250,11 +266,14 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       expect(phoneLink).toHaveAttribute("href", "tel:0901234567");
     });
 
-    it("displays candidate personal details in the overview card", () => {
+    it("displays candidate personal details in the overview card and notes stream in the notes tab", () => {
       renderWithClient(<CandidateDetailPage />);
 
       expect(screen.getByText("Tổng quan")).toBeInTheDocument();
       expect(screen.getByText("Nam")).toBeInTheDocument();
+
+      const notesTab = screen.getByRole("button", { name: /Ghi chú \(1\)/i });
+      fireEvent.click(notesTab);
       expect(
         screen.getByText("Experienced full-stack engineer"),
       ).toBeInTheDocument();
@@ -333,7 +352,6 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
     it("shows empty state when candidate has no documents", () => {
       if (currentCandidate) {
         currentCandidate.allDocuments = [];
-        currentCandidate.notes = "";
         currentCandidate.resumeUrl = "";
         currentCandidate.resumeFileName = "";
       }

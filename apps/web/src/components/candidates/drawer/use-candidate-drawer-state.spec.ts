@@ -24,6 +24,7 @@ vi.mock("@/i18n", () => ({
 
 vi.mock("@/hooks/use-queries", () => ({
   useCandidate: () => ({ data: null }),
+  useCandidateNotes: () => ({ data: [] }),
   useUploadCandidateDocumentMutation: () => ({
     mutateAsync: vi.fn(),
     isPending: false,

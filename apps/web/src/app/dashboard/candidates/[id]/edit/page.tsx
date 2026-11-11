@@ -16,11 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import {
-  parseCandidateNotes,
-  normalizeDateForInput,
-  isValidUuid,
-} from "@/lib/utils";
+import { inferCandidateName } from "@haihire/shared";
+import { normalizeDateForInput, isValidUuid } from "@/lib/utils";
 import type { Gender } from "@/types";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -66,28 +63,25 @@ function EditCandidatePageContent() {
   // Pre-fill form when candidate data is loaded
   useEffect(() => {
     if (candidate && !isInitialized) {
-      const parsed = parseCandidateNotes(candidate.notes, candidate.name);
-      setFirstName(candidate.firstName || parsed.firstName);
-      setLastName(candidate.lastName || parsed.lastName);
-      setDisplayName(candidate.name || parsed.displayName);
+      const inferred = inferCandidateName(candidate.name || "");
+      setFirstName(candidate.firstName || inferred.firstName || "");
+      setLastName(candidate.lastName || inferred.lastName || "");
+      setDisplayName(candidate.name || "");
       setEmail(candidate.email || "");
       setPhone(candidate.phone || "");
 
-      const effGender = candidate.gender || parsed.gender;
-      if (effGender && effGender !== "—") {
-        const upper = effGender.toUpperCase();
-        if (upper === "MALE" || upper === "FEMALE" || upper === "OTHER") {
-          setGender(upper as Gender);
-        } else if (effGender === "Nam") {
-          setGender("MALE");
-        } else if (effGender === "Nữ") {
-          setGender("FEMALE");
-        } else {
-          setGender("NOT_SPECIFIED");
-        }
+      const effGender = candidate.gender;
+      if (
+        effGender === "MALE" ||
+        effGender === "FEMALE" ||
+        effGender === "OTHER"
+      ) {
+        setGender(effGender);
+      } else {
+        setGender("NOT_SPECIFIED");
       }
-      const effDob = candidate.dateOfBirth || parsed.dob;
-      if (effDob && effDob !== "—") {
+      const effDob = candidate.dateOfBirth;
+      if (effDob) {
         setDateOfBirth(normalizeDateForInput(effDob));
       }
       setIsInitialized(true);
@@ -129,7 +123,6 @@ function EditCandidatePageContent() {
           dateOfBirth: dateOfBirth ? dateOfBirth : undefined,
           email: email.trim(),
           phone: phone.trim() || undefined,
-          notes: candidate.notes || undefined,
         },
       });
 

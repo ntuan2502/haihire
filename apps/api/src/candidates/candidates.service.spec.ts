@@ -29,6 +29,7 @@ describe("CandidatesService (Characterization Tests)", () => {
   let jobTable: MockTable<Record<string, unknown>>;
   let interviewTable: MockTable<Record<string, unknown>>;
   let candidateDocTable: MockTable<Record<string, unknown>>;
+  let candidateNoteTable: MockTable<Record<string, unknown>>;
 
   let mockPrisma: PrismaService;
   let mockMinio: MinioService;
@@ -44,7 +45,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         lastName: "Nguyen Van",
         email: "nguyenvana@example.com",
         phone: "0901234567",
-        notes: "Experienced TypeScript developer",
         resumeUrl: "https://minio.local/resumes/org-1/resume-1.pdf",
         resumeFileName: "resume-1.pdf",
         resumeFileSize: 1024,
@@ -63,7 +63,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         lastName: "Tran Thi",
         email: "tranthib@example.com",
         phone: "0912345678",
-        notes: "Junior React developer",
         resumeUrl: null,
         resumeFileName: null,
         resumeFileSize: null,
@@ -82,7 +81,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         lastName: "Le Van",
         email: "levanc@example.com",
         phone: null,
-        notes: "Soft deleted candidate",
         resumeUrl: null,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -96,7 +94,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         lastName: "Pham Van",
         email: "phamvand@example.com",
         phone: null,
-        notes: "Belongs to Org 2",
         resumeUrl: null,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -114,7 +111,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         resumeFileName: "app-resume-1.pdf",
         resumeFileSize: 2048,
         resumeMimeType: "application/pdf",
-        notes: "Solid technical background",
         orderIndex: 0,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -155,6 +151,45 @@ describe("CandidatesService (Characterization Tests)", () => {
       },
     ]);
 
+    candidateNoteTable = createMockTable([
+      {
+        id: "cnote-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Initial phone screen passed",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-2",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Strong Rust and TypeScript background",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-3",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Portfolio link verified",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+      },
+    ]);
+
     const mockOrm = {
       public: {
         Candidate: candidateTable,
@@ -162,6 +197,7 @@ describe("CandidatesService (Characterization Tests)", () => {
         Job: jobTable,
         Interview: interviewTable,
         CandidateDocument: candidateDocTable,
+        CandidateNote: candidateNoteTable,
       },
     };
 
@@ -175,6 +211,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       Job: jobTable,
       Interview: interviewTable,
       CandidateDocument: candidateDocTable,
+      CandidateNote: candidateNoteTable,
     }) as unknown as PrismaService;
 
     mockMinio = {
@@ -234,6 +271,19 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(paged.total).toBe(2);
       expect(paged.totalPages).toBe(2);
       expect(paged.data).toHaveLength(1);
+    });
+
+    it("returns latestNote, notesCount, and matches search terms inside candidateNote content", async () => {
+      const result = await service.findAll("org-1", { search: "Strong Rust" });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe("cand-1");
+      expect(result.data[0].notesCount).toBe(2);
+      expect(result.data[0].latestNote).toMatchObject({
+        id: "cnote-2",
+        content: "Strong Rust and TypeScript background",
+        authorName: "Recruiter Alice",
+      });
     });
   });
 
@@ -313,7 +363,6 @@ describe("CandidatesService (Characterization Tests)", () => {
           email: "tranvanminh@example.com",
           dateOfBirth: "1995-05-20",
           phone: "0988776655",
-          notes: "Initial screening notes",
         },
         undefined,
         "org-1",
@@ -395,7 +444,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         {
           name: "Nguyen Van A Updated",
           phone: "0999888777",
-          notes: "Updated senior developer notes",
           dateOfBirth: "1992-08-15",
         },
         "org-1",
@@ -404,7 +452,6 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(updated).toBeDefined();
       expect(updated.name).toBe("Nguyen Van A Updated");
       expect(updated.phone).toBe("0999888777");
-      expect(updated.notes).toBe("Updated senior developer notes");
       expect(updated.dateOfBirth).toBeDefined();
     });
 

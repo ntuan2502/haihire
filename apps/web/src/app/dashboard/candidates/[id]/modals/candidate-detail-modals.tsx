@@ -68,7 +68,6 @@ export function CandidateDetailModals({
                 name: candidate.name,
                 email: candidate.email,
                 phone: candidate.phone || undefined,
-                notes: candidate.notes || undefined,
                 resumeUrl: candidate.resumeUrl,
                 resumeFileName: candidate.resumeFileName,
               }

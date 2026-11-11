@@ -37,7 +37,6 @@ export class CandidatesProfileService {
         dateOfBirth: true,
         email: true,
         phone: true,
-        notes: true,
         resumeUrl: true,
         resumeFileName: true,
         resumeFileSize: true,

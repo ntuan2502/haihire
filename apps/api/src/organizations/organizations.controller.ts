@@ -93,10 +93,18 @@ export class OrganizationsController {
     return result;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Get("my/members")
   getMembers(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMembers(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("interview:create")
+  @Get("my/interviewers")
+  getInterviewers(@Request() req: { user: { id: string } }) {
+    return this.orgsService.getInterviewers(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

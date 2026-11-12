@@ -376,5 +376,61 @@ describe("EventsService - SSE Streaming", () => {
 
       sub.unsubscribe();
     });
+
+    it("broadcasts domain change events to all connected members in the organization", () => {
+      const receivedUser1: Array<{
+        type?: string;
+        organizationId?: string | null;
+      }> = [];
+      const receivedUser2: Array<{
+        type?: string;
+        organizationId?: string | null;
+      }> = [];
+
+      const sub1 = service.subscribe("user-1", ["org-1"]).subscribe((msg) => {
+        if (msg.data && typeof msg.data === "object") {
+          receivedUser1.push(
+            msg.data as { type?: string; organizationId?: string | null },
+          );
+        }
+      });
+      const sub2 = service.subscribe("user-2", ["org-1"]).subscribe((msg) => {
+        if (msg.data && typeof msg.data === "object") {
+          receivedUser2.push(
+            msg.data as { type?: string; organizationId?: string | null },
+          );
+        }
+      });
+
+      service.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: "org-1",
+        data: { applicationId: "app-1" },
+      });
+      service.emit({
+        type: "MEMBERS_CHANGED",
+        organizationId: "org-1",
+        data: { memberId: "mem-1" },
+      });
+
+      const user1Events = receivedUser1.filter(
+        (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+      );
+      const user2Events = receivedUser2.filter(
+        (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+      );
+
+      expect(user1Events.map((e) => e.type)).toEqual([
+        "APPLICATIONS_CHANGED",
+        "MEMBERS_CHANGED",
+      ]);
+      expect(user2Events.map((e) => e.type)).toEqual([
+        "APPLICATIONS_CHANGED",
+        "MEMBERS_CHANGED",
+      ]);
+
+      sub1.unsubscribe();
+      sub2.unsubscribe();
+    });
   });
 });

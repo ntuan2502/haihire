@@ -16,6 +16,7 @@ import {
 } from "../../common/upload-utils";
 import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import { toTimestamp, toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -33,6 +34,9 @@ export class ApplicationsDocumentsService {
     @Optional()
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -119,6 +123,23 @@ export class ApplicationsDocumentsService {
         resumeMimeType: uploadResult.mimeType ?? null,
       },
     });
+
+    const orgId =
+      existing.job?.organizationId ||
+      existing.candidate?.organizationId ||
+      tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: existing.candidateId },
+      });
+    }
 
     return this.query.findOne(id, tenantOrgId);
   }
@@ -289,6 +310,17 @@ export class ApplicationsDocumentsService {
         resumeFileSize: null,
         resumeMimeType: null,
       },
+    });
+
+    this.eventsService?.emit({
+      type: "APPLICATIONS_CHANGED",
+      organizationId,
+      data: { applicationId: id },
+    });
+    this.eventsService?.emit({
+      type: "CANDIDATES_CHANGED",
+      organizationId,
+      data: { candidateId: app.candidateId },
     });
 
     return this.query.findOne(id, tenantOrgId);

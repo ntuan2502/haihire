@@ -31,6 +31,7 @@ import {
 } from "../../common/upload-utils";
 import { fixUtf8String } from "../../common/doc-utils";
 import { toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -52,6 +53,9 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -541,6 +545,29 @@ export class ApplicationsSagaService {
           console.warn("Failed to send confirmation email:", emailErr);
         }
       }
+    }
+
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: result.id, jobId: result.jobId },
+      });
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: result.candidate?.id },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: result.candidate?.id, applicationId: result.id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { jobId: job.id },
+      });
     }
 
     if (!currentUser) {

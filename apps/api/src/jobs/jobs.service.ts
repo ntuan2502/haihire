@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   formatCandidateDisplayName,
@@ -23,11 +23,16 @@ import crypto from "node:crypto";
 import { toInstant } from "../common/date.util";
 import { formatInterviewRecord } from "../interviews/constants";
 
+import { EventsService } from "../events/events.service";
+
 @Injectable()
 export class JobsService {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async findAll(filter?: {
@@ -577,6 +582,12 @@ export class JobsService {
       },
     });
 
+    this.eventsService?.emit({
+      type: "JOBS_CHANGED",
+      organizationId: targetOrgId,
+      data: { jobId: created.id },
+    });
+
     return created;
   }
 
@@ -620,6 +631,15 @@ export class JobsService {
       },
     });
 
+    const orgId = updated.organizationId || job.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "JOBS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: updated.id },
+      });
+    }
+
     return updated;
   }
 
@@ -647,6 +667,15 @@ export class JobsService {
         },
       });
     });
+
+    const orgId = job.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "JOBS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
+    }
 
     return { success: true, message: `Job ${id} deleted successfully` };
   }

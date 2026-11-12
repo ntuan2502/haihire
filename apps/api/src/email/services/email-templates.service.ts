@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import {
   type EmailTemplateType,
@@ -10,6 +10,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { EmailSettingsService } from "./email-settings.service";
 import { UpdateEmailTemplateDto } from "../dto/update-template.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 
 export interface EnrichedEmailTemplate {
   id: string;
@@ -31,6 +32,9 @@ export class EmailTemplatesService {
     private readonly prisma: PrismaService,
     @Inject(EmailSettingsService)
     private readonly settingsService: EmailSettingsService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async getTemplates(
@@ -147,6 +151,12 @@ export class EmailTemplatesService {
     await this.prisma.emailTemplate.update({
       where: { id: current.id },
       data: updateData,
+    });
+
+    this.eventsService?.emit({
+      type: "EMAIL_CHANGED",
+      organizationId: targetOrgId,
+      data: { templateType: type },
     });
 
     const updated = await this.prisma.emailTemplate.findFirst({

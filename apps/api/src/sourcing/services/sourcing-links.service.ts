@@ -16,6 +16,7 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { CreateTrackingLinkDto } from "../dto/create-tracking-link.dto";
 import { UpdateTrackingLinkDto } from "../dto/update-tracking-link.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 
 export function parseDomain(urlStr?: string | null): string | null {
   if (!urlStr) return null;
@@ -42,6 +43,9 @@ export class SourcingLinksService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async getLinks(
@@ -257,6 +261,12 @@ export class SourcingLinksService {
       jobTitle = j?.title || null;
     }
 
+    this.eventsService?.emit({
+      type: "SOURCING_CHANGED",
+      organizationId: created.organizationId,
+      data: { linkId: created.id },
+    });
+
     return {
       id: created.id,
       organizationId: created.organizationId,
@@ -338,6 +348,12 @@ export class SourcingLinksService {
       where: { id },
       data: updateData,
     });
+
+    this.eventsService?.emit({
+      type: "SOURCING_CHANGED",
+      organizationId,
+      data: { linkId: id },
+    });
   }
 
   async deleteLink(organizationId: string, id: string): Promise<void> {
@@ -371,6 +387,12 @@ export class SourcingLinksService {
         isActive: false,
         updatedAt: toInstant(),
       },
+    });
+
+    this.eventsService?.emit({
+      type: "SOURCING_CHANGED",
+      organizationId,
+      data: { linkId: id },
     });
   }
 

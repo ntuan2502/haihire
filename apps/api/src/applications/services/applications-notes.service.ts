@@ -8,6 +8,7 @@ import {
 import { APP_ERROR_CODES } from "@haihire/shared";
 import type { CreateApplicationNoteDto } from "../dto/create-application-note.dto";
 import type { UpdateApplicationNoteDto } from "../dto/update-application-note.dto";
+import { EventsService } from "../../events/events.service";
 
 export interface AuthenticatedUser {
   id: string;
@@ -27,6 +28,9 @@ export class ApplicationsNotesService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async findNotes(
@@ -150,6 +154,19 @@ export class ApplicationsNotesService {
       }
     }
 
+    if (targetOrgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: targetOrgId,
+        data: { applicationId: app.id },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: targetOrgId,
+        data: { candidateId: app.candidateId, applicationId: app.id },
+      });
+    }
+
     return note;
   }
 
@@ -190,13 +207,24 @@ export class ApplicationsNotesService {
       );
     }
 
-    return this.prisma.applicationNote.update({
+    const updatedNote = await this.prisma.applicationNote.update({
       where: { id: noteId },
       data: {
         content: dto.content.trim(),
         isEdited: true,
       },
     });
+
+    const orgId = note.organizationId || user.organizationId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId },
+      });
+    }
+
+    return updatedNote;
   }
 
   async deleteNote(
@@ -238,6 +266,15 @@ export class ApplicationsNotesService {
     await this.prisma.applicationNote.delete({
       where: { id: noteId },
     });
+
+    const orgId = note.organizationId || user.organizationId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId },
+      });
+    }
 
     return { success: true, id: noteId };
   }

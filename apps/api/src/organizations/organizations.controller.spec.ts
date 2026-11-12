@@ -23,6 +23,8 @@ describe("OrganizationsController", () => {
     updateMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
     transferOwnership: vi.fn(),
+    getMembers: vi.fn(),
+    getInterviewers: vi.fn(),
     updateMemberRole: vi.fn(),
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
@@ -199,6 +201,91 @@ describe("OrganizationsController", () => {
         Role.RECRUITER,
       );
       expect(result).toEqual({ success: true, role: Role.RECRUITER });
+    });
+  });
+
+  describe("Members & Interviewers RBAC Endpoints", () => {
+    describe("GET /organizations/my/members", () => {
+      it("allows ADMIN with org:manage_members and delegates to getMembers", async () => {
+        const context = createMockContext(
+          nonOwnerAdminReq,
+          controller.getMembers,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        const members = [
+          {
+            id: "u-1",
+            name: "Admin",
+            email: "admin@haihire.local",
+            role: Role.ADMIN,
+          },
+        ];
+        mockService.getMembers.mockResolvedValueOnce(members);
+
+        const result = await controller.getMembers(nonOwnerAdminReq);
+        expect(mockService.getMembers).toHaveBeenCalledWith("user-admin-other");
+        expect(result).toEqual(members);
+      });
+
+      it("rejects MEMBER without org:manage_members -> 403 Forbidden", () => {
+        const context = createMockContext(memberReq, controller.getMembers);
+        expect(() => rolesGuard.canActivate(context)).toThrow(
+          AppForbiddenException,
+        );
+        expect(mockService.getMembers).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("GET /organizations/my/interviewers", () => {
+      it("allows ADMIN and RECRUITER with interview:create and delegates to getInterviewers", async () => {
+        const adminContext = createMockContext(
+          nonOwnerAdminReq,
+          controller.getInterviewers,
+        );
+        expect(rolesGuard.canActivate(adminContext)).toBe(true);
+
+        const recruiterReq = {
+          user: {
+            id: "user-recruiter",
+            email: "recruiter@haihire.local",
+            role: Role.RECRUITER,
+            organizationId: "org-1",
+          },
+        };
+        const recruiterContext = createMockContext(
+          recruiterReq,
+          controller.getInterviewers,
+        );
+        expect(rolesGuard.canActivate(recruiterContext)).toBe(true);
+
+        const interviewers = [
+          {
+            id: "user-recruiter",
+            name: "Recruiter",
+            email: "recruiter@haihire.local",
+            role: Role.RECRUITER,
+          },
+        ];
+        mockService.getInterviewers.mockResolvedValueOnce(interviewers);
+
+        const result = await controller.getInterviewers(recruiterReq);
+        expect(mockService.getInterviewers).toHaveBeenCalledWith(
+          "user-recruiter",
+        );
+        expect(result).toEqual(interviewers);
+      });
+
+      it("rejects MEMBER without interview:create -> 403 Forbidden", () => {
+        const context = createMockContext(
+          memberReq,
+          controller.getInterviewers,
+        );
+        expect(() => rolesGuard.canActivate(context)).toThrow(
+          AppForbiddenException,
+        );
+        expect(mockService.getInterviewers).not.toHaveBeenCalled();
+      });
     });
   });
 

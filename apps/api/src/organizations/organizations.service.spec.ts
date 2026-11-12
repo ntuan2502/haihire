@@ -205,6 +205,18 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(members.some((m) => m.name === "Member User")).toBe(true);
     });
 
+    it("7a. Should get interviewers directory containing minimal member identity fields", async () => {
+      const interviewers = await service.getInterviewers("usr-2");
+      expect(interviewers.length).toBe(3);
+      expect(Object.keys(interviewers[0] || {}).sort()).toEqual([
+        "email",
+        "id",
+        "name",
+        "role",
+      ]);
+      expect(interviewers.some((m) => m.name === "HR Lead")).toBe(true);
+    });
+
     it("7b. Should get all organizations for switching (getMyOrgs)", async () => {
       const orgs = await service.getMyOrgs("usr-2");
       expect(orgs.length).toBeGreaterThanOrEqual(1);

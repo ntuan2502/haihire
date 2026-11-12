@@ -15,6 +15,7 @@ import {
   Role,
   hasPermission,
 } from "@haihire/shared";
+import { EventsService } from "../../events/events.service";
 
 export interface InviteLinkRecord {
   id: string;
@@ -59,6 +60,9 @@ export class OrganizationsInvitesService {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private resolveValidInviteRole(rawRole?: string | null): Role {
@@ -254,6 +258,12 @@ export class OrganizationsInvitesService {
       },
     });
 
+    this.eventsService?.emit({
+      type: "INVITE_LINKS_CHANGED",
+      organizationId: org.id,
+      data: { linkId: id },
+    });
+
     return {
       id,
       token,
@@ -366,6 +376,12 @@ export class OrganizationsInvitesService {
       );
     }
 
+    this.eventsService?.emit({
+      type: "INVITE_LINKS_CHANGED",
+      organizationId: orgId,
+      data: { linkId },
+    });
+
     return { success: true, message: "Invite link revoked successfully" };
   }
 
@@ -453,7 +469,7 @@ export class OrganizationsInvitesService {
   }
 
   async joinByToken(userId: string, token: string) {
-    return await runInTransaction(this.prisma, async (tx) => {
+    const result = await runInTransaction(this.prisma, async (tx) => {
       const link = await tx.inviteLink.findFirst({
         where: { token },
         select: {
@@ -600,6 +616,18 @@ export class OrganizationsInvitesService {
         message: `Successfully joined ${org?.name || "organization"}`,
       };
     });
+
+    this.eventsService?.emit({
+      type: "MEMBERS_CHANGED",
+      organizationId: result.organization?.id,
+      data: { userId },
+    });
+    this.eventsService?.emit({
+      type: "INVITE_LINKS_CHANGED",
+      organizationId: result.organization?.id,
+    });
+
+    return result;
   }
 
   async join(userId: string, dto: JoinOrgDto) {
@@ -617,7 +645,8 @@ export class OrganizationsInvitesService {
       rawInput = parts[parts.length - 1].split("?")[0].trim();
     }
 
-    return await runInTransaction(this.prisma, async (tx) => {
+    let joinedNewMember = false;
+    const result = await runInTransaction(this.prisma, async (tx) => {
       const inviteLink = await tx.inviteLink.findFirst({
         where: { token: rawInput },
         select: {
@@ -766,11 +795,33 @@ export class OrganizationsInvitesService {
         });
       }
 
+      joinedNewMember = true;
+
       return {
         organization: org,
         role: assignedRole,
         message: `Successfully joined ${org.name}`,
       };
     });
+
+    if (joinedNewMember) {
+      this.eventsService?.emit({
+        type: "MEMBERS_CHANGED",
+        organizationId: result.organization.id,
+        data: { userId },
+      });
+      this.eventsService?.emit({
+        type: "INVITE_LINKS_CHANGED",
+        organizationId: result.organization.id,
+      });
+    } else {
+      this.eventsService?.emit({
+        type: "ORG_UPDATED",
+        targetUserId: userId,
+        organizationId: result.organization.id,
+      });
+    }
+
+    return result;
   }
 }

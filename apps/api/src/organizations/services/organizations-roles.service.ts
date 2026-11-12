@@ -168,6 +168,10 @@ export class OrganizationsRolesService {
       role: roleStr,
       data: { action: "UPDATED" },
     });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId,
+    });
 
     const fullMatrix = await this.getRolePermissionsMatrix(organizationId);
 
@@ -246,6 +250,10 @@ export class OrganizationsRolesService {
       organizationId,
       role: roleStr || "ALL",
       data: { action: "RESET" },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId,
     });
 
     return { deleted: deletedCount };

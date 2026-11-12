@@ -8,6 +8,7 @@ import {
 import { APP_ERROR_CODES } from "@haihire/shared";
 import type { CreateCandidateNoteDto } from "../dto/create-candidate-note.dto";
 import type { UpdateCandidateNoteDto } from "../dto/update-candidate-note.dto";
+import { EventsService } from "../../events/events.service";
 
 export interface AuthenticatedUser {
   id: string;
@@ -27,6 +28,9 @@ export class CandidatesNotesService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async findNotes(
@@ -140,6 +144,19 @@ export class CandidatesNotesService {
       }
     }
 
+    if (targetOrgId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: targetOrgId,
+        data: { candidateId },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: targetOrgId,
+        data: { candidateId },
+      });
+    }
+
     return note;
   }
 
@@ -180,13 +197,24 @@ export class CandidatesNotesService {
       );
     }
 
-    return this.prisma.candidateNote.update({
+    const updatedNote = await this.prisma.candidateNote.update({
       where: { id: noteId },
       data: {
         content: dto.content.trim(),
         isEdited: true,
       },
     });
+
+    const orgId = note.organizationId || user.organizationId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId },
+      });
+    }
+
+    return updatedNote;
   }
 
   async deleteNote(
@@ -228,6 +256,15 @@ export class CandidatesNotesService {
     await this.prisma.candidateNote.delete({
       where: { id: noteId },
     });
+
+    const orgId = note.organizationId || user.organizationId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId },
+      });
+    }
 
     return { success: true, message: "Note deleted successfully" };
   }

@@ -1,6 +1,7 @@
 export * from "./brand";
 export * from "./permissions";
 export * from "./organizations";
+export * from "./events";
 export * from "./jobs";
 export * from "./candidates";
 export * from "./applications";

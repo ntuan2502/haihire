@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
@@ -20,6 +20,7 @@ import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { InterviewsQueryService } from "./interviews-query.service";
 import { InterviewsScorecardService } from "./interviews-scorecard.service";
+import { EventsService } from "../../events/events.service";
 
 export type InterviewType =
   "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
@@ -51,6 +52,9 @@ export class InterviewsScheduleService {
     private readonly queryService: InterviewsQueryService,
     @Inject(InterviewsScorecardService)
     private readonly scorecardService: InterviewsScorecardService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
@@ -254,6 +258,24 @@ export class InterviewsScheduleService {
       }
     }
 
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { interviewId: id, applicationId: dto.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: dto.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: candidate?.id, applicationId: dto.applicationId },
+      });
+    }
+
     return createdInterview;
   }
 
@@ -337,14 +359,52 @@ export class InterviewsScheduleService {
       });
     }
 
+    const updateOrgId = candidate?.organizationId || tenantOrgId;
+    if (updateOrgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: updateOrgId,
+        data: { interviewId: id, applicationId: updated.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: updateOrgId,
+        data: { applicationId: updated.applicationId },
+      });
+      if (candidate) {
+        this.eventsService?.emit({
+          type: "ACTIVITIES_CHANGED",
+          organizationId: updateOrgId,
+          data: {
+            candidateId: candidate.id,
+            applicationId: updated.applicationId,
+          },
+        });
+      }
+    }
+
     return updated;
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    await this.queryService.findOne(id, tenantOrgId);
+    const existing = await this.queryService.findOne(id, tenantOrgId);
     await this.prisma.interview.delete({
       where: { id },
     });
+    const orgId =
+      existing.application?.candidate?.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { interviewId: id, applicationId: existing.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: existing.applicationId },
+      });
+    }
     return { success: true, message: `Interview ${id} deleted successfully` };
   }
 }

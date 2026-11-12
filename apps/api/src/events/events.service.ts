@@ -14,23 +14,15 @@ import type Redis from "ioredis";
 import { REDIS_CLIENT } from "../redis/redis.module";
 import { PrismaService } from "../prisma/prisma.service";
 import { AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  type AppEvent,
+  type AppEventType,
+} from "@haihire/shared";
+
+export type { AppEvent, AppEventType };
 
 export const EVENTS_PUBSUB_CHANNEL = "haihire:events";
-
-export interface AppEvent {
-  type:
-    | "MEMBER_REMOVED"
-    | "MEMBER_ROLE_UPDATED"
-    | "PERMISSIONS_CHANGED"
-    | "ORG_UPDATED"
-    | "CONNECTED"
-    | "HEARTBEAT";
-  targetUserId?: string;
-  organizationId?: string | null;
-  role?: string;
-  data?: Record<string, unknown>;
-}
 
 @Injectable()
 export class EventsService implements OnModuleInit, OnModuleDestroy {

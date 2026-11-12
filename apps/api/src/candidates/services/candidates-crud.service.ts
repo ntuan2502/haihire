@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import {
@@ -17,6 +17,7 @@ import { CreateCandidateDto } from "../dto/create-candidate.dto";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { validateUploadedFile } from "../../common/upload-utils";
 import { toInstant, toTimestamp } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 
 @Injectable()
 export class CandidatesCrudService {
@@ -27,6 +28,9 @@ export class CandidatesCrudService {
     private readonly minioService: MinioService,
     @Inject(CandidatesProfileService)
     private readonly profileService: CandidatesProfileService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private assertValidTenantResumeUrl(resumeUrl: string, orgId: string): void {
@@ -318,6 +322,12 @@ export class CandidatesCrudService {
       },
     });
 
+    this.eventsService?.emit({
+      type: "CANDIDATES_CHANGED",
+      organizationId: orgId,
+      data: { candidateId: created.id },
+    });
+
     return created;
   }
 
@@ -410,11 +420,26 @@ export class CandidatesCrudService {
       where: { id },
       data: updatePayload,
     });
+
+    const orgId = existing.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+    }
+
     return this.profileService.findOne(id, tenantOrgId);
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    await this.profileService.findOne(id, tenantOrgId);
+    const existing = await this.profileService.findOne(id, tenantOrgId);
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
     await runInTransaction(this.prisma, async (tx) => {
@@ -425,6 +450,25 @@ export class CandidatesCrudService {
         },
       });
     });
+
+    const orgId = existing.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+    }
 
     return { success: true, message: `Candidate ${id} deleted successfully` };
   }

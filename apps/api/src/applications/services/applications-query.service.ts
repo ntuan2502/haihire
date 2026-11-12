@@ -19,6 +19,7 @@ import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
+import { EventsService } from "../../events/events.service";
 
 function createEmptyStageCounts(): Record<ApplicationStage, number> {
   return APPLICATION_STAGES.reduce(
@@ -38,6 +39,9 @@ export class ApplicationsQueryService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async findByJob(
@@ -586,6 +590,23 @@ export class ApplicationsQueryService {
         where: { id: existing.candidateId },
         data: candidateUpdate,
       });
+
+      const orgId =
+        existing.job?.organizationId ||
+        existing.candidate?.organizationId ||
+        tenantOrgId;
+      if (orgId) {
+        this.eventsService?.emit({
+          type: "APPLICATIONS_CHANGED",
+          organizationId: orgId,
+          data: { applicationId: id, candidateId: existing.candidateId },
+        });
+        this.eventsService?.emit({
+          type: "CANDIDATES_CHANGED",
+          organizationId: orgId,
+          data: { candidateId: existing.candidateId },
+        });
+      }
     }
 
     return this.findOne(id, tenantOrgId);
@@ -641,6 +662,28 @@ export class ApplicationsQueryService {
         where: { id },
       });
     });
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "JOBS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: existing.job?.id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: existing.candidate?.id },
+      });
+    }
     return { success: true, message: `Application ${id} deleted successfully` };
   }
 }

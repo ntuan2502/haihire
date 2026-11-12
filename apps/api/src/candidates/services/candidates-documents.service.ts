@@ -17,6 +17,7 @@ import {
   sanitizeFilename,
 } from "../../common/upload-utils";
 import { toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 
 @Injectable()
 export class CandidatesDocumentsService {
@@ -30,6 +31,9 @@ export class CandidatesDocumentsService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async uploadDocument(
@@ -104,6 +108,19 @@ export class CandidatesDocumentsService {
           resumeFileSize: uploadResult.size ?? null,
           resumeMimeType: uploadResult.mimeType ?? null,
         },
+      });
+    }
+
+    if (candidate.organizationId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: candidate.organizationId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: candidate.organizationId,
+        data: { candidateId: id },
       });
     }
 
@@ -283,6 +300,17 @@ export class CandidatesDocumentsService {
         },
       });
     }
+
+    this.eventsService?.emit({
+      type: "CANDIDATES_CHANGED",
+      organizationId: candidate.organizationId,
+      data: { candidateId: id },
+    });
+    this.eventsService?.emit({
+      type: "APPLICATIONS_CHANGED",
+      organizationId: candidate.organizationId,
+      data: { candidateId: id },
+    });
 
     return this.profileService.findOne(id, tenantOrgId);
   }

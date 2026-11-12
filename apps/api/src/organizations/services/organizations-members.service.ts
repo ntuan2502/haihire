@@ -114,6 +114,16 @@ export class OrganizationsMembersService {
     }
   }
 
+  async getInterviewers(userId: string) {
+    const members = await this.getMembers(userId);
+    return members.map((member) => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+    }));
+  }
+
   async getMembers(userId: string) {
     const user = await this.prisma.user.findFirst({
       where: { id: userId },
@@ -351,6 +361,11 @@ export class OrganizationsMembersService {
       organizationId: targetOrgId,
       role: newRole,
     });
+    this.eventsService?.emit({
+      type: "MEMBERS_CHANGED",
+      organizationId: targetOrgId,
+      data: { memberId: targetMemberId, role: newRole },
+    });
 
     await this.auditLog?.logOrg(
       targetOrgId,
@@ -359,6 +374,11 @@ export class OrganizationsMembersService {
       "MEMBER",
       { memberId: targetMemberId, oldRole, newRole },
     );
+
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
+    });
 
     return {
       success: true,
@@ -483,6 +503,15 @@ export class OrganizationsMembersService {
       this.eventsService?.emit({
         type: "MEMBER_REMOVED",
         targetUserId: targetMemberId,
+        organizationId: targetOrgId,
+      });
+      this.eventsService?.emit({
+        type: "MEMBERS_CHANGED",
+        organizationId: targetOrgId,
+        data: { memberId: targetMemberId },
+      });
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
         organizationId: targetOrgId,
       });
 

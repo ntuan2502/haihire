@@ -13,6 +13,7 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { UpdateStageDto } from "../dto/update-stage.dto";
+import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -29,6 +30,9 @@ export class ApplicationsStageService {
     @Optional()
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -193,6 +197,34 @@ export class ApplicationsStageService {
         } catch (emailErr) {
           console.warn("Failed to send rejection email:", emailErr);
         }
+      }
+    }
+
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: updated.id, stage: dto.stage },
+      });
+      this.eventsService?.emit({
+        type: "JOBS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: updated.jobId },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: updated.id },
+      });
+      if (oldStage !== dto.stage) {
+        this.eventsService?.emit({
+          type: "ACTIVITIES_CHANGED",
+          organizationId: orgId,
+          data: {
+            candidateId: updated.candidate?.id,
+            applicationId: updated.id,
+          },
+        });
       }
     }
 

@@ -17,6 +17,7 @@ import {
   type OrganizationLocalizationSettings,
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
+import { EventsService } from "../../events/events.service";
 
 const ORG_CORE_SELECT = {
   id: true,
@@ -54,6 +55,9 @@ export class OrganizationsCoreService {
     @Optional()
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private withLocalization<T extends Record<string, unknown>>(
@@ -313,6 +317,12 @@ export class OrganizationsCoreService {
 
     const normalizedOrg = this.withLocalization(org);
 
+    this.eventsService?.emit({
+      type: "ORG_UPDATED",
+      targetUserId: userId,
+      organizationId: org.id,
+    });
+
     return {
       success: true,
       organization: normalizedOrg,
@@ -433,6 +443,20 @@ export class OrganizationsCoreService {
       select: ORG_CORE_SELECT,
     });
 
+    if (Object.keys(updateData).length > 0) {
+      this.eventsService?.emit({
+        type: "ORG_UPDATED",
+        organizationId: orgId,
+        data: { updatedBy: userId },
+      });
+      if (Object.keys(localizationChanges).length > 0) {
+        this.eventsService?.emit({
+          type: "AUDIT_LOGS_CHANGED",
+          organizationId: orgId,
+        });
+      }
+    }
+
     return updatedOrg ? this.withLocalization(updatedOrg) : null;
   }
 
@@ -492,6 +516,22 @@ export class OrganizationsCoreService {
       { organizationName: currentOrg.name },
     );
 
+    const orgUsers =
+      (await this.prisma.user.findMany?.({
+        where: { organizationId: orgId },
+        select: { id: true },
+      })) ?? [];
+    const orgMembers =
+      (await this.prisma.organizationMember?.findMany?.({
+        where: { organizationId: orgId },
+        select: { userId: true },
+      })) ?? [];
+    const affectedUserIds = new Set<string>([
+      userId,
+      ...orgUsers.map((u) => u.id),
+      ...orgMembers.map((m) => m.userId),
+    ]);
+
     // Execute atomic cleanup of users, memberships, and organization inside a single transaction
     await runInTransaction(this.prisma, async (tx) => {
       const locked = await tx.organization.updateMany({
@@ -520,6 +560,14 @@ export class OrganizationsCoreService {
         where: { id: orgId },
       });
     });
+
+    for (const targetUserId of affectedUserIds) {
+      this.eventsService?.emit({
+        type: "MEMBER_REMOVED",
+        targetUserId,
+        organizationId: orgId,
+      });
+    }
 
     return { success: true, message: "Organization deleted successfully" };
   }
@@ -644,6 +692,33 @@ export class OrganizationsCoreService {
     this.logger.log(
       `Transferred ownership of organization ${orgId} from ${userId} to ${newOwnerUserId}`,
     );
+
+    this.eventsService?.emit({
+      type: "ORG_UPDATED",
+      organizationId: orgId,
+      data: { previousOwnerId: userId, newOwnerId: newOwnerUserId },
+    });
+    this.eventsService?.emit({
+      type: "MEMBERS_CHANGED",
+      organizationId: orgId,
+      data: { previousOwnerId: userId, newOwnerId: newOwnerUserId },
+    });
+    this.eventsService?.emit({
+      type: "MEMBER_ROLE_UPDATED",
+      targetUserId: userId,
+      organizationId: orgId,
+      role: "ADMIN",
+    });
+    this.eventsService?.emit({
+      type: "MEMBER_ROLE_UPDATED",
+      targetUserId: newOwnerUserId,
+      organizationId: orgId,
+      role: "ADMIN",
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: orgId,
+    });
 
     return {
       success: true,

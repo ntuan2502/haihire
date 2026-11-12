@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 import { parseDomain } from "./sourcing-links.service";
 
 export interface RedisLockClient {
@@ -30,6 +31,9 @@ export class SourcingLockService {
     @Optional()
     @Inject("REDIS_CLIENT")
     private readonly redis?: RedisLockClient,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private async withClickLock<T>(
@@ -128,6 +132,7 @@ export class SourcingLockService {
           token: string;
           source: string;
           jobId?: string | null;
+          organizationId?: string | null;
         } | null = null;
 
         await runInTransaction(this.prisma, async (tx) => {
@@ -135,6 +140,7 @@ export class SourcingLockService {
             where: { token },
             select: {
               id: true,
+              organizationId: true,
               token: true,
               source: true,
               jobId: true,
@@ -178,6 +184,7 @@ export class SourcingLockService {
             token: link.token,
             source: link.source,
             jobId: link.jobId,
+            organizationId: link.organizationId,
           };
         });
 
@@ -185,9 +192,28 @@ export class SourcingLockService {
           return { success: false };
         }
 
+        const recorded = recordedLink as {
+          token: string;
+          source: string;
+          jobId?: string | null;
+          organizationId?: string | null;
+        };
+
+        if (recorded.organizationId) {
+          this.eventsService?.emit({
+            type: "SOURCING_CHANGED",
+            organizationId: recorded.organizationId,
+            data: { token: recorded.token },
+          });
+        }
+
         return {
           success: true,
-          link: recordedLink,
+          link: {
+            token: recorded.token,
+            source: recorded.source,
+            jobId: recorded.jobId,
+          },
         };
       },
       lockOptions,

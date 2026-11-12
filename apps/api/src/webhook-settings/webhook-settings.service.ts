@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
@@ -23,6 +23,7 @@ import {
 } from "./webhook-settings.validator";
 import { WebhookProviderFactory } from "../common/webhook/webhook-provider.factory";
 import type { WebhookMessage } from "../common/webhook/webhook-provider.interface";
+import { EventsService } from "../events/events.service";
 
 @Injectable()
 export class WebhookSettingsService {
@@ -31,6 +32,9 @@ export class WebhookSettingsService {
     private readonly prisma: PrismaService,
     @Inject(EncryptionService)
     private readonly encryptionService: EncryptionService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private mapToResponse(item: {
@@ -194,6 +198,12 @@ export class WebhookSettingsService {
       },
     });
 
+    this.eventsService?.emit({
+      type: "WEBHOOKS_CHANGED",
+      organizationId,
+      data: { webhookId: setting.id },
+    });
+
     return this.mapToResponse(setting);
   }
 
@@ -348,6 +358,12 @@ export class WebhookSettingsService {
       );
     }
 
+    this.eventsService?.emit({
+      type: "WEBHOOKS_CHANGED",
+      organizationId,
+      data: { webhookId: updated.id },
+    });
+
     return this.mapToResponse(updated);
   }
 
@@ -383,6 +399,12 @@ export class WebhookSettingsService {
 
     await this.prisma.organizationWebhookSetting.delete({
       where: { id },
+    });
+
+    this.eventsService?.emit({
+      type: "WEBHOOKS_CHANGED",
+      organizationId,
+      data: { webhookId: id },
     });
 
     return { success: true };

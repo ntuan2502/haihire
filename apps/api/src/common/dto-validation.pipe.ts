@@ -4,8 +4,41 @@ import {
   type ArgumentMetadata,
   type PipeTransform,
   type Type,
+  type ValidationError,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import type { ZodType } from "zod";
+
+function createValidationBadRequest(messages: string[]): BadRequestException {
+  return new BadRequestException({
+    statusCode: 400,
+    error: "Bad Request",
+    code: APP_ERROR_CODES.VALIDATION_ERROR,
+    message: messages,
+  });
+}
+
+function extractValidationMessages(errors: ValidationError[]): string[] {
+  const messages: string[] = [];
+  for (const err of errors) {
+    if (err.constraints) {
+      messages.push(...Object.values(err.constraints));
+    }
+    if (err.children && err.children.length > 0) {
+      messages.push(...extractValidationMessages(err.children));
+    }
+  }
+  return messages;
+}
+
+/**
+ * Formats class-validator errors into a machine-readable VALIDATION_ERROR response.
+ */
+export function validationExceptionFactory(
+  errors: ValidationError[],
+): BadRequestException {
+  return createValidationBadRequest(extractValidationMessages(errors));
+}
 
 export class ZodValidationPipe<T = unknown> implements PipeTransform {
   constructor(private readonly schema: ZodType<T>) {}
@@ -25,11 +58,7 @@ export class ZodValidationPipe<T = unknown> implements PipeTransform {
         const path = err.path.join(".");
         return path ? `${path}: ${err.message}` : err.message;
       });
-      throw new BadRequestException({
-        statusCode: 400,
-        error: "Bad Request",
-        message: messages,
-      });
+      throw createValidationBadRequest(messages);
     }
     return result.data;
   }
@@ -58,5 +87,6 @@ export function DtoPipe<T>(
     transform: true,
     whitelist: true,
     expectedType: expectedTypeOrSchema,
+    exceptionFactory: validationExceptionFactory,
   });
 }

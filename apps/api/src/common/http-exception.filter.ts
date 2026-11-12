@@ -5,7 +5,16 @@ import {
   type ExceptionFilter,
   type ArgumentsHost,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import type { Response } from "express";
+
+function isNestValidationPayload(body: Record<string, unknown>): boolean {
+  return (
+    Array.isArray(body.message) ||
+    (typeof body.message === "string" &&
+      body.message.startsWith("Validation failed"))
+  );
+}
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -48,6 +57,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         : (exception as HttpException).getResponse();
       const body =
         typeof res === "string" ? { statusCode: status, message: res } : res;
+      if (
+        status === HttpStatus.BAD_REQUEST &&
+        body &&
+        typeof body === "object" &&
+        !("code" in body) &&
+        isNestValidationPayload(body as Record<string, unknown>)
+      ) {
+        return response.status(status).json({
+          ...(body as Record<string, unknown>),
+          code: APP_ERROR_CODES.VALIDATION_ERROR,
+        });
+      }
       return response.status(status).json(body);
     }
 

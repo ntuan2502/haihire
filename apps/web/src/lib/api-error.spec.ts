@@ -331,6 +331,30 @@ describe("getApiErrorMessage", () => {
     );
   });
 
+  it("translates backend validation errors emitting VALIDATION_ERROR code to Vietnamese", async () => {
+    const { vi } = await import("@/i18n/locales/vi");
+    const tVi = (k: TranslationKey) => {
+      const code = k.replace("errors.", "");
+      return (vi.errors as Record<string, string>)[code] || k;
+    };
+
+    const zodValidationErr = {
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          error: "Bad Request",
+          code: "VALIDATION_ERROR",
+          message: ["email: Invalid email address"],
+        },
+      },
+    };
+
+    expect(getApiErrorMessage(zodValidationErr, tVi)).toBe(
+      vi.errors.VALIDATION_ERROR,
+    );
+  });
+
   it("falls back to status code messages when response body is empty", async () => {
     const { vi } = await import("@/i18n/locales/vi");
     const tVi = (k: TranslationKey) => {

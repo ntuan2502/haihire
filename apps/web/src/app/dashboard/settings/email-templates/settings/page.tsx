@@ -212,7 +212,7 @@ export default function EmailSettingsPage() {
                   fromName: e.target.value,
                 }))
               }
-              placeholder="VD: Nexus Recruitment Team"
+              placeholder={t("email.senderNamePlaceholder")}
               className="h-9 text-xs"
             />
           </div>

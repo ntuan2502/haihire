@@ -47,7 +47,7 @@ export function DevicePreviewSelector({
         className,
       )}
       role="group"
-      aria-label="Device Preview Controls"
+      aria-label={t("email.previewDeviceControls")}
     >
       {options.map((opt) => {
         const Icon = opt.icon;

@@ -76,6 +76,9 @@ export interface TranslationSchema {
     openRoleFallback: string;
     departmentSuffix: string;
     unknownUserFallback: string;
+    filterStatusTabs: string;
+    organizationFallback: string;
+    closeModal: string;
     docTypes: {
       resume: string;
       coverLetter: string;
@@ -1879,6 +1882,7 @@ export interface TranslationSchema {
     insertVariable: string;
     insertVariableHint: string;
     livePreview: string;
+    previewDeviceControls: string;
     previewDeviceDesktop: string;
     previewDeviceTablet: string;
     previewDeviceMobile: string;
@@ -1897,6 +1901,7 @@ export interface TranslationSchema {
     providerSendGrid: string;
     providerSendGridDesc: string;
     senderName: string;
+    senderNamePlaceholder: string;
     senderEmail: string;
     smtpHost: string;
     smtpPort: string;

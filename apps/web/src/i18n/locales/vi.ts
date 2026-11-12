@@ -78,6 +78,9 @@ export const vi: TranslationSchema = {
     openRoleFallback: "Vị trí đang tuyển",
     departmentSuffix: "Phòng ban {department}",
     unknownUserFallback: "Thành viên",
+    filterStatusTabs: "Bộ lọc trạng thái",
+    organizationFallback: "Tổ chức",
+    closeModal: "Đóng hộp thoại",
     docTypes: {
       resume: "CV / Sơ yếu lý lịch",
       coverLetter: "Thư xin việc",
@@ -1759,10 +1762,10 @@ export const vi: TranslationSchema = {
             discord: "Định dạng: https://discord.com/api/webhooks/<id>/<token>",
             generic: "Bắt buộc giao thức HTTPS bảo mật",
           },
-          secretToken: "Mã bí mật (Secret Token)",
+          secretToken: "Mã bí mật",
           secretTokenHint:
             "Khóa bí mật dùng để xác thực chữ ký HMAC-SHA256 (Tùy chọn)",
-          chatId: "ID Nhóm / Kênh Chat (Chat ID)",
+          chatId: "ID Nhóm / Kênh Chat",
           chatIdHint: "Bắt buộc cho Telegram (ví dụ: -100123456789)",
           isEnabled: "Kích hoạt nhận sự kiện",
           testButton: "Kiểm tra kết nối",
@@ -2091,6 +2094,7 @@ export const vi: TranslationSchema = {
     insertVariableHint:
       "Nhấp vào biến bên dưới để tự động chèn vào vị trí con trỏ trong nội dung thư:",
     livePreview: "Xem trước giao diện thực tế",
+    previewDeviceControls: "Tùy chọn thiết bị xem trước",
     previewDeviceDesktop: "Máy tính",
     previewDeviceTablet: "Máy tính bảng",
     previewDeviceMobile: "Điện thoại",
@@ -2112,6 +2116,7 @@ export const vi: TranslationSchema = {
     providerSendGrid: "SendGrid",
     providerSendGridDesc: "Hạ tầng gửi email đám mây quy mô lớn của Twilio.",
     senderName: "Tên người gửi hiển thị",
+    senderNamePlaceholder: "VD: Đội ngũ Tuyển dụng HaiHire",
     senderEmail: "Địa chỉ email gửi",
     smtpHost: "Địa chỉ máy chủ SMTP",
     smtpPort: "Cổng SMTP",

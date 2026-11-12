@@ -78,6 +78,9 @@ export const en: TranslationSchema = {
     openRoleFallback: "Open position",
     departmentSuffix: "{department} Department",
     unknownUserFallback: "Member",
+    filterStatusTabs: "Filter status tabs",
+    organizationFallback: "Organization",
+    closeModal: "Close modal",
     docTypes: {
       resume: "Resume",
       coverLetter: "Cover Letter",
@@ -2088,6 +2091,7 @@ export const en: TranslationSchema = {
     insertVariableHint:
       "Click any variable chip below to insert it at your current cursor position:",
     livePreview: "Live Preview",
+    previewDeviceControls: "Device Preview Controls",
     previewDeviceDesktop: "Desktop",
     previewDeviceTablet: "Tablet",
     previewDeviceMobile: "Mobile",
@@ -2110,6 +2114,7 @@ export const en: TranslationSchema = {
     providerSendGridDesc:
       "Twilio's scalable cloud email delivery infrastructure.",
     senderName: "Sender Name (From Name)",
+    senderNamePlaceholder: "e.g. HaiHire Recruitment Team",
     senderEmail: "Sender Email (From Email)",
     smtpHost: "SMTP Host Server",
     smtpPort: "SMTP Port",

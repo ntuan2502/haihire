@@ -2,6 +2,7 @@
 
 import { cn } from "cn";
 import { Check } from "lucide-react";
+import { useOptionalI18n } from "@/i18n/optional";
 
 export interface TabItem<T extends string = string> {
   id: T;
@@ -41,13 +42,15 @@ export function SegmentedTabs<T extends string = string>({
   className,
   size = "sm",
 }: SegmentedTabsProps<T>) {
+  const { t } = useOptionalI18n();
+
   if (multiSelect) {
     const isAllActive = activeTabs.length === 0;
 
     return (
       <div
         role="group"
-        aria-label="Filter status tabs"
+        aria-label={t("common.filterStatusTabs")}
         className={cn(
           "inline-flex items-center p-1 bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-900/90 rounded-xl border border-slate-200/80 dark:border-slate-800 max-w-full overflow-x-auto scrollbar-none shrink-0 gap-1",
           className,

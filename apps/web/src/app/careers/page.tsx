@@ -22,7 +22,6 @@ import {
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
 import { useI18n } from "@/i18n";
-import { BRAND_CONFIG } from "@haihire/shared";
 
 export default function CareersDirectoryPage() {
   const { t } = useI18n();
@@ -51,7 +50,7 @@ export default function CareersDirectoryPage() {
 
       const orgId = job.organization?.id || job.organizationId || "default";
       const orgName =
-        job.organization?.name || `${BRAND_CONFIG.name} Organization`;
+        job.organization?.name || t("common.organizationFallback");
       const orgSlug =
         job.organization?.slug ||
         (job.organization?.name ? slugify(job.organization.name) : "company");
@@ -74,7 +73,7 @@ export default function CareersDirectoryPage() {
     }
 
     return Array.from(orgMap.values());
-  }, [jobs]);
+  }, [jobs, t]);
 
   // Unique departments across all public jobs
   const allDepartments = useMemo(() => {
@@ -459,7 +458,8 @@ export default function CareersDirectoryPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredJobs.map((job) => {
-              const orgName = job.organization?.name || "ATS Organization";
+              const orgName =
+                job.organization?.name || t("common.organizationFallback");
               const orgSlug =
                 job.organization?.slug ||
                 (job.organization?.name

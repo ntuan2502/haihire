@@ -107,7 +107,7 @@ export function CustomModal({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Close modal"
+        aria-label={t("common.closeModal")}
         className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         onKeyDown={(e) => {

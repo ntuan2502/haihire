@@ -176,7 +176,8 @@ export default function JoinOrganizationPage() {
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                  {inviteData.organization?.name || "Organization"}
+                  {inviteData.organization?.name ||
+                    t("common.organizationFallback")}
                 </h3>
                 <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
                   {inviteData.organization?.slug || "org"}
@@ -197,7 +198,10 @@ export default function JoinOrganizationPage() {
                 <UserIcon className="h-3.5 w-3.5 text-slate-400" />
                 <span>
                   {t("join.invitedBy")}{" "}
-                  <strong>{inviteData.createdByName || "Team"}</strong>
+                  <strong>
+                    {inviteData.createdByName ||
+                      t("common.unknownUserFallback")}
+                  </strong>
                 </span>
               </div>
             </div>

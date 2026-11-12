@@ -64,7 +64,6 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.title": "Audit Log",
         "settings.auditLog.description":
           "Track administrative changes and security events.",
-        "settings.auditLog.badge": "Security & Governance",
         "settings.auditLog.filterAllActions": "All Actions",
         "settings.auditLog.filterAction": "Filter by action",
         "settings.auditLog.colTimestamp": "Timestamp",
@@ -185,6 +184,9 @@ describe("AuditLogPage", () => {
     render(<AuditLogPage />);
 
     expect(screen.getByText("Audit Log")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Security & Governance|settings\.auditLog\.badge/),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Alice Admin")).toBeInTheDocument();
     expect(screen.getByText("alice@haihire.local")).toBeInTheDocument();
     expect(screen.getAllByText("Permissions Updated").length).toBeGreaterThan(

@@ -179,6 +179,9 @@ describe("RolesPermissionsSettingsPage Component", () => {
 
     expect(screen.getByText("Role & Permissions Matrix")).toBeInTheDocument();
     expect(
+      screen.queryByText(/RBAC Matrix|settings\.rolesMatrix\.badge/),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("table", {
         name: "Matrix of roles and permissions in this organization",
       }),

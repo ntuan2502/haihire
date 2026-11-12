@@ -1641,7 +1641,6 @@ export interface TranslationSchema {
     rolesMatrix: {
       title: string;
       description: string;
-      badge: string;
       readOnlyBadge: string;
       readOnlyNotice: string;
       saveButton: string;
@@ -1721,7 +1720,6 @@ export interface TranslationSchema {
     auditLog: {
       title: string;
       description: string;
-      badge: string;
       filterAllActions: string;
       filterAction: string;
       colTimestamp: string;

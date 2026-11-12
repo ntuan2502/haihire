@@ -227,7 +227,6 @@ export default function AuditLogPage() {
         <PageHeader
           title={t("settings.auditLog.title")}
           subtitle={t("settings.auditLog.description")}
-          badge={t("settings.auditLog.badge")}
           icon={History}
           bordered
         />
@@ -249,7 +248,6 @@ export default function AuditLogPage() {
       <PageHeader
         title={t("settings.auditLog.title")}
         subtitle={t("settings.auditLog.description")}
-        badge={t("settings.auditLog.badge")}
         icon={History}
         bordered
         actions={

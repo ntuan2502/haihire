@@ -1837,7 +1837,6 @@ export const vi: TranslationSchema = {
       title: "Vai trò & Phân quyền",
       description:
         "Quản lý và tùy chỉnh phân quyền chi tiết cho từng vai trò trong tổ chức.",
-      badge: "Ma trận phân quyền",
       readOnlyBadge: "Chế độ xem",
       readOnlyNotice:
         "Bạn không có quyền thay đổi phân quyền vai trò. Vui lòng liên hệ quản trị viên.",
@@ -1922,7 +1921,6 @@ export const vi: TranslationSchema = {
       title: "Nhật ký kiểm toán",
       description:
         "Theo dõi các thay đổi quản trị, cập nhật phân quyền vai trò và sự kiện vòng đời thành viên trong tổ chức.",
-      badge: "Bảo mật & Quản trị",
       filterAllActions: "Tất cả thao tác",
       filterAction: "Lọc theo thao tác",
       colTimestamp: "Thời gian",

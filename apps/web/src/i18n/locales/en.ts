@@ -1830,7 +1830,6 @@ export const en: TranslationSchema = {
       title: "Roles & Permissions Matrix",
       description:
         "Manage and customize granular role permissions for your organization.",
-      badge: "RBAC Matrix",
       readOnlyBadge: "Read-only View",
       readOnlyNotice:
         "You do not have permission to modify roles. Contact an administrator to adjust permissions.",
@@ -1917,7 +1916,6 @@ export const en: TranslationSchema = {
       title: "Audit Log",
       description:
         "Track administrative changes, role permission updates, and member lifecycle events across your organization.",
-      badge: "Security & Governance",
       filterAllActions: "All Actions",
       filterAction: "Filter by action",
       colTimestamp: "Timestamp",

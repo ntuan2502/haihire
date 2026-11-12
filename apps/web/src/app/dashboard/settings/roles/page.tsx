@@ -313,7 +313,6 @@ export default function RolesPermissionsPage() {
         <PageHeader
           title={t("settings.rolesMatrix.title")}
           subtitle={t("settings.rolesMatrix.description")}
-          badge={t("settings.rolesMatrix.badge")}
           icon={ShieldCheck}
           bordered
         />
@@ -332,7 +331,6 @@ export default function RolesPermissionsPage() {
       <PageHeader
         title={t("settings.rolesMatrix.title")}
         subtitle={t("settings.rolesMatrix.description")}
-        badge={t("settings.rolesMatrix.badge")}
         icon={ShieldCheck}
         bordered
         actions={headerActions}

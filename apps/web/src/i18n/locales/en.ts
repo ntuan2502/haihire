@@ -202,6 +202,10 @@ export const en: TranslationSchema = {
         "The page you're looking for doesn't exist or has been moved.",
       goHome: "Go home",
     },
+    forbidden: {
+      title: "Access Denied",
+      description: "You do not have permission to access this page or feature.",
+    },
   },
   nav: {
     dashboard: "Dashboard",
@@ -1625,6 +1629,16 @@ export const en: TranslationSchema = {
     passwordMismatchError: "New passwords do not match.",
     passwordTooShortError: "Password must be at least 6 characters.",
     currentPasswordRequiredError: "Current password is required.",
+    backToSettings: "Back to Settings",
+    generalProfileDesc:
+      "Manage your organization's display name, public careers URL, and basic workspace details.",
+    accountProfileDesc:
+      "Manage your account identity, password security, and personal workspace preferences.",
+    accountInfoSub:
+      "Basic account identity details associated with your login.",
+    openPublicCareers: "Open Careers Page",
+    workspaceSummaryDesc:
+      "Summary of your organization workspace and public career board URL.",
     accountPreferences: {
       title: "Language & Timezone Preferences",
       subtitle:

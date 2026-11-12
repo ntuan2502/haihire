@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { StatusState } from "@/components/shared/status-state";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { normalizeDateForInput, isValidUuid } from "@/lib/utils";
 import type { Gender } from "@/types";
@@ -168,27 +169,20 @@ function EditCandidatePageContent() {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
         />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
-            <span className="text-lg font-black">404</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("candidates.noCandidatesFound")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {!isCandidateIdValid
-              ? t("candidates.invalidCandidateId")
-              : t("candidates.candidateNotFound")}
-          </p>
-          <div className="pt-2">
-            <Button
-              onClick={() => router.push("/dashboard/candidates")}
-              variant="outline"
-              className="text-xs font-semibold rounded-xl"
-            >
-              {t("common.back")}: {t("candidates.title")}
-            </Button>
-          </div>
+        <main className="flex-1 flex flex-col">
+          <StatusState
+            status="404"
+            variant="page"
+            title={t("candidates.noCandidatesFound")}
+            description={
+              !isCandidateIdValid
+                ? t("candidates.invalidCandidateId")
+                : t("candidates.candidateNotFound")
+            }
+            actionLabel={`${t("common.back")}: ${t("candidates.title")}`}
+            onAction={() => router.push("/dashboard/candidates")}
+            actionVariant="outline"
+          />
         </main>
       </div>
     );

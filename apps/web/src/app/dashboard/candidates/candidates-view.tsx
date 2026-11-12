@@ -5,6 +5,7 @@ import { Users, Plus } from "lucide-react";
 import { Navbar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -61,11 +62,14 @@ export function CandidatesView() {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
         />
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            {t("common.accessDenied")}
-          </p>
-        </div>
+        <StatusState
+          status="403"
+          variant="page"
+          title={t("common.accessDenied")}
+          description={t("errors.FORBIDDEN_READ_ONLY")}
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+        />
       </div>
     );
   }

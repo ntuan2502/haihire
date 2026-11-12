@@ -6,6 +6,7 @@ import { useJob } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
 import { JobWizardEditor } from "@/components/jobs/job-wizard-editor";
 
 function JobSettingsPageContent() {
@@ -19,13 +20,16 @@ function JobSettingsPageContent() {
 
   if (!canUpdateJob) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">
-          {t("common.accessDenied")}
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-          {t("errors.FORBIDDEN_READ_ONLY")}
-        </p>
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <StatusState
+          status="403"
+          variant="card"
+          title={t("common.accessDenied")}
+          description={t("errors.FORBIDDEN_READ_ONLY")}
+          actionLabel={t("jobs.allJobs")}
+          actionHref={`/dashboard/jobs/${jobId}/pipeline`}
+          className="w-full max-w-lg"
+        />
       </div>
     );
   }

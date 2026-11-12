@@ -167,6 +167,10 @@ export interface TranslationSchema {
       description: string;
       goHome: string;
     };
+    forbidden: {
+      title: string;
+      description: string;
+    };
   };
   nav: {
     dashboard: string;
@@ -1458,6 +1462,12 @@ export interface TranslationSchema {
     passwordMismatchError: string;
     passwordTooShortError: string;
     currentPasswordRequiredError: string;
+    backToSettings: string;
+    generalProfileDesc: string;
+    accountProfileDesc: string;
+    accountInfoSub: string;
+    openPublicCareers: string;
+    workspaceSummaryDesc: string;
     accountPreferences: {
       title: string;
       subtitle: string;

@@ -199,6 +199,10 @@ export const vi: TranslationSchema = {
       description: "Trang bạn tìm không tồn tại hoặc đã bị di chuyển.",
       goHome: "Về trang chủ",
     },
+    forbidden: {
+      title: "Từ chối truy cập",
+      description: "Bạn không có quyền truy cập nội dung hoặc tính năng này.",
+    },
   },
   nav: {
     dashboard: "Tổng quan",
@@ -1629,6 +1633,16 @@ export const vi: TranslationSchema = {
     passwordMismatchError: "Mật khẩu xác nhận không khớp.",
     passwordTooShortError: "Mật khẩu mới phải có ít nhất 6 ký tự.",
     currentPasswordRequiredError: "Vui lòng nhập mật khẩu hiện tại.",
+    backToSettings: "Quay lại Cài đặt",
+    generalProfileDesc:
+      "Quản lý tên hiển thị, đường dẫn trang tuyển dụng và thông tin cơ bản của tổ chức.",
+    accountProfileDesc:
+      "Quản lý thông tin tài khoản, bảo mật mật khẩu và tùy chọn cá nhân.",
+    accountInfoSub:
+      "Thông tin nhận diện cơ bản trên tài khoản đăng nhập của bạn.",
+    openPublicCareers: "Mở trang tuyển dụng",
+    workspaceSummaryDesc:
+      "Thông tin tóm tắt về không gian làm việc và đường dẫn cổng tuyển dụng công khai của tổ chức.",
     accountPreferences: {
       title: "Tùy chọn Ngôn ngữ & Múi giờ cá nhân",
       subtitle:

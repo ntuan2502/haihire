@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Navbar } from "@/components/layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
+import { StatusState } from "@/components/shared/status-state";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -99,11 +99,14 @@ export function CandidateDetailView() {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={state.jobs.length}
         />
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            {t("common.accessDenied")}
-          </p>
-        </div>
+        <StatusState
+          status="403"
+          variant="page"
+          title={t("common.accessDenied")}
+          description={t("errors.FORBIDDEN_READ_ONLY")}
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+        />
       </div>
     );
   }
@@ -131,29 +134,20 @@ export function CandidateDetailView() {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={state.jobs.length}
         />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
-            <span className="text-lg font-black">404</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("candidates.noCandidatesYet")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {t(
+        <main className="flex-1 flex flex-col">
+          <StatusState
+            status="404"
+            variant="page"
+            title={t("candidates.noCandidatesYet")}
+            description={t(
               !state.isCandidateIdValid
                 ? "candidates.invalidCandidateId"
                 : "candidates.candidateNotFound",
             )}
-          </p>
-          <div className="pt-2">
-            <Button
-              onClick={() => router.push("/dashboard/candidates")}
-              variant="outline"
-              className="text-xs font-semibold rounded-xl"
-            >
-              {t("common.back")}: {t("candidates.title")}
-            </Button>
-          </div>
+            actionLabel={`${t("common.back")}: ${t("candidates.title")}`}
+            onAction={() => router.push("/dashboard/candidates")}
+            actionVariant="outline"
+          />
         </main>
       </div>
     );

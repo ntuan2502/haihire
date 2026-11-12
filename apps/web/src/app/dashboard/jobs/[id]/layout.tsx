@@ -14,6 +14,7 @@ import {
   useUpdateJobMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
 import {
   Briefcase,
   ArrowLeft,
@@ -26,7 +27,6 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import {
   DropdownMenu,
@@ -108,23 +108,14 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
         />
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
-            <Briefcase className="h-6 w-6" />
-          </div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            {t("careers.jobNotFound")}
-          </h2>
-          <p className="text-xs text-slate-400 max-w-sm">
-            {t("careers.jobNotFoundDesc")}
-          </p>
-          <Button
-            onClick={() => router.push("/dashboard/jobs")}
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs cursor-pointer"
-          >
-            {t("jobs.allJobs")}
-          </Button>
-        </div>
+        <StatusState
+          status="404"
+          variant="page"
+          title={t("careers.jobNotFound")}
+          description={t("careers.jobNotFoundDesc")}
+          actionLabel={t("jobs.allJobs")}
+          actionHref="/dashboard/jobs"
+        />
       </div>
     );
   }

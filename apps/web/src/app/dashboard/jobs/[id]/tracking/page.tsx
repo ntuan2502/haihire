@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/search-input";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
 import { Plus } from "lucide-react";
 
 function JobTrackingPageContent() {
@@ -85,13 +86,16 @@ function JobTrackingPageContent() {
 
   if (!canViewSourcing) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">
-          {t("common.accessDenied")}
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-          {t("errors.FORBIDDEN_READ_ONLY")}
-        </p>
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <StatusState
+          status="403"
+          variant="card"
+          title={t("common.accessDenied")}
+          description={t("errors.FORBIDDEN_READ_ONLY")}
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+          className="w-full max-w-lg"
+        />
       </div>
     );
   }

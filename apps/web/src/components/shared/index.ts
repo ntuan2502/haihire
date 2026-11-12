@@ -9,6 +9,7 @@ export * from "./brand-logo";
 export * from "./device-preview-frame";
 export * from "./device-preview-selector";
 export * from "./page-header";
+export * from "./status-state";
 export * from "./metric-card";
 export * from "./segmented-tabs";
 export * from "./pagination";

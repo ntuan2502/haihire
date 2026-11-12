@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
+import { StatusState } from "@/components/shared/status-state";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/i18n";
 
@@ -48,27 +48,21 @@ export function ApplicationDetailView() {
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={state.jobs.length}
         />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
-            <span className="text-lg font-black">404</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("applications.applicationNotFound")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {!state.isAppIdValid
-              ? t("applications.invalidAppId")
-              : t("applications.appNotFoundDesc")}
-          </p>
-          <div className="pt-2">
-            <Button
-              onClick={() => router.push("/dashboard/applications")}
-              variant="outline"
-              className="text-xs font-semibold rounded-xl"
-            >
-              {t("applications.backToApplications")}
-            </Button>
-          </div>
+        <main className="flex-1 flex flex-col">
+          <StatusState
+            status="404"
+            variant="page"
+            title={t("applications.applicationNotFound")}
+            description={
+              !state.isAppIdValid
+                ? t("applications.invalidAppId")
+                : t("applications.appNotFoundDesc")
+            }
+            actionLabel={t("applications.backToApplications")}
+            onAction={() => router.push("/dashboard/applications")}
+            actionVariant="outline"
+            actionIcon={ArrowLeft}
+          />
         </main>
       </div>
     );

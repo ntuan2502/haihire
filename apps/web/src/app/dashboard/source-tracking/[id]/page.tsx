@@ -21,8 +21,8 @@ import {
   EditLinkModal,
 } from "@/components/sourcing";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle, Radio } from "lucide-react";
+import { StatusState } from "@/components/shared/status-state";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
 import { slugify } from "@/lib/utils";
@@ -111,22 +111,15 @@ function TrackingLinkDetailContent() {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
         <Navbar activeTab="dashboard" />
-        <main className="flex-1 px-4 py-16 sm:px-6 lg:px-8 max-w-xl mx-auto flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
-            <Radio className="w-7 h-7" />
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("common.accessDenied")}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-md">
-            {t("errors.FORBIDDEN_READ_ONLY")}
-          </p>
-          <Button
-            onClick={() => router.push("/dashboard")}
-            className="mt-6 h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
-          >
-            {t("common.dashboard")}
-          </Button>
+        <main className="flex-1 flex flex-col">
+          <StatusState
+            status="403"
+            variant="page"
+            title={t("common.accessDenied")}
+            description={t("errors.FORBIDDEN_READ_ONLY")}
+            actionLabel={t("common.dashboard")}
+            actionHref="/dashboard"
+          />
         </main>
       </div>
     );
@@ -148,28 +141,17 @@ function TrackingLinkDetailContent() {
             <LoadingSpinner />
           </div>
         ) : isError || !detail ? (
-          <div className="p-12 text-center space-y-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-md mx-auto my-12">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-500">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {t("sourcing.details.notFoundTitle")}
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("sourcing.details.notFoundDesc")}
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/dashboard/source-tracking")}
-              className="rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-              <span>{t("sourcing.details.backToTracking")}</span>
-            </Button>
-          </div>
+          <StatusState
+            status="404"
+            variant="card"
+            title={t("sourcing.details.notFoundTitle")}
+            description={t("sourcing.details.notFoundDesc")}
+            actionLabel={t("sourcing.details.backToTracking")}
+            onAction={() => router.push("/dashboard/source-tracking")}
+            actionVariant="outline"
+            actionIcon={ArrowLeft}
+            className="max-w-md mx-auto my-12"
+          />
         ) : (
           <>
             {/* Header */}

@@ -178,8 +178,10 @@ export class InterviewsScheduleService {
         orgSettings?.nameDisplayOrder === "LAST_FIRST"
           ? "LAST_FIRST"
           : "FIRST_LAST";
-      const resolvedCandidateName =
-        formatCandidateDisplayName(candidate, orgOrder) || candidate.name;
+      const resolvedCandidateName = formatCandidateDisplayName(
+        candidate,
+        orgOrder,
+      );
       const formattedEmailDt = formatInterviewDateTimeInTimezone(
         scheduledInstant,
         orgSettings ?? undefined,

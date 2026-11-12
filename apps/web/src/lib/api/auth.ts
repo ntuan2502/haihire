@@ -1,5 +1,9 @@
 import { api } from "./client";
-import type { UpdateUserPreferencesPayload, User } from "@/types";
+import type {
+  UpdateUserPreferencesPayload,
+  UpdateUserProfilePayload,
+  User,
+} from "@/types";
 
 export const authApi = {
   getMe: async (): Promise<User> => {
@@ -53,6 +57,11 @@ export const authApi = {
     data: UpdateUserPreferencesPayload,
   ): Promise<User> => {
     const response = await api.patch<User>("/auth/me/preferences", data);
+    return response.data;
+  },
+
+  updateProfile: async (data: UpdateUserProfilePayload): Promise<User> => {
+    const response = await api.patch<User>("/auth/me/profile", data);
     return response.data;
   },
 };

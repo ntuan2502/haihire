@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef } from "react";
 import { Search, ArrowUpDown, Menu, User } from "lucide-react";
+import { matchesPersonNameSearch } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
@@ -200,10 +201,12 @@ export const LandingAtsPreview: React.FC = () => {
       .filter((app) => app.stage === selectedStage)
       .filter((app) => {
         if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          app.candidateName.toLowerCase().includes(q) ||
-          app.candidateEmail.toLowerCase().includes(q)
+        return matchesPersonNameSearch(
+          {
+            candidateName: app.candidateName,
+            email: app.candidateEmail,
+          },
+          searchQuery,
         );
       })
       .sort((a, b) => {

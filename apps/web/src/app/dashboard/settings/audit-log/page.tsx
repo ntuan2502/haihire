@@ -7,7 +7,7 @@ import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
 import { History, Filter, Info, ChevronDown, ChevronUp } from "lucide-react";
 import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
 import { getOrgRoleLabel } from "@/lib/roles";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, getInitials, getUserDisplayName } from "@/lib/utils";
 import {
   CustomSelect,
   PageHeader,
@@ -348,15 +348,11 @@ export default function AuditLogPage() {
                               {log.actor ? (
                                 <div className="flex items-center gap-2">
                                   <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
-                                    {log.actor.name?.charAt(0).toUpperCase() ||
-                                      log.actor.email
-                                        ?.charAt(0)
-                                        .toUpperCase() ||
-                                      "?"}
+                                    {getInitials(getUserDisplayName(log.actor))}
                                   </div>
                                   <div className="leading-tight">
                                     <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
-                                      {log.actor.name}
+                                      {getUserDisplayName(log.actor)}
                                     </div>
                                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
                                       {log.actor.email}

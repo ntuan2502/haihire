@@ -1,5 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { formatUserDisplayName } from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { toInstant } from "../../common/date.util";
 
@@ -103,13 +105,19 @@ export class OrganizationsAuditLogService {
       new Set(pagedLogs.map((l) => l.actorId).filter(Boolean)),
     ) as string[];
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      organizationId,
+    );
+
     const actors =
       actorIds.length > 0
         ? await this.prisma.user.findMany({
             where: { id: { in: actorIds } },
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
               role: true,
               avatarUrl: true,
@@ -118,7 +126,15 @@ export class OrganizationsAuditLogService {
           })
         : [];
 
-    const actorMap = new Map(actors.map((u) => [u.id, u]));
+    const actorMap = new Map(
+      actors.map((u) => [
+        u.id,
+        {
+          ...u,
+          name: formatUserDisplayName(u, nameOrder),
+        },
+      ]),
+    );
 
     const data = pagedLogs.map((log) => ({
       id: log.id,

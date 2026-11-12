@@ -67,19 +67,25 @@ describe("SourcingMetricsService", () => {
       {
         id: "cand-1",
         organizationId: "org-1",
-        name: "Alice Walker",
+        firstName: "Alice",
+        lastName: "Walker",
+        displayName: null,
         email: "alice@example.com",
       },
       {
         id: "cand-2",
         organizationId: "org-1",
-        name: "Bob Stone",
+        firstName: "Bob",
+        lastName: "Stone",
+        displayName: null,
         email: "bob@example.com",
       },
       {
         id: "cand-3",
         organizationId: "org-1",
-        name: "Charlie Brown",
+        firstName: "Charlie",
+        lastName: "Brown",
+        displayName: null,
         email: "charlie@example.com",
       },
     ]);
@@ -390,12 +396,18 @@ describe("SourcingMetricsService", () => {
       expect(result.data[0]?.source).toBe(SourcingChannel.INDEED);
     });
 
-    it("searches attribution log by candidate name case-insensitively", async () => {
+    it("searches attribution log by candidate name case-insensitively and in reversed token order", async () => {
       const result = await service.getAttributionLog("org-1", {
         search: "alice",
       });
       expect(result.total).toBe(1);
       expect(result.data[0]?.candidateName).toBe("Alice Walker");
+
+      const reversed = await service.getAttributionLog("org-1", {
+        search: "Walker Alice",
+      });
+      expect(reversed.total).toBe(1);
+      expect(reversed.data[0]?.candidateName).toBe("Alice Walker");
     });
 
     it("searches attribution log by candidate email", async () => {

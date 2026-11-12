@@ -25,7 +25,12 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<User>;
+  register: (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+  ) => Promise<User>;
   logout: () => Promise<void> | void;
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
   updateUser: (updatedFields: Partial<User>) => void;
@@ -393,7 +398,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (
-    name: string,
+    firstName: string,
+    lastName: string,
     email: string,
     password: string,
   ): Promise<User> => {
@@ -402,7 +408,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshToken?: string;
       user: User;
     }>("/auth/register", {
-      name,
+      firstName,
+      lastName,
       email,
       password,
     });

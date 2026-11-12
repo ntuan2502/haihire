@@ -1,6 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatUserDisplayName,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import type { Request } from "express";
@@ -61,7 +65,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         avatarUrl: true,
         preferredLanguage: true,
@@ -124,8 +129,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
+
     return {
       ...user,
+      name: formatUserDisplayName(user, orgOrder),
       organization,
       isOwner,
     };

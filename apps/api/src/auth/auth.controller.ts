@@ -24,6 +24,7 @@ import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
+import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
@@ -170,6 +171,15 @@ export class AuthController {
     const user = await this.authService.getProfile(req.user.id);
     setHasOrgCookie(res, Boolean(user?.organizationId));
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch("me/profile")
+  async updateProfile(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(UpdateUserProfileDto)) dto: UpdateUserProfileDto,
+  ) {
+    return this.authService.updateProfile(req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)

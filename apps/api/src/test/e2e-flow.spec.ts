@@ -34,7 +34,8 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
         {
           id: "usr-admin-1",
           email: DEMO_ACCOUNTS.ADMIN.email,
-          name: DEMO_ACCOUNTS.ADMIN.name,
+          firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+          lastName: DEMO_ACCOUNTS.ADMIN.lastName,
           password: hashedPassword,
           role: "ADMIN",
           avatarUrl: null,

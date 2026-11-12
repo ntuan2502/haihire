@@ -2,7 +2,9 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   APPLICATION_STAGES,
+  foldVietnameseAccents,
   formatCandidateDisplayName,
+  normalizeNameInput,
   type ApplicationStage,
   type ApplicationStats,
 } from "@haihire/shared";
@@ -11,10 +13,8 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import {
-  buildCandidateSearchName,
-  resolveOrgNameDisplayOrder,
-} from "../../common/candidate-name.util";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
+import { findMatchingCandidateIds } from "../../common/person-search.util";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
@@ -143,12 +143,18 @@ export class ApplicationsQueryService {
     );
     const populated = applications.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
+        : "Unknown";
       return {
         ...app,
-        candidate,
-        candidateName: candidate
-          ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
-          : "Unknown",
+        candidate: candidate
+          ? {
+              ...candidate,
+              name: resolvedCandidateName,
+            }
+          : undefined,
+        candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -252,28 +258,17 @@ export class ApplicationsQueryService {
     }
 
     if (options?.search && options.search.trim() !== "") {
-      const q = options.search.trim();
-      const matchedCandidates = await this.prisma.candidate.findMany({
-        where: {
-          organizationId: targetOrgId,
-          deletedAt: null,
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { firstName: { contains: q, mode: "insensitive" } },
-            { lastName: { contains: q, mode: "insensitive" } },
-            { displayName: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
-            { phone: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        select: { id: true },
+      const q = foldVietnameseAccents(options.search);
+      const matchedCandidateIds = await findMatchingCandidateIds(this.prisma, {
+        organizationId: targetOrgId,
+        rawSearch: options.search,
       });
       const matchingJobIds = jobs
-        .filter((j) => j.title.toLowerCase().includes(q.toLowerCase()))
+        .filter((j) => foldVietnameseAccents(j.title).includes(q))
         .map((j) => j.id);
 
       appWhere.OR = [
-        { candidateId: { in: matchedCandidates.map((c) => c.id) } },
+        { candidateId: { in: matchedCandidateIds } },
         { jobId: { in: matchingJobIds } },
       ];
     }
@@ -337,13 +332,19 @@ export class ApplicationsQueryService {
     const data = pagedApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
+        : "Unknown";
       return {
         ...app,
         job,
-        candidate,
-        candidateName: candidate
-          ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
-          : "Unknown",
+        candidate: candidate
+          ? {
+              ...candidate,
+              name: resolvedCandidateName,
+            }
+          : undefined,
+        candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -502,13 +503,20 @@ export class ApplicationsQueryService {
       appOrgId || tenantOrgId,
     );
 
+    const resolvedCandidateName = candidate
+      ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
+      : "Unknown";
+
     return {
       ...app,
       job: job || null,
-      candidate: candidate || null,
-      candidateName: candidate
-        ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
-        : "Unknown",
+      candidate: candidate
+        ? {
+            ...candidate,
+            name: resolvedCandidateName,
+          }
+        : null,
+      candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
       resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -532,7 +540,7 @@ export class ApplicationsQueryService {
     if (existing.candidateId) {
       const candidateUpdate: Record<string, unknown> = {};
       if (dto.firstName !== undefined) {
-        const trimmed = dto.firstName.trim();
+        const trimmed = normalizeNameInput(dto.firstName);
         if (!trimmed) {
           throw new AppBadRequestException(
             APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -542,7 +550,7 @@ export class ApplicationsQueryService {
         candidateUpdate.firstName = trimmed;
       }
       if (dto.lastName !== undefined) {
-        const trimmed = dto.lastName.trim();
+        const trimmed = normalizeNameInput(dto.lastName);
         if (!trimmed) {
           throw new AppBadRequestException(
             APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -553,29 +561,6 @@ export class ApplicationsQueryService {
       }
       if (dto.displayName !== undefined) {
         candidateUpdate.displayName = dto.displayName?.trim() || null;
-      }
-      if (
-        dto.firstName !== undefined ||
-        dto.lastName !== undefined ||
-        dto.displayName !== undefined
-      ) {
-        const orgId = existing.job?.organizationId || tenantOrgId;
-        const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
-        candidateUpdate.name = buildCandidateSearchName(
-          {
-            firstName:
-              (candidateUpdate.firstName as string | undefined) ??
-              existing.candidate?.firstName,
-            lastName:
-              (candidateUpdate.lastName as string | undefined) ??
-              existing.candidate?.lastName,
-            displayName:
-              dto.displayName !== undefined
-                ? (candidateUpdate.displayName as string | null)
-                : (existing.candidate?.displayName ?? null),
-          },
-          nameOrder,
-        );
       }
       if (dto.candidateEmail !== undefined)
         candidateUpdate.email = dto.candidateEmail.toLowerCase();
@@ -634,7 +619,7 @@ export class ApplicationsQueryService {
             metadata: {
               action: "APPLICATION_DELETED",
               applicationId: existing.id,
-              candidateName: existing.candidate.name,
+              candidateName: existing.candidateName || existing.candidate.name,
               candidateEmail: existing.candidate.email,
               jobId: existing.job?.id,
               jobTitle: existing.job?.title,

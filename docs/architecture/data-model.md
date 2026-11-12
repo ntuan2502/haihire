@@ -70,7 +70,7 @@ Universal user identity across tenants.
 - `id` (`String` UUID, Primary Key)
 - `email` (`String` Unique)
 - `passwordHash` (`String`)
-- `name` (`String?`)
+- `firstName` (`String`, default `""`), `lastName` (`String`, default `""`) — structured personal name fields (display `name` is dynamically computed per organization `nameDisplayOrder`)
 - `preferredLanguage` (`String?` nullable personal language override: `'vi'` | `'en'`; `null` follows organization default)
 - `preferredTimezone` (`String?` nullable personal IANA timezone override; `null` follows organization default)
 - `role` (`Role` Enum: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`)
@@ -122,7 +122,7 @@ Applicant profile.
 
 - `id` (`String` UUID, Primary Key)
 - `organizationId` (`String`, `onDelete: Cascade`)
-- `firstName` (`String?`), `lastName` (`String?`), `displayName` (`String?`), `name` (`String`, server-maintained search index)
+- `firstName` (`String?`), `lastName` (`String?`), `displayName` (`String?`) — structured personal name fields (display `name` is dynamically computed per organization `nameDisplayOrder`; smart search indexes `firstName`, `lastName`, `displayName` via PostgreSQL `unaccent`)
 - `email` (`String`), `phone` (`String?`)
 - `deletedAt` (`DateTime?`, for 30-day soft-delete)
 - **Key Indices:** `@@unique([organizationId, email])`, `@@index([organizationId, deletedAt])`

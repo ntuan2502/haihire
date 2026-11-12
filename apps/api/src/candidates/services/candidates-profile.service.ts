@@ -35,7 +35,6 @@ export class CandidatesProfileService {
       select: {
         id: true,
         organizationId: true,
-        name: true,
         firstName: true,
         lastName: true,
         displayName: true,
@@ -138,14 +137,14 @@ export class CandidatesProfileService {
       job: jobMap.get(app.jobId) || null,
       candidate: {
         id: candidate.id,
-        name: candidate.name,
+        name: resolvedCandidateName,
         firstName: candidate.firstName,
         lastName: candidate.lastName,
         displayName: candidate.displayName ?? null,
         email: candidate.email,
         phone: candidate.phone,
       },
-      candidateName: resolvedCandidateName || candidate.name,
+      candidateName: resolvedCandidateName,
       candidateEmail: candidate.email,
       candidatePhone: candidate.phone,
       interviews: interviewsByApp.get(app.id) || [],
@@ -244,6 +243,7 @@ export class CandidatesProfileService {
 
     return {
       ...candidate,
+      name: resolvedCandidateName,
       applications: populatedApps,
       applicationsCount: populatedApps.length,
       allDocuments,

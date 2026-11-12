@@ -9,6 +9,7 @@ import {
   formatTime,
   getInitials,
   getCandidateDisplayName,
+  getUserDisplayName,
   normalizeDateForInput,
   fixUtf8String,
   parseCandidateDocuments,
@@ -406,6 +407,24 @@ describe("Frontend utils", () => {
       const rareOpts = getTimezoneSelectOptions("Antarctica/McMurdo");
       expect(rareOpts[0].value).toBe("Antarctica/McMurdo");
       expect(rareOpts[0].label).toContain("McMurdo");
+    });
+
+    it("formats user display names respecting FIRST_LAST and LAST_FIRST order", () => {
+      const user = {
+        firstName: "Tuấn",
+        lastName: "Nguyễn Anh",
+        email: "tuan@example.com",
+      };
+      expect(getUserDisplayName(user, { nameDisplayOrder: "FIRST_LAST" })).toBe(
+        "Tuấn Nguyễn Anh",
+      );
+      expect(getUserDisplayName(user, { nameDisplayOrder: "LAST_FIRST" })).toBe(
+        "Nguyễn Anh Tuấn",
+      );
+      expect(getUserDisplayName({ email: "only@example.com" })).toBe(
+        "only@example.com",
+      );
+      expect(getUserDisplayName(null)).toBe("—");
     });
   });
 });

@@ -1,10 +1,12 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES } from "@haihire/shared";
 import {
-  buildCandidateSearchName,
-  resolveOrgNameDisplayOrder,
-} from "../../common/candidate-name.util";
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  normalizeNameInput,
+} from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
+import { findMatchingCandidateIds } from "../../common/person-search.util";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -76,33 +78,28 @@ export class CandidatesCrudService {
       deletedAt: null,
     };
 
-    if (options?.search && options.search.trim() !== "") {
-      const q = options.search.trim();
-      const noteMatches = await this.prisma.candidateNote.findMany({
-        where: {
-          organizationId: targetOrgId,
-          content: { contains: q, mode: "insensitive" },
-        },
-        select: { candidateId: true },
-      });
-      const noteMatchIds = Array.from(
-        new Set(noteMatches.map((m) => m.candidateId)),
-      );
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { firstName: { contains: q, mode: "insensitive" } },
-        { lastName: { contains: q, mode: "insensitive" } },
-        { displayName: { contains: q, mode: "insensitive" } },
-        { email: { contains: q, mode: "insensitive" } },
-        { phone: { contains: q } },
-        ...(noteMatchIds.length > 0 ? [{ id: { in: noteMatchIds } }] : []),
-      ];
-    }
-
     const page = options?.page && options.page > 0 ? options.page : 1;
     const limit = options?.limit && options.limit > 0 ? options.limit : 20;
 
-    const [total, candidates] = await Promise.all([
+    if (options?.search && options.search.trim() !== "") {
+      const matchedIds = await findMatchingCandidateIds(this.prisma, {
+        organizationId: targetOrgId,
+        rawSearch: options.search,
+        includeNotes: true,
+      });
+      if (matchedIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        };
+      }
+      where.id = { in: matchedIds };
+    }
+
+    const [total, candidates, nameOrder] = await Promise.all([
       this.prisma.candidate.count({ where }),
       this.prisma.candidate.findMany({
         where,
@@ -110,6 +107,7 @@ export class CandidatesCrudService {
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
+      resolveOrgNameDisplayOrder(this.prisma, targetOrgId),
     ]);
 
     const totalPages = Math.ceil(total / limit) || 1;
@@ -192,7 +190,7 @@ export class CandidatesCrudService {
       const noteSummary = notesSummaryByCandidate.get(c.id);
       return {
         ...c,
-        name: c.name,
+        name: formatCandidateDisplayName(c, nameOrder),
         firstName: c.firstName,
         lastName: c.lastName,
         displayName: c.displayName ?? null,
@@ -287,8 +285,8 @@ export class CandidatesCrudService {
       }
     }
 
-    const firstName = dto.firstName?.trim() || "";
-    const lastName = dto.lastName?.trim() || "";
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
     if (!firstName || !lastName) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -297,16 +295,11 @@ export class CandidatesCrudService {
     }
     const displayName = dto.displayName?.trim() || null;
     const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
-    const name = buildCandidateSearchName(
-      { firstName, lastName, displayName },
-      nameOrder,
-    );
 
     const created = await this.prisma.candidate.create({
       data: {
         id: crypto.randomUUID(),
         organizationId: orgId,
-        name,
         firstName,
         lastName,
         displayName,
@@ -328,7 +321,10 @@ export class CandidatesCrudService {
       data: { candidateId: created.id },
     });
 
-    return created;
+    return {
+      ...created,
+      name: formatCandidateDisplayName(created, nameOrder),
+    };
   }
 
   async update(
@@ -340,7 +336,7 @@ export class CandidatesCrudService {
 
     const updatePayload: Record<string, unknown> = {};
     if (dto.firstName !== undefined) {
-      const trimmed = dto.firstName.trim();
+      const trimmed = normalizeNameInput(dto.firstName);
       if (!trimmed) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -350,7 +346,7 @@ export class CandidatesCrudService {
       updatePayload.firstName = trimmed;
     }
     if (dto.lastName !== undefined) {
-      const trimmed = dto.lastName.trim();
+      const trimmed = normalizeNameInput(dto.lastName);
       if (!trimmed) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -361,32 +357,6 @@ export class CandidatesCrudService {
     }
     if (dto.displayName !== undefined) {
       updatePayload.displayName = dto.displayName?.trim() || null;
-    }
-    if (
-      dto.firstName !== undefined ||
-      dto.lastName !== undefined ||
-      dto.displayName !== undefined
-    ) {
-      const nextFirstName =
-        (updatePayload.firstName as string | undefined) ?? existing.firstName;
-      const nextLastName =
-        (updatePayload.lastName as string | undefined) ?? existing.lastName;
-      const nextDisplayName =
-        dto.displayName !== undefined
-          ? (updatePayload.displayName as string | null)
-          : (existing.displayName ?? null);
-      const nameOrder = await resolveOrgNameDisplayOrder(
-        this.prisma,
-        existing.organizationId,
-      );
-      updatePayload.name = buildCandidateSearchName(
-        {
-          firstName: nextFirstName,
-          lastName: nextLastName,
-          displayName: nextDisplayName,
-        },
-        nameOrder,
-      );
     }
     if (dto.gender !== undefined) {
       updatePayload.gender = dto.gender ? dto.gender : null;

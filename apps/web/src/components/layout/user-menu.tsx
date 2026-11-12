@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
-import { getInitials } from "@/lib/utils";
+import { getInitials, getUserDisplayName } from "@/lib/utils";
 import { getOrgRoleBadgeClass, getOrgRoleLabel } from "@/lib/roles";
 
 export interface UserMenuProps {
@@ -38,6 +38,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
   if (!user) return null;
 
   const displayRole = isOwner ? "OWNER" : user.role;
+  const displayName = getUserDisplayName(user);
 
   return (
     <DropdownMenu>
@@ -49,7 +50,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         aria-label={t("common.userProfile")}
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
-          {getInitials(user.name)}
+          {getInitials(displayName)}
         </div>
       </DropdownMenuTrigger>
 
@@ -61,7 +62,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         <div className="px-2 pt-1 pb-1">
           <div className="flex items-center justify-between gap-1.5">
             <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
-              {user.name}
+              {displayName}
             </span>
             {user.organizationId && (
               <span

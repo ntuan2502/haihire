@@ -184,7 +184,8 @@ model Organization {
 model User {
   id                 String                 @id @default(uuid())
   email              String                 @unique
-  name               String
+  firstName          String                 @default("")
+  lastName           String                 @default("")
   password           String?
   avatarUrl          String?
   preferredLanguage  String?
@@ -286,7 +287,6 @@ model Candidate {
   id             String              @id @default(uuid())
   organizationId String
   organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
   firstName      String?
   lastName       String?
   displayName    String?

@@ -256,6 +256,10 @@ export const en: TranslationSchema = {
     registerSubtitle: "Start streamlining your hiring process today.",
     fullNameLabel: "Full Name",
     fullNamePlaceholder: "John Doe",
+    firstNameLabel: "First name",
+    firstNamePlaceholder: "John",
+    lastNameLabel: "Last name",
+    lastNamePlaceholder: "Doe",
     signUpButton: "Create Account",
     signingUp: "Creating account...",
     hasAccount: "Already have an account?",
@@ -1647,6 +1651,17 @@ export const en: TranslationSchema = {
       "Manage your account identity, password security, and personal workspace preferences.",
     accountInfoSub:
       "Basic account identity details associated with your login.",
+    accountProfile: {
+      firstNameLabel: "First name",
+      firstNamePlaceholder: "Enter first name",
+      lastNameLabel: "Last name",
+      lastNamePlaceholder: "Enter last name",
+      saveBtn: "Save Changes",
+      savingBtn: "Saving...",
+      saveSuccess: "Profile information updated.",
+      saveError: "Failed to update profile information. Please try again.",
+      nameRequiredError: "Please enter your first and last name.",
+    },
     openPublicCareers: "Open Careers Page",
     workspaceSummaryDesc:
       "Summary of your organization workspace and public career board URL.",

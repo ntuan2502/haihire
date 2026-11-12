@@ -8,7 +8,12 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { APP_ERROR_CODES, Role } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  Role,
+  formatUserDisplayName,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 @Injectable()
@@ -118,6 +123,8 @@ export class OrganizationsMembersService {
     const members = await this.getMembers(userId);
     return members.map((member) => ({
       id: member.id,
+      firstName: member.firstName,
+      lastName: member.lastName,
       name: member.name,
       email: member.email,
       role: member.role,
@@ -143,8 +150,11 @@ export class OrganizationsMembersService {
       select: {
         id: true,
         ownerId: true,
+        nameDisplayOrder: true,
       },
     });
+    const nameOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
     // 1. Fetch all memberships recorded in OrganizationMember for this organization
     const memberships = await this.prisma.organizationMember.findMany({
@@ -166,7 +176,8 @@ export class OrganizationsMembersService {
       where: { organizationId: currentOrgId },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         avatarUrl: true,
@@ -185,7 +196,8 @@ export class OrganizationsMembersService {
             where: { id: { in: additionalUserIds } },
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
               role: true,
               avatarUrl: true,
@@ -216,7 +228,9 @@ export class OrganizationsMembersService {
           : roleMap.get(u.id) || u.role || "MEMBER";
         return {
           id: u.id,
-          name: u.name,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          name: formatUserDisplayName(u, nameOrder),
           email: u.email,
           role,
           avatarUrl: u.avatarUrl,

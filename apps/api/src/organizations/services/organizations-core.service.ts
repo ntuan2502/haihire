@@ -13,6 +13,7 @@ import {
 import {
   APP_ERROR_CODES,
   canonicalizeTimezone,
+  formatUserDisplayName,
   normalizeOrgLocalization,
   type OrganizationLocalizationSettings,
 } from "@haihire/shared";
@@ -309,7 +310,8 @@ export class OrganizationsCoreService {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         organizationId: true,
       },
@@ -326,7 +328,15 @@ export class OrganizationsCoreService {
     return {
       success: true,
       organization: normalizedOrg,
-      user: { ...updatedUser, organization: normalizedOrg, isOwner },
+      user: {
+        ...updatedUser,
+        name: formatUserDisplayName(
+          updatedUser,
+          normalizedOrg.nameDisplayOrder,
+        ),
+        organization: normalizedOrg,
+        isOwner,
+      },
     };
   }
 

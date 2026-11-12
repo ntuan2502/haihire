@@ -8,6 +8,7 @@ import type {
 import {
   DEFAULT_ORG_LOCALIZATION,
   formatCandidateDisplayName,
+  formatUserDisplayName,
   normalizeOrgLocalization,
   type CurrencyCode,
   type DateFormat,
@@ -576,6 +577,28 @@ export function getCandidateDisplayName(
     nameOrder,
   );
   return formatted || "—";
+}
+
+export interface UserNameInput {
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+  email?: string | null;
+}
+
+/**
+ * Format user display name respecting organization name display order.
+ */
+export function getUserDisplayName(
+  user?: UserNameInput | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (!user) return "—";
+  const nameOrder: NameDisplayOrder =
+    overrides?.nameDisplayOrder ??
+    activeOrgLocalization?.nameDisplayOrder ??
+    DEFAULT_ORG_LOCALIZATION.nameDisplayOrder;
+  return formatUserDisplayName(user, nameOrder) || user.email?.trim() || "—";
 }
 
 /**

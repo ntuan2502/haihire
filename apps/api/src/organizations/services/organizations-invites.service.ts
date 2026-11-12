@@ -13,7 +13,9 @@ import {
   APP_ERROR_CODES,
   ROLE_LIST,
   Role,
+  formatUserDisplayName,
   hasPermission,
+  type NameDisplayOrder,
 } from "@haihire/shared";
 import { EventsService } from "../../events/events.service";
 
@@ -36,6 +38,8 @@ export interface InviteLinkRecord {
 interface MemberInviteContext {
   user: {
     id: string;
+    firstName: string | null;
+    lastName: string | null;
     name: string | null;
     role: string;
     organizationId: string;
@@ -46,6 +50,7 @@ interface MemberInviteContext {
     name: string;
     slug: string;
     ownerId: string | null;
+    nameDisplayOrder?: string;
   } | null;
   isOwner: boolean;
   effectiveRole: Role;
@@ -114,7 +119,8 @@ export class OrganizationsInvitesService {
       where: { id: userId },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         organizationId: true,
       },
@@ -132,6 +138,7 @@ export class OrganizationsInvitesService {
         name: true,
         slug: true,
         ownerId: true,
+        nameDisplayOrder: true,
       },
     });
 
@@ -159,11 +166,15 @@ export class OrganizationsInvitesService {
       effectiveRole,
       isOwner,
     );
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
     return {
       user: {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: formatUserDisplayName(user, orgOrder),
         role: user.role,
         organizationId: orgId,
       },
@@ -307,11 +318,16 @@ export class OrganizationsInvitesService {
 
     const links = allLinks.filter((l) => l.status !== "REVOKED");
 
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+
     const users = await this.prisma.user.findMany({
       where: { organizationId: orgId },
-      select: { id: true, name: true },
+      select: { id: true, firstName: true, lastName: true },
     });
-    const userMap = new Map(users.map((u) => [u.id, u.name]));
+    const userMap = new Map(
+      users.map((u) => [u.id, formatUserDisplayName(u, orgOrder)]),
+    );
 
     return links.map((link) => {
       let status = link.status;
@@ -438,17 +454,21 @@ export class OrganizationsInvitesService {
         id: true,
         name: true,
         slug: true,
+        nameDisplayOrder: true,
       },
     });
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
     let createdByName = "Team Member";
     if (link.createdById) {
       const creator = await this.prisma.user.findFirst({
         where: { id: link.createdById as string },
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       });
-      if (creator?.name) {
-        createdByName = creator.name;
+      const resolved = formatUserDisplayName(creator, orgOrder);
+      if (resolved) {
+        createdByName = resolved;
       }
     }
 

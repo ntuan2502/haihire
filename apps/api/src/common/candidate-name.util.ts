@@ -1,5 +1,6 @@
 import {
   formatCandidateDisplayName,
+  formatUserDisplayName,
   type NameDisplayOrder,
 } from "@haihire/shared";
 import type { PrismaService } from "../prisma/prisma.service";
@@ -28,7 +29,7 @@ export async function resolveOrgNameDisplayOrder(
   }
 }
 
-export function buildCandidateSearchName(
+export function buildCandidateDisplayName(
   candidate: {
     displayName?: string | null;
     firstName?: string | null;
@@ -38,4 +39,19 @@ export function buildCandidateSearchName(
   order: NameDisplayOrder = "FIRST_LAST",
 ): string {
   return formatCandidateDisplayName(candidate, order);
+}
+
+export function resolveUserDisplayName(
+  user:
+    | {
+        firstName?: string | null;
+        lastName?: string | null;
+        displayName?: string | null;
+        name?: string | null;
+      }
+    | null
+    | undefined,
+  order: NameDisplayOrder = "FIRST_LAST",
+): string {
+  return formatUserDisplayName(user, order);
 }

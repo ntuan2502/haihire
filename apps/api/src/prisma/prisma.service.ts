@@ -65,6 +65,14 @@ export class PrismaService
     try {
       await this.$connect();
 
+      try {
+        await this.$executeRawUnsafe(
+          "CREATE EXTENSION IF NOT EXISTS unaccent;",
+        );
+      } catch {
+        // Non-superuser or non-Postgres environments may ignore extension creation; search falls back in JS.
+      }
+
       if (
         backendEnv.SEED_DEMO_ON_BOOT &&
         backendEnv.NODE_ENV !== "production"
@@ -100,7 +108,8 @@ export class PrismaService
             create: {
               id: adminUserId,
               email: DEMO_ACCOUNTS.ADMIN.email,
-              name: "Demo Admin",
+              firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+              lastName: DEMO_ACCOUNTS.ADMIN.lastName,
               password: hashedPassword,
               role: "ADMIN",
               organizationId: adminOrgId,
@@ -108,7 +117,8 @@ export class PrismaService
             },
             update: {
               email: DEMO_ACCOUNTS.ADMIN.email,
-              name: "Demo Admin",
+              firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+              lastName: DEMO_ACCOUNTS.ADMIN.lastName,
               password: hashedPassword,
               role: "ADMIN",
               organizationId: adminOrgId,
@@ -121,14 +131,16 @@ export class PrismaService
             create: {
               id: memberUserId,
               email: DEMO_ACCOUNTS.MEMBER.email,
-              name: "Demo Member",
+              firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+              lastName: DEMO_ACCOUNTS.MEMBER.lastName,
               password: hashedPassword,
               role: "MEMBER",
               updatedAt: toInstant(),
             },
             update: {
               email: DEMO_ACCOUNTS.MEMBER.email,
-              name: "Demo Member",
+              firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+              lastName: DEMO_ACCOUNTS.MEMBER.lastName,
               password: hashedPassword,
               role: "MEMBER",
               updatedAt: toInstant(),

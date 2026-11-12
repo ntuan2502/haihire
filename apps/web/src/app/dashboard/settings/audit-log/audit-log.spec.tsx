@@ -21,6 +21,8 @@ let mockAuditLogData = {
       createdAt: "2026-10-23T10:00:00Z",
       actor: {
         id: "user-1",
+        firstName: "Alice",
+        lastName: "Admin",
         name: "Alice Admin",
         email: "alice@haihire.local",
         role: "ADMIN",

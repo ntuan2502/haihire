@@ -19,6 +19,8 @@ const mockRefreshUser = vi.fn();
 
 let mockAuthUser = {
   id: "user-admin",
+  firstName: "Admin",
+  lastName: "User",
   name: "Admin User",
   email: "admin@haihire.vn",
   role: "ADMIN",

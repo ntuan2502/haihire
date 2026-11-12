@@ -18,7 +18,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let mockUsers: Array<{
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     password: string;
     role: "ADMIN" | "MEMBER";
     avatarUrl: string | null;
@@ -35,7 +36,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       {
         id: "usr-admin",
         email: DEMO_ACCOUNTS.ADMIN.email,
-        name: DEMO_ACCOUNTS.ADMIN.name,
+        firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+        lastName: DEMO_ACCOUNTS.ADMIN.lastName,
         password: hashedPassword,
         role: DEMO_ACCOUNTS.ADMIN.role,
         avatarUrl: null,
@@ -48,7 +50,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       {
         id: "usr-member",
         email: DEMO_ACCOUNTS.MEMBER.email,
-        name: DEMO_ACCOUNTS.MEMBER.name,
+        firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+        lastName: DEMO_ACCOUNTS.MEMBER.lastName,
         password: hashedPassword,
         role: DEMO_ACCOUNTS.MEMBER.role,
         avatarUrl: null,
@@ -154,6 +157,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
             data: {
               tokenVersion?: number | { increment?: number };
               password?: string;
+              firstName?: string;
+              lastName?: string;
               preferredLanguage?: string | null;
               preferredTimezone?: string | null;
             };
@@ -170,6 +175,12 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
               }
               if (data.password) {
                 user.password = data.password;
+              }
+              if (data.firstName !== undefined) {
+                user.firstName = data.firstName;
+              }
+              if (data.lastName !== undefined) {
+                user.lastName = data.lastName;
               }
               if (data.preferredLanguage !== undefined) {
                 user.preferredLanguage = data.preferredLanguage;
@@ -282,14 +293,17 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   describe("Registration Flow", () => {
     it("6. Should register a new user successfully with default MEMBER role", async () => {
       const result = await authService.register({
-        name: "New Member",
+        firstName: "Member",
+        lastName: "New",
         email: "newmember@company.com",
         password: "securepassword",
       });
 
       expect(result).toBeDefined();
       expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
-      expect(result.user.name).toBe("New Member");
+      expect(result.user.firstName).toBe("Member");
+      expect(result.user.lastName).toBe("New");
+      expect(result.user.name).toBe("Member New");
       expect(result.user.email).toBe("newmember@company.com");
       expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();
@@ -299,7 +313,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
     it("7. Should throw ConflictException if email is already registered", async () => {
       await expect(
         authService.register({
-          name: "Duplicate Admin",
+          firstName: "Admin",
+          lastName: "Duplicate",
           email: DEMO_ACCOUNTS.ADMIN.email,
           password: DEMO_PASSWORD,
         }),
@@ -460,6 +475,26 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
       expect(cleared.preferredLanguage).toBeNull();
       expect(cleared.preferredTimezone).toBeNull();
+    });
+
+    it("17. Should update firstName and lastName via updateProfile and reject blank names", async () => {
+      const updated = await authService.updateProfile("usr-member", {
+        firstName: "Tuấn",
+        lastName: "Nguyễn Anh",
+      });
+
+      expect(updated.firstName).toBe("Tuấn");
+      expect(updated.lastName).toBe("Nguyễn Anh");
+      expect(updated.name).toBe("Tuấn Nguyễn Anh");
+      expect(mockUsers[1].firstName).toBe("Tuấn");
+      expect(mockUsers[1].lastName).toBe("Nguyễn Anh");
+
+      await expect(
+        authService.updateProfile("usr-member", {
+          firstName: "   ",
+          lastName: "Nguyễn",
+        }),
+      ).rejects.toThrow();
     });
   });
 });

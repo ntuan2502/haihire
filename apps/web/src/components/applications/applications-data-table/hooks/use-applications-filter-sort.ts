@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { matchesPersonNameSearch } from "@haihire/shared";
 import { getCandidateDisplayName } from "@/lib/utils";
 import type { Application, Job } from "@/types";
 import type { SortField, SortDirection } from "../types";
@@ -64,20 +65,20 @@ export function useApplicationsFilterSort({
       });
     }
     if (search.trim()) {
-      const q = search.toLowerCase().trim();
       list = list.filter((app) => {
         const job = app.jobId ? jobMap.get(app.jobId) : null;
-        return (
-          getCandidateDisplayName(app).toLowerCase().includes(q) ||
-          app.candidateName.toLowerCase().includes(q) ||
-          (app.candidate?.firstName &&
-            app.candidate.firstName.toLowerCase().includes(q)) ||
-          (app.candidate?.lastName &&
-            app.candidate.lastName.toLowerCase().includes(q)) ||
-          app.candidateEmail.toLowerCase().includes(q) ||
-          (app.candidatePhone &&
-            app.candidatePhone.toLowerCase().includes(q)) ||
-          (job && job.title.toLowerCase().includes(q))
+        return matchesPersonNameSearch(
+          {
+            firstName: app.candidate?.firstName,
+            lastName: app.candidate?.lastName,
+            displayName: app.candidate?.displayName,
+            name: getCandidateDisplayName(app),
+            candidateName: app.candidateName,
+            email: app.candidateEmail,
+            phone: app.candidatePhone,
+            extraFields: [job?.title],
+          },
+          search,
         );
       });
     }

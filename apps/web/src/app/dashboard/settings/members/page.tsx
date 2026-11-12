@@ -17,6 +17,7 @@ import { useI18n } from "@/i18n";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
+import { getUserDisplayName } from "@/lib/utils";
 import {
   InviteMemberCard,
   InviteLinksCard,
@@ -163,7 +164,9 @@ export default function MembersSettingsPage() {
       return members
         .map((m) => ({
           id: m.id,
-          name: m.name,
+          name: getUserDisplayName(m),
+          firstName: m.firstName ?? null,
+          lastName: m.lastName ?? null,
           email: m.email,
           role: m.role || "MEMBER",
           avatarUrl: m.avatarUrl,
@@ -188,7 +191,9 @@ export default function MembersSettingsPage() {
       return [
         {
           id: user.id,
-          name: user.name,
+          name: getUserDisplayName(user),
+          firstName: user.firstName ?? null,
+          lastName: user.lastName ?? null,
           email: user.email,
           role: user.role,
           avatarUrl: user.avatarUrl,

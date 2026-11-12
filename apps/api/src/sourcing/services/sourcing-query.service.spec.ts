@@ -40,7 +40,9 @@ describe("SourcingQueryService", () => {
   const candidateTable = createMockTable([
     {
       id: "cand-1",
-      name: "Alice",
+      firstName: "Alice",
+      lastName: "Smith",
+      displayName: null,
       email: "alice@example.com",
       organizationId: "org-1",
     },
@@ -90,7 +92,8 @@ describe("SourcingQueryService", () => {
   it("fetches candidates by IDs scoped to organization", async () => {
     const candidates = await service.getCandidatesByIds("org-1", ["cand-1"]);
     expect(candidates.length).toBe(1);
-    expect(candidates[0]?.name).toBe("Alice");
+    expect(candidates[0]?.firstName).toBe("Alice");
+    expect(candidates[0]?.lastName).toBe("Smith");
   });
 
   it("returns empty array when querying candidates with empty IDs", async () => {

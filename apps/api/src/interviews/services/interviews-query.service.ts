@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  foldVietnameseAccents,
   formatCandidateDisplayName,
   type NameDisplayOrder,
 } from "@haihire/shared";
@@ -9,6 +10,7 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
+import { findMatchingCandidateIds } from "../../common/person-search.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { formatInterviewRecord } from "../constants";
 
@@ -175,34 +177,24 @@ export class InterviewsQueryService {
     let isSearchActive = false;
     if (options?.search && options.search.trim()) {
       isSearchActive = true;
-      const q = options.search.trim().toLowerCase();
-      const [matchingCandidates, matchingJobs] = await Promise.all([
-        this.prisma.candidate.findMany({
-          where: {
-            ...(targetOrgId ? { organizationId: targetOrgId } : {}),
-            deletedAt: null,
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { firstName: { contains: q, mode: "insensitive" } },
-              { lastName: { contains: q, mode: "insensitive" } },
-              { displayName: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          select: { id: true },
+      const q = foldVietnameseAccents(options.search);
+      const [searchCandidateIds, matchingJobs] = await Promise.all([
+        findMatchingCandidateIds(this.prisma, {
+          organizationId: targetOrgId,
+          rawSearch: options.search,
         }),
         this.prisma.job.findMany({
           where: {
             ...(targetOrgId ? { organizationId: targetOrgId } : {}),
             deletedAt: null,
-            title: { contains: q, mode: "insensitive" },
           },
-          select: { id: true },
+          select: { id: true, title: true },
         }),
       ]);
 
-      const searchCandidateIds = matchingCandidates.map((c) => c.id);
-      const searchJobIds = matchingJobs.map((j) => j.id);
+      const searchJobIds = matchingJobs
+        .filter((j) => foldVietnameseAccents(j.title).includes(q))
+        .map((j) => j.id);
 
       if (searchCandidateIds.length > 0 || searchJobIds.length > 0) {
         const searchApps = await this.prisma.application.findMany({
@@ -316,7 +308,6 @@ export class InterviewsQueryService {
         where: { id: { in: neededCandidateIds } },
         select: {
           id: true,
-          name: true,
           firstName: true,
           lastName: true,
           displayName: true,
@@ -359,7 +350,7 @@ export class InterviewsQueryService {
       const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
       const job = app ? jobsMap.get(app.jobId) : undefined;
       const resolvedCandidateName = candidate
-        ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+        ? formatCandidateDisplayName(candidate, orgOrder) || "Candidate"
         : "Candidate";
 
       return {
@@ -375,7 +366,7 @@ export class InterviewsQueryService {
           ? {
               ...app,
               candidate: candidate
-                ? { ...candidate, name: candidate.name }
+                ? { ...candidate, name: resolvedCandidateName }
                 : undefined,
               job: job ? { ...job, title: job.title } : undefined,
               candidateName: resolvedCandidateName,
@@ -438,7 +429,7 @@ export class InterviewsQueryService {
       ? await resolveOrgNameDisplayOrder(this.prisma, interviewOrgId)
       : "FIRST_LAST";
     const resolvedCandidateName = candidate
-      ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+      ? formatCandidateDisplayName(candidate, orgOrder) || "Candidate"
       : "Candidate";
 
     return {
@@ -448,7 +439,7 @@ export class InterviewsQueryService {
         ? {
             ...app,
             candidate: candidate
-              ? { ...candidate, name: candidate.name }
+              ? { ...candidate, name: resolvedCandidateName }
               : undefined,
             job: job ? { ...job, title: job.title } : undefined,
           }

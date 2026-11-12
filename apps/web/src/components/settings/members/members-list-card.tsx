@@ -15,10 +15,13 @@ import {
   Trash2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getInitials, getUserDisplayName } from "@/lib/utils";
 
 export interface MemberItem {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   role: string;
   avatarUrl?: string | null;
@@ -100,6 +103,7 @@ export function MembersListCard({
       <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1">
         {members.map((m, index) => {
           const isMemberOwner = m.isOwner;
+          const displayName = getUserDisplayName(m);
 
           return (
             <div
@@ -114,18 +118,11 @@ export function MembersListCard({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={m.avatarUrl}
-                      alt={m.name}
+                      alt={displayName}
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span>
-                      {(m.name || "U")
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()}
-                    </span>
+                    <span>{getInitials(displayName)}</span>
                   )}
                 </div>
 
@@ -133,7 +130,7 @@ export function MembersListCard({
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                      {m.name}
+                      {displayName}
                     </span>
                     {m.isCurrent && (
                       <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">

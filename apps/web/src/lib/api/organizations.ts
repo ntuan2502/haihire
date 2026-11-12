@@ -213,6 +213,8 @@ export interface OrganizationAuditLogRecord {
   actor: {
     id: string;
     name: string;
+    firstName?: string | null;
+    lastName?: string | null;
     email: string;
     role: string;
     avatarUrl: string | null;

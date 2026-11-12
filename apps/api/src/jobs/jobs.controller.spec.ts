@@ -53,7 +53,8 @@ describe("JobsController public directory and detail privacy", () => {
           {
             id: "candidate-1",
             organizationId: "org-a",
-            name: "Alice",
+            firstName: "Alice",
+            lastName: "",
             email: "alice@example.com",
             resumeUrl: "private-cv",
           },

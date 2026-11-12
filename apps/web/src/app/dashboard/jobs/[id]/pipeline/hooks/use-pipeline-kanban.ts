@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { matchesPersonNameSearch } from "@haihire/shared";
 import {
   useJob,
   useJobApplications,
@@ -197,15 +198,16 @@ export function usePipelineKanban(jobId: string) {
       .filter((app) => app.stage === selectedStage)
       .filter((app) => {
         if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          getCandidateDisplayName(app).toLowerCase().includes(q) ||
-          app.candidateName.toLowerCase().includes(q) ||
-          (app.candidate?.firstName &&
-            app.candidate.firstName.toLowerCase().includes(q)) ||
-          (app.candidate?.lastName &&
-            app.candidate.lastName.toLowerCase().includes(q)) ||
-          app.candidateEmail.toLowerCase().includes(q)
+        return matchesPersonNameSearch(
+          {
+            firstName: app.candidate?.firstName,
+            lastName: app.candidate?.lastName,
+            displayName: app.candidate?.displayName,
+            name: getCandidateDisplayName(app),
+            candidateName: app.candidateName,
+            email: app.candidateEmail,
+          },
+          searchQuery,
         );
       })
       .sort((a, b) => {

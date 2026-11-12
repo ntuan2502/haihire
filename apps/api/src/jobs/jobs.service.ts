@@ -374,7 +374,6 @@ export class JobsService {
             },
             select: {
               id: true,
-              name: true,
               firstName: true,
               lastName: true,
               displayName: true,
@@ -411,7 +410,7 @@ export class JobsService {
     const populatedApps = applications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
       const resolvedCandidateName = candidate
-        ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+        ? formatCandidateDisplayName(candidate, orgOrder) || "Unknown"
         : "Unknown";
       if (!fullCandidateAccess) {
         return {
@@ -425,7 +424,7 @@ export class JobsService {
           candidate: candidate
             ? {
                 id: candidate.id,
-                name: candidate.name,
+                name: resolvedCandidateName,
                 firstName: candidate.firstName,
                 lastName: candidate.lastName,
                 displayName: candidate.displayName ?? null,
@@ -441,7 +440,12 @@ export class JobsService {
       }
       return {
         ...a,
-        candidate,
+        candidate: candidate
+          ? {
+              ...candidate,
+              name: resolvedCandidateName,
+            }
+          : undefined,
         candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,

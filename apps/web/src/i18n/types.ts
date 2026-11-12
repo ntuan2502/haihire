@@ -220,6 +220,10 @@ export interface TranslationSchema {
     registerSubtitle: string;
     fullNameLabel: string;
     fullNamePlaceholder: string;
+    firstNameLabel: string;
+    firstNamePlaceholder: string;
+    lastNameLabel: string;
+    lastNamePlaceholder: string;
     signUpButton: string;
     signingUp: string;
     hasAccount: string;
@@ -1476,6 +1480,17 @@ export interface TranslationSchema {
     generalProfileDesc: string;
     accountProfileDesc: string;
     accountInfoSub: string;
+    accountProfile: {
+      firstNameLabel: string;
+      firstNamePlaceholder: string;
+      lastNameLabel: string;
+      lastNamePlaceholder: string;
+      saveBtn: string;
+      savingBtn: string;
+      saveSuccess: string;
+      saveError: string;
+      nameRequiredError: string;
+    };
     openPublicCareers: string;
     workspaceSummaryDesc: string;
     accountPreferences: {

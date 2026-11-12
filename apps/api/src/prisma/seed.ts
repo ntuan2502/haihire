@@ -687,7 +687,8 @@ export async function runSeed(): Promise<void> {
     create: {
       id: adminUserId,
       email: DEMO_ACCOUNTS.ADMIN.email,
-      name: DEMO_ACCOUNTS.ADMIN.name,
+      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
       role: DEMO_ACCOUNTS.ADMIN.role,
       password: defaultPasswordHash,
       organizationId: null,
@@ -695,7 +696,8 @@ export async function runSeed(): Promise<void> {
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.ADMIN.name,
+      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
       role: DEMO_ACCOUNTS.ADMIN.role,
     },
     where: { email: DEMO_ACCOUNTS.ADMIN.email },
@@ -743,7 +745,8 @@ export async function runSeed(): Promise<void> {
     create: {
       id: memberUserId,
       email: DEMO_ACCOUNTS.MEMBER.email,
-      name: DEMO_ACCOUNTS.MEMBER.name,
+      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
       role: DEMO_ACCOUNTS.MEMBER.role,
       password: defaultPasswordHash,
       organizationId: adminOrgId,
@@ -751,7 +754,8 @@ export async function runSeed(): Promise<void> {
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.MEMBER.name,
+      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
       role: DEMO_ACCOUNTS.MEMBER.role,
       organizationId: adminOrgId,
     },
@@ -800,7 +804,8 @@ export async function runSeed(): Promise<void> {
     create: {
       id: betaAdminUserId,
       email: DEMO_ACCOUNTS.BETA_ADMIN.email,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
       role: DEMO_ACCOUNTS.BETA_ADMIN.role,
       password: defaultPasswordHash,
       organizationId: null,
@@ -808,7 +813,8 @@ export async function runSeed(): Promise<void> {
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
       role: DEMO_ACCOUNTS.BETA_ADMIN.role,
     },
     where: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
@@ -877,7 +883,6 @@ export async function runSeed(): Promise<void> {
     create: {
       id: betaCandidateId,
       organizationId: betaOrgId,
-      name: "Tran Beta",
       firstName: "Beta",
       lastName: "Tran",
       email: "candidate@beta.test",
@@ -888,7 +893,8 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(),
     },
     update: {
-      name: "Tran Beta",
+      firstName: "Beta",
+      lastName: "Tran",
     },
     where: { id: betaCandidateId },
   });
@@ -1703,7 +1709,6 @@ export async function runSeed(): Promise<void> {
   const candidatesToInsert: Array<{
     id: string;
     organizationId: string;
-    name: string;
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | "OTHER";
@@ -1883,7 +1888,6 @@ export async function runSeed(): Promise<void> {
     candidatesToInsert.push({
       id: candidateId,
       organizationId: adminOrgId,
-      name: candidate.name,
       firstName,
       lastName,
       gender,
@@ -2143,7 +2147,6 @@ export async function runSeed(): Promise<void> {
   candidatesToInsert.push({
     id: testCandidateId,
     organizationId: adminOrgId,
-    name: "Nguyen Test Applicant",
     firstName: "Test Applicant",
     lastName: "Nguyen",
     gender: "MALE",
@@ -2173,7 +2176,6 @@ export async function runSeed(): Promise<void> {
   candidatesToInsert.push({
     id: kanbanCandidateId,
     organizationId: adminOrgId,
-    name: "Tran Minh Kanban",
     firstName: "Minh Kanban",
     lastName: "Tran",
     gender: "MALE",

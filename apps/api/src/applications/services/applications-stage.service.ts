@@ -249,8 +249,10 @@ export class ApplicationsStageService {
         orgOrder = "LAST_FIRST";
       }
 
-      const resolvedCandidateName =
-        formatCandidateDisplayName(candidate, orgOrder) || candidate.name;
+      const resolvedCandidateName = formatCandidateDisplayName(
+        candidate,
+        orgOrder,
+      );
       const senderContext = currentUser?.name
         ? { name: currentUser.name }
         : undefined;

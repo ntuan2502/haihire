@@ -24,7 +24,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   interface MockUser {
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     role: string;
     organizationId: string | null;
     [key: string]: unknown;
@@ -76,7 +77,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       {
         id: "usr-1",
         email: "hr@tun.io.vn",
-        name: "HR Lead",
+        firstName: "HR",
+        lastName: "Lead",
         role: "ADMIN",
         organizationId: null,
         createdAt: new Date("2026-01-01T00:00:00Z"),
@@ -84,7 +86,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       {
         id: "usr-2",
         email: "admin@tun.io.vn",
-        name: "Admin",
+        firstName: "Admin",
+        lastName: "",
         role: "ADMIN",
         organizationId: "org-1",
         createdAt: new Date("2026-01-02T00:00:00Z"),
@@ -92,7 +95,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       {
         id: "usr-3",
         email: "member@tun.io.vn",
-        name: "Member User",
+        firstName: "Member",
+        lastName: "User",
         role: "MEMBER",
         organizationId: "org-1",
         createdAt: new Date("2026-01-03T00:00:00Z"),
@@ -210,7 +214,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(interviewers.length).toBe(3);
       expect(Object.keys(interviewers[0] || {}).sort()).toEqual([
         "email",
+        "firstName",
         "id",
+        "lastName",
         "name",
         "role",
       ]);
@@ -389,7 +395,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       mockUsers.push({
         id: "usr-hm",
         email: "hm@tun.io.vn",
-        name: "Hiring Manager User",
+        firstName: "Hiring Manager",
+        lastName: "User",
         role: "MEMBER",
         organizationId: null,
         createdAt: new Date(),
@@ -420,7 +427,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       mockUsers.push({
         id: "usr-recruiter",
         email: "recruiter@tun.io.vn",
-        name: "Recruiter User",
+        firstName: "Recruiter",
+        lastName: "User",
         role: "RECRUITER",
         organizationId: "org-1",
         createdAt: new Date(),
@@ -446,7 +454,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       mockUsers.push({
         id: "usr-recruiter",
         email: "recruiter@tun.io.vn",
-        name: "Recruiter User",
+        firstName: "Recruiter",
+        lastName: "User",
         role: "RECRUITER",
         organizationId: "org-1",
         createdAt: new Date(),
@@ -670,7 +679,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         mockUsers.push({
           id: `owner-${i}`,
           email: `owner-${i}@test.com`,
-          name: `Owner ${i}`,
+          firstName: "Owner",
+          lastName: `${i}`,
           role: "ADMIN",
           organizationId: `org-${i}`,
         });

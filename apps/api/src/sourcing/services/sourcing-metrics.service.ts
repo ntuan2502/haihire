@@ -2,6 +2,8 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
+  formatCandidateDisplayName,
+  matchesPersonNameSearch,
   type PaginatedResult,
   type SourcingStats,
   type AttributionLogItem,
@@ -12,6 +14,7 @@ import {
   type AttributedApplicationDetailItem,
   type TopReferrerItem,
 } from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -89,15 +92,15 @@ export class SourcingMetricsService {
     const candidateIds = Array.from(
       new Set(filteredApplications.map((a) => a.candidateId)),
     );
-    const candidates = await this.queryService.getCandidatesByIds(
-      organizationId,
-      candidateIds,
-    );
+    const [candidates, nameOrder] = await Promise.all([
+      this.queryService.getCandidatesByIds(organizationId, candidateIds),
+      resolveOrgNameDisplayOrder(this.prisma, organizationId),
+    ]);
     const candidateMap = new Map(
       candidates.map((c) => [
         c.id,
         {
-          name: c.name,
+          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
           firstName: c.firstName ?? null,
           lastName: c.lastName ?? null,
           displayName: c.displayName ?? null,
@@ -389,11 +392,15 @@ export class SourcingMetricsService {
       organizationId,
       candidateIds,
     );
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      organizationId,
+    );
     const candMap = new Map(
       candidates.map((c) => [
         c.id,
         {
-          name: c.name,
+          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
           firstName: c.firstName ?? null,
           lastName: c.lastName ?? null,
           displayName: c.displayName ?? null,
@@ -553,15 +560,15 @@ export class SourcingMetricsService {
     const candidateIds = Array.from(
       new Set(filtered.map((a) => a.candidateId)),
     );
-    const candidates = await this.queryService.getCandidatesByIds(
-      organizationId,
-      candidateIds,
-    );
+    const [candidates, nameOrder] = await Promise.all([
+      this.queryService.getCandidatesByIds(organizationId, candidateIds),
+      resolveOrgNameDisplayOrder(this.prisma, organizationId),
+    ]);
     const candidateMap = new Map(
       candidates.map((c) => [
         c.id,
         {
-          name: c.name,
+          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
           firstName: c.firstName ?? null,
           lastName: c.lastName ?? null,
           displayName: c.displayName ?? null,
@@ -571,17 +578,19 @@ export class SourcingMetricsService {
     );
 
     if (pagination.search) {
-      const q = pagination.search.toLowerCase();
+      const searchQuery = pagination.search;
       filtered = filtered.filter((a) => {
         const c = candidateMap.get(a.candidateId);
-        const nameMatch =
-          c?.name?.toLowerCase().includes(q) ||
-          c?.firstName?.toLowerCase().includes(q) ||
-          c?.lastName?.toLowerCase().includes(q) ||
-          c?.displayName?.toLowerCase().includes(q);
-        const emailMatch = c?.email?.toLowerCase().includes(q);
-        const campaignMatch = a.utmCampaign?.toLowerCase().includes(q);
-        return nameMatch || emailMatch || campaignMatch;
+        return matchesPersonNameSearch(
+          {
+            firstName: c?.firstName,
+            lastName: c?.lastName,
+            displayName: c?.displayName,
+            email: c?.email,
+            extraFields: [a.utmCampaign],
+          },
+          searchQuery,
+        );
       });
     }
 

@@ -9,6 +9,8 @@ const mockSetLocale = vi.fn();
 let mockCurrentUser: {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   preferredLanguage?: "vi" | "en" | null;
   preferredTimezone?: string | null;
@@ -17,12 +19,15 @@ let mockCurrentUser: {
     name: string;
     slug: string;
     defaultLanguage?: "vi" | "en";
+    nameDisplayOrder?: "FIRST_LAST" | "LAST_FIRST";
     timezone?: string;
     createdAt: string;
   };
 } = {
   id: "user-1",
-  name: "Recruiter Alice",
+  name: "Alice Recruiter",
+  firstName: "Alice",
+  lastName: "Recruiter",
   email: "alice@example.com",
   organization: {
     id: "org-1",
@@ -47,6 +52,7 @@ vi.mock("@/lib/api/auth", () => ({
   authApi: {
     changePassword: vi.fn(),
     updatePreferences: vi.fn(),
+    updateProfile: vi.fn(),
   },
 }));
 
@@ -59,6 +65,17 @@ vi.mock("@/i18n", () => ({
         "settings.tabs.accountSub": "Thông tin cá nhân & bảo mật",
         "settings.yourName": "Họ và tên",
         "settings.emailAddress": "Địa chỉ email",
+        "settings.accountProfile.firstNameLabel": "Tên",
+        "settings.accountProfile.firstNamePlaceholder": "Nhập tên",
+        "settings.accountProfile.lastNameLabel": "Họ và tên đệm",
+        "settings.accountProfile.lastNamePlaceholder": "Nhập họ và tên đệm",
+        "settings.accountProfile.saveBtn": "Lưu thay đổi",
+        "settings.accountProfile.savingBtn": "Đang lưu...",
+        "settings.accountProfile.saveSuccess": "Đã cập nhật thông tin cá nhân.",
+        "settings.accountProfile.saveError":
+          "Không thể cập nhật thông tin cá nhân.",
+        "settings.accountProfile.nameRequiredError":
+          "Vui lòng nhập đầy đủ họ và tên.",
         "nav.signOut": "Đăng xuất",
         "settings.changePasswordTitle": "Đổi mật khẩu",
         "settings.changePasswordSub": "Cập nhật mật khẩu tài khoản định kỳ",
@@ -109,7 +126,9 @@ describe("AccountSettingsPage Component", () => {
     vi.clearAllMocks();
     mockCurrentUser = {
       id: "user-1",
-      name: "Recruiter Alice",
+      name: "Alice Recruiter",
+      firstName: "Alice",
+      lastName: "Recruiter",
       email: "alice@example.com",
       preferredLanguage: null,
       preferredTimezone: null,
@@ -127,7 +146,8 @@ describe("AccountSettingsPage Component", () => {
   it("renders user information and password change form", () => {
     render(<AccountSettingsPage />);
 
-    expect(screen.getByDisplayValue("Recruiter Alice")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Alice")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Recruiter")).toBeInTheDocument();
     expect(screen.getByDisplayValue("alice@example.com")).toBeInTheDocument();
     expect(screen.getByText("Đổi mật khẩu")).toBeInTheDocument();
     expect(
@@ -135,6 +155,53 @@ describe("AccountSettingsPage Component", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText("Nhập mật khẩu mới (tối thiểu 6 ký tự)"),
+    ).toBeInTheDocument();
+  });
+
+  it("updates user firstName and lastName via updateProfile and validates blank names", async () => {
+    vi.mocked(authApi.updateProfile).mockResolvedValueOnce({
+      id: "user-1",
+      name: "Tuấn Nguyễn Anh",
+      firstName: "Tuấn",
+      lastName: "Nguyễn Anh",
+      email: "alice@example.com",
+      role: "ADMIN",
+      organizationId: "org-1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    render(<AccountSettingsPage />);
+
+    const firstNameInput = screen.getByLabelText("Tên");
+    const lastNameInput = screen.getByLabelText("Họ và tên đệm");
+
+    fireEvent.change(firstNameInput, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+    expect(
+      await screen.findByText("Vui lòng nhập đầy đủ họ và tên."),
+    ).toBeInTheDocument();
+    expect(authApi.updateProfile).not.toHaveBeenCalled();
+
+    fireEvent.change(firstNameInput, { target: { value: "Tuấn" } });
+    fireEvent.change(lastNameInput, { target: { value: "Nguyễn Anh" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        firstName: "Tuấn",
+        lastName: "Nguyễn Anh",
+      });
+    });
+
+    expect(mockUpdateUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: "Tuấn",
+        lastName: "Nguyễn Anh",
+      }),
+    );
+    expect(
+      await screen.findByText("Đã cập nhật thông tin cá nhân."),
     ).toBeInTheDocument();
   });
 

@@ -6,7 +6,8 @@ type Actor = { id: string; headers: { Cookie: string } };
 async function register(request: APIRequestContext): Promise<Actor> {
   const response = await request.post("/api/auth/register", {
     data: {
-      name: "Ownership Transfer Test",
+      firstName: "Ownership",
+      lastName: "Transfer Test",
       email: `ownership-${randomUUID()}@example.com`,
       password: "OwnershipTransferTest2026!",
     },

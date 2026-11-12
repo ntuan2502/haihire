@@ -256,6 +256,10 @@ export const vi: TranslationSchema = {
       "Bắt đầu tối ưu hóa quy trình tuyển dụng của bạn ngay hôm nay.",
     fullNameLabel: "Họ và tên",
     fullNamePlaceholder: "Nguyễn Văn A",
+    firstNameLabel: "Tên",
+    firstNamePlaceholder: "Văn A",
+    lastNameLabel: "Họ và tên đệm",
+    lastNamePlaceholder: "Nguyễn",
     signUpButton: "Đăng ký tài khoản",
     signingUp: "Đang tạo tài khoản...",
     hasAccount: "Đã có tài khoản?",
@@ -1654,6 +1658,17 @@ export const vi: TranslationSchema = {
       "Quản lý thông tin tài khoản, bảo mật mật khẩu và tùy chọn cá nhân.",
     accountInfoSub:
       "Thông tin nhận diện cơ bản trên tài khoản đăng nhập của bạn.",
+    accountProfile: {
+      firstNameLabel: "Tên",
+      firstNamePlaceholder: "Nhập tên",
+      lastNameLabel: "Họ và tên đệm",
+      lastNamePlaceholder: "Nhập họ và tên đệm",
+      saveBtn: "Lưu thay đổi",
+      savingBtn: "Đang lưu...",
+      saveSuccess: "Đã cập nhật thông tin cá nhân.",
+      saveError: "Không thể cập nhật thông tin cá nhân. Vui lòng thử lại.",
+      nameRequiredError: "Vui lòng nhập đầy đủ họ và tên.",
+    },
     openPublicCareers: "Mở trang tuyển dụng",
     workspaceSummaryDesc:
       "Thông tin tóm tắt về không gian làm việc và đường dẫn cổng tuyển dụng công khai của tổ chức.",

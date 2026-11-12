@@ -1089,9 +1089,17 @@ export interface UpdateUserPreferencesPayload {
   preferredTimezone?: string | null;
 }
 
+export interface UpdateUserProfilePayload {
+  firstName: string;
+  lastName: string;
+}
+
 export interface User {
   id: string;
   email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  /** Computed display name formatted per organization `nameDisplayOrder`. */
   name: string;
   role: Role;
   isOwner?: boolean;

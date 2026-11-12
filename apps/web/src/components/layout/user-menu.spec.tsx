@@ -16,6 +16,8 @@ vi.mock("next/navigation", () => ({
 const mockUser: User = {
   id: "user-1",
   email: "admin@haihire.vn",
+  firstName: "Hai",
+  lastName: "Admin",
   name: "Hai Admin",
   role: "ADMIN",
   organizationId: "org-1",

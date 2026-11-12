@@ -6,12 +6,10 @@ import {
   APP_ERROR_CODES,
   SourcingChannel,
   formatCandidateDisplayName,
+  normalizeNameInput,
   resolveChannelFromDomain,
 } from "@haihire/shared";
-import {
-  buildCandidateSearchName,
-  resolveOrgNameDisplayOrder,
-} from "../../common/candidate-name.util";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
 import {
   AppBadRequestException,
@@ -186,8 +184,8 @@ export class ApplicationsSagaService {
         let applicantName = "";
 
         if (!candidateId) {
-          const firstName = dto.firstName?.trim() || "";
-          const lastName = dto.lastName?.trim() || "";
+          const firstName = normalizeNameInput(dto.firstName);
+          const lastName = normalizeNameInput(dto.lastName);
           if (!dto.candidateEmail || !firstName || !lastName) {
             throw new AppBadRequestException(
               APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
@@ -197,7 +195,7 @@ export class ApplicationsSagaService {
 
           const email = dto.candidateEmail.trim().toLowerCase();
           const displayName = dto.displayName?.trim() || null;
-          applicantName = buildCandidateSearchName(
+          applicantName = formatCandidateDisplayName(
             { firstName, lastName, displayName },
             nameOrder,
           );
@@ -209,7 +207,6 @@ export class ApplicationsSagaService {
             },
             select: {
               id: true,
-              name: true,
               firstName: true,
               lastName: true,
               displayName: true,
@@ -218,7 +215,7 @@ export class ApplicationsSagaService {
 
           if (existingCandidate) {
             candidateId = existingCandidate.id;
-            applicantName = buildCandidateSearchName(
+            applicantName = formatCandidateDisplayName(
               existingCandidate,
               nameOrder,
             );
@@ -227,7 +224,6 @@ export class ApplicationsSagaService {
               data: {
                 id: crypto.randomUUID(),
                 organizationId: orgId,
-                name: applicantName,
                 firstName,
                 lastName,
                 displayName,
@@ -248,7 +244,6 @@ export class ApplicationsSagaService {
             where: { id: candidateId as string },
             select: {
               id: true,
-              name: true,
               firstName: true,
               lastName: true,
               displayName: true,
@@ -266,7 +261,7 @@ export class ApplicationsSagaService {
               `Candidate with ID ${candidateId} not found`,
             );
           }
-          applicantName = buildCandidateSearchName(
+          applicantName = formatCandidateDisplayName(
             existingCandidate,
             nameOrder,
           );
@@ -480,7 +475,7 @@ export class ApplicationsSagaService {
         type: "APPLIED",
         title: "Application Submitted",
         description: `Applied for ${job.title}`,
-        actorName: result.candidate.name,
+        actorName: result.candidateName || result.candidate.name,
         actorRole: "CANDIDATE",
         metadata: {
           jobId: job.id,
@@ -517,9 +512,10 @@ export class ApplicationsSagaService {
             if (org?.nameDisplayOrder === "LAST_FIRST") {
               orgOrder = "LAST_FIRST";
             }
-            const resolvedCandidateName =
-              formatCandidateDisplayName(result.candidate, orgOrder) ||
-              result.candidate.name;
+            const resolvedCandidateName = formatCandidateDisplayName(
+              result.candidate,
+              orgOrder,
+            );
 
             await this.emailService.sendEmail(
               {

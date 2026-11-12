@@ -10,6 +10,7 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
+import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
@@ -18,7 +19,10 @@ import {
 import {
   APP_ERROR_CODES,
   canonicalizeTimezone,
+  formatUserDisplayName,
+  normalizeNameInput,
   Role,
+  type NameDisplayOrder,
   type Permission,
   PERMISSIONS,
   hasPermission,
@@ -30,7 +34,8 @@ import { toInstant } from "../common/date.util";
 const USER_PROFILE_SELECT = {
   id: true,
   email: true,
-  name: true,
+  firstName: true,
+  lastName: true,
   role: true,
   avatarUrl: true,
   preferredLanguage: true,
@@ -122,7 +127,8 @@ export class AuthService {
             create: {
               id: adminUserId,
               email: normalizedEmail,
-              name: matchedDemo.name,
+              firstName: matchedDemo.firstName,
+              lastName: matchedDemo.lastName,
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: orgId,
@@ -130,7 +136,8 @@ export class AuthService {
             },
             update: {
               password: hashedPassword,
-              name: matchedDemo.name,
+              firstName: matchedDemo.firstName,
+              lastName: matchedDemo.lastName,
               role: matchedDemo.role,
               organizationId: orgId,
             },
@@ -146,7 +153,8 @@ export class AuthService {
             create: {
               id: crypto.randomUUID(),
               email: normalizedEmail,
-              name: matchedDemo.name,
+              firstName: matchedDemo.firstName,
+              lastName: matchedDemo.lastName,
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: null,
@@ -154,7 +162,8 @@ export class AuthService {
             },
             update: {
               password: hashedPassword,
-              name: matchedDemo.name,
+              firstName: matchedDemo.firstName,
+              lastName: matchedDemo.lastName,
               role: matchedDemo.role,
               organizationId: null,
             },
@@ -196,9 +205,14 @@ export class AuthService {
     const isOwner = Boolean(
       organization && organization.ownerId === sanitizedUser.id,
     );
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
 
     return {
       ...sanitizedUser,
+      name: formatUserDisplayName(sanitizedUser, orgOrder),
       isOwner,
       organization,
     };
@@ -230,6 +244,15 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const normalizedEmail = dto.email.toLowerCase().trim();
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "First name and last name are required.",
+      );
+    }
 
     const existing = await this.prisma.user.findFirst({
       where: { email: normalizedEmail },
@@ -250,7 +273,8 @@ export class AuthService {
       data: {
         id,
         email: normalizedEmail,
-        name: dto.name.trim(),
+        firstName,
+        lastName,
         password: hashedPassword,
         role: "MEMBER",
         organizationId: null,
@@ -259,10 +283,13 @@ export class AuthService {
       },
     });
 
+    const displayName = formatUserDisplayName({ firstName, lastName });
     const user = {
       id,
       email: normalizedEmail,
-      name: dto.name.trim(),
+      firstName,
+      lastName,
+      name: displayName,
       role: "MEMBER" as const,
       avatarUrl: null,
       preferredLanguage: null,
@@ -334,7 +361,8 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         organizationId: true,
         tokenVersion: true,
@@ -440,6 +468,8 @@ export class AuthService {
     user: {
       id: string;
       email: string;
+      firstName: string;
+      lastName: string;
       name: string;
       role: string;
       avatarUrl: string | null;
@@ -452,13 +482,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
+        ...USER_PROFILE_SELECT,
         password: true,
         tokenVersion: true,
       },
@@ -512,6 +536,15 @@ export class AuthService {
       { expiresIn: "7d" },
     );
 
+    const org = updatedUser.organizationId
+      ? await this.prisma.organization.findUnique({
+          where: { id: updatedUser.organizationId },
+          select: { nameDisplayOrder: true },
+        })
+      : null;
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+
     return {
       success: true,
       accessToken,
@@ -519,7 +552,9 @@ export class AuthService {
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
-        name: updatedUser.name,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        name: formatUserDisplayName(updatedUser, orgOrder),
         role: updatedUser.role,
         avatarUrl: updatedUser.avatarUrl,
         preferredLanguage: updatedUser.preferredLanguage,
@@ -556,8 +591,14 @@ export class AuthService {
       }
     }
 
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
+
     return {
       ...user,
+      name: formatUserDisplayName(user, orgOrder),
       preferredTimezone: user.preferredTimezone
         ? canonicalizeTimezone(user.preferredTimezone)
         : user.preferredTimezone,
@@ -569,6 +610,30 @@ export class AuthService {
           }
         : organization,
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateUserProfileDto) {
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "First name and last name are required.",
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName,
+        lastName,
+        updatedAt: toInstant(),
+      },
+      select: { id: true },
+    });
+
+    return this.getProfile(userId);
   }
 
   async updatePreferences(userId: string, dto: UpdateUserPreferencesDto) {

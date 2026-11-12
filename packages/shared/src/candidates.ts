@@ -1,5 +1,6 @@
 import type { Application } from "./applications";
 import type { NameDisplayOrder } from "./organizations";
+import { formatPersonDisplayName } from "./person-name";
 
 export function formatCandidateDisplayName(
   candidate:
@@ -15,16 +16,16 @@ export function formatCandidateDisplayName(
   order: NameDisplayOrder = "FIRST_LAST",
 ): string {
   if (!candidate) return "";
-  const custom = candidate.displayName?.trim();
-  if (custom) return custom;
-
-  const first = candidate.firstName?.trim() || "";
-  const last = candidate.lastName?.trim() || "";
-  if (first || last) {
-    const parts = order === "LAST_FIRST" ? [last, first] : [first, last];
-    return parts.filter(Boolean).join(" ").trim();
-  }
-  return (candidate.candidateName || candidate.name || "").trim();
+  return formatPersonDisplayName(
+    {
+      displayName: candidate.displayName,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      name: candidate.name,
+      fallbackName: candidate.candidateName,
+    },
+    order,
+  );
 }
 
 export const Gender = {
@@ -56,7 +57,8 @@ export interface CandidateLatestNoteSummary {
 export interface Candidate {
   id: string;
   organizationId: string;
-  name: string;
+  /** Computed dynamically on serialization from firstName / lastName / displayName. */
+  name?: string;
   firstName?: string | null;
   lastName?: string | null;
   displayName?: string | null;

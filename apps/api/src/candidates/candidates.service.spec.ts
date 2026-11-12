@@ -40,7 +40,6 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-1",
         organizationId: "org-1",
-        name: "Nguyen Van A",
         firstName: "A",
         lastName: "Nguyen Van",
         email: "nguyenvana@example.com",
@@ -58,7 +57,6 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-2",
         organizationId: "org-1",
-        name: "Tran Thi B",
         firstName: "B",
         lastName: "Tran Thi",
         email: "tranthib@example.com",
@@ -76,7 +74,6 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-deleted",
         organizationId: "org-1",
-        name: "Le Van C",
         firstName: "C",
         lastName: "Le Van",
         email: "levanc@example.com",
@@ -89,7 +86,6 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-other-org",
         organizationId: "org-2",
-        name: "Pham Van D",
         firstName: "D",
         lastName: "Pham Van",
         email: "phamvand@example.com",

@@ -45,6 +45,15 @@ export const organizationsApi = {
     return response.data;
   },
 
+  getInterviewers: async (): Promise<
+    Pick<User, "id" | "name" | "email" | "role">[]
+  > => {
+    const response = await api.get<
+      Pick<User, "id" | "name" | "email" | "role">[]
+    >("/organizations/my/interviewers");
+    return response.data;
+  },
+
   updateMyOrg: async (data: UpdateOrgPayload): Promise<Organization> => {
     const response = await api.patch<Organization>("/organizations/my", data);
     return response.data;

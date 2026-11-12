@@ -16,13 +16,13 @@ import {
   Save,
   Loader2,
   Lock,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getPermissionLabel } from "@/lib/roles";
+import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 
 const ROLES: Array<{
   role: Role;
@@ -139,7 +139,7 @@ export default function RolesPermissionsPage() {
     isLoading,
     isError,
     error,
-  } = useRolePermissionsMatrix();
+  } = useRolePermissionsMatrix({ enabled: canManageRoles });
   const updateMutation = useUpdateRolePermissionsMutation();
   const resetDefaultMutation = useResetRolePermissionsMutation();
 
@@ -250,6 +250,17 @@ export default function RolesPermissionsPage() {
     }
   };
 
+  if (!canManageRoles) {
+    return (
+      <SettingsAccessDenied
+        title={t("settings.rolesMatrix.title")}
+        description={t("settings.rolesMatrix.description")}
+        message={t("settings.rolesMatrix.accessDenied")}
+        icon={ShieldCheck}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 w-full space-y-6">
       {/* Header & Actions Bar */}
@@ -262,12 +273,6 @@ export default function RolesPermissionsPage() {
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
               {t("settings.rolesMatrix.badge")}
             </span>
-            {!canManageRoles && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                <Lock className="w-3 h-3" aria-hidden="true" />
-                {t("settings.rolesMatrix.readOnlyBadge")}
-              </span>
-            )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {t("settings.rolesMatrix.description")}
@@ -279,9 +284,7 @@ export default function RolesPermissionsPage() {
             variant="outline"
             size="sm"
             onClick={() => setIsResetConfirmOpen(true)}
-            disabled={
-              !canManageRoles || isSaving || resetDefaultMutation.isPending
-            }
+            disabled={isSaving || resetDefaultMutation.isPending}
             className="text-xs h-9 cursor-pointer"
           >
             {resetDefaultMutation.isPending ? (
@@ -295,64 +298,46 @@ export default function RolesPermissionsPage() {
             {t("settings.rolesMatrix.resetDefaultButton")}
           </Button>
 
-          {canManageRoles && (
-            <>
-              {dirtyCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReset}
-                  disabled={isSaving || resetDefaultMutation.isPending}
-                  className="text-xs h-9 cursor-pointer"
-                >
-                  <RotateCcw
-                    className="w-3.5 h-3.5 mr-1.5"
-                    aria-hidden="true"
-                  />
-                  {t("settings.rolesMatrix.resetButton")}
-                </Button>
-              )}
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={
-                  dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
-                }
-                className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2
-                      className="w-3.5 h-3.5 mr-1.5 animate-spin"
-                      aria-hidden="true"
-                    />
-                    {t("settings.rolesMatrix.savingButton")}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                    {t("settings.rolesMatrix.saveButton")}
-                  </>
-                )}
-              </Button>
-            </>
+          {dirtyCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              disabled={isSaving || resetDefaultMutation.isPending}
+              className="text-xs h-9 cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              {t("settings.rolesMatrix.resetButton")}
+            </Button>
           )}
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={
+              dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
+            }
+            className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isSaving ? (
+              <>
+                <Loader2
+                  className="w-3.5 h-3.5 mr-1.5 animate-spin"
+                  aria-hidden="true"
+                />
+                {t("settings.rolesMatrix.savingButton")}
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                {t("settings.rolesMatrix.saveButton")}
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Read-Only Notice */}
-      {!canManageRoles && (
-        <div
-          role="alert"
-          className="p-4 rounded-xl border border-amber-200/80 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-sm flex items-start gap-3 shadow-xs"
-        >
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-          <div>{t("settings.rolesMatrix.readOnlyNotice")}</div>
-        </div>
-      )}
-
       {/* Unsaved Changes Banner */}
-      {dirtyCount > 0 && canManageRoles && (
+      {dirtyCount > 0 && (
         <div
           role="status"
           className="p-3.5 rounded-xl border border-blue-200/80 bg-blue-50/80 dark:border-blue-900/60 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 text-sm flex items-center justify-between shadow-xs animate-in fade-in"

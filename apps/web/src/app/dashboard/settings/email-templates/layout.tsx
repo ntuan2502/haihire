@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, Sliders, History } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 
 export default function EmailTemplatesLayout({
   children,
@@ -13,6 +15,18 @@ export default function EmailTemplatesLayout({
 }) {
   const pathname = usePathname();
   const { t } = useI18n();
+  const canViewEmail = useHasPermission("email:view");
+
+  if (!canViewEmail) {
+    return (
+      <SettingsAccessDenied
+        title={t("email.templatesTitle")}
+        description={t("email.templatesSubtitle")}
+        message={t("email.accessDenied")}
+        icon={Mail}
+      />
+    );
+  }
 
   const isTemplates = pathname === "/dashboard/settings/email-templates";
   const isSettings = pathname.startsWith(

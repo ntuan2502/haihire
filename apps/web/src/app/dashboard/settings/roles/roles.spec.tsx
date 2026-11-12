@@ -53,14 +53,19 @@ let mockMatrixData: Record<Role, Record<string, boolean>> = {
   MEMBER: {},
 };
 
+let capturedMatrixOptions: { enabled?: boolean } | undefined;
+
 vi.mock("@/hooks/use-queries", () => ({
-  useRolePermissionsMatrix: () => ({
-    data: mockMatrixData,
-    isLoading: mockMatrixLoading,
-    isError: Boolean(mockMatrixError),
-    error: mockMatrixError,
-    refetch: vi.fn(),
-  }),
+  useRolePermissionsMatrix: (options?: { enabled?: boolean }) => {
+    capturedMatrixOptions = options;
+    return {
+      data: mockMatrixData,
+      isLoading: mockMatrixLoading,
+      isError: Boolean(mockMatrixError),
+      error: mockMatrixError,
+      refetch: vi.fn(),
+    };
+  },
   useUpdateRolePermissionsMutation: () => ({
     mutateAsync: mockUpdateRolePermissionsMutateAsync,
     isPending: false,
@@ -133,6 +138,7 @@ vi.mock("@/i18n", () => ({
 describe("RolesPermissionsSettingsPage Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedMatrixOptions = undefined;
     mockCanManageRoles = true;
     mockMatrixLoading = false;
     mockMatrixError = null;
@@ -396,25 +402,23 @@ describe("RolesPermissionsSettingsPage Component", () => {
     });
   });
 
-  it("locks all checkboxes and shows read-only notice when user lacks org:manage_roles", () => {
+  it("renders access denied alert and hides permission matrix when user lacks org:manage_roles", () => {
     mockCanManageRoles = false;
     render(<RolesPermissionsSettingsPage />);
 
+    expect(capturedMatrixOptions).toEqual({ enabled: false });
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("settings.rolesMatrix.accessDenied");
     expect(
-      screen.getByText(
-        "You are viewing the permission matrix in read-only mode.",
-      ),
-    ).toBeInTheDocument();
-
-    // Checkboxes should all be disabled
-    const recruiterJobView = screen.getByRole("checkbox", {
-      name: "Recruiter: View jobs",
-    });
-    expect(recruiterJobView).toBeDisabled();
-
-    // Action buttons (Save/Reset) are not rendered in read-only mode
+      screen.queryByRole("table", {
+        name: "Matrix of roles and permissions in this organization",
+      }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Save Changes" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Reset to Default/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -481,14 +485,14 @@ describe("RolesPermissionsSettingsPage Component", () => {
       expect(mockResetRolePermissionsMutateAsync).not.toHaveBeenCalled();
     });
 
-    it("disables reset to default button when user lacks org:manage_roles", () => {
+    it("does not expose reset to default action when user lacks org:manage_roles", () => {
       mockCanManageRoles = false;
       render(<RolesPermissionsSettingsPage />);
 
-      const resetDefaultBtn = screen.getByRole("button", {
-        name: /Reset to Default/i,
-      });
-      expect(resetDefaultBtn).toBeDisabled();
+      expect(
+        screen.queryByRole("button", { name: /Reset to Default/i }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("alert")).toBeInTheDocument();
     });
   });
 });

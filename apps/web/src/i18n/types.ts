@@ -248,6 +248,9 @@ export interface TranslationSchema {
     featureLifecycle: string;
     featureInvites: string;
     footerNote: string;
+    sseRoleChanged: string;
+    sseOrgRemoved: string;
+    ssePermissionsChanged: string;
   };
   landing: {
     product: string;
@@ -1306,6 +1309,7 @@ export interface TranslationSchema {
   members: {
     title: string;
     subtitle: string;
+    accessDenied: string;
     inviteMemberTitle: string;
     inviteEmailPlaceholder: string;
     sendInvite: string;
@@ -1556,6 +1560,7 @@ export interface TranslationSchema {
     integrations: {
       title: string;
       description: string;
+      accessDenied: string;
       tabs: {
         webhooks: string;
       };
@@ -1617,6 +1622,7 @@ export interface TranslationSchema {
     rolesMatrix: {
       title: string;
       description: string;
+      accessDenied: string;
       badge: string;
       readOnlyBadge: string;
       readOnlyNotice: string;
@@ -1871,6 +1877,7 @@ export interface TranslationSchema {
   email: {
     templatesTitle: string;
     templatesSubtitle: string;
+    accessDenied: string;
     tabTemplates: string;
     tabSettings: string;
     tabLogs: string;

@@ -288,6 +288,11 @@ export const vi: TranslationSchema = {
     featureLifecycle: "Quản lý toàn diện vòng đời tuyển dụng nhân sự",
     featureInvites: "Mời thành viên tức thì & phân quyền linh hoạt",
     footerNote: "{brand} • Không gian Tuyển dụng Nội bộ • Tên miền @{domain}",
+    sseRoleChanged: "Vai trò của bạn đã được cập nhật thành {role}.",
+    sseOrgRemoved:
+      "Bạn đã bị xóa khỏi tổ chức này hoặc không gian làm việc đã bị xóa.",
+    ssePermissionsChanged:
+      "Phân quyền vai trò trong tổ chức vừa được cập nhật.",
   },
   landing: {
     product: "Sản phẩm",
@@ -1456,6 +1461,7 @@ export const vi: TranslationSchema = {
   members: {
     title: "Thành viên nhóm",
     subtitle: "Quản lý thành viên trong tổ chức và các liên kết mời tham gia.",
+    accessDenied: "Bạn không có quyền quản lý thành viên và lời mời.",
     inviteMemberTitle: "Mời thành viên mới",
     inviteEmailPlaceholder: "dongnghiep@congty.com",
     sendInvite: "Gửi lời mời",
@@ -1738,6 +1744,7 @@ export const vi: TranslationSchema = {
       title: "Tích hợp & Webhook",
       description:
         "Quản lý các kết nối webhook tùy chỉnh để nhận thông báo thời gian thực về sự kiện tuyển dụng và cảnh báo hệ thống.",
+      accessDenied: "Bạn không có quyền quản lý tích hợp và webhook.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1803,6 +1810,8 @@ export const vi: TranslationSchema = {
       title: "Vai trò & Phân quyền",
       description:
         "Quản lý và tùy chỉnh phân quyền chi tiết cho từng vai trò trong tổ chức.",
+      accessDenied:
+        "Bạn không có quyền xem hoặc quản lý vai trò và phân quyền.",
       badge: "Ma trận phân quyền",
       readOnlyBadge: "Chế độ xem",
       readOnlyNotice:
@@ -2081,6 +2090,8 @@ export const vi: TranslationSchema = {
     templatesTitle: "Mẫu Email Tuyển dụng",
     templatesSubtitle:
       "Cấu hình các mẫu email tự động gửi cho ứng viên theo từng giai đoạn trong quy trình tuyển dụng.",
+    accessDenied:
+      "Bạn không có quyền truy cập mẫu email tuyển dụng và cấu hình gửi thư.",
     tabTemplates: "Mẫu Email",
     tabSettings: "Cấu hình gửi thư (SMTP)",
     tabLogs: "Nhật ký gửi thư",

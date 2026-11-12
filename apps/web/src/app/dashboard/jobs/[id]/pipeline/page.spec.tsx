@@ -82,7 +82,7 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
-  useOrgMembers: () => ({ data: [], isLoading: false }),
+  useOrgInterviewers: () => ({ data: [], isLoading: false }),
 }));
 
 vi.mock("@/components/interviews/schedule-interview-modal", () => ({

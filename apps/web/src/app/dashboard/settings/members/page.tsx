@@ -12,7 +12,7 @@ import {
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Users } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -26,6 +26,7 @@ import {
   RevokeLinkModal,
   type MemberModalTarget,
 } from "@/components/settings/members";
+import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 
 export default function MembersSettingsPage() {
   const { user, canEdit, isOwner, refreshUser } = useAuth();
@@ -44,7 +45,9 @@ export default function MembersSettingsPage() {
     [t],
   );
 
-  const { data: members = [], refetch: refetchMembers } = useOrgMembers();
+  const { data: members = [], refetch: refetchMembers } = useOrgMembers({
+    enabled: canManageMembers,
+  });
   const { data: serverInviteLinks = [], refetch: refetchLinks } =
     useInviteLinks({ enabled: canManageMembers });
   const revokeInviteMutation = useRevokeInviteLinkMutation();
@@ -199,6 +202,17 @@ export default function MembersSettingsPage() {
 
     return [];
   }, [members, user]);
+
+  if (!canManageMembers) {
+    return (
+      <SettingsAccessDenied
+        title={t("members.title")}
+        description={t("members.subtitle")}
+        message={t("members.accessDenied")}
+        icon={Users}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

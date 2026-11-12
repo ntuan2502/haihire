@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useI18n } from "@/i18n";
-import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useWebhookSettingsQuery,
   useCreateWebhookSettingMutation,
@@ -15,22 +15,26 @@ import type {
   WebhookEventType,
   WebhookProviderType,
 } from "@haihire/shared";
-import { Plus, Webhook, ShieldAlert } from "lucide-react";
+import { Plus, Webhook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   WebhookSettingsTable,
   WebhookModal,
   DeleteWebhookModal,
 } from "@/components/settings/integrations";
+import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 import { toast } from "sonner";
 import { cn } from "cn";
 
 export default function IntegrationsSettingsPage() {
   const { t } = useI18n();
-  const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const canManageIntegrations = useHasPermission(
+    "settings:manage_integrations",
+  );
 
-  const { data: webhookSettings = [], isLoading } = useWebhookSettingsQuery();
+  const { data: webhookSettings = [], isLoading } = useWebhookSettingsQuery({
+    enabled: canManageIntegrations,
+  });
   const createMutation = useCreateWebhookSettingMutation();
   const updateMutation = useUpdateWebhookSettingMutation();
   const deleteMutation = useDeleteWebhookSettingMutation();
@@ -155,6 +159,17 @@ export default function IntegrationsSettingsPage() {
     }
   };
 
+  if (!canManageIntegrations) {
+    return (
+      <SettingsAccessDenied
+        title={t("settings.integrations.title")}
+        description={t("settings.integrations.description")}
+        message={t("settings.integrations.accessDenied")}
+        icon={Webhook}
+      />
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
       {/* Page Header */}
@@ -187,34 +202,21 @@ export default function IntegrationsSettingsPage() {
       {/* Main Content Area */}
       {activeTab === "webhooks" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                {!isAdmin && (
-                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                    <ShieldAlert className="h-3.5 w-3.5" />
-                    {t("settings.integrations.webhooks.adminOnly")}
-                  </span>
-                )}
-              </p>
-            </div>
-
-            {isAdmin && (
-              <Button
-                id="add-webhook-btn"
-                onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 shadow-sm"
-              >
-                <Plus className="h-4 w-4" />
-                <span>{t("settings.integrations.webhooks.addButton")}</span>
-              </Button>
-            )}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+            <Button
+              id="add-webhook-btn"
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t("settings.integrations.webhooks.addButton")}</span>
+            </Button>
           </div>
 
           <WebhookSettingsTable
             webhookSettings={webhookSettings}
             isLoading={isLoading}
-            isAdmin={isAdmin}
+            isAdmin={canManageIntegrations}
             onOpenAdd={handleOpenAdd}
             onOpenEdit={handleOpenEdit}
             onDelete={(id) => setDeletingId(id)}

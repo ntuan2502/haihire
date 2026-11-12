@@ -143,7 +143,7 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockUpdateInterview,
     isPending: false,
   }),
-  useOrgMembers: () => ({
+  useOrgInterviewers: () => ({
     data: [
       {
         id: "mem-1",

@@ -18,6 +18,7 @@ export const queryKeys = {
   myOrg: () => ["organization", "my"] as const,
   myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
+  orgInterviewers: () => ["organization", "interviewers"] as const,
   inviteLinks: () => ["organization", "invite-links"] as const,
   rolePermissionsMatrix: () =>
     ["organization", "roles", "permissions"] as const,

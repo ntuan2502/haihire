@@ -87,6 +87,17 @@ describe("use-webhook-setting-queries", () => {
     expect(webhookSettingsApi.getWebhookSettings).toHaveBeenCalledTimes(1);
   });
 
+  it("Case 2b: useWebhookSettingsQuery does not fetch when enabled is false", () => {
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(
+      () => useWebhookSettingsQuery({ enabled: false }),
+      { wrapper },
+    );
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(webhookSettingsApi.getWebhookSettings).not.toHaveBeenCalled();
+  });
+
   it("Case 3: useCreateWebhookSettingMutation invalidates queries on both onSuccess and onError", async () => {
     const { queryClient, wrapper } = createWrapper();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");

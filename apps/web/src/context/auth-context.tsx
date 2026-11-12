@@ -6,11 +6,18 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClientContext } from "@tanstack/react-query";
+import { isAppEventType, type AppEvent } from "@haihire/shared";
+import { toast } from "sonner";
 import { api, getApiBaseUrl } from "@/lib/api/client";
+import { queryKeys } from "@/hooks/query-keys";
+import { createRealtimeInvalidator } from "@/lib/realtime-sync";
+import { getOrgRoleLabel } from "@/lib/roles";
+import { useOptionalI18n } from "@/i18n/optional";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
@@ -80,16 +87,20 @@ function isSessionRequiredRoute(pathname: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  let queryClient: ReturnType<typeof useQueryClient> | null = null;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    queryClient = useQueryClient();
-  } catch {
-    queryClient = null;
-  }
+  const routerRef = useRef(router);
+  const queryClient = useContext(QueryClientContext) ?? null;
+  const { t } = useOptionalI18n();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const userRef = useRef<User | null>(null);
+  const tRef = useRef(t);
+
+  useEffect(() => {
+    routerRef.current = router;
+    userRef.current = user;
+    tRef.current = t;
+  }, [router, user, t]);
 
   const setSession = useCallback(
     (newAccessToken: string, newRefreshToken?: string, newUserData?: User) => {
@@ -126,9 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Best-effort cleanup of HttpOnly session cookies
     }
     clearAuthCookies();
-    router.replace("/auth/login");
-    router.refresh?.();
-  }, [queryClient, router]);
+    routerRef.current.replace("/auth/login");
+    routerRef.current.refresh?.();
+  }, [queryClient]);
 
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
@@ -152,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof window !== "undefined" &&
           window.location.pathname.startsWith("/dashboard")
         ) {
-          router.replace("/auth/onboarding");
+          routerRef.current.replace("/auth/onboarding");
         }
       }
 
@@ -189,13 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearAuthCookies();
 
         if (onSessionRoute) {
-          router.replace("/auth/login");
-          router.refresh?.();
+          routerRef.current.replace("/auth/login");
+          routerRef.current.refresh?.();
         }
       }
       return null;
     }
-  }, [queryClient, router]);
+  }, [queryClient]);
 
   // Initialize auth state from localStorage and verify with backend
   useEffect(() => {
@@ -230,6 +241,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!currentUserId || typeof EventSource === "undefined") return;
 
+    const invalidator = queryClient
+      ? createRealtimeInvalidator(queryClient)
+      : null;
     const sseBaseUrl = getApiBaseUrl();
     const eventSource = new EventSource(`${sseBaseUrl}/events/sse`, {
       withCredentials: true,
@@ -237,49 +251,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     eventSource.onmessage = (e) => {
       try {
-        const data = JSON.parse(e.data);
+        const parsed: unknown = JSON.parse(e.data);
+        if (
+          !parsed ||
+          typeof parsed !== "object" ||
+          !("type" in parsed) ||
+          typeof parsed.type !== "string"
+        ) {
+          return;
+        }
 
         // Notify entire app of SSE events
         if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent("ats:sse_event", { detail: data }),
+            new CustomEvent("ats:sse_event", { detail: parsed }),
           );
         }
 
-        if (data.type === "ORGANIZATION_REMOVED") {
-          if (data.userId === currentUserId) {
-            refreshUser().then((updatedUser) => {
-              if (!updatedUser) return;
-              setUser(updatedUser);
-              localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-              setAuthCookies(token, false);
+        if (!isAppEventType(parsed.type)) {
+          return;
+        }
 
-              if (
-                typeof window !== "undefined" &&
-                window.location.pathname.startsWith("/dashboard")
-              ) {
-                router.replace("/auth/onboarding");
-              }
+        const data = parsed as AppEvent;
+        invalidator?.scheduleForEvent(data.type);
+
+        const activeUser = userRef.current;
+
+        if (data.type === "MEMBER_ROLE_UPDATED") {
+          if (data.targetUserId === currentUserId) {
+            const previousRole = activeUser?.role;
+            const nextRole = data.role;
+            if (nextRole && nextRole !== previousRole) {
+              toast.warning(
+                tRef.current("auth.sseRoleChanged", {
+                  role: getOrgRoleLabel(nextRole, tRef.current),
+                }),
+              );
+            }
+            void refreshUser().finally(() => {
+              if (!queryClient) return;
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myPermissions(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.rolePermissionsMatrix(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myOrg(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myOrgs(),
+              });
             });
           }
-        } else if (data.type === "ORGANIZATION_SWITCHED") {
-          if (data.userId === currentUserId) {
-            refreshUser().then((updatedUser) => {
-              if (updatedUser) {
-                setUser(updatedUser);
-                localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-                setAuthCookies(token, Boolean(updatedUser.organizationId));
-              }
+        } else if (data.type === "MEMBER_REMOVED") {
+          if (data.targetUserId === currentUserId) {
+            toast.warning(tRef.current("auth.sseOrgRemoved"));
+            void refreshUser().finally(() => {
+              if (!queryClient) return;
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myOrg(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myOrgs(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.myPermissions(),
+              });
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.rolePermissionsMatrix(),
+              });
             });
           }
-        } else if (data.type === "ROLE_CHANGED") {
-          if (data.userId === currentUserId) {
-            refreshUser().then((updatedUser) => {
-              if (updatedUser) {
-                setUser(updatedUser);
-                localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-              }
-            });
+        } else if (data.type === "PERMISSIONS_CHANGED") {
+          if (
+            activeUser &&
+            !activeUser.isOwner &&
+            activeUser.role !== "ADMIN" &&
+            (!data.role || data.role === activeUser.role || data.role === "ALL")
+          ) {
+            toast.info(tRef.current("auth.ssePermissionsChanged"));
+          }
+        } else if (data.type === "ORG_UPDATED") {
+          if (!data.targetUserId || data.targetUserId === currentUserId) {
+            void refreshUser();
           }
         }
       } catch (err) {
@@ -305,11 +360,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      invalidator?.cancel();
       eventSource.close();
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [token, currentUserId, refreshUser, router]);
+  }, [currentUserId, queryClient, refreshUser]);
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{

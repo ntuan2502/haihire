@@ -8,14 +8,14 @@ import {
 import { queryKeys } from "./query-keys";
 import { useAuth } from "@/context/auth-context";
 
-export function useWebhookSettingsQuery() {
+export function useWebhookSettingsQuery(options?: { enabled?: boolean }) {
   const { user } = useAuth();
   const orgId = user?.organizationId;
 
   return useQuery({
     queryKey: queryKeys.webhookSettings(orgId),
     queryFn: () => webhookSettingsApi.getWebhookSettings(),
-    enabled: Boolean(orgId),
+    enabled: Boolean(orgId) && (options?.enabled ?? true),
     staleTime: 30 * 1000,
   });
 }

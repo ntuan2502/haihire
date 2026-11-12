@@ -22,8 +22,9 @@ import {
   useCreateInterviewMutation,
   useUpdateInterviewMutation,
   useUpdateStageMutation,
-  useOrgMembers,
+  useOrgInterviewers,
 } from "@/hooks/use-queries";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   extractDateTimeInTimezone,
   combineDateTimeInTimezone,
@@ -76,7 +77,10 @@ export function ScheduleInterviewModal({
     isConfigured,
   );
   const queryClient = useQueryClient();
-  const { data: members = [] } = useOrgMembers();
+  const canManageInterviews = useHasPermission("interview:create");
+  const { data: members = [] } = useOrgInterviewers({
+    enabled: isOpen && canManageInterviews,
+  });
   const createInterviewMutation = useCreateInterviewMutation();
   const updateInterviewMutation = useUpdateInterviewMutation();
   const updateStageMutation = useUpdateStageMutation();

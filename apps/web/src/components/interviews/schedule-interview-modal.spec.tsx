@@ -28,7 +28,7 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockUpdateStageMutateAsync,
     isPending: false,
   }),
-  useOrgMembers: () => ({
+  useOrgInterviewers: () => ({
     data: [
       { id: "mem-1", name: "Nguyen Recruiter", email: "recruiter@haihire.vn" },
       { id: "mem-2", name: "Tran Tech Lead", email: "techlead@haihire.vn" },

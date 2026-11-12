@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { AuthProvider, useAuth } from "./auth-context";
 import { api } from "@/lib/api/client";
@@ -175,5 +177,303 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
 
     expect(result.current.loading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
+  });
+});
+
+interface MockEventSourceInstance {
+  url: string;
+  withCredentials?: boolean;
+  onmessage: ((event: MessageEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  close: ReturnType<typeof vi.fn>;
+}
+
+describe("AuthProvider - Real-Time SSE Sync", () => {
+  const originalEventSource = globalThis.EventSource;
+  let latestSource: MockEventSourceInstance | null = null;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(api.get).mockReset();
+    localStorage.clear();
+    latestSource = null;
+
+    const recordSource = (source: MockEventSourceInstance) => {
+      latestSource = source;
+    };
+
+    class MockEventSource implements MockEventSourceInstance {
+      url: string;
+      withCredentials?: boolean;
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+      close = vi.fn();
+
+      constructor(url: string, init?: EventSourceInit) {
+        this.url = url;
+        this.withCredentials = init?.withCredentials;
+        recordSource(this);
+      }
+    }
+
+    globalThis.EventSource = MockEventSource as unknown as typeof EventSource;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    globalThis.EventSource = originalEventSource;
+  });
+
+  it("refreshes user, invalidates permission/org queries, and shows warning toast on self MEMBER_ROLE_UPDATED", async () => {
+    window.history.pushState({}, "", "/dashboard/settings/members");
+    const warnSpy = vi.spyOn(toast, "warning");
+    const sseListener = vi.fn();
+    window.addEventListener("ats:sse_event", sseListener);
+
+    const queryClient = new QueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-1",
+        email: "u1@test.local",
+        name: "User One",
+        role: "ADMIN",
+        isOwner: false,
+        organizationId: "org-1",
+      },
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.role).toBe("ADMIN");
+      expect(latestSource).not.toBeNull();
+    });
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-1",
+        email: "u1@test.local",
+        name: "User One",
+        role: "MEMBER",
+        isOwner: false,
+        organizationId: "org-1",
+      },
+    });
+
+    await act(async () => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "MEMBER_ROLE_UPDATED",
+            targetUserId: "u-1",
+            role: "MEMBER",
+            orgId: "org-1",
+          }),
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.user?.role).toBe("MEMBER");
+    });
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(sseListener).toHaveBeenCalled();
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["auth", "me", "permissions"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["organization", "roles", "permissions"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["organization", "my"],
+    });
+
+    window.removeEventListener("ats:sse_event", sseListener);
+  });
+
+  it("warns and refreshes user on self MEMBER_REMOVED", async () => {
+    window.history.pushState({}, "", "/dashboard/jobs");
+    const warnSpy = vi.spyOn(toast, "warning");
+    const queryClient = new QueryClient();
+
+    vi.mocked(api.get)
+      .mockResolvedValueOnce({
+        data: {
+          id: "u-2",
+          email: "u2@test.local",
+          name: "User Two",
+          role: "MEMBER",
+          isOwner: false,
+          organizationId: "org-1",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "u-2",
+          email: "u2@test.local",
+          name: "User Two",
+          role: "MEMBER",
+          isOwner: false,
+          organizationId: null,
+        },
+      });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.id).toBe("u-2");
+      expect(latestSource).not.toBeNull();
+    });
+
+    await act(async () => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "MEMBER_REMOVED",
+            targetUserId: "u-2",
+            orgId: "org-1",
+          }),
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith("/auth/onboarding");
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("coalesces domain SSE updates and invalidates matching queries automatically", async () => {
+    const queryClient = new QueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-3",
+        email: "u3@test.local",
+        name: "User Three",
+        role: "RECRUITER",
+        isOwner: false,
+        organizationId: "org-1",
+      },
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.id).toBe("u-3");
+      expect(latestSource).not.toBeNull();
+    });
+
+    vi.useFakeTimers();
+
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "APPLICATIONS_CHANGED",
+            orgId: "org-1",
+          }),
+        }),
+      );
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "CANDIDATES_CHANGED",
+            orgId: "org-1",
+          }),
+        }),
+      );
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(120);
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["applications"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["job-applications"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["candidates"],
+    });
+  });
+
+  it("notifies only matching non-admin members on PERMISSIONS_CHANGED", async () => {
+    const infoSpy = vi.spyOn(toast, "info");
+    const queryClient = new QueryClient();
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-4",
+        email: "u4@test.local",
+        name: "User Four",
+        role: "MEMBER",
+        isOwner: false,
+        organizationId: "org-1",
+      },
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.id).toBe("u-4");
+      expect(latestSource).not.toBeNull();
+    });
+
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "PERMISSIONS_CHANGED",
+            orgId: "org-1",
+            role: "RECRUITER",
+          }),
+        }),
+      );
+    });
+    expect(infoSpy).not.toHaveBeenCalled();
+
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "PERMISSIONS_CHANGED",
+            orgId: "org-1",
+            role: "MEMBER",
+          }),
+        }),
+      );
+    });
+    expect(infoSpy).toHaveBeenCalledTimes(1);
   });
 });

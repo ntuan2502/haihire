@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi, authApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
@@ -102,29 +101,19 @@ export function useDeleteMyOrgMutation() {
   });
 }
 
-export function useOrgMembers() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const handleSseEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (
-        customEvent.detail?.type === "MEMBER_REMOVED" ||
-        customEvent.detail?.type === "MEMBER_ROLE_UPDATED"
-      ) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("ats:sse_event", handleSseEvent);
-      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
-    }
-  }, [queryClient]);
-
+export function useOrgMembers(options?: { enabled?: boolean }) {
   return useQuery<User[]>({
     queryKey: queryKeys.orgMembers(),
     queryFn: () => organizationsApi.getMembers(),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useOrgInterviewers(options?: { enabled?: boolean }) {
+  return useQuery<Pick<User, "id" | "name" | "email" | "role">[]>({
+    queryKey: queryKeys.orgInterviewers(),
+    queryFn: () => organizationsApi.getInterviewers(),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -198,27 +187,6 @@ export function useRemoveMemberMutation() {
 }
 
 export function useRolePermissionsMatrix(options?: { enabled?: boolean }) {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const handleSseEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail?.type === "PERMISSIONS_CHANGED") {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.rolePermissionsMatrix(),
-        });
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.myPermissions(),
-        });
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("ats:sse_event", handleSseEvent);
-      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
-    }
-  }, [queryClient]);
-
   return useQuery<Record<Role, Record<Permission, boolean>>>({
     queryKey: queryKeys.rolePermissionsMatrix(),
     queryFn: () => organizationsApi.getRolePermissionsMatrix(),
@@ -273,36 +241,18 @@ export function useResetRolePermissionsMutation() {
   });
 }
 
-export function useAuditLogsQuery(params?: {
-  action?: string;
-  resource?: string;
-  limit?: number;
-  offset?: number;
-}) {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const handleSseEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (
-        customEvent.detail?.type === "PERMISSIONS_CHANGED" ||
-        customEvent.detail?.type === "MEMBER_ROLE_UPDATED" ||
-        customEvent.detail?.type === "MEMBER_REMOVED"
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: ["organization", "audit-logs"],
-        });
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("ats:sse_event", handleSseEvent);
-      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
-    }
-  }, [queryClient]);
-
+export function useAuditLogsQuery(
+  params?: {
+    action?: string;
+    resource?: string;
+    limit?: number;
+    offset?: number;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.auditLogs(params),
     queryFn: () => organizationsApi.getAuditLogs(params),
+    enabled: options?.enabled ?? true,
   });
 }

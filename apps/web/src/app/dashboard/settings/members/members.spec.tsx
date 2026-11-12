@@ -82,16 +82,25 @@ const mockMembersList = [
   },
 ];
 
+let capturedMembersOptions: { enabled?: boolean } | undefined;
+let capturedInviteLinksOptions: { enabled?: boolean } | undefined;
+
 vi.mock("@/hooks/use-queries", () => ({
-  useOrgMembers: () => ({
-    data: mockMembersList,
-    isLoading: false,
-    refetch: vi.fn(),
-  }),
-  useInviteLinks: () => ({
-    data: mockInviteLinks,
-    refetch: mockRefetchLinks,
-  }),
+  useOrgMembers: (options?: { enabled?: boolean }) => {
+    capturedMembersOptions = options;
+    return {
+      data: mockMembersList,
+      isLoading: false,
+      refetch: vi.fn(),
+    };
+  },
+  useInviteLinks: (options?: { enabled?: boolean }) => {
+    capturedInviteLinksOptions = options;
+    return {
+      data: mockInviteLinks,
+      refetch: mockRefetchLinks,
+    };
+  },
   useCreateInviteLinkMutation: () => ({
     mutateAsync: mockCreateInviteMutateAsync,
     isPending: false,
@@ -120,6 +129,8 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "members.title": "Quản lý thành viên",
         "members.subtitle": "Quản trị danh sách người dùng trong tổ chức",
+        "members.accessDenied":
+          "Bạn không có quyền quản lý thành viên và lời mời.",
         "members.inviteMemberTitle": "Mời thành viên",
         "members.createLinkTitle": "Tạo liên kết",
         "members.createLinkButton": "Tạo liên kết",
@@ -161,6 +172,8 @@ vi.mock("@/i18n", () => ({
 describe("MembersSettingsPage Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedMembersOptions = undefined;
+    capturedInviteLinksOptions = undefined;
     mockAuthUser = {
       id: "user-admin",
       name: "Admin User",
@@ -329,7 +342,7 @@ describe("MembersSettingsPage Component", () => {
       expect(dropdowns.length).toBe(4);
     });
 
-    it("hides role dropdown for regular member without org:manage_members permission", () => {
+    it("blocks access and disables queries for regular member without org:manage_members permission", () => {
       mockAuthUser = {
         id: "mem-2",
         name: "Tran Interviewer",
@@ -343,6 +356,12 @@ describe("MembersSettingsPage Component", () => {
 
       render(<MembersSettingsPage />);
 
+      expect(capturedMembersOptions).toEqual({ enabled: false });
+      expect(capturedInviteLinksOptions).toEqual({ enabled: false });
+      const alert = screen.getByRole("alert");
+      expect(alert).toHaveTextContent(
+        "Bạn không có quyền quản lý thành viên và lời mời.",
+      );
       expect(screen.queryAllByLabelText("Role")).toHaveLength(0);
     });
 

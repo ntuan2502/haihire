@@ -56,6 +56,7 @@ export default function AuditLogPage() {
           offset: page * PAGE_SIZE,
         }
       : undefined,
+    { enabled: canViewAuditLog },
   );
 
   const handleActionChange = (action: string) => {

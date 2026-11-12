@@ -286,6 +286,11 @@ export const en: TranslationSchema = {
     featureLifecycle: "End-to-end recruitment lifecycle management",
     featureInvites: "Instant team invitations & role assignment",
     footerNote: "{brand} • Internal Hiring Team Workspace • Domain @{domain}",
+    sseRoleChanged: "Your role has been updated to {role}.",
+    sseOrgRemoved:
+      "You have been removed from this organization or the workspace was deleted.",
+    ssePermissionsChanged:
+      "Role permissions in your organization have been updated.",
   },
   landing: {
     product: "Product",
@@ -1451,6 +1456,8 @@ export const en: TranslationSchema = {
   members: {
     title: "Team Members",
     subtitle: "Manage your team members and invitation links.",
+    accessDenied:
+      "You do not have permission to manage team members and invitations.",
     inviteMemberTitle: "Invite a team member",
     inviteEmailPlaceholder: "colleague@company.com",
     sendInvite: "Send Invitation",
@@ -1733,6 +1740,8 @@ export const en: TranslationSchema = {
       title: "Integrations & Webhooks",
       description:
         "Manage custom webhook integrations to receive real-time notifications for hiring events and system alerts.",
+      accessDenied:
+        "You do not have permission to manage integrations and webhooks.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1798,6 +1807,8 @@ export const en: TranslationSchema = {
       title: "Roles & Permissions Matrix",
       description:
         "Manage and customize granular role permissions for your organization.",
+      accessDenied:
+        "You do not have permission to view or manage roles and permissions.",
       badge: "RBAC Matrix",
       readOnlyBadge: "Read-only View",
       readOnlyNotice:
@@ -2078,6 +2089,8 @@ export const en: TranslationSchema = {
     templatesTitle: "Recruitment Email Templates",
     templatesSubtitle:
       "Configure automated emails sent to candidates across hiring stages.",
+    accessDenied:
+      "You do not have permission to access recruitment email templates and settings.",
     tabTemplates: "Email Templates",
     tabSettings: "Delivery Settings (SMTP)",
     tabLogs: "Sent Outbox & Logs",

@@ -408,7 +408,10 @@ describe("RolesPermissionsSettingsPage Component", () => {
 
     expect(capturedMatrixOptions).toEqual({ enabled: false });
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("settings.rolesMatrix.accessDenied");
+    expect(alert).toHaveTextContent("Access Denied");
+    expect(alert).toHaveTextContent(
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
+    );
     expect(
       screen.queryByRole("table", {
         name: "Matrix of roles and permissions in this organization",

@@ -320,7 +320,6 @@ export default function RolesPermissionsPage() {
         <StatusState
           status="403"
           variant="card"
-          description={t("settings.rolesMatrix.accessDenied")}
           actionLabel={t("settings.backToSettings")}
           actionHref="/dashboard/settings"
         />

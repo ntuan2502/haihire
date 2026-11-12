@@ -18,8 +18,6 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "email.templatesTitle": "Email Templates",
         "email.templatesSubtitle": "Configure recruitment emails",
-        "email.accessDenied":
-          "You do not have permission to access recruitment email templates and settings.",
         "email.tabTemplates": "Templates",
         "email.tabSettings": "SMTP Settings",
         "email.tabLogs": "Logs",
@@ -46,7 +44,7 @@ describe("EmailTemplatesLayout RBAC Guard", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent(
-      "You do not have permission to access recruitment email templates and settings.",
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
     );
     expect(screen.queryByTestId("email-child-content")).not.toBeInTheDocument();
   });

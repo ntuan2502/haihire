@@ -233,7 +233,6 @@ export default function MembersSettingsPage() {
         <StatusState
           status="403"
           variant="card"
-          description={t("members.accessDenied")}
           actionLabel={t("settings.backToSettings")}
           actionHref="/dashboard/settings"
         />

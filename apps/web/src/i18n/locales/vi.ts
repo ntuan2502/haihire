@@ -204,7 +204,8 @@ export const vi: TranslationSchema = {
     },
     forbidden: {
       title: "Từ chối truy cập",
-      description: "Bạn không có quyền truy cập nội dung hoặc tính năng này.",
+      description:
+        "Bạn không có quyền truy cập vào mục này. Vui lòng liên hệ quản trị viên nếu cần được cấp quyền.",
     },
   },
   nav: {
@@ -1479,7 +1480,6 @@ export const vi: TranslationSchema = {
   members: {
     title: "Thành viên nhóm",
     subtitle: "Quản lý thành viên trong tổ chức và các liên kết mời tham gia.",
-    accessDenied: "Bạn không có quyền quản lý thành viên và lời mời.",
     inviteMemberTitle: "Mời thành viên mới",
     inviteEmailPlaceholder: "dongnghiep@congty.com",
     sendInvite: "Gửi lời mời",
@@ -1772,7 +1772,6 @@ export const vi: TranslationSchema = {
       title: "Tích hợp & Webhook",
       description:
         "Quản lý các kết nối webhook tùy chỉnh để nhận thông báo thời gian thực về sự kiện tuyển dụng và cảnh báo hệ thống.",
-      accessDenied: "Bạn không có quyền quản lý tích hợp và webhook.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1838,8 +1837,6 @@ export const vi: TranslationSchema = {
       title: "Vai trò & Phân quyền",
       description:
         "Quản lý và tùy chỉnh phân quyền chi tiết cho từng vai trò trong tổ chức.",
-      accessDenied:
-        "Bạn không có quyền xem hoặc quản lý vai trò và phân quyền.",
       badge: "Ma trận phân quyền",
       readOnlyBadge: "Chế độ xem",
       readOnlyNotice:
@@ -1926,7 +1923,6 @@ export const vi: TranslationSchema = {
       description:
         "Theo dõi các thay đổi quản trị, cập nhật phân quyền vai trò và sự kiện vòng đời thành viên trong tổ chức.",
       badge: "Bảo mật & Quản trị",
-      accessDenied: "Bạn không có quyền xem nhật ký kiểm toán.",
       filterAllActions: "Tất cả thao tác",
       filterAction: "Lọc theo thao tác",
       colTimestamp: "Thời gian",
@@ -2118,8 +2114,6 @@ export const vi: TranslationSchema = {
     templatesTitle: "Mẫu Email Tuyển dụng",
     templatesSubtitle:
       "Cấu hình các mẫu email tự động gửi cho ứng viên theo từng giai đoạn trong quy trình tuyển dụng.",
-    accessDenied:
-      "Bạn không có quyền truy cập mẫu email tuyển dụng và cấu hình gửi thư.",
     tabTemplates: "Mẫu Email",
     tabSettings: "Cấu hình gửi thư (SMTP)",
     tabLogs: "Nhật ký gửi thư",

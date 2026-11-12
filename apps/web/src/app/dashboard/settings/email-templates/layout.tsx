@@ -59,7 +59,6 @@ export default function EmailTemplatesLayout({
         <StatusState
           status="403"
           variant="card"
-          description={t("email.accessDenied")}
           actionLabel={t("settings.backToSettings")}
           actionHref="/dashboard/settings"
         />

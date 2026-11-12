@@ -46,8 +46,6 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "settings.integrations.title": "Integrations & Webhooks",
         "settings.integrations.description": "Manage webhooks",
-        "settings.integrations.accessDenied":
-          "You do not have permission to manage integrations and webhooks.",
         "settings.integrations.tabs.webhooks": "Webhooks",
         "settings.integrations.webhooks.addButton": "Add Webhook",
       };
@@ -70,7 +68,7 @@ describe("IntegrationsSettingsPage RBAC Guard", () => {
     expect(capturedWebhookQueryOptions).toEqual({ enabled: false });
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent(
-      "You do not have permission to manage integrations and webhooks.",
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
     );
     expect(screen.queryByTestId("webhooks-table")).not.toBeInTheDocument();
   });

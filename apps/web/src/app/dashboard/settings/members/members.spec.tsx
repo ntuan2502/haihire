@@ -129,8 +129,6 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "members.title": "Quản lý thành viên",
         "members.subtitle": "Quản trị danh sách người dùng trong tổ chức",
-        "members.accessDenied":
-          "Bạn không có quyền quản lý thành viên và lời mời.",
         "members.inviteMemberTitle": "Mời thành viên",
         "members.createLinkTitle": "Tạo liên kết",
         "members.createLinkButton": "Tạo liên kết",
@@ -360,7 +358,7 @@ describe("MembersSettingsPage Component", () => {
       expect(capturedInviteLinksOptions).toEqual({ enabled: false });
       const alert = screen.getByRole("alert");
       expect(alert).toHaveTextContent(
-        "Bạn không có quyền quản lý thành viên và lời mời.",
+        "You do not have permission to access this section. Please contact your administrator if you need access.",
       );
       expect(screen.queryAllByLabelText("Role")).toHaveLength(0);
     });

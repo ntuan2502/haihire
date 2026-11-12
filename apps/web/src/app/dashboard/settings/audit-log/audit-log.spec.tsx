@@ -65,8 +65,6 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.description":
           "Track administrative changes and security events.",
         "settings.auditLog.badge": "Security & Governance",
-        "settings.auditLog.accessDenied":
-          "You do not have permission to view the audit log.",
         "settings.auditLog.filterAllActions": "All Actions",
         "settings.auditLog.filterAction": "Filter by action",
         "settings.auditLog.colTimestamp": "Timestamp",
@@ -176,7 +174,9 @@ describe("AuditLogPage", () => {
 
     expect(screen.getByText("Access Denied")).toBeInTheDocument();
     expect(
-      screen.getByText("You do not have permission to view the audit log."),
+      screen.getByText(
+        "You do not have permission to access this section. Please contact your administrator if you need access.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });

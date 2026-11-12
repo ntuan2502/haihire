@@ -234,7 +234,6 @@ export default function AuditLogPage() {
         <StatusState
           status="403"
           variant="card"
-          description={t("settings.auditLog.accessDenied")}
           actionLabel={t("settings.backToSettings")}
           actionHref="/dashboard/settings"
         />

@@ -26,6 +26,23 @@ describe("StatusState component", () => {
     expect(link).toHaveAttribute("href", "/dashboard/settings");
   });
 
+  it("uses unified default forbidden title and description when omitted", () => {
+    render(
+      <StatusState
+        status="403"
+        variant="card"
+        actionLabel="Back"
+        actionHref="/dashboard"
+      />,
+    );
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Access Denied");
+    expect(alert).toHaveTextContent(
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
+    );
+  });
+
   it("renders 404 page state with 404 badge, h1 heading, and click + link actions", () => {
     const onBack = vi.fn();
     render(

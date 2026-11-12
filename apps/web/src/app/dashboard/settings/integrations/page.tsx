@@ -171,7 +171,6 @@ export default function IntegrationsSettingsPage() {
         <StatusState
           status="403"
           variant="card"
-          description={t("settings.integrations.accessDenied")}
           actionLabel={t("settings.backToSettings")}
           actionHref="/dashboard/settings"
         />

@@ -150,8 +150,6 @@ function SourceTrackingContent() {
           <StatusState
             status="403"
             variant="page"
-            title={t("common.accessDenied")}
-            description={t("errors.FORBIDDEN_READ_ONLY")}
             actionLabel={t("common.dashboard")}
             actionHref="/dashboard"
           />

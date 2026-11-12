@@ -90,8 +90,6 @@ function JobTrackingPageContent() {
         <StatusState
           status="403"
           variant="card"
-          title={t("common.accessDenied")}
-          description={t("errors.FORBIDDEN_READ_ONLY")}
           actionLabel={t("common.dashboard")}
           actionHref="/dashboard"
           className="w-full max-w-lg"

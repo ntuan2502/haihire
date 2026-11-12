@@ -24,8 +24,6 @@ function JobSettingsPageContent() {
         <StatusState
           status="403"
           variant="card"
-          title={t("common.accessDenied")}
-          description={t("errors.FORBIDDEN_READ_ONLY")}
           actionLabel={t("jobs.allJobs")}
           actionHref={`/dashboard/jobs/${jobId}/pipeline`}
           className="w-full max-w-lg"

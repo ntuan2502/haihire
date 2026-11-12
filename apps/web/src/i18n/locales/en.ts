@@ -206,7 +206,8 @@ export const en: TranslationSchema = {
     },
     forbidden: {
       title: "Access Denied",
-      description: "You do not have permission to access this page or feature.",
+      description:
+        "You do not have permission to access this section. Please contact your administrator if you need access.",
     },
   },
   nav: {
@@ -1472,8 +1473,6 @@ export const en: TranslationSchema = {
   members: {
     title: "Team Members",
     subtitle: "Manage your team members and invitation links.",
-    accessDenied:
-      "You do not have permission to manage team members and invitations.",
     inviteMemberTitle: "Invite a team member",
     inviteEmailPlaceholder: "colleague@company.com",
     sendInvite: "Send Invitation",
@@ -1766,8 +1765,6 @@ export const en: TranslationSchema = {
       title: "Integrations & Webhooks",
       description:
         "Manage custom webhook integrations to receive real-time notifications for hiring events and system alerts.",
-      accessDenied:
-        "You do not have permission to manage integrations and webhooks.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1833,8 +1830,6 @@ export const en: TranslationSchema = {
       title: "Roles & Permissions Matrix",
       description:
         "Manage and customize granular role permissions for your organization.",
-      accessDenied:
-        "You do not have permission to view or manage roles and permissions.",
       badge: "RBAC Matrix",
       readOnlyBadge: "Read-only View",
       readOnlyNotice:
@@ -1923,7 +1918,6 @@ export const en: TranslationSchema = {
       description:
         "Track administrative changes, role permission updates, and member lifecycle events across your organization.",
       badge: "Security & Governance",
-      accessDenied: "You do not have permission to view the audit log.",
       filterAllActions: "All Actions",
       filterAction: "Filter by action",
       colTimestamp: "Timestamp",
@@ -2115,8 +2109,6 @@ export const en: TranslationSchema = {
     templatesTitle: "Recruitment Email Templates",
     templatesSubtitle:
       "Configure automated emails sent to candidates across hiring stages.",
-    accessDenied:
-      "You do not have permission to access recruitment email templates and settings.",
     tabTemplates: "Email Templates",
     tabSettings: "Delivery Settings (SMTP)",
     tabLogs: "Sent Outbox & Logs",

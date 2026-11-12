@@ -494,10 +494,16 @@ export class ApplicationsSagaService {
 
       if (result.candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(
-            orgId,
-            "APPLICATION_CONFIRMATION",
-          );
+          const template =
+            typeof this.emailService.resolveFlowTemplate === "function"
+              ? await this.emailService.resolveFlowTemplate(
+                  orgId,
+                  "APPLICATION_RECEIVED",
+                )
+              : await this.emailService.getTemplateByType(
+                  orgId,
+                  "APPLICATION_CONFIRMATION",
+                );
           if (template && template.enabled) {
             let orgName = "Company";
             let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
@@ -521,7 +527,9 @@ export class ApplicationsSagaService {
                 recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
-                templateType: "APPLICATION_CONFIRMATION",
+                templateType: template.type || "APPLICATION_CONFIRMATION",
+                templateId: template.id,
+                templateName: template.name,
                 candidateId: result.candidate.id,
                 applicationId: result.id,
                 variables: buildDynamicEmailContext({

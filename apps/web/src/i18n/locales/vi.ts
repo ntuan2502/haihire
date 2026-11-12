@@ -156,7 +156,10 @@ export const vi: TranslationSchema = {
       "Không tìm thấy hồ sơ ứng tuyển ({applicationId}) cần xếp lịch phỏng vấn.",
     INTERVIEW_INVALID_ORGANIZATION:
       "Lịch phỏng vấn ({id}) không thuộc tổ chức hiện tại của bạn.",
-    EMAIL_TEMPLATE_NOT_FOUND: "Không tìm thấy mẫu email '{templateType}'.",
+    EMAIL_TEMPLATE_NOT_FOUND: "Không tìm thấy mẫu email tương ứng.",
+    EMAIL_TEMPLATE_SYSTEM_PROTECTED:
+      "Không thể xóa mẫu email mặc định của hệ thống.",
+    EMAIL_FLOW_NOT_FOUND: "Không tìm thấy cấu hình luồng gửi email tương ứng.",
     EMAIL_SETTINGS_NOT_FOUND: "Chưa cấu hình cài đặt email cho tổ chức.",
     EMAIL_SETTINGS_INVALID:
       "Cấu hình gửi email của công ty chưa hợp lệ. Hãy kiểm tra địa chỉ người gửi và thông tin kết nối.",
@@ -1075,9 +1078,20 @@ export const vi: TranslationSchema = {
       reasonPlaceholder:
         "VD: Chưa đáp ứng kinh nghiệm chuyên môn, không phù hợp mức lương...",
       sendEmailLabel: "Gửi email thông báo từ chối tới {email}",
+      selectTemplateLabel: "Mẫu email áp dụng",
       noEmailHint:
         "Ứng viên chưa có địa chỉ email nên không thể gửi email tự động.",
       confirmButton: "Xác nhận từ chối",
+    },
+    offerModal: {
+      title: "Chuyển sang Đề nghị nhận việc",
+      description:
+        "Xác nhận chuyển hồ sơ {name} ({job}) sang giai đoạn Đề nghị nhận việc.",
+      sendEmailLabel: "Gửi email thư mời nhận việc tới {email}",
+      selectTemplateLabel: "Mẫu email áp dụng",
+      noEmailHint:
+        "Ứng viên chưa có địa chỉ email nên không thể gửi email tự động.",
+      confirmButton: "Xác nhận đề nghị nhận việc",
     },
     applied: "Ngày ứng tuyển",
     actions: "Thao tác",
@@ -2242,6 +2256,61 @@ export const vi: TranslationSchema = {
     varInterviewLink: "Link phỏng vấn / Địa điểm",
     varInterviewerName: "Người phỏng vấn",
     varSenderName: "Người gửi",
+    flowsSectionTitle: "Cấu hình luồng gửi email tự động",
+    flowsSectionDesc:
+      "Chọn mẫu email mặc định cho từng điểm chạm trong quy trình tuyển dụng.",
+    flowApplicationReceivedTitle: "Khi ứng viên nộp hồ sơ",
+    flowApplicationReceivedDesc:
+      "Tự động gửi ngay khi ứng viên nộp CV ứng tuyển thành công.",
+    flowInterviewScheduledTitle: "Khi đặt lịch phỏng vấn",
+    flowInterviewScheduledDesc:
+      "Mẫu mặc định được chọn sẵn khi tạo lịch phỏng vấn mới (có thể đổi khi đặt lịch).",
+    flowApplicationRejectedTitle: "Khi từ chối ứng viên",
+    flowApplicationRejectedDesc:
+      "Mẫu mặc định được chọn sẵn khi chuyển hồ sơ sang trạng thái Từ chối.",
+    flowApplicationOfferTitle: "Khi đề nghị nhận việc",
+    flowApplicationOfferDesc:
+      "Mẫu mặc định được chọn sẵn khi chuyển hồ sơ sang giai đoạn Đề nghị nhận việc.",
+    flowAutoEnabled: "Đang bật",
+    flowAutoDisabled: "Đang tắt",
+    flowUnassigned: "Chưa gán mẫu email",
+    flowWarningUnassigned:
+      "Luồng này chưa được gán mẫu email nên sẽ không tự động gửi.",
+    flowWarningTemplateDisabled:
+      "Mẫu đang gán hiện tạm ngưng — hãy bật lại mẫu hoặc chọn mẫu khác.",
+    flowSavedSuccess: "Đã cập nhật cấu hình luồng gửi email",
+    libraryTitle: "Thư viện mẫu email",
+    libraryDesc:
+      "Tạo mới, chỉnh sửa hoặc nhân bản các mẫu email theo từng kịch bản tuyển dụng.",
+    newTemplateBtn: "Tạo mẫu mới",
+    createModalTitle: "Tạo mẫu email mới",
+    createSuccess: "Đã tạo mẫu email mới",
+    duplicateBtn: "Nhân bản",
+    duplicateSuccess: "Đã nhân bản mẫu email",
+    deleteBtn: "Xóa mẫu",
+    deleteConfirmTitle: "Xóa mẫu email",
+    deleteConfirmDesc:
+      'Bạn có chắc chắn muốn xóa mẫu email "{name}"? Thao tác này không thể hoàn tác.',
+    deleteConfirmAssignedWarning:
+      "Mẫu này đang được gắn với luồng: {flows}. Xóa mẫu sẽ tự động gỡ liên kết và tắt gửi tự động ở các luồng đó.",
+    deleteSuccess: "Đã xóa mẫu email",
+    systemBadge: "Mặc định hệ thống",
+    customBadge: "Tùy chỉnh",
+    systemProtectedHint:
+      "Mẫu mặc định hệ thống: có thể chỉnh sửa nội dung hoặc nhân bản, không thể xóa.",
+    assignedFlowsLabel: "Đang gắn luồng:",
+    templateTitleLabel: "Tên mẫu email",
+    templateTitlePlaceholder: "VD: Thư mời phỏng vấn vòng Kỹ thuật...",
+    templateCategoryLabel: "Nhóm phân loại",
+    templateEnabledLabel: "Kích hoạt mẫu",
+    templateEnabledDesc:
+      "Khi tạm tắt, mẫu này sẽ không tự động gửi qua luồng và không hiển thị trong danh sách gửi thủ công.",
+    copySuffix: "Bản sao",
+    selectTemplateOption: "Chọn mẫu email...",
+    noActiveTemplates: "Hiện chưa có mẫu email nào đang hoạt động.",
+    customAdHocOption: "Soạn nội dung trống (tùy chỉnh nhanh)",
+    interviewTemplateSelectLabel: "Mẫu email mời phỏng vấn",
+    customEmailOverrideNote: "Chọn mẫu email áp dụng cho lần gửi này",
   },
   timeline: {
     title: "Dòng thời gian hoạt động",

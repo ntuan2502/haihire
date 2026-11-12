@@ -107,6 +107,8 @@ export interface UpdateApplicationStageInput {
   orderIndex?: number;
   rejectionReason?: string;
   sendRejectionEmail?: boolean;
+  sendOfferEmail?: boolean;
+  emailTemplateId?: string;
 }
 
 export interface ApplicationJobStats {

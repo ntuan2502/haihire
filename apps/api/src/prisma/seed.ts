@@ -654,6 +654,7 @@ export async function runSeed(): Promise<void> {
   console.log("==================================================");
 
   await prisma.emailLog.deleteMany();
+  await prisma.emailFlowConfig.deleteMany();
   await prisma.emailSetting.deleteMany();
   await prisma.emailTemplate.deleteMany();
   await prisma.activityLog.deleteMany();

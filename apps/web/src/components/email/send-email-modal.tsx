@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Send,
   Eye,
@@ -11,10 +11,12 @@ import {
   Briefcase,
 } from "lucide-react";
 import {
+  type EmailFlowKey,
   type EmailTemplateType,
   type EmailLog,
   DEFAULT_EMAIL_TEMPLATES,
   TEMPLATE_VARIABLES,
+  getEmailTemplateTypeLabel,
   interpolateTemplate,
 } from "@/lib/email-templates";
 import { useI18n, type TranslationKey } from "@/i18n";
@@ -25,8 +27,12 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { EmailHtmlPreview } from "./email-html-preview";
-
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useEmailFlows } from "@/hooks/use-email-queries";
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
+
+const ADHOC_TEMPLATE_VALUE = "__ADHOC__";
+const STATIC_TEMPLATE_PREFIX = "__STATIC__";
 
 export interface SendEmailModalProps {
   isOpen: boolean;
@@ -43,6 +49,7 @@ export interface SendEmailModalProps {
   jobTitle?: string;
   organizationName?: string;
   defaultTemplateType?: EmailTemplateType;
+  defaultFlowKey?: EmailFlowKey;
   interviewDetails?: {
     scheduledAt?: string;
     format?: string;
@@ -59,10 +66,12 @@ export function SendEmailModal({
   jobTitle,
   organizationName,
   defaultTemplateType = "APPLICATION_CONFIRMATION",
+  defaultFlowKey,
   interviewDetails,
   onSendSuccess,
 }: SendEmailModalProps) {
   const { t } = useI18n();
+  const canViewEmail = useHasPermission("email:view");
 
   const candidateDisplayName = candidate
     ? getCandidateDisplayName(candidate)
@@ -71,16 +80,82 @@ export function SendEmailModal({
   const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
   const { data: remoteTemplates } = useEmailTemplates();
+  const { data: remoteFlows } = useEmailFlows(undefined, {
+    enabled: isOpen && canViewEmail && Boolean(defaultFlowKey),
+  });
   const sendEmailMutation = useSendEmailMutation();
 
-  const [selectedType, setSelectedType] =
-    useState<EmailTemplateType>(defaultTemplateType);
+  const activeTemplates = useMemo(
+    () => (remoteTemplates ?? []).filter((tpl) => Boolean(tpl.enabled)),
+    [remoteTemplates],
+  );
+
+  const templateOptions = useMemo(() => {
+    if (activeTemplates.length > 0) {
+      return [
+        ...activeTemplates.map((tpl) => ({
+          value: tpl.id,
+          label: `${tpl.name} (${getEmailTemplateTypeLabel(tpl.type, t)})`,
+        })),
+        {
+          value: ADHOC_TEMPLATE_VALUE,
+          label: `✏️ ${t("email.customAdHocOption")}`,
+        },
+      ];
+    }
+
+    const staticTypes: EmailTemplateType[] = [
+      "APPLICATION_CONFIRMATION",
+      "INTERVIEW_INVITATION",
+      "REJECTION",
+      "OFFER",
+    ];
+    return [
+      ...staticTypes.map((typeKey) => ({
+        value: `${STATIC_TEMPLATE_PREFIX}${typeKey}`,
+        label: getEmailTemplateTypeLabel(typeKey, t),
+      })),
+      {
+        value: ADHOC_TEMPLATE_VALUE,
+        label: `✏️ ${t("email.customAdHocOption")}`,
+      },
+    ];
+  }, [activeTemplates, t]);
+
+  const resolvedDefaultValue = useMemo(() => {
+    if (defaultFlowKey && remoteFlows) {
+      const matchedFlow = remoteFlows.find(
+        (flow) => flow.flowKey === defaultFlowKey,
+      );
+      if (
+        matchedFlow?.templateId &&
+        activeTemplates.some((tpl) => tpl.id === matchedFlow.templateId)
+      ) {
+        return matchedFlow.templateId;
+      }
+    }
+    if (activeTemplates.length > 0) {
+      const byType = activeTemplates.find(
+        (tpl) => tpl.type === defaultTemplateType,
+      );
+      return byType ? byType.id : activeTemplates[0].id;
+    }
+    if (defaultTemplateType === "CUSTOM") {
+      return ADHOC_TEMPLATE_VALUE;
+    }
+    return `${STATIC_TEMPLATE_PREFIX}${defaultTemplateType}`;
+  }, [defaultFlowKey, remoteFlows, activeTemplates, defaultTemplateType]);
+
+  const [selectedValue, setSelectedValue] =
+    useState<string>(resolvedDefaultValue);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const bodyInputRef = useRef<HTMLTextAreaElement>(null);
+  const wasOpenRef = useRef(false);
+  const hasManualSelectionRef = useRef(false);
 
   // Variables map for interpolation
   const variablesMap = useMemo(() => {
@@ -112,19 +187,56 @@ export function SendEmailModal({
     t,
   ]);
 
-  // Sync template when selected type changes or modal opens
-  useEffect(() => {
-    if (isOpen) {
-      const matchRemote = remoteTemplates?.find((t) => t.type === selectedType);
-      const template = matchRemote || DEFAULT_EMAIL_TEMPLATES[selectedType];
-      if (template) {
+  const applyTemplateByValue = useCallback(
+    (value: string) => {
+      if (value === ADHOC_TEMPLATE_VALUE) {
+        const template = DEFAULT_EMAIL_TEMPLATES.CUSTOM;
         setSubject(interpolateTemplate(template.subject, variablesMap));
         setBody(interpolateTemplate(template.body, variablesMap));
+        return;
       }
+      if (value.startsWith(STATIC_TEMPLATE_PREFIX)) {
+        const typeKey = value.slice(
+          STATIC_TEMPLATE_PREFIX.length,
+        ) as EmailTemplateType;
+        const template =
+          DEFAULT_EMAIL_TEMPLATES[typeKey] || DEFAULT_EMAIL_TEMPLATES.CUSTOM;
+        setSubject(interpolateTemplate(template.subject, variablesMap));
+        setBody(interpolateTemplate(template.body, variablesMap));
+        return;
+      }
+      const matched = activeTemplates.find((tpl) => tpl.id === value);
+      if (matched) {
+        setSubject(interpolateTemplate(matched.subject, variablesMap));
+        setBody(interpolateTemplate(matched.body, variablesMap));
+      }
+    },
+    [activeTemplates, variablesMap],
+  );
+
+  // Sync default template when modal opens or templates resolve asynchronously
+  useEffect(() => {
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      hasManualSelectionRef.current = false;
+      return;
+    }
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
       setIsPreviewMode(false);
       setShowSuccessToast(false);
     }
-  }, [isOpen, selectedType, variablesMap, remoteTemplates]);
+    if (!hasManualSelectionRef.current) {
+      setSelectedValue(resolvedDefaultValue);
+      applyTemplateByValue(resolvedDefaultValue);
+    }
+  }, [isOpen, resolvedDefaultValue, applyTemplateByValue]);
+
+  const handleSelectTemplate = (nextValue: string) => {
+    hasManualSelectionRef.current = true;
+    setSelectedValue(nextValue);
+    applyTemplateByValue(nextValue);
+  };
 
   if (!isOpen || !candidate) return null;
 
@@ -146,12 +258,31 @@ export function SendEmailModal({
 
   const handleSend = async () => {
     try {
+      const selectedTemplate = activeTemplates.find(
+        (tpl) => tpl.id === selectedValue,
+      );
+      const templateType: EmailTemplateType = selectedTemplate
+        ? selectedTemplate.type
+        : selectedValue.startsWith(STATIC_TEMPLATE_PREFIX)
+          ? (selectedValue.slice(
+              STATIC_TEMPLATE_PREFIX.length,
+            ) as EmailTemplateType)
+          : "CUSTOM";
+      const templateId = selectedTemplate ? selectedTemplate.id : undefined;
+      const templateName = selectedTemplate
+        ? selectedTemplate.name
+        : selectedValue === ADHOC_TEMPLATE_VALUE
+          ? t("email.customAdHocOption")
+          : undefined;
+
       const log = await sendEmailMutation.mutateAsync({
         to: candidate.email,
         recipientName: candidateDisplayName,
         subject,
         body,
-        templateType: selectedType,
+        ...(templateId ? { templateId } : {}),
+        ...(templateName ? { templateName } : {}),
+        templateType,
         candidateId: candidate.id,
       });
 
@@ -210,30 +341,9 @@ export function SendEmailModal({
             {t("email.selectTemplate")}
           </label>
           <CustomSelect
-            value={selectedType}
-            onChange={(val) => setSelectedType(val as EmailTemplateType)}
-            options={[
-              {
-                value: "APPLICATION_CONFIRMATION",
-                label: "✉️ " + t("email.optApplicationConfirmation"),
-              },
-              {
-                value: "INTERVIEW_INVITATION",
-                label: "📅 " + t("email.optInterviewInvitation"),
-              },
-              {
-                value: "REJECTION",
-                label: "🤝 " + t("email.optRejection"),
-              },
-              {
-                value: "OFFER",
-                label: "🏆 " + t("email.optOffer"),
-              },
-              {
-                value: "CUSTOM",
-                label: "✏️ " + t("email.optCustom"),
-              },
-            ]}
+            value={selectedValue}
+            onChange={handleSelectTemplate}
+            options={templateOptions}
             className="w-full"
             triggerClassName="h-9 text-xs"
           />

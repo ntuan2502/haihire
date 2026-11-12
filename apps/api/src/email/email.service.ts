@@ -1,5 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import { CreateEmailTemplateDto } from "./dto/create-template.dto";
+import {
+  DuplicateEmailTemplateDto,
+  UpdateEmailTemplateDto,
+} from "./dto/update-template.dto";
+import { UpdateEmailFlowDto } from "./dto/update-flow.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import {
@@ -9,26 +14,31 @@ import {
 import {
   EmailDispatchService,
   EmailTemplatesService,
+  EmailFlowsService,
   EmailSettingsService,
   EmailSystemService,
   type EnrichedEmailTemplate,
+  type EnrichedEmailFlowConfig,
   type GetLogsOptions,
 } from "./services";
 import {
   type EmailTemplateType,
+  type EmailFlowKey,
   type TemplateDefinition,
   DEFAULT_TEMPLATES,
+  EMAIL_FLOW_DEFINITIONS,
   interpolateEmail as interpolate,
 } from "@haihire/shared";
 
 export {
   type EmailTemplateType,
+  type EmailFlowKey,
   type TemplateDefinition,
   DEFAULT_TEMPLATES,
   interpolate,
 };
 
-export type { GetLogsOptions, EnrichedEmailTemplate };
+export type { GetLogsOptions, EnrichedEmailTemplate, EnrichedEmailFlowConfig };
 
 @Injectable()
 export class EmailService {
@@ -41,6 +51,9 @@ export class EmailService {
     private readonly settings: EmailSettingsService,
     @Inject(EmailSystemService)
     private readonly system: EmailSystemService,
+    @Optional()
+    @Inject(EmailFlowsService)
+    private readonly flows?: EmailFlowsService,
   ) {}
 
   resolveOrgId(
@@ -64,6 +77,13 @@ export class EmailService {
     return this.templates.seedDefaultTemplates(organizationId);
   }
 
+  async getTemplateById(
+    organizationId: string,
+    id: string,
+  ): Promise<EnrichedEmailTemplate | undefined> {
+    return this.templates.getTemplateById(organizationId, id);
+  }
+
   async getTemplateByType(
     organizationId: string,
     type: string,
@@ -71,13 +91,95 @@ export class EmailService {
     return this.templates.getTemplateByType(organizationId, type);
   }
 
+  async createTemplate(
+    organizationId: string | undefined,
+    dto: CreateEmailTemplateDto,
+    userOrgId?: string | null,
+  ): Promise<EnrichedEmailTemplate> {
+    return this.templates.createTemplate(organizationId, dto, userOrgId);
+  }
+
   async updateTemplate(
     organizationId: string | undefined,
-    type: string,
+    idOrType: string,
     dto: UpdateEmailTemplateDto,
     userOrgId?: string | null,
-  ) {
-    return this.templates.updateTemplate(organizationId, type, dto, userOrgId);
+  ): Promise<EnrichedEmailTemplate> {
+    return this.templates.updateTemplate(
+      organizationId,
+      idOrType,
+      dto,
+      userOrgId,
+    );
+  }
+
+  async duplicateTemplate(
+    organizationId: string | undefined,
+    id: string,
+    dto?: DuplicateEmailTemplateDto,
+    userOrgId?: string | null,
+  ): Promise<EnrichedEmailTemplate> {
+    return this.templates.duplicateTemplate(organizationId, id, dto, userOrgId);
+  }
+
+  async deleteTemplate(
+    organizationId: string | undefined,
+    id: string,
+    userOrgId?: string | null,
+  ): Promise<{ deleted: true; id: string }> {
+    return this.templates.deleteTemplate(organizationId, id, userOrgId);
+  }
+
+  async getFlows(
+    organizationId?: string,
+    userOrgId?: string | null,
+  ): Promise<EnrichedEmailFlowConfig[]> {
+    if (!this.flows) {
+      return [];
+    }
+    return this.flows.getFlows(organizationId, userOrgId);
+  }
+
+  async updateFlow(
+    organizationId: string | undefined,
+    flowKey: string,
+    dto: UpdateEmailFlowDto,
+    userOrgId?: string | null,
+  ): Promise<EnrichedEmailFlowConfig> {
+    if (!this.flows) {
+      throw new Error("EmailFlowsService is not initialized");
+    }
+    return this.flows.updateFlow(organizationId, flowKey, dto, userOrgId);
+  }
+
+  async resolveFlowTemplate(
+    organizationId: string,
+    flowKey: EmailFlowKey,
+    overrideTemplateId?: string,
+  ): Promise<EnrichedEmailTemplate | undefined> {
+    if (this.flows) {
+      return this.flows.resolveFlowTemplate(
+        organizationId,
+        flowKey,
+        overrideTemplateId,
+      );
+    }
+
+    const trimmedOverride = overrideTemplateId?.trim();
+    if (trimmedOverride) {
+      const override = await this.templates.getTemplateById(
+        organizationId,
+        trimmedOverride,
+      );
+      return override && override.enabled ? override : undefined;
+    }
+
+    const defaultType = EMAIL_FLOW_DEFINITIONS[flowKey].defaultTemplateType;
+    const fallback = await this.templates.getTemplateByType(
+      organizationId,
+      defaultType,
+    );
+    return fallback && fallback.enabled ? fallback : undefined;
   }
 
   async getSettings(organizationId?: string, userOrgId?: string | null) {

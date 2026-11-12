@@ -734,6 +734,98 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
     });
 
+    it("passes override emailTemplateId on rejection and supports opt-in OFFER flow with sender context", async () => {
+      const resolveFlowMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          id: "tpl-custom-rej",
+          name: "Custom Reject",
+          type: "REJECTION",
+          enabled: true,
+          subject: "Custom Update",
+          body: "<p>Sorry {{candidate_name}}</p>",
+        })
+        .mockResolvedValueOnce({
+          id: "tpl-custom-offer",
+          name: "Senior Offer",
+          type: "OFFER",
+          enabled: true,
+          subject: "Offer {{job_title}}",
+          body: "<p>Congrats {{candidate_name}} from {{sender_name}}</p>",
+        });
+
+      (
+        mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+      ).resolveFlowTemplate = resolveFlowMock;
+
+      try {
+        await service.updateStage("app-1", {
+          stage: "REJECTED",
+          rejectionReason: "Cultural mismatch",
+          sendRejectionEmail: true,
+          emailTemplateId: "tpl-custom-rej",
+        });
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_REJECTED",
+          "tpl-custom-rej",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-rej",
+            templateName: "Custom Reject",
+            templateType: "REJECTION",
+          }),
+          "org-1",
+        );
+
+        vi.mocked(mockEmailService.sendEmail).mockClear();
+
+        // Moving to OFFER without sendOfferEmail=true does NOT auto-dispatch email
+        await service.updateStage("app-2", {
+          stage: "OFFER",
+        });
+        expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+
+        // Reset app-2 back cleanly to INTERVIEW via REOPEN -> INTERVIEW? Move app-2 to HIRED isn't offer; instead test OFFER from INTERVIEW after resetting mockApps or creating stage transition:
+        mockApps[1].stage = "INTERVIEW";
+
+        await service.updateStage(
+          "app-2",
+          {
+            stage: "OFFER",
+            sendOfferEmail: true,
+            emailTemplateId: "tpl-custom-offer",
+          },
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter", role: "RECRUITER" },
+        );
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_OFFER",
+          "tpl-custom-offer",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-offer",
+            templateName: "Senior Offer",
+            templateType: "OFFER",
+            variables: expect.objectContaining({
+              sender_name: "Nguyen Recruiter",
+            }),
+          }),
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter" },
+        );
+      } finally {
+        delete (
+          mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+        ).resolveFlowTemplate;
+      }
+    });
+
     it("allows reopening REJECTED application to SCREENING and clears rejection metadata", async () => {
       await service.updateStage("app-1", {
         stage: "REJECTED",

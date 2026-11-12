@@ -166,6 +166,9 @@ export function ApplicationDetailView() {
         isRejectModalOpen={actions.isRejectModalOpen}
         onCloseRejectModal={() => actions.setIsRejectModalOpen(false)}
         onConfirmReject={actions.handleConfirmReject}
+        isOfferModalOpen={actions.isOfferModalOpen}
+        onCloseOfferModal={() => actions.setIsOfferModalOpen(false)}
+        onConfirmOffer={actions.handleConfirmOffer}
         isUpdatingStage={actions.isUpdatingStage}
         scheduleModalOpen={state.scheduleModalOpen}
         onCloseScheduleModal={() => {

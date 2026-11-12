@@ -76,6 +76,12 @@ export const applicationsApi = {
             ...(stageOrOptions.sendRejectionEmail !== undefined
               ? { sendRejectionEmail: stageOrOptions.sendRejectionEmail }
               : {}),
+            ...(stageOrOptions.sendOfferEmail !== undefined
+              ? { sendOfferEmail: stageOrOptions.sendOfferEmail }
+              : {}),
+            ...(stageOrOptions.emailTemplateId !== undefined
+              ? { emailTemplateId: stageOrOptions.emailTemplateId }
+              : {}),
           };
     const response = await api.patch<Application>(
       `/applications/${id}/stage`,

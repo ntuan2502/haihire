@@ -5,6 +5,77 @@ export type EmailTemplateType =
   | "OFFER"
   | "CUSTOM";
 
+export const EMAIL_FLOW_KEYS = [
+  "APPLICATION_RECEIVED",
+  "INTERVIEW_SCHEDULED",
+  "APPLICATION_REJECTED",
+  "APPLICATION_OFFER",
+] as const;
+
+export type EmailFlowKey = (typeof EMAIL_FLOW_KEYS)[number];
+
+export interface EmailFlowDefinition {
+  key: EmailFlowKey;
+  defaultTemplateType: EmailTemplateType;
+  supportsContextualOverride: boolean;
+  recommendedVariables: readonly string[];
+}
+
+export const EMAIL_FLOW_DEFINITIONS: Record<EmailFlowKey, EmailFlowDefinition> =
+  {
+    APPLICATION_RECEIVED: {
+      key: "APPLICATION_RECEIVED",
+      defaultTemplateType: "APPLICATION_CONFIRMATION",
+      supportsContextualOverride: false,
+      recommendedVariables: [
+        "candidate_name",
+        "candidate_email",
+        "job_title",
+        "company_name",
+      ],
+    },
+    INTERVIEW_SCHEDULED: {
+      key: "INTERVIEW_SCHEDULED",
+      defaultTemplateType: "INTERVIEW_INVITATION",
+      supportsContextualOverride: true,
+      recommendedVariables: [
+        "candidate_name",
+        "job_title",
+        "company_name",
+        "interview_date",
+        "interview_time",
+        "interview_format",
+        "interview_link",
+        "interviewer_name",
+        "sender_name",
+      ],
+    },
+    APPLICATION_REJECTED: {
+      key: "APPLICATION_REJECTED",
+      defaultTemplateType: "REJECTION",
+      supportsContextualOverride: true,
+      recommendedVariables: [
+        "candidate_name",
+        "job_title",
+        "company_name",
+        "sender_name",
+      ],
+    },
+    APPLICATION_OFFER: {
+      key: "APPLICATION_OFFER",
+      defaultTemplateType: "OFFER",
+      supportsContextualOverride: true,
+      recommendedVariables: [
+        "candidate_name",
+        "job_title",
+        "company_name",
+        "sender_name",
+        "start_date",
+        "salary",
+      ],
+    },
+  };
+
 export type EmailDeliveryStatus = "SENT" | "SIMULATED" | "FAILED";
 
 export type EmailProviderType = "SIMULATED" | "SMTP" | "RESEND" | "SENDGRID";
@@ -24,7 +95,21 @@ export interface EmailTemplate {
   subject: string;
   body: string;
   enabled: boolean;
+  isSystem?: boolean;
   variables: string[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+export interface EmailFlowConfig {
+  id: string;
+  organizationId: string;
+  flowKey: EmailFlowKey;
+  templateId: string | null;
+  enabled: boolean;
+  template?: EmailTemplate | null;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export const DEFAULT_EMAIL_TEMPLATES: Record<EmailTemplateType, EmailTemplate> =

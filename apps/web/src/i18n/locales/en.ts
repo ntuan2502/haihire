@@ -154,8 +154,10 @@ export const en: TranslationSchema = {
       "Application record ({applicationId}) for interview not found.",
     INTERVIEW_INVALID_ORGANIZATION:
       "Interview schedule ({id}) does not belong to your organization.",
-    EMAIL_TEMPLATE_NOT_FOUND:
-      "Requested email template '{templateType}' not found.",
+    EMAIL_TEMPLATE_NOT_FOUND: "Requested email template was not found.",
+    EMAIL_TEMPLATE_SYSTEM_PROTECTED:
+      "System default email templates cannot be deleted.",
+    EMAIL_FLOW_NOT_FOUND: "Requested email flow configuration was not found.",
     EMAIL_SETTINGS_NOT_FOUND:
       "Email settings not configured for this organization.",
     EMAIL_SETTINGS_INVALID:
@@ -1070,9 +1072,19 @@ export const en: TranslationSchema = {
       reasonPlaceholder:
         "e.g. Lacking required experience, compensation mismatch...",
       sendEmailLabel: "Send automated rejection email to {email}",
+      selectTemplateLabel: "Email template",
       noEmailHint:
         "Candidate has no email on file; automated email cannot be sent.",
       confirmButton: "Confirm Reject",
+    },
+    offerModal: {
+      title: "Move to Job Offer",
+      description: "Confirm moving {name} ({job}) to the Offer stage.",
+      sendEmailLabel: "Send automated offer email to {email}",
+      selectTemplateLabel: "Email template",
+      noEmailHint:
+        "Candidate has no email on file; automated email cannot be sent.",
+      confirmButton: "Confirm Offer",
     },
     applied: "Applied",
     actions: "Actions",
@@ -2242,6 +2254,61 @@ export const en: TranslationSchema = {
     varInterviewLink: "Interview Link / Location",
     varInterviewerName: "Interviewer Name",
     varSenderName: "Sender Name",
+    flowsSectionTitle: "Email Flow Assignments",
+    flowsSectionDesc:
+      "Assign the default email template used automatically at each stage of the hiring workflow.",
+    flowApplicationReceivedTitle: "Application Received",
+    flowApplicationReceivedDesc:
+      "Automatically sent when a candidate submits an application.",
+    flowInterviewScheduledTitle: "Interview Scheduled",
+    flowInterviewScheduledDesc:
+      "Default template preselected when scheduling a new interview (overridable in modal).",
+    flowApplicationRejectedTitle: "Application Rejected",
+    flowApplicationRejectedDesc:
+      "Default template preselected when moving an application to Rejected.",
+    flowApplicationOfferTitle: "Job Offer",
+    flowApplicationOfferDesc:
+      "Default template preselected when moving an application to Offer.",
+    flowAutoEnabled: "Active",
+    flowAutoDisabled: "Paused",
+    flowUnassigned: "No template assigned",
+    flowWarningUnassigned:
+      "No template is assigned to this flow, so automatic emails will not be sent.",
+    flowWarningTemplateDisabled:
+      "The assigned template is currently paused — re-enable it or choose another template.",
+    flowSavedSuccess: "Email flow configuration updated",
+    libraryTitle: "Email Template Library",
+    libraryDesc:
+      "Create, customize, or duplicate email templates across recruitment scenarios.",
+    newTemplateBtn: "New Template",
+    createModalTitle: "Create New Email Template",
+    createSuccess: "Email template created",
+    duplicateBtn: "Duplicate",
+    duplicateSuccess: "Email template duplicated",
+    deleteBtn: "Delete",
+    deleteConfirmTitle: "Delete Email Template",
+    deleteConfirmDesc:
+      'Are you sure you want to delete "{name}"? This action cannot be undone.',
+    deleteConfirmAssignedWarning:
+      "This template is currently assigned to: {flows}. Deleting it will unlink and pause automatic sending on those flows.",
+    deleteSuccess: "Email template deleted",
+    systemBadge: "System Default",
+    customBadge: "Custom",
+    systemProtectedHint:
+      "System default template: editable and duplicatable, protected from deletion.",
+    assignedFlowsLabel: "Assigned to:",
+    templateTitleLabel: "Template Name",
+    templateTitlePlaceholder: "e.g. Technical Round Invitation...",
+    templateCategoryLabel: "Category",
+    templateEnabledLabel: "Template Active",
+    templateEnabledDesc:
+      "When paused, this template cannot send via automated flows or appear in manual send options.",
+    copySuffix: "Copy",
+    selectTemplateOption: "Select an email template...",
+    noActiveTemplates: "No active email templates are currently available.",
+    customAdHocOption: "Blank custom email (ad-hoc)",
+    interviewTemplateSelectLabel: "Interview invitation template",
+    customEmailOverrideNote: "Choose the template to apply for this email",
   },
   timeline: {
     title: "Activity Timeline",

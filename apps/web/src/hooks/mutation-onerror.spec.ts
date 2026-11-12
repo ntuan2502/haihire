@@ -527,7 +527,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
   });
 
   describe("Domain 5: Email Hooks (3 hooks)", () => {
-    it("useUpdateEmailTemplateMutation invalidates email templates on success and error", async () => {
+    it("useUpdateEmailTemplateMutation invalidates email templates and flows on success and error", async () => {
       const { queryClient, wrapper } = createWrapper();
       const spy = vi.spyOn(queryClient, "invalidateQueries");
       vi.mocked(emailApi.updateTemplate).mockResolvedValueOnce({
@@ -542,6 +542,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
         data: { subject: "Invite" },
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["email", "templates"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["email", "flows"] });
 
       vi.mocked(emailApi.updateTemplate).mockRejectedValueOnce(
         new Error("Template failed"),
@@ -552,7 +553,9 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
           data: { subject: "Invite" },
         }),
       ).rejects.toThrow();
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["email", "templates"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["email", "flows"] });
+      expect(spy).toHaveBeenCalledTimes(4);
     });
 
     it("useUpdateEmailSettingsMutation invalidates email settings on success and error", async () => {

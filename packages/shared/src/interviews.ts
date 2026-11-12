@@ -63,6 +63,8 @@ export interface CreateInterviewInput {
   round?: number;
   scorecard?: InterviewScorecard;
   notes?: string;
+  sendInvitationEmail?: boolean;
+  templateId?: string;
 }
 
 export interface UpdateInterviewInput {

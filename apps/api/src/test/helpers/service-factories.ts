@@ -17,6 +17,7 @@ import {
 import {
   EmailDispatchService,
   EmailTemplatesService,
+  EmailFlowsService,
   EmailSettingsService,
   EmailSystemService,
 } from "../../email/services";
@@ -53,11 +54,14 @@ export function createTestEmailService(
   queue?: Queue,
 ): EmailService {
   const settings = new EmailSettingsService(prisma, encryption);
+  const templates = new EmailTemplatesService(prisma, settings);
+  const flows = new EmailFlowsService(prisma, settings, templates);
   return new EmailService(
     new EmailDispatchService(prisma, activities, settings, queue),
-    new EmailTemplatesService(prisma, settings),
+    templates,
     settings,
     new EmailSystemService(prisma, encryption, queue),
+    flows,
   );
 }
 

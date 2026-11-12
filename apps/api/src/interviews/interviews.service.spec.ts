@@ -325,6 +325,54 @@ describe("InterviewsService", () => {
     });
   });
 
+  it("uses resolved override templateId from INTERVIEW_SCHEDULED flow when creating an interview", async () => {
+    const resolveFlowMock = vi.fn().mockResolvedValueOnce({
+      id: "tpl-round-2",
+      name: "Phỏng vấn Vòng 2",
+      type: "INTERVIEW_INVITATION",
+      enabled: true,
+      subject: "Mời phỏng vấn vòng 2 {{job_title}}",
+      body: "<p>Chào {{candidate_name}}</p>",
+    });
+    (
+      mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+    ).resolveFlowTemplate = resolveFlowMock;
+
+    try {
+      await service.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-10-21T09:00:00.000Z",
+          type: "TECHNICAL",
+          format: "MEET",
+          interviewer: "CTO",
+          sendInvitationEmail: true,
+          templateId: "tpl-round-2",
+        },
+        "org-1",
+      );
+
+      expect(resolveFlowMock).toHaveBeenCalledWith(
+        "org-1",
+        "INTERVIEW_SCHEDULED",
+        "tpl-round-2",
+      );
+      expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateId: "tpl-round-2",
+          templateName: "Phỏng vấn Vòng 2",
+          templateType: "INTERVIEW_INVITATION",
+        }),
+        "org-1",
+        expect.objectContaining({ name: "CTO" }),
+      );
+    } finally {
+      delete (
+        mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+      ).resolveFlowTemplate;
+    }
+  });
+
   describe("formatInterviewRecord", () => {
     it("should serialize scheduledAt to UTC ISO string and parse JSON scorecard", () => {
       const raw = {

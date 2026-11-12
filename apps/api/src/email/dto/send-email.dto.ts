@@ -23,6 +23,14 @@ export class SendEmailDto {
 
   @IsString()
   @IsOptional()
+  templateId?: string;
+
+  @IsString()
+  @IsOptional()
+  templateName?: string;
+
+  @IsString()
+  @IsOptional()
   candidateId?: string;
 
   @IsString()

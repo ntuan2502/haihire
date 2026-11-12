@@ -800,4 +800,191 @@ describe("EmailService", () => {
       expect(config).toBeDefined();
     });
   });
+
+  describe("Multi-Template Library, Protected System Templates & Email Flows", () => {
+    it("marks initial seeded templates as isSystem=true and creates custom non-system duplicates of same category", async () => {
+      const initial = await service.getTemplates("org-flow");
+      expect(initial).toHaveLength(DEFAULT_TEMPLATES.length);
+      expect(initial.every((tpl) => tpl.isSystem)).toBe(true);
+
+      const round2 = await service.createTemplate("org-flow", {
+        name: "Mời phỏng vấn vòng 2",
+        type: "INTERVIEW_INVITATION",
+        subject: "Mời phỏng vấn Technical - {{job_title}}",
+        body: "<p>Xin chào {{candidate_name}}, hẹn gặp lúc {{interview_time}}.</p>",
+        enabled: true,
+      });
+
+      expect(round2.isSystem).toBe(false);
+      expect(round2.type).toBe("INTERVIEW_INVITATION");
+      expect(round2.variables).toContain("job_title");
+      expect(round2.variables).toContain("interview_time");
+
+      const all = await service.getTemplates("org-flow");
+      expect(all).toHaveLength(DEFAULT_TEMPLATES.length + 1);
+      expect(
+        all.filter((tpl) => tpl.type === "INTERVIEW_INVITATION"),
+      ).toHaveLength(2);
+    });
+
+    it("duplicates a template as isSystem=false and updates template fields by ID", async () => {
+      const initial = await service.getTemplates("org-dup");
+      const offerTpl = initial.find((tpl) => tpl.type === "OFFER")!;
+
+      const copy = await service.duplicateTemplate("org-dup", offerTpl.id, {
+        name: "Offer Senior Track",
+      });
+      expect(copy.isSystem).toBe(false);
+      expect(copy.name).toBe("Offer Senior Track");
+      expect(copy.type).toBe("OFFER");
+
+      const updated = await service.updateTemplate("org-dup", copy.id, {
+        name: "Offer Principal Track",
+        enabled: false,
+      });
+      expect(updated.name).toBe("Offer Principal Track");
+      expect(updated.enabled).toBe(false);
+    });
+
+    it("blocks deleting isSystem templates with EMAIL_TEMPLATE_SYSTEM_PROTECTED", async () => {
+      const initial = await service.getTemplates("org-prot");
+      const systemTpl = initial.find((tpl) => tpl.isSystem)!;
+
+      await expect(
+        service.deleteTemplate("org-prot", systemTpl.id),
+      ).rejects.toMatchObject({
+        code: "EMAIL_TEMPLATE_SYSTEM_PROTECTED",
+      });
+    });
+
+    it("deletes custom template safely and unassigns + disables bound email flows", async () => {
+      const custom = await service.createTemplate("org-del", {
+        name: "Custom Offer",
+        type: "OFFER",
+        subject: "Offer {{job_title}}",
+        body: "<p>Welcome {{candidate_name}}</p>",
+        enabled: true,
+      });
+
+      const updatedFlow = await service.updateFlow(
+        "org-del",
+        "APPLICATION_OFFER",
+        {
+          templateId: custom.id,
+          enabled: true,
+        },
+      );
+      expect(updatedFlow.templateId).toBe(custom.id);
+      expect(updatedFlow.enabled).toBe(true);
+
+      const res = await service.deleteTemplate("org-del", custom.id);
+      expect(res).toEqual({ deleted: true, id: custom.id });
+
+      const flowsAfter = await service.getFlows("org-del");
+      const offerFlow = flowsAfter.find(
+        (f) => f.flowKey === "APPLICATION_OFFER",
+      );
+      expect(offerFlow?.templateId).toBeNull();
+      expect(offerFlow?.enabled).toBe(false);
+    });
+
+    it("resolves flow bindings, disabled states, cross-org safety, and override templateId", async () => {
+      const customReject = await service.createTemplate("org-res", {
+        name: "Custom Soft Reject",
+        type: "REJECTION",
+        subject: "Cảm ơn {{candidate_name}}",
+        body: "<p>Giữ kết nối</p>",
+        enabled: true,
+      });
+      const disabledTpl = await service.createTemplate("org-res", {
+        name: "Disabled Offer",
+        type: "OFFER",
+        subject: "Disabled",
+        body: "<p>Disabled</p>",
+        enabled: false,
+      });
+      const otherOrgTpl = await service.createTemplate("org-other", {
+        name: "Other Org Template",
+        type: "OFFER",
+        subject: "Other",
+        body: "<p>Other</p>",
+        enabled: true,
+      });
+
+      // Default bound flow resolves system template
+      const resolvedDefault = await service.resolveFlowTemplate(
+        "org-res",
+        "APPLICATION_REJECTED",
+      );
+      expect(resolvedDefault?.type).toBe("REJECTION");
+      expect(resolvedDefault?.isSystem).toBe(true);
+
+      // Override picks custom template even when flow points elsewhere
+      const resolvedOverride = await service.resolveFlowTemplate(
+        "org-res",
+        "APPLICATION_REJECTED",
+        customReject.id,
+      );
+      expect(resolvedOverride?.id).toBe(customReject.id);
+
+      // Disabled or cross-org override returns undefined
+      expect(
+        await service.resolveFlowTemplate(
+          "org-res",
+          "APPLICATION_REJECTED",
+          disabledTpl.id,
+        ),
+      ).toBeUndefined();
+      expect(
+        await service.resolveFlowTemplate(
+          "org-res",
+          "APPLICATION_REJECTED",
+          otherOrgTpl.id,
+        ),
+      ).toBeUndefined();
+
+      // Disabling a flow suppresses default dispatch
+      await service.updateFlow("org-res", "APPLICATION_RECEIVED", {
+        enabled: false,
+      });
+      expect(
+        await service.resolveFlowTemplate("org-res", "APPLICATION_RECEIVED"),
+      ).toBeUndefined();
+
+      // Cannot bind template from another org
+      await expect(
+        service.updateFlow("org-res", "APPLICATION_OFFER", {
+          templateId: otherOrgTpl.id,
+        }),
+      ).rejects.toMatchObject({ code: "EMAIL_TEMPLATE_NOT_FOUND" });
+    });
+
+    it("stores templateId and templateName snapshot in email logs", async () => {
+      await service.updateSettings("org-log", { provider: "SIMULATED" });
+      const created = await service.createTemplate("org-log", {
+        name: "Technical Invite Template",
+        type: "INTERVIEW_INVITATION",
+        subject: "Invite {{candidate_name}}",
+        body: "<p>Hello</p>",
+        enabled: true,
+      });
+
+      await service.sendEmail(
+        {
+          to: "candidate@example.com",
+          recipientName: "Nguyen Van C",
+          subject: created.subject,
+          body: created.body,
+          templateId: created.id,
+          templateName: created.name,
+          templateType: created.type,
+        },
+        "org-log",
+      );
+
+      const logs = await service.getLogs("org-log");
+      expect(logs.data[0]?.templateId).toBe(created.id);
+      expect(logs.data[0]?.templateName).toBe("Technical Invite Template");
+    });
+  });
 });

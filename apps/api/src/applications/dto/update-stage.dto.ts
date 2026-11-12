@@ -30,4 +30,12 @@ export class UpdateStageDto {
   @IsBoolean()
   @IsOptional()
   sendRejectionEmail?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  sendOfferEmail?: boolean;
+
+  @IsString()
+  @IsOptional()
+  emailTemplateId?: string;
 }

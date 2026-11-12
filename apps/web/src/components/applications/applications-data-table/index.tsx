@@ -5,6 +5,7 @@ import { getCandidateDisplayName } from "@/lib/utils";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
+import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import type { ApplicationsDataTableProps } from "./types";
 import { useApplicationsTable } from "./hooks/use-applications-table";
@@ -163,6 +164,23 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           candidateEmail={drawer.pendingRejectApp.candidateEmail}
           jobTitle={
             table.jobMap.get(drawer.pendingRejectApp.jobId)?.title ||
+            drawer.selectedJobTitle ||
+            ""
+          }
+          isSubmitting={drawer.isStageUpdatePending}
+        />
+      )}
+
+      {/* Offer Application Confirmation Modal */}
+      {drawer.pendingOfferApp && (
+        <OfferApplicationModal
+          isOpen={!!drawer.pendingOfferApp}
+          onClose={() => drawer.setPendingOfferApp(null)}
+          onConfirm={drawer.handleConfirmOffer}
+          candidateName={getCandidateDisplayName(drawer.pendingOfferApp)}
+          candidateEmail={drawer.pendingOfferApp.candidateEmail}
+          jobTitle={
+            table.jobMap.get(drawer.pendingOfferApp.jobId)?.title ||
             drawer.selectedJobTitle ||
             ""
           }

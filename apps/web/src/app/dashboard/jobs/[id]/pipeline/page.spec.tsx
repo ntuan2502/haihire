@@ -208,4 +208,28 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
       ).toBeInTheDocument();
     }
   });
+
+  it("opens OfferApplicationModal instead of bypassing confirmation when moving candidate to OFFER", () => {
+    mockUseJobApplications.mockReturnValue({
+      data: [
+        {
+          ...mockApplications[0],
+          stage: "INTERVIEW",
+        },
+      ],
+      isLoading: false,
+    });
+
+    render(<JobPipelinePage />);
+
+    const offerBtn = screen
+      .getAllByRole("button")
+      .find((b) => b.textContent?.includes("applications.stages.offer"));
+    if (offerBtn) {
+      fireEvent.click(offerBtn);
+      expect(
+        screen.getByText("applications.offerModal.title"),
+      ).toBeInTheDocument();
+    }
+  });
 });

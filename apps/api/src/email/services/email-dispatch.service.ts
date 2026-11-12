@@ -49,7 +49,7 @@ export class EmailDispatchService {
       try {
         const candidateKey = dto.candidateId || dto.to.toLowerCase();
         const appKey = dto.applicationId || "general";
-        const templateKey = dto.templateType || "custom";
+        const templateKey = dto.templateId || dto.templateType || "custom";
         const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
         const deterministicJobId = `email-${crypto
           .createHash("sha256")
@@ -145,6 +145,8 @@ export class EmailDispatchService {
         senderEmail: fromEmail,
         recipientEmail: dto.to,
         recipientName: dto.recipientName,
+        templateId: dto.templateId || null,
+        templateName: dto.templateName || null,
         templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
         subject: renderedSubject,
         body: renderedBody,
@@ -168,6 +170,8 @@ export class EmailDispatchService {
         actorRole: "ADMIN",
         metadata: {
           emailLogId: logId,
+          templateId: dto.templateId || null,
+          templateName: dto.templateName || null,
           templateType: dto.templateType || "CUSTOM",
           subject: renderedSubject,
           status: sendResult.status,

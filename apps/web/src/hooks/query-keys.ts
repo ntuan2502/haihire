@@ -27,6 +27,7 @@ export const queryKeys = {
     ["organization", "audit-logs", params] as const,
   emailTemplates: (orgId?: string | null) =>
     ["email", "templates", { orgId }] as const,
+  emailFlows: (orgId?: string | null) => ["email", "flows", { orgId }] as const,
   emailSettings: (orgId?: string | null) =>
     ["email", "settings", { orgId }] as const,
   emailLogs: (params?: {

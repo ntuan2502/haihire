@@ -5,12 +5,17 @@ import { emailApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
   EmailTemplate,
+  EmailFlowConfig,
+  EmailTemplateType,
   EmailSettings,
   EmailLog,
 } from "@/lib/email-templates";
 import { queryKeys } from "./query-keys";
 
-export function useEmailTemplates(organizationId?: string | null) {
+export function useEmailTemplates(
+  organizationId?: string | null,
+  options?: { enabled?: boolean },
+) {
   const { user } = useAuth();
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
@@ -21,7 +26,29 @@ export function useEmailTemplates(organizationId?: string | null) {
       if (!effectiveOrgId) return [];
       return emailApi.getTemplates(effectiveOrgId);
     },
-    enabled: Boolean(effectiveOrgId),
+    enabled: Boolean(effectiveOrgId) && (options?.enabled ?? true),
+  });
+}
+
+export function useCreateEmailTemplateMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      type?: EmailTemplateType;
+      subject: string;
+      body: string;
+      enabled?: boolean;
+    }) => emailApi.createTemplate(data, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+    },
   });
 }
 
@@ -35,13 +62,94 @@ export function useUpdateEmailTemplateMutation() {
       data,
     }: {
       type: string;
-      data: { subject?: string; body?: string; enabled?: boolean };
+      data: {
+        name?: string;
+        type?: EmailTemplateType;
+        subject?: string;
+        body?: string;
+        enabled?: boolean;
+      };
     }) => emailApi.updateTemplate(type, data, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+  });
+}
+
+export function useDuplicateEmailTemplateMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name?: string }) =>
+      emailApi.duplicateTemplate(id, { name }, user?.organizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+    },
+  });
+}
+
+export function useDeleteEmailTemplateMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      emailApi.deleteTemplate(id, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+  });
+}
+
+export function useEmailFlows(
+  organizationId?: string | null,
+  options?: { enabled?: boolean },
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<EmailFlowConfig[]>({
+    queryKey: queryKeys.emailFlows(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) return [];
+      return emailApi.getFlows(effectiveOrgId);
+    },
+    enabled: Boolean(effectiveOrgId) && (options?.enabled ?? true),
+  });
+}
+
+export function useUpdateEmailFlowMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({
+      flowKey,
+      data,
+    }: {
+      flowKey: string;
+      data: { templateId?: string | null; enabled?: boolean };
+    }) => emailApi.updateFlow(flowKey, data, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "flows"] });
     },
   });
 }
@@ -144,6 +252,8 @@ export function useSendEmailMutation() {
       recipientName: string;
       subject: string;
       body: string;
+      templateId?: string;
+      templateName?: string;
       templateType?: string;
       candidateId?: string;
       applicationId?: string;

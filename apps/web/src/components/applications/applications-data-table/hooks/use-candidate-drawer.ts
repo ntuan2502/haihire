@@ -27,6 +27,7 @@ import {
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
 import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
+import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import type {
   Job,
   Application,
@@ -64,6 +65,9 @@ export function useCandidateDrawer({
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
   const [pendingRejectApp, setPendingRejectApp] = useState<Application | null>(
+    null,
+  );
+  const [pendingOfferApp, setPendingOfferApp] = useState<Application | null>(
     null,
   );
 
@@ -113,7 +117,9 @@ export function useCandidateDrawer({
   const executeStageChange = async (
     targetApp: Application,
     newStage: ApplicationStage,
-    options?: RejectApplicationConfirmPayload,
+    options?: Partial<
+      RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
+    >,
   ) => {
     try {
       const updated = await updateStageMutation.mutateAsync({
@@ -124,6 +130,12 @@ export function useCandidateDrawer({
           : {}),
         ...(options?.sendRejectionEmail !== undefined
           ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
+        ...(options?.sendOfferEmail !== undefined
+          ? { sendOfferEmail: options.sendOfferEmail }
+          : {}),
+        ...(options?.emailTemplateId
+          ? { emailTemplateId: options.emailTemplateId }
           : {}),
       });
       setSelectedApp((prev) =>
@@ -158,6 +170,10 @@ export function useCandidateDrawer({
       setPendingRejectApp(currentApp);
       return;
     }
+    if (newStage === "OFFER" && currentApp.stage !== "OFFER") {
+      setPendingOfferApp(currentApp);
+      return;
+    }
     await executeStageChange(currentApp, newStage);
   };
 
@@ -168,6 +184,15 @@ export function useCandidateDrawer({
     const target = pendingRejectApp;
     await executeStageChange(target, "REJECTED", payload);
     setPendingRejectApp(null);
+  };
+
+  const handleConfirmOffer = async (
+    payload: OfferApplicationConfirmPayload,
+  ) => {
+    if (!pendingOfferApp) return;
+    const target = pendingOfferApp;
+    await executeStageChange(target, "OFFER", payload);
+    setPendingOfferApp(null);
   };
 
   const handleDownloadDoc = async (
@@ -248,6 +273,9 @@ export function useCandidateDrawer({
     pendingRejectApp,
     setPendingRejectApp,
     handleConfirmReject,
+    pendingOfferApp,
+    setPendingOfferApp,
+    handleConfirmOffer,
     handleDownloadDoc,
     drawerOverviewSections,
     setDrawerOverviewSections,

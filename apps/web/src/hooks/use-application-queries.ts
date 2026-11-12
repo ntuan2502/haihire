@@ -139,18 +139,24 @@ export function useUpdateStageMutation() {
       orderIndex,
       rejectionReason,
       sendRejectionEmail,
+      sendOfferEmail,
+      emailTemplateId,
     }: {
       id: string;
       stage: ApplicationStage;
       orderIndex?: number;
       rejectionReason?: string;
       sendRejectionEmail?: boolean;
+      sendOfferEmail?: boolean;
+      emailTemplateId?: string;
     }) =>
       applicationsApi.updateStage(id, {
         stage,
         orderIndex,
         rejectionReason,
         sendRejectionEmail,
+        sendOfferEmail,
+        emailTemplateId,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });

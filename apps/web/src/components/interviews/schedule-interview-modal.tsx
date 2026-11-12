@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useMemo, useRef, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
+import {
+  FlowTemplateSelect,
+  useFlowTemplateSelection,
+} from "@/components/email/flow-template-selector";
 import {
   Calendar,
   Clock,
@@ -97,7 +101,21 @@ export function ScheduleInterviewModal({
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
+  const hasTouchedEmailRef = useRef(false);
+  const hasTouchedTemplateRef = useRef(false);
+
+  const {
+    canViewEmail,
+    activeTemplates,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  } = useFlowTemplateSelection(
+    "INTERVIEW_SCHEDULED",
+    isOpen && !editingInterview,
+  );
 
   // Filter candidates for selected job
   const modalCandidates = useMemo(() => {
@@ -111,6 +129,29 @@ export function ScheduleInterviewModal({
   const currentCandidate = useMemo(() => {
     return applications.find((a) => a.id === modalCandidateId);
   }, [applications, modalCandidateId]);
+
+  // Sync invitation email defaults from configured INTERVIEW_SCHEDULED flow
+  useEffect(() => {
+    if (!isOpen || editingInterview) {
+      hasTouchedEmailRef.current = false;
+      hasTouchedTemplateRef.current = false;
+      setSendEmailInvite(true);
+      setSelectedTemplateId("");
+      return;
+    }
+    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+      setSendEmailInvite(defaultSendEnabled);
+    }
+    if (!hasTouchedTemplateRef.current) {
+      setSelectedTemplateId(defaultTemplateId);
+    }
+  }, [
+    isOpen,
+    editingInterview,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  ]);
 
   // Sync state when modal opens or selections change
   useEffect(() => {
@@ -253,6 +294,10 @@ export function ScheduleInterviewModal({
           interviewer: interviewerName.trim(),
           notes: interviewNotes.trim() || undefined,
           round: (candidate.interviews?.length || 0) + 1,
+          sendInvitationEmail: sendEmailInvite,
+          ...(sendEmailInvite && selectedTemplateId
+            ? { templateId: selectedTemplateId }
+            : {}),
         });
 
         // If candidate stage can transition to INTERVIEW stage according to state machine, advance
@@ -575,23 +620,44 @@ export function ScheduleInterviewModal({
               />
             </div>
 
-            {/* Send Email Invitation Checkbox */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <input
-                type="checkbox"
-                id="sendEmailInviteCheckbox"
-                checked={sendEmailInvite}
-                onChange={(e) => setSendEmailInvite(e.target.checked)}
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
-              />
-              <label
-                htmlFor="sendEmailInviteCheckbox"
-                className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1.5"
-              >
-                <Mail className="h-3.5 w-3.5 text-blue-500" />
-                <span>{t("email.sendEmailInviteCheckbox")}</span>
-              </label>
-            </div>
+            {/* Send Email Invitation Checkbox + Template Override (Create Only) */}
+            {!editingInterview && (
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="sendEmailInviteCheckbox"
+                    checked={sendEmailInvite}
+                    onChange={(e) => {
+                      hasTouchedEmailRef.current = true;
+                      setSendEmailInvite(e.target.checked);
+                    }}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="sendEmailInviteCheckbox"
+                    className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Mail className="h-3.5 w-3.5 text-blue-500" />
+                    <span>{t("email.sendEmailInviteCheckbox")}</span>
+                  </label>
+                </div>
+
+                {sendEmailInvite && canViewEmail && (
+                  <FlowTemplateSelect
+                    selectId="interview-email-template-select"
+                    label={t("email.interviewTemplateSelectLabel")}
+                    value={selectedTemplateId}
+                    onChange={(val) => {
+                      hasTouchedTemplateRef.current = true;
+                      setSelectedTemplateId(val);
+                    }}
+                    activeTemplates={activeTemplates}
+                    disabled={isSaving}
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-end gap-3">

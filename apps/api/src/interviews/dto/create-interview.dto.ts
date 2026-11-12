@@ -53,4 +53,8 @@ export class CreateInterviewDto {
 
   @IsOptional()
   sendInvitationEmail?: boolean;
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
 }

@@ -17,6 +17,7 @@ import {
 } from "@/components/applications/overview-sections-popover";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
+import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import {
   PIPELINE_STAGES,
   usePipelineStages,
@@ -366,11 +367,15 @@ export function usePipelineKanban(jobId: string) {
 
   const [pendingRejectCandidate, setPendingRejectCandidate] =
     useState<Application | null>(null);
+  const [pendingOfferCandidate, setPendingOfferCandidate] =
+    useState<Application | null>(null);
 
   const executeMoveCandidateStage = async (
     candidate: Application,
     newStage: ApplicationStage,
-    options?: RejectApplicationConfirmPayload,
+    options?: Partial<
+      RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
+    >,
   ) => {
     try {
       await updateStageMutation.mutateAsync({
@@ -381,6 +386,12 @@ export function usePipelineKanban(jobId: string) {
           : {}),
         ...(options?.sendRejectionEmail !== undefined
           ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
+        ...(options?.sendOfferEmail !== undefined
+          ? { sendOfferEmail: options.sendOfferEmail }
+          : {}),
+        ...(options?.emailTemplateId
+          ? { emailTemplateId: options.emailTemplateId }
           : {}),
       });
       setSelectedStage(newStage);
@@ -422,6 +433,11 @@ export function usePipelineKanban(jobId: string) {
       return;
     }
 
+    if (newStage === "OFFER" && candidate.stage !== "OFFER") {
+      setPendingOfferCandidate(candidate);
+      return;
+    }
+
     await executeMoveCandidateStage(candidate, newStage);
   };
 
@@ -433,6 +449,19 @@ export function usePipelineKanban(jobId: string) {
     try {
       await executeMoveCandidateStage(target, "REJECTED", payload);
       setPendingRejectCandidate(null);
+    } catch {
+      // Error already surfaced via executeMoveCandidateStage
+    }
+  };
+
+  const handleConfirmOfferCandidate = async (
+    payload: OfferApplicationConfirmPayload,
+  ) => {
+    if (!pendingOfferCandidate) return;
+    const target = pendingOfferCandidate;
+    try {
+      await executeMoveCandidateStage(target, "OFFER", payload);
+      setPendingOfferCandidate(null);
     } catch {
       // Error already surfaced via executeMoveCandidateStage
     }
@@ -533,6 +562,9 @@ export function usePipelineKanban(jobId: string) {
     pendingRejectCandidate,
     setPendingRejectCandidate,
     handleConfirmRejectCandidate,
+    pendingOfferCandidate,
+    setPendingOfferCandidate,
+    handleConfirmOfferCandidate,
     deleteAppModalOpen,
     setDeleteAppModalOpen,
     isDeletingApp,

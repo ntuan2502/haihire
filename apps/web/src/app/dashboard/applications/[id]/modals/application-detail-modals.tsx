@@ -4,6 +4,10 @@ import {
   RejectApplicationModal,
   type RejectApplicationConfirmPayload,
 } from "@/components/applications/reject-application-modal";
+import {
+  OfferApplicationModal,
+  type OfferApplicationConfirmPayload,
+} from "@/components/applications/offer-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { useI18n } from "@/i18n";
@@ -29,6 +33,9 @@ interface ApplicationDetailModalsProps {
   isRejectModalOpen: boolean;
   onCloseRejectModal: () => void;
   onConfirmReject: (payload: RejectApplicationConfirmPayload) => Promise<void>;
+  isOfferModalOpen?: boolean;
+  onCloseOfferModal?: () => void;
+  onConfirmOffer?: (payload: OfferApplicationConfirmPayload) => Promise<void>;
   isUpdatingStage: boolean;
   scheduleModalOpen: boolean;
   onCloseScheduleModal: () => void;
@@ -55,6 +62,9 @@ export function ApplicationDetailModals({
   isRejectModalOpen,
   onCloseRejectModal,
   onConfirmReject,
+  isOfferModalOpen = false,
+  onCloseOfferModal,
+  onConfirmOffer,
   isUpdatingStage,
   scheduleModalOpen,
   onCloseScheduleModal,
@@ -93,6 +103,19 @@ export function ApplicationDetailModals({
           isOpen={isRejectModalOpen}
           onClose={onCloseRejectModal}
           onConfirm={onConfirmReject}
+          candidateName={candidateName}
+          candidateEmail={candidateEmail}
+          jobTitle={jobTitle}
+          isSubmitting={isUpdatingStage}
+        />
+      )}
+
+      {/* Offer Application Confirmation Modal */}
+      {app && onCloseOfferModal && onConfirmOffer && (
+        <OfferApplicationModal
+          isOpen={isOfferModalOpen}
+          onClose={onCloseOfferModal}
+          onConfirm={onConfirmOffer}
           candidateName={candidateName}
           candidateEmail={candidateEmail}
           jobTitle={jobTitle}

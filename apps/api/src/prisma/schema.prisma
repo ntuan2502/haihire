@@ -86,6 +86,13 @@ enum EmailTemplateType {
   CUSTOM
 }
 
+enum EmailFlowKey {
+  APPLICATION_RECEIVED
+  INTERVIEW_SCHEDULED
+  APPLICATION_REJECTED
+  APPLICATION_OFFER
+}
+
 enum EmailDeliveryStatus {
   SENT
   SIMULATED
@@ -156,6 +163,7 @@ model Organization {
   inviteLinks      InviteLink[]
   members          OrganizationMember[]
   emailTemplates   EmailTemplate[]
+  emailFlows       EmailFlowConfig[]
   emailSettings    EmailSetting?
   emailLogs        EmailLog[]
   activityLogs     ActivityLog[]
@@ -367,17 +375,36 @@ model EmailTemplate {
   id             String            @id @default(uuid())
   organizationId String
   organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  type           EmailTemplateType
+  type           EmailTemplateType @default(CUSTOM)
   name           String
   subject        String
   body           String
   enabled        Boolean           @default(true)
+  isSystem       Boolean           @default(false)
   variables      String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+  flowConfigs    EmailFlowConfig[]
+  emailLogs      EmailLog[]
 
-  @@unique([organizationId, type])
+  @@index([organizationId, enabled])
   @@map("email_template")
+}
+
+model EmailFlowConfig {
+  id             String         @id @default(uuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  flowKey        EmailFlowKey
+  templateId     String?
+  template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  enabled        Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([organizationId, flowKey])
+  @@index([organizationId])
+  @@map("email_flow_config")
 }
 
 model EmailSetting {
@@ -408,6 +435,9 @@ model EmailLog {
   candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
   application    Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  templateId     String?
+  template       EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateName   String?
   senderId       String?
   senderName     String
   senderEmail    String
@@ -424,6 +454,7 @@ model EmailLog {
 
   @@index([organizationId, createdAt])
   @@index([scope, createdAt])
+  @@index([templateId])
   @@map("email_log")
 }
 

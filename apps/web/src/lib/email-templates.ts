@@ -1,17 +1,27 @@
 import {
   type EmailTemplateType,
+  type EmailFlowKey,
   type EmailDeliveryStatus,
   type EmailProviderType,
   type EmailTemplate,
+  type EmailFlowConfig,
+  type EmailFlowDefinition,
+  EMAIL_FLOW_KEYS,
+  EMAIL_FLOW_DEFINITIONS,
   DEFAULT_EMAIL_TEMPLATES,
   interpolateEmail,
 } from "@haihire/shared";
 
 export {
   type EmailTemplateType,
+  type EmailFlowKey,
   type EmailDeliveryStatus,
   type EmailProviderType,
   type EmailTemplate,
+  type EmailFlowConfig,
+  type EmailFlowDefinition,
+  EMAIL_FLOW_KEYS,
+  EMAIL_FLOW_DEFINITIONS,
   DEFAULT_EMAIL_TEMPLATES,
 };
 
@@ -35,6 +45,8 @@ export interface EmailLog {
   candidateEmail?: string;
   recipientName?: string;
   recipientEmail?: string;
+  templateId?: string | null;
+  templateName?: string | null;
   templateType: EmailTemplateType;
   subject: string;
   body: string;
@@ -155,6 +167,36 @@ const EMAIL_TEMPLATE_TYPE_LABEL_KEYS: Record<EmailTemplateType, string> = {
   CUSTOM: "email.optCustom",
 };
 
+const EMAIL_FLOW_META_KEYS: Record<
+  EmailFlowKey,
+  { titleKey: string; descKey: string }
+> = {
+  APPLICATION_RECEIVED: {
+    titleKey: "email.flowApplicationReceivedTitle",
+    descKey: "email.flowApplicationReceivedDesc",
+  },
+  INTERVIEW_SCHEDULED: {
+    titleKey: "email.flowInterviewScheduledTitle",
+    descKey: "email.flowInterviewScheduledDesc",
+  },
+  APPLICATION_REJECTED: {
+    titleKey: "email.flowApplicationRejectedTitle",
+    descKey: "email.flowApplicationRejectedDesc",
+  },
+  APPLICATION_OFFER: {
+    titleKey: "email.flowApplicationOfferTitle",
+    descKey: "email.flowApplicationOfferDesc",
+  },
+};
+
+const EMAIL_TEMPLATE_TYPE_ICONS: Record<EmailTemplateType, string> = {
+  APPLICATION_CONFIRMATION: "✉️",
+  INTERVIEW_INVITATION: "📅",
+  REJECTION: "🤝",
+  OFFER: "🏆",
+  CUSTOM: "✏️",
+};
+
 /**
  * Resolves a localized display label for an email template type enum value.
  */
@@ -167,6 +209,47 @@ export function getEmailTemplateTypeLabel(
   if (!key) return templateType;
   const translated = t(key);
   return translated && translated !== key ? translated : templateType;
+}
+
+/**
+ * Builds localized select options for the 5 template categories.
+ */
+export function getEmailTemplateTypeOptions(t: (key: string) => string): Array<{
+  value: EmailTemplateType;
+  label: string;
+}> {
+  return (
+    Object.keys(EMAIL_TEMPLATE_TYPE_LABEL_KEYS) as EmailTemplateType[]
+  ).map((typeKey) => ({
+    value: typeKey,
+    label: `${EMAIL_TEMPLATE_TYPE_ICONS[typeKey]} ${getEmailTemplateTypeLabel(typeKey, t)}`,
+  }));
+}
+
+/**
+ * Resolves localized title for one of the 4 standard email flow keys.
+ */
+export function getEmailFlowTitle(
+  flowKey: EmailFlowKey,
+  t: (key: string) => string,
+): string {
+  const meta = EMAIL_FLOW_META_KEYS[flowKey];
+  if (!meta) return flowKey;
+  const translated = t(meta.titleKey);
+  return translated && translated !== meta.titleKey ? translated : flowKey;
+}
+
+/**
+ * Resolves localized description for one of the 4 standard email flow keys.
+ */
+export function getEmailFlowDescription(
+  flowKey: EmailFlowKey,
+  t: (key: string) => string,
+): string {
+  const meta = EMAIL_FLOW_META_KEYS[flowKey];
+  if (!meta) return "";
+  const translated = t(meta.descKey);
+  return translated && translated !== meta.descKey ? translated : "";
 }
 
 export function interpolateTemplate(

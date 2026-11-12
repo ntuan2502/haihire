@@ -32,9 +32,12 @@ describe("Database Migration: Table Rename to snake_case (H-01)", () => {
     }
 
     // Exclude models introduced after the 20261109 rename migration
-    const renamedTables = mappedTables.filter(
-      (t) => t !== "application_note" && t !== "candidate_note",
-    );
+    const postRenameTables = new Set([
+      "application_note",
+      "candidate_note",
+      "email_flow_config",
+    ]);
+    const renamedTables = mappedTables.filter((t) => !postRenameTables.has(t));
     expect(renamedTables.length).toBe(19);
 
     for (const table of renamedTables) {

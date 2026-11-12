@@ -206,10 +206,17 @@ export class InterviewsScheduleService {
 
       if (dto.sendInvitationEmail && candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(
-            orgId,
-            "INTERVIEW_INVITATION",
-          );
+          const template =
+            typeof this.emailService.resolveFlowTemplate === "function"
+              ? await this.emailService.resolveFlowTemplate(
+                  orgId,
+                  "INTERVIEW_SCHEDULED",
+                  dto.templateId,
+                )
+              : await this.emailService.getTemplateByType(
+                  orgId,
+                  "INTERVIEW_INVITATION",
+                );
           if (template && template.enabled) {
             const orgName = orgSettings?.name || "Company";
 
@@ -219,7 +226,9 @@ export class InterviewsScheduleService {
                 recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
-                templateType: "INTERVIEW_INVITATION",
+                templateType: template.type || "INTERVIEW_INVITATION",
+                templateId: template.id,
+                templateName: template.name,
                 candidateId: candidate.id,
                 applicationId: app.id,
                 variables: buildDynamicEmailContext({

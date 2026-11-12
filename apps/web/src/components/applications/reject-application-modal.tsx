@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, Mail, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  FlowTemplateSelect,
+  useFlowTemplateSelection,
+} from "@/components/email/flow-template-selector";
 import { useI18n } from "@/i18n";
 
 export interface RejectApplicationConfirmPayload {
   rejectionReason?: string;
   sendRejectionEmail: boolean;
+  emailTemplateId?: string;
 }
 
 export interface RejectApplicationModalProps {
@@ -43,26 +48,41 @@ export function RejectApplicationModal({
   isSubmitting = false,
 }: RejectApplicationModalProps) {
   const { t } = useI18n();
+  const { canViewEmail, activeTemplates, defaultTemplateId } =
+    useFlowTemplateSelection("APPLICATION_REJECTED", isOpen);
+
   const [rejectionReason, setRejectionReason] = useState("");
   const [sendRejectionEmail, setSendRejectionEmail] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const hasTouchedTemplateRef = useRef(false);
 
   const normalizedEmail = candidateEmail?.trim() || "";
   const hasEmail = normalizedEmail.length > 0;
 
   useEffect(() => {
     if (!isOpen) {
+      hasTouchedTemplateRef.current = false;
       setRejectionReason("");
       setSendRejectionEmail(false);
+      setSelectedTemplateId("");
+      return;
     }
-  }, [isOpen]);
+    if (!hasTouchedTemplateRef.current) {
+      setSelectedTemplateId(defaultTemplateId);
+    }
+  }, [isOpen, defaultTemplateId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     const trimmedReason = rejectionReason.trim();
+    const effectiveSend = hasEmail ? sendRejectionEmail : false;
+    const effectiveTemplateId =
+      effectiveSend && selectedTemplateId ? selectedTemplateId : undefined;
     await onConfirm({
       rejectionReason: trimmedReason || undefined,
-      sendRejectionEmail: hasEmail ? sendRejectionEmail : false,
+      sendRejectionEmail: effectiveSend,
+      ...(effectiveTemplateId ? { emailTemplateId: effectiveTemplateId } : {}),
     });
   };
 
@@ -115,23 +135,39 @@ export function RejectApplicationModal({
 
           <div className="rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3">
             {hasEmail ? (
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={sendRejectionEmail}
-                  onChange={(e) => setSendRejectionEmail(e.target.checked)}
-                  disabled={isSubmitting}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-                />
-                <span className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed flex items-center gap-1.5 flex-wrap">
-                  <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>
-                    {t("applications.rejectModal.sendEmailLabel", {
-                      email: normalizedEmail,
-                    })}
+              <>
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={sendRejectionEmail}
+                    onChange={(e) => setSendRejectionEmail(e.target.checked)}
+                    disabled={isSubmitting}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                  />
+                  <span className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed flex items-center gap-1.5 flex-wrap">
+                    <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>
+                      {t("applications.rejectModal.sendEmailLabel", {
+                        email: normalizedEmail,
+                      })}
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
+
+                {sendRejectionEmail && canViewEmail && (
+                  <FlowTemplateSelect
+                    selectId="reject-email-template-select"
+                    label={t("applications.rejectModal.selectTemplateLabel")}
+                    value={selectedTemplateId}
+                    onChange={(val) => {
+                      hasTouchedTemplateRef.current = true;
+                      setSelectedTemplateId(val);
+                    }}
+                    activeTemplates={activeTemplates}
+                    disabled={isSubmitting}
+                  />
+                )}
+              </>
             ) : (
               <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />

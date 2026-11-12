@@ -1,22 +1,108 @@
 import { api } from "./client";
-import type { EmailSettings, EmailLog } from "../email-templates";
+import type {
+  EmailSettings,
+  EmailTemplate,
+  EmailFlowConfig,
+  EmailTemplateType,
+  EmailLog,
+} from "../email-templates";
 
 export const emailApi = {
-  getTemplates: async (organizationId?: string | null) => {
-    const response = await api.get("/email/templates", {
+  getTemplates: async (
+    organizationId?: string | null,
+  ): Promise<EmailTemplate[]> => {
+    const response = await api.get<EmailTemplate[]>("/email/templates", {
+      params: { organizationId: organizationId || undefined },
+    });
+    return response.data;
+  },
+
+  createTemplate: async (
+    data: {
+      name: string;
+      type?: EmailTemplateType;
+      subject: string;
+      body: string;
+      enabled?: boolean;
+    },
+    organizationId?: string | null,
+  ): Promise<EmailTemplate> => {
+    const response = await api.post<EmailTemplate>("/email/templates", data, {
       params: { organizationId: organizationId || undefined },
     });
     return response.data;
   },
 
   updateTemplate: async (
-    type: string,
-    data: { subject?: string; body?: string; enabled?: boolean },
+    idOrType: string,
+    data: {
+      name?: string;
+      type?: EmailTemplateType;
+      subject?: string;
+      body?: string;
+      enabled?: boolean;
+    },
     organizationId?: string | null,
-  ) => {
-    const response = await api.put(`/email/templates/${type}`, data, {
+  ): Promise<EmailTemplate> => {
+    const response = await api.put<EmailTemplate>(
+      `/email/templates/${idOrType}`,
+      data,
+      {
+        params: { organizationId: organizationId || undefined },
+      },
+    );
+    return response.data;
+  },
+
+  duplicateTemplate: async (
+    id: string,
+    data: { name?: string } = {},
+    organizationId?: string | null,
+  ): Promise<EmailTemplate> => {
+    const response = await api.post<EmailTemplate>(
+      `/email/templates/${id}/duplicate`,
+      data,
+      {
+        params: { organizationId: organizationId || undefined },
+      },
+    );
+    return response.data;
+  },
+
+  deleteTemplate: async (
+    id: string,
+    organizationId?: string | null,
+  ): Promise<{ deleted: boolean; id: string }> => {
+    const response = await api.delete<{ deleted: boolean; id: string }>(
+      `/email/templates/${id}`,
+      {
+        params: { organizationId: organizationId || undefined },
+      },
+    );
+    return response.data;
+  },
+
+  getFlows: async (
+    organizationId?: string | null,
+  ): Promise<EmailFlowConfig[]> => {
+    const response = await api.get<EmailFlowConfig[]>("/email/flows", {
       params: { organizationId: organizationId || undefined },
     });
+    return response.data;
+  },
+
+  updateFlow: async (
+    flowKey: string,
+    data: { templateId?: string | null; enabled?: boolean },
+    organizationId?: string | null,
+  ): Promise<EmailFlowConfig> => {
+    const response = await api.put<EmailFlowConfig>(
+      `/email/flows/${flowKey}`,
+      data,
+      {
+        params: { organizationId: organizationId || undefined },
+      },
+    );
     return response.data;
   },
 
@@ -44,6 +130,8 @@ export const emailApi = {
       subject: string;
       body: string;
       templateType?: string;
+      templateId?: string;
+      templateName?: string;
       candidateId?: string;
       applicationId?: string;
       variables?: Record<string, string>;

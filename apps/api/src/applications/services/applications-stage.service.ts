@@ -1,6 +1,8 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  type EmailFlowKey,
+  type EmailTemplateType,
   formatCandidateDisplayName,
   VALID_APPLICATION_STAGE_TRANSITIONS,
 } from "@haihire/shared";
@@ -109,9 +111,11 @@ export class ApplicationsStageService {
     // Record activity log
     const orgId =
       updated.job?.organizationId || updated.candidate?.organizationId;
+    const isOffering = dto.stage === "OFFER";
     if (orgId && updated.candidate && oldStage !== dto.stage) {
       const shouldSendRejectionEmail =
         isRejecting && dto.sendRejectionEmail !== false;
+      const shouldSendOfferEmail = isOffering && dto.sendOfferEmail === true;
       const descriptionParts = [
         `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
       ];
@@ -138,65 +142,32 @@ export class ApplicationsStageService {
           sendRejectionEmail: isRejecting
             ? shouldSendRejectionEmail
             : undefined,
+          sendOfferEmail: isOffering ? shouldSendOfferEmail : undefined,
+          emailTemplateId: dto.emailTemplateId || undefined,
           jobTitle: updated.job?.title || "",
           actorName: currentUser?.name || "HR Team",
           actorRole: currentUser?.role || "ADMIN",
         },
       });
 
-      // Only dispatch automated rejection email if explicitly enabled
       if (shouldSendRejectionEmail && updated.candidate.email) {
-        try {
-          const template = await this.emailService.getTemplateByType(
-            orgId,
-            "REJECTION",
-          );
-          if (template && template.enabled) {
-            let orgName = "Company";
-            let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
-            const org = await this.prisma.organization.findFirst({
-              where: { id: orgId },
-              select: { name: true, nameDisplayOrder: true },
-            });
-            if (org?.name) {
-              orgName = org.name;
-            }
-            if (org?.nameDisplayOrder === "LAST_FIRST") {
-              orgOrder = "LAST_FIRST";
-            }
-            const resolvedCandidateName =
-              formatCandidateDisplayName(updated.candidate, orgOrder) ||
-              updated.candidate.name;
-
-            await this.emailService.sendEmail(
-              {
-                to: updated.candidate.email,
-                recipientName: resolvedCandidateName,
-                subject: template.subject,
-                body: template.body,
-                templateType: "REJECTION",
-                candidateId: updated.candidate.id,
-                applicationId: updated.id,
-                variables: buildDynamicEmailContext({
-                  candidate: {
-                    name: resolvedCandidateName,
-                    email: updated.candidate.email,
-                    phone: updated.candidate.phone,
-                  },
-                  job: {
-                    title: updated.job?.title || "Vị trí tuyển dụng",
-                    department: updated.job?.department || "",
-                    location: updated.job?.location || "",
-                  },
-                  organization: { name: orgName },
-                }),
-              },
-              orgId,
-            );
-          }
-        } catch (emailErr) {
-          console.warn("Failed to send rejection email:", emailErr);
-        }
+        await this.dispatchStageEmail({
+          orgId,
+          flowKey: "APPLICATION_REJECTED",
+          legacyType: "REJECTION",
+          overrideTemplateId: dto.emailTemplateId,
+          updated,
+          currentUser,
+        });
+      } else if (shouldSendOfferEmail && updated.candidate.email) {
+        await this.dispatchStageEmail({
+          orgId,
+          flowKey: "APPLICATION_OFFER",
+          legacyType: "OFFER",
+          overrideTemplateId: dto.emailTemplateId,
+          updated,
+          currentUser,
+        });
       }
     }
 
@@ -229,5 +200,98 @@ export class ApplicationsStageService {
     }
 
     return updated;
+  }
+
+  private async dispatchStageEmail(params: {
+    orgId: string;
+    flowKey: EmailFlowKey;
+    legacyType: EmailTemplateType;
+    overrideTemplateId?: string;
+    updated: Awaited<ReturnType<ApplicationsQueryService["findOne"]>>;
+    currentUser?: { id?: string; name?: string; role?: string } | null;
+  }): Promise<void> {
+    const {
+      orgId,
+      flowKey,
+      legacyType,
+      overrideTemplateId,
+      updated,
+      currentUser,
+    } = params;
+    const candidate = updated.candidate;
+    if (!candidate?.email) {
+      return;
+    }
+
+    try {
+      const template =
+        typeof this.emailService.resolveFlowTemplate === "function"
+          ? await this.emailService.resolveFlowTemplate(
+              orgId,
+              flowKey,
+              overrideTemplateId,
+            )
+          : await this.emailService.getTemplateByType(orgId, legacyType);
+      if (!template || !template.enabled) {
+        return;
+      }
+
+      let orgName = "Company";
+      let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
+      const org = await this.prisma.organization.findFirst({
+        where: { id: orgId },
+        select: { name: true, nameDisplayOrder: true },
+      });
+      if (org?.name) {
+        orgName = org.name;
+      }
+      if (org?.nameDisplayOrder === "LAST_FIRST") {
+        orgOrder = "LAST_FIRST";
+      }
+
+      const resolvedCandidateName =
+        formatCandidateDisplayName(candidate, orgOrder) || candidate.name;
+      const senderContext = currentUser?.name
+        ? { name: currentUser.name }
+        : undefined;
+      const senderUser =
+        currentUser?.id || currentUser?.name
+          ? { id: currentUser.id, name: currentUser.name }
+          : undefined;
+
+      const payload = {
+        to: candidate.email,
+        recipientName: resolvedCandidateName,
+        subject: template.subject,
+        body: template.body,
+        templateType: template.type || legacyType,
+        templateId: template.id,
+        templateName: template.name,
+        candidateId: candidate.id,
+        applicationId: updated.id,
+        variables: buildDynamicEmailContext({
+          candidate: {
+            name: resolvedCandidateName,
+            email: candidate.email,
+            phone: candidate.phone,
+          },
+          job: {
+            title: updated.job?.title || "Vị trí tuyển dụng",
+            department: updated.job?.department || "",
+            location: updated.job?.location || "",
+          },
+          organization: { name: orgName },
+          sender: senderContext,
+        }),
+      };
+
+      if (senderUser) {
+        await this.emailService.sendEmail(payload, orgId, senderUser);
+      } else {
+        await this.emailService.sendEmail(payload, orgId);
+      }
+    } catch (emailErr) {
+      console.warn(`Failed to send ${flowKey} email:`, emailErr);
+    }
   }
 }

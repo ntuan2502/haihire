@@ -130,7 +130,8 @@ export default function EmailLogsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {getEmailTemplateTypeLabel(log.templateType, t)}
+                          {log.templateName ||
+                            getEmailTemplateTypeLabel(log.templateType, t)}
                         </span>
                       </td>
                       <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300 font-medium">
@@ -208,7 +209,10 @@ export default function EmailLogsPage() {
           candidateEmail={
             viewingLog.candidateEmail || viewingLog.recipientEmail || undefined
           }
-          templateName={getEmailTemplateTypeLabel(viewingLog.templateType, t)}
+          templateName={
+            viewingLog.templateName ||
+            getEmailTemplateTypeLabel(viewingLog.templateType, t)
+          }
           status={viewingLog.status}
           date={viewingLog.sentAt}
           errorMessage={viewingLog.errorMessage}

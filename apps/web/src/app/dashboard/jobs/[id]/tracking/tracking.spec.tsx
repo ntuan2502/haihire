@@ -110,7 +110,9 @@ describe("JobTrackingPage", () => {
 
     // Job selector is locked
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText("Cố định cho vị trí này")).toBeDefined();
+    expect(
+      within(dialog).getByText("Áp dụng cho tin tuyển dụng này"),
+    ).toBeDefined();
     const jobButton = within(dialog)
       .getByText("Senior Frontend Engineer")
       .closest("button");

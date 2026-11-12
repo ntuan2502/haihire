@@ -442,9 +442,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
     it("renders activity timeline container", () => {
       renderWithClient(<CandidateDetailPage />);
 
-      expect(
-        screen.getByText("Dòng thời gian Hoạt động (Activity Timeline)"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Dòng thời gian hoạt động")).toBeInTheDocument();
     });
   });
 

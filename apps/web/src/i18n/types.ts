@@ -64,6 +64,23 @@ export interface TranslationSchema {
     revokeConfirmWord: string;
     skipToContent: string;
     accessDenied: string;
+    loadingWorkspace: string;
+    clearSearch: string;
+    removeFilter: string;
+    removeSpecificFilter: string;
+    maximize: string;
+    restore: string;
+    userProfile: string;
+    toggleNavigationMenu: string;
+    positionFallback: string;
+    openRoleFallback: string;
+    departmentSuffix: string;
+    unknownUserFallback: string;
+    docTypes: {
+      resume: string;
+      coverLetter: string;
+      other: string;
+    };
   };
   errors: {
     generic: string;
@@ -485,6 +502,10 @@ export interface TranslationSchema {
       cannotMoveRejected: string;
       dragNotAllowed: string;
     };
+    focusCandidate: string;
+    viewCandidateLabel: string;
+    noEmail: string;
+    filterOptions: string;
   };
   jobs: {
     title: string;
@@ -530,6 +551,9 @@ export interface TranslationSchema {
     draftStatus: string;
     closedStatus: string;
     moreOptions: string;
+    defaultLocation: string;
+    competitiveSalary: string;
+    noDescription: string;
     tabs: {
       pipeline: string;
       promote: string;
@@ -900,6 +924,7 @@ export interface TranslationSchema {
     updateFailed: string;
     invalidCandidateId: string;
     candidateNotFound: string;
+    notesTitle: string;
   };
   applications: {
     title: string;
@@ -952,6 +977,7 @@ export interface TranslationSchema {
       deleting: string;
     };
     toggleSections: string;
+    comingSoonTooltip: string;
     views: string;
     columnsToggle: string;
     columns: {
@@ -1261,6 +1287,7 @@ export interface TranslationSchema {
     close: string;
     cancelInterviewTitle: string;
     cancelInterviewWarning: string;
+    interviewEventAria: string;
     errors: {
       selectCandidate: string;
       selectDate: string;
@@ -1307,15 +1334,21 @@ export interface TranslationSchema {
     roleHiringManager: string;
     roleInterviewer: string;
     roleMember: string;
+    expires1Day: string;
     expires7Days: string;
     expires30Days: string;
     expiresNever: string;
     uses1: string;
+    uses5: string;
+    uses10: string;
     usesUnlimited: string;
     noActiveInviteLinks: string;
     noActiveInviteLinksDesc: string;
     updateRoleSuccess: string;
     updateRoleError: string;
+    memberActionsTitle: string;
+    inviteEmailRequired: string;
+    inviteSentSuccess: string;
   };
   onboarding: {
     selectOrgTitle: string;
@@ -1614,6 +1647,49 @@ export interface TranslationSchema {
       roleInterviewer: string;
       roleMember: string;
       tableSummary: string;
+      permissions: {
+        org_view: string;
+        org_update: string;
+        org_delete: string;
+        org_manage_members: string;
+        org_manage_roles: string;
+        org_manage_billing: string;
+        org_transfer_ownership: string;
+        org_view_audit_log: string;
+        job_view: string;
+        job_create: string;
+        job_update: string;
+        job_delete: string;
+        candidate_view: string;
+        candidate_create: string;
+        candidate_update: string;
+        candidate_delete: string;
+        candidate_document_upload: string;
+        candidate_document_download: string;
+        candidate_document_delete: string;
+        application_view: string;
+        application_create: string;
+        application_update: string;
+        application_update_stage: string;
+        application_delete: string;
+        application_document_upload: string;
+        application_document_download: string;
+        application_document_delete: string;
+        interview_view: string;
+        interview_create: string;
+        interview_update: string;
+        interview_delete: string;
+        interview_scorecard_submit: string;
+        sourcing_view: string;
+        sourcing_create: string;
+        sourcing_update: string;
+        sourcing_delete: string;
+        email_view: string;
+        email_send: string;
+        email_manage_templates: string;
+        email_manage_settings: string;
+        settings_manage_integrations: string;
+      };
     };
     auditLog: {
       title: string;
@@ -1639,6 +1715,30 @@ export interface TranslationSchema {
       actionMemberRoleChanged: string;
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
+      actionOrgLocalizationUpdated: string;
+      resources: {
+        ORGANIZATION: string;
+        MEMBER: string;
+        ROLE_PERMISSIONS: string;
+        SYSTEM: string;
+        OTHER: string;
+      };
+      metadataLabels: {
+        roleTarget: string;
+        allRoles: string;
+        roleChanged: string;
+        permissionsUpdated: string;
+        ownershipTransferred: string;
+        localizationUpdated: string;
+        localizationFields: {
+          timezone: string;
+          defaultLocale: string;
+          defaultCurrency: string;
+          nameDisplayOrder: string;
+          dateFormat: string;
+          timeFormat: string;
+        };
+      };
     };
   };
   theme: {
@@ -1881,6 +1981,7 @@ export interface TranslationSchema {
     subjectPlaceholder: string;
     tabCompose: string;
     htmlAndVariables: string;
+    mobileBackToInbox: string;
     bodyPlaceholder: string;
     varCandidateName: string;
     varCandidateEmail: string;

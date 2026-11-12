@@ -58,14 +58,14 @@ describe("TrackingLinkModal (Unified Component)", () => {
     // Modal title & submit button
     expect(screen.getByText("Tạo liên kết theo dõi mới")).toBeDefined();
     expect(screen.getByRole("button", { name: "Tạo liên kết" })).toBeDefined();
-    expect(screen.getByRole("button", { name: "Hủy bỏ" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Hủy" })).toBeDefined();
 
     // UTM inputs are directly visible with standard labels
-    expect(screen.getByText("utm_source")).toBeDefined();
-    expect(screen.getByText("utm_medium")).toBeDefined();
-    expect(screen.getByText("utm_campaign")).toBeDefined();
-    expect(screen.getByText("utm_term")).toBeDefined();
-    expect(screen.getByText("utm_content")).toBeDefined();
+    expect(screen.getByText("Nguồn (utm_source)")).toBeDefined();
+    expect(screen.getByText("Kênh (utm_medium)")).toBeDefined();
+    expect(screen.getByText("Chiến dịch (utm_campaign)")).toBeDefined();
+    expect(screen.getByText("Từ khóa (utm_term)")).toBeDefined();
+    expect(screen.getByText("Nội dung (utm_content)")).toBeDefined();
   });
 
   it("renders in edit mode with prefilled values from link item", () => {
@@ -82,7 +82,7 @@ describe("TrackingLinkModal (Unified Component)", () => {
     // Modal title & submit button
     expect(screen.getByText("Chỉnh sửa liên kết nguồn")).toBeDefined();
     expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDefined();
-    expect(screen.getByRole("button", { name: "Hủy bỏ" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Hủy" })).toBeDefined();
 
     // Name field and UTM fields should be prefilled
     expect(
@@ -106,7 +106,7 @@ describe("TrackingLinkModal (Unified Component)", () => {
     );
 
     // Job lock hint is visible
-    expect(screen.getByText("Cố định cho vị trí này")).toBeDefined();
+    expect(screen.getByText("Áp dụng cho tin tuyển dụng này")).toBeDefined();
 
     // The job dropdown trigger button is disabled
     const jobButton = screen

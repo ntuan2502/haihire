@@ -1,6 +1,7 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
+import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { JoinOrgDto } from "../dto/join-org.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import {
@@ -8,7 +9,12 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  ROLE_LIST,
+  Role,
+  hasPermission,
+} from "@haihire/shared";
 
 export interface InviteLinkRecord {
   id: string;
@@ -26,17 +32,80 @@ export interface InviteLinkRecord {
   createdAt: string;
 }
 
+interface MemberInviteContext {
+  user: {
+    id: string;
+    name: string | null;
+    role: string;
+    organizationId: string;
+  };
+  orgId: string;
+  org: {
+    id: string;
+    name: string;
+    slug: string;
+    ownerId: string | null;
+  } | null;
+  isOwner: boolean;
+  effectiveRole: Role;
+  canManageMembers: boolean;
+}
+
 @Injectable()
 export class OrganizationsInvitesService {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
-  async createInviteLink(
+  private resolveValidInviteRole(rawRole?: string | null): Role {
+    if (!rawRole) {
+      return Role.MEMBER;
+    }
+    const normalized = rawRole.trim().toUpperCase();
+    if (!normalized) {
+      return Role.MEMBER;
+    }
+    const matched = ROLE_LIST.find((role) => role === normalized);
+    if (!matched) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Invalid invite role "${rawRole}". Valid roles: ${ROLE_LIST.join(", ")}`,
+      );
+    }
+    return matched;
+  }
+
+  private async hasManageMembersPermission(
+    organizationId: string,
+    effectiveRole: Role,
+    isOwner: boolean,
+  ): Promise<boolean> {
+    if (isOwner || effectiveRole === Role.ADMIN) {
+      return true;
+    }
+    const prismaPartial: Partial<
+      Pick<PrismaService, "organizationRolePermission">
+    > = this.prisma;
+    if (
+      this.permissionResolver &&
+      typeof prismaPartial.organizationRolePermission?.findMany === "function"
+    ) {
+      return this.permissionResolver.resolvePermission(
+        organizationId,
+        effectiveRole,
+        "org:manage_members",
+      );
+    }
+    return hasPermission(effectiveRole, "org:manage_members");
+  }
+
+  private async resolveMemberInviteContext(
     userId: string,
-    dto: { role?: string; expiresIn?: string; maxUses?: string },
-  ): Promise<InviteLinkRecord> {
+  ): Promise<MemberInviteContext | null> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId },
       select: {
@@ -48,14 +117,12 @@ export class OrganizationsInvitesService {
     });
 
     if (!user || !user.organizationId) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.ORG_USER_NO_ORG,
-        "User is not associated with an organization",
-      );
+      return null;
     }
 
+    const orgId = user.organizationId;
     const org = await this.prisma.organization.findFirst({
-      where: { id: user.organizationId as string },
+      where: { id: orgId },
       select: {
         id: true,
         name: true,
@@ -64,6 +131,59 @@ export class OrganizationsInvitesService {
       },
     });
 
+    const prismaPartial: Partial<Pick<PrismaService, "organizationMember">> =
+      this.prisma;
+    const membership =
+      typeof prismaPartial.organizationMember?.findFirst === "function"
+        ? await this.prisma.organizationMember.findFirst({
+            where: {
+              organizationId: orgId,
+              userId: user.id,
+            },
+            select: { role: true },
+          })
+        : null;
+
+    const rawEffectiveRole = membership?.role ?? user.role;
+    const effectiveRole =
+      ROLE_LIST.find(
+        (role) => role === rawEffectiveRole.trim().toUpperCase(),
+      ) ?? Role.MEMBER;
+    const isOwner = Boolean(org && org.ownerId === user.id);
+    const canManageMembers = await this.hasManageMembersPermission(
+      orgId,
+      effectiveRole,
+      isOwner,
+    );
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        organizationId: orgId,
+      },
+      orgId,
+      org,
+      isOwner,
+      effectiveRole,
+      canManageMembers,
+    };
+  }
+
+  async createInviteLink(
+    userId: string,
+    dto: { role?: string; expiresIn?: string; maxUses?: string },
+  ): Promise<InviteLinkRecord> {
+    const ctx = await this.resolveMemberInviteContext(userId);
+    if (!ctx) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
+    }
+
+    const { user, org, isOwner, effectiveRole, canManageMembers } = ctx;
     if (!org) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_NOT_FOUND,
@@ -71,13 +191,18 @@ export class OrganizationsInvitesService {
       );
     }
 
-    const isOwner = Boolean(org.ownerId && org.ownerId === user.id);
-    const isAdmin = user.role === "ADMIN";
-
-    if (!isAdmin && !isOwner) {
+    if (!canManageMembers) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-        "Only organization owners and administrators can create invite links.",
+        "You do not have permission to create invite links.",
+      );
+    }
+
+    const linkRole = this.resolveValidInviteRole(dto.role);
+    if (linkRole === Role.ADMIN && !isOwner && effectiveRole !== Role.ADMIN) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Only organization owners and administrators can create admin invite links.",
       );
     }
 
@@ -113,7 +238,6 @@ export class OrganizationsInvitesService {
     }
 
     const id = crypto.randomUUID();
-    const linkRole = dto.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
     await this.prisma.inviteLink.create({
       data: {
@@ -148,37 +272,12 @@ export class OrganizationsInvitesService {
   }
 
   async getInviteLinks(userId: string): Promise<InviteLinkRecord[]> {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-        organizationId: true,
-      },
-    });
-
-    if (!user || !user.organizationId) {
+    const ctx = await this.resolveMemberInviteContext(userId);
+    if (!ctx || !ctx.canManageMembers) {
       return [];
     }
 
-    const orgId = user.organizationId as string;
-    const org = await this.prisma.organization.findFirst({
-      where: { id: orgId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-      },
-    });
-
-    const isOwner = Boolean(org && org.ownerId === user.id);
-    const isAdmin = user.role === "ADMIN";
-
-    // Security: Only Admin and Owner can view invite links
-    if (!isAdmin && !isOwner) {
-      return [];
-    }
+    const { orgId, org } = ctx;
 
     const allLinks = await this.prisma.inviteLink.findMany({
       where: { organizationId: orgId },
@@ -236,38 +335,19 @@ export class OrganizationsInvitesService {
   }
 
   async revokeInviteLink(userId: string, linkId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-      select: {
-        id: true,
-        role: true,
-        organizationId: true,
-      },
-    });
-
-    if (!user || !user.organizationId) {
+    const ctx = await this.resolveMemberInviteContext(userId);
+    if (!ctx) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
         "User is not associated with an organization",
       );
     }
 
-    const orgId = user.organizationId;
-    const org = await this.prisma.organization.findFirst({
-      where: { id: orgId },
-      select: {
-        id: true,
-        ownerId: true,
-      },
-    });
-
-    const isOwner = Boolean(org && org.ownerId === user.id);
-    const isAdmin = user.role === "ADMIN";
-
-    if (!isAdmin && !isOwner) {
+    const { orgId, canManageMembers } = ctx;
+    if (!canManageMembers) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-        "Only organization owners and administrators can revoke invite links.",
+        "You do not have permission to revoke invite links.",
       );
     }
 
@@ -473,8 +553,7 @@ export class OrganizationsInvitesService {
         );
       }
 
-      const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as
-        "ADMIN" | "MEMBER";
+      const assignedRole = this.resolveValidInviteRole(link.role);
 
       // Record persistent membership in OrganizationMember
       const newMemberId = crypto.randomUUID();
@@ -517,7 +596,7 @@ export class OrganizationsInvitesService {
       return {
         success: true,
         organization: org,
-        role: link.role,
+        role: assignedRole,
         message: `Successfully joined ${org?.name || "organization"}`,
       };
     });
@@ -597,7 +676,7 @@ export class OrganizationsInvitesService {
         );
       }
 
-      const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
+      const assignedRole = this.resolveValidInviteRole(inviteLink.role);
 
       // Check if user already has an active membership in this organization
       const userMemberships = await tx.organizationMember.findMany({

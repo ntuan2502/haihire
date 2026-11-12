@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel } from "@/lib/roles";
 
 interface PublicInviteData {
   valid: boolean;
@@ -189,7 +190,7 @@ export default function JoinOrganizationPage() {
                 <Shield className="h-3.5 w-3.5 text-slate-400" />
                 <span>
                   {t("join.joinAs")}{" "}
-                  <strong>{inviteData.role || "Member"}</strong>
+                  <strong>{getOrgRoleLabel(inviteData.role, t)}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

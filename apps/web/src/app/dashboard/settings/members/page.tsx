@@ -12,11 +12,11 @@ import {
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
-import type { CustomSelectOption } from "@/components/shared/custom-select";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 import {
   InviteMemberCard,
   InviteLinksCard,
@@ -31,35 +31,16 @@ export default function MembersSettingsPage() {
   const { user, canEdit, isOwner, refreshUser } = useAuth();
   const { t } = useI18n();
   const canManageMembers = useHasPermission("org:manage_members");
+  const canInviteAdmin = Boolean(isOwner || user?.role === Role.ADMIN);
 
-  const roleOptions: CustomSelectOption<Role>[] = useMemo(
-    () => [
-      { value: Role.ADMIN, label: t("members.roleAdmin") },
-      { value: Role.RECRUITER, label: t("members.roleRecruiter") },
-      { value: Role.HIRING_MANAGER, label: t("members.roleHiringManager") },
-      { value: Role.INTERVIEWER, label: t("members.roleInterviewer") },
-      { value: Role.MEMBER, label: t("members.roleMember") },
-    ],
-    [t],
+  const roleOptions = useMemo(() => getOrgRoleOptions(t), [t]);
+  const inviteRoleOptions = useMemo(
+    () => getOrgRoleOptions(t, { excludeAdmin: !canInviteAdmin }),
+    [t, canInviteAdmin],
   );
 
   const getRoleLabel = useCallback(
-    (role: string): string => {
-      switch (role?.toUpperCase()) {
-        case Role.ADMIN:
-          return t("members.roleAdmin");
-        case Role.RECRUITER:
-          return t("members.roleRecruiter");
-        case Role.HIRING_MANAGER:
-          return t("members.roleHiringManager");
-        case Role.INTERVIEWER:
-          return t("members.roleInterviewer");
-        case Role.MEMBER:
-          return t("members.roleMember");
-        default:
-          return role || t("members.roleMember");
-      }
-    },
+    (role: string): string => getOrgRoleLabel(role, t),
     [t],
   );
 
@@ -250,6 +231,8 @@ export default function MembersSettingsPage() {
       {/* Top Action + Invite team member card */}
       <InviteMemberCard
         canEdit={canManageMembers}
+        roleOptions={inviteRoleOptions}
+        getRoleLabel={getRoleLabel}
         onInviteSuccess={handleInviteSuccess}
         onInviteError={handleInviteError}
       />
@@ -257,6 +240,8 @@ export default function MembersSettingsPage() {
       {/* Invite links card */}
       <InviteLinksCard
         canEdit={canManageMembers}
+        roleOptions={inviteRoleOptions}
+        getRoleLabel={getRoleLabel}
         serverInviteLinks={serverInviteLinks}
         refetchLinks={refetchLinks}
         onRevokeClick={(linkId) => setLinkToRevoke(linkId)}

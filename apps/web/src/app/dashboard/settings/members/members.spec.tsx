@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import MembersSettingsPage from "./page";
+import * as OrgQueriesModule from "@/hooks/use-organization-queries";
 
 const mockCreateInviteMutateAsync = vi.fn();
 const mockRevokeInviteMutateAsync = vi.fn();
@@ -20,6 +27,16 @@ let mockAuthUser = {
 };
 let mockCanEdit = true;
 let mockIsOwner = true;
+let mockInviteLinks = [
+  {
+    id: "link-1",
+    token: "tok-abc-123",
+    role: "MEMBER",
+    expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    maxUses: 5,
+    usesCount: 1,
+  },
+];
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -72,16 +89,7 @@ vi.mock("@/hooks/use-queries", () => ({
     refetch: vi.fn(),
   }),
   useInviteLinks: () => ({
-    data: [
-      {
-        id: "link-1",
-        token: "tok-abc-123",
-        role: "MEMBER",
-        expiresAt: new Date(Date.now() + 86400000).toISOString(),
-        maxUses: 5,
-        uses: 1,
-      },
-    ],
+    data: mockInviteLinks,
     refetch: mockRefetchLinks,
   }),
   useCreateInviteLinkMutation: () => ({
@@ -153,6 +161,16 @@ describe("MembersSettingsPage Component", () => {
     };
     mockCanEdit = true;
     mockIsOwner = true;
+    mockInviteLinks = [
+      {
+        id: "link-1",
+        token: "tok-abc-123",
+        role: "MEMBER",
+        expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        maxUses: 5,
+        usesCount: 1,
+      },
+    ];
   });
 
   it("renders page title and member list correctly", () => {
@@ -369,6 +387,194 @@ describe("MembersSettingsPage Component", () => {
       expect(dropdowns[1]).toHaveTextContent("Admin");
       expect(dropdowns[2]).toHaveTextContent("Admin");
       expect(dropdowns[3]).toHaveTextContent("Member");
+    });
+  });
+
+  describe("Multi-Role Invitations", () => {
+    it("displays localized role labels on active invite link rows instead of raw enum keys", () => {
+      mockInviteLinks = [
+        {
+          id: "link-hm",
+          token: "tok-hm-123",
+          role: "HIRING_MANAGER",
+          expiresAt: new Date(Date.now() + 86400000).toISOString(),
+          maxUses: 5,
+          usesCount: 1,
+        },
+        {
+          id: "link-rec",
+          token: "tok-rec-456",
+          role: "RECRUITER",
+          expiresAt: new Date(Date.now() + 86400000).toISOString(),
+          maxUses: 3,
+          usesCount: 0,
+        },
+      ];
+
+      render(<MembersSettingsPage />);
+
+      expect(screen.getByText("Hiring Manager")).toBeInTheDocument();
+      expect(screen.getByText("Recruiter")).toBeInTheDocument();
+      expect(screen.queryByText("HIRING_MANAGER")).not.toBeInTheDocument();
+      expect(screen.queryByText("RECRUITER")).not.toBeInTheDocument();
+    });
+
+    it("shows all 5 roles for owner/admin in InviteMemberCard and InviteLinksCard and submits selected role", async () => {
+      mockCreateInviteMutateAsync.mockResolvedValueOnce({ id: "link-hm" });
+
+      render(<MembersSettingsPage />);
+
+      // 1. Test InviteMemberCard dropdown + submit with Recruiter
+      const inviteBtn = screen.getByText("Mời thành viên").closest("button");
+      expect(inviteBtn).toBeTruthy();
+      fireEvent.click(inviteBtn!);
+
+      const emailInput = screen.getByPlaceholderText("colleague@company.com");
+      const inviteForm = emailInput.closest("form");
+      expect(inviteForm).toBeTruthy();
+
+      const memberRoleTrigger = within(inviteForm!).getByRole("button", {
+        name: "Member",
+      });
+      fireEvent.click(memberRoleTrigger);
+
+      for (const expectedLabel of [
+        "Admin",
+        "Recruiter",
+        "Hiring Manager",
+        "Interviewer",
+        "Member",
+      ]) {
+        expect(
+          screen.getByRole("option", { name: expectedLabel }),
+        ).toBeInTheDocument();
+      }
+
+      fireEvent.click(screen.getByRole("option", { name: "Recruiter" }));
+      fireEvent.change(emailInput, { target: { value: "rec@haihire.vn" } });
+      fireEvent.click(screen.getByText("Gửi lời mời").closest("button")!);
+
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(
+              'Invitation sent to rec@haihire.vn with role "Recruiter".',
+            ),
+          ).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
+
+      // 2. Test InviteLinksCard dropdown + submit with HIRING_MANAGER
+      const openCreateBtn = screen.getByRole("button", {
+        name: /Tạo liên kết/,
+      });
+      fireEvent.click(openCreateBtn);
+
+      const expiresLabel = screen.getByText("members.expiresInLabel");
+      const createPanel = expiresLabel.closest("div")!.parentElement!;
+      const linkRoleTrigger = within(createPanel).getByRole("button", {
+        name: "Member",
+      });
+      fireEvent.click(linkRoleTrigger);
+
+      for (const expectedLabel of [
+        "Admin",
+        "Recruiter",
+        "Hiring Manager",
+        "Interviewer",
+        "Member",
+      ]) {
+        expect(
+          screen.getByRole("option", { name: expectedLabel }),
+        ).toBeInTheDocument();
+      }
+
+      fireEvent.click(screen.getByRole("option", { name: "Hiring Manager" }));
+
+      const confirmCreateBtn = within(createPanel).getByRole("button", {
+        name: /Tạo liên kết/,
+      });
+      fireEvent.click(confirmCreateBtn);
+
+      await waitFor(() => {
+        expect(mockCreateInviteMutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({
+            role: "HIRING_MANAGER",
+          }),
+        );
+      });
+    });
+
+    it("excludes ADMIN option in invite cards for non-owner non-admin users granted org:manage_members", () => {
+      mockAuthUser = {
+        id: "user-recruiter",
+        name: "Recruiter User",
+        email: "recruiter@haihire.vn",
+        role: "RECRUITER",
+        isOwner: false,
+        organization: { id: "org-1", ownerId: "mem-owner" },
+      };
+      mockIsOwner = false;
+      mockCanEdit = true;
+
+      const myPermsSpy = vi
+        .spyOn(OrgQueriesModule, "useMyPermissions")
+        .mockReturnValue({
+          data: { permissions: ["org:manage_members"] },
+        } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      try {
+        render(<MembersSettingsPage />);
+
+        const inviteBtn = screen.getByText("Mời thành viên").closest("button");
+        fireEvent.click(inviteBtn!);
+        const emailInput = screen.getByPlaceholderText("colleague@company.com");
+        const inviteForm = emailInput.closest("form")!;
+        const inviteTrigger = within(inviteForm).getByRole("button", {
+          name: "Member",
+        });
+        fireEvent.click(inviteTrigger);
+
+        expect(
+          screen.queryByRole("option", { name: "Admin" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Recruiter" }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Hiring Manager" }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Interviewer" }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Member" }),
+        ).toBeInTheDocument();
+
+        // Close InviteMemberCard listbox before opening InviteLinksCard listbox
+        fireEvent.click(screen.getByRole("option", { name: "Recruiter" }));
+
+        const openCreateBtn = screen.getByRole("button", {
+          name: /Tạo liên kết/,
+        });
+        fireEvent.click(openCreateBtn);
+        const expiresLabel = screen.getByText("members.expiresInLabel");
+        const createPanel = expiresLabel.closest("div")!.parentElement!;
+        const linkRoleTrigger = within(createPanel).getByRole("button", {
+          name: "Member",
+        });
+        fireEvent.click(linkRoleTrigger);
+
+        expect(
+          screen.queryByRole("option", { name: "Admin" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Hiring Manager" }),
+        ).toBeInTheDocument();
+      } finally {
+        myPermsSpy.mockRestore();
+      }
     });
   });
 });

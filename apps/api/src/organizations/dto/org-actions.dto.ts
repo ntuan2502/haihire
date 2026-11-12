@@ -1,5 +1,8 @@
+import { Transform } from "class-transformer";
 import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { Role } from "@haihire/shared";
+import { ROLE_LIST, Role } from "@haihire/shared";
+
+const VALID_ROLE_MESSAGE = `Role must be one of: ${ROLE_LIST.join(", ")}`;
 
 export class SwitchOrgDto {
   @IsString()
@@ -8,27 +11,23 @@ export class SwitchOrgDto {
 }
 
 export class UpdateMemberRoleDto {
-  @IsIn(
-    [
-      Role.ADMIN,
-      Role.RECRUITER,
-      Role.HIRING_MANAGER,
-      Role.INTERVIEWER,
-      Role.MEMBER,
-    ],
-    {
-      message:
-        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
-    },
-  )
+  @IsIn(ROLE_LIST, {
+    message: VALID_ROLE_MESSAGE,
+  })
   @IsNotEmpty({ message: "Role is required" })
   role!: Role;
 }
 
 export class CreateInviteLinkDto {
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.trim().toUpperCase() : value,
+  )
   @IsString()
-  role?: string;
+  @IsIn(ROLE_LIST, {
+    message: VALID_ROLE_MESSAGE,
+  })
+  role?: Role;
 
   @IsOptional()
   @IsString()

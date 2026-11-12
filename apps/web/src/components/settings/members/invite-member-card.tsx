@@ -1,30 +1,43 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Role } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared/custom-select";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "@/components/shared/custom-select";
 import { UserPlus, X, Send } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 
 interface InviteMemberCardProps {
   canEdit: boolean;
+  roleOptions?: CustomSelectOption<Role>[];
+  getRoleLabel?: (role: string) => string;
   onInviteSuccess: (msg: string) => void;
   onInviteError: (msg: string) => void;
 }
 
 export function InviteMemberCard({
   canEdit,
+  roleOptions,
+  getRoleLabel,
   onInviteSuccess,
   onInviteError,
 }: InviteMemberCardProps) {
   const { t } = useI18n();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("MEMBER");
+  const [inviteRole, setInviteRole] = useState<Role>(Role.MEMBER);
   const [isInviting, setIsInviting] = useState(false);
 
   if (!canEdit) return null;
+
+  const resolvedRoleOptions = roleOptions ?? getOrgRoleOptions(t);
+  const resolveRoleLabel = (role: string) =>
+    getRoleLabel ? getRoleLabel(role) : getOrgRoleLabel(role, t);
 
   const handleSendInvite = (e: FormEvent) => {
     e.preventDefault();
@@ -39,7 +52,7 @@ export function InviteMemberCard({
     setTimeout(() => {
       setIsInviting(false);
       onInviteSuccess(
-        `Invitation sent to ${trimmedEmail} with role "${inviteRole}".`,
+        `Invitation sent to ${trimmedEmail} with role "${resolveRoleLabel(inviteRole)}".`,
       );
       setInviteEmail("");
     }, 500);
@@ -97,11 +110,8 @@ export function InviteMemberCard({
           <CustomSelect
             value={inviteRole}
             onChange={(val) => setInviteRole(val)}
-            options={[
-              { value: "MEMBER", label: t("members.roleMember") },
-              { value: "ADMIN", label: t("members.roleAdmin") },
-            ]}
-            className="w-full sm:w-36"
+            options={resolvedRoleOptions}
+            className="w-full sm:w-48"
             triggerClassName="h-10 text-xs font-semibold"
           />
         </div>

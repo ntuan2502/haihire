@@ -66,16 +66,12 @@ export function createTestOrganizationsService(
   events = new EventsService(),
 ): OrganizationsService {
   const auditLog = new OrganizationsAuditLogService(prisma);
+  const permissionResolver = new PermissionResolverService(prisma);
   return new OrganizationsService(
     new OrganizationsCoreService(prisma, auditLog),
     new OrganizationsMembersService(prisma, events, auditLog),
-    new OrganizationsInvitesService(prisma),
-    new OrganizationsRolesService(
-      prisma,
-      new PermissionResolverService(prisma),
-      auditLog,
-      events,
-    ),
+    new OrganizationsInvitesService(prisma, permissionResolver),
+    new OrganizationsRolesService(prisma, permissionResolver, auditLog, events),
     auditLog,
   );
 }

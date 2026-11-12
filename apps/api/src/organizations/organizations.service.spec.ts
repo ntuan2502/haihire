@@ -52,6 +52,14 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   let mockOrgs: MockOrg[] = [];
   let mockUsers: MockUser[] = [];
   let mockLinks: MockLink[] = [];
+  let mockMembers: MockMember[] = [];
+  let mockRolePermissions: Array<{
+    id: string;
+    organizationId: string;
+    role: string;
+    permission: string;
+    granted: boolean;
+  }> = [];
 
   beforeEach(() => {
     mockOrgs = [
@@ -93,7 +101,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
     mockLinks = [];
 
-    const mockMembers: MockMember[] = [
+    mockMembers = [
       {
         id: "mem-2",
         organizationId: "org-1",
@@ -110,12 +118,15 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       },
     ];
 
+    mockRolePermissions = [];
+
     mockPrismaService = createMockPrismaService({
       organization: mockOrgs,
       user: mockUsers,
       organizationMember: mockMembers,
       inviteLink: mockLinks,
       organizationInviteLink: mockLinks,
+      organizationRolePermission: mockRolePermissions,
     });
 
     service = createTestOrganizationsService(mockPrismaService as never);
@@ -334,6 +345,131 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         service.join("usr-1", { inviteCodeOrSlug: link.token }),
       ).rejects.toThrow(BadRequestException);
       updateManySpy.mockRestore();
+    });
+
+    it("12c. Supports creating and joining with all non-admin roles (RECRUITER, HIRING_MANAGER, INTERVIEWER)", async () => {
+      const recruiterLink = await service.createInviteLink("usr-2", {
+        role: "RECRUITER",
+      });
+      const hmLink = await service.createInviteLink("usr-2", {
+        role: "HIRING_MANAGER",
+      });
+      const interviewerLink = await service.createInviteLink("usr-2", {
+        role: "INTERVIEWER",
+      });
+
+      expect(recruiterLink.role).toBe("RECRUITER");
+      expect(hmLink.role).toBe("HIRING_MANAGER");
+      expect(interviewerLink.role).toBe("INTERVIEWER");
+
+      const joinByTokenResult = await service.joinByToken(
+        "usr-1",
+        recruiterLink.token,
+      );
+      expect(joinByTokenResult.role).toBe("RECRUITER");
+      expect(mockUsers.find((u) => u.id === "usr-1")?.role).toBe("RECRUITER");
+      expect(
+        mockMembers.find(
+          (m) => m.organizationId === "org-1" && m.userId === "usr-1",
+        )?.role,
+      ).toBe("RECRUITER");
+
+      mockUsers.push({
+        id: "usr-hm",
+        email: "hm@tun.io.vn",
+        name: "Hiring Manager User",
+        role: "MEMBER",
+        organizationId: null,
+        createdAt: new Date(),
+      });
+      const joinResult = await service.join("usr-hm", {
+        inviteCodeOrSlug: hmLink.token,
+      });
+      expect(joinResult.role).toBe("HIRING_MANAGER");
+      expect(mockUsers.find((u) => u.id === "usr-hm")?.role).toBe(
+        "HIRING_MANAGER",
+      );
+      expect(
+        mockMembers.find(
+          (m) => m.organizationId === "org-1" && m.userId === "usr-hm",
+        )?.role,
+      ).toBe("HIRING_MANAGER");
+    });
+
+    it("12d. Rejects invalid invite role string when creating invite link", async () => {
+      await expect(
+        service.createInviteLink("usr-2", { role: "INVALID_ROLE" }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("12e. Rejects non-admin without org:manage_members permission from creating, listing, or revoking invite links", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+
+      mockUsers.push({
+        id: "usr-recruiter",
+        email: "recruiter@tun.io.vn",
+        name: "Recruiter User",
+        role: "RECRUITER",
+        organizationId: "org-1",
+        createdAt: new Date(),
+      });
+      mockMembers.push({
+        id: "mem-recruiter",
+        organizationId: "org-1",
+        userId: "usr-recruiter",
+        role: "RECRUITER",
+        createdAt: new Date(),
+      });
+
+      await expect(
+        service.createInviteLink("usr-recruiter", { role: "INTERVIEWER" }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(await service.getInviteLinks("usr-recruiter")).toEqual([]);
+      await expect(
+        service.revokeInviteLink("usr-recruiter", link.id),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("12f. Allows non-admin with dynamic org:manage_members to invite non-admin roles while blocking ADMIN invites", async () => {
+      mockUsers.push({
+        id: "usr-recruiter",
+        email: "recruiter@tun.io.vn",
+        name: "Recruiter User",
+        role: "RECRUITER",
+        organizationId: "org-1",
+        createdAt: new Date(),
+      });
+      mockMembers.push({
+        id: "mem-recruiter",
+        organizationId: "org-1",
+        userId: "usr-recruiter",
+        role: "RECRUITER",
+        createdAt: new Date(),
+      });
+      mockRolePermissions.push({
+        id: "perm-1",
+        organizationId: "org-1",
+        role: "RECRUITER",
+        permission: "org:manage_members",
+        granted: true,
+      });
+
+      const created = await service.createInviteLink("usr-recruiter", {
+        role: "HIRING_MANAGER",
+      });
+      expect(created.role).toBe("HIRING_MANAGER");
+
+      const listed = await service.getInviteLinks("usr-recruiter");
+      expect(listed.some((l) => l.id === created.id)).toBe(true);
+
+      // Non-owner/non-admin cannot escalate by creating ADMIN invites
+      await expect(
+        service.createInviteLink("usr-recruiter", { role: "ADMIN" }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.revokeInviteLink("usr-recruiter", created.id),
+      ).resolves.toMatchObject({ success: true });
     });
   });
 

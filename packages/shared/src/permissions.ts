@@ -14,6 +14,14 @@ export const Role = {
 
 export type Role = (typeof Role)[keyof typeof Role];
 
+export const ROLE_LIST: readonly Role[] = [
+  Role.ADMIN,
+  Role.RECRUITER,
+  Role.HIRING_MANAGER,
+  Role.INTERVIEWER,
+  Role.MEMBER,
+];
+
 export type Permission =
   // Organization Management
   | "org:view"

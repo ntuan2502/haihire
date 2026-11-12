@@ -8,6 +8,7 @@ import {
   getCandidateDisplayName,
 } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { getStageLabel } from "@/lib/stages";
 import { useKeyboardClick } from "@/hooks/use-keyboard-click";
 import type { Application } from "@/types";
 
@@ -54,7 +55,10 @@ export function PipelineCandidateCard({
       onKeyDown={handleKeyDown}
       draggable={canDrag}
       onDragStart={handleDragStart}
-      aria-label={`View candidate ${displayName}, stage ${candidate.stage}`}
+      aria-label={t("pipeline.viewCandidateLabel", {
+        name: displayName,
+        stage: getStageLabel(candidate.stage, t),
+      })}
       className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
         isSelected
           ? "bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400"
@@ -92,7 +96,7 @@ export function PipelineCandidateCard({
         </div>
 
         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-          {candidate.candidateEmail || "No email"}
+          {candidate.candidateEmail || t("pipeline.noEmail")}
         </p>
 
         <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-400">

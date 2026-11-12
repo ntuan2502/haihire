@@ -227,7 +227,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("404")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "The candidate ID provided is invalid. A valid UUID is required.",
+          "Mã định danh ứng viên không hợp lệ. Cần một mã UUID hợp lệ.",
         ),
       ).toBeInTheDocument();
       expect(

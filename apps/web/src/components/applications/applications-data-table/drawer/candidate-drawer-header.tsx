@@ -66,7 +66,7 @@ export function CandidateDrawerHeader({
                 onClose();
               }}
               className="h-8 px-2.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900/60 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-              title="Focus candidate in Pipeline"
+              title={t("pipeline.focusCandidate")}
             >
               <Columns3 className="h-3.5 w-3.5" />
               <span>{t("applications.viewInPipeline")}</span>

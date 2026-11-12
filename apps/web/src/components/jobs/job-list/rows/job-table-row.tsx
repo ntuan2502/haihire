@@ -46,7 +46,7 @@ export function JobTableRow({
           </Link>
           <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 flex-wrap">
             <span className="font-medium text-slate-600 dark:text-slate-300">
-              {job.department || "General"}
+              {job.department || t("jobs.wizard.generalDepartment")}
             </span>
             <span>•</span>
             <span>{getJobTypeLabel(job.type, t)}</span>
@@ -56,7 +56,7 @@ export function JobTableRow({
                 className="h-3 w-3 text-slate-400 shrink-0"
                 aria-hidden="true"
               />
-              {job.location || "Remote"}
+              {job.location || t("jobs.defaultLocation")}
             </span>
           </div>
         </div>

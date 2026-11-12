@@ -288,7 +288,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(offerBtn).toBeDisabled();
       expect(offerBtn).toHaveAttribute("title");
       expect(offerBtn.getAttribute("title")).toContain(
-        "Không thể chuyển từ APPLIED sang OFFER",
+        "Không thể chuyển từ Ứng tuyển sang Đề nghị",
       );
     });
 
@@ -421,7 +421,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     it("opens overview sections popover when toggle button is clicked", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      const popoverToggle = screen.getByLabelText("Toggle overview sections");
+      const popoverToggle = screen.getByLabelText("Hiển thị phần");
       fireEvent.click(popoverToggle);
 
       expect(screen.getByText("Các phần hiển thị")).toBeInTheDocument();

@@ -47,7 +47,7 @@ export function JobQuickDetailDrawer({
           <div className="flex items-center gap-2 mb-1.5">
             <JobStatusBadge status={job.status} />
             <span className="text-[11px] font-medium text-slate-500">
-              {job.department || "General"}
+              {job.department || t("jobs.wizard.generalDepartment")}
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -57,6 +57,7 @@ export function JobQuickDetailDrawer({
         <button
           type="button"
           onClick={onClose}
+          aria-label={t("common.close")}
           className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
@@ -69,11 +70,11 @@ export function JobQuickDetailDrawer({
         <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
             <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>{job.location || "Remote"}</span>
+            <span>{job.location || t("jobs.defaultLocation")}</span>
           </div>
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
             <DollarSign className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>{job.salaryRange || "Competitive"}</span>
+            <span>{job.salaryRange || t("jobs.competitiveSalary")}</span>
           </div>
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
             <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -92,7 +93,7 @@ export function JobQuickDetailDrawer({
             {t("jobs.description")}
           </h4>
           <p className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-            {job.description || "No description provided."}
+            {job.description || t("jobs.noDescription")}
           </p>
         </div>
 

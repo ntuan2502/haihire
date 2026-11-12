@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { X, Maximize2, Minimize2 } from "lucide-react";
+import { useOptionalI18n } from "@/i18n/optional";
 import { cn } from "cn";
 
 export type CustomModalSize =
@@ -59,6 +60,7 @@ export function CustomModal({
   showCloseButton = true,
   allowMaximize = false,
 }: CustomModalProps) {
+  const { t } = useOptionalI18n();
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -171,8 +173,12 @@ export function CustomModal({
                   type="button"
                   onClick={() => setIsMaximized((prev) => !prev)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                  aria-label={isMaximized ? "Restore" : "Maximize"}
-                  title={isMaximized ? "Restore" : "Maximize"}
+                  aria-label={
+                    isMaximized ? t("common.restore") : t("common.maximize")
+                  }
+                  title={
+                    isMaximized ? t("common.restore") : t("common.maximize")
+                  }
                 >
                   {isMaximized ? (
                     <Minimize2 className="h-4 w-4" />
@@ -187,7 +193,7 @@ export function CustomModal({
                   type="button"
                   onClick={onClose}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                  aria-label="Close"
+                  aria-label={t("common.close")}
                 >
                   <X className="h-4 w-4" />
                 </button>

@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-queries";
 import { getInitials, formatRelativeTime, formatDate } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleBadgeClass, getOrgRoleLabel } from "@/lib/roles";
 import { useI18n } from "@/i18n";
 import type { ApplicationNote } from "@/types";
 
@@ -28,42 +29,6 @@ interface ApplicationNotesStreamProps {
   showHeader?: boolean;
   maxHeight?: string;
   placeholder?: string;
-}
-
-function getRoleBadge(role: string) {
-  const normalized = role.toUpperCase();
-  switch (normalized) {
-    case "ADMIN":
-      return {
-        label: "Admin",
-        className:
-          "bg-rose-50 text-rose-700 border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50",
-      };
-    case "RECRUITER":
-      return {
-        label: "Recruiter",
-        className:
-          "bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50",
-      };
-    case "HIRING_MANAGER":
-      return {
-        label: "Hiring Manager",
-        className:
-          "bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50",
-      };
-    case "INTERVIEWER":
-      return {
-        label: "Interviewer",
-        className:
-          "bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50",
-      };
-    default:
-      return {
-        label: role,
-        className:
-          "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-      };
-  }
 }
 
 function getAvatarBg(name: string) {
@@ -209,10 +174,10 @@ export function ApplicationNotesStream({
         <div className="flex gap-2.5">
           <div
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
-              user?.name || "User",
+              user?.name || t("common.unknownUserFallback"),
             )}`}
           >
-            {getInitials(user?.name || "U")}
+            {getInitials(user?.name || t("common.unknownUserFallback"))}
           </div>
 
           <div className="flex-1 space-y-2">
@@ -318,7 +283,8 @@ export function ApplicationNotesStream({
           notes.map((note) => {
             const isEditing = editingNoteId === note.id;
             const isDeleting = deletingNoteId === note.id;
-            const roleBadge = getRoleBadge(note.authorRole);
+            const roleLabel = getOrgRoleLabel(note.authorRole, t);
+            const roleBadgeClass = getOrgRoleBadgeClass(note.authorRole);
             const userCanManage = canManageNote(note);
 
             return (
@@ -345,9 +311,9 @@ export function ApplicationNotesStream({
                         </span>
 
                         <span
-                          className={`inline-flex items-center px-1.5 py-0.2 rounded-sm border text-[10px] font-medium ${roleBadge.className}`}
+                          className={`inline-flex items-center px-1.5 py-0.2 rounded-sm border text-[10px] font-medium ${roleBadgeClass}`}
                         >
-                          {roleBadge.label}
+                          {roleLabel}
                         </span>
 
                         <span

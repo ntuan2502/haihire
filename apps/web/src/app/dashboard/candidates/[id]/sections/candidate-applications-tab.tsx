@@ -7,6 +7,7 @@ import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { formatDate } from "@/lib/utils";
+import { getStageLabel } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
@@ -90,11 +91,11 @@ export function CandidateApplicationsTab({
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
                     <h4 className="font-bold text-slate-900 dark:text-white">
-                      {job?.title || "Position"}
+                      {job?.title || t("common.positionFallback")}
                     </h4>
                     <p className="text-[11px] text-slate-400 flex items-center gap-2">
                       <span>
-                        {t("candidates.stage")}: {app.stage}
+                        {t("candidates.stage")}: {getStageLabel(app.stage, t)}
                       </span>
                       <span>•</span>
                       <span>

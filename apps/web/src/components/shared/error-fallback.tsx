@@ -16,12 +16,13 @@ export interface ErrorFallbackProps {
   homeLabelKey?: TranslationKey;
 }
 
-const FALLBACK_STRINGS = {
+export const FALLBACK_STRINGS = {
   en: {
     title: "Something went wrong",
     description: "We've logged the issue. Please try again.",
     tryAgain: "Try again",
     goHome: "Go home",
+    skipToMain: "Skip to main content",
     dashboardTitle: "Dashboard Error",
     dashboardDescription: "Could not load dashboard. Please try again.",
     careersTitle: "Careers Page Error",
@@ -32,6 +33,7 @@ const FALLBACK_STRINGS = {
     description: "Chúng tôi đã ghi nhận sự cố. Vui lòng thử lại.",
     tryAgain: "Thử lại",
     goHome: "Về trang chủ",
+    skipToMain: "Bỏ qua đến nội dung chính",
     dashboardTitle: "Lỗi Bảng điều khiển",
     dashboardDescription: "Không thể tải bảng điều khiển. Vui lòng thử lại.",
     careersTitle: "Lỗi trang tuyển dụng",
@@ -39,7 +41,7 @@ const FALLBACK_STRINGS = {
   },
 };
 
-function detectStandaloneLocale(): "vi" | "en" {
+export function detectStandaloneLocale(): "vi" | "en" {
   if (typeof window === "undefined") return "en";
   try {
     const stored = localStorage.getItem("haihire_locale");

@@ -83,7 +83,7 @@ export function DashboardRecentApplications({
                       <StageBadge stage={app.stage} />
                     </div>
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                      {candidateJob?.title || "Open Role"}
+                      {candidateJob?.title || t("common.openRoleFallback")}
                     </p>
                   </div>
                 </div>

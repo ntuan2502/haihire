@@ -12,6 +12,7 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { formatDate, type CandidateItem } from "@/lib/utils";
+import { getStageLabel } from "@/lib/stages";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -112,10 +113,10 @@ export function CandidateDrawerApplicationsTab({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
                     <h4 className="font-bold text-slate-900 dark:text-white truncate">
-                      {job?.title || "Position"}
+                      {job?.title || t("common.positionFallback")}
                     </h4>
                     <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                      {t("common.status")}: {app.stage} •{" "}
+                      {t("common.status")}: {getStageLabel(app.stage, t)} •{" "}
                       {t("applications.appliedBadge")}{" "}
                       {formatDate(app.createdAt, "short")}
                     </p>

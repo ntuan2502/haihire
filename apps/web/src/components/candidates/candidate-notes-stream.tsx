@@ -19,6 +19,7 @@ import {
 } from "@/hooks/use-queries";
 import { getInitials, formatRelativeTime, formatDate } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleBadgeClass, getOrgRoleLabel } from "@/lib/roles";
 import { useI18n } from "@/i18n";
 import type { CandidateNote } from "@/types";
 
@@ -28,42 +29,6 @@ interface CandidateNotesStreamProps {
   showHeader?: boolean;
   maxHeight?: string;
   placeholder?: string;
-}
-
-function getRoleBadge(role: string) {
-  const normalized = role.toUpperCase();
-  switch (normalized) {
-    case "ADMIN":
-      return {
-        label: "Admin",
-        className:
-          "bg-rose-50 text-rose-700 border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50",
-      };
-    case "RECRUITER":
-      return {
-        label: "Recruiter",
-        className:
-          "bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50",
-      };
-    case "HIRING_MANAGER":
-      return {
-        label: "Hiring Manager",
-        className:
-          "bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50",
-      };
-    case "INTERVIEWER":
-      return {
-        label: "Interviewer",
-        className:
-          "bg-amber-50 text-amber-700 border-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50",
-      };
-    default:
-      return {
-        label: role,
-        className:
-          "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-      };
-  }
 }
 
 function getAvatarBg(name: string) {
@@ -225,7 +190,7 @@ export function CandidateNotesStream({
             </div>
             <div>
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                {t("candidates.notes") || "Candidate Notes"}
+                {t("candidates.notesTitle")}
               </h3>
               <p className="text-[11px] text-slate-400">
                 {t("applications.notesStream.subtitle")}
@@ -329,7 +294,8 @@ export function CandidateNotesStream({
             const isEditing = editingNoteId === note.id;
             const isConfirmingDelete = deleteConfirmId === note.id;
             const canManage = canManageNote(note);
-            const roleBadge = getRoleBadge(note.authorRole);
+            const roleLabel = getOrgRoleLabel(note.authorRole, t);
+            const roleBadgeClass = getOrgRoleBadgeClass(note.authorRole);
             const avatarBg = getAvatarBg(note.authorName);
             const initials = getInitials(note.authorName);
 
@@ -352,9 +318,9 @@ export function CandidateNotesStream({
                         {note.authorName}
                       </span>
                       <span
-                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md border ${roleBadge.className}`}
+                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md border ${roleBadgeClass}`}
                       >
-                        {roleBadge.label}
+                        {roleLabel}
                       </span>
                     </div>
                   </div>

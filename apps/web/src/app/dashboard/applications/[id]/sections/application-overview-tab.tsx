@@ -43,7 +43,9 @@ export function ApplicationOverviewTab({
             type="button"
             disabled
             className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
-            title={`${t("applications.runAnalysis")} (Coming soon)`}
+            title={t("applications.comingSoonTooltip", {
+              action: t("applications.runAnalysis"),
+            })}
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("applications.runAnalysis")}</span>

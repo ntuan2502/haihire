@@ -15,8 +15,31 @@ import {
   ChevronUp,
 } from "lucide-react";
 import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
+import { getOrgRoleLabel } from "@/lib/roles";
+import { formatDateTime } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
+
+const RESOURCE_KEYS = new Set([
+  "ORGANIZATION",
+  "MEMBER",
+  "ROLE_PERMISSIONS",
+  "SYSTEM",
+]);
+
+const LOCALIZATION_FIELD_MAP: Record<string, string> = {
+  timezone: "settings.auditLog.metadataLabels.localizationFields.timezone",
+  defaultLanguage:
+    "settings.auditLog.metadataLabels.localizationFields.defaultLocale",
+  defaultLocale:
+    "settings.auditLog.metadataLabels.localizationFields.defaultLocale",
+  defaultCurrency:
+    "settings.auditLog.metadataLabels.localizationFields.defaultCurrency",
+  nameDisplayOrder:
+    "settings.auditLog.metadataLabels.localizationFields.nameDisplayOrder",
+  dateFormat: "settings.auditLog.metadataLabels.localizationFields.dateFormat",
+  timeFormat: "settings.auditLog.metadataLabels.localizationFields.timeFormat",
+};
 
 export default function AuditLogPage() {
   const { t } = useI18n();
@@ -77,6 +100,12 @@ export default function AuditLogPage() {
           className:
             "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800",
         };
+      case "ORG_LOCALIZATION_UPDATED":
+        return {
+          label: t("settings.auditLog.actionOrgLocalizationUpdated"),
+          className:
+            "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800",
+        };
       default:
         return {
           label: action,
@@ -84,6 +113,84 @@ export default function AuditLogPage() {
             "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
         };
     }
+  };
+
+  const getResourceLabel = (resource: string) => {
+    const normalized = resource?.trim().toUpperCase();
+    const key = RESOURCE_KEYS.has(normalized) ? normalized : "OTHER";
+    return t(`settings.auditLog.resources.${key}`);
+  };
+
+  const formatAuditMetadataLines = (
+    log: OrganizationAuditLogRecord,
+  ): string[] => {
+    const metadata = log.metadata;
+    if (!metadata || typeof metadata !== "object") return [];
+    const record = metadata as Record<string, unknown>;
+    const lines: string[] = [];
+
+    if (typeof record.role === "string" && record.role.trim()) {
+      const roleLabel =
+        record.role === "ALL"
+          ? t("settings.auditLog.metadataLabels.allRoles")
+          : getOrgRoleLabel(record.role, t);
+      lines.push(
+        t("settings.auditLog.metadataLabels.roleTarget", {
+          role: roleLabel,
+        }).replace("{role}", roleLabel),
+      );
+    }
+
+    const permCount = Array.isArray(record.permissions)
+      ? record.permissions.length
+      : record.permissions && typeof record.permissions === "object"
+        ? Object.keys(record.permissions).length
+        : typeof record.changes === "number"
+          ? record.changes
+          : null;
+    if (permCount !== null) {
+      lines.push(
+        t("settings.auditLog.metadataLabels.permissionsUpdated", {
+          count: permCount,
+        }).replace("{count}", String(permCount)),
+      );
+    }
+
+    if (
+      typeof record.oldRole === "string" &&
+      typeof record.newRole === "string"
+    ) {
+      const oldRoleLabel = getOrgRoleLabel(record.oldRole, t);
+      const newRoleLabel = getOrgRoleLabel(record.newRole, t);
+      lines.push(
+        t("settings.auditLog.metadataLabels.roleChanged", {
+          oldRole: oldRoleLabel,
+          newRole: newRoleLabel,
+        })
+          .replace("{oldRole}", oldRoleLabel)
+          .replace("{newRole}", newRoleLabel),
+      );
+    }
+
+    if (log.action === "OWNERSHIP_TRANSFERRED") {
+      lines.push(t("settings.auditLog.metadataLabels.ownershipTransferred"));
+    }
+
+    if (log.action === "ORG_LOCALIZATION_UPDATED") {
+      const fieldLabels = Object.keys(record)
+        .filter((k) => k in LOCALIZATION_FIELD_MAP)
+        .map((k) => t(LOCALIZATION_FIELD_MAP[k]));
+      if (fieldLabels.length > 0) {
+        const joined = fieldLabels.join(", ");
+        lines.push(
+          t("settings.auditLog.metadataLabels.localizationUpdated", {
+            fields: joined,
+          }).replace("{fields}", joined),
+        );
+      }
+    }
+
+    return lines;
   };
 
   if (!canViewAuditLog) {
@@ -159,6 +266,9 @@ export default function AuditLogPage() {
             </option>
             <option value="ORG_DELETED">
               {t("settings.auditLog.actionOrgDeleted")}
+            </option>
+            <option value="ORG_LOCALIZATION_UPDATED">
+              {t("settings.auditLog.actionOrgLocalizationUpdated")}
             </option>
           </select>
         </div>
@@ -240,14 +350,15 @@ export default function AuditLogPage() {
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                         >
                           <td className="py-3 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {new Date(log.createdAt).toLocaleString()}
+                            {formatDateTime(log.createdAt)}
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
                             {log.actor ? (
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
                                   {log.actor.name?.charAt(0).toUpperCase() ||
-                                    "U"}
+                                    log.actor.email?.charAt(0).toUpperCase() ||
+                                    "?"}
                                 </div>
                                 <div className="leading-tight">
                                   <div className="font-medium text-slate-900 dark:text-slate-100 text-xs">
@@ -271,8 +382,8 @@ export default function AuditLogPage() {
                               {badge.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                            {log.resource}
+                          <td className="py-3 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                            {getResourceLabel(log.resource)}
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             {hasMetadata ? (
@@ -311,13 +422,29 @@ export default function AuditLogPage() {
                     <Info className="w-3.5 h-3.5" />
                     <span>{t("settings.auditLog.colMetadata")}</span>
                   </div>
-                  <pre className="text-xs font-mono p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 overflow-x-auto">
-                    {JSON.stringify(
-                      logs.find((l) => l.id === expandedRowId)?.metadata,
-                      null,
-                      2,
-                    )}
-                  </pre>
+                  {(() => {
+                    const selectedLog = logs.find(
+                      (l) => l.id === expandedRowId,
+                    );
+                    if (!selectedLog) return null;
+                    const summaryLines = formatAuditMetadataLines(selectedLog);
+                    if (summaryLines.length > 0) {
+                      return (
+                        <ul className="space-y-1 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
+                          {summaryLines.map((line, index) => (
+                            <li key={`${selectedLog.id}-line-${index}`}>
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        {t("settings.auditLog.noMetadata")}
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
 

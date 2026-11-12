@@ -15,6 +15,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { type ActivityEvent } from "@/lib/email-templates";
+import { getOrgRoleLabel } from "@/lib/roles";
+import { formatDate } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 
@@ -152,9 +154,14 @@ export function CandidateTimeline({
     }
 
     const interpolationParams: Record<string, string | number> = {
-      userName: (meta.userName as string) || event.actorName || "Recruiter",
+      userName:
+        (meta.userName as string) ||
+        event.actorName ||
+        getOrgRoleLabel("RECRUITER", t),
       interviewer:
-        (meta.interviewer as string) || event.actorName || "Interviewer",
+        (meta.interviewer as string) ||
+        event.actorName ||
+        getOrgRoleLabel("INTERVIEWER", t),
       fromStage: fromStageLabel,
       toStage: toStageLabel,
       recipientName: (meta.recipientName as string) || event.actorName || "",
@@ -286,9 +293,9 @@ export function CandidateTimeline({
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
                           {event.timestamp ||
                             ((event as { createdAt?: string }).createdAt
-                              ? new Date(
-                                  (event as { createdAt?: string }).createdAt!,
-                                ).toLocaleDateString()
+                              ? formatDate(
+                                  (event as { createdAt?: string }).createdAt,
+                                )
                               : "")}
                         </span>
                       </div>
@@ -346,7 +353,7 @@ export function CandidateTimeline({
                       </strong>
                       {event.actorRole && (
                         <span className="text-[10px] text-slate-400">
-                          ({event.actorRole})
+                          ({getOrgRoleLabel(event.actorRole, t)})
                         </span>
                       )}
                     </span>

@@ -155,7 +155,9 @@ export function ApplyToJobModal({
                     </h4>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate pl-8">
-                    {job.location || job.department || "Remote"}
+                    {job.location ||
+                      job.department ||
+                      t("jobs.defaultLocation")}
                   </p>
                 </div>
 

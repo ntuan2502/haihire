@@ -51,8 +51,15 @@ describe("Kanban Drag-and-Drop State Machine Alignment (C3 Acceptance Criteria)"
         const reason = getTransitionDisabledReason(
           fromStage,
           toStage,
-          (key, params) =>
-            `Không thể chuyển từ ${params?.from} sang ${params?.to}`,
+          (key, params) => {
+            if (key === "pipeline.tooltips.cannotMoveHired") {
+              return `Ứng viên đã HIRED không thể quay lại ${params?.to}`;
+            }
+            if (key === "pipeline.tooltips.invalidTransition") {
+              return `Không thể chuyển từ ${params?.from} sang ${params?.to}`;
+            }
+            return key;
+          },
         );
         toast.error(reason);
         return;

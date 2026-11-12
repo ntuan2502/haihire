@@ -80,7 +80,7 @@ describe("UserMenu Accessibility", () => {
   it("renders trigger and opens menu with keyboard-accessible items", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -100,7 +100,7 @@ describe("UserMenu Accessibility", () => {
   it("has keyboard-accessible organization switcher and items", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     fireEvent.click(trigger);
 
     await waitFor(() => {
@@ -131,7 +131,7 @@ describe("UserMenu Accessibility", () => {
   it("has keyboard-accessible settings button", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     fireEvent.click(trigger);
 
     await waitFor(() => {

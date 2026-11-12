@@ -137,8 +137,8 @@ export function CandidateQuickDrawer({
                   onToggleDrawerOverviewPopover();
                 }}
                 className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                aria-label="Toggle overview sections"
-                title="Toggle overview sections"
+                aria-label={t("applications.toggleSections")}
+                title={t("applications.toggleSections")}
               >
                 <ChevronDown
                   className={`h-3 w-3 transition-transform duration-200 ${

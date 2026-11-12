@@ -106,7 +106,10 @@ export function DayDetailsModal({
                     onClose();
                     onSelectEvent(evt);
                   }}
-                  aria-label={`Interview with ${candidateName} at ${formattedTime}`}
+                  aria-label={t("interviews.interviewEventAria", {
+                    candidate: candidateName,
+                    time: formattedTime,
+                  })}
                   className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     hasScorecard
                       ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"

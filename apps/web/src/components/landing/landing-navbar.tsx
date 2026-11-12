@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Briefcase, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import { BrandLogo } from "@/components/shared";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -27,7 +28,7 @@ export const LandingNavbar = () => {
           <div className="flex items-center gap-6">
             <Link
               href="/"
-              aria-label="HaiHire Home"
+              aria-label={BRAND_CONFIG.name}
               className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
             >
               <BrandLogo size="md" />
@@ -85,7 +86,7 @@ export const LandingNavbar = () => {
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label="Toggle Navigation Menu"
+              aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5 stroke-[2]" />

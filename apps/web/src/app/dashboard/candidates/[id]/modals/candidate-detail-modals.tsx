@@ -3,6 +3,8 @@ import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-m
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { SendEmailModal } from "@/components/email/send-email-modal";
+import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Candidate, Application, CandidateDocument, Job } from "@/types";
 
@@ -55,6 +57,8 @@ export function CandidateDetailModals({
   isSendEmailOpen,
   setIsSendEmailOpen,
 }: CandidateDetailModalsProps) {
+  const { t } = useI18n();
+
   return (
     <>
       {/* Apply to Job Modal */}
@@ -125,8 +129,10 @@ export function CandidateDetailModals({
           jobTitle={candidateApps[0]?.job?.title}
           organizationName={
             candidateApps[0]?.job?.department
-              ? `${candidateApps[0]?.job?.department} Department`
-              : "Nexus ATS"
+              ? t("common.departmentSuffix", {
+                  department: candidateApps[0].job.department,
+                })
+              : BRAND_CONFIG.name
           }
         />
       )}

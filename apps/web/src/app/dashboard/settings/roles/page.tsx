@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getPermissionLabel } from "@/lib/roles";
 
 const ROLES: Array<{
   role: Role;
@@ -438,9 +439,6 @@ export default function RolesPermissionsPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                          {role}
-                        </span>
                       </div>
                     </th>
                   ))}
@@ -460,55 +458,61 @@ export default function RolesPermissionsPage() {
                     </tr>
 
                     {/* Permission Rows */}
-                    {category.permissions.map((permission) => (
-                      <tr
-                        key={permission}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-                      >
-                        <td className="py-2.5 px-4 font-mono text-xs text-slate-700 dark:text-slate-300">
-                          {permission}
-                        </td>
-                        {ROLES.map(({ role, labelKey }) => {
-                          const checked = isCellChecked(role, permission);
-                          const disabled = isCellDisabled(role, permission);
-                          const isAdminRole = role === Role.ADMIN;
+                    {category.permissions.map((permission) => {
+                      const permissionLabel = getPermissionLabel(permission, t);
+                      return (
+                        <tr
+                          key={permission}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+                            {permissionLabel}
+                          </td>
+                          {ROLES.map(({ role, labelKey }) => {
+                            const checked = isCellChecked(role, permission);
+                            const disabled = isCellDisabled(role, permission);
+                            const isAdminRole = role === Role.ADMIN;
+                            const roleLabel = t(
+                              `settings.rolesMatrix.${labelKey}`,
+                            );
 
-                          return (
-                            <td
-                              key={`${role}-${permission}`}
-                              className="py-2.5 px-3 text-center align-middle"
-                            >
-                              <div className="inline-flex items-center justify-center relative">
-                                <input
-                                  type="checkbox"
-                                  id={`perm-${role}-${permission}`}
-                                  checked={checked}
-                                  disabled={disabled}
-                                  onChange={() =>
-                                    handleToggle(role, permission)
-                                  }
-                                  title={
-                                    isAdminRole
-                                      ? t(
-                                          "settings.rolesMatrix.adminRoleImmutable",
-                                        )
-                                      : `${t(`settings.rolesMatrix.${labelKey}`)} - ${permission}`
-                                  }
-                                  aria-label={`${t(`settings.rolesMatrix.${labelKey}`)}: ${permission}`}
-                                  className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:checked:bg-blue-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                                />
-                                {isAdminRole && (
-                                  <Lock
-                                    className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-400 dark:text-slate-500 pointer-events-none"
-                                    aria-hidden="true"
+                            return (
+                              <td
+                                key={`${role}-${permission}`}
+                                className="py-2.5 px-3 text-center align-middle"
+                              >
+                                <div className="inline-flex items-center justify-center relative">
+                                  <input
+                                    type="checkbox"
+                                    id={`perm-${role}-${permission}`}
+                                    checked={checked}
+                                    disabled={disabled}
+                                    onChange={() =>
+                                      handleToggle(role, permission)
+                                    }
+                                    title={
+                                      isAdminRole
+                                        ? t(
+                                            "settings.rolesMatrix.adminRoleImmutable",
+                                          )
+                                        : `${roleLabel} - ${permissionLabel}`
+                                    }
+                                    aria-label={`${roleLabel}: ${permissionLabel}`}
+                                    className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:checked:bg-blue-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                                   />
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                                  {isAdminRole && (
+                                    <Lock
+                                      className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-400 dark:text-slate-500 pointer-events-none"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
                   </Fragment>
                 ))}
               </tbody>

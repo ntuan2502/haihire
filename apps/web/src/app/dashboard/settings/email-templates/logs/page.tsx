@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle2, AlertCircle, Search } from "lucide-react";
-import { type EmailLog } from "@/lib/email-templates";
+import {
+  getEmailTemplateTypeLabel,
+  type EmailLog,
+} from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
+import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -106,12 +110,7 @@ export default function EmailLogsPage() {
                 </tr>
               ) : (
                 logs.map((log) => {
-                  const dateStr = new Date(log.sentAt).toLocaleString("vi-VN", {
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
+                  const dateStr = formatDateTime(log.sentAt);
 
                   return (
                     <tr
@@ -131,7 +130,7 @@ export default function EmailLogsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {log.templateType}
+                          {getEmailTemplateTypeLabel(log.templateType, t)}
                         </span>
                       </td>
                       <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300 font-medium">
@@ -209,7 +208,7 @@ export default function EmailLogsPage() {
           candidateEmail={
             viewingLog.candidateEmail || viewingLog.recipientEmail || undefined
           }
-          templateName={viewingLog.templateType}
+          templateName={getEmailTemplateTypeLabel(viewingLog.templateType, t)}
           status={viewingLog.status}
           date={viewingLog.sentAt}
           errorMessage={viewingLog.errorMessage}

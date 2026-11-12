@@ -139,9 +139,11 @@ export function CandidateDetailView() {
             {t("candidates.noCandidatesYet")}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {!state.isCandidateIdValid
-              ? "The candidate ID provided is invalid. A valid UUID is required."
-              : "The candidate you are looking for does not exist or has been removed."}
+            {t(
+              !state.isCandidateIdValid
+                ? "candidates.invalidCandidateId"
+                : "candidates.candidateNotFound",
+            )}
           </p>
           <div className="pt-2">
             <Button

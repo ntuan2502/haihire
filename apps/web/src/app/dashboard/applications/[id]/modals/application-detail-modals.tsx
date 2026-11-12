@@ -6,6 +6,8 @@ import {
 } from "@/components/applications/reject-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { SendEmailModal } from "@/components/email/send-email-modal";
+import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import type { Application, CandidateDocument, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
@@ -60,6 +62,8 @@ export function ApplicationDetailModals({
   isSendEmailOpen,
   onCloseSendEmailModal,
 }: ApplicationDetailModalsProps) {
+  const { t } = useI18n();
+
   return (
     <>
       {/* Document Preview Modal matching Screenshot 2 */}
@@ -122,7 +126,9 @@ export function ApplicationDetailModals({
           }}
           jobTitle={jobTitle}
           organizationName={
-            job?.department ? `${job.department} Department` : "Nexus ATS"
+            job?.department
+              ? t("common.departmentSuffix", { department: job.department })
+              : BRAND_CONFIG.name
           }
         />
       )}

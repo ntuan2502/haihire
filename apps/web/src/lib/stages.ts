@@ -231,27 +231,44 @@ export function useStageInfo(
   };
 }
 
+const STAGE_TRANSLATION_KEYS: Record<
+  ApplicationStage,
+  "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"
+> = {
+  APPLIED: "applied",
+  SCREENING: "screening",
+  INTERVIEW: "interview",
+  OFFER: "offer",
+  HIRED: "hired",
+  REJECTED: "rejected",
+};
+
+/**
+ * Resolves a localized display label for an application stage.
+ * Falls back to the raw stage code when a test mock returns the translation key verbatim.
+ */
+export function getStageLabel(
+  stage: ApplicationStage | string | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (!stage) return "";
+  const normalized = stage.trim().toUpperCase() as ApplicationStage;
+  const suffix = STAGE_TRANSLATION_KEYS[normalized];
+  if (!suffix) return stage;
+  const key = `pipeline.stages.${suffix}`;
+  const translated = t(key);
+  return translated && translated !== key ? translated : stage;
+}
+
 /**
  * Hook to get all pipeline stages with localized labels in order
  */
 export function usePipelineStages(): StageConfig[] {
   const { t } = useI18n();
 
-  const stageKeyMap: Record<
-    ApplicationStage,
-    "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"
-  > = {
-    APPLIED: "applied",
-    SCREENING: "screening",
-    INTERVIEW: "interview",
-    OFFER: "offer",
-    HIRED: "hired",
-    REJECTED: "rejected",
-  };
-
   return STAGES_ORDER.map((stage) => {
     const raw = STAGE_CONFIG_MAP[stage];
-    const key = stageKeyMap[stage];
+    const key = STAGE_TRANSLATION_KEYS[stage];
     const localizedLabel = key
       ? t(`pipeline.stages.${key}` as const)
       : raw.label;
@@ -291,47 +308,49 @@ export function getTransitionDisabledReason(
   if (!from || !to || from === to) return "";
   const fromStage = from as ApplicationStage;
   const toStage = to as ApplicationStage;
+  const fromLabel = t ? getStageLabel(fromStage, t) : fromStage;
+  const toLabel = t ? getStageLabel(toStage, t) : toStage;
 
   if (fromStage === "HIRED") {
     if (t) {
       try {
         const msg = t("pipeline.tooltips.cannotMoveHired", {
-          from: fromStage,
-          to: toStage,
+          from: fromLabel,
+          to: toLabel,
         });
         if (msg && msg !== "pipeline.tooltips.cannotMoveHired") return msg;
       } catch {
         // Fallback
       }
     }
-    return `Ứng viên đã HIRED không thể quay lại ${toStage}`;
+    return `Ứng viên đã HIRED không thể quay lại ${toLabel}`;
   }
 
   if (fromStage === "REJECTED") {
     if (t) {
       try {
         const msg = t("pipeline.tooltips.cannotMoveRejected", {
-          from: fromStage,
-          to: toStage,
+          from: fromLabel,
+          to: toLabel,
         });
         if (msg && msg !== "pipeline.tooltips.cannotMoveRejected") return msg;
       } catch {
         // Fallback
       }
     }
-    return `Ứng viên đã REJECTED. Mở lại sang APPLIED, SCREENING hoặc INTERVIEW trước khi chuyển sang ${toStage}`;
+    return `Ứng viên đã REJECTED. Mở lại sang APPLIED, SCREENING hoặc INTERVIEW trước khi chuyển sang ${toLabel}`;
   }
 
   if (t) {
     try {
       const msg = t("pipeline.tooltips.invalidTransition", {
-        from: fromStage,
-        to: toStage,
+        from: fromLabel,
+        to: toLabel,
       });
       if (msg && msg !== "pipeline.tooltips.invalidTransition") return msg;
     } catch {
       // Fallback
     }
   }
-  return `Không thể chuyển từ ${fromStage} sang ${toStage}`;
+  return `Không thể chuyển từ ${fromLabel} sang ${toLabel}`;
 }

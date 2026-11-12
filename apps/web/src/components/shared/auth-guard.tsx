@@ -37,12 +37,7 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
     !isAuthenticated ||
     (requireOrg && user && !user.organizationId)
   ) {
-    return (
-      <LoadingSpinner
-        fullScreen
-        text={t("common.loading") || "Loading workspace..."}
-      />
-    );
+    return <LoadingSpinner fullScreen text={t("common.loadingWorkspace")} />;
   }
 
   return <>{children}</>;

@@ -13,6 +13,7 @@ import {
 import { CustomSelect } from "@/components/shared/custom-select";
 import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
 import { formatDate } from "@/lib/utils";
+import { getDocumentTypeLabel } from "@/lib/roles";
 import type { CandidateDocument } from "@/types";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
@@ -177,7 +178,7 @@ export function CandidateDrawerDocumentsTab({
                     {doc.name}
                   </h4>
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
-                    <span>{doc.type || t("candidates.resume")}</span>
+                    <span>{getDocumentTypeLabel(doc.type, t)}</span>
                     <span>•</span>
                     <span>{formatDate(doc.createdAt, "short")}</span>
                     <span>•</span>

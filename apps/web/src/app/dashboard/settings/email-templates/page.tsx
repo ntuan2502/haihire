@@ -334,7 +334,7 @@ export default function EmailTemplatesSettingsPage() {
               {t("email.body")}
             </label>
             <span className="text-[10px] text-slate-400 font-mono">
-              HTML / Template Variables
+              {t("email.htmlAndVariables")}
             </span>
           </div>
           <textarea

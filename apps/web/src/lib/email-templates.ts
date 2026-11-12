@@ -147,6 +147,28 @@ export const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
   sendgridApiKey: "",
 };
 
+const EMAIL_TEMPLATE_TYPE_LABEL_KEYS: Record<EmailTemplateType, string> = {
+  APPLICATION_CONFIRMATION: "email.optApplicationConfirmation",
+  INTERVIEW_INVITATION: "email.optInterviewInvitation",
+  REJECTION: "email.optRejection",
+  OFFER: "email.optOffer",
+  CUSTOM: "email.optCustom",
+};
+
+/**
+ * Resolves a localized display label for an email template type enum value.
+ */
+export function getEmailTemplateTypeLabel(
+  templateType: EmailTemplateType | string | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (!templateType) return "";
+  const key = EMAIL_TEMPLATE_TYPE_LABEL_KEYS[templateType as EmailTemplateType];
+  if (!key) return templateType;
+  const translated = t(key);
+  return translated && translated !== key ? translated : templateType;
+}
+
 export function interpolateTemplate(
   text: string,
   variables: Record<string, string | undefined>,

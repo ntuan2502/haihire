@@ -197,7 +197,7 @@ export function MembersListCard({
                       }}
                       disabled={actionLoadingId === m.id}
                       className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors cursor-pointer disabled:opacity-50"
-                      title="Member actions"
+                      title={t("members.memberActionsTitle")}
                     >
                       {actionLoadingId === m.id ? (
                         <Loader2 className="h-4 w-4 animate-spin text-slate-400" />

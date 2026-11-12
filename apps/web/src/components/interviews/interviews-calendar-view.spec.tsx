@@ -7,13 +7,17 @@ vi.mock("@/i18n", () => ({
   useI18n: () => ({
     locale: "en",
     t: (key: string, params?: Record<string, string | number>) => {
+      const dict: Record<string, string> = {
+        "interviews.interviewEventAria": "Interview with {candidate} at {time}",
+      };
+      const base = dict[key] ?? key;
       if (params) {
         return Object.entries(params).reduce(
           (acc, [k, v]) => acc.replace(`{${k}}`, String(v)),
-          key,
+          base,
         );
       }
-      return key;
+      return base;
     },
   }),
 }));

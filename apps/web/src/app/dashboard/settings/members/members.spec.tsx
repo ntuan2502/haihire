@@ -116,7 +116,7 @@ vi.mock("@/hooks/use-queries", () => ({
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, params?: Record<string, string | number>) => {
       const dict: Record<string, string> = {
         "members.title": "Quản lý thành viên",
         "members.subtitle": "Quản trị danh sách người dùng trong tổ chức",
@@ -125,6 +125,9 @@ vi.mock("@/i18n", () => ({
         "members.createLinkButton": "Tạo liên kết",
         "members.inviteEmailPlaceholder": "colleague@company.com",
         "members.sendInvite": "Gửi lời mời",
+        "members.inviteEmailRequired": "Please enter an email address.",
+        "members.inviteSentSuccess":
+          'Invitation sent to {email} with role "{role}".',
         "members.roleOwner": "Owner",
         "members.roleAdmin": "Admin",
         "members.roleRecruiter": "Recruiter",
@@ -140,10 +143,17 @@ vi.mock("@/i18n", () => ({
         "members.transferOwnershipConfirmNote": "Bạn sẽ là Admin",
         "members.transferOwnershipConfirmButton": "Chuyển giao",
         "members.transferOwnershipSuccess": "Thành công",
+        "members.memberActionsTitle": "Thao tác thành viên",
         "common.cancel": "Hủy",
         "common.you": "Bạn",
       };
-      return dict[key] || key;
+      let text = dict[key] || key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          text = text.replace(`{${k}}`, String(v));
+        }
+      }
+      return text;
     },
   }),
 }));
@@ -241,7 +251,7 @@ describe("MembersSettingsPage Component", () => {
     render(<MembersSettingsPage />);
 
     // Click member action button for Nguyen Recruiter (mem-1)
-    const actionButtons = screen.getAllByTitle("Member actions");
+    const actionButtons = screen.getAllByTitle("Thao tác thành viên");
     expect(actionButtons.length).toBeGreaterThan(0);
     fireEvent.click(actionButtons[0]);
 

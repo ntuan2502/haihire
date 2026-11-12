@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useOptionalI18n } from "@/i18n/optional";
 import { cn } from "cn";
 
 export interface SearchInputProps {
@@ -46,6 +47,7 @@ export function SearchInput({
   ariaLabel,
   "aria-label": ariaLabelKebab,
 }: SearchInputProps) {
+  const { t } = useOptionalI18n();
   // Local state keeps keystrokes isolated from heavy parent table re-renders,
   // guaranteeing 0ms typing latency and 60+ FPS UI responsiveness.
   const [localValue, setLocalValue] = useState(value);
@@ -121,7 +123,7 @@ export function SearchInput({
   };
 
   const resolvedAriaLabel =
-    ariaLabelKebab || ariaLabel || placeholder || "Search";
+    ariaLabelKebab || ariaLabel || placeholder || t("common.search");
 
   return (
     <div className={cn("relative flex-1 min-w-0 w-full", className)}>
@@ -147,7 +149,7 @@ export function SearchInput({
         <button
           type="button"
           onClick={handleClear}
-          aria-label="Clear search"
+          aria-label={t("common.clearSearch")}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />

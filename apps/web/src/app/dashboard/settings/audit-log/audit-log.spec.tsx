@@ -87,6 +87,28 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.actionMemberRoleChanged": "Member Role Changed",
         "settings.auditLog.actionOwnershipTransferred": "Ownership Transferred",
         "settings.auditLog.actionOrgDeleted": "Organization Deleted",
+        "settings.auditLog.actionOrgLocalizationUpdated":
+          "Localization Updated",
+        "settings.auditLog.resources.ORGANIZATION": "Organization",
+        "settings.auditLog.resources.MEMBER": "Member",
+        "settings.auditLog.resources.ROLE_PERMISSIONS": "Role Permissions",
+        "settings.auditLog.resources.SYSTEM": "System",
+        "settings.auditLog.resources.OTHER": "Other",
+        "settings.auditLog.metadataLabels.roleTarget": "Role: {role}",
+        "settings.auditLog.metadataLabels.allRoles": "All roles",
+        "settings.auditLog.metadataLabels.roleChanged": "{oldRole} → {newRole}",
+        "settings.auditLog.metadataLabels.permissionsUpdated":
+          "{count} permissions updated",
+        "settings.auditLog.metadataLabels.ownershipTransferred":
+          "Organization ownership transferred",
+        "settings.auditLog.metadataLabels.localizationUpdated":
+          "Updated localization: {fields}",
+        "members.roleOwner": "Owner",
+        "members.roleAdmin": "Admin",
+        "members.roleRecruiter": "Recruiter",
+        "members.roleHiringManager": "Hiring Manager",
+        "members.roleInterviewer": "Interviewer",
+        "members.roleMember": "Member",
       };
       return translations[key] ?? key;
     },
@@ -120,7 +142,7 @@ describe("AuditLogPage", () => {
     expect(screen.getAllByText("Permissions Updated").length).toBeGreaterThan(
       0,
     );
-    expect(screen.getByText("ROLE_PERMISSIONS")).toBeInTheDocument();
+    expect(screen.getByText("Role Permissions")).toBeInTheDocument();
     expect(screen.getByText("System")).toBeInTheDocument();
     expect(screen.getAllByText("Member Role Changed").length).toBeGreaterThan(
       0,
@@ -140,7 +162,7 @@ describe("AuditLogPage", () => {
     });
   });
 
-  it("expands metadata JSON viewer when details button is clicked", () => {
+  it("expands metadata summary viewer when details button is clicked", () => {
     render(<AuditLogPage />);
 
     const detailsButtons = screen.getAllByRole("button", { name: "Details" });
@@ -148,7 +170,8 @@ describe("AuditLogPage", () => {
 
     fireEvent.click(detailsButtons[0]);
 
-    expect(screen.getByText(/"role": "RECRUITER"/)).toBeInTheDocument();
+    expect(screen.getByText("Role: Recruiter")).toBeInTheDocument();
+    expect(screen.getByText("2 permissions updated")).toBeInTheDocument();
   });
 
   it("renders empty state when there are zero audit logs", () => {

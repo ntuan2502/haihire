@@ -129,7 +129,7 @@ export function CareersHeader({
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                aria-label="Toggle Navigation Menu"
+                aria-label={t("common.toggleNavigationMenu")}
               >
                 {mobileMenuOpen ? (
                   <X className="h-5 w-5 stroke-[2]" />
@@ -219,7 +219,7 @@ export function CareersHeader({
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label="Toggle Navigation Menu"
+              aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5 stroke-[2]" />

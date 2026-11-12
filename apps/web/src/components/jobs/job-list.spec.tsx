@@ -358,7 +358,7 @@ describe("JobList Component - Characterization Tests", () => {
       fireEvent.click(screen.getByText(en.jobs.done));
 
       // Active chip should be rendered with remove button
-      expect(screen.getByTitle("Remove filter")).toBeDefined();
+      expect(screen.getByTitle(en.common.removeFilter)).toBeDefined();
       expect(screen.getAllByText(en.jobs.fullTime).length).toBeGreaterThan(0);
       // Product Designer is CONTRACT, so it shouldn't be in the table
       expect(screen.queryByText("Product Designer")).toBeNull();

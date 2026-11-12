@@ -44,7 +44,7 @@ export function InviteMemberCard({
 
     const trimmedEmail = inviteEmail.trim();
     if (!trimmedEmail) {
-      onInviteError("Please enter an email address.");
+      onInviteError(t("members.inviteEmailRequired"));
       return;
     }
 
@@ -52,7 +52,10 @@ export function InviteMemberCard({
     setTimeout(() => {
       setIsInviting(false);
       onInviteSuccess(
-        `Invitation sent to ${trimmedEmail} with role "${resolveRoleLabel(inviteRole)}".`,
+        t("members.inviteSentSuccess", {
+          email: trimmedEmail,
+          role: resolveRoleLabel(inviteRole),
+        }),
       );
       setInviteEmail("");
     }, 500);

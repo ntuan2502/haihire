@@ -1,3 +1,4 @@
+import { useI18n } from "@/i18n";
 import { formatTime, getCandidateDisplayName } from "@/lib/utils";
 import type { CalendarEventItem } from "../types";
 
@@ -7,6 +8,7 @@ export interface CalendarEventChipProps {
 }
 
 export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
+  const { t } = useI18n();
   const candidateName = getCandidateDisplayName(event.application);
   const hasScorecard = Boolean(event.interview.scorecard);
   const timeStr = formatTime(event.interview.scheduledAt);
@@ -15,7 +17,10 @@ export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Interview with ${candidateName} at ${timeStr}`}
+      aria-label={t("interviews.interviewEventAria", {
+        candidate: candidateName,
+        time: timeStr,
+      })}
       className={`w-full text-left h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-all hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
         hasScorecard
           ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-200"

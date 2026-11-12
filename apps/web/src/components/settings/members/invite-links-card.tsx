@@ -168,7 +168,7 @@ export function InviteLinksCard({
                 value={linkExpiresIn}
                 onChange={(val) => setLinkExpiresIn(val)}
                 options={[
-                  { value: "1 day", label: "1 day" },
+                  { value: "1 day", label: t("members.expires1Day") },
                   { value: "7 days", label: t("members.expires7Days") },
                   { value: "30 days", label: t("members.expires30Days") },
                   { value: "Never", label: t("members.expiresNever") },
@@ -187,8 +187,8 @@ export function InviteLinksCard({
                 onChange={(val) => setLinkMaxUses(val)}
                 options={[
                   { value: "1", label: t("members.uses1") },
-                  { value: "5", label: "5 uses" },
-                  { value: "10", label: "10 uses" },
+                  { value: "5", label: t("members.uses5") },
+                  { value: "10", label: t("members.uses10") },
                   { value: "Unlimited", label: t("members.usesUnlimited") },
                 ]}
                 className="w-36"
@@ -275,7 +275,8 @@ export function InviteLinksCard({
                       {" • "}
                       {t("members.expiresInLabel")} {daysRemaining}
                       {" • "}
-                      {t("common.created")}: {link.createdByName || "Admin"}
+                      {t("common.created")}:{" "}
+                      {link.createdByName || t("members.roleAdmin")}
                     </p>
                   </div>
                 </div>

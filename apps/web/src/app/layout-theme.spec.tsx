@@ -25,10 +25,6 @@ vi.mock("next/script", () => ({
   },
 }));
 
-vi.mock("sonner", () => ({
-  Toaster: () => null,
-}));
-
 vi.mock("./globals.css", () => ({}));
 
 vi.mock("@/components/providers", () => ({
@@ -44,6 +40,7 @@ vi.mock("@/components/providers", () => ({
   },
   QueryProvider: ({ children }: { children: ReactNode }) => children,
   LocalizationProvider: ({ children }: { children: ReactNode }) => children,
+  ToastProvider: () => null,
 }));
 
 vi.mock("@/context/auth-context", () => ({

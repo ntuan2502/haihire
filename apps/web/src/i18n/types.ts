@@ -78,6 +78,7 @@ export interface TranslationSchema {
     unknownUserFallback: string;
     filterStatusTabs: string;
     organizationFallback: string;
+    systemNotifications: string;
     closeModal: string;
     docTypes: {
       resume: string;

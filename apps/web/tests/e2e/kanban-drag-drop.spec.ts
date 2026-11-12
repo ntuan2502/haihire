@@ -221,7 +221,7 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
 
     // 6. Verify toast error appears
     const toastLocator = page.locator(
-      "[data-sonner-toast], [role='status'], .toaster",
+      ".Toastify__toast, [role='alert'], [role='status']",
     );
     await expect(toastLocator.first()).toBeVisible({ timeout: 5000 });
     const toastText = await toastLocator.first().textContent();

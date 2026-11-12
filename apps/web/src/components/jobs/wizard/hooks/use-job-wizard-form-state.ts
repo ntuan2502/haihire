@@ -46,7 +46,6 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     initialJob?.requirements || "",
   );
   const [formError, setFormError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   // STEP 2: Application Form State
   const [phoneSetting, setPhoneSetting] = useState<
@@ -225,8 +224,6 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setRequirements,
     formError,
     setFormError,
-    saveSuccess,
-    setSaveSuccess,
     phoneSetting,
     setPhoneSetting,
     resumeSetting,

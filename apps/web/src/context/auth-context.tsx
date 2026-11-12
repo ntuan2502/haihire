@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { QueryClientContext } from "@tanstack/react-query";
 import { isAppEventType, type AppEvent } from "@haihire/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { api, getApiBaseUrl } from "@/lib/api/client";
 import { queryKeys } from "@/hooks/query-keys";
 import { createRealtimeInvalidator } from "@/lib/realtime-sync";
@@ -291,6 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 tRef.current("auth.sseRoleChanged", {
                   role: getOrgRoleLabel(nextRole, tRef.current),
                 }),
+                { toastId: `sse-role-changed-${nextRole}` },
               );
             }
             void refreshUser().finally(() => {
@@ -311,7 +312,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else if (data.type === "MEMBER_REMOVED") {
           if (data.targetUserId === currentUserId) {
-            toast.warning(tRef.current("auth.sseOrgRemoved"));
+            toast.warning(tRef.current("auth.sseOrgRemoved"), {
+              toastId: "sse-org-removed",
+            });
             void refreshUser().finally(() => {
               if (!queryClient) return;
               void queryClient.invalidateQueries({
@@ -335,7 +338,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             activeUser.role !== "ADMIN" &&
             (!data.role || data.role === activeUser.role || data.role === "ALL")
           ) {
-            toast.info(tRef.current("auth.ssePermissionsChanged"));
+            toast.info(tRef.current("auth.ssePermissionsChanged"), {
+              toastId: "sse-permissions-changed",
+            });
           }
         } else if (data.type === "ORG_UPDATED") {
           if (!data.targetUserId || data.targetUserId === currentUserId) {

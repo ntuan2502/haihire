@@ -53,7 +53,7 @@ vi.mock("@/context/auth-context", () => ({
 
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: (...args: unknown[]) => mockToastError(...args),
     success: (...args: unknown[]) => mockToastSuccess(...args),

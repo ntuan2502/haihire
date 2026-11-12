@@ -90,7 +90,7 @@ vi.mock("@/i18n", () => ({
   }),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

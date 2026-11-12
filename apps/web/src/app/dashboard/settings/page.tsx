@@ -16,13 +16,13 @@ import {
   Building2,
   AlertTriangle,
   Trash2,
-  CheckCircle2,
   Shield,
   Globe,
   ExternalLink,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
@@ -35,8 +35,6 @@ export default function GeneralSettingsPage() {
   // Form states
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [appHost, setAppHost] = useState("");
 
@@ -62,18 +60,16 @@ export default function GeneralSettingsPage() {
   // Handle saving organization profile
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
-    setSaveSuccess(null);
-    setSaveError(null);
 
     const trimmedName = orgName.trim();
     const trimmedSlug = orgSlug.toLowerCase().trim();
 
     if (!trimmedName) {
-      setSaveError("Organization name is required.");
+      toast.error("Organization name is required.");
       return;
     }
     if (!trimmedSlug) {
-      setSaveError("URL slug is required.");
+      toast.error("URL slug is required.");
       return;
     }
 
@@ -87,10 +83,9 @@ export default function GeneralSettingsPage() {
         updateUserOrg(updated);
       }
 
-      setSaveSuccess(t("common.save"));
-      setTimeout(() => setSaveSuccess(null), 3000);
+      toast.success(t("common.save"));
     } catch (err: unknown) {
-      setSaveError(getApiErrorMessage(err, t));
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 
@@ -103,7 +98,7 @@ export default function GeneralSettingsPage() {
       router.replace("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
-      setSaveError(getApiErrorMessage(err, t));
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 
@@ -115,26 +110,6 @@ export default function GeneralSettingsPage() {
         icon={Building2}
         bordered
       />
-
-      {/* Notifications */}
-      {saveSuccess && (
-        <div
-          role="status"
-          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
-      {saveError && (
-        <div
-          role="alert"
-          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2"
-        >
-          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
-          <span>{saveError}</span>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* CARD 1: Organization profile */}

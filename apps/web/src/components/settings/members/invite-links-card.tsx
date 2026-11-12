@@ -18,7 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 import { useCreateInviteLinkMutation } from "@/hooks/use-queries";

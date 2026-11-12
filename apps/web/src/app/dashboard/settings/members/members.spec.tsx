@@ -8,6 +8,14 @@ import {
 } from "@testing-library/react";
 import MembersSettingsPage from "./page";
 import * as OrgQueriesModule from "@/hooks/use-organization-queries";
+import { toast } from "@/lib/toast";
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const mockCreateInviteMutateAsync = vi.fn();
 const mockRevokeInviteMutateAsync = vi.fn();
@@ -225,9 +233,9 @@ describe("MembersSettingsPage Component", () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText(/Invitation sent to newbie@haihire.vn/),
-        ).toBeInTheDocument();
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringMatching(/Invitation sent to newbie@haihire.vn/),
+        );
       },
       { timeout: 2000 },
     );
@@ -485,11 +493,9 @@ describe("MembersSettingsPage Component", () => {
 
       await waitFor(
         () => {
-          expect(
-            screen.getByText(
-              'Invitation sent to rec@haihire.vn with role "Recruiter".',
-            ),
-          ).toBeInTheDocument();
+          expect(toast.success).toHaveBeenCalledWith(
+            'Invitation sent to rec@haihire.vn with role "Recruiter".',
+          );
         },
         { timeout: 2000 },
       );

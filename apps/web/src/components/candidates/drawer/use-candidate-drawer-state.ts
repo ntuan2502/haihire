@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   useCandidate,
   useCandidateNotes,

@@ -20,15 +20,8 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
-import {
-  Lock,
-  KeyRound,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Globe,
-  User as UserIcon,
-} from "lucide-react";
+import { toast } from "@/lib/toast";
+import { Lock, KeyRound, Loader2, Globe, User as UserIcon } from "lucide-react";
 
 export default function AccountSettingsPage() {
   const { user, logout, setSession, updateUser } = useAuth();
@@ -48,23 +41,17 @@ export default function AccountSettingsPage() {
   const [firstNameDraft, setFirstNameDraft] = useState<string | null>(null);
   const [lastNameDraft, setLastNameDraft] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [profileSuccessMsg, setProfileSuccessMsg] = useState<string | null>(
-    null,
-  );
-  const [profileErrorMsg, setProfileErrorMsg] = useState<string | null>(null);
 
   const activeFirstName = firstNameDraft ?? resolvedFirstName;
   const activeLastName = lastNameDraft ?? resolvedLastName;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setProfileSuccessMsg(null);
-    setProfileErrorMsg(null);
 
     const trimmedFirst = activeFirstName.trim();
     const trimmedLast = activeLastName.trim();
     if (!trimmedFirst || !trimmedLast) {
-      setProfileErrorMsg(t("settings.accountProfile.nameRequiredError"));
+      toast.error(t("settings.accountProfile.nameRequiredError"));
       return;
     }
 
@@ -86,9 +73,9 @@ export default function AccountSettingsPage() {
       queryClient?.invalidateQueries({
         queryKey: ["organization", "audit-logs"],
       });
-      setProfileSuccessMsg(t("settings.accountProfile.saveSuccess"));
+      toast.success(t("settings.accountProfile.saveSuccess"));
     } catch (err: unknown) {
-      setProfileErrorMsg(
+      toast.error(
         getApiErrorMessage(err, t, "settings.accountProfile.saveError"),
       );
     } finally {
@@ -101,8 +88,6 @@ export default function AccountSettingsPage() {
     null,
   );
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
-  const [prefSuccessMsg, setPrefSuccessMsg] = useState<string | null>(null);
-  const [prefErrorMsg, setPrefErrorMsg] = useState<string | null>(null);
 
   const activePrefLang = prefLangDraft ?? user?.preferredLanguage ?? "";
   const rawPrefTimezone = prefTimezoneDraft ?? user?.preferredTimezone ?? "";
@@ -143,8 +128,6 @@ export default function AccountSettingsPage() {
 
   const handleSavePreferences = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPrefSuccessMsg(null);
-    setPrefErrorMsg(null);
     setIsSavingPrefs(true);
 
     try {
@@ -159,9 +142,9 @@ export default function AccountSettingsPage() {
       setPrefLangDraft(null);
       setPrefTimezoneDraft(null);
       setLocale?.(payload.preferredLanguage ?? orgLocalization.defaultLanguage);
-      setPrefSuccessMsg(t("settings.accountPreferences.saveSuccess"));
+      toast.success(t("settings.accountPreferences.saveSuccess"));
     } catch (err: unknown) {
-      setPrefErrorMsg(
+      toast.error(
         getApiErrorMessage(err, t, "settings.accountPreferences.saveError"),
       );
     } finally {
@@ -173,26 +156,22 @@ export default function AccountSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMsg(null);
-    setErrorMsg(null);
 
     if (!currentPassword.trim()) {
-      setErrorMsg(t("settings.currentPasswordRequiredError"));
+      toast.error(t("settings.currentPasswordRequiredError"));
       return;
     }
 
     if (newPassword.length < 6) {
-      setErrorMsg(t("settings.passwordTooShortError"));
+      toast.error(t("settings.passwordTooShortError"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMsg(t("settings.passwordMismatchError"));
+      toast.error(t("settings.passwordMismatchError"));
       return;
     }
 
@@ -205,12 +184,12 @@ export default function AccountSettingsPage() {
       if (res.accessToken) {
         setSession(res.accessToken, res.refreshToken, res.user);
       }
-      setSuccessMsg(t("settings.passwordChangedSuccess"));
+      toast.success(t("settings.passwordChangedSuccess"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: unknown) {
-      setErrorMsg(getApiErrorMessage(err, t, "settings.changePasswordError"));
+      toast.error(getApiErrorMessage(err, t, "settings.changePasswordError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -244,26 +223,6 @@ export default function AccountSettingsPage() {
               </div>
             </div>
 
-            {profileSuccessMsg && (
-              <div
-                role="status"
-                className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-center gap-2"
-              >
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>{profileSuccessMsg}</span>
-              </div>
-            )}
-
-            {profileErrorMsg && (
-              <div
-                role="alert"
-                className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-2"
-              >
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{profileErrorMsg}</span>
-              </div>
-            )}
-
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(isLastFirst
@@ -275,11 +234,7 @@ export default function AccountSettingsPage() {
                           "settings.accountProfile.lastNamePlaceholder",
                         ),
                         value: activeLastName,
-                        onChange: (val: string) => {
-                          setLastNameDraft(val);
-                          setProfileSuccessMsg(null);
-                          setProfileErrorMsg(null);
-                        },
+                        onChange: (val: string) => setLastNameDraft(val),
                       },
                       {
                         id: "account-first-name",
@@ -288,11 +243,7 @@ export default function AccountSettingsPage() {
                           "settings.accountProfile.firstNamePlaceholder",
                         ),
                         value: activeFirstName,
-                        onChange: (val: string) => {
-                          setFirstNameDraft(val);
-                          setProfileSuccessMsg(null);
-                          setProfileErrorMsg(null);
-                        },
+                        onChange: (val: string) => setFirstNameDraft(val),
                       },
                     ]
                   : [
@@ -303,11 +254,7 @@ export default function AccountSettingsPage() {
                           "settings.accountProfile.firstNamePlaceholder",
                         ),
                         value: activeFirstName,
-                        onChange: (val: string) => {
-                          setFirstNameDraft(val);
-                          setProfileSuccessMsg(null);
-                          setProfileErrorMsg(null);
-                        },
+                        onChange: (val: string) => setFirstNameDraft(val),
                       },
                       {
                         id: "account-last-name",
@@ -316,11 +263,7 @@ export default function AccountSettingsPage() {
                           "settings.accountProfile.lastNamePlaceholder",
                         ),
                         value: activeLastName,
-                        onChange: (val: string) => {
-                          setLastNameDraft(val);
-                          setProfileSuccessMsg(null);
-                          setProfileErrorMsg(null);
-                        },
+                        onChange: (val: string) => setLastNameDraft(val),
                       },
                     ]
                 ).map((field) => (
@@ -403,26 +346,6 @@ export default function AccountSettingsPage() {
               </div>
             </div>
 
-            {successMsg && (
-              <div
-                role="status"
-                className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-center gap-2"
-              >
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
-            {errorMsg && (
-              <div
-                role="alert"
-                className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-2"
-              >
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
@@ -503,26 +426,6 @@ export default function AccountSettingsPage() {
             </div>
           </div>
 
-          {prefSuccessMsg && (
-            <div
-              role="status"
-              className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs font-medium text-emerald-800 dark:text-emerald-300 flex items-center gap-2"
-            >
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>{prefSuccessMsg}</span>
-            </div>
-          )}
-
-          {prefErrorMsg && (
-            <div
-              role="alert"
-              className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-2"
-            >
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{prefErrorMsg}</span>
-            </div>
-          )}
-
           <form onSubmit={handleSavePreferences} className="space-y-4">
             <div className="space-y-1.5">
               <label
@@ -535,11 +438,7 @@ export default function AccountSettingsPage() {
                 id="account-preferred-language"
                 aria-label={t("settings.accountPreferences.languageLabel")}
                 value={activePrefLang}
-                onChange={(val) => {
-                  setPrefSuccessMsg(null);
-                  setPrefErrorMsg(null);
-                  setPrefLangDraft(val);
-                }}
+                onChange={(val) => setPrefLangDraft(val)}
                 disabled={isSavingPrefs}
                 options={languageOptions}
                 className="w-full"
@@ -561,11 +460,7 @@ export default function AccountSettingsPage() {
                 id="account-preferred-timezone"
                 aria-label={t("settings.accountPreferences.timezoneLabel")}
                 value={activePrefTimezone}
-                onChange={(val) => {
-                  setPrefSuccessMsg(null);
-                  setPrefErrorMsg(null);
-                  setPrefTimezoneDraft(val);
-                }}
+                onChange={(val) => setPrefTimezoneDraft(val)}
                 disabled={isSavingPrefs}
                 searchable
                 searchPlaceholder={t(

@@ -2,10 +2,8 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   Banknote,
   Calendar,
-  CheckCircle2,
   Clock,
   Eye,
   Globe,
@@ -41,6 +39,7 @@ import {
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
 import {
   cn,
   formatCurrency,
@@ -94,8 +93,6 @@ export default function LocalizationSettingsPage() {
 
   const [draftOverride, setDraftOverride] =
     useState<OrganizationLocalizationSettings | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const draft = draftOverride ?? savedSettings;
   const isDirty = !settingsEqual(draft, savedSettings);
@@ -104,8 +101,6 @@ export default function LocalizationSettingsPage() {
     key: K,
     value: OrganizationLocalizationSettings[K],
   ) => {
-    setSaveSuccess(null);
-    setSaveError(null);
     setDraftOverride((prev) => ({
       ...(prev ?? savedSettings),
       [key]: value,
@@ -169,23 +164,18 @@ export default function LocalizationSettingsPage() {
     e.preventDefault();
     if (!canEdit || !isDirty) return;
 
-    setSaveSuccess(null);
-    setSaveError(null);
-
     try {
       await updateOrgMutation.mutateAsync(draft);
       setDraftOverride(null);
-      setSaveSuccess(t("settings.localization.saveSuccess"));
+      toast.success(t("settings.localization.saveSuccess"));
     } catch (err: unknown) {
-      setSaveError(
+      toast.error(
         getApiErrorMessage(err, t, "settings.localization.saveError"),
       );
     }
   };
 
   const handleReset = () => {
-    setSaveSuccess(null);
-    setSaveError(null);
     setDraftOverride(null);
   };
 
@@ -199,26 +189,6 @@ export default function LocalizationSettingsPage() {
         icon={Globe}
         bordered
       />
-
-      {/* Feedback Banners */}
-      {saveSuccess && (
-        <div
-          role="status"
-          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
-      {saveError && (
-        <div
-          role="alert"
-          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2"
-        >
-          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
-          <span>{saveError}</span>
-        </div>
-      )}
 
       {/* Main Responsive 2-Column Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">

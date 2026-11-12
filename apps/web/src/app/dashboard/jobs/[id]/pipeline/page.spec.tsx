@@ -3,13 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import JobPipelinePage from "./page";
 import { downloadAuthenticatedFile } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 vi.mock("@/lib/api", () => ({
   downloadAuthenticatedFile: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),

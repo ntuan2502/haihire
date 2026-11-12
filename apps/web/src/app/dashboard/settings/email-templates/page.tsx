@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ElementType } from "react";
 import {
-  AlertCircle,
   Award,
   Calendar,
-  CheckCircle2,
   Copy,
   Eye,
   FileText,
@@ -31,6 +29,7 @@ import {
 } from "@/lib/email-templates";
 import { useI18n, type TranslationKey } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useCreateEmailTemplateMutation,
@@ -85,16 +84,15 @@ export default function EmailTemplatesSettingsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null);
-  const [feedbackToast, setFeedbackToast] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const showFeedback = (type: "success" | "error", text: string) => {
-    setFeedbackToast({ type, text });
-    setTimeout(() => setFeedbackToast(null), type === "success" ? 3000 : 4000);
+    if (type === "success") {
+      toast.success(text);
+    } else {
+      toast.error(text);
+    }
   };
 
   // Select initial template and keep selection valid across list updates
@@ -291,24 +289,6 @@ export default function EmailTemplatesSettingsPage() {
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      {feedbackToast && (
-        <div
-          className={cn(
-            "p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150",
-            feedbackToast.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
-              : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300",
-          )}
-        >
-          {feedbackToast.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-          )}
-          <span>{feedbackToast.text}</span>
-        </div>
-      )}
-
       {/* Section 1: 4 Workflow Auto-Send Bindings */}
       <EmailFlowsCard
         flows={remoteFlows}

@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EmailTemplatesSettingsPage from "./page";
 import type { EmailFlowConfig, EmailTemplate } from "@/lib/email-templates";
+import { toast } from "@/lib/toast";
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const mockCreateTemplate = vi.fn();
 const mockUpdateTemplate = vi.fn();
@@ -233,7 +241,7 @@ describe("EmailTemplatesSettingsPage", () => {
           name: "Mẫu Phỏng Vấn Vòng 2",
         }),
       );
-      expect(screen.getByText("email.createSuccess")).toBeInTheDocument();
+      expect(toast.success).toHaveBeenCalledWith("email.createSuccess");
       expect(
         document.getElementById("new-template-name"),
       ).not.toBeInTheDocument();

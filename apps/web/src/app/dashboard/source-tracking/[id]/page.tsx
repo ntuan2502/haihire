@@ -23,7 +23,7 @@ import {
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
 import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
 import { slugify } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";

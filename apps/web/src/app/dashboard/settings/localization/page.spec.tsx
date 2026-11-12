@@ -9,6 +9,14 @@ import {
 } from "@/hooks/use-organization-queries";
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
+import { toast } from "@/lib/toast";
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: vi.fn(),
@@ -160,9 +168,9 @@ describe("LocalizationSettingsPage", () => {
       });
     });
 
-    expect(
-      await screen.findByText("settings.localization.saveSuccess"),
-    ).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith(
+      "settings.localization.saveSuccess",
+    );
   });
 
   it("switches personal UI language via dropdown list for any user and syncs preference", async () => {

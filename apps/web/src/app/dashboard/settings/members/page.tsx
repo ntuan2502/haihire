@@ -12,9 +12,9 @@ import {
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
-import { CheckCircle2, AlertCircle, Users, UserPlus } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 import { getUserDisplayName } from "@/lib/utils";
@@ -68,9 +68,6 @@ export default function MembersSettingsPage() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
-  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
-  const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
-
   const [appHost, setAppHost] = useState("");
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -84,12 +81,11 @@ export default function MembersSettingsPage() {
   }, []);
 
   const handleInviteSuccess = (msg: string) => {
-    setInviteSuccessMsg(msg);
-    setTimeout(() => setInviteSuccessMsg(null), 4000);
+    toast.success(msg);
   };
 
   const handleInviteError = (msg: string) => {
-    setInviteErrorMsg(msg);
+    toast.error(msg);
   };
 
   const handleConfirmRevokeLink = async () => {
@@ -102,7 +98,6 @@ export default function MembersSettingsPage() {
     } catch (err) {
       console.error(err);
       const msg = getApiErrorMessage(err, t);
-      setInviteErrorMsg(msg);
       toast.error(msg);
       refetchLinks?.();
     } finally {
@@ -249,26 +244,6 @@ export default function MembersSettingsPage() {
     <div className="space-y-6 animate-in fade-in duration-200">
       {header}
 
-      {/* Action Notification */}
-      {inviteSuccessMsg && (
-        <div
-          role="status"
-          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{inviteSuccessMsg}</span>
-        </div>
-      )}
-      {inviteErrorMsg && (
-        <div
-          role="alert"
-          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2"
-        >
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-          <span>{inviteErrorMsg}</span>
-        </div>
-      )}
-
       {/* Top Action + Invite team member card */}
       <InviteMemberCard
         canEdit={canManageMembers}
@@ -290,7 +265,7 @@ export default function MembersSettingsPage() {
         refetchLinks={refetchLinks}
         onRevokeClick={(linkId) => setLinkToRevoke(linkId)}
         revokingId={revokingId}
-        onError={(msg) => setInviteErrorMsg(msg)}
+        onError={(msg) => toast.error(msg)}
         displayHost={appHost || "localhost:3000"}
         mountedTime={mountedTime}
       />

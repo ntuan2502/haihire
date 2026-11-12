@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
+import { toast } from "@/lib/toast";
 import {
   useCreateJobMutation,
   useUpdateJobMutation,
@@ -85,7 +86,6 @@ export function useJobWizardSubmit({
 
     try {
       form.setFormError(null);
-      form.setSaveSuccess(null);
 
       if (mode === "create") {
         await createJobMutation.mutateAsync({
@@ -128,8 +128,7 @@ export function useJobWizardSubmit({
           },
         });
 
-        form.setSaveSuccess(t("jobs.wizard.saveSuccess"));
-        setTimeout(() => form.setSaveSuccess(null), 3500);
+        toast.success(t("jobs.wizard.saveSuccess"));
       }
     } catch (err) {
       console.error("Failed to save job opening:", err);

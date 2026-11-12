@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useCandidate, useDeleteCandidateMutation } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import type { CandidateItem } from "@/lib/utils";
 import type { Application } from "@/types";

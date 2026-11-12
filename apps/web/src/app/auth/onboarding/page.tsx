@@ -18,7 +18,6 @@ import {
   Building2,
   Link2,
   AlertCircle,
-  CheckCircle2,
   ArrowLeft,
   ArrowRight,
   Loader2,
@@ -27,6 +26,7 @@ import { cn } from "cn";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
 
 function OnboardingContent() {
   const router = useRouter();
@@ -70,7 +70,6 @@ function OnboardingContent() {
   const handleSwitchMode = (newMode: "select" | "create" | "join") => {
     setMode(newMode);
     setErrorSource(null);
-    setSuccessMsg(null);
 
     const params = new URLSearchParams(searchParams.toString());
     if (newMode === "select") {
@@ -94,7 +93,6 @@ function OnboardingContent() {
   // Status & error state
   const [submitting, setSubmitting] = useState(false);
   const [errorSource, setErrorSource] = useState<AppErrorSource | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Derived reactive error message: re-evaluates automatically whenever `t` (language) changes!
   const error = useMemo(() => {
@@ -175,7 +173,7 @@ function OnboardingContent() {
 
       const createdOrg = res.data.organization;
       updateUserOrg(createdOrg);
-      setSuccessMsg(`Workspace for "${createdOrg.name}" successfully created!`);
+      toast.success(`Workspace for "${createdOrg.name}" successfully created!`);
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -208,7 +206,7 @@ function OnboardingContent() {
 
       const joinedOrg = res.data.organization;
       updateUserOrg(joinedOrg);
-      setSuccessMsg(`Successfully joined ${joinedOrg.name}!`);
+      toast.success(`Successfully joined ${joinedOrg.name}!`);
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -234,13 +232,6 @@ function OnboardingContent() {
         <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/50 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
-        </div>
-      )}
-
-      {successMsg && (
-        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-300 flex items-start gap-2.5 shadow-xs">
-          <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{successMsg}</span>
         </div>
       )}
 

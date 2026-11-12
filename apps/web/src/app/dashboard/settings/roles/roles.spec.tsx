@@ -6,7 +6,7 @@ import { Role } from "@haihire/shared";
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     success: (...args: unknown[]) => mockToastSuccess(...args),
     error: (...args: unknown[]) => mockToastError(...args),

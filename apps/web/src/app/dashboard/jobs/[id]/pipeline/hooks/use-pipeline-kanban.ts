@@ -10,7 +10,7 @@ import {
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
   type OverviewSectionsState,

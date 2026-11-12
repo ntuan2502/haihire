@@ -23,7 +23,7 @@ import {
   WebhookModal,
   DeleteWebhookModal,
 } from "@/components/settings/integrations";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { cn } from "cn";
 
 export default function IntegrationsSettingsPage() {

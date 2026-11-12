@@ -81,6 +81,7 @@ export const en: TranslationSchema = {
     filterStatusTabs: "Filter status tabs",
     organizationFallback: "Organization",
     closeModal: "Close modal",
+    systemNotifications: "Notifications",
     docTypes: {
       resume: "Resume",
       coverLetter: "Cover Letter",

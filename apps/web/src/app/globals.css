@@ -157,3 +157,38 @@ body {
     @apply font-sans;
   }
 }
+
+/* Unified React-Toastify styling aligned with HaiHire design tokens */
+:root {
+  --toastify-font-family: var(--font-sans);
+  --toastify-toast-bd-radius: 0.75rem;
+  --toastify-color-light: #ffffff;
+  --toastify-text-color-light: #0f172a;
+  --toastify-color-dark: #0f172a;
+  --toastify-text-color-dark: #f8fafc;
+  --toastify-color-success: #059669;
+  --toastify-color-error: #e11d48;
+  --toastify-color-warning: #d97706;
+  --toastify-color-info: #2563eb;
+}
+
+.Toastify__toast {
+  border: 1px solid var(--border);
+  box-shadow:
+    0 10px 25px -5px rgb(15 23 42 / 0.08),
+    0 4px 10px -6px rgb(15 23 42 / 0.05);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.75rem 0.875rem;
+}
+
+.dark .Toastify__toast {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 28px -6px rgb(0 0 0 / 0.45);
+}
+
+@media (max-width: 639px) {
+  .Toastify__toast-container--bottom-right {
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  }
+}

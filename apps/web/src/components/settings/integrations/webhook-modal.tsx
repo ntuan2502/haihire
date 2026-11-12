@@ -15,7 +15,7 @@ import {
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export interface WebhookModalProps {
   isOpen: boolean;

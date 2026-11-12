@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import {
-  Send,
-  Eye,
-  Edit3,
-  Sparkles,
-  CheckCircle2,
-  User,
-  Briefcase,
-} from "lucide-react";
+import { Send, Eye, Edit3, Sparkles, User, Briefcase } from "lucide-react";
 import {
   type EmailFlowKey,
   type EmailTemplateType,
@@ -23,7 +15,7 @@ import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { EmailHtmlPreview } from "./email-html-preview";
@@ -151,7 +143,6 @@ export function SendEmailModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const bodyInputRef = useRef<HTMLTextAreaElement>(null);
   const wasOpenRef = useRef(false);
@@ -224,7 +215,6 @@ export function SendEmailModal({
     if (!wasOpenRef.current) {
       wasOpenRef.current = true;
       setIsPreviewMode(false);
-      setShowSuccessToast(false);
     }
     if (!hasManualSelectionRef.current) {
       setSelectedValue(resolvedDefaultValue);
@@ -286,12 +276,9 @@ export function SendEmailModal({
         candidateId: candidate.id,
       });
 
-      setShowSuccessToast(true);
+      toast.success(t("email.sendSuccessToast"));
       onSendSuccess?.(log);
-
-      setTimeout(() => {
-        onClose();
-      }, 900);
+      onClose();
     } catch (err) {
       console.error("Failed to send email:", err);
       toast.error(getApiErrorMessage(err, t));
@@ -328,13 +315,6 @@ export function SendEmailModal({
 
       {/* Modal Body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {showSuccessToast && (
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span>{t("email.sendSuccessToast")}</span>
-          </div>
-        )}
-
         {/* Template Selector */}
         <div>
           <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">

@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { fixUtf8String } from "@/lib/utils";

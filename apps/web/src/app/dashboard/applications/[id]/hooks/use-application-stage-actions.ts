@@ -3,7 +3,7 @@ import type { RejectApplicationConfirmPayload } from "@/components/applications/
 import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { canTransition, getTransitionDisabledReason } from "@/lib/stages";

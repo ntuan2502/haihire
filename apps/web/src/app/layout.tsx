@@ -7,6 +7,7 @@ import {
   ThemeProvider,
   QueryProvider,
   LocalizationProvider,
+  ToastProvider,
 } from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import {
@@ -15,7 +16,6 @@ import {
   DEFAULT_LOCALE,
   type SupportedLocale,
 } from "@/i18n";
-import { Toaster } from "sonner";
 import { BRAND_CONFIG } from "@haihire/shared";
 import "./globals.css";
 
@@ -70,13 +70,7 @@ export default async function RootLayout({
               <AuthProvider>
                 <LocalizationProvider>{children}</LocalizationProvider>
               </AuthProvider>
-              <Toaster
-                richColors
-                position="top-right"
-                containerAriaLabel={
-                  locale === "vi" ? "Thông báo hệ thống" : "Notifications"
-                }
-              />
+              <ToastProvider />
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

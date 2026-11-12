@@ -81,6 +81,7 @@ export const vi: TranslationSchema = {
     filterStatusTabs: "Bộ lọc trạng thái",
     organizationFallback: "Tổ chức",
     closeModal: "Đóng hộp thoại",
+    systemNotifications: "Thông báo hệ thống",
     docTypes: {
       resume: "CV / Sơ yếu lý lịch",
       coverLetter: "Thư xin việc",

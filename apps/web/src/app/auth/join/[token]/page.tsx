@@ -17,6 +17,7 @@ import {
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel } from "@/lib/roles";
+import { toast } from "@/lib/toast";
 
 interface PublicInviteData {
   valid: boolean;
@@ -45,7 +46,6 @@ export default function JoinOrganizationPage() {
   const [inviteData, setInviteData] = useState<PublicInviteData | null>(null);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const isAlreadyMember = Boolean(
     isAuthenticated &&
@@ -96,7 +96,7 @@ export default function JoinOrganizationPage() {
       if (res.organization) {
         updateUserOrg(res.organization);
       }
-      setSuccessMsg(t("join.welcome", { org: res.organization?.name || "" }));
+      toast.success(t("join.welcome", { org: res.organization?.name || "" }));
       setTimeout(() => {
         router.push("/dashboard");
       }, 1200);
@@ -152,21 +152,8 @@ export default function JoinOrganizationPage() {
         </div>
       )}
 
-      {/* Success message */}
-      {successMsg && (
-        <div className="rounded-2xl border border-emerald-200/90 bg-white p-6 shadow-xs dark:border-emerald-950 dark:bg-slate-900 text-center space-y-3">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">
-            <CheckCircle2 className="h-5 w-5" />
-          </div>
-          <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-            {successMsg}
-          </h3>
-          <p className="text-xs text-slate-400">{t("auth.alreadySignedIn")}</p>
-        </div>
-      )}
-
       {/* Valid Invite Card */}
-      {!loading && inviteData?.valid && !successMsg && (
+      {!loading && inviteData?.valid && (
         <div className="space-y-4">
           {/* Organization Preview Card */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">

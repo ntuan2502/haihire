@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useApplicationStageActions } from "./use-application-stage-actions";
 import { downloadAuthenticatedFile } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Application } from "@/types";
 
 vi.mock("@/lib/api", () => ({
   downloadAuthenticatedFile: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),

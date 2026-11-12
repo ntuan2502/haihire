@@ -7,9 +7,9 @@ import {
   getTransitionDisabledReason,
   PIPELINE_STAGES,
 } from "@/lib/stages";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),

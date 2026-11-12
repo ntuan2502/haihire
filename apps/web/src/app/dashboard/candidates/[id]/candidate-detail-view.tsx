@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Navbar } from "@/components/layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";

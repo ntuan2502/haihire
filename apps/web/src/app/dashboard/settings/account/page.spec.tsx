@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AccountSettingsPage from "./page";
 import { authApi } from "@/lib/api/auth";
+import { toast } from "@/lib/toast";
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const mockSetSession = vi.fn();
 const mockUpdateUser = vi.fn();
@@ -178,9 +186,11 @@ describe("AccountSettingsPage Component", () => {
     fireEvent.change(firstNameInput, { target: { value: "   " } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
-    expect(
-      await screen.findByText("Vui lòng nhập đầy đủ họ và tên."),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Vui lòng nhập đầy đủ họ và tên.",
+      );
+    });
     expect(authApi.updateProfile).not.toHaveBeenCalled();
 
     fireEvent.change(firstNameInput, { target: { value: "Tuấn" } });
@@ -200,9 +210,9 @@ describe("AccountSettingsPage Component", () => {
         lastName: "Nguyễn Anh",
       }),
     );
-    expect(
-      await screen.findByText("Đã cập nhật thông tin cá nhân."),
-    ).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith(
+      "Đã cập nhật thông tin cá nhân.",
+    );
   });
 
   it("shows error when current password is empty", async () => {
@@ -212,9 +222,9 @@ describe("AccountSettingsPage Component", () => {
     if (submitBtn) fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Vui lòng nhập mật khẩu hiện tại."),
-      ).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(
+        "Vui lòng nhập mật khẩu hiện tại.",
+      );
     });
     expect(authApi.changePassword).not.toHaveBeenCalled();
   });
@@ -237,9 +247,9 @@ describe("AccountSettingsPage Component", () => {
     if (submitBtn) fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Mật khẩu mới phải có ít nhất 6 ký tự."),
-      ).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(
+        "Mật khẩu mới phải có ít nhất 6 ký tự.",
+      );
     });
     expect(authApi.changePassword).not.toHaveBeenCalled();
   });
@@ -262,9 +272,7 @@ describe("AccountSettingsPage Component", () => {
     if (submitBtn) fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Mật khẩu xác nhận không khớp."),
-      ).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith("Mật khẩu xác nhận không khớp.");
     });
     expect(authApi.changePassword).not.toHaveBeenCalled();
   });
@@ -295,7 +303,7 @@ describe("AccountSettingsPage Component", () => {
         currentPassword: "oldSecret123",
         newPassword: "newSecret456",
       });
-      expect(screen.getByText("Đổi mật khẩu thành công.")).toBeInTheDocument();
+      expect(toast.success).toHaveBeenCalledWith("Đổi mật khẩu thành công.");
     });
 
     // Inputs should be cleared
@@ -336,9 +344,9 @@ describe("AccountSettingsPage Component", () => {
     if (submitBtn) fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Mật khẩu hiện tại không chính xác."),
-      ).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(
+        "Mật khẩu hiện tại không chính xác.",
+      );
     });
   });
 
@@ -392,9 +400,9 @@ describe("AccountSettingsPage Component", () => {
       }),
     );
     expect(mockSetLocale).toHaveBeenCalledWith("en");
-    expect(
-      await screen.findByText("Đã lưu tùy chọn ngôn ngữ & múi giờ cá nhân."),
-    ).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith(
+      "Đã lưu tùy chọn ngôn ngữ & múi giờ cá nhân.",
+    );
   });
 
   it("resets personal preferences back to null when Follow organization default is chosen", async () => {

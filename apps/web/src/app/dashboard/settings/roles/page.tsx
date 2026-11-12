@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomModal, PageHeader, StatusState } from "@/components/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getPermissionLabel } from "@/lib/roles";
 

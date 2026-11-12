@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import type { JobType, WorkplaceType, ExperienceLevel } from "@/types";
 import {
   type StepId,
@@ -132,13 +132,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2 animate-in fade-in">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{form.formError}</span>
-          </div>
-        )}
-
-        {form.saveSuccess && (
-          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>{form.saveSuccess}</span>
           </div>
         )}
 

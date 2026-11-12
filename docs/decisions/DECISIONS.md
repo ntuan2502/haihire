@@ -178,3 +178,13 @@
 - **Evidence:** 38 backend services migrated, `apps/api/src/prisma/db.ts` deleted via `git rm`, 697/697 API unit tests passing, and 100% tenant scoping compliance verified by `check-tenant-scoping.ts` (231/231 queries isolated).
 - **Enforcement:** Enforced via CI Gate 9 (`pnpm lint:tenant-scope`), CI Gate 1 (`pnpm typecheck`), and CI Gate 3 (`pnpm lint`).
 - **History:** Supersedes legacy composer references in D-015.
+
+---
+
+## D-017: Unified Frontend Notifications via `react-toastify` Wrapper & Hybrid Form Validation Policy
+
+- **Date:** 2026-11-12
+- **Decision:** Replaced `sonner` and all transient inline mutation/action feedback banners (`role="status"` / `role="alert"` save, invite, preference, email test, wizard save, and onboarding success banners) with a single unified toast system powered by `react-toastify` (`apps/web/src/lib/toast.ts` wrapper + `<ToastProvider />` in `apps/web/src/components/providers/toast-provider.tsx` synced with `next-themes` and `I18nProvider`). Retained inline alerts strictly for blocking page/section fetch errors, persistent contextual notices (e.g., unsaved changes in RBAC matrix), and form-level validation/submit errors on multi-field forms, modals, and public auth/career pages (Hybrid Policy).
+- **Rationale:** Mixing `sonner` floating toasts with bespoke inline status banners caused inconsistent user feedback, duplicated state boilerplate (`successMsg`/`errorMsg`/`setTimeout` cleanup), and conflicting patterns even inside single files (e.g., `members/page.tsx`, `send-email-modal.tsx`). Centralizing behind `@/lib/toast` prevents direct library coupling, preserves Light/Dark theme consistency, and enables `toastId` deduplication for SSE broadcasts while keeping blocking form/load context visible inline.
+- **Evidence:** Removed `sonner` from `apps/web/package.json`, migrated 21 source files, 11 unit specs, and 2 Playwright E2E specs (`.Toastify__toast`), and converted 10 transient inline banner screens/modals to `@/lib/toast`.
+- **Enforcement:** All frontend toast calls MUST import `{ toast } from "@/lib/toast"`; direct imports of `react-toastify` outside `apps/web/src/lib/toast.ts` and `apps/web/src/components/providers/toast-provider.tsx` are prohibited.

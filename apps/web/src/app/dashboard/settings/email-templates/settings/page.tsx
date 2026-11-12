@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, AlertCircle, Send, Save, Sliders } from "lucide-react";
+import { Send, Save, Sliders } from "lucide-react";
 import {
   type EmailSettings,
   type EmailProviderType,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,14 +29,6 @@ export default function EmailSettingsPage() {
     DEFAULT_EMAIL_SETTINGS,
   );
   const [testEmailAddress, setTestEmailAddress] = useState("");
-  const [testToast, setTestToast] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-  const [settingsToast, setSettingsToast] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   // Sync remote settings when fetched with null-safety
   useEffect(() => {
@@ -79,15 +72,10 @@ export default function EmailSettingsPage() {
       };
 
       await updateSettingsMutation.mutateAsync(payload);
-      setSettingsToast({
-        type: "success",
-        text: t("email.settingsSavedSuccess"),
-      });
-      setTimeout(() => setSettingsToast(null), 3000);
+      toast.success(t("email.settingsSavedSuccess"));
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, t, "email.settingsSaveError");
-      setSettingsToast({ type: "error", text: msg });
-      setTimeout(() => setSettingsToast(null), 4000);
+      toast.error(msg);
     }
   };
 
@@ -96,12 +84,10 @@ export default function EmailSettingsPage() {
     if (!to) return;
     try {
       await sendTestMutation.mutateAsync(to);
-      setTestToast({ type: "success", text: t("email.testSentSuccess") });
-      setTimeout(() => setTestToast(null), 4000);
+      toast.success(t("email.testSentSuccess"));
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, t, "email.testSentError");
-      setTestToast({ type: "error", text: msg });
-      setTimeout(() => setTestToast(null), 4000);
+      toast.error(msg);
     }
   };
 
@@ -109,24 +95,6 @@ export default function EmailSettingsPage() {
 
   return (
     <div className="space-y-6 w-full min-w-0">
-      {settingsToast && (
-        <div
-          role={settingsToast.type === "success" ? "status" : "alert"}
-          className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 animate-in fade-in duration-150 ${
-            settingsToast.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
-              : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300"
-          }`}
-        >
-          {settingsToast.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-          )}
-          <span>{settingsToast.text}</span>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Provider Selection */}
         <div className="xl:col-span-7 w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
@@ -395,24 +363,6 @@ export default function EmailSettingsPage() {
               </p>
             </div>
           </div>
-
-          {testToast && (
-            <div
-              role={testToast.type === "success" ? "status" : "alert"}
-              className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2 animate-in fade-in duration-150 ${
-                testToast.type === "success"
-                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
-                  : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300"
-              }`}
-            >
-              {testToast.type === "success" ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-              )}
-              <span>{testToast.text}</span>
-            </div>
-          )}
 
           <div className="flex flex-col sm:flex-row xl:flex-col items-stretch sm:items-center xl:items-stretch gap-3">
             <Input

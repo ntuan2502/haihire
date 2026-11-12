@@ -18,11 +18,10 @@ import {
   Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CustomModal } from "@/components/shared";
+import { CustomModal, PageHeader, StatusState } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getPermissionLabel } from "@/lib/roles";
-import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 
 const ROLES: Array<{
   role: Role;
@@ -250,91 +249,95 @@ export default function RolesPermissionsPage() {
     }
   };
 
+  const headerActions = (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsResetConfirmOpen(true)}
+        disabled={isSaving || resetDefaultMutation.isPending}
+        className="text-xs h-9 cursor-pointer rounded-xl"
+      >
+        {resetDefaultMutation.isPending ? (
+          <Loader2
+            className="w-3.5 h-3.5 mr-1.5 animate-spin"
+            aria-hidden="true"
+          />
+        ) : (
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+        )}
+        {t("settings.rolesMatrix.resetDefaultButton")}
+      </Button>
+
+      {dirtyCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReset}
+          disabled={isSaving || resetDefaultMutation.isPending}
+          className="text-xs h-9 cursor-pointer rounded-xl"
+        >
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+          {t("settings.rolesMatrix.resetButton")}
+        </Button>
+      )}
+      <Button
+        size="sm"
+        onClick={handleSave}
+        disabled={
+          dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
+        }
+        className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+      >
+        {isSaving ? (
+          <>
+            <Loader2
+              className="w-3.5 h-3.5 mr-1.5 animate-spin"
+              aria-hidden="true"
+            />
+            {t("settings.rolesMatrix.savingButton")}
+          </>
+        ) : (
+          <>
+            <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+            {t("settings.rolesMatrix.saveButton")}
+          </>
+        )}
+      </Button>
+    </>
+  );
+
   if (!canManageRoles) {
     return (
-      <SettingsAccessDenied
-        title={t("settings.rolesMatrix.title")}
-        description={t("settings.rolesMatrix.description")}
-        message={t("settings.rolesMatrix.accessDenied")}
-        icon={ShieldCheck}
-      />
+      <div className="flex-1 w-full space-y-6 animate-in fade-in duration-200">
+        <PageHeader
+          title={t("settings.rolesMatrix.title")}
+          subtitle={t("settings.rolesMatrix.description")}
+          badge={t("settings.rolesMatrix.badge")}
+          icon={ShieldCheck}
+          bordered
+        />
+        <StatusState
+          status="403"
+          variant="card"
+          description={t("settings.rolesMatrix.accessDenied")}
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/dashboard/settings"
+        />
+      </div>
     );
   }
 
   return (
-    <div className="flex-1 w-full space-y-6">
-      {/* Header & Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {t("settings.rolesMatrix.title")}
-            </h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-              {t("settings.rolesMatrix.badge")}
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {t("settings.rolesMatrix.description")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsResetConfirmOpen(true)}
-            disabled={isSaving || resetDefaultMutation.isPending}
-            className="text-xs h-9 cursor-pointer"
-          >
-            {resetDefaultMutation.isPending ? (
-              <Loader2
-                className="w-3.5 h-3.5 mr-1.5 animate-spin"
-                aria-hidden="true"
-              />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            )}
-            {t("settings.rolesMatrix.resetDefaultButton")}
-          </Button>
-
-          {dirtyCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              disabled={isSaving || resetDefaultMutation.isPending}
-              className="text-xs h-9 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-              {t("settings.rolesMatrix.resetButton")}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={
-              dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
-            }
-            className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isSaving ? (
-              <>
-                <Loader2
-                  className="w-3.5 h-3.5 mr-1.5 animate-spin"
-                  aria-hidden="true"
-                />
-                {t("settings.rolesMatrix.savingButton")}
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                {t("settings.rolesMatrix.saveButton")}
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+    <div className="flex-1 w-full space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title={t("settings.rolesMatrix.title")}
+        subtitle={t("settings.rolesMatrix.description")}
+        badge={t("settings.rolesMatrix.badge")}
+        icon={ShieldCheck}
+        bordered
+        actions={headerActions}
+      />
 
       {/* Unsaved Changes Banner */}
       {dirtyCount > 0 && (

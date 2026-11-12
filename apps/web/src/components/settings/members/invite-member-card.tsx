@@ -18,6 +18,9 @@ interface InviteMemberCardProps {
   getRoleLabel?: (role: string) => string;
   onInviteSuccess: (msg: string) => void;
   onInviteError: (msg: string) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
 export function InviteMemberCard({
@@ -26,12 +29,24 @@ export function InviteMemberCard({
   getRoleLabel,
   onInviteSuccess,
   onInviteError,
+  isOpen,
+  onOpenChange,
+  hideTrigger = false,
 }: InviteMemberCardProps) {
   const { t } = useI18n();
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role>(Role.MEMBER);
   const [isInviting, setIsInviting] = useState(false);
+
+  const resolvedOpen = isOpen ?? internalOpen;
+  const setInviteOpen = (next: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(next);
+    } else {
+      setInternalOpen(next);
+    }
+  };
 
   if (!canEdit) return null;
 
@@ -61,12 +76,15 @@ export function InviteMemberCard({
     }, 500);
   };
 
-  if (!isInviteOpen) {
+  if (!resolvedOpen) {
+    if (hideTrigger) {
+      return null;
+    }
     return (
       <div>
         <Button
           type="button"
-          onClick={() => setIsInviteOpen(true)}
+          onClick={() => setInviteOpen(true)}
           className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
         >
           <UserPlus className="h-4 w-4" />
@@ -87,7 +105,8 @@ export function InviteMemberCard({
         </div>
         <button
           type="button"
-          onClick={() => setIsInviteOpen(false)}
+          onClick={() => setInviteOpen(false)}
+          aria-label={t("common.close")}
           className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />

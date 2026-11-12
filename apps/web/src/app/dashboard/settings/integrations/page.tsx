@@ -15,14 +15,14 @@ import type {
   WebhookEventType,
   WebhookProviderType,
 } from "@haihire/shared";
-import { Plus, Webhook } from "lucide-react";
+import { Plus, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader, StatusState } from "@/components/shared";
 import {
   WebhookSettingsTable,
   WebhookModal,
   DeleteWebhookModal,
 } from "@/components/settings/integrations";
-import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
 import { toast } from "sonner";
 import { cn } from "cn";
 
@@ -161,58 +161,65 @@ export default function IntegrationsSettingsPage() {
 
   if (!canManageIntegrations) {
     return (
-      <SettingsAccessDenied
-        title={t("settings.integrations.title")}
-        description={t("settings.integrations.description")}
-        message={t("settings.integrations.accessDenied")}
-        icon={Webhook}
-      />
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
+        <PageHeader
+          title={t("settings.integrations.title")}
+          subtitle={t("settings.integrations.description")}
+          icon={Plug}
+          bordered
+        />
+        <StatusState
+          status="403"
+          variant="card"
+          description={t("settings.integrations.accessDenied")}
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/dashboard/settings"
+        />
+      </div>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* Page Header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <Webhook className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-          {t("settings.integrations.title")}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("settings.integrations.description")}
-        </p>
-      </div>
+    <div className="w-full space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title={t("settings.integrations.title")}
+        subtitle={t("settings.integrations.description")}
+        icon={Plug}
+        bordered
+        actions={
+          activeTab === "webhooks" ? (
+            <Button
+              id="add-webhook-btn"
+              onClick={handleOpenAdd}
+              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t("settings.integrations.webhooks.addButton")}</span>
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-2">
+      <div className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("webhooks")}
           className={cn(
-            "pb-2.5 px-3 text-sm font-semibold border-b-2 transition-colors",
+            "px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap",
             activeTab === "webhooks"
-              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+              ? "bg-blue-600 text-white shadow-xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/70 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/70",
           )}
         >
-          {t("settings.integrations.tabs.webhooks")}
+          <Plug className="h-4 w-4 shrink-0" />
+          <span>{t("settings.integrations.tabs.webhooks")}</span>
         </button>
       </div>
 
       {/* Main Content Area */}
       {activeTab === "webhooks" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-            <Button
-              id="add-webhook-btn"
-              onClick={handleOpenAdd}
-              className="inline-flex items-center gap-1.5 shadow-sm"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{t("settings.integrations.webhooks.addButton")}</span>
-            </Button>
-          </div>
-
           <WebhookSettingsTable
             webhookSettings={webhookSettings}
             isLoading={isLoading}

@@ -1,22 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
-import {
-  History,
-  ShieldAlert,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Info,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { History, Filter, Info, ChevronDown, ChevronUp } from "lucide-react";
 import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
 import { getOrgRoleLabel } from "@/lib/roles";
 import { formatDateTime } from "@/lib/utils";
+import {
+  CustomSelect,
+  PageHeader,
+  StatusState,
+  type CustomSelectOption,
+} from "@/components/shared";
+import { Pagination } from "@/components/shared/pagination";
 
 const PAGE_SIZE = 20;
 
@@ -45,15 +43,16 @@ export default function AuditLogPage() {
   const { t } = useI18n();
   const canViewAuditLog = useHasPermission("org:view_audit_log");
   const [selectedAction, setSelectedAction] = useState<string>("");
-  const [page, setPage] = useState<number>(0);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   const { data, isLoading, isError, error } = useAuditLogsQuery(
     canViewAuditLog
       ? {
           action: selectedAction || undefined,
-          limit: PAGE_SIZE,
-          offset: page * PAGE_SIZE,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
         }
       : undefined,
     { enabled: canViewAuditLog },
@@ -61,7 +60,7 @@ export default function AuditLogPage() {
 
   const handleActionChange = (action: string) => {
     setSelectedAction(action);
-    setPage(0);
+    setPage(1);
     setExpandedRowId(null);
   };
 
@@ -194,96 +193,88 @@ export default function AuditLogPage() {
     return lines;
   };
 
+  const actionOptions: CustomSelectOption<string>[] = [
+    { value: "", label: t("settings.auditLog.filterAllActions") },
+    {
+      value: "ROLE_PERMISSIONS_UPDATED",
+      label: t("settings.auditLog.actionRolePermissionsUpdated"),
+    },
+    {
+      value: "ROLE_PERMISSIONS_RESET",
+      label: t("settings.auditLog.actionRolePermissionsReset"),
+    },
+    {
+      value: "MEMBER_ROLE_CHANGED",
+      label: t("settings.auditLog.actionMemberRoleChanged"),
+    },
+    {
+      value: "OWNERSHIP_TRANSFERRED",
+      label: t("settings.auditLog.actionOwnershipTransferred"),
+    },
+    {
+      value: "ORG_DELETED",
+      label: t("settings.auditLog.actionOrgDeleted"),
+    },
+    {
+      value: "ORG_LOCALIZATION_UPDATED",
+      label: t("settings.auditLog.actionOrgLocalizationUpdated"),
+    },
+  ];
+
   if (!canViewAuditLog) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2.5">
-            <History className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-            {t("settings.auditLog.title")}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {t("settings.auditLog.description")}
-          </p>
-        </div>
-
-        <div
-          role="alert"
-          className="p-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 flex items-center gap-3"
-        >
-          <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="font-medium">{t("settings.auditLog.accessDenied")}</p>
-        </div>
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
+        <PageHeader
+          title={t("settings.auditLog.title")}
+          subtitle={t("settings.auditLog.description")}
+          badge={t("settings.auditLog.badge")}
+          icon={History}
+          bordered
+        />
+        <StatusState
+          status="403"
+          variant="card"
+          description={t("settings.auditLog.accessDenied")}
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/dashboard/settings"
+        />
       </div>
     );
   }
 
   const logs = data?.data ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const currentOffset = page * PAGE_SIZE + 1;
-  const currentEnd = Math.min((page + 1) * PAGE_SIZE, total);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2.5">
-              <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              {t("settings.auditLog.title")}
-            </h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800">
-              {t("settings.auditLog.badge")}
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {t("settings.auditLog.description")}
-          </p>
-        </div>
-
-        {/* Action Filter */}
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-          <select
+    <div className="w-full space-y-6 animate-in fade-in duration-200">
+      <PageHeader
+        title={t("settings.auditLog.title")}
+        subtitle={t("settings.auditLog.description")}
+        badge={t("settings.auditLog.badge")}
+        icon={History}
+        bordered
+        actions={
+          <CustomSelect
+            size="sm"
             aria-label={t("settings.auditLog.filterAction")}
+            icon={Filter}
             value={selectedAction}
-            onChange={(e) => handleActionChange(e.target.value)}
-            className="text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-3 py-1.5 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">{t("settings.auditLog.filterAllActions")}</option>
-            <option value="ROLE_PERMISSIONS_UPDATED">
-              {t("settings.auditLog.actionRolePermissionsUpdated")}
-            </option>
-            <option value="ROLE_PERMISSIONS_RESET">
-              {t("settings.auditLog.actionRolePermissionsReset")}
-            </option>
-            <option value="MEMBER_ROLE_CHANGED">
-              {t("settings.auditLog.actionMemberRoleChanged")}
-            </option>
-            <option value="OWNERSHIP_TRANSFERRED">
-              {t("settings.auditLog.actionOwnershipTransferred")}
-            </option>
-            <option value="ORG_DELETED">
-              {t("settings.auditLog.actionOrgDeleted")}
-            </option>
-            <option value="ORG_LOCALIZATION_UPDATED">
-              {t("settings.auditLog.actionOrgLocalizationUpdated")}
-            </option>
-          </select>
-        </div>
-      </div>
+            onChange={handleActionChange}
+            options={actionOptions}
+            className="w-full sm:w-64"
+          />
+        }
+      />
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
+        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs space-y-4">
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-md w-full animate-pulse"
+                className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full animate-pulse"
               />
             ))}
           </div>
@@ -294,9 +285,9 @@ export default function AuditLogPage() {
       {isError && (
         <div
           role="alert"
-          className="p-6 rounded-xl border border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/40 text-red-800 dark:text-red-200 text-center"
+          className="p-3.5 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-medium text-center"
         >
-          <p className="font-semibold">{String(error)}</p>
+          <span>{String(error)}</span>
         </div>
       )}
 
@@ -304,34 +295,36 @@ export default function AuditLogPage() {
       {!isLoading && !isError && (
         <>
           {logs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-12 text-center bg-slate-50/50 dark:bg-slate-900/50">
-              <History className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-60" />
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-xs space-y-2.5">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+                <History className="w-6 h-6" aria-hidden="true" />
+              </div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {t("settings.auditLog.emptyTitle")}
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                 {t("settings.auditLog.emptyDescription")}
               </p>
             </div>
           ) : (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+            <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="py-3 px-4">
                         {t("settings.auditLog.colTimestamp")}
                       </th>
-                      <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="py-3 px-4">
                         {t("settings.auditLog.colActor")}
                       </th>
-                      <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="py-3 px-4">
                         {t("settings.auditLog.colAction")}
                       </th>
-                      <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                      <th className="py-3 px-4">
                         {t("settings.auditLog.colResource")}
                       </th>
-                      <th className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300 text-right">
+                      <th className="py-3 px-4 text-right">
                         {t("settings.auditLog.colMetadata")}
                       </th>
                     </tr>
@@ -344,147 +337,131 @@ export default function AuditLogPage() {
                         log.metadata !== null &&
                         typeof log.metadata === "object" &&
                         Object.keys(log.metadata).length > 0;
+                      const summaryLines = isExpanded
+                        ? formatAuditMetadataLines(log)
+                        : [];
 
                       return (
-                        <tr
-                          key={log.id}
-                          className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-                        >
-                          <td className="py-3 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {formatDateTime(log.createdAt)}
-                          </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            {log.actor ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
-                                  {log.actor.name?.charAt(0).toUpperCase() ||
-                                    log.actor.email?.charAt(0).toUpperCase() ||
-                                    "?"}
-                                </div>
-                                <div className="leading-tight">
-                                  <div className="font-medium text-slate-900 dark:text-slate-100 text-xs">
-                                    {log.actor.name}
+                        <Fragment key={log.id}>
+                          <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              {formatDateTime(log.createdAt)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {log.actor ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
+                                    {log.actor.name?.charAt(0).toUpperCase() ||
+                                      log.actor.email
+                                        ?.charAt(0)
+                                        .toUpperCase() ||
+                                      "?"}
                                   </div>
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                    {log.actor.email}
+                                  <div className="leading-tight">
+                                    <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                                      {log.actor.name}
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                      {log.actor.email}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-400 italic">
-                                {t("settings.auditLog.systemActor")}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}
-                            >
-                              {badge.label}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                            {getResourceLabel(log.resource)}
-                          </td>
-                          <td className="py-3 px-4 text-right whitespace-nowrap">
-                            {hasMetadata ? (
-                              <button
-                                type="button"
-                                onClick={() => toggleRow(log.id)}
-                                aria-label={t("settings.auditLog.colMetadata")}
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                              >
-                                <span>
-                                  {t("settings.auditLog.colMetadata")}
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">
+                                  {t("settings.auditLog.systemActor")}
                                 </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-400">
-                                {t("settings.auditLog.noMetadata")}
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}
+                              >
+                                {badge.label}
                               </span>
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                            <td className="py-3.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                              {getResourceLabel(log.resource)}
+                            </td>
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              {hasMetadata ? (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleRow(log.id)}
+                                  aria-label={t(
+                                    "settings.auditLog.colMetadata",
+                                  )}
+                                  aria-expanded={isExpanded}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                                >
+                                  <span>
+                                    {t("settings.auditLog.colMetadata")}
+                                  </span>
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400">
+                                  {t("settings.auditLog.noMetadata")}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className="bg-slate-50/70 dark:bg-slate-950/40">
+                              <td
+                                colSpan={5}
+                                className="p-4 border-t border-slate-100 dark:border-slate-800"
+                              >
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                                  <Info className="w-3.5 h-3.5" />
+                                  <span>
+                                    {t("settings.auditLog.colMetadata")}
+                                  </span>
+                                </div>
+                                {summaryLines.length > 0 ? (
+                                  <ul className="space-y-1 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
+                                    {summaryLines.map((line, index) => (
+                                      <li key={`${log.id}-line-${index}`}>
+                                        {line}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                                    {t("settings.auditLog.noMetadata")}
+                                  </p>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
 
-              {/* Expanded Metadata Sub-view */}
-              {expandedRowId && (
-                <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                    <Info className="w-3.5 h-3.5" />
-                    <span>{t("settings.auditLog.colMetadata")}</span>
-                  </div>
-                  {(() => {
-                    const selectedLog = logs.find(
-                      (l) => l.id === expandedRowId,
-                    );
-                    if (!selectedLog) return null;
-                    const summaryLines = formatAuditMetadataLines(selectedLog);
-                    if (summaryLines.length > 0) {
-                      return (
-                        <ul className="space-y-1 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
-                          {summaryLines.map((line, index) => (
-                            <li key={`${selectedLog.id}-line-${index}`}>
-                              {line}
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    }
-                    return (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                        {t("settings.auditLog.noMetadata")}
-                      </p>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* Pagination Footer */}
+              {/* Shared Pagination Footer */}
               {total > 0 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
-                  <div>
-                    {t("settings.auditLog.paginationShowing")
-                      .replace("{offset}", String(currentOffset))
-                      .replace("{end}", String(currentEnd))
-                      .replace("{total}", String(total))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={page === 0}
-                      onClick={() => {
-                        setPage((prev) => Math.max(prev - 1, 0));
-                        setExpandedRowId(null);
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                      {t("settings.auditLog.paginationPrev")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={page >= totalPages - 1}
-                      onClick={() => {
-                        setPage((prev) => prev + 1);
-                        setExpandedRowId(null);
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-                    >
-                      {t("settings.auditLog.paginationNext")}
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={page}
+                  totalPages={Math.max(1, Math.ceil(total / pageSize))}
+                  totalItems={total}
+                  pageSize={pageSize}
+                  onPageChange={(nextPage) => {
+                    setPage(nextPage);
+                    setExpandedRowId(null);
+                  }}
+                  onPageSizeChange={(nextSize) => {
+                    setPageSize(nextSize);
+                    setPage(1);
+                    setExpandedRowId(null);
+                  }}
+                  className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
+                />
               )}
             </div>
           )}

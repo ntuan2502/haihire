@@ -12,7 +12,7 @@ import {
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
-import { CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { CheckCircle2, AlertCircle, Users, UserPlus } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -26,7 +26,8 @@ import {
   RevokeLinkModal,
   type MemberModalTarget,
 } from "@/components/settings/members";
-import { SettingsAccessDenied } from "@/components/settings/settings-access-denied";
+import { Button } from "@/components/ui/button";
+import { PageHeader, StatusState } from "@/components/shared";
 
 export default function MembersSettingsPage() {
   const { user, canEdit, isOwner, refreshUser } = useAuth();
@@ -64,6 +65,7 @@ export default function MembersSettingsPage() {
   const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
   const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
@@ -203,40 +205,61 @@ export default function MembersSettingsPage() {
     return [];
   }, [members, user]);
 
+  const header = (
+    <PageHeader
+      title={t("members.title")}
+      subtitle={t("members.subtitle")}
+      icon={Users}
+      bordered
+      actions={
+        canManageMembers && !isInviteOpen ? (
+          <Button
+            type="button"
+            onClick={() => setIsInviteOpen(true)}
+            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-2 shadow-sm shadow-blue-600/20"
+          >
+            <UserPlus className="h-4 w-4 shrink-0" />
+            <span>{t("members.inviteMemberTitle")}</span>
+          </Button>
+        ) : undefined
+      }
+    />
+  );
+
   if (!canManageMembers) {
     return (
-      <SettingsAccessDenied
-        title={t("members.title")}
-        description={t("members.subtitle")}
-        message={t("members.accessDenied")}
-        icon={Users}
-      />
+      <div className="space-y-6 animate-in fade-in duration-200">
+        {header}
+        <StatusState
+          status="403"
+          variant="card"
+          description={t("members.accessDenied")}
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/dashboard/settings"
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Page Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            {t("members.title")}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {t("members.subtitle")}
-          </p>
-        </div>
-      </div>
+      {header}
 
       {/* Action Notification */}
       {inviteSuccessMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+        <div
+          role="status"
+          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2"
+        >
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
           <span>{inviteSuccessMsg}</span>
         </div>
       )}
       {inviteErrorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2">
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2"
+        >
           <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
           <span>{inviteErrorMsg}</span>
         </div>
@@ -249,6 +272,9 @@ export default function MembersSettingsPage() {
         getRoleLabel={getRoleLabel}
         onInviteSuccess={handleInviteSuccess}
         onInviteError={handleInviteError}
+        isOpen={isInviteOpen}
+        onOpenChange={setIsInviteOpen}
+        hideTrigger
       />
 
       {/* Invite links card */}

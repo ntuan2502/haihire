@@ -2,7 +2,9 @@
 
 import { Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { FileText } from "lucide-react";
 import { AuthGuard } from "@/components/shared/auth-guard";
+import { PageHeader } from "@/components/shared/page-header";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -76,22 +78,14 @@ function ApplicationsPageContent() {
       {/* Main Content */}
       <main
         id="main-content"
-        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4"
+        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6"
       >
-        {/* Clean, Non-redundant Header Row (min-h-9 sm:h-9 aligns height with views having CTA button) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9 sm:h-9">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t("applications.title")}
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-              {applicationsData?.total ?? 0}
-            </span>
-          </div>
-
-          {/* Spacer matching the 36px CTA button height of other views to prevent vertical jump */}
-          <div className="hidden sm:block h-9" aria-hidden="true" />
-        </div>
+        <PageHeader
+          title={t("applications.title")}
+          badge={applicationsData?.total ?? 0}
+          icon={FileText}
+          bordered
+        />
 
         <ApplicationsDataTable
           applications={applicationsData?.data || []}

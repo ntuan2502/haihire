@@ -54,7 +54,7 @@ export function DashboardUpcomingInterviews({
             {t("dashboard.upcomingInterviews")}
           </h3>
           {upcomingInterviews.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
               {upcomingInterviews.length}
             </span>
           )}
@@ -64,25 +64,23 @@ export function DashboardUpcomingInterviews({
           className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
         >
           <span>{t("common.viewAll")}</span>
-          <ArrowRight className="h-3 w-3" />
+          <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
 
       {/* Scrollable Interviews Content */}
       {upcomingInterviews.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center py-10 text-center space-y-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-            <Calendar className="h-5 w-5" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-800 mb-1">
+            <Calendar className="h-6 w-6 stroke-[1.5]" aria-hidden="true" />
           </div>
-          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
             {t("dashboard.noUpcomingInterviews")}
           </h4>
-          <p className="text-[11px] text-slate-400">
-            {t("dashboard.next7Days")}
-          </p>
+          <p className="text-xs text-slate-400">{t("dashboard.next7Days")}</p>
           <Link
             href="/dashboard/interviews"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           >
             <span>+ {t("dashboard.scheduleNew")}</span>
           </Link>

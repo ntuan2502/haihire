@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
-import { ConfirmDestructiveModal } from "@/components/shared";
+import { ConfirmDestructiveModal, PageHeader } from "@/components/shared";
 import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
@@ -22,7 +22,7 @@ import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { Plus } from "lucide-react";
+import { Briefcase, Plus } from "lucide-react";
 
 function JobsPageContent() {
   const router = useRouter();
@@ -172,30 +172,24 @@ function JobsPageContent() {
             onImportFromFile={() => router.push("/dashboard/jobs/new")}
           />
         ) : (
-          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-4">
-            {/* Clean, Non-redundant Header Row with Primary CTA */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {t("jobs.title")}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                  {stats.total}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                {canCreateJob && (
+          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
+            <PageHeader
+              title={t("jobs.title")}
+              badge={stats.total}
+              icon={Briefcase}
+              bordered
+              actions={
+                canCreateJob ? (
                   <Button
                     onClick={() => router.push("/dashboard/jobs/new")}
                     className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4" aria-hidden="true" />
                     <span>{t("jobs.createJob")}</span>
                   </Button>
-                )}
-              </div>
-            </div>
+                ) : undefined
+              }
+            />
 
             {/* JobList component with full URL synchronized filter drawer */}
             <JobList

@@ -136,8 +136,13 @@ export function RejectApplicationModal({
           <div className="rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3">
             {hasEmail ? (
               <>
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <label
+                  htmlFor="send-rejection-email-checkbox"
+                  className="flex items-start gap-2.5 cursor-pointer select-none"
+                >
                   <input
+                    id="send-rejection-email-checkbox"
+                    name="sendRejectionEmail"
                     type="checkbox"
                     checked={sendRejectionEmail}
                     onChange={(e) => setSendRejectionEmail(e.target.checked)}

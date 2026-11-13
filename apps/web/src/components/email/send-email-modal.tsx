@@ -298,10 +298,10 @@ export function SendEmailModal({
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="flex flex-col min-h-0 bg-white dark:bg-slate-900"
     >
       {/* Subheader Candidate info strip */}
-      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
+      <div className="px-6 py-2.5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-900 dark:text-white">
             {candidateDisplayName}
@@ -455,7 +455,7 @@ export function SendEmailModal({
       </div>
 
       {/* Modal Footer */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
         <Button
           type="button"
           variant="outline"

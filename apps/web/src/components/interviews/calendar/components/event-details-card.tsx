@@ -16,7 +16,7 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
 
   return (
     <>
-      <div className="p-4 rounded-xl bg-white dark:bg-[#252525] border border-slate-200/80 dark:border-white/10 space-y-2.5 text-xs shadow-2xs">
+      <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5 text-xs shadow-2xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-400">{t("interviews.role")}:</span>
           <span className="font-bold text-slate-800 dark:text-slate-200">

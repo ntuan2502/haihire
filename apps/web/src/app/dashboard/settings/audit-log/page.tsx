@@ -92,7 +92,7 @@ export default function AuditLogPage() {
         return {
           label: t("settings.auditLog.actionOwnershipTransferred"),
           className:
-            "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+            "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
         };
       case "ORG_DELETED":
         return {

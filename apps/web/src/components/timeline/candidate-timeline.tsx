@@ -93,7 +93,7 @@ export function CandidateTimeline({
         );
       case "STAGE_CHANGED":
         return (
-          <ArrowRightCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          <ArrowRightCircle className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
         );
       case "EMAIL_SENT":
         return (
@@ -122,7 +122,7 @@ export function CandidateTimeline({
       case "APPLIED":
         return "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/50 dark:border-blue-900/50 dark:text-blue-300";
       case "STAGE_CHANGED":
-        return "bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950/50 dark:border-purple-900/50 dark:text-purple-300";
+        return "bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/50 dark:border-cyan-900/50 dark:text-cyan-300";
       case "EMAIL_SENT":
         return "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/50 dark:border-emerald-900/50 dark:text-emerald-300";
       case "INTERVIEW_SCHEDULED":
@@ -246,7 +246,7 @@ export function CandidateTimeline({
             onClick={() => setFilter("STAGE")}
             className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               filter === "STAGE"
-                ? "bg-purple-600 text-white shadow-xs"
+                ? "bg-cyan-600 text-white shadow-xs"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
             }`}
           >

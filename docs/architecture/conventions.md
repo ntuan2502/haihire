@@ -137,8 +137,8 @@
 
 ## 12. Design Rules & UI Standards
 
-1. **DESIGN.md Gate:** Net-new UI features must follow design tokens specified in design documentation.
-   - _Rationale:_ Maintains consistent typography, spacing, and color schemes.
+1. **DESIGN.md Gate (SSOT):** All UI work (net-new pages, modals, shared components, and visual refactors) must follow the canonical design tokens, spacing rhythm, 3-tier corner radius hierarchy, Slate surface tokens, and `lucide-react` icon sizing defined in [DESIGN.md](../../DESIGN.md).
+   - _Rationale:_ Prevents spacing, border, radius, and arbitrary neutral hex drift across dashboard and settings screens.
 2. **No Default Purple:** Do not use purple as a default accent unless explicitly required by brand brief.
    - _Rationale:_ Avoids generic AI template appearances.
 3. **No Fake Screenshots:** Never build fake product screenshots out of nested `<div>` mockups.

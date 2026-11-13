@@ -42,7 +42,7 @@ export function PageHeader({
             {badge !== undefined &&
               badge !== null &&
               (typeof badge === "string" || typeof badge === "number" ? (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold tabular-nums bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
                   {badge}
                 </span>
               ) : (

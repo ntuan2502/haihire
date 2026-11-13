@@ -198,7 +198,7 @@ function EditCandidatePageContent() {
       />
 
       {/* Main Content Form */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Back Link */}
         <div>
           <Link
@@ -216,7 +216,7 @@ function EditCandidatePageContent() {
 
         {/* Heading */}
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             {t("candidates.editCandidateTitle")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">

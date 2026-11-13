@@ -157,7 +157,7 @@ export function WizardPreviewModal({
 
                 {experienceLevel && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                    <Briefcase className="h-3.5 w-3.5 text-purple-500" />
+                    <Briefcase className="h-3.5 w-3.5 text-cyan-500" />
                     <span>{getExperienceLevelLabel(experienceLevel, t)}</span>
                   </div>
                 )}

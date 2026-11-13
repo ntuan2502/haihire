@@ -31,9 +31,10 @@ import {
   type TabItem,
 } from "@/components/shared/segmented-tabs";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { PageHeader } from "@/components/shared/page-header";
 import { SearchInput } from "@/components/shared/search-input";
 import { StatusState } from "@/components/shared/status-state";
-import { Plus } from "lucide-react";
+import { Plus, Radio } from "lucide-react";
 import type { TimeRangeFilter } from "@haihire/shared";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
@@ -167,31 +168,25 @@ function SourceTrackingContent() {
         candidatesCount={stats?.trackedCount ?? 0}
       />
 
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
-        {/* Standard Page Header Row matching Jobs & Candidates */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {t("sourcing.title")}
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-              {linksCount}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            {canCreateLink && (
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6">
+        <PageHeader
+          title={t("sourcing.title")}
+          badge={linksCount}
+          icon={Radio}
+          bordered
+          actions={
+            canCreateLink ? (
               <Button
                 size="sm"
                 onClick={() => setIsCreateModalOpen(true)}
                 className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Plus className="h-4 w-4 stroke-[2.5]" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 <span>{t("sourcing.newLink")}</span>
               </Button>
-            )}
-          </div>
-        </div>
+            ) : undefined
+          }
+        />
 
         {/* Modern Unified Responsive Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">

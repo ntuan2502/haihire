@@ -111,7 +111,7 @@ export function WizardStepScoring({
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     crit.category === "Experience"
-                      ? "bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400"
+                      ? "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400"
                       : crit.category === "Technical"
                         ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
                         : crit.category === "Soft Skills"

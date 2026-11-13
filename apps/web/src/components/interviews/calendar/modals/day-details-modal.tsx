@@ -67,10 +67,10 @@ export function DayDetailsModal({
         ) : undefined
       }
       size="md"
-      contentClassName="p-4 sm:p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="p-4 sm:p-5 flex flex-col min-h-0 bg-white dark:bg-slate-900"
     >
       <div className="flex flex-col min-h-0">
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-white/10">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {t("interviews.candidateInterviewsMultiple", {
               count: events.length,
@@ -113,7 +113,7 @@ export function DayDetailsModal({
                   className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     hasScorecard
                       ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"
-                      : "bg-white hover:bg-slate-50/90 dark:bg-[#252525] dark:hover:bg-[#2c2c2c] border-slate-200/80 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-600 text-slate-900 dark:text-white"
+                      : "bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-800/60 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-600 text-slate-900 dark:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">

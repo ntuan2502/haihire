@@ -356,6 +356,7 @@ export function CustomSelect<T extends string = string>({
             />
             <input
               ref={searchInputRef}
+              name="custom-select-search"
               type="text"
               value={searchQuery}
               onChange={(e) => {

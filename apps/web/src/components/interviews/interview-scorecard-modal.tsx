@@ -183,10 +183,10 @@ export function InterviewScorecardModal({
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="flex flex-col min-h-0 bg-white dark:bg-slate-900"
     >
       {/* Candidate & Interview Summary Strip */}
-      <div className="p-4 sm:px-6 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+      <div className="p-4 sm:px-6 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center">
             {candidateName.charAt(0)}
@@ -242,7 +242,7 @@ export function InterviewScorecardModal({
         )}
 
         {/* 1. Overall Rating Hero Card */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white">
               {t("interviews.overallRatingTitle")}
@@ -276,7 +276,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "STRONG_YES"
                   ? "bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500 ring-2 ring-emerald-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -303,7 +303,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "YES"
                   ? "bg-blue-50/80 border-blue-500 dark:bg-blue-950/40 dark:border-blue-500 ring-2 ring-blue-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -330,7 +330,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "NEUTRAL"
                   ? "bg-amber-50/80 border-amber-500 dark:bg-amber-950/40 dark:border-amber-500 ring-2 ring-amber-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -357,7 +357,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "NO" || recommendation === "STRONG_NO"
                   ? "bg-rose-50/80 border-rose-500 dark:bg-rose-950/40 dark:border-rose-500 ring-2 ring-rose-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -384,7 +384,7 @@ export function InterviewScorecardModal({
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Technical Skills */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.technicalCriteria")}
@@ -397,7 +397,7 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Communication Skills */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.communicationCriteria")}
@@ -410,7 +410,7 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Culture Fit */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.cultureFitCriteria")}
@@ -423,7 +423,7 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Problem Solving */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.problemSolvingCriteria")}
@@ -454,7 +454,7 @@ export function InterviewScorecardModal({
       </div>
 
       {/* Modal Footer */}
-      <div className="p-4 sm:px-6 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between gap-2 shrink-0">
+      <div className="p-4 sm:px-6 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex items-center justify-between gap-2 shrink-0">
         <Button
           type="button"
           variant="outline"

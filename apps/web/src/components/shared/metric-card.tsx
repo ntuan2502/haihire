@@ -77,13 +77,13 @@ export function MetricCard({
           {label}
         </p>
         <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          <span className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
             {value}
           </span>
           {badge && (
             <span
               className={cn(
-                "text-[11px] font-semibold",
+                "text-xs font-semibold",
                 badge.variant === "success" &&
                   "text-emerald-600 dark:text-emerald-400",
                 badge.variant === "warning" &&
@@ -106,13 +106,13 @@ export function MetricCard({
 
       <div
         className={cn(
-          "h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform",
+          "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border transition-transform",
           styles.iconBg,
           styles.iconColor,
           styles.iconBorder,
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
     </>
   );

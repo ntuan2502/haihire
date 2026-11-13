@@ -113,7 +113,7 @@ export function ApplyToJobModal({
       }}
       title={t("applications.applyToJobTitle")}
       size="md"
-      contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-3"
+      contentClassName="p-5 flex flex-col min-h-0 bg-white dark:bg-slate-900 space-y-3"
     >
       {errorMessage && (
         <div className="p-2.5 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900/50">
@@ -143,7 +143,7 @@ export function ApplyToJobModal({
             return (
               <div
                 key={job.id}
-                className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#252525] hover:border-blue-300 dark:hover:border-blue-600 flex items-center justify-between gap-3 transition-all shadow-2xs"
+                className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60 hover:border-blue-300 dark:hover:border-blue-600 flex items-center justify-between gap-3 transition-all shadow-2xs"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">

@@ -32,7 +32,7 @@ export function DashboardPipeline({
           <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
             {t("dashboard.hiringPipeline")}
           </h3>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shrink-0">
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shrink-0">
             {pipelineJobs.length}
           </span>
         </div>
@@ -41,15 +41,17 @@ export function DashboardPipeline({
           className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
         >
           <span>{t("dashboard.allJobs")}</span>
-          <ArrowRight className="h-3 w-3" />
+          <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
 
       {/* Scrollable Pipeline Jobs Content */}
       {pipelineJobs.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center py-8 text-center space-y-2">
-          <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-700" />
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+        <div className="flex flex-1 flex-col items-center justify-center py-10 text-center space-y-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-800 mb-1">
+            <Briefcase className="h-6 w-6 stroke-[1.5]" aria-hidden="true" />
+          </div>
+          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
             {t("dashboard.noActiveJobs")}
           </p>
           <Link

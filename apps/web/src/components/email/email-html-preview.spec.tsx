@@ -5,7 +5,7 @@ import { EmailHtmlPreview } from "./email-html-preview";
 describe("EmailHtmlPreview", () => {
   it("keeps untrusted markup in a sandbox without script or same-origin permissions", () => {
     const payload =
-      '<img src=x onerror="localStorage.clear()"><script>alert(1)</script>';
+      '<img src=x alt="" onerror="localStorage.clear()"><script>alert(1)</script>';
     render(<EmailHtmlPreview title="Preview" body={payload} />);
 
     const frame = screen.getByTitle("Preview");

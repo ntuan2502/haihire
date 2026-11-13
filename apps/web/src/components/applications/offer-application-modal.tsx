@@ -121,8 +121,13 @@ export function OfferApplicationModal({
           <div className="rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3">
             {hasEmail ? (
               <>
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <label
+                  htmlFor="send-offer-email-checkbox"
+                  className="flex items-start gap-2.5 cursor-pointer select-none"
+                >
                   <input
+                    id="send-offer-email-checkbox"
+                    name="sendOfferEmail"
                     type="checkbox"
                     checked={sendOfferEmail}
                     onChange={(e) => {

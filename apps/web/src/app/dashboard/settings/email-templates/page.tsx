@@ -331,18 +331,23 @@ export default function EmailTemplatesSettingsPage() {
               const assignedFlows =
                 flowAssignmentsByTemplateId.get(tpl.id) ?? [];
 
+              const handleCardClick = () => handleSelectTemplate(tpl);
+              const handleCardKeyDown = (
+                e: React.KeyboardEvent<HTMLDivElement>,
+              ) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelectTemplate(tpl);
+                }
+              };
+
               return (
                 <div
                   key={tpl.id}
-                  onClick={() => handleSelectTemplate(tpl)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleSelectTemplate(tpl);
-                    }
-                  }}
+                  onKeyDown={handleCardKeyDown}
+                  onClick={handleCardClick}
                   className={cn(
                     "w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer space-y-2",
                     isSelected

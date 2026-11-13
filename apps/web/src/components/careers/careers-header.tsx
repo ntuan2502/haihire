@@ -61,7 +61,7 @@ export function CareersHeader({
               href={`/careers/${orgSlug}`}
               className="flex items-center gap-3 min-w-0 group hover:opacity-90 transition-opacity"
             >
-              <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
+              <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
                 {orgName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">

@@ -32,7 +32,7 @@ export function DeleteWebhookModal({
           {t("settings.integrations.webhooks.deleteConfirm.message")}
         </p>
       </div>
-      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
+      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 shrink-0">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t("settings.integrations.webhooks.deleteConfirm.cancel")}
         </Button>

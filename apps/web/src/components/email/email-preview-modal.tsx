@@ -126,7 +126,7 @@ export function EmailPreviewModal({
             /* iOS Mail Layout */
             <div
               key="email-preview-mobile"
-              className="flex-1 flex flex-col bg-white dark:bg-[#1c1c1e]"
+              className="flex-1 flex flex-col bg-white dark:bg-slate-900"
             >
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between mt-1">
                 <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
@@ -179,7 +179,7 @@ export function EmailPreviewModal({
             /* Desktop / Tablet Apple Mail Layout */
             <div
               key={`email-preview-${previewDevice}`}
-              className="flex-1 overflow-y-auto flex flex-col bg-white dark:bg-[#1e1e1e]"
+              className="flex-1 overflow-y-auto flex flex-col bg-white dark:bg-slate-900"
             >
               <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-slate-100 dark:border-slate-800/90">
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug">

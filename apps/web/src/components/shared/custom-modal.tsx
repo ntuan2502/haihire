@@ -121,7 +121,7 @@ export function CustomModal({
       {/* Modal Dialog Surface */}
       <div
         className={cn(
-          "relative z-10 w-full flex flex-col rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-[#fbfbfd] dark:bg-[#1a1a1a] shadow-2xl overflow-hidden duration-150 animate-in zoom-in-95",
+          "relative z-10 w-full flex flex-col rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden duration-150 animate-in zoom-in-95",
           isMaximized
             ? "w-full h-full max-w-none max-h-none rounded-none fixed inset-0 z-50"
             : cn(resolvedMaxWidth, resolvedHeight),
@@ -137,7 +137,7 @@ export function CustomModal({
           allowMaximize) && (
           <div
             className={cn(
-              "px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] flex items-center justify-between gap-3 shrink-0",
+              "px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900 flex items-center justify-between gap-3 shrink-0",
               headerClassName,
             )}
           >

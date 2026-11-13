@@ -47,11 +47,11 @@ export function EventDetailsModal({
         ) : undefined
       }
       size="md"
-      contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-4"
+      contentClassName="p-5 flex flex-col min-h-0 bg-white dark:bg-slate-900 space-y-4"
     >
       {selectedEvent && (
         <>
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/10">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                 {getInitials(

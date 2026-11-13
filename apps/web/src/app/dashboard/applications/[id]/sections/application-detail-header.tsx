@@ -42,7 +42,7 @@ export function ApplicationDetailHeader({
         {/* Info */}
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
               {candidateName}
             </h1>
             <StageBadge stage={stage} />

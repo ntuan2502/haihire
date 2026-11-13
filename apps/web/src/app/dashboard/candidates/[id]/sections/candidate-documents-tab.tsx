@@ -72,7 +72,12 @@ export function CandidateDocumentsTab({
               )}
               <span>{t("candidates.uploadDoc")}</span>
             </button>
+            <label htmlFor="candidate-doc-upload-input" className="sr-only">
+              {t("candidates.uploadDoc")}
+            </label>
             <input
+              id="candidate-doc-upload-input"
+              name="candidateDocument"
               ref={docInputRef}
               type="file"
               accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"

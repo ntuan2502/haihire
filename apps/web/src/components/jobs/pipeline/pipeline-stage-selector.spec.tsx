@@ -31,11 +31,11 @@ const mockStages: StageConfig[] = [
   {
     id: "INTERVIEW",
     label: "Phỏng vấn",
-    color: "purple",
-    badgeColor: "bg-purple-100 text-purple-700",
-    dotColor: "bg-purple-500",
-    activePill: "border-purple-500 bg-purple-50 text-purple-900",
-    pillBadge: "bg-purple-200 text-purple-800",
+    color: "cyan",
+    badgeColor: "bg-cyan-100 text-cyan-700",
+    dotColor: "bg-cyan-500",
+    activePill: "border-cyan-500 bg-cyan-50 text-cyan-900",
+    pillBadge: "bg-cyan-200 text-cyan-800",
   },
 ];
 

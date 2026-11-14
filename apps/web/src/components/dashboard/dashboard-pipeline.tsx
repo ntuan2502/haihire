@@ -24,7 +24,7 @@ export function DashboardPipeline({
   const pipelineStages = usePipelineStages();
 
   return (
-    <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex flex-col h-[520px] xl:h-[calc(100vh-280px)] min-h-[460px] max-h-[640px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center gap-2 min-w-0">
@@ -99,7 +99,7 @@ export function DashboardPipeline({
                   >
                     {job.title}
                   </Link>
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 shrink-0 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700/60">
                     {totalPipeline} {t("pipeline.stageCounts")}
                   </span>
                 </div>
@@ -122,8 +122,8 @@ export function DashboardPipeline({
                   })}
                 </div>
 
-                {/* 6 Stage Metric Cards (Streamlined Compact Pills) */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 pt-0.5">
+                {/* 6 Stage Metric Cards (2 rows of 3 readable pills) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
                   {pipelineStages.map((stage) => {
                     const count = stageCounts[stage.id] || 0;
                     const displayLabel = stage.label;
@@ -137,17 +137,17 @@ export function DashboardPipeline({
                             `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
                           )
                         }
-                        className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
+                        className={`flex items-center justify-between px-2 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
                         title={`${stage.label}: ${count}`}
                         aria-label={`${stage.label}: ${count}`}
                       >
                         <span
-                          className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
+                          className={`text-[11px] font-semibold ${stage.textColor} opacity-90 truncate mr-1`}
                         >
                           {displayLabel}
                         </span>
                         <span
-                          className={`text-[11px] font-black ${stage.textColor} shrink-0`}
+                          className={`text-[11px] font-bold tabular-nums ${stage.textColor} shrink-0`}
                         >
                           {count}
                         </span>

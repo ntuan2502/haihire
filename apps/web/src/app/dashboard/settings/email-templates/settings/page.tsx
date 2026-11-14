@@ -94,8 +94,8 @@ export default function EmailSettingsPage() {
   const isSendingTest = sendTestMutation.isPending;
 
   return (
-    <div className="space-y-6 w-full min-w-0">
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+    <div className="space-y-5 w-full min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         {/* Provider Selection */}
         <div className="xl:col-span-7 w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
           <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -157,7 +157,7 @@ export default function EmailSettingsPage() {
                     {prov.title}
                   </span>
                   {prov.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                       {prov.badge}
                     </span>
                   )}
@@ -370,7 +370,7 @@ export default function EmailSettingsPage() {
               value={testEmailAddress}
               onChange={(e) => setTestEmailAddress(e.target.value)}
               placeholder={t("email.testEmailPlaceholder")}
-              className="h-10 text-xs flex-1"
+              className="h-9 text-xs flex-1"
             />
             <Button
               type="button"

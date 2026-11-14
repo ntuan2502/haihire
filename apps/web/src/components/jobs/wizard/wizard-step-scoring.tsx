@@ -56,14 +56,14 @@ export function WizardStepScoring({
   const { t } = useI18n();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-5">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">
             {t("jobs.wizard.scoringTitle")}
           </h1>
-          <span className="rounded-md bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+          <span className="rounded-md bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-600 dark:text-slate-400">
             {mode === "create"
               ? t("jobs.wizard.compensationOptional")
               : t("jobs.wizard.scoringConfiguredBadge")}
@@ -109,7 +109,7 @@ export function WizardStepScoring({
                   {crit.title}
                 </h3>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
                     crit.category === "Experience"
                       ? "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400"
                       : crit.category === "Technical"
@@ -167,7 +167,7 @@ export function WizardStepScoring({
               <span>
                 {t("jobs.wizard.maxScoreLabel")}: {crit.maxScore}
               </span>
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
+              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[11px] text-slate-600 dark:text-slate-300">
                 {t("jobs.wizard.keyLabel")}: {crit.key}
               </span>
             </div>
@@ -178,7 +178,7 @@ export function WizardStepScoring({
       {/* Add Criterion Inline Form */}
       {isAddingCriterion ? (
         <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20 space-y-4">
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
             {t("jobs.wizard.addCustomCriterionTitle")}
           </h4>
 
@@ -275,7 +275,7 @@ export function WizardStepScoring({
           type="button"
           variant="outline"
           onClick={() => setIsAddingCriterion(true)}
-          className="h-10 text-xs font-bold text-slate-800 dark:text-slate-200 gap-1.5 w-full sm:w-auto"
+          className="h-9 text-xs font-bold text-slate-800 dark:text-slate-200 gap-1.5 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4 stroke-[2.5]" />
           {t("jobs.wizard.addCriterionAction")}

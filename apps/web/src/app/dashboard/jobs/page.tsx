@@ -172,7 +172,7 @@ function JobsPageContent() {
             onImportFromFile={() => router.push("/dashboard/jobs/new")}
           />
         ) : (
-          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-6">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
             <PageHeader
               title={t("jobs.title")}
               badge={stats.total}

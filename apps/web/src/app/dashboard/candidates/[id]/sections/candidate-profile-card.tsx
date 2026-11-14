@@ -27,7 +27,7 @@ export function CandidateProfileCard({
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
         {t("candidates.overviewTab")}
       </h3>
 

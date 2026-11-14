@@ -41,7 +41,7 @@ export function EventDetailsModal({
       title={title}
       badge={
         selectedEvent?.interview.round ? (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
             {t("interviews.round")} {selectedEvent.interview.round}
           </span>
         ) : undefined
@@ -53,7 +53,7 @@ export function EventDetailsModal({
         <>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 font-bold text-xs flex items-center justify-center">
                 {getInitials(
                   getCandidateDisplayName(selectedEvent.application),
                 )}

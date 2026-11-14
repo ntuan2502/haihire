@@ -59,7 +59,7 @@ export function CandidatesTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
+          <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
             <tr>
               {sortableColumns.map((col) => {
                 if (!visibleColumns[col.id]) return null;
@@ -75,25 +75,17 @@ export function CandidatesTable({
                     key={col.id}
                     scope="col"
                     aria-sort={ariaSort}
-                    className="py-3 px-5 select-none"
+                    className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                   >
                     <button
                       type="button"
                       onClick={() => onSort(col.id)}
-                      className={`flex items-center gap-1 ${
-                        col.id === "added"
-                          ? "font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                          : "font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer`}
+                      className="flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                     >
                       <span>{col.label}</span>
                       {isSorted ? (
                         <ArrowDown
-                          className={`h-3 w-3 ${
-                            col.id === "added"
-                              ? "text-slate-700 dark:text-slate-300"
-                              : ""
-                          } transition-transform ${
+                          className={`h-3 w-3 transition-transform ${
                             sortDirection === "asc" ? "rotate-180" : ""
                           }`}
                           aria-hidden="true"
@@ -112,7 +104,7 @@ export function CandidatesTable({
               {visibleColumns.quickNotes && (
                 <th
                   scope="col"
-                  className="py-3 px-5 font-semibold text-slate-500"
+                  className="py-3 px-3.5 xl:px-5 font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap"
                 >
                   {t("candidates.columns.quickNotes")}
                 </th>
@@ -120,7 +112,7 @@ export function CandidatesTable({
 
               <th
                 scope="col"
-                className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500"
+                className="py-3 px-3.5 xl:px-5 text-right min-w-[90px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap"
               >
                 {t("common.actions")}
               </th>

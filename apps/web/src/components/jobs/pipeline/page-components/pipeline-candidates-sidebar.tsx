@@ -89,7 +89,7 @@ export function PipelineCandidatesSidebar({
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-400 font-medium pt-0.5">
+        <p className="text-[11px] text-slate-400 font-medium pt-0.5">
           {candidateCountText}
         </p>
       </div>

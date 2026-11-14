@@ -127,7 +127,7 @@ export function EmailFlowsCard({
                   />
                   <span
                     className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                      "text-[11px] font-bold px-2 py-0.5 rounded-full border",
                       isFlowEnabled && !isTemplateDisabled
                         ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300"
                         : "bg-slate-100 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400",

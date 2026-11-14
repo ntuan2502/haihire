@@ -35,7 +35,7 @@ export function PipelineStageSelector({
   const { t } = useI18n();
 
   return (
-    <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs px-4 py-2 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
+    <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs px-4 py-2 sm:px-6 lg:px-8 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
       {/* Stage Pills */}
       <div className="flex items-center gap-2">
         {stages.map((stage) => {

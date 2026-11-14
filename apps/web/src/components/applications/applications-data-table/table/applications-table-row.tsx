@@ -2,11 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Mail, Building2, Trash2, Eye } from "lucide-react";
-import {
-  formatRelativeTime,
-  getCandidateDisplayName,
-  getStageInfo,
-} from "@/lib/utils";
+import { formatRelativeTime, getCandidateDisplayName } from "@/lib/utils";
+import { useStageInfo } from "@/lib/stages";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { Application, Job } from "@/types";
 import { useI18n } from "@/i18n";
@@ -37,7 +34,7 @@ export function ApplicationsTableRow({
 }: ApplicationsTableRowProps) {
   const router = useRouter();
   const { t } = useI18n();
-  const stageInfo = getStageInfo(application.stage);
+  const stageInfo = useStageInfo(application.stage);
 
   return (
     <tr
@@ -46,7 +43,7 @@ export function ApplicationsTableRow({
     >
       {/* Candidate Name */}
       {visibleColumns.candidate && (
-        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+        <td className="py-4 px-3.5 xl:px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
           <button
             type="button"
             onClick={(e) => {
@@ -62,20 +59,22 @@ export function ApplicationsTableRow({
 
       {/* Email */}
       {visibleColumns.email && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-3.5 xl:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
             <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>{application.candidateEmail}</span>
+            <span className="truncate max-w-[180px] xl:max-w-[240px]">
+              {application.candidateEmail}
+            </span>
           </span>
         </td>
       )}
 
       {/* Job */}
       {visibleColumns.job && (
-        <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+        <td className="py-4 px-3.5 xl:px-5 max-w-[180px] xl:max-w-[260px]">
+          <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium min-w-0">
             <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span>
+            <span className="truncate">
               {job?.title || t("candidates.role")}{" "}
               <span className="text-slate-400">
                 ({getJobTypeLabel(job?.type, t)})
@@ -87,8 +86,10 @@ export function ApplicationsTableRow({
 
       {/* Status */}
       {visibleColumns.status && (
-        <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+        <td className="py-4 px-3.5 xl:px-5 whitespace-nowrap">
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${stageInfo.badgeBg}`}
+          >
             <span
               className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
             />
@@ -98,17 +99,21 @@ export function ApplicationsTableRow({
       )}
 
       {/* Score */}
-      {visibleColumns.score && <td className="py-4 px-5 text-slate-400">—</td>}
+      {visibleColumns.score && (
+        <td className="py-4 px-3.5 xl:px-5 text-slate-400 whitespace-nowrap">
+          —
+        </td>
+      )}
 
       {/* Applied */}
       {visibleColumns.applied && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-3.5 xl:px-5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
           {formatRelativeTime(application.createdAt)}
         </td>
       )}
 
       {/* Actions */}
-      <td className="py-4 px-5 text-right whitespace-nowrap">
+      <td className="py-4 px-3.5 xl:px-5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           {/* Quick View */}
           <button

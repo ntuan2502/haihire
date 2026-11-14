@@ -93,23 +93,29 @@ export function TrackingLinksTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
-                  <th className="py-3.5 px-4 text-center">
+                <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">
+                    {t("sourcing.links.name")}
+                  </th>
+                  <th className="py-3 px-2.5 xl:px-4 whitespace-nowrap">
+                    {t("sourcing.links.source")}
+                  </th>
+                  <th className="py-3 px-2.5 xl:px-4 whitespace-nowrap">
+                    {t("sourcing.links.job")}
+                  </th>
+                  <th className="py-3 px-2.5 xl:px-4 text-center whitespace-nowrap">
                     {t("sourcing.links.clicks")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th className="py-3 px-2.5 xl:px-4 text-center whitespace-nowrap">
                     {t("sourcing.links.apps")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th className="py-3 px-2.5 xl:px-4 text-center whitespace-nowrap">
                     {t("sourcing.links.cvr")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th className="py-3 px-2.5 xl:px-4 text-center whitespace-nowrap">
                     {t("sourcing.links.status")}
                   </th>
-                  <th className="py-3.5 px-5 text-right">
+                  <th className="py-3 px-3 xl:px-4 text-right whitespace-nowrap">
                     {t("sourcing.links.actions")}
                   </th>
                 </tr>
@@ -124,22 +130,23 @@ export function TrackingLinksTab({
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                     >
                       {/* Name & Token */}
-                      <td className="py-3.5 px-5">
-                        <div className="space-y-0.5">
+                      <td className="py-3.5 px-3 xl:px-4 max-w-[200px]">
+                        <div className="space-y-0.5 min-w-0">
                           <Link
                             href={`/dashboard/source-tracking/${link.id}`}
-                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
+                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors block truncate"
+                            title={link.name}
                           >
                             {link.name}
                           </Link>
-                          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate">
                             ?ref={link.token}
                           </p>
                         </div>
                       </td>
 
                       {/* Source */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-2.5 xl:px-4 whitespace-nowrap">
                         <ChannelBadge
                           channel={link.source}
                           customLabel={link.customSource}
@@ -148,41 +155,46 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Job */}
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                      <td
+                        className="py-3.5 px-2.5 xl:px-4 text-slate-600 dark:text-slate-300 max-w-[180px] truncate"
+                        title={
+                          link.jobTitle || t("sourcing.modal.allJobsOption")
+                        }
+                      >
                         {link.jobTitle || t("sourcing.modal.allJobsOption")}
                       </td>
 
                       {/* Clicks */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-2.5 xl:px-4 text-center font-bold text-slate-900 dark:text-white whitespace-nowrap">
                         {link.clicksCount}
                       </td>
 
                       {/* Applications */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-2.5 xl:px-4 text-center font-bold text-slate-900 dark:text-white whitespace-nowrap">
                         {link.applicationsCount}
                       </td>
 
                       {/* CVR */}
-                      <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
+                      <td className="py-3.5 px-2.5 xl:px-4 text-center font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         {link.conversionRate}%
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-2.5 xl:px-4 text-center whitespace-nowrap">
                         {onToggleStatus ? (
                           <button
                             type="button"
                             onClick={() =>
                               onToggleStatus(link.id, link.isActive)
                             }
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
                                 : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
                             }`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
+                              className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                                 link.isActive
                                   ? "bg-emerald-500"
                                   : "bg-slate-400"
@@ -196,14 +208,14 @@ export function TrackingLinksTab({
                           </button>
                         ) : (
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
                                 : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
                             }`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
+                              className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                                 link.isActive
                                   ? "bg-emerald-500"
                                   : "bg-slate-400"
@@ -219,7 +231,7 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-5 text-right">
+                      <td className="py-3.5 px-3 xl:px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Copy URL Button */}
                           <Button
@@ -233,7 +245,7 @@ export function TrackingLinksTab({
                                 link.jobTitle,
                               )
                             }
-                            className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
+                            className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer whitespace-nowrap"
                           >
                             {isCopied ? (
                               <>
@@ -318,7 +330,7 @@ export function TrackingLinksTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+          <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

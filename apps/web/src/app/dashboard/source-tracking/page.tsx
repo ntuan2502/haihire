@@ -168,7 +168,7 @@ function SourceTrackingContent() {
         candidatesCount={stats?.trackedCount ?? 0}
       />
 
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6">
+      <main className="flex-1 mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
         <PageHeader
           title={t("sourcing.title")}
           badge={linksCount}
@@ -206,7 +206,7 @@ function SourceTrackingContent() {
           <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
             {/* Search Input (visible on links and attribution tabs) */}
             {activeTab !== "overview" && (
-              <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+              <div className="flex-1 sm:w-72 md:w-80 sm:flex-initial">
                 <SearchInput
                   placeholder={
                     activeTab === "links"
@@ -238,7 +238,7 @@ function SourceTrackingContent() {
                 ...jobsList.map((j) => ({ value: j.id, label: j.title })),
               ]}
               placeholder={t("sourcing.allJobs")}
-              className="w-full sm:w-48 shrink-0"
+              className="w-full sm:w-56 shrink-0"
               triggerClassName="w-full h-9 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3"
             />
 
@@ -256,7 +256,7 @@ function SourceTrackingContent() {
                 { value: "90d", label: t("sourcing.time90d") },
                 { value: "all", label: t("sourcing.timeAll") },
               ]}
-              className="w-full sm:w-32 shrink-0"
+              className="w-full sm:w-36 shrink-0"
               triggerClassName="w-full h-9 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3"
             />
           </div>
@@ -264,7 +264,7 @@ function SourceTrackingContent() {
 
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-4">
             {/* 4 Metric KPI Cards via MetricCard shared component */}
             <SourcingStatsCards stats={stats} isLoading={statsLoading} />
 
@@ -282,7 +282,7 @@ function SourceTrackingContent() {
 
         {/* TAB 2: TRACKING LINKS */}
         {activeTab === "links" && (
-          <div className="animate-in fade-in duration-200">
+          <div>
             <TrackingLinksTab
               data={linksData}
               isLoading={linksLoading}
@@ -302,7 +302,7 @@ function SourceTrackingContent() {
 
         {/* TAB 3: ATTRIBUTION LOG */}
         {activeTab === "attribution" && (
-          <div className="animate-in fade-in duration-200">
+          <div>
             <AttributionLogTab
               data={attributionData}
               isLoading={attributionLoading}

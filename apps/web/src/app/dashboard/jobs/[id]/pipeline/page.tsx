@@ -53,7 +53,7 @@ function JobPipelinePageContent() {
       />
 
       {/* 2. Main Master-Detail Workspace */}
-      <main className="flex-1 min-h-0 flex overflow-hidden">
+      <main className="flex-1 min-h-0 w-full max-w-[1600px] mx-auto flex overflow-hidden border-x border-slate-200/80 dark:border-slate-800">
         {/* LEFT COLUMN: Candidates List */}
         <PipelineCandidatesSidebar
           isListCollapsed={pipeline.isListCollapsed}

@@ -36,7 +36,7 @@ export function GatewayNavbar({
       >
         <div
           className={cn(
-            "mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-4",
+            "mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4",
             maxWidthClassName,
           )}
         >

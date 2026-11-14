@@ -154,11 +154,11 @@ export function ApplicationNotesStream({
             <div className="flex items-center justify-center h-6 w-6 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
               <MessageSquare className="h-3.5 w-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white">
               {t("applications.notesStream.title")}
             </h3>
             {notes.length > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                 {notes.length}
               </span>
             )}
@@ -199,7 +199,7 @@ export function ApplicationNotesStream({
 
             {(isFocused || composerContent.trim().length > 0) && (
               <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[11px] text-slate-400">
                   {t("applications.notesStream.keyboardHint")}
                 </span>
 
@@ -311,20 +311,20 @@ export function ApplicationNotesStream({
                         </span>
 
                         <span
-                          className={`inline-flex items-center px-1.5 py-0.2 rounded-sm border text-[10px] font-medium ${roleBadgeClass}`}
+                          className={`inline-flex items-center px-1.5 py-0.5 rounded-md border text-[10px] font-medium ${roleBadgeClass}`}
                         >
                           {roleLabel}
                         </span>
 
                         <span
-                          className="text-[10px] text-slate-400 cursor-default"
+                          className="text-[11px] text-slate-400 cursor-default"
                           title={formatDate(note.createdAt, "standard")}
                         >
                           • {formatRelativeTime(note.createdAt)}
                         </span>
 
                         {note.isEdited && (
-                          <span className="text-[10px] text-slate-400 italic">
+                          <span className="text-[11px] text-slate-400 italic">
                             {t("applications.notesStream.edited")}
                           </span>
                         )}
@@ -406,7 +406,7 @@ export function ApplicationNotesStream({
                           className="w-full text-xs p-2.5 rounded-lg border border-blue-400 bg-white dark:bg-slate-950 dark:border-blue-500 focus:outline-hidden ring-2 ring-blue-500/10 resize-none text-slate-800 dark:text-slate-100"
                         />
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[11px] text-slate-400">
                             {t("applications.notesStream.keyboardHint")}
                           </span>
                           <div className="flex items-center gap-1.5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import {
   Briefcase,
   ChevronDown,
@@ -64,6 +64,7 @@ export interface InterviewsTableViewProps {
     interview: ScheduledInterviewInfo,
   ) => void;
   canEdit?: boolean;
+  footer?: ReactNode;
 }
 
 export function InterviewsTableView({
@@ -75,6 +76,7 @@ export function InterviewsTableView({
   onNavigateToPipeline,
   onCancelInterview,
   canEdit = true,
+  footer,
 }: InterviewsTableViewProps) {
   const { t } = useI18n();
   const { localization, isConfigured } = useLocalization();
@@ -110,27 +112,27 @@ export function InterviewsTableView({
       key.includes("TUYỂN NGAY")
     ) {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 whitespace-nowrap">
+        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 whitespace-nowrap">
           {label}
         </span>
       );
     }
     if (key === "YES" || key.includes("ĐỒNG Ý")) {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 whitespace-nowrap">
+        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 whitespace-nowrap">
           {label}
         </span>
       );
     }
     if (key === "NEUTRAL" || key.includes("CÂN NHẮC")) {
       return (
-        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 whitespace-nowrap">
+        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 whitespace-nowrap">
           {label}
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60 whitespace-nowrap">
+      <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60 whitespace-nowrap">
         {label}
       </span>
     );
@@ -152,14 +154,14 @@ export function InterviewsTableView({
 
     if (dateYmd === todayYmd) {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
+        <span className="px-1.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
           {t("dashboard.today")}
         </span>
       );
     }
     if (dateYmd === tomorrowYmd) {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800">
+        <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800">
           {t("dashboard.tomorrow")}
         </span>
       );
@@ -168,40 +170,61 @@ export function InterviewsTableView({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs overflow-hidden transition-all">
+    <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xs overflow-hidden transition-all">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
-              <th scope="col" className="py-3.5 px-4 text-left">
+            <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 text-[11px] font-semibold">
+              <th
+                scope="col"
+                className="py-3 px-3 xl:px-4 text-left whitespace-nowrap"
+              >
                 {t("interviews.tableHeaders.candidate")}
               </th>
               {visibleColumns?.job !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3 px-2.5 xl:px-3.5 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.job")}
                 </th>
               )}
               {visibleColumns?.schedule !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3 px-2.5 xl:px-3.5 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.schedule")}
                 </th>
               )}
               {visibleColumns?.interviewer !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3 px-2.5 xl:px-3.5 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.interviewer")}
                 </th>
               )}
               {visibleColumns?.status !== false && (
-                <th scope="col" className="py-3.5 px-3 text-center">
+                <th
+                  scope="col"
+                  className="py-3 px-2.5 xl:px-3.5 text-center whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.status")}
                 </th>
               )}
               {visibleColumns?.rating !== false && (
-                <th scope="col" className="py-3.5 px-3 text-center">
+                <th
+                  scope="col"
+                  className="py-3 px-2.5 xl:px-3.5 text-center whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.rating")}
                 </th>
               )}
-              <th scope="col" className="py-3.5 px-4 text-right">
+              <th
+                scope="col"
+                className="py-3 px-3 xl:px-4 text-right whitespace-nowrap"
+              >
                 {t("interviews.tableHeaders.actions")}
               </th>
             </tr>
@@ -220,10 +243,10 @@ export function InterviewsTableView({
                 <Fragment key={app.id}>
                   <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     {/* 1. Candidate Info */}
-                    <td className="py-3.5 px-4 align-middle">
+                    <td className="py-3.5 px-3 xl:px-4 align-middle max-w-[150px] xl:max-w-[205px]">
                       <button
                         type="button"
-                        className="flex items-center gap-3 pr-2 min-w-0 cursor-pointer group/cand text-left"
+                        className="flex items-center gap-2.5 pr-1 min-w-0 w-full cursor-pointer group/cand text-left"
                         onClick={() => {
                           if (job) {
                             onNavigateToPipeline(job.id, app.id, app.stage);
@@ -232,7 +255,7 @@ export function InterviewsTableView({
                         title={t("interviews.viewCandidateInPipeline")}
                         aria-label={`${t("interviews.viewCandidateInPipeline")}: ${displayName}`}
                       >
-                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs group-hover/cand:scale-105 transition-transform">
+                        <div className="h-9 w-9 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 font-bold text-xs flex items-center justify-center shrink-0">
                           {initials}
                         </div>
                         <div className="min-w-0">
@@ -248,9 +271,9 @@ export function InterviewsTableView({
 
                     {/* 2. Job Position */}
                     {visibleColumns?.job !== false && (
-                      <td className="py-3.5 px-4 align-middle">
-                        <div className="pr-2 min-w-0">
-                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <td className="py-3.5 px-2.5 xl:px-3.5 align-middle max-w-[140px] xl:max-w-[200px]">
+                        <div className="pr-1 min-w-0">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 min-w-0">
                             <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                             <span className="truncate">
                               {job?.title || t("interviews.defaultJob")}
@@ -266,7 +289,7 @@ export function InterviewsTableView({
 
                     {/* 3. Schedule & Format */}
                     {visibleColumns?.schedule !== false && (
-                      <td className="py-3.5 px-4 align-middle">
+                      <td className="py-3.5 px-2.5 xl:px-3.5 align-middle whitespace-nowrap">
                         <div className="pr-2 min-w-0">
                           {currentInterview ? (
                             <div className="space-y-1">
@@ -281,7 +304,7 @@ export function InterviewsTableView({
                                 )}
                               </div>
                               <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
-                                <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
+                                <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold border border-blue-200/80 dark:border-blue-900/60">
                                   {getInterviewTypeLabel(
                                     currentInterview.type,
                                     t,
@@ -289,12 +312,12 @@ export function InterviewsTableView({
                                 </span>
 
                                 {currentInterview.format === "OFFICE" ? (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
                                     <MapPin className="h-2.5 w-2.5" />
                                     <span>{t("interviews.atOffice")}</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
                                     <Video className="h-2.5 w-2.5" />
                                     <span>{t("interviews.onlineMeeting")}</span>
                                   </span>
@@ -307,7 +330,7 @@ export function InterviewsTableView({
                                     href={currentInterview.linkOrLocation}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
                                     title={t("interviews.joinOnlineMeeting")}
                                   >
                                     <span>
@@ -330,18 +353,18 @@ export function InterviewsTableView({
 
                     {/* 4. Interviewer */}
                     {visibleColumns?.interviewer !== false && (
-                      <td className="py-3.5 px-4 align-middle">
-                        <div className="pr-2 min-w-0">
+                      <td className="py-3.5 px-2.5 xl:px-3.5 align-middle max-w-[120px] xl:max-w-[165px]">
+                        <div className="pr-1 min-w-0">
                           {currentInterview ? (
                             <div className="space-y-0.5">
-                              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium truncate">
+                              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium min-w-0">
                                 <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                                 <span className="truncate">
                                   {currentInterview.interviewer}
                                 </span>
                               </div>
                               {currentInterview.round && (
-                                <p className="text-[10px] text-slate-400 pl-5">
+                                <p className="text-[11px] text-slate-400 pl-5 truncate">
                                   {t("interviews.roundInterview", {
                                     round: currentInterview.round,
                                   })}
@@ -357,16 +380,16 @@ export function InterviewsTableView({
 
                     {/* 5. Status (Stacked 2 lines: Status badge above, Rounds badge below) */}
                     {visibleColumns?.status !== false && (
-                      <td className="py-3.5 px-3 text-center align-middle">
+                      <td className="py-3.5 px-2.5 xl:px-3.5 text-center align-middle whitespace-nowrap">
                         <div className="flex flex-col items-center justify-center gap-1.5">
                           {/* Line 1: Status */}
                           {allInterviews.length > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 whitespace-nowrap">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                               <span>{t("interviews.hasScheduleBadge")}</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/80 dark:border-amber-900/60 whitespace-nowrap">
                               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                               <span>
                                 {t("interviews.awaitingScheduleBadge")}
@@ -379,7 +402,7 @@ export function InterviewsTableView({
                             <button
                               type="button"
                               onClick={() => toggleRowHistory(app.id)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
                               title={t(
                                 "interviews.candidateInterviewsMultiple",
                                 { count: allInterviews.length },
@@ -397,11 +420,11 @@ export function InterviewsTableView({
                               />
                             </button>
                           ) : allInterviews.length === 1 ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-bold whitespace-nowrap">
                               {t("interviews.roundsCount", { count: 1 })}
                             </span>
                           ) : (
-                            <span className="text-slate-400 text-[10px]">
+                            <span className="text-slate-400 text-[11px]">
                               —
                             </span>
                           )}
@@ -411,7 +434,7 @@ export function InterviewsTableView({
 
                     {/* 6. Rating / Scorecard */}
                     {visibleColumns?.rating !== false && (
-                      <td className="py-3.5 px-3 text-center align-middle">
+                      <td className="py-3.5 px-2.5 xl:px-3.5 text-center align-middle whitespace-nowrap">
                         {currentInterview?.scorecard ? (
                           <div className="flex flex-col items-center justify-center gap-1">
                             <button
@@ -419,7 +442,7 @@ export function InterviewsTableView({
                               onClick={() =>
                                 onOpenScorecard(app, currentInterview)
                               }
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
                               title={t("interviews.scorecardTooltip")}
                               aria-label={`${t("interviews.scorecardTooltip")} - ${displayName}`}
                             >
@@ -441,7 +464,7 @@ export function InterviewsTableView({
                             onClick={() =>
                               onOpenScorecard(app, currentInterview)
                             }
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 font-bold border border-amber-200/70 dark:border-amber-900/60 cursor-pointer transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 font-bold border border-amber-200/70 dark:border-amber-900/60 cursor-pointer transition-colors"
                             aria-label={`${t("interviews.rateNow")} - ${displayName}`}
                           >
                             <Star
@@ -457,7 +480,7 @@ export function InterviewsTableView({
                     )}
 
                     {/* 7. Actions */}
-                    <td className="py-3.5 px-4 text-right align-middle whitespace-nowrap">
+                    <td className="py-3.5 px-3 xl:px-4 text-right align-middle whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {canEdit && (
                           <button
@@ -538,7 +561,7 @@ export function InterviewsTableView({
                                         })
                                       : getInterviewTypeLabel(prev.type, t)}
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-normal">
+                                  <span className="text-[11px] text-slate-400 font-normal">
                                     {formatDate(prev.scheduledAt)} (
                                     {formatTime(prev.scheduledAt)})
                                   </span>
@@ -557,7 +580,7 @@ export function InterviewsTableView({
                                 </div>
 
                                 {prev.scorecard && (
-                                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px]">
+                                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
                                     <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
                                       <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                                       {prev.scorecard.overallRating} ⭐
@@ -580,6 +603,11 @@ export function InterviewsTableView({
           </tbody>
         </table>
       </div>
+      {footer && (
+        <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

@@ -44,7 +44,7 @@ export function WizardHeader({
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 shadow-2xs shrink-0">
-      <div className="mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl">
+      <div className="mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-[1600px]">
         {/* Left: Back Link & Stepper */}
         <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           {mode === "create" ? (

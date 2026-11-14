@@ -63,23 +63,23 @@ export function AttributionLogTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-3.5 px-5">
+                <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <th className="py-3 px-5 whitespace-nowrap">
                     {t("sourcing.attribution.candidate")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th className="py-3 px-4 whitespace-nowrap">
                     {t("sourcing.attribution.job")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th className="py-3 px-4 whitespace-nowrap">
                     {t("sourcing.attribution.source")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th className="py-3 px-4 whitespace-nowrap">
                     {t("sourcing.attribution.campaign")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th className="py-3 px-4 text-center whitespace-nowrap">
                     {t("sourcing.attribution.status")}
                   </th>
-                  <th className="py-3.5 px-5 text-right">
+                  <th className="py-3 px-5 text-right whitespace-nowrap">
                     {t("sourcing.attribution.applied")}
                   </th>
                 </tr>
@@ -124,7 +124,7 @@ export function AttributionLogTab({
                         <div className="space-y-0.5">
                           <ChannelBadge channel={log.source} size="sm" />
                           {log.sourceDetails && (
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                               {t("sourcing.attribution.via")}{" "}
                               {log.sourceDetails}
                             </p>
@@ -138,12 +138,12 @@ export function AttributionLogTab({
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <StageBadge stage={log.stage as ApplicationStage} />
                       </td>
 
                       {/* Applied */}
-                      <td className="py-3.5 px-5 text-right text-slate-400 dark:text-slate-500 font-mono text-[11px]">
+                      <td className="py-3.5 px-5 text-right text-slate-400 dark:text-slate-500 font-mono text-[11px] whitespace-nowrap">
                         {formatRelativeTime(log.appliedAt)}
                       </td>
                     </tr>
@@ -156,7 +156,7 @@ export function AttributionLogTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+          <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

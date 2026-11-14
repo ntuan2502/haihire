@@ -86,7 +86,7 @@ export function CandidatesView() {
       {/* Main Content */}
       <main
         id="main-content"
-        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6"
+        className="flex-1 mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5"
       >
         <PageHeader
           title={t("candidates.title")}

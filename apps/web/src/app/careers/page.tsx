@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { slugify } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -504,7 +505,7 @@ export default function CareersDirectoryPage() {
                       )}
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3 text-slate-400 shrink-0" />
-                        <span>{job.type}</span>
+                        <span>{getJobTypeLabel(job.type, t)}</span>
                       </span>
                     </div>
                   </div>

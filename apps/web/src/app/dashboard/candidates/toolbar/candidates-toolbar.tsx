@@ -65,7 +65,7 @@ export function CandidatesToolbar({
 
         {/* Right: Search Box + Columns Dropdown + Filter Button */}
         <div className="flex items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+          <div className="flex-1 sm:w-72 md:w-80 sm:flex-initial">
             <SearchInput
               placeholder={t("candidates.searchCandidates")}
               aria-label={t("candidates.searchCandidates")}
@@ -89,7 +89,7 @@ export function CandidatesToolbar({
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}

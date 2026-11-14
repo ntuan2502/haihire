@@ -119,16 +119,13 @@ export function WizardStepDetails({
   const { t } = useI18n();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">
           {t("jobs.wizard.jobDetailsTitle")}
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-          {t("jobs.wizard.jobDetailsDesc")}{" "}
-          <span className="underline decoration-slate-300 dark:decoration-slate-700 cursor-pointer">
-            {t("jobs.wizard.saveChangesLink")}
-          </span>
+          {t("jobs.wizard.jobDetailsDesc")}
         </p>
       </div>
 
@@ -147,7 +144,7 @@ export function WizardStepDetails({
               onChange={(e) => setJobTitle(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, title: true }))}
               className={cn(
-                "h-10 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
+                "h-9 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
                 showTitleError &&
                   "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
               )}
@@ -169,7 +166,7 @@ export function WizardStepDetails({
               placeholder={t("jobs.wizard.placeholders.department")}
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+              className="h-9 text-xs bg-slate-50/50 dark:bg-slate-950"
             />
             <p className="text-[11px] text-slate-400 mt-1">
               {t("jobs.wizard.departmentHint")}
@@ -185,7 +182,7 @@ export function WizardStepDetails({
               <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="text"
                 placeholder={t("jobs.wizard.placeholders.location")}
@@ -195,7 +192,7 @@ export function WizardStepDetails({
                   setTouched((prev) => ({ ...prev, location: true }))
                 }
                 className={cn(
-                  "h-10 pl-9 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
+                  "h-9 pl-9 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
                   showLocationError &&
                     "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
                 )}
@@ -225,7 +222,7 @@ export function WizardStepDetails({
               placeholder={t("jobs.wizard.placeholders.postalCode")}
               value={postalCode}
               onChange={(e) => setPostalCode(e.target.value)}
-              className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+              className="h-9 text-xs bg-slate-50/50 dark:bg-slate-950"
             />
             <p className="text-[11px] text-slate-400 mt-1">
               {t("jobs.wizard.pickLocationFirst")}
@@ -255,7 +252,7 @@ export function WizardStepDetails({
               ]}
               className="w-full"
               triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                "w-full h-9 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
                 showEmploymentTypeError &&
                   "border-rose-500 ring-1 ring-rose-500",
               )}
@@ -288,7 +285,7 @@ export function WizardStepDetails({
               ]}
               className="w-full"
               triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                "w-full h-9 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
                 showExperienceLevelError &&
                   "border-rose-500 ring-1 ring-rose-500",
               )}
@@ -319,7 +316,7 @@ export function WizardStepDetails({
               ]}
               className="w-full"
               triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                "w-full h-9 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
                 showWorkplaceError && "border-rose-500 ring-1 ring-rose-500",
               )}
             />

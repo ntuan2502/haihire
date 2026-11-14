@@ -182,7 +182,7 @@ export default function LocalizationSettingsPage() {
   const isDisabled = !canEdit || isOrgLoading || updateOrgMutation.isPending;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.localization.title")}
         subtitle={t("settings.localization.description")}
@@ -191,8 +191,8 @@ export default function LocalizationSettingsPage() {
       />
 
       {/* Main Responsive 2-Column Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        <div className="xl:col-span-7 space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+        <div className="xl:col-span-7 space-y-5">
           {/* CARD 1: Personal UI Language (All roles) */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
             <div className="flex items-start gap-3">
@@ -225,7 +225,7 @@ export default function LocalizationSettingsPage() {
                 }
                 options={languageOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.localization.personalLanguageHint")}
@@ -236,7 +236,7 @@ export default function LocalizationSettingsPage() {
           {/* CARD 2: Organization Regional Settings */}
           <form
             onSubmit={handleSave}
-            className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6"
+            className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5"
           >
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -277,7 +277,7 @@ export default function LocalizationSettingsPage() {
                 disabled={isDisabled}
                 options={languageOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.localization.defaultLanguageHint")}
@@ -305,7 +305,7 @@ export default function LocalizationSettingsPage() {
                 emptyText={t("settings.localization.timezoneNoMatch")}
                 options={timezoneOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.localization.timezoneHint")}
@@ -501,7 +501,7 @@ export default function LocalizationSettingsPage() {
                 disabled={isDisabled}
                 options={currencyOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.localization.currencyHint")}

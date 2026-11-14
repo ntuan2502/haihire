@@ -132,8 +132,8 @@ function TrackingLinkDetailContent() {
         candidatesCount={detail?.stats?.applications ?? 0}
       />
 
-      {/* Full-width container per HaiHire design system mandate (no max-w-7xl) */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+      {/* Unified max-w-[1600px] container matching Navbar and list pages */}
+      <main className="flex-1 mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-24 space-y-4">
             <LoadingSpinner />
@@ -175,9 +175,9 @@ function TrackingLinkDetailContent() {
             <LinkStatsCards stats={detail.stats} />
 
             {/* Two-Column Responsive Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
               {/* Left Column (Pipeline + Trend Chart + Attributed Applications) */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2 space-y-5">
                 <LinkPipelineCard
                   breakdown={detail.pipeline.stages}
                   totalApplications={detail.pipeline.total}
@@ -189,7 +189,7 @@ function TrackingLinkDetailContent() {
               </div>
 
               {/* Right Column (Link Configuration + Referrer Domains) */}
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <LinkConfigCard link={detail.link} />
 
                 <LinkReferrersCard referrers={detail.referrerDomains} />

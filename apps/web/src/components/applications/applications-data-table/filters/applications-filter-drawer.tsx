@@ -54,7 +54,7 @@ export function ApplicationsFilterDrawer({
           {/* 1. FILTER BY JOB */}
           {!fixedJobId && (
             <div className="space-y-2.5">
-              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+              <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
                 {t("applications.filterByJob")}
               </span>
               <CustomSelect
@@ -72,7 +72,7 @@ export function ApplicationsFilterDrawer({
 
           {/* 2. MATCH SCORE RANGE */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
               {t("applications.score")}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -103,7 +103,7 @@ export function ApplicationsFilterDrawer({
 
           {/* 3. SORT BY */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
               {t("jobs.sortByUpper")}
             </span>
             <div className="grid grid-cols-2 gap-2">

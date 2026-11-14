@@ -70,7 +70,7 @@ export function JobFilterDrawer({
       <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
         {/* 1. STATUS */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
             {t("jobs.statusUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -97,7 +97,7 @@ export function JobFilterDrawer({
 
         {/* 2. EMPLOYMENT TYPE */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
             {t("jobs.employmentTypeUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -125,7 +125,7 @@ export function JobFilterDrawer({
 
         {/* 3. EXPERIENCE LEVEL */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
             {t("jobs.experienceLevelUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -154,7 +154,7 @@ export function JobFilterDrawer({
 
         {/* 4. WORK ARRANGEMENT */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
             {t("jobs.workArrangementUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -183,7 +183,7 @@ export function JobFilterDrawer({
 
         {/* 5. SORT BY */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
             {t("jobs.sortByUpper")}
           </span>
           <div className="grid grid-cols-2 gap-2">

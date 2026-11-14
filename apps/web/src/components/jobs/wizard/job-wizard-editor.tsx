@@ -117,19 +117,21 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onSaveJob={submit.handleSaveJob}
       />
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-28 sm:pb-20">
+      <main className="flex-1 mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6 space-y-5 pb-28 sm:pb-20">
         {mode === "create" &&
           draft.hasRestoredDraft &&
           !draft.draftBannerDismissed && (
-            <WizardDraftBanner
-              draftSavedAt={draft.draftSavedAt}
-              onDiscard={draft.handleDiscardDraft}
-              onDismiss={() => draft.setDraftBannerDismissed(true)}
-            />
+            <div className="max-w-4xl mx-auto">
+              <WizardDraftBanner
+                draftSavedAt={draft.draftSavedAt}
+                onDiscard={draft.handleDiscardDraft}
+                onDismiss={() => draft.setDraftBannerDismissed(true)}
+              />
+            </div>
           )}
 
         {form.formError && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2 animate-in fade-in">
+          <div className="max-w-4xl mx-auto p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2 animate-in fade-in">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{form.formError}</span>
           </div>

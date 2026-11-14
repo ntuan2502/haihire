@@ -45,7 +45,7 @@ export function DashboardUpcomingInterviews({
   const tomorrowYmd = addDaysToYmd(todayYmd, 1);
 
   return (
-    <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex flex-col h-[520px] xl:h-[calc(100vh-280px)] min-h-[460px] max-h-[640px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center gap-2 min-w-0">
@@ -122,10 +122,10 @@ export function DashboardUpcomingInterviews({
                         >
                           {candidateDisplay}
                         </Link>
-                        <span className="text-[10px] text-slate-400 shrink-0">
+                        <span className="text-[11px] text-slate-400 shrink-0">
                           •
                         </span>
-                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
                           {getInterviewTypeLabel(intv.type, t)}
                         </span>
                       </div>
@@ -137,7 +137,7 @@ export function DashboardUpcomingInterviews({
 
                   {/* Date pill */}
                   <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold shrink-0 ${
                       isToday
                         ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
                         : isTomorrow
@@ -160,14 +160,14 @@ export function DashboardUpcomingInterviews({
                       {isOnline ? (
                         <>
                           <Video className="h-3 w-3 text-emerald-500 shrink-0" />
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[10px]">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
                             {intv.format}
                           </span>
                         </>
                       ) : (
                         <>
                           <MapPin className="h-3 w-3 text-rose-500 shrink-0" />
-                          <span className="text-rose-600 dark:text-rose-400 font-medium text-[10px]">
+                          <span className="text-rose-600 dark:text-rose-400 font-medium text-[11px]">
                             {t("dashboard.officeMeeting")}
                           </span>
                         </>
@@ -180,7 +180,7 @@ export function DashboardUpcomingInterviews({
                       href={intv.linkOrLocation}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[11px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
                     >
                       <Video className="h-2.5 w-2.5" />
                       <span>{t("dashboard.joinMeeting")}</span>

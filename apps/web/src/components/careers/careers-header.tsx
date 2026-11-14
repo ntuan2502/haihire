@@ -54,8 +54,8 @@ export function CareersHeader({
   if (orgSlug && orgName) {
     return (
       <>
-        <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-40 w-full h-16 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             {/* Left: Branding */}
             <Link
               href={`/careers/${orgSlug}`}
@@ -65,7 +65,7 @@ export function CareersHeader({
                 {orgName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
                   <span>{t("careers.companyPage")}</span>
                 </div>
                 <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
@@ -184,8 +184,8 @@ export function CareersHeader({
   // Case 2: General /careers directory
   return (
     <>
-      <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 w-full h-16 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group">
               <BrandLogo size="md" />

@@ -149,29 +149,29 @@ export function JobList(props: JobListProps) {
         <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                 <tr>
-                  <th scope="col" className="py-3.5 px-5 min-w-[280px]">
+                  <th scope="col" className="py-3 px-5 min-w-[240px]">
                     {t("jobs.jobTitle")}
                   </th>
                   {visibleColumns.status && (
-                    <th scope="col" className="py-3.5 px-4 min-w-[110px]">
+                    <th scope="col" className="py-3 px-4 min-w-[110px]">
                       {t("jobs.status")}
                     </th>
                   )}
                   {visibleColumns.pipeline && (
-                    <th scope="col" className="py-3.5 px-4 min-w-[340px]">
+                    <th scope="col" className="py-3 px-4 min-w-[420px]">
                       {t("dashboard.hiringPipeline")}
                     </th>
                   )}
                   {visibleColumns.applicants && (
-                    <th scope="col" className="py-3.5 px-4 min-w-[130px]">
+                    <th scope="col" className="py-3 px-4 min-w-[130px]">
                       {t("jobs.newApplicants")}
                     </th>
                   )}
                   <th
                     scope="col"
-                    className="py-3.5 px-5 text-right min-w-[140px]"
+                    className="py-3 px-5 text-right min-w-[140px]"
                   >
                     {t("common.actions")}
                   </th>
@@ -192,22 +192,20 @@ export function JobList(props: JobListProps) {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {/* Pagination Footer */}
-      {filteredJobs.length > 0 && (
-        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={total !== undefined ? total : filteredJobs.length}
-            pageSize={pageSize}
-            pageSizeOptions={[10, 20, 50, 100]}
-            onPageChange={(p) => onPageChange?.(p)}
-            onPageSizeChange={(size) => onPageSizeChange?.(size)}
-            itemLabel={t("nav.jobs").toLowerCase()}
-          />
+          {/* Pagination Footer integrated inside card */}
+          <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total !== undefined ? total : filteredJobs.length}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={(p) => onPageChange?.(p)}
+              onPageSizeChange={(size) => onPageSizeChange?.(size)}
+              itemLabel={t("nav.jobs").toLowerCase()}
+            />
+          </div>
         </div>
       )}
 

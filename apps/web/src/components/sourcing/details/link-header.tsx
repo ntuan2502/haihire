@@ -131,7 +131,7 @@ export function LinkHeader({
               variant="outline"
               size="sm"
               onClick={onOpenEdit}
-              className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5 text-slate-500" />
               <span>{t("sourcing.details.edit")}</span>
@@ -144,7 +144,7 @@ export function LinkHeader({
             variant="outline"
             size="sm"
             onClick={onCopyUrl}
-            className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             {isCopied ? (
               <>

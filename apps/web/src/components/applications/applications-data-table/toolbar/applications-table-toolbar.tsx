@@ -25,6 +25,7 @@ interface ApplicationsTableToolbarProps {
     score: boolean;
     applied: boolean;
   };
+  hideJobColumn?: boolean;
   toggleColumn: (
     col: keyof ApplicationsTableToolbarProps["visibleColumns"],
   ) => void;
@@ -51,6 +52,7 @@ export function ApplicationsTableToolbar({
   setIsColumnsOpen,
   columnsRef,
   visibleColumns,
+  hideJobColumn = false,
   toggleColumn,
   setIsFilterOpen,
   secondaryFiltersCount,
@@ -80,7 +82,7 @@ export function ApplicationsTableToolbar({
 
         {/* Right: Search Box + Columns Dropdown */}
         <div className="flex items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+          <div className="flex-1 sm:w-72 md:w-80 sm:flex-initial">
             <SearchInput
               placeholder={t("applications.searchApplications")}
               aria-label={t("applications.searchApplications")}
@@ -107,7 +109,7 @@ export function ApplicationsTableToolbar({
 
             {isColumnsOpen && (
               <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
-                <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                <div className="px-2 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 select-none">
                   {t("applications.columnsToggle")}
                 </div>
                 <div className="space-y-0.5 mt-1">
@@ -118,7 +120,9 @@ export function ApplicationsTableToolbar({
                       locked: true,
                     },
                     { id: "email", label: t("applications.columns.email") },
-                    { id: "job", label: t("applications.columns.job") },
+                    ...(hideJobColumn
+                      ? []
+                      : [{ id: "job", label: t("applications.columns.job") }]),
                     { id: "status", label: t("applications.columns.status") },
                     { id: "score", label: t("applications.columns.score") },
                     { id: "applied", label: t("applications.columns.applied") },
@@ -167,7 +171,7 @@ export function ApplicationsTableToolbar({
             />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}

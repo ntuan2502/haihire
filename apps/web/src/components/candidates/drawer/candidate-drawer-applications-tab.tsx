@@ -72,14 +72,14 @@ export function CandidateDrawerApplicationsTab({
             { value: "REJECTED", label: t("pipeline.stages.rejected") },
           ]}
           size="sm"
-          triggerClassName="h-7 w-28 text-[11px] font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
+          triggerClassName="h-8 w-40 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
         />
 
         {canCreateApplication && (
           <button
             type="button"
             onClick={() => onApplyToJob(candidate)}
-            className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
           >
             <Plus className="h-3 w-3" />
             <span>{t("candidates.applyToJob")}</span>

@@ -57,14 +57,14 @@ export function CandidateApplicationsTab({
             { value: "REJECTED", label: t("pipeline.stages.rejected") },
           ]}
           size="sm"
-          triggerClassName="h-8 w-36 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl"
+          triggerClassName="h-9 w-44 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl"
         />
 
         {canEdit && (
           <button
             type="button"
             onClick={onOpenApplyModal}
-            className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{t("candidates.applyToJob")}</span>

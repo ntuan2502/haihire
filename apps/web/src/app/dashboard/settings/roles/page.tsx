@@ -327,7 +327,7 @@ export default function RolesPermissionsPage() {
   }
 
   return (
-    <div className="flex-1 w-full space-y-6 animate-in fade-in duration-200">
+    <div className="flex-1 w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.rolesMatrix.title")}
         subtitle={t("settings.rolesMatrix.description")}
@@ -356,7 +356,7 @@ export default function RolesPermissionsPage() {
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 space-y-4">
           <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -384,17 +384,17 @@ export default function RolesPermissionsPage() {
 
       {/* Permissions Matrix Table */}
       {!isLoading && !isError && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table
-              className="w-full text-left text-sm border-collapse"
+              className="w-full text-left text-xs border-collapse"
               aria-label={t("settings.rolesMatrix.tableSummary")}
             >
-              <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 z-10">
+              <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 z-10">
                 <tr>
                   <th
                     scope="col"
-                    className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-200 w-1/3 min-w-[240px]"
+                    className="py-3 px-3.5 font-semibold text-slate-700 dark:text-slate-200 min-w-[140px] xl:min-w-[180px]"
                   >
                     {t("settings.rolesMatrix.permissionColumn")}
                   </th>
@@ -402,7 +402,7 @@ export default function RolesPermissionsPage() {
                     <th
                       key={role}
                       scope="col"
-                      className="py-3.5 px-3 font-semibold text-center text-slate-700 dark:text-slate-200 min-w-[110px]"
+                      className="py-3 px-1.5 font-semibold text-center text-slate-700 dark:text-slate-200 min-w-[68px] lg:min-w-[76px] max-w-[98px] leading-tight"
                     >
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-1">
@@ -436,7 +436,7 @@ export default function RolesPermissionsPage() {
                     <tr className="bg-slate-100/75 dark:bg-slate-800/40 border-t border-b border-slate-200/80 dark:border-slate-800">
                       <td
                         colSpan={ROLES.length + 1}
-                        className="py-2 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300"
+                        className="py-2.5 px-4 font-bold text-xs text-slate-700 dark:text-slate-300"
                       >
                         {t(`settings.rolesMatrix.${category.categoryKey}`)}
                       </td>
@@ -464,7 +464,7 @@ export default function RolesPermissionsPage() {
                             return (
                               <td
                                 key={`${role}-${permission}`}
-                                className="py-2.5 px-3 text-center align-middle"
+                                className="py-2.5 px-2 text-center align-middle"
                               >
                                 <div className="inline-flex items-center justify-center relative">
                                   <input

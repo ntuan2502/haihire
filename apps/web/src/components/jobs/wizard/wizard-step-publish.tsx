@@ -51,7 +51,7 @@ export function WizardStepPublish({
   const { t } = useI18n();
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-5">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -197,7 +197,7 @@ export function WizardStepPublish({
 
       {/* Job Summary Card */}
       <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
           {t("jobs.wizard.jobSummaryTitle")}
         </h3>
 
@@ -207,7 +207,7 @@ export function WizardStepPublish({
               <Briefcase className="h-3.5 w-3.5" />
             </span>
             <div>
-              <span className="text-slate-400 block text-[10px]">
+              <span className="text-slate-400 block text-[11px]">
                 {t("jobs.wizard.titleSub")}
               </span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -221,7 +221,7 @@ export function WizardStepPublish({
               <MapPin className="h-3.5 w-3.5" />
             </span>
             <div>
-              <span className="text-slate-400 block text-[10px]">
+              <span className="text-slate-400 block text-[11px]">
                 {t("jobs.wizard.locationSub")}
               </span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -235,7 +235,7 @@ export function WizardStepPublish({
               <FileUp className="h-3.5 w-3.5" />
             </span>
             <div>
-              <span className="text-slate-400 block text-[10px]">
+              <span className="text-slate-400 block text-[11px]">
                 {t("jobs.wizard.resumeSub")}
               </span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -251,7 +251,7 @@ export function WizardStepPublish({
               <Target className="h-3.5 w-3.5" />
             </span>
             <div>
-              <span className="text-slate-400 block text-[10px]">
+              <span className="text-slate-400 block text-[11px]">
                 {t("jobs.wizard.questionsSub")}
               </span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">

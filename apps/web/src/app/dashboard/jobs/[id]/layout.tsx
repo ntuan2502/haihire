@@ -137,189 +137,193 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
       {/* 1. Job Workspace Header: Two-tier Navigation */}
       <header className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-2xs">
         {/* Tier 1: Context & Primary Actions */}
-        <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 border-b border-slate-100 dark:border-slate-800/60">
-          {/* Left: Back button & Job Title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/dashboard/jobs"
-              className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors shrink-0"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("jobs.allJobs")}</span>
-            </Link>
+        <div className="border-b border-slate-100 dark:border-slate-800/60">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
+            {/* Left: Back button & Job Title */}
+            <div className="flex items-center gap-3 min-w-0">
+              <Link
+                href="/dashboard/jobs"
+                className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors shrink-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>{t("jobs.allJobs")}</span>
+              </Link>
 
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 shrink-0" />
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 shrink-0" />
 
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
-                <Briefcase className="h-3.5 w-3.5" />
-              </div>
-              <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
-                {job.title}{" "}
-                <span className="font-normal text-slate-500 dark:text-slate-400">
-                  ({jobTypeLabel})
-                </span>
-              </h1>
-              <div className="shrink-0">
-                <JobStatusBadge status={job.status} />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
+                  <Briefcase className="h-3.5 w-3.5" />
+                </div>
+                <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
+                  {job.title}{" "}
+                  <span className="font-normal text-slate-500 dark:text-slate-400">
+                    ({jobTypeLabel})
+                  </span>
+                </h1>
+                <div className="shrink-0">
+                  <JobStatusBadge status={job.status} />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={getJobPublicUrl(job)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
-              title={t("jobs.openPublicCareerPage")}
-            >
-              <ExternalLink className="h-3 w-3" />
-              <span className="hidden sm:inline">{t("jobs.careerPage")}</span>
-            </a>
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={getJobPublicUrl(job)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+                title={t("jobs.openPublicCareerPage")}
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span className="hidden sm:inline">{t("jobs.careerPage")}</span>
+              </a>
 
-            {/* 3-Status Switcher Dropdown (Only for users who can update jobs) */}
-            {canUpdateJob && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
-                    job.status === "PUBLISHED"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
-                      : job.status === "CLOSED"
-                        ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                        : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
-                  }`}
-                  title={t("jobs.changeJobStatus")}
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full ${
+              {/* 3-Status Switcher Dropdown (Only for users who can update jobs) */}
+              {canUpdateJob && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
                       job.status === "PUBLISHED"
-                        ? "bg-emerald-500"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
                         : job.status === "CLOSED"
-                          ? "bg-slate-400"
-                          : "bg-amber-500"
+                          ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                          : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
                     }`}
-                  />
-                  <span>
-                    {job.status === "PUBLISHED"
-                      ? t("jobs.openStatus")
-                      : job.status === "CLOSED"
-                        ? t("jobs.closed")
-                        : t("jobs.draftStatus")}
-                  </span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => handleUpdateJobStatus("PUBLISHED")}
-                    className="text-xs flex items-center justify-between cursor-pointer py-2"
+                    title={t("jobs.changeJobStatus")}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-                        {t("jobs.openStatus")}
-                      </span>
-                    </div>
-                    {job.status === "PUBLISHED" && (
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleUpdateJobStatus("DRAFT")}
-                    className="text-xs flex items-center justify-between cursor-pointer py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
-                      <span className="font-semibold text-amber-700 dark:text-amber-300">
-                        {t("jobs.draftStatus")}
-                      </span>
-                    </div>
-                    {job.status === "DRAFT" && (
-                      <Check className="h-3.5 w-3.5 text-amber-600" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleUpdateJobStatus("CLOSED")}
-                    className="text-xs flex items-center justify-between cursor-pointer py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-slate-400" />
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {t("jobs.closed")}
-                      </span>
-                    </div>
-                    {job.status === "CLOSED" && (
-                      <Check className="h-3.5 w-3.5 text-slate-600" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        job.status === "PUBLISHED"
+                          ? "bg-emerald-500"
+                          : job.status === "CLOSED"
+                            ? "bg-slate-400"
+                            : "bg-amber-500"
+                      }`}
+                    />
+                    <span>
+                      {job.status === "PUBLISHED"
+                        ? t("jobs.openStatus")
+                        : job.status === "CLOSED"
+                          ? t("jobs.closed")
+                          : t("jobs.draftStatus")}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateJobStatus("PUBLISHED")}
+                      className="text-xs flex items-center justify-between cursor-pointer py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                          {t("jobs.openStatus")}
+                        </span>
+                      </div>
+                      {job.status === "PUBLISHED" && (
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateJobStatus("DRAFT")}
+                      className="text-xs flex items-center justify-between cursor-pointer py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        <span className="font-semibold text-amber-700 dark:text-amber-300">
+                          {t("jobs.draftStatus")}
+                        </span>
+                      </div>
+                      {job.status === "DRAFT" && (
+                        <Check className="h-3.5 w-3.5 text-amber-600" />
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateJobStatus("CLOSED")}
+                      className="text-xs flex items-center justify-between cursor-pointer py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-slate-400" />
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {t("jobs.closed")}
+                        </span>
+                      </div>
+                      {job.status === "CLOSED" && (
+                        <Check className="h-3.5 w-3.5 text-slate-600" />
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
-            <button
-              type="button"
-              onClick={() =>
-                router.push(`/dashboard/candidates?jobId=${job.id}`)
-              }
-              className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-              title={t("jobs.moreOptions")}
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/dashboard/candidates?jobId=${job.id}`)
+                }
+                className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                title={t("jobs.moreOptions")}
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Tier 2: Feature Navigation Tabs (Dedicated horizontal scrollable bar) */}
-        <div className="flex items-center gap-1 px-4 py-1.5 sm:px-6 overflow-x-auto no-scrollbar bg-slate-50/60 dark:bg-slate-950/40 text-xs font-medium text-slate-500 dark:text-slate-400">
-          {[
-            {
-              id: "pipeline",
-              label: t("jobs.tabs.pipeline"),
-              icon: Columns3,
-            },
-            {
-              id: "table",
-              label: t("jobs.tabs.table"),
-              icon: Table,
-            },
-            ...(canViewSourcing
-              ? [
-                  {
-                    id: "tracking",
-                    label: t("jobs.tabs.sourceTracking"),
-                    icon: BarChart2,
-                  },
-                ]
-              : []),
-            ...(canUpdateJob
-              ? [
-                  {
-                    id: "settings",
-                    label: t("jobs.tabs.settings"),
-                    icon: Settings,
-                  },
-                ]
-              : []),
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeNavTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleNavTabClick(tab.id)}
-                className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  isActive
-                    ? "bg-white text-blue-600 font-bold dark:bg-slate-800 dark:text-blue-400 shadow-2xs border border-slate-200/80 dark:border-slate-700/80"
-                    : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200"
-                }`}
-              >
-                <Icon className="h-3 w-3" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="bg-slate-50/60 dark:bg-slate-950/40">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-1 px-4 py-1.5 sm:px-6 lg:px-8 overflow-x-auto no-scrollbar text-xs font-medium text-slate-500 dark:text-slate-400">
+            {[
+              {
+                id: "pipeline",
+                label: t("jobs.tabs.pipeline"),
+                icon: Columns3,
+              },
+              {
+                id: "table",
+                label: t("jobs.tabs.table"),
+                icon: Table,
+              },
+              ...(canViewSourcing
+                ? [
+                    {
+                      id: "tracking",
+                      label: t("jobs.tabs.sourceTracking"),
+                      icon: BarChart2,
+                    },
+                  ]
+                : []),
+              ...(canUpdateJob
+                ? [
+                    {
+                      id: "settings",
+                      label: t("jobs.tabs.settings"),
+                      icon: Settings,
+                    },
+                  ]
+                : []),
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeNavTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleNavTabClick(tab.id)}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    isActive
+                      ? "bg-white text-blue-600 font-bold dark:bg-slate-800 dark:text-blue-400 shadow-2xs border border-slate-200/80 dark:border-slate-700/80"
+                      : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </header>
 

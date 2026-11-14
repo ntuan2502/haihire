@@ -24,7 +24,7 @@ export function PageHeader({
     <div
       className={cn(
         "flex flex-col sm:flex-row sm:items-center justify-between gap-4",
-        bordered && "pb-5 border-b border-slate-200/80 dark:border-slate-800",
+        bordered && "pb-4 border-b border-slate-200/80 dark:border-slate-800",
         className,
       )}
     >

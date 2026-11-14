@@ -249,7 +249,7 @@ export function JobDetailsClient({
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* Back link */}
         <div>
           <Link
@@ -331,7 +331,7 @@ export function JobDetailsClient({
             <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-8">
               {/* Job Overview */}
               <div className="space-y-4">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
                   {t("careers.jobDescription")}
                 </h2>
@@ -343,7 +343,7 @@ export function JobDetailsClient({
               {/* Requirements */}
               {job.requirements && (
                 <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
                     {t("careers.requirements")}
                   </h2>
@@ -548,7 +548,7 @@ export function JobDetailsClient({
                             <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                               {resumeFile.name}
                             </p>
-                            <p className="text-[10px] text-slate-500">
+                            <p className="text-[11px] text-slate-500">
                               {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
                             </p>
                           </div>
@@ -581,7 +581,7 @@ export function JobDetailsClient({
                           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             {t("careers.dropCvHere")}
                           </p>
-                          <p className="text-[10px] text-slate-400">
+                          <p className="text-[11px] text-slate-400">
                             {t("careers.cvFormats")}
                           </p>
                         </div>
@@ -618,7 +618,7 @@ export function JobDetailsClient({
                   </div>
 
                   {/* Privacy note */}
-                  <div className="pt-1 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
+                  <div className="pt-1 flex items-start gap-2 text-[11px] text-slate-400 leading-normal">
                     <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
                     <span>{t("careers.privacyNotice")}</span>
                   </div>

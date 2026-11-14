@@ -131,7 +131,7 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
 
           {/* Date Axis Labels */}
           {points.length > 1 && (
-            <div className="flex justify-between px-2 pt-1 text-[10px] font-medium text-slate-400">
+            <div className="flex justify-between px-2 pt-1 text-[11px] font-medium text-slate-400">
               <span>{points[0].date}</span>
               {points.length > 2 && (
                 <span>{points[Math.floor(points.length / 2)].date}</span>

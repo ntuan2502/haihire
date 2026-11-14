@@ -158,8 +158,8 @@ export function Navbar({
   return (
     <>
       {/* Top Navbar Header */}
-      <header className="sticky top-0 z-40 w-full h-16 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/85 transition-colors duration-200 select-none">
-        <div className="flex h-16 w-full items-center justify-between px-3 sm:px-6">
+      <header className="sticky top-0 z-40 w-full h-16 border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/95 transition-colors duration-200 select-none">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left: Logo & Desktop Navigation */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Logo & Workspace */}

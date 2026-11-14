@@ -390,7 +390,7 @@ export function ScheduleInterviewModal({
                         }))
                   }
                   className="w-full"
-                  triggerClassName="h-10 text-xs font-medium"
+                  triggerClassName="h-9 text-xs font-medium"
                 />
               </div>
 
@@ -402,7 +402,7 @@ export function ScheduleInterviewModal({
                     <span className="text-rose-500">*</span>
                   </span>
                   {currentCandidate && (
-                    <span className="text-[10px] font-normal text-slate-400">
+                    <span className="text-[11px] font-normal text-slate-400">
                       {t("interviews.stageLabel")}{" "}
                       <strong className="font-semibold text-blue-600 dark:text-blue-400">
                         {currentCandidate.stage}
@@ -438,7 +438,7 @@ export function ScheduleInterviewModal({
                         }))
                   }
                   className="w-full"
-                  triggerClassName="h-10 text-xs font-medium"
+                  triggerClassName="h-9 text-xs font-medium"
                 />
               </div>
             </div>
@@ -459,7 +459,7 @@ export function ScheduleInterviewModal({
                 type="date"
                 value={interviewDate}
                 onChange={(e) => setInterviewDate(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                className="h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                 required
               />
             </div>
@@ -477,7 +477,7 @@ export function ScheduleInterviewModal({
                 type="time"
                 value={interviewTime}
                 onChange={(e) => setInterviewTime(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                className="h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                 required
               />
             </div>
@@ -503,7 +503,7 @@ export function ScheduleInterviewModal({
                   label: t(opt.labelKey),
                 }))}
                 className="w-full"
-                triggerClassName="h-10 text-xs font-medium"
+                triggerClassName="h-9 text-xs font-medium"
               />
             </div>
 
@@ -531,7 +531,7 @@ export function ScheduleInterviewModal({
                   { value: "OFFICE", label: t("interviews.formats.office") },
                 ]}
                 className="w-full"
-                triggerClassName="h-10 text-xs font-medium"
+                triggerClassName="h-9 text-xs font-medium"
               />
             </div>
           </div>
@@ -555,7 +555,7 @@ export function ScheduleInterviewModal({
               }
               value={linkOrLocation}
               onChange={(e) => setLinkOrLocation(e.target.value)}
-              className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+              className="h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
             />
           </div>
 
@@ -591,7 +591,7 @@ export function ScheduleInterviewModal({
                       })),
                     ]}
                     className="w-auto"
-                    triggerClassName="h-6 py-0.5 px-2 text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 rounded-lg"
+                    triggerClassName="h-6 py-0.5 px-2 text-[11px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 rounded-lg"
                     popupClassName="min-w-[220px]"
                   />
                 )}
@@ -601,7 +601,7 @@ export function ScheduleInterviewModal({
                 placeholder={t("interviews.placeholders.interviewer")}
                 value={interviewerName}
                 onChange={(e) => setInterviewerName(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                className="h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                 required
               />
             </div>
@@ -616,7 +616,7 @@ export function ScheduleInterviewModal({
                 placeholder={t("interviews.placeholders.notes")}
                 value={interviewNotes}
                 onChange={(e) => setInterviewNotes(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                className="h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
               />
             </div>
 

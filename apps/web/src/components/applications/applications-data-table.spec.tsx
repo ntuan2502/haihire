@@ -292,7 +292,9 @@ describe("ApplicationsDataTable Component", () => {
       expect(within(table).getByText("Job")).toBeInTheDocument();
       expect(within(table).getByText("Status")).toBeInTheDocument();
       expect(within(table).getByText("Score")).toBeInTheDocument();
-      expect(within(table).getByText("Applied")).toBeInTheDocument();
+      expect(
+        within(table).getByRole("columnheader", { name: "Applied" }),
+      ).toBeInTheDocument();
       expect(within(table).getByText("Actions")).toBeInTheDocument();
 
       expect(screen.getByText("Nguyen Van An")).toBeInTheDocument();
@@ -312,8 +314,8 @@ describe("ApplicationsDataTable Component", () => {
 
     it("displays stage badge and status indicator", () => {
       renderTable();
-      // Table rows display stage status label: New (for APPLIED), Screening, Offer
-      expect(screen.getByText("New")).toBeInTheDocument();
+      // Table rows display localized stage status labels: Applied, Screening, Offer
+      expect(screen.getAllByText("Applied").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Screening").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Offer").length).toBeGreaterThan(0);
     });
@@ -380,7 +382,9 @@ describe("ApplicationsDataTable Component", () => {
     it("sorts by applied date default descending", () => {
       renderTable();
       const table = screen.getByRole("table");
-      const appliedHeader = within(table).getByText("Applied");
+      const appliedHeader = within(
+        within(table).getByRole("columnheader", { name: "Applied" }),
+      ).getByRole("button");
       // Default is desc: app-3 (Jan 15) is first
       let rows = screen.getAllByRole("row");
       expect(rows[1]).toHaveTextContent("Le Van Cuong");

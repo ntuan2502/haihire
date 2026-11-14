@@ -218,7 +218,7 @@ export function InterviewScorecardModal({
           </div>
 
           {interview.round && (
-            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
+            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-[11px]">
               {t("interviews.round")} {interview.round}
             </span>
           )}
@@ -288,7 +288,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[11px] text-slate-400 leading-tight">
                 {t("interviews.recommendations.strongYesDesc")}
               </p>
             </button>
@@ -315,7 +315,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-blue-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[11px] text-slate-400 leading-tight">
                 {t("interviews.recommendations.yesDesc")}
               </p>
             </button>
@@ -342,7 +342,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-amber-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[11px] text-slate-400 leading-tight">
                 {t("interviews.recommendations.neutralDesc")}
               </p>
             </button>
@@ -370,7 +370,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-rose-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[11px] text-slate-400 leading-tight">
                 {t("interviews.recommendations.noDesc")}
               </p>
             </button>
@@ -389,7 +389,7 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.technicalCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   {t("interviews.technicalDesc")}
                 </p>
               </div>
@@ -402,7 +402,7 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.communicationCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   {t("interviews.communicationDesc")}
                 </p>
               </div>
@@ -415,7 +415,7 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.cultureFitCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   {t("interviews.cultureFitDesc")}
                 </p>
               </div>
@@ -428,7 +428,7 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.problemSolvingCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[11px] text-slate-400">
                   {t("interviews.problemSolvingDesc")}
                 </p>
               </div>

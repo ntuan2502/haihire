@@ -113,12 +113,12 @@ export function PipelineCandidateDetail({
 
   return (
     <section
-      className={`flex-1 min-h-0 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 ${
+      className={`flex-1 min-h-0 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 ${
         mobileDetailOpen ? "block" : "hidden md:block"
       }`}
     >
       {selectedCandidate ? (
-        <div className="max-w-4xl mx-auto space-y-5 pb-12">
+        <div className="max-w-6xl mx-auto space-y-5 pb-12">
           {/* Mobile Back Button to return to list */}
           <div className="md:hidden pb-1">
             <button

@@ -161,7 +161,7 @@ export default function IntegrationsSettingsPage() {
 
   if (!canManageIntegrations) {
     return (
-      <div className="w-full space-y-6 animate-in fade-in duration-200">
+      <div className="w-full space-y-5 animate-in fade-in duration-200">
         <PageHeader
           title={t("settings.integrations.title")}
           subtitle={t("settings.integrations.description")}
@@ -179,7 +179,7 @@ export default function IntegrationsSettingsPage() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.integrations.title")}
         subtitle={t("settings.integrations.description")}

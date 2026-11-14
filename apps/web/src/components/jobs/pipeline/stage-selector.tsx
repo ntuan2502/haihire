@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Check, X } from "lucide-react";
 import type { ApplicationStage } from "@haihire/shared";
 import {
   usePipelineStages,
@@ -97,36 +98,51 @@ export function StageSelector({
   // variant === "buttons"
   return (
     <div className={`flex items-center gap-2 flex-wrap ${className}`}>
-      {stageOptions
-        .filter((stage) => !stage.isCurrent)
-        .map((stage) => {
-          const isButtonDisabled = disabled || isLoading || !stage.allowed;
+      {stageOptions.map((stage) => {
+        if (stage.isCurrent) {
           return (
-            <button
+            <span
               key={stage.id}
-              type="button"
-              disabled={isButtonDisabled}
-              title={stage.reason || stage.actionLabel}
-              onClick={() => handleStageClick(stage.id)}
-              className={`h-8 px-3.5 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors ${
-                stage.allowed
-                  ? `${stage.btnBg} ${stage.btnHover} text-white cursor-pointer disabled:opacity-50`
-                  : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed opacity-50 shadow-none border border-slate-200 dark:border-slate-800"
-              }`}
+              aria-current="step"
+              className={`h-8 px-3.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 ring-2 ring-offset-1 ring-blue-500/30 dark:ring-offset-slate-900 select-none ${stage.badgeBg}`}
             >
-              <span>{stage.actionLabel}</span>
-              <span
-                className={`h-4 w-4 rounded-full text-[10px] flex items-center justify-center ${
-                  stage.allowed
-                    ? "bg-white/20"
-                    : "bg-slate-200 dark:bg-slate-700 text-slate-500"
-                }`}
-              >
+              {stage.id === "HIRED" && <Check className="w-3.5 h-3.5" />}
+              {stage.id === "REJECTED" && <X className="w-3.5 h-3.5" />}
+              <span>{stage.label}</span>
+              <span className="text-[11px] opacity-80 font-mono">
                 {stage.stepNumber}
               </span>
-            </button>
+            </span>
           );
-        })}
+        }
+
+        const isButtonDisabled = disabled || isLoading || !stage.allowed;
+        return (
+          <button
+            key={stage.id}
+            type="button"
+            disabled={isButtonDisabled}
+            title={stage.reason || stage.actionLabel}
+            onClick={() => handleStageClick(stage.id)}
+            className={`h-8 px-3.5 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors ${
+              stage.allowed
+                ? `${stage.btnBg} ${stage.btnHover} text-white cursor-pointer disabled:opacity-50`
+                : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed opacity-50 shadow-none border border-slate-200 dark:border-slate-800"
+            }`}
+          >
+            <span>{stage.actionLabel}</span>
+            <span
+              className={`h-4 w-4 rounded-full text-[10px] flex items-center justify-center ${
+                stage.allowed
+                  ? "bg-white/20"
+                  : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+              }`}
+            >
+              {stage.stepNumber}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

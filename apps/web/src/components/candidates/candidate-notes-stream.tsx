@@ -308,7 +308,7 @@ export function CandidateNotesStream({
                 <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/60">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
-                      className={`h-7 w-7 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs ${avatarBg}`}
+                      className={`h-7 w-7 rounded-xl flex items-center justify-center text-[11px] font-black shrink-0 shadow-2xs ${avatarBg}`}
                       title={note.authorName}
                     >
                       {initials}
@@ -318,14 +318,14 @@ export function CandidateNotesStream({
                         {note.authorName}
                       </span>
                       <span
-                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md border ${roleBadgeClass}`}
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${roleBadgeClass}`}
                       >
                         {roleLabel}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-slate-400">
+                  <div className="flex items-center gap-1.5 shrink-0 text-[11px] text-slate-400">
                     {note.isEdited && (
                       <span
                         className="italic text-slate-400 dark:text-slate-500"

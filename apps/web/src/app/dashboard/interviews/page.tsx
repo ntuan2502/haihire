@@ -261,7 +261,7 @@ function InterviewsPageContent() {
       {/* Main Content */}
       <main
         id="main-content"
-        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6"
+        className="flex-1 mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5"
       >
         {/* Standard Header Row */}
         <InterviewsHeader
@@ -353,23 +353,19 @@ function InterviewsPageContent() {
               );
             }}
             canEdit={canCreateInterview}
+            footer={
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                pageSizeOptions={[10, 20, 50, 100]}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                itemLabel={t("nav.interviews").toLowerCase()}
+              />
+            }
           />
-        )}
-
-        {/* Pagination Bar (Only for Table mode) */}
-        {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
-          <div className="pt-2">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              pageSizeOptions={[10, 20, 50, 100]}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-              itemLabel={t("nav.interviews").toLowerCase()}
-            />
-          </div>
         )}
       </main>
 

@@ -109,7 +109,7 @@ function JobTrackingPageContent() {
   if (!job) return null;
 
   return (
-    <main className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <main className="flex-1 min-h-0 overflow-y-auto mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
       {/* Search and Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="w-full sm:w-80">

@@ -365,7 +365,7 @@ function OnboardingContent() {
                 placeholder={t("onboarding.orgNamePlaceholder")}
                 value={orgName}
                 onChange={handleNameChange}
-                className="h-10 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-950"
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-950"
               />
             </div>
 
@@ -373,7 +373,7 @@ function OnboardingContent() {
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 {t("onboarding.slugLabel")}
               </label>
-              <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+              <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                 <span className="px-3 text-xs text-slate-400 font-mono select-none">
                   {displayHost ? `${displayHost}/` : "workspace/"}
                 </span>
@@ -383,7 +383,7 @@ function OnboardingContent() {
                   placeholder={t("onboarding.slugPlaceholder")}
                   value={slug}
                   onChange={handleSlugChange}
-                  className="h-10 flex-1 bg-white dark:bg-slate-950 px-3 text-sm font-mono border-l border-slate-200 dark:border-slate-800 outline-hidden"
+                  className="h-10 flex-1 bg-white dark:bg-slate-950 px-3 text-xs font-mono border-l border-slate-200 dark:border-slate-800 outline-hidden"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
@@ -394,7 +394,7 @@ function OnboardingContent() {
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-all cursor-pointer"
+              className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-sm transition-all cursor-pointer"
             >
               {submitting
                 ? t("onboarding.creatingOrg")
@@ -464,12 +464,12 @@ function OnboardingContent() {
                     setInviteCodeOrSlug(e.target.value);
                     setErrorSource(null);
                   }}
-                  className="h-10 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-950"
+                  className="h-10 rounded-xl border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-950"
                 />
                 <Button
                   type="submit"
                   disabled={submitting || !inviteCodeOrSlug.trim()}
-                  className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm cursor-pointer shrink-0"
+                  className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-sm cursor-pointer shrink-0"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

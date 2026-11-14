@@ -143,7 +143,7 @@ export function InterviewsFilterBar({
           </div>
 
           {/* Search Input */}
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+          <div className="flex-1 sm:w-72 md:w-80 sm:flex-initial">
             <SearchInput
               placeholder={t("interviews.searchPlaceholder")}
               aria-label={t("interviews.searchPlaceholder")}
@@ -168,7 +168,7 @@ export function InterviewsFilterBar({
 
               {isColumnsOpen && (
                 <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
-                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                  <div className="px-2 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 select-none">
                     {t("interviews.toggleColumns")}
                   </div>
                   <div className="space-y-0.5 mt-1">
@@ -238,7 +238,7 @@ export function InterviewsFilterBar({
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}

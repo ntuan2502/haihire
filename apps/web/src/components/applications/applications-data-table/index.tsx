@@ -28,6 +28,10 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
     jobMap: table.jobMap,
   });
 
+  const effectiveVisibleColumns = fixedJobId
+    ? { ...table.visibleColumns, job: false }
+    : table.visibleColumns;
+
   return (
     <div className="space-y-4">
       {/* Modern Unified Responsive Toolbar & Filter Chips */}
@@ -41,7 +45,8 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         isColumnsOpen={table.isColumnsOpen}
         setIsColumnsOpen={table.setIsColumnsOpen}
         columnsRef={table.columnsRef}
-        visibleColumns={table.visibleColumns}
+        visibleColumns={effectiveVisibleColumns}
+        hideJobColumn={Boolean(fixedJobId)}
         toggleColumn={table.toggleColumn}
         setIsFilterOpen={table.setIsFilterOpen}
         secondaryFiltersCount={table.secondaryFiltersCount}
@@ -63,7 +68,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           baseApplications={table.baseApplications}
           paginatedApps={table.paginatedApps}
           jobMap={table.jobMap}
-          visibleColumns={table.visibleColumns}
+          visibleColumns={effectiveVisibleColumns}
           sortField={table.sortField}
           sortDirection={table.sortDirection}
           handleSort={table.handleSort}

@@ -83,9 +83,9 @@ export function WebhookSettingsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="py-3 px-4">
+                <th className="py-3 px-5">
                   {t("settings.integrations.webhooks.table.eventType")}
                 </th>
                 <th className="py-3 px-4">
@@ -97,7 +97,7 @@ export function WebhookSettingsTable({
                 <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
-                <th className="py-3 px-4 text-right">
+                <th className="py-3 px-5 text-right">
                   {t("settings.integrations.webhooks.table.actions")}
                 </th>
               </tr>
@@ -108,7 +108,7 @@ export function WebhookSettingsTable({
                   key={item.id}
                   className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
                 >
-                  <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
+                  <td className="py-3.5 px-5 font-medium text-slate-900 dark:text-white">
                     <div className="flex flex-col">
                       <span>
                         {t(
@@ -149,7 +149,7 @@ export function WebhookSettingsTable({
                   <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {formatDate(item.updatedAt)}
                   </td>
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                  <td className="py-3.5 px-5 text-right whitespace-nowrap">
                     <div className="inline-flex items-center gap-1">
                       <Button
                         variant="ghost"

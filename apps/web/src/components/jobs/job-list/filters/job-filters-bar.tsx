@@ -64,7 +64,7 @@ export function JobFiltersBar({
   return (
     <>
       {/* Modern Unified Responsive Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Left: Quick Status Tabs */}
         <SegmentedTabs
           multiSelect
@@ -75,8 +75,8 @@ export function JobFiltersBar({
         />
 
         {/* Right: Search Box + Columns Dropdown + Filters Button */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+        <div className="flex items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex-1 sm:w-72 md:w-80 lg:flex-initial">
             <SearchInput
               placeholder={t("jobs.searchJobs")}
               aria-label={t("jobs.searchJobs")}

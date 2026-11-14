@@ -19,7 +19,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
   const { t } = useI18n();
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
       {/* Header */}
       <div className="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center gap-2">
@@ -46,7 +46,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                 <th className="py-3 px-5">
                   {t("sourcing.details.colCandidate")}
                 </th>

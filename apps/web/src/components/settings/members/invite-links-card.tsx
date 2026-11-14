@@ -122,7 +122,7 @@ export function InviteLinksCard({
           <Button
             type="button"
             onClick={() => setIsCreateLinkOpen(true)}
-            className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            className="h-9 px-3.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{t("members.createLinkButton")}</span>
@@ -262,7 +262,7 @@ export function InviteLinksCard({
                       </span>
 
                       {isInactive && (
-                        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                           {t("common.inactive")}
                         </span>
                       )}

@@ -67,9 +67,9 @@ export function WizardStepForm({
       ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+        <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
           {t("jobs.wizard.customizeFormTitle")}
         </span>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
@@ -79,7 +79,7 @@ export function WizardStepForm({
 
       {/* Section 1: Personal Information */}
       <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
           {t("jobs.wizard.personalInfoTitle")}
         </h3>
 
@@ -93,7 +93,7 @@ export function WizardStepForm({
                 <span>{row.label}</span>
                 <Lock className="h-3 w-3 text-slate-400" />
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[11px] font-bold">
                 {t("jobs.wizard.mandatoryBadge")}
               </span>
             </div>
@@ -104,7 +104,7 @@ export function WizardStepForm({
               <span>{t("jobs.wizard.emailLabel")}</span>
               <Lock className="h-3 w-3 text-slate-400" />
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[11px] font-bold">
               {t("jobs.wizard.mandatoryBadge")}
             </span>
           </div>
@@ -161,7 +161,7 @@ export function WizardStepForm({
 
       {/* Section 2: Documents */}
       <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
           {t("jobs.wizard.documentsTitle")}
         </h3>
 
@@ -255,7 +255,7 @@ export function WizardStepForm({
       {/* Section 3: Screening Questions */}
       <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             {t("jobs.wizard.screeningQuestionsTitle")}
           </h3>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -294,7 +294,7 @@ export function WizardStepForm({
                     <p className="text-xs font-semibold text-slate-900 dark:text-white">
                       {q.text}
                     </p>
-                    <span className="text-[10px] text-slate-400 capitalize">
+                    <span className="text-[11px] text-slate-400 capitalize">
                       {q.type === "text"
                         ? t("jobs.wizard.openTextAnswer")
                         : t("jobs.wizard.yesNoChoice")}

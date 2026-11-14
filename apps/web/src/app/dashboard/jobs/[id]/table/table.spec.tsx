@@ -38,14 +38,15 @@ vi.mock("@/components/applications/applications-data-table", () => ({
 }));
 
 describe("JobTablePage", () => {
-  it("renders full-width main container without max-w-7xl constraint", () => {
+  it("renders standardized max-w-[1600px] container without max-w-7xl constraint", () => {
     const { container } = render(<JobTablePage />);
 
     const main = container.querySelector("main");
     expect(main).not.toBeNull();
     expect(main?.className).toContain("w-full");
-    expect(main?.className).toContain("xl:px-10");
+    expect(main?.className).toContain("max-w-[1600px]");
+    expect(main?.className).toContain("mx-auto");
+    expect(main?.className).toContain("lg:px-8");
     expect(main?.className).not.toContain("max-w-7xl");
-    expect(main?.className).not.toContain("mx-auto");
   });
 });

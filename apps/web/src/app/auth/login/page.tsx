@@ -154,7 +154,7 @@ function LoginForm() {
                       <p className="text-xs font-bold text-slate-900 dark:text-white">
                         {DEMO_ACCOUNTS.ADMIN.name}
                       </p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
                         {DEMO_ACCOUNTS.ADMIN.badge}
                       </span>
                     </div>
@@ -187,7 +187,7 @@ function LoginForm() {
                       <p className="text-xs font-bold text-slate-900 dark:text-white">
                         {DEMO_ACCOUNTS.MEMBER.name}
                       </p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                         {DEMO_ACCOUNTS.MEMBER.badge}
                       </span>
                     </div>
@@ -273,7 +273,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               tabIndex={-1}
             >
               {showPassword ? (

@@ -23,7 +23,7 @@ export const LandingNavbar = () => {
   return (
     <>
       <header className="sticky top-0 z-50 w-full h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left: Brand Logo & Navigation Links */}
           <div className="flex items-center gap-6">
             <Link

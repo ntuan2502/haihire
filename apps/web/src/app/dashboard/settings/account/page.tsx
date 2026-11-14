@@ -196,7 +196,7 @@ export default function AccountSettingsPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.tabs.account")}
         subtitle={t("settings.accountProfileDesc")}
@@ -204,9 +204,9 @@ export default function AccountSettingsPage() {
         bordered
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         {/* Left Column: Account Info + Change Password */}
-        <div className="xl:col-span-7 space-y-6">
+        <div className="xl:col-span-7 space-y-5">
           {/* Account Info Card */}
           <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
             <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -280,7 +280,7 @@ export default function AccountSettingsPage() {
                       placeholder={field.placeholder}
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
-                      className="h-10 text-xs w-full"
+                      className="h-9 text-xs w-full"
                     />
                   </div>
                 ))}
@@ -298,7 +298,7 @@ export default function AccountSettingsPage() {
                   type="email"
                   disabled
                   value={user?.email || ""}
-                  className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80 w-full"
+                  className="h-9 text-xs bg-slate-50 dark:bg-slate-950 opacity-80 w-full"
                 />
               </div>
 
@@ -356,7 +356,7 @@ export default function AccountSettingsPage() {
                   placeholder={t("settings.currentPasswordPlaceholder")}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="h-10 text-xs w-full"
+                  className="h-9 text-xs w-full"
                 />
               </div>
 
@@ -370,7 +370,7 @@ export default function AccountSettingsPage() {
                     placeholder={t("settings.newPasswordPlaceholder")}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-10 text-xs w-full"
+                    className="h-9 text-xs w-full"
                   />
                 </div>
                 <div>
@@ -382,7 +382,7 @@ export default function AccountSettingsPage() {
                     placeholder={t("settings.confirmNewPasswordPlaceholder")}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-10 text-xs w-full"
+                    className="h-9 text-xs w-full"
                   />
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function AccountSettingsPage() {
                 disabled={isSavingPrefs}
                 options={languageOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.accountPreferences.languageHint")}
@@ -469,7 +469,7 @@ export default function AccountSettingsPage() {
                 emptyText={t("settings.localization.timezoneNoMatch")}
                 options={timezoneOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full h-9 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
               />
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.accountPreferences.timezoneHint")}

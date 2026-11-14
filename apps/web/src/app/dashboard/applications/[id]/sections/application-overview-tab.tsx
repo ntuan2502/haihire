@@ -78,7 +78,7 @@ export function ApplicationOverviewTab({
       {/* 4. Responses */}
       {overviewSections.responses && (
         <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
             <FileCheck className="h-3.5 w-3.5 text-slate-400" />
             <span>{t("applications.sections.responses")}</span>
           </h3>

@@ -39,7 +39,7 @@ export function CandidateTableRow({
     >
       {/* Name */}
       {visibleColumns.name && (
-        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+        <td className="py-4 px-3.5 xl:px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
           <button
             type="button"
             onClick={(e) => {
@@ -55,7 +55,7 @@ export function CandidateTableRow({
 
       {/* Email */}
       {visibleColumns.email && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-3.5 xl:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
             <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>{candidate.email}</span>
@@ -65,7 +65,7 @@ export function CandidateTableRow({
 
       {/* Phone */}
       {visibleColumns.phone && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-3.5 xl:px-5 whitespace-nowrap">
           {candidate.phone ? (
             <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
               <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -79,31 +79,31 @@ export function CandidateTableRow({
 
       {/* Applications Count */}
       {visibleColumns.applications && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-3.5 xl:px-5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
           {candidate.applicationsCount}
         </td>
       )}
 
       {/* Added Date */}
       {visibleColumns.added && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-3.5 xl:px-5 text-slate-500 dark:text-slate-400 whitespace-nowrap">
           {formatDate(candidate.createdAt)}
         </td>
       )}
 
       {/* Latest note */}
       {visibleColumns.quickNotes && (
-        <td className="py-4 px-5 max-w-xs">
+        <td className="py-4 px-3.5 xl:px-5 max-w-[160px] xl:max-w-xs">
           {candidate.latestNote?.content ? (
             <div className="flex items-center gap-1.5">
               <span
-                className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[190px]"
+                className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[130px] xl:max-w-[190px]"
                 title={candidate.latestNote.content}
               >
                 {candidate.latestNote.content}
               </span>
               {(candidate.notesCount ?? 0) > 1 && (
-                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
                   +{candidate.notesCount! - 1}
                 </span>
               )}
@@ -115,7 +115,7 @@ export function CandidateTableRow({
       )}
 
       {/* Actions */}
-      <td className="py-4 px-5 text-right whitespace-nowrap">
+      <td className="py-4 px-3.5 xl:px-5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           {/* Quick View */}
           <button

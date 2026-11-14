@@ -103,7 +103,7 @@ export default function GeneralSettingsPage() {
   };
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.tabs.general")}
         subtitle={t("settings.tabs.generalSub")}
@@ -111,7 +111,7 @@ export default function GeneralSettingsPage() {
         bordered
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
         {/* CARD 1: Organization profile */}
         <div className="xl:col-span-7 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
           {/* Card Header */}
@@ -141,7 +141,7 @@ export default function GeneralSettingsPage() {
                 placeholder={t("settings.placeholders.orgName")}
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+                className="h-9 text-xs bg-slate-50/50 dark:bg-slate-950"
                 required
                 disabled={
                   !canEdit || isOrgLoading || updateOrgMutation.isPending
@@ -170,7 +170,7 @@ export default function GeneralSettingsPage() {
                       e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
                     )
                   }
-                  className="flex-1 h-10 px-3 text-xs bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
+                  className="flex-1 h-9 px-3 text-xs bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
                   required
                   disabled={
                     !canEdit || isOrgLoading || updateOrgMutation.isPending
@@ -205,7 +205,7 @@ export default function GeneralSettingsPage() {
         </div>
 
         {/* Right Column: Workspace Careers Portal + Danger zone (Owner only) */}
-        <div className="xl:col-span-5 space-y-6">
+        <div className="xl:col-span-5 space-y-5">
           <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
             <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">

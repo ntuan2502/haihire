@@ -228,7 +228,7 @@ export default function MembersSettingsPage() {
 
   if (!canManageMembers) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-200">
+      <div className="space-y-5 animate-in fade-in duration-200">
         {header}
         <StatusState
           status="403"
@@ -241,7 +241,7 @@ export default function MembersSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-5 animate-in fade-in duration-200">
       {header}
 
       {/* Top Action + Invite team member card */}

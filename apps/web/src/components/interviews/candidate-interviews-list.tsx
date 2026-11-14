@@ -170,7 +170,7 @@ export function CandidateInterviewsList({
                       {formatInterviewType(scheduled.type)}
                     </h4>
                     {allInterviews.length > 1 && (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold">
                         {scheduled.round
                           ? `${t("interviews.round")} ${scheduled.round}`
                           : `#${allInterviews.length - idx}`}
@@ -281,7 +281,7 @@ export function CandidateInterviewsList({
                       })}
                     </span>
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
                     {t("interviews.recommendationLabel", {
                       recommendation: getRecommendationLabel(
                         scheduled.scorecard.recommendation,
@@ -299,7 +299,7 @@ export function CandidateInterviewsList({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
                     {scheduled.scorecard.technicalScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                           {t("interviews.technicalCriteria")}
                         </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
@@ -310,7 +310,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.communicationScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                           {t("interviews.communicationCriteria")}
                         </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
@@ -321,7 +321,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.cultureScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                           {t("interviews.cultureFitCriteria")}
                         </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
@@ -332,7 +332,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.problemSolvingScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                           {t("interviews.problemSolvingCriteria")}
                         </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
@@ -346,7 +346,7 @@ export function CandidateInterviewsList({
 
                 {scheduled.scorecard.feedback && (
                   <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 block mb-0.5">
+                    <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 block mb-0.5">
                       {t("interviews.detailedFeedback")}:
                     </span>
                     <p className="text-slate-700 dark:text-slate-300 italic bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">

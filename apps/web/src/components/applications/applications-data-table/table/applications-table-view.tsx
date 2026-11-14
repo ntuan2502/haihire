@@ -96,12 +96,12 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("candidate")}
-                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.candidate")}</span>
                     {sortField === "candidate" ? (
@@ -132,12 +132,12 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("email")}
-                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.email")}</span>
                     {sortField === "email" ? (
@@ -168,12 +168,12 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("job")}
-                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.job")}</span>
                     {sortField === "job" ? (
@@ -204,12 +204,12 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("status")}
-                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.status")}</span>
                     {sortField === "status" ? (
@@ -240,12 +240,12 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("score")}
-                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.score")}</span>
                     {sortField === "score" ? (
@@ -276,17 +276,17 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3 px-3.5 xl:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("applied")}
-                    className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer whitespace-nowrap"
                   >
                     <span>{t("applications.columns.applied")}</span>
                     {sortField === "applied" ? (
                       <ArrowDown
-                        className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
+                        className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -302,7 +302,7 @@ export function ApplicationsTableView({
               )}
               <th
                 scope="col"
-                className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500"
+                className="py-3 px-3.5 xl:px-5 text-right min-w-[84px] font-semibold text-slate-500 whitespace-nowrap"
               >
                 {t("common.actions")}
               </th>

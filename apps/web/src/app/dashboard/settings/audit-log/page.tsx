@@ -244,7 +244,7 @@ export default function AuditLogPage() {
   const total = data?.total ?? 0;
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-5 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.auditLog.title")}
         subtitle={t("settings.auditLog.description")}
@@ -307,9 +307,9 @@ export default function AuditLogPage() {
             <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th className="py-3 px-4">
+                      <th className="py-3 px-5">
                         {t("settings.auditLog.colTimestamp")}
                       </th>
                       <th className="py-3 px-4">
@@ -321,7 +321,7 @@ export default function AuditLogPage() {
                       <th className="py-3 px-4">
                         {t("settings.auditLog.colResource")}
                       </th>
-                      <th className="py-3 px-4 text-right">
+                      <th className="py-3 px-5 text-right">
                         {t("settings.auditLog.colMetadata")}
                       </th>
                     </tr>
@@ -341,7 +341,7 @@ export default function AuditLogPage() {
                       return (
                         <Fragment key={log.id}>
                           <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            <td className="py-3.5 px-5 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
                               {formatDateTime(log.createdAt)}
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
@@ -375,7 +375,7 @@ export default function AuditLogPage() {
                             <td className="py-3.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                               {getResourceLabel(log.resource)}
                             </td>
-                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            <td className="py-3.5 px-5 text-right whitespace-nowrap">
                               {hasMetadata ? (
                                 <button
                                   type="button"
@@ -453,7 +453,7 @@ export default function AuditLogPage() {
                     setPage(1);
                     setExpandedRowId(null);
                   }}
-                  className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
+                  className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30"
                 />
               )}
             </div>

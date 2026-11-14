@@ -74,14 +74,14 @@ export function InterviewsGridView({
           return (
             <div
               key={app.id}
-              className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs hover:shadow-md hover:border-blue-300/80 dark:hover:border-blue-900/80 transition-all flex flex-col justify-between space-y-4"
+              className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs hover:shadow-md hover:border-blue-300/80 dark:hover:border-blue-900/80 transition-all flex flex-col justify-between space-y-4"
             >
               {/* Top: Header, Job, Schedule */}
               <div className="space-y-3.5">
                 {/* Candidate Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 font-bold text-xs flex items-center justify-center shrink-0">
                       {initials}
                     </div>
                     <div className="min-w-0">
@@ -149,13 +149,13 @@ export function InterviewsGridView({
                         </span>
                       </div>
                       {currentInterview.round ? (
-                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
                           {t("interviews.roundInterview", {
                             round: currentInterview.round,
                           })}
                         </span>
                       ) : allInterviews.length > 1 ? (
-                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
                           {t("interviews.latestBadge")}
                         </span>
                       ) : null}
@@ -163,7 +163,7 @@ export function InterviewsGridView({
 
                     {/* Interview Type Badge */}
                     <div>
-                      <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
+                      <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[11px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
                         {getInterviewTypeLabel(currentInterview.type, t)}
                       </span>
                     </div>
@@ -242,11 +242,11 @@ export function InterviewsGridView({
                           <span>
                             {currentInterview.scorecard.overallRating} / 5
                           </span>
-                          <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden sm:inline">
+                          <span className="text-[11px] font-normal text-slate-400 ml-0.5 hidden sm:inline">
                             {t("interviews.ratedStatus")}
                           </span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
                           {getRecommendationLabel(
                             currentInterview.scorecard.recommendation,
                             t,
@@ -313,7 +313,7 @@ export function InterviewsGridView({
                                 {formatDate(prev.scheduledAt)} (
                                 {formatTime(prev.scheduledAt)})
                               </span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
+                              <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
                                 {prev.round
                                   ? t("interviews.roundInterview", {
                                       round: prev.round,
@@ -321,7 +321,7 @@ export function InterviewsGridView({
                                   : getInterviewTypeLabel(prev.type, t)}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <div className="flex items-center justify-between text-[11px] text-slate-400">
                               <span>
                                 {t("interviews.pvPrefix", {
                                   interviewer: prev.interviewer,

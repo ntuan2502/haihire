@@ -123,7 +123,7 @@ export function InviteMemberCard({
             placeholder={t("members.inviteEmailPlaceholder")}
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+            className="h-9 text-xs bg-slate-50/50 dark:bg-slate-950 rounded-xl"
             required
           />
         </div>
@@ -134,14 +134,14 @@ export function InviteMemberCard({
             onChange={(val) => setInviteRole(val)}
             options={resolvedRoleOptions}
             className="w-full sm:w-48"
-            triggerClassName="h-10 text-xs font-semibold"
+            triggerClassName="h-9 text-xs font-semibold"
           />
         </div>
 
         <Button
           type="submit"
           disabled={isInviting}
-          className="h-10 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
         >
           <Send className="h-3.5 w-3.5" />
           <span>

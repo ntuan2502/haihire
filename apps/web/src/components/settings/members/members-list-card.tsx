@@ -94,7 +94,12 @@ export function MembersListCard({
             {t("members.activeMembers")}
           </h3>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {members.length} {members.length === 1 ? "member" : "members"}
+            {members.length}{" "}
+            {t("members.roleMember") === "Member"
+              ? members.length === 1
+                ? "member"
+                : "members"
+              : t("members.roleMember").toLowerCase()}
           </p>
         </div>
       </div>

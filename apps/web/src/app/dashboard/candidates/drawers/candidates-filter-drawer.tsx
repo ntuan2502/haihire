@@ -54,7 +54,7 @@ export function CandidatesFilterDrawer({
         <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
           {/* 1. FILTER BY JOB */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
               {t("applications.filterByJob")}
             </span>
             <CustomSelect
@@ -71,7 +71,7 @@ export function CandidatesFilterDrawer({
 
           {/* 2. PROFILE STATUS */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
               {t("jobs.statusUpper")}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -101,7 +101,7 @@ export function CandidatesFilterDrawer({
 
           {/* 3. SORT BY */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-semibold text-slate-500 dark:text-slate-400 text-[11px] block">
               {t("jobs.sortByUpper")}
             </span>
             <div className="grid grid-cols-2 gap-2">

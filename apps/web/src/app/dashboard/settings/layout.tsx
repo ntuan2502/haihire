@@ -240,11 +240,11 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
         <Navbar activeTab="settings" />
 
         <main className="flex-1 min-h-0 w-full flex flex-col overflow-x-hidden">
-          <div className="flex-1 min-h-0 flex flex-col md:flex-row w-full md:overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col md:flex-row w-full max-w-[1600px] mx-auto md:overflow-hidden">
             {/* ================= LEFT SIDEBAR ================= */}
             <aside
               data-testid="settings-sidebar"
-              className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col md:h-full md:min-h-0 md:border-r md:border-slate-200/70 dark:md:border-slate-800/70 px-3 sm:px-6 md:pl-6 lg:pl-8 xl:pl-10 md:pr-0 pt-4 sm:pt-6"
+              className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col md:h-full md:min-h-0 md:border-r md:border-slate-200/70 dark:md:border-slate-800/70 px-4 sm:px-6 lg:pl-8 md:pr-0 pt-6"
             >
               <div className="shrink-0 space-y-3 sm:space-y-4 md:pr-4 md:pb-3">
                 {/* Back to jobs link */}
@@ -415,7 +415,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
             {/* ================= RIGHT CONTENT AREA (Independent Scroll Container) ================= */}
             <section
               data-testid="settings-content"
-              className="w-full flex-1 min-w-0 md:h-full md:min-h-0 md:overflow-y-auto px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 space-y-6"
+              className="w-full flex-1 min-w-0 md:h-full md:min-h-0 md:overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
             >
               {children}
             </section>

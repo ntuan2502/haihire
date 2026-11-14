@@ -96,7 +96,7 @@ export function CandidateDrawerHeader({
       </div>
 
       {/* Stage Action Pipeline Bar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="px-6 pt-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <StageSelector
             currentStage={currentApp.stage}
@@ -110,7 +110,7 @@ export function CandidateDrawerHeader({
           <button
             type="button"
             onClick={onOpenScheduleModal}
-            className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+            className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
           >
             <Calendar className="h-3.5 w-3.5 text-slate-400" />
             <span>{t("applications.scheduleInterview")}</span>
@@ -120,7 +120,7 @@ export function CandidateDrawerHeader({
             type="button"
             disabled={isDeleting}
             onClick={() => onOpenDeleteModal(currentApp)}
-            className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+            className="h-9 px-3.5 rounded-xl border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>{t("applications.deleteApplication")}</span>
@@ -129,7 +129,7 @@ export function CandidateDrawerHeader({
       </div>
 
       {/* Candidate Header Card */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
+      <div className="mx-6 mt-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
         <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
           {getInitials(getCandidateDisplayName(currentApp))}
         </div>

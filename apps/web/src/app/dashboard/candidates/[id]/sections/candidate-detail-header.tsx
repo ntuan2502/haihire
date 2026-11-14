@@ -85,7 +85,7 @@ export function CandidateDetailHeader({
               type="button"
               size="sm"
               onClick={onOpenSendEmail}
-              className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="h-9 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Mail className="h-3.5 w-3.5" />
               <span>{t("email.sendEmailAction")}</span>
@@ -97,7 +97,7 @@ export function CandidateDetailHeader({
               onClick={() =>
                 router.push(`/dashboard/candidates/${candidateId}/edit`)
               }
-              className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-9 px-3.5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Edit2 className="h-3 w-3 text-slate-400" />
               <span>{t("common.edit")}</span>
@@ -108,7 +108,7 @@ export function CandidateDetailHeader({
               type="button"
               disabled={isDeleting}
               onClick={onOpenDeleteModal}
-              className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-9 px-3.5 rounded-xl border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Trash2 className="h-3 w-3" />
               <span>{t("common.delete")}</span>

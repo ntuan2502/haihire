@@ -23,7 +23,7 @@ export function DashboardRecentApplications({
   const { t } = useI18n();
 
   return (
-    <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex flex-col h-[520px] xl:h-[calc(100vh-280px)] min-h-[460px] max-h-[640px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
       {/* Header */}
       <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
         <div className="flex items-center gap-2 min-w-0">
@@ -89,7 +89,7 @@ export function DashboardRecentApplications({
                 </div>
 
                 {/* Timestamp */}
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
                   {formatRelativeTime(app.createdAt)}
                 </span>
               </Link>

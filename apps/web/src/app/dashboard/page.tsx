@@ -193,7 +193,7 @@ function DashboardContent() {
                   />
                 ) : (
                   /* When jobs exist, display full high-fidelity Dashboard with live database metrics */
-                  <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 space-y-6">
+                  <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 space-y-5">
                     {/* Top Stat Cards Grid */}
                     <DashboardMetrics
                       openJobsCount={openJobsCount}

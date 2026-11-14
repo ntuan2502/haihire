@@ -16,7 +16,7 @@ Stack baselines verified in `apps/api/package.json` and `apps/api/src/`:
 ## 1. ESM & `esbuild` Bundler Hazards (Critical)
 
 - **Always annotate constructor dependencies with explicit `@Inject(Token)`** and `@Optional() @Inject(Token)`. Under ESM / `tsx` / `esbuild`, implicit TypeScript `design:paramtypes` reflection can be stripped or suffer CJS/ESM dual-package token mismatches (see `throttlerReflectorToken` workaround in `apps/api/src/app.module.ts`).
-- **Always validate body/query/params with `@Body(DtoPipe(DtoOrZodSchema))` / `@Query(DtoPipe(...))` (`pnpm lint:dtopipe`).** Using `@UsePipes` or omitting `DtoPipe(...)` fails CI Gate 3 because explicit `expectedType` / `ZodValidationPipe` guarantees runtime validation even when metadata is erased.
+- **Always validate body/query/params with `@Body(DtoPipe(DtoOrZodSchema))` / `@Query(DtoPipe(...))` (`pnpm lint:dtopipe`).** Using `@UsePipes` or omitting `DtoPipe(...)` fails CI Gate 5 because explicit `expectedType` / `ZodValidationPipe` guarantees runtime validation even when metadata is erased (`AppModule` also registers a global `APP_PIPE` `ValidationPipe` safety net alongside `DtoPipe`).
 - **No `any` & Strict Logging:** Prefer explicit interfaces or `unknown`, use `CorrelationLogger` + `CorrelationIdMiddleware` (`correlationStorage`), and sanitize sensitive tokens/UUIDs (`sanitizeLogPath` in `src/main.ts`).
 
 ---

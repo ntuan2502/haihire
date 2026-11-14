@@ -27,7 +27,8 @@ import {
   PERMISSIONS,
   hasPermission,
 } from "@haihire/shared";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { ensureDefaultDemoAccounts } from "../prisma/demo-seed.util";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
 
@@ -84,8 +85,9 @@ export class AuthService {
       },
     });
 
-    // Auto-provision demo accounts in non-production environments if database is fresh
-    const isDevOrDemoEnabled = env.NODE_ENV !== "production";
+    // Auto-provision demo accounts in non-production environments if SEED_DEMO_ON_BOOT is enabled
+    const isDevOrDemoEnabled =
+      env.NODE_ENV !== "production" && env.SEED_DEMO_ON_BOOT;
 
     if (!user && isDevOrDemoEnabled) {
       const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
@@ -93,94 +95,16 @@ export class AuthService {
         (a) => a.email.toLowerCase() === normalizedEmail,
       );
 
-      if (matchedDemo && dto.password === DEMO_PASSWORD) {
-        const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
-        let orgId: string | null = null;
-
-        if (matchedDemo.role === "ADMIN") {
-          const adminUserId = crypto.randomUUID();
-          const existingOrg = await this.prisma.organization.findUnique({
-            where: { slug: "admin" },
-            select: { id: true },
-          });
-
-          const orgIdToAssign = existingOrg ? existingOrg.id : null;
-
-          user = await this.prisma.user.upsert({
-            where: { email: normalizedEmail },
-            create: {
-              id: adminUserId,
-              email: normalizedEmail,
-              firstName: matchedDemo.firstName,
-              lastName: matchedDemo.lastName,
-              role: matchedDemo.role,
-              password: hashedPassword,
-              organizationId: orgIdToAssign,
-              updatedAt: toInstant(),
-            },
-            update: {
-              password: hashedPassword,
-              firstName: matchedDemo.firstName,
-              lastName: matchedDemo.lastName,
-              role: matchedDemo.role,
-              ...(orgIdToAssign ? { organizationId: orgIdToAssign } : {}),
-            },
-            select: {
-              ...USER_PROFILE_SELECT,
-              password: true,
-              tokenVersion: true,
-            },
-          });
-
-          if (!existingOrg) {
-            const newOrgId = crypto.randomUUID();
-            await this.prisma.organization.upsert({
-              where: { slug: "admin" },
-              create: {
-                id: newOrgId,
-                name: "Admin",
-                slug: "admin",
-                ownerId: user.id,
-                updatedAt: toInstant(),
-              },
-              update: { ownerId: user.id },
-            });
-            orgId = newOrgId;
-            await this.prisma.user.update({
-              where: { id: user.id },
-              data: { organizationId: orgId, updatedAt: toInstant() },
-            });
-            user = { ...user, organizationId: orgId };
-          } else {
-            orgId = existingOrg.id;
-          }
-        } else {
-          user = await this.prisma.user.upsert({
-            where: { email: normalizedEmail },
-            create: {
-              id: crypto.randomUUID(),
-              email: normalizedEmail,
-              firstName: matchedDemo.firstName,
-              lastName: matchedDemo.lastName,
-              role: matchedDemo.role,
-              password: hashedPassword,
-              organizationId: null,
-              updatedAt: toInstant(),
-            },
-            update: {
-              password: hashedPassword,
-              firstName: matchedDemo.firstName,
-              lastName: matchedDemo.lastName,
-              role: matchedDemo.role,
-              organizationId: null,
-            },
-            select: {
-              ...USER_PROFILE_SELECT,
-              password: true,
-              tokenVersion: true,
-            },
-          });
-        }
+      if (matchedDemo && DEMO_PASSWORD && dto.password === DEMO_PASSWORD) {
+        await ensureDefaultDemoAccounts(this.prisma);
+        user = await this.prisma.user.findFirst({
+          where: { email: normalizedEmail },
+          select: {
+            ...USER_PROFILE_SELECT,
+            password: true,
+            tokenVersion: true,
+          },
+        });
       }
     }
 
@@ -273,7 +197,7 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(dto.password, 10);
+    const hashedPassword = bcrypt.hashSync(dto.password, BCRYPT_SALT_ROUNDS);
     const id = crypto.randomUUID();
 
     await this.prisma.user.create({
@@ -510,7 +434,7 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(newPass, 10);
+    const hashedPassword = bcrypt.hashSync(newPass, BCRYPT_SALT_ROUNDS);
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {

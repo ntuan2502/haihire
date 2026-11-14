@@ -6,15 +6,14 @@
 
 ## 1. Production Stack Topology (`docker-compose.prod.yml`)
 
-| Service          | Container Name                | Image / Baseline                                                           | Port / Network                           | Healthcheck                             |
-| :--------------- | :---------------------------- | :------------------------------------------------------------------------- | :--------------------------------------- | :-------------------------------------- |
-| `postgres`       | `haihire-prod-postgres`       | `postgres:17.6-alpine`                                                     | `haihire-prod-network` (internal `5432`) | `pg_isready`                            |
-| `redis`          | `haihire-prod-redis`          | `valkey/valkey:8.0.2-alpine` (`noeviction`, AOF `everysec`, `384mb` limit) | `haihire-prod-network` (internal `6379`) | `redis-cli ping`                        |
-| `minio`          | `haihire-prod-minio`          | `alpine/minio`                                                             | `haihire-prod-network` (internal `9000`) | HTTP `/minio/health/live`               |
-| `api`            | `haihire-prod-api`            | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `${BACKEND_PORT:-3001}:3001`             | HTTP `GET /health`                      |
-| `web`            | `haihire-prod-web`            | `ghcr.io/<owner>/haihire-web:<IMAGE_TAG>`                                  | `${FRONTEND_PORT:-3000}:3000`            | Starts after healthy `api`              |
-| `orphan-cleanup` | `haihire-prod-orphan-cleanup` | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>` (`crond` daily `04:00`)          | `haihire-prod-network`                   | Depends on healthy `postgres` + `minio` |
-| `pushgateway`    | `haihire-prod-pushgateway`    | `prom/pushgateway:v1.10.0`                                                 | `${PUSHGATEWAY_PORT:-9091}:9091`         | HTTP `/-/healthy`                       |
+| Service       | Container Name             | Image / Baseline                                                           | Port / Network                           | Healthcheck                |
+| :------------ | :------------------------- | :------------------------------------------------------------------------- | :--------------------------------------- | :------------------------- |
+| `postgres`    | `haihire-prod-postgres`    | `postgres:17.6-alpine`                                                     | `haihire-prod-network` (internal `5432`) | `pg_isready`               |
+| `redis`       | `haihire-prod-redis`       | `valkey/valkey:8.0.2-alpine` (`noeviction`, AOF `everysec`, `384mb` limit) | `haihire-prod-network` (internal `6379`) | `redis-cli ping`           |
+| `minio`       | `haihire-prod-minio`       | `alpine/minio`                                                             | `haihire-prod-network` (internal `9000`) | HTTP `/minio/health/live`  |
+| `api`         | `haihire-prod-api`         | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `${BACKEND_PORT:-3001}:3001`             | HTTP `GET /health`         |
+| `web`         | `haihire-prod-web`         | `ghcr.io/<owner>/haihire-web:<IMAGE_TAG>`                                  | `${FRONTEND_PORT:-3000}:3000`            | Starts after healthy `api` |
+| `pushgateway` | `haihire-prod-pushgateway` | `prom/pushgateway:v1.10.0`                                                 | `${PUSHGATEWAY_PORT:-9091}:9091`         | HTTP `/-/healthy`          |
 
 Persistent named volumes in [docker-compose.prod.yml](../../docker-compose.prod.yml): `haihire_prod_postgres_data`, `haihire_prod_redis_data`, `haihire_prod_minio_data`.
 
@@ -46,7 +45,7 @@ pnpm db:backup
 Update `IMAGE_TAG` in `.env.production`, then pull signed images from GHCR:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml pull api web orphan-cleanup
+docker compose --env-file .env.production -f docker-compose.prod.yml pull api web
 ```
 
 ### Step 2: Apply Database Schema / Migrations (When Required)
@@ -99,7 +98,7 @@ Also confirm:
 ### Application-Only Rollback (No Incompatible Schema Change)
 
 1. Revert `IMAGE_TAG` in `.env.production` to the previous known-good release tag.
-2. Recreate `api`, `web`, and `orphan-cleanup`:
+2. Recreate `api` and `web`:
 
 ```bash
 pnpm docker:prod:up
@@ -107,7 +106,7 @@ pnpm docker:prod:up
 
 ### Full Rollback (After Destructive / Non-Backward-Compatible Migration)
 
-1. Stop `api`, `web`, and `orphan-cleanup` (`docker compose --env-file .env.production -f docker-compose.prod.yml stop api web orphan-cleanup`).
+1. Stop `api` and `web` (`docker compose --env-file .env.production -f docker-compose.prod.yml stop api web`).
 2. Restore PostgreSQL and MinIO from the pre-deploy backup taken in Section 2 following [Backup and Restore Runbook](backup-and-restore.md).
 3. Set `IMAGE_TAG` back to the prior release tag and start the stack (`pnpm docker:prod:up`).
 

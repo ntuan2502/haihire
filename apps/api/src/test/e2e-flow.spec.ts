@@ -6,9 +6,17 @@ import { AuthService } from "../auth/auth.service";
 import { JobsService } from "../jobs/jobs.service";
 import { ApplicationsService } from "../applications/applications.service";
 import { CandidatesService } from "../candidates/candidates.service";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
+import {
+  BCRYPT_SALT_ROUNDS,
+  DEMO_ACCOUNTS,
+  DEMO_PASSWORD,
+} from "../auth/constants";
 
 describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
+  const precomputedAdminHash = bcrypt.hashSync(
+    DEMO_PASSWORD,
+    BCRYPT_SALT_ROUNDS,
+  );
   let authService: AuthService;
   let jobsService: JobsService;
   let applicationsService: ApplicationsService;
@@ -28,7 +36,6 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
   let dbState: MockDbState;
 
   beforeEach(() => {
-    const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
     dbState = {
       users: [
         {
@@ -36,7 +43,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
           email: DEMO_ACCOUNTS.ADMIN.email,
           firstName: DEMO_ACCOUNTS.ADMIN.firstName,
           lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-          password: hashedPassword,
+          password: precomputedAdminHash,
           role: "ADMIN",
           avatarUrl: null,
           organizationId: "org-test-1",

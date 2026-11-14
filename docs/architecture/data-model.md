@@ -19,9 +19,9 @@ Organization (tenant root, ownerId -> User)
  ├── OrganizationAuditLog (organizationId, actorId, action, resource)
  ├── Job (organizationId, deletedAt, status)
  │    ├── TrackingLink (organizationId, jobId?, token, deletedAt)
- │    │    └── TrackingClick (trackingLinkId, referrerDomain, ipHash)
- │    └── Application (candidateId, jobId, stage, trackingLinkId?)
- │         ├── Interview (applicationId, scheduledAt, type, format, scorecard)
+ │    │    └── TrackingClick (organizationId, trackingLinkId, referrerDomain, ipHash)
+ │    └── Application (organizationId, candidateId, jobId, stage, trackingLinkId?)
+ │         ├── Interview (organizationId, applicationId, interviewerId?, scheduledAt, type, format, scorecard)
  │         ├── ApplicationNote (organizationId, applicationId, authorId)
  │         ├── EmailLog (scope, organizationId?, candidateId?, applicationId?)
  │         └── ActivityLog (organizationId, candidateId, applicationId?)
@@ -68,36 +68,36 @@ User (email unique, tokenVersion, organizationId?, preferredLanguage?, preferred
 
 ## 3. Prisma Models Inventory (`22`)
 
-|  #  | Model                        | Table (`@@map`)                | Tenant Isolation Column / Rule                                                                                |    Soft Delete    |
-| :-: | :--------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------ | :---------------: |
-|  1  | `Organization`               | `organization`                 | Root entity (`id`, `slug` unique, `ownerId` `Restrict`)                                                       |        No         |
-|  2  | `User`                       | `user`                         | Optional active `organizationId` + `OrganizationMember` join; `tokenVersion`                                  |        No         |
-|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`                                                 |        No         |
-|  4  | `OrganizationRolePermission` | `organization_role_permission` | `organizationId` (Cascade), unique `[organizationId, role, permission]`                                       |        No         |
-|  5  | `InviteLink`                 | `invite_link`                  | `organizationId` (Cascade), `token` unique                                                                    |        No         |
-|  6  | `Job`                        | `job`                          | `organizationId` (Cascade), indexed `[organizationId, status]` & `[organizationId, deletedAt]`                | Yes (`deletedAt`) |
-|  7  | `Candidate`                  | `candidate`                    | `organizationId` (Cascade), unique `[organizationId, email]`                                                  | Yes (`deletedAt`) |
-|  8  | `Application`                | `application`                  | Inherits tenant via `jobId -> Job.organizationId` & `candidateId -> Candidate`; unique `[candidateId, jobId]` |        No         |
-|  9  | `Interview`                  | `interview`                    | Inherits tenant via `applicationId -> Application.job.organizationId`                                         |        No         |
-| 10  | `EmailTemplate`              | `email_template`               | `organizationId` (Cascade)                                                                                    |        No         |
-| 11  | `EmailFlowConfig`            | `email_flow_config`            | `organizationId` (Cascade), unique `[organizationId, flowKey]`                                                |        No         |
-| 12  | `EmailSetting`               | `email_setting`                | `organizationId` unique (Cascade); holds AES-256 encrypted secrets                                            |        No         |
-| 13  | `EmailLog`                   | `email_log`                    | `scope` (`SYSTEM` \| `ORGANIZATION`), optional `organizationId` (Cascade)                                     |        No         |
-| 14  | `ActivityLog`                | `activity_log`                 | `organizationId` (Cascade), `candidateId` (Cascade)                                                           |        No         |
-| 15  | `CandidateDocument`          | `candidate_document`           | `organizationId` (Cascade), `candidateId` (Cascade)                                                           |        No         |
-| 16  | `TrackingLink`               | `tracking_link`                | `organizationId` (Cascade), `token` unique                                                                    | Yes (`deletedAt`) |
-| 17  | `TrackingClick`              | `tracking_click`               | Inherits tenant via `trackingLinkId -> TrackingLink.organizationId`                                           |        No         |
-| 18  | `OrganizationWebhookSetting` | `organization_webhook_setting` | `organizationId` (Cascade), unique `[organizationId, eventType, provider]`                                    |        No         |
-| 19  | `OrganizationAuditLog`       | `organization_audit_log`       | `organizationId` (Cascade), `actorId` (`SetNull`)                                                             |        No         |
-| 20  | `PlatformAuditLog`           | `platform_audit_log`           | Platform-wide security/admin event table (`organizationId`, `actorId`, `action`, `resource`)                  |        No         |
-| 21  | `ApplicationNote`            | `application_note`             | `organizationId` (Cascade), `applicationId` (Cascade)                                                         |        No         |
-| 22  | `CandidateNote`              | `candidate_note`               | `organizationId` (Cascade), `candidateId` (Cascade)                                                           |        No         |
+|  #  | Model                        | Table (`@@map`)                | Tenant Isolation Column / Rule                                                                                 |    Soft Delete    |
+| :-: | :--------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------- | :---------------: |
+|  1  | `Organization`               | `organization`                 | Root entity (`id`, `slug` unique, `ownerId` `Restrict`)                                                        |        No         |
+|  2  | `User`                       | `user`                         | Optional active `organizationId` + `OrganizationMember` join; `tokenVersion`                                   |        No         |
+|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`                                                  |        No         |
+|  4  | `OrganizationRolePermission` | `organization_role_permission` | `organizationId` (Cascade), unique `[organizationId, role, permission]`                                        |        No         |
+|  5  | `InviteLink`                 | `invite_link`                  | `organizationId` (Cascade), `token` unique                                                                     |        No         |
+|  6  | `Job`                        | `job`                          | `organizationId` (Cascade), indexed `[organizationId, deletedAt, status, createdAt]`                           | Yes (`deletedAt`) |
+|  7  | `Candidate`                  | `candidate`                    | `organizationId` (Cascade), unique `[organizationId, email]`, indexed `[organizationId, deletedAt, createdAt]` | Yes (`deletedAt`) |
+|  8  | `Application`                | `application`                  | Direct `organizationId` (Cascade) + relational parent scoping; unique `[candidateId, jobId]`                   |        No         |
+|  9  | `Interview`                  | `interview`                    | Direct `organizationId` (Cascade) + `interviewerId` (`SetNull` -> `User`)                                      |        No         |
+| 10  | `EmailTemplate`              | `email_template`               | `organizationId` (Cascade)                                                                                     |        No         |
+| 11  | `EmailFlowConfig`            | `email_flow_config`            | `organizationId` (Cascade), unique `[organizationId, flowKey]`                                                 |        No         |
+| 12  | `EmailSetting`               | `email_setting`                | `organizationId` unique (Cascade); holds AES-256 encrypted secrets                                             |        No         |
+| 13  | `EmailLog`                   | `email_log`                    | `scope` (`SYSTEM` \| `ORGANIZATION`), optional `organizationId` (Cascade), `applicationId` (`SetNull`)         |        No         |
+| 14  | `ActivityLog`                | `activity_log`                 | `organizationId` (Cascade), `candidateId` (Cascade), `applicationId` (`SetNull`)                               |        No         |
+| 15  | `CandidateDocument`          | `candidate_document`           | `organizationId` (Cascade), `candidateId` (Cascade)                                                            |        No         |
+| 16  | `TrackingLink`               | `tracking_link`                | `organizationId` (Cascade), `token` unique                                                                     | Yes (`deletedAt`) |
+| 17  | `TrackingClick`              | `tracking_click`               | Direct `organizationId` (Cascade), indexed `[organizationId, createdAt]` & `[trackingLinkId, createdAt]`       |        No         |
+| 18  | `OrganizationWebhookSetting` | `organization_webhook_setting` | `organizationId` (Cascade), unique `[organizationId, eventType, provider]`                                     |        No         |
+| 19  | `OrganizationAuditLog`       | `organization_audit_log`       | `organizationId` (Cascade), `actorId` (`SetNull`)                                                              |        No         |
+| 20  | `PlatformAuditLog`           | `platform_audit_log`           | Platform-wide security/admin event table (`organizationId`, `actorId`, `action`, `resource`)                   |        No         |
+| 21  | `ApplicationNote`            | `application_note`             | `organizationId` (Cascade), `applicationId` (Cascade)                                                          |        No         |
+| 22  | `CandidateNote`              | `candidate_note`               | `organizationId` (Cascade), `candidateId` (Cascade)                                                            |        No         |
 
 ---
 
 ## 4. Schema Evolution & Critical Query Invariants
 
 - **PostgreSQL Datasource Configuration:** Since Prisma `7.10.1`, `datasource db` in `schema.prisma` omits inline `url`; database connections resolve from `apps/api/prisma.config.ts` (`env("DATABASE_URL")`) and `PrismaPg` at runtime.
-- **SQL & Legacy Migrations:** Historical SQL scripts and legacy Prisma artifacts live in `apps/api/migrations/` (not under `src/prisma/`). Schema changes apply via `pnpm db:update` (`prisma db push`) + `pnpm db:generate`.
+- **Schema Synchronization:** Schema changes apply via `pnpm db:update` (`prisma db push`) + `pnpm db:generate` from `apps/api/src/prisma/schema.prisma`.
 - **Unique Email + Soft Delete:** Because `Candidate` uses `@@unique([organizationId, email])` across all rows, re-application by email checks `deletedAt` and clears `deletedAt: null` inside the transaction rather than attempting a conflicting insert.
-- **No Parent Filter Omission:** Models in `MODELS_WITHOUT_ORG_COLUMN` (`Interview`, `Application`, `TrackingClick`, `Organization`) MUST always enforce relational tenant checks in service queries (`job: { organizationId: targetOrgId }` or parent ownership verification).
+- **Strict Tenant Column Isolation:** `21` of `22` models carry `organizationId` directly (including `Application`, `Interview`, and `TrackingClick`), leaving only root `Organization` in `MODELS_WITHOUT_ORG_COLUMN`; service queries enforce direct `organizationId` filters/selects alongside parent ownership guards.

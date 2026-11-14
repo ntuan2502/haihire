@@ -79,6 +79,9 @@ export class ApplicationsStageService {
       where: {
         id,
         stage: oldStage,
+        ...(tenantOrgId && existing.organizationId
+          ? { organizationId: tenantOrgId }
+          : {}),
       },
       data: {
         stage: dto.stage,

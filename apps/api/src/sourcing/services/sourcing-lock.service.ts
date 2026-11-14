@@ -172,6 +172,7 @@ export class SourcingLockService {
           await tx.trackingClick.create({
             data: {
               id: crypto.randomUUID(),
+              organizationId: link.organizationId,
               trackingLinkId: link.id,
               referrer: referrer || null,
               referrerDomain: domain,

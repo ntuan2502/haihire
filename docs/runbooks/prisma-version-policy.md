@@ -8,13 +8,13 @@
 
 HaiHire standardizes on **Prisma `7.10.1` (Stable GA)** with the driver-adapter architecture:
 
-| Component             | Baseline                                                   | Authoritative File                                                                   |
-| :-------------------- | :--------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| **ORM & CLI**         | `prisma` & `@prisma/client` pinned in lockstep (`7.10.1`)  | [apps/api/package.json](../../apps/api/package.json)                                 |
-| **Driver Adapter**    | `@prisma/adapter-pg` + `pg.Pool`                           | [apps/api/src/prisma/prisma.service.ts](../../apps/api/src/prisma/prisma.service.ts) |
-| **Prisma CLI Config** | Explicit `prisma.config.ts` schema entry                   | [apps/api/prisma.config.ts](../../apps/api/prisma.config.ts)                         |
-| **Schema Definition** | `22` models, `18` enums (`PostgreSQL 17.6`)                | [apps/api/src/prisma/schema.prisma](../../apps/api/src/prisma/schema.prisma)         |
-| **Migration History** | Legacy migration files stored under `apps/api/migrations/` | [apps/api/migrations/](../../apps/api/migrations/)                                   |
+| Component              | Baseline                                                   | Authoritative File                                                                   |
+| :--------------------- | :--------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| **ORM & CLI**          | `prisma` & `@prisma/client` pinned in lockstep (`7.10.1`)  | [apps/api/package.json](../../apps/api/package.json)                                 |
+| **Driver Adapter**     | `@prisma/adapter-pg` + `pg.Pool`                           | [apps/api/src/prisma/prisma.service.ts](../../apps/api/src/prisma/prisma.service.ts) |
+| **Prisma CLI Config**  | Explicit `prisma.config.ts` schema entry                   | [apps/api/prisma.config.ts](../../apps/api/prisma.config.ts)                         |
+| **Schema Definition**  | `22` models, `18` enums (`PostgreSQL 17.6`)                | [apps/api/src/prisma/schema.prisma](../../apps/api/src/prisma/schema.prisma)         |
+| **Schema Push & Sync** | Applied via `pnpm db:update` (`prisma db push`) & generate | [apps/api/src/prisma/schema.prisma](../../apps/api/src/prisma/schema.prisma)         |
 
 > [!IMPORTANT]
 > Never install a mismatched version between `prisma` and `@prisma/client`. Both packages must advance together with verified client regeneration and container build tests.

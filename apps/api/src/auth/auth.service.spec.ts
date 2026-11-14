@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthService } from "./auth.service";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 
 describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;
@@ -13,7 +13,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   };
 
   const validPassword = DEMO_PASSWORD;
-  const hashedPassword = bcrypt.hashSync(validPassword, 10);
+  const hashedPassword = bcrypt.hashSync(validPassword, BCRYPT_SALT_ROUNDS);
 
   let mockUsers: Array<{
     id: string;

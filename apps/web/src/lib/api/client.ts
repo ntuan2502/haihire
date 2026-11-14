@@ -218,7 +218,7 @@ function clearClientAuthCookies() {
     typeof window !== "undefined" && window.location.protocol === "https:"
       ? "; Secure"
       : "";
-  document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax${secure}`;
+  // Note: haihire_token is an HttpOnly cookie cleared by the backend /auth/logout endpoint.
   document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
 
@@ -233,7 +233,6 @@ function hasClientSessionState(): boolean {
   }
   return Boolean(
     document.cookie.includes("haihire_has_org=") ||
-    document.cookie.includes("haihire_token=") ||
     localStorage.getItem("haihire_recruiter_token") ||
     localStorage.getItem("haihire_recruiter_user"),
   );
@@ -358,7 +357,6 @@ api.interceptors.response.use(
 
         const maxAge = 60 * 60 * 24 * 7;
         const secure = window.location.protocol === "https:" ? "; Secure" : "";
-        document.cookie = `haihire_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
         if (typeof refreshRes.data.hasOrg === "boolean") {
           document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
         }

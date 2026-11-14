@@ -282,7 +282,7 @@ export function formatReport(result: TenantScopingAuditResult): string {
       `  • ${result.explicitFilterCount} queries have explicit organizationId/targetOrgId filter`,
     );
     lines.push(
-      `  • 4 models whitelisted (no org column in schema): Interview, Application, TrackingClick, Organization (${result.modelWhitelistCount} queries)`,
+      `  • 1 model whitelisted (no org column in schema): Organization (${result.modelWhitelistCount} queries)`,
     );
     lines.push(
       `  • ${result.parentGuardCount} queries verified via parent object guard`,

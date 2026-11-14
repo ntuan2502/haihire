@@ -45,9 +45,9 @@ describe("Tenant Scoping Static Analysis Gate (check-tenant-scoping)", () => {
 @Injectable()
 export class SampleService {
   async findJobs(organizationId: string) {
-    return this.prisma.db.orm.public.Job
-      .where((j) => j.organizationId.eq(organizationId))
-      .all();
+    return this.prisma.job.findMany({
+      where: { organizationId },
+    });
   }
 }
 `;
@@ -69,7 +69,7 @@ export class SampleService {
 @Injectable()
 export class UnsafeService {
   async getUnscopedCandidates() {
-    return this.prisma.db.orm.public.Candidate.all();
+    return this.prisma.candidate.findMany();
   }
 }
 `;
@@ -81,20 +81,20 @@ export class UnsafeService {
     expect(result.safeQueries).toBe(0);
     expect(result.unsafeQueries).toBe(1);
     expect(result.violations).toHaveLength(1);
-    expect(result.violations[0].model).toBe("Candidate");
+    expect(result.violations[0].model).toBe("candidate");
     expect(result.violations[0].reason).toContain("No organizationId filter");
   });
 
-  // Test Case 4: Whitelist model (Interview, Application) query -> SAFE even without organizationId
-  it("Test 4: whitelist model (Interview) query -> SAFE even without organizationId", () => {
-    const testFile = path.join(tempDir, "interview.service.ts");
+  // Test Case 4: Whitelist model (Organization) query -> SAFE even without organizationId column
+  it("Test 4: whitelist model (Organization) query -> SAFE even without organizationId", () => {
+    const testFile = path.join(tempDir, "organization.service.ts");
     const code = `
 @Injectable()
-export class InterviewService {
-  async getInterviewsByApp(applicationId: string) {
-    return this.prisma.db.orm.public.Interview
-      .where((i) => i.applicationId.eq(applicationId))
-      .all();
+export class OrganizationService {
+  async getOrgById(orgId: string) {
+    return this.prisma.organization.findFirst({
+      where: { id: orgId },
+    });
   }
 }
 `;
@@ -131,7 +131,7 @@ export class GuardedService {
     if (existing.organizationId !== tenantOrgId) {
       throw new AppForbiddenException("Denied");
     }
-    return tx.orm.public.Candidate.where((c) => c.id.eq(id)).update({ status: "ACTIVE" });
+    return this.prisma.candidate.update({ where: { id }, data: { firstName: "Active" } });
   }
 }
 `;
@@ -181,7 +181,7 @@ export class GuardedService {
           file: "apps/api/src/candidates/candidates.service.ts",
           line: 42,
           model: "Candidate",
-          snippet: "Candidate.all()",
+          snippet: "Candidate.findMany()",
           reason: "No organizationId filter and parent not verified.",
         },
       ],
@@ -200,7 +200,7 @@ export class GuardedService {
 @Injectable()
 export class MultiViolationService {
   async dangerousDelete(id: string) {
-    await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).delete();
+    await this.prisma.job.delete({ where: { id } });
   }
 }
 `;
@@ -209,7 +209,7 @@ export class MultiViolationService {
     const result = checkTenantScoping({ files: [testFile] });
     expect(result.compliant).toBe(false);
     expect(result.unsafeQueries).toBe(1);
-    expect(result.violations[0].model).toBe("Job");
+    expect(result.violations[0].model).toBe("job");
     expect(result.violations[0].line).toBe(5);
   });
 
@@ -220,7 +220,7 @@ export class MultiViolationService {
 @Injectable()
 export class PublicJobsService {
   async findBySlug(slug: string) {
-    return this.prisma.db.orm.public.Job.where((j) => j.slug.eq(slug)).first();
+    return this.prisma.job.findFirst({ where: { id: slug } });
   }
 }
 `;

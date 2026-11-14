@@ -138,7 +138,7 @@ export class SourcingLinksService {
             where: {
               trackingLinkId: { in: scopedLinkIds },
             },
-            select: { trackingLinkId: true },
+            select: { trackingLinkId: true, organizationId: true },
           })
         : [];
     const appCountMap = new Map<string, number>();

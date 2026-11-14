@@ -160,6 +160,9 @@ model Organization {
   users            User[]                       @relation("OrganizationUsers")
   jobs             Job[]
   candidates       Candidate[]
+  applications     Application[]
+  interviews       Interview[]
+  trackingClicks   TrackingClick[]
   inviteLinks      InviteLink[]
   members          OrganizationMember[]
   emailTemplates   EmailTemplate[]
@@ -193,11 +196,12 @@ model User {
   role               Role                   @default(MEMBER)
   tokenVersion       Int                    @default(0)
   organizationId     String?
-  organization       Organization?          @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  organization       Organization?          @relation("OrganizationUsers", fields: [organizationId], references: [id], onDelete: SetNull)
   ownedOrganizations Organization[]         @relation("OrganizationOwner")
   jobs               Job[]
   inviteLinks        InviteLink[]
   trackingLinks      TrackingLink[]
+  assignedInterviews Interview[]            @relation("InterviewAssignee")
   memberships        OrganizationMember[]
   auditLogs          OrganizationAuditLog[]
   createdAt          DateTime               @default(now())
@@ -212,13 +216,13 @@ model OrganizationMember {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           Role         @default(MEMBER)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, userId])
-  @@index([organizationId, userId])
+  @@index([userId])
   @@map("organization_member")
 }
 
@@ -248,10 +252,11 @@ model InviteLink {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String?
-  createdBy      User?        @relation(fields: [createdById], references: [id])
+  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@index([organizationId, status])
   @@map("invite_link")
 }
 
@@ -269,7 +274,7 @@ model Job {
   salaryRange     String?
   status          JobStatus        @default(PUBLISHED)
   createdById     String?
-  createdBy       User?            @relation(fields: [createdById], references: [id])
+  createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   organizationId  String
   organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
@@ -278,8 +283,7 @@ model Job {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  @@index([organizationId, status])
-  @@index([organizationId, deletedAt])
+  @@index([organizationId, deletedAt, status, createdAt])
   @@map("job")
 }
 
@@ -308,13 +312,14 @@ model Candidate {
   updatedAt      DateTime            @updatedAt
 
   @@unique([organizationId, email])
-  @@index([organizationId, createdAt])
-  @@index([organizationId, deletedAt])
+  @@index([organizationId, deletedAt, createdAt])
   @@map("candidate")
 }
 
 model Application {
   id               String            @id @default(uuid())
+  organizationId   String?
+  organization     Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidateId      String
   candidate        Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobId            String
@@ -346,6 +351,8 @@ model Application {
   updatedAt        DateTime          @updatedAt
 
   @@unique([candidateId, jobId])
+  @@index([organizationId, stage])
+  @@index([organizationId, createdAt])
   @@index([jobId, stage])
   @@index([candidateId])
   @@index([trackingLinkId])
@@ -353,21 +360,27 @@ model Application {
 }
 
 model Interview {
-  id             String          @id @default(uuid())
-  applicationId  String
-  application    Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  scheduledAt    DateTime
-  type           InterviewType   @default(TECHNICAL)
-  format         InterviewFormat @default(MEET)
-  linkOrLocation String
-  interviewer    String
-  round          Int             @default(1)
-  scorecard      String?
-  notes          String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id              String          @id @default(uuid())
+  organizationId  String?
+  organization    Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId   String
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime
+  type            InterviewType   @default(TECHNICAL)
+  format          InterviewFormat @default(MEET)
+  linkOrLocation  String
+  interviewer     String
+  interviewerId   String?
+  interviewerUser User?           @relation("InterviewAssignee", fields: [interviewerId], references: [id], onDelete: SetNull)
+  round           Int             @default(1)
+  scorecard       String?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([applicationId])
+  @@index([organizationId, scheduledAt])
+  @@index([interviewerId])
   @@map("interview")
 }
 
@@ -434,7 +447,7 @@ model EmailLog {
   candidateId    String?
   candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
-  application    Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application    Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   templateId     String?
   template       EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateName   String?
@@ -465,7 +478,7 @@ model ActivityLog {
   candidateId    String
   candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
-  application    Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   type           ActivityType
   title          String
   description    String
@@ -528,20 +541,22 @@ model TrackingLink {
   updatedAt      DateTime        @updatedAt
 
   @@index([organizationId, isActive])
-  @@index([token])
   @@map("tracking_link")
 }
 
 model TrackingClick {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   trackingLinkId String
-  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
   referrer       String?
   referrerDomain String?
   ipHash         String?
   userAgent      String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime      @default(now())
 
+  @@index([organizationId, createdAt])
   @@index([trackingLinkId, createdAt])
   @@index([referrerDomain])
   @@map("tracking_click")

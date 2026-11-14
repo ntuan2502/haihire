@@ -468,6 +468,18 @@ export class InterviewsQueryService {
       );
     }
 
+    if (
+      tenantOrgId &&
+      intv.organizationId &&
+      intv.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
+        "Access denied: interview belongs to another organization.",
+        { id, organizationId: intv.organizationId },
+      );
+    }
+
     const app = await this.prisma.application.findFirst({
       where: { id: intv.applicationId },
     });

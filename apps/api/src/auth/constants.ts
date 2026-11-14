@@ -1,3 +1,5 @@
+export const BCRYPT_SALT_ROUNDS = process.env.NODE_ENV === "test" ? 4 : 10;
+
 export const DEMO_SEED_PASSWORD =
   process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
   process.env.DEMO_SEED_PASSWORD ||

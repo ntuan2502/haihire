@@ -1,14 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
-import crypto from "node:crypto";
-import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
-import { toInstant } from "../common/date.util";
+import { DEMO_ACCOUNTS } from "../auth/constants";
 import { backendEnv } from "../config/env";
+import { ensureDefaultDemoAccounts } from "./demo-seed.util";
 
 const connectionString = backendEnv.DATABASE_URL;
 
@@ -81,79 +79,7 @@ export class PrismaService
           select: { id: true },
         });
         if (!existingUser) {
-          const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
-          const adminUserId = crypto.randomUUID();
-          const adminOrgId = crypto.randomUUID();
-          const memberUserId = crypto.randomUUID();
-
-          const adminUser = await this.user.upsert({
-            where: { email: DEMO_ACCOUNTS.ADMIN.email },
-            create: {
-              id: adminUserId,
-              email: DEMO_ACCOUNTS.ADMIN.email,
-              firstName: DEMO_ACCOUNTS.ADMIN.firstName,
-              lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-              password: hashedPassword,
-              role: "ADMIN",
-              organizationId: null,
-              updatedAt: toInstant(),
-            },
-            update: {
-              email: DEMO_ACCOUNTS.ADMIN.email,
-              firstName: DEMO_ACCOUNTS.ADMIN.firstName,
-              lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-              password: hashedPassword,
-              role: "ADMIN",
-              updatedAt: toInstant(),
-            },
-            select: { id: true },
-          });
-
-          await this.organization.upsert({
-            where: { id: adminOrgId },
-            create: {
-              id: adminOrgId,
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUser.id,
-              updatedAt: toInstant(),
-            },
-            update: {
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUser.id,
-              updatedAt: toInstant(),
-            },
-          });
-
-          await this.user.update({
-            where: { id: adminUser.id },
-            data: {
-              organizationId: adminOrgId,
-              updatedAt: toInstant(),
-            },
-          });
-
-          await this.user.upsert({
-            where: { email: DEMO_ACCOUNTS.MEMBER.email },
-            create: {
-              id: memberUserId,
-              email: DEMO_ACCOUNTS.MEMBER.email,
-              firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-              lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-              password: hashedPassword,
-              role: "MEMBER",
-              updatedAt: toInstant(),
-            },
-            update: {
-              email: DEMO_ACCOUNTS.MEMBER.email,
-              firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-              lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-              password: hashedPassword,
-              role: "MEMBER",
-              updatedAt: toInstant(),
-            },
-          });
+          await ensureDefaultDemoAccounts(this);
           console.log(
             `Initialized default demo accounts: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - Org Admin), ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER - No Org)`,
           );

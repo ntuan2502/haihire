@@ -382,6 +382,7 @@ export class ApplicationsSagaService {
         const savedApp = await tx.application.create({
           data: {
             id: crypto.randomUUID(),
+            organizationId: orgId,
             candidateId: candidateId as string,
             jobId: dto.jobId,
             stage: "APPLIED",

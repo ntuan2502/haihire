@@ -459,6 +459,18 @@ export class ApplicationsQueryService {
       );
     }
 
+    if (
+      tenantOrgId &&
+      app.organizationId &&
+      app.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { id, organizationId: app.organizationId },
+      );
+    }
+
     const [job, candidate] = await Promise.all([
       this.prisma.job.findFirst({
         where: { id: app.jobId, deletedAt: null },
@@ -599,9 +611,21 @@ export class ApplicationsQueryService {
 
   async remove(id: string, tenantOrgId?: string | null) {
     const existing = await this.findOne(id, tenantOrgId);
+    if (
+      tenantOrgId &&
+      existing.organizationId &&
+      existing.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { id, organizationId: existing.organizationId },
+      );
+    }
     const orgId =
       existing.job?.organizationId ||
       existing.candidate?.organizationId ||
+      existing.organizationId ||
       tenantOrgId;
 
     if (orgId && existing.candidate) {
@@ -638,7 +662,12 @@ export class ApplicationsQueryService {
     await runInTransaction(this.prisma, async (tx) => {
       try {
         await tx.interview.deleteMany({
-          where: { applicationId: id },
+          where: {
+            applicationId: id,
+            ...(orgId && existing.organizationId
+              ? { organizationId: orgId }
+              : {}),
+          },
         });
       } catch {
         // Cascade handles if schema level onDelete: Cascade is configured

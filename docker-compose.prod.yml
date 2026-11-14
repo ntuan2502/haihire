@@ -153,6 +153,7 @@ services:
       REDIS_PORT: 6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
+      PUSHGATEWAY_URL: ${PUSHGATEWAY_URL:-http://pushgateway:9091}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:
@@ -219,48 +220,7 @@ services:
       - haihire-prod-network
 
   # ------------------------------------------------------------------------------
-  # 6. MinIO Orphan File Cleanup Cron Service (Runs daily at 04:00 AM)
-  # ------------------------------------------------------------------------------
-  orphan-cleanup:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
-    container_name: haihire-prod-orphan-cleanup
-    restart: unless-stopped
-    user: root
-    env_file:
-      - path: ./.env
-        required: false
-      - path: ./.env.production
-        required: false
-    command: >
-      /bin/sh -c "
-        echo '0 4 * * * cd /app && node --no-warnings --experimental-strip-types scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root &&
-        crond -f -l 2
-      "
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      PUSHGATEWAY_URL: ${PUSHGATEWAY_URL:-http://pushgateway:9091}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - haihire-prod-network
-    logging: *prod-logging
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-
-  # ------------------------------------------------------------------------------
-  # 7. Prometheus Pushgateway Service (Metrics for Batch & Cron Jobs)
+  # 6. Prometheus Pushgateway Service (Metrics for Batch & Cron Jobs)
   # ------------------------------------------------------------------------------
   pushgateway:
     image: prom/pushgateway:v1.10.0

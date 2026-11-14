@@ -24,6 +24,7 @@ export class SourcingQueryService {
     return this.prisma.application.findMany({
       where: { jobId: { in: jobIds } },
       select: {
+        organizationId: true,
         id: true,
         jobId: true,
         candidateId: true,
@@ -122,6 +123,7 @@ export class SourcingQueryService {
     return this.prisma.trackingClick.findMany({
       where: { trackingLinkId: { in: linkIds } },
       select: {
+        organizationId: true,
         referrerDomain: true,
         createdAt: true,
       },
@@ -132,6 +134,7 @@ export class SourcingQueryService {
     return this.prisma.trackingClick.findMany({
       where: { trackingLinkId: linkId },
       select: {
+        organizationId: true,
         id: true,
         referrerDomain: true,
         createdAt: true,
@@ -143,6 +146,7 @@ export class SourcingQueryService {
     return this.prisma.application.findMany({
       where: { trackingLinkId: linkId },
       select: {
+        organizationId: true,
         id: true,
         candidateId: true,
         jobId: true,

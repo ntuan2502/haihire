@@ -902,6 +902,7 @@ export async function runSeed(): Promise<void> {
   await prisma.application.upsert({
     create: {
       id: betaAppId,
+      organizationId: betaOrgId,
       jobId: betaJobId,
       candidateId: betaCandidateId,
       stage: "SCREENING",
@@ -1564,6 +1565,7 @@ export async function runSeed(): Promise<void> {
 
   const clicksToInsert: Array<{
     id: string;
+    organizationId: string;
     trackingLinkId: string;
     referrer: string | null;
     referrerDomain: string | null;
@@ -1634,6 +1636,7 @@ export async function runSeed(): Promise<void> {
 
         clicksToInsert.push({
           id: crypto.randomUUID(),
+          organizationId: adminOrgId,
           trackingLinkId: linkId,
           referrer: `https://${domain}/jobs/feed?ref=${item.token}`,
           referrerDomain: domain,
@@ -1725,6 +1728,7 @@ export async function runSeed(): Promise<void> {
 
   const applicationsToInsert: Array<{
     id: string;
+    organizationId: string;
     candidateId: string;
     jobId: string;
     stage: (typeof STAGES)[number];
@@ -1775,6 +1779,7 @@ export async function runSeed(): Promise<void> {
 
   const interviewsToInsert: Array<{
     id: string;
+    organizationId: string;
     applicationId: string;
     scheduledAt: Date;
     type:
@@ -1967,6 +1972,7 @@ export async function runSeed(): Promise<void> {
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
+                organizationId: adminOrgId,
                 applicationId: appId,
                 scheduledAt: intv.scheduledAt,
                 type: intv.type,
@@ -1994,6 +2000,7 @@ export async function runSeed(): Promise<void> {
             );
             interviewsToInsert.push({
               id: crypto.randomUUID(),
+              organizationId: adminOrgId,
               applicationId: appId,
               scheduledAt: intv.scheduledAt,
               type: intv.type,
@@ -2028,6 +2035,7 @@ export async function runSeed(): Promise<void> {
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
+                organizationId: adminOrgId,
                 applicationId: appId,
                 scheduledAt: intv.scheduledAt,
                 type: intv.type,
@@ -2098,6 +2106,7 @@ export async function runSeed(): Promise<void> {
 
         applicationsToInsert.push({
           id: appId,
+          organizationId: adminOrgId,
           candidateId,
           jobId,
           stage,
@@ -2206,6 +2215,7 @@ export async function runSeed(): Promise<void> {
   const kanbanAppId = "00000000-0000-4000-8000-000000000301";
   applicationsToInsert.push({
     id: kanbanAppId,
+    organizationId: adminOrgId,
     candidateId: kanbanCandidateId,
     jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
     stage: "APPLIED",
@@ -2245,6 +2255,7 @@ export async function runSeed(): Promise<void> {
   const testAppId = "00000000-0000-4000-8000-000000000302";
   applicationsToInsert.push({
     id: testAppId,
+    organizationId: adminOrgId,
     candidateId: testCandidateId,
     jobId: createdJobIds[1],
     stage: "SCREENING",

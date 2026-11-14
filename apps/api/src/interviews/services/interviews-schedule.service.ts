@@ -60,12 +60,31 @@ export class InterviewsScheduleService {
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
     const app = await this.prisma.application.findFirst({
       where: { id: dto.applicationId },
+      select: {
+        id: true,
+        organizationId: true,
+        candidateId: true,
+        jobId: true,
+        stage: true,
+      },
     });
     if (!app) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND,
         `Application with ID ${dto.applicationId} not found`,
         { applicationId: dto.applicationId, id: dto.applicationId },
+      );
+    }
+
+    if (
+      organizationId &&
+      app.organizationId &&
+      app.organizationId !== organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { applicationId: dto.applicationId, organizationId },
       );
     }
 
@@ -113,6 +132,7 @@ export class InterviewsScheduleService {
     await this.prisma.interview.create({
       data: {
         id,
+        organizationId: orgId || app.organizationId || organizationId || null,
         applicationId: dto.applicationId,
         scheduledAt: scheduledInstant,
         type: dto.type as InterviewType,

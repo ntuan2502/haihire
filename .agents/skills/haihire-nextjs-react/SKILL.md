@@ -18,7 +18,7 @@ Stack baselines verified in `apps/web/package.json` and `apps/web/components.jso
 
 Per Next.js 16 official documentation and `scripts/check-nextjs-conventions.ts` (`pnpm lint:nextjs-conventions`):
 - **Never create `middleware.ts` or `src/middleware.ts`.** Next.js 16 replaces `middleware` with `src/proxy.ts` exporting `export async function proxy(request: NextRequest)`.
-- Keep `middleware.ts` absent so CI Gate 15 and standalone tracing (`ƒ Proxy`) succeed without conflict errors.
+- Keep `middleware.ts` absent so CI Gate 14 and standalone tracing (`ƒ Proxy`) succeed without conflict errors.
 - `apps/web/next.config.ts` sets `output: "standalone"`, `outputFileTracingRoot: repoRoot`, dynamic LAN `allowedDevOrigins`, and rewrites `/api/*` -> backend (`BACKEND_HOST`:`BACKEND_PORT` or `INTERNAL_API_URL`) and `/haihire-resumes/*` -> MinIO.
 - Server vs. Client boundary in `apps/web/src/app/`:
   - Only **4 server files** exist (`layout.tsx`, `icon.tsx`, `careers/[orgSlug]/page.tsx`, `careers/[orgSlug]/[jobSlug]/page.tsx`).

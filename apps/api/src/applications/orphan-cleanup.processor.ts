@@ -5,9 +5,17 @@ import {
   InjectQueue,
 } from "@nestjs/bullmq";
 import { Job, Queue } from "bullmq";
-import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  Optional,
+  type OnModuleInit,
+} from "@nestjs/common";
 import { MinioService } from "../minio/minio.service";
 import { WebhookNotifierService } from "../common/webhook/webhook-notifier.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { cleanupOrphans } from "../common/orphan-cleanup";
 
 export interface OrphanCleanupJobData {
   objectName: string;
@@ -19,10 +27,11 @@ export interface OrphanCleanupJobData {
 
 export const ORPHAN_CLEANUP_QUEUE = "orphan-cleanup-queue";
 export const ORPHAN_CLEANUP_DLQ = "orphan-cleanup-dlq";
+export const SCHEDULED_ORPHAN_SWEEP_JOB = "scheduled-orphan-sweep";
 
 @Processor(ORPHAN_CLEANUP_QUEUE)
 @Injectable()
-export class OrphanCleanupProcessor extends WorkerHost {
+export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
   private readonly logger = new Logger(OrphanCleanupProcessor.name);
 
   constructor(
@@ -33,13 +42,77 @@ export class OrphanCleanupProcessor extends WorkerHost {
     @Optional()
     @Inject(WebhookNotifierService)
     private readonly webhookNotifier?: WebhookNotifierService,
+    @Optional()
+    @InjectQueue(ORPHAN_CLEANUP_QUEUE)
+    private readonly orphanQueue?: Queue<OrphanCleanupJobData>,
+    @Optional()
+    @Inject(PrismaService)
+    private readonly prisma?: PrismaService,
   ) {
     super();
+  }
+
+  async onModuleInit(): Promise<void> {
+    if (
+      process.env.NODE_ENV === "test" ||
+      !this.orphanQueue ||
+      typeof this.orphanQueue.upsertJobScheduler !== "function"
+    ) {
+      return;
+    }
+
+    try {
+      await this.orphanQueue.upsertJobScheduler(
+        "daily-minio-orphan-sweep",
+        { pattern: "0 4 * * *" },
+        {
+          name: SCHEDULED_ORPHAN_SWEEP_JOB,
+          data: {
+            objectName: "__scheduled_sweep__",
+            reason: "Daily scheduled MinIO orphan cleanup",
+          },
+          opts: {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 5000 },
+            removeOnComplete: 100,
+            removeOnFail: 500,
+          },
+        },
+      );
+      this.logger.log(
+        "[OrphanCleanup] Registered BullMQ scheduler 'daily-minio-orphan-sweep' (0 4 * * *)",
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `[OrphanCleanup] Skipped registering BullMQ job scheduler: ${msg}`,
+      );
+    }
   }
 
   async process(
     job: Job<OrphanCleanupJobData>,
   ): Promise<{ success: boolean; objectName: string }> {
+    if (
+      job.name === SCHEDULED_ORPHAN_SWEEP_JOB ||
+      job.data?.objectName === "__scheduled_sweep__"
+    ) {
+      this.logger.log(
+        "[OrphanCleanup] Running scheduled MinIO orphan cleanup sweep...",
+      );
+      const report = await cleanupOrphans({
+        dbClient: this.prisma,
+        dryRun: false,
+      });
+      this.logger.log(
+        `[OrphanCleanup] Scheduled sweep complete: scanned=${report.scannedCount}, orphans=${report.orphanCount}, deleted=${report.deletedCount}, preserved=${report.preservedGraceCount}`,
+      );
+      return {
+        success: true,
+        objectName: job.data?.objectName || "__scheduled_sweep__",
+      };
+    }
+
     const { objectName } = job.data;
     this.logger.log(
       `[OrphanCleanup] Processing deletion of orphan file: ${objectName} (Attempt: ${job.attemptsMade + 1}/${job.opts.attempts || 5})`,

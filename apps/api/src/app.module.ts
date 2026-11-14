@@ -1,5 +1,6 @@
 import {
   Module,
+  ValidationPipe,
   type MiddlewareConsumer,
   type NestModule,
 } from "@nestjs/common";
@@ -7,6 +8,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import path from "node:path";
 import { BullModule } from "@nestjs/bullmq";
 import { CorrelationIdMiddleware } from "./common/middleware/correlation-id.middleware";
+import { validationExceptionFactory } from "./common/dto-validation.pipe";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
@@ -22,7 +24,7 @@ import { EmailModule } from "./email/email.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD, Reflector } from "@nestjs/core";
+import { APP_GUARD, APP_PIPE, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RedisModule } from "./redis/redis.module";
 
@@ -88,6 +90,14 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        exceptionFactory: validationExceptionFactory,
+      }),
     },
   ],
   exports: [MetricsModule],

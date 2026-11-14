@@ -421,4 +421,24 @@ describe("InterviewsService", () => {
       expect(result.notes).toBeNull();
     });
   });
+
+  describe("cross-tenant isolation on findAll filters", () => {
+    it("should return empty results when filtering by another organization's applicationId", async () => {
+      const list = await service.findAll({
+        applicationId: "app-1",
+        tenantOrgId: "org-2",
+      });
+      expect(list.data).toHaveLength(0);
+      expect(list.total).toBe(0);
+    });
+
+    it("should return empty results when filtering by another organization's jobId", async () => {
+      const list = await service.findAll({
+        jobId: "job-1",
+        tenantOrgId: "org-2",
+      });
+      expect(list.data).toHaveLength(0);
+      expect(list.total).toBe(0);
+    });
+  });
 });

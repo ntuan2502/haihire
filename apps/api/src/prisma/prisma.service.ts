@@ -86,24 +86,7 @@ export class PrismaService
           const adminOrgId = crypto.randomUUID();
           const memberUserId = crypto.randomUUID();
 
-          await this.organization.upsert({
-            where: { id: adminOrgId },
-            create: {
-              id: adminOrgId,
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUserId,
-              updatedAt: toInstant(),
-            },
-            update: {
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUserId,
-              updatedAt: toInstant(),
-            },
-          });
-
-          await this.user.upsert({
+          const adminUser = await this.user.upsert({
             where: { email: DEMO_ACCOUNTS.ADMIN.email },
             create: {
               id: adminUserId,
@@ -112,7 +95,7 @@ export class PrismaService
               lastName: DEMO_ACCOUNTS.ADMIN.lastName,
               password: hashedPassword,
               role: "ADMIN",
-              organizationId: adminOrgId,
+              organizationId: null,
               updatedAt: toInstant(),
             },
             update: {
@@ -121,6 +104,31 @@ export class PrismaService
               lastName: DEMO_ACCOUNTS.ADMIN.lastName,
               password: hashedPassword,
               role: "ADMIN",
+              updatedAt: toInstant(),
+            },
+            select: { id: true },
+          });
+
+          await this.organization.upsert({
+            where: { id: adminOrgId },
+            create: {
+              id: adminOrgId,
+              name: "Admin",
+              slug: "admin",
+              ownerId: adminUser.id,
+              updatedAt: toInstant(),
+            },
+            update: {
+              name: "Admin",
+              slug: "admin",
+              ownerId: adminUser.id,
+              updatedAt: toInstant(),
+            },
+          });
+
+          await this.user.update({
+            where: { id: adminUser.id },
+            data: {
               organizationId: adminOrgId,
               updatedAt: toInstant(),
             },

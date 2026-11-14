@@ -320,6 +320,19 @@ export class SourcingLinksService {
       );
     }
 
+    if (dto.jobId) {
+      const job = await this.prisma.job.findFirst({
+        where: { id: dto.jobId, organizationId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!job) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.JOB_NOT_FOUND,
+          "Job not found",
+        );
+      }
+    }
+
     const updateData: Record<string, unknown> = {
       updatedAt: toInstant(),
     };

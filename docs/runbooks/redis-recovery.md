@@ -1,107 +1,110 @@
-# Runbook: Valkey / Redis Recovery & Queue Restoration
+# Redis (Valkey) Recovery Runbook
 
-**System:** HaiHire Enterprise ATS  
-**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)  
-**Alert Rules:** `HaiHireRedisDown` (Critical), `HaiHireBullMqRedisDown` (Critical)  
-**Responsible Teams:** SRE & Infrastructure Engineering (`team: sre`)
+> Triage and disaster recovery procedures for HaiHire's Valkey 8.0.2 instance backing BullMQ queues and real-time SSE pub/sub.
 
 ---
 
-## Alert Triggers & Conditions
+## 1. Configuration Baseline
 
-- **`HaiHireBullMqRedisDown` (Critical):**
-  > Metric `bullmq_queue_depth` returns `-1` continuously for $> 2$ minutes.  
-  > `MetricsService` failed to query queue status from Redis within the 2.5s timeout.  
-  > All asynchronous workers (Orphan Cleanup, Email Queue) are halted.
-- **`HaiHireRedisDown` (Critical):**
-  > Health check endpoint reports Redis ping connection timeout $> 30$s.
+Production runs **Valkey `8.0.2-alpine`** (`redis` service, container `haihire-prod-redis`) configured in [docker-compose.prod.yml](../../docker-compose.prod.yml):
 
----
+| Parameter           | Value                                                       | Why                                                       |
+| :------------------ | :---------------------------------------------------------- | :-------------------------------------------------------- |
+| **Image**           | `valkey/valkey:8.0.2-alpine`                                | Redis-compatible in-memory store for BullMQ + SSE         |
+| **Max Memory**      | `--maxmemory 384mb` (container limit `512M`)                | Leaves OS/overhead headroom inside container              |
+| **Eviction Policy** | `--maxmemory-policy noeviction`                             | Prevents silent dropping of BullMQ delayed/retry/DLQ keys |
+| **Persistence**     | `--appendonly yes --appendfsync everysec`                   | Caps AOF data loss on crash to at most ~1 second          |
+| **Volume**          | `redis_data` (`haihire_prod_redis_data` mounted at `/data`) | Persists AOF across container restarts                    |
+| **Auth**            | `REDIS_PASSWORD` (optional env var passed via `ARGS`)       | Authenticated `redis-cli` healthcheck & BullMQ/API access |
 
-## Step 1: Verify Incident
+Triggers from [monitoring/prometheus/alert-rules.yml](../../monitoring/prometheus/alert-rules.yml):
 
-1. **Verify Valkey / Redis Container Status:**
-
-   ```bash
-   # Production
-   docker compose -f docker-compose.prod.yml ps redis
-
-   # Development
-   docker ps --filter "name=redis"
-   ```
-
-2. **Test Direct Ping via redis-cli / valkey-cli:**
-
-   ```bash
-   # Development (port 16379)
-   docker exec -it haihire-redis redis-cli ping
-
-   # Production (internal network)
-   docker exec -it haihire-prod-redis redis-cli ping
-   ```
-
-3. **Check Prometheus Metric:**
-   ```bash
-   curl -s http://localhost:3001/metrics | grep bullmq_queue_depth | head -n 5
-   # If all queues return -1 -> Redis connection blackout confirmed
-   ```
+- `HaiHireRedisDown` (`severity: critical`) — Redis healthcheck unreachable from API.
+- `HaiHireBullMqRedisDown` (`severity: critical`) — BullMQ workers (`email-queue`, `orphan-cleanup-queue`) lost Redis connectivity.
 
 ---
 
-## Step 2: Diagnose Root Cause
+## 2. Diagnostic Triage
 
-1. **Inspect Valkey / Redis Container Logs:**
-   ```bash
-   docker compose -f docker-compose.prod.yml logs redis --tail=100
-   ```
-2. **Inspect Host Memory and Swap Resources:**
-   ```bash
-   free -m
-   docker stats --no-stream haihire-prod-redis
-   ```
-   _Note:_ Valkey/Redis crashes are commonly caused by the Linux OOMKiller when memory exceeds `deploy.resources.limits.memory` (default: 512MB).
-3. **Inspect AOF / RDB Disk Persistence Space:**
-   ```bash
-   df -h /var/lib/docker/volumes/haihire_redis_data
-   ```
+Run diagnostics directly against `haihire-prod-redis`:
 
----
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=100 redis
+```
 
-## Step 3: Mitigate (Short-Term Action)
+Check ping, memory usage, and persistence state (pass `-a "$REDIS_PASSWORD"` when auth is enabled):
 
-1. **If Container Has Exited: Restart Immediately:**
-   ```bash
-   docker compose -f docker-compose.prod.yml start redis
-   # or
-   docker restart haihire-prod-redis
-   ```
-2. **If Container Is Hanging or Saturated at 100% CPU:**
-   ```bash
-   docker compose -f docker-compose.prod.yml restart redis
-   ```
-3. **Restart Backend Container if ioredis Connections Fail to Resynchronize:**
-   ```bash
-   docker compose -f docker-compose.prod.yml restart backend
-   ```
+```bash
+docker exec haihire-prod-redis sh -c '
+  if [ -n "$REDIS_PASSWORD" ]; then
+    redis-cli -a "$REDIS_PASSWORD" PING && redis-cli -a "$REDIS_PASSWORD" INFO memory persistence
+  else
+    redis-cli PING && redis-cli INFO memory persistence
+  fi
+'
+```
+
+Inspect queue key footprint if approaching `384mb` (`OOM command not allowed` errors):
+
+```bash
+docker exec haihire-prod-redis sh -c '
+  if [ -n "$REDIS_PASSWORD" ]; then
+    redis-cli -a "$REDIS_PASSWORD" INFO keyspace
+  else
+    redis-cli INFO keyspace
+  fi
+'
+```
 
 ---
 
-## Step 4: Resolve (Long-Term Fix)
+## 3. Recovery Scenarios
 
-1. **Configure Appropriate `maxmemory` and Eviction Policy:**
-   - Ensure Redis configuration enables key eviction:
-     `maxmemory-policy volatile-lru` or `allkeys-lru`.
-2. **Increase Resource Limits in `docker-compose.prod.yml`:**
-   - Scale to `memory: 1024M` under heavy queue payloads or session spikes.
-3. **Dedicated Cache and Queue Separation:**
-   - Consider separating the Redis instance dedicated to BullMQ from the application caching instance when sustained traffic exceeds 10,000 requests/minute.
+### Scenario A: Container Restart / Transient Network Drop
+
+1. Restart the `redis` container and confirm healthy status:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml restart redis
+docker compose --env-file .env.production -f docker-compose.prod.yml ps redis
+```
+
+2. Check API logs (`docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=100 api`) to verify BullMQ workers and SSE pub/sub reconnected cleanly; restart `api` if connection backoff appears stalled:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml restart api
+```
+
+### Scenario B: Memory Exhaustion (`noeviction` OOM Errors)
+
+Because `noeviction` refuses writes once `384mb` is full:
+
+1. Inspect `api` & BullMQ completed/failed job accumulation via [DLQ Recovery Runbook](dlq-recovery.md) and [Email Queue Runbook](email-queue.md).
+2. Clear archived DLQ/completed jobs using safe BullMQ / `EmailLog` reconciliation steps rather than flushing the whole DB with `FLUSHALL`.
+3. If memory capacity is genuinely undersized for traffic, plan a vertical bump to `--maxmemory` and container `deploy.resources.limits.memory` in [docker-compose.prod.yml](../../docker-compose.prod.yml).
+
+### Scenario C: Corrupt Append-Only File (AOF) Blocking Startup
+
+If container logs report AOF corruption preventing Valkey from booting:
+
+1. Copy `/data` volume contents to a temporary backup directory on the host first.
+2. Stop `redis` (`docker compose --env-file .env.production -f docker-compose.prod.yml stop redis`).
+3. Run Valkey/Redis AOF check/repair against the volume (`valkey-check-aof --fix` or `redis-check-aof --fix`) via a one-off container mounting `redis_data:/data`.
+4. Start `redis` and `api` cleanly, then reconcile any failed/unsent emails using `EmailLog` records per [DLQ Recovery Runbook](dlq-recovery.md).
 
 ---
 
-## Step 5: Post-Mortem & Incident Closure
+## 4. Impact During Redis Outage
 
-- [ ] Command `redis-cli ping` returns `PONG`.
-- [ ] Metric `bullmq_queue_depth` on `/metrics` restores to `0` or positive integers (no longer `-1`).
-- [ ] Both `HaiHireRedisDown` and `HaiHireBullMqRedisDown` alerts transition to `RESOLVED`.
-- [ ] Verify zero stalled or lost jobs in BullMQ queues.
-- [ ] Document infrastructure incident root cause in post-mortem report.
+- **Read/Write Core ATS APIs:** Database-backed endpoints remain operational except enqueueing async jobs or real-time push.
+- **SSE Events:** Connected clients may fall back cleanly on degraded polling / manual refresh until pub/sub recovers.
+- **Email & Cleanup Queues:** New jobs fail to enqueue until Valkey recovers; check `EmailLog` (`FAILED` / `PENDING`) after restoration.
+
+---
+
+## 5. Related Documentation
+
+- [Alerts Runbook](alerts.md)
+- [DLQ Recovery Runbook](dlq-recovery.md)
+- [Email Queue Runbook](email-queue.md)
+- [Production Deployment Plan](production-deployment-plan.md)

@@ -273,6 +273,7 @@ export class JobsService {
       where: { id },
       select: {
         id: true,
+        organizationId: true,
         title: true,
         department: true,
         location: true,
@@ -284,7 +285,6 @@ export class JobsService {
         requirements: true,
         salaryRange: true,
         status: true,
-        organizationId: true,
         createdById: true,
         createdAt: true,
         updatedAt: true,

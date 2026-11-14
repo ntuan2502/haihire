@@ -1,305 +1,60 @@
 # Contributing to HaiHire
 
-Thank you for contributing to the HaiHire Enterprise ATS platform. To maintain enterprise-grade software standards, security, and stability, all contributors must adhere to the conventions and quality gates outlined below.
+Thank you for contributing to HaiHire. All contributors and automated coding agents follow a unified engineering workflow backed by automated static, security, and regression gates.
 
 ---
 
-## 🌿 Branch Naming Conventions
+## 1. Prerequisites & Branch Workflow
 
-Always branch off the primary integration branch (`dev`). Use the following naming format:
+- **Node.js `26.x`** and **`pnpm@12.18.0`** (enabled via Corepack or global install matching [package.json](package.json)).
+- Branch off `dev` using clean feature/fix branch naming (`feat/...`, `fix/...`, `chore/...`).
+- Commit messages follow **Conventional Commits** enforced by `commitlint` + `husky` (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`).
 
-| Type              | Pattern                | Example                        |
-| :---------------- | :--------------------- | :----------------------------- |
-| **New Feature**   | `feature/[task-slug]`  | `feature/candidate-scorecards` |
-| **Bug Fix**       | `fix/[bug-slug]`       | `fix/minio-upload-timeout`     |
-| **Refactoring**   | `refactor/[task-slug]` | `refactor/modular-api-client`  |
-| **Performance**   | `perf/[task-slug]`     | `perf/rsc-job-queries`         |
-| **Documentation** | `docs/[task-slug]`     | `docs/architecture-overview`   |
+See [Branch Protection Runbook](docs/runbooks/branch-protection.md) and [CI/CD Pipeline](docs/runbooks/ci-cd.md) for merge rules across `dev`, `staging`, and `main`.
 
 ---
 
-## Branch Strategy
+## 2. Mandatory Coding Standards
 
-HaiHire uses an enterprise 3-branch environment promotion flow:
+Before submitting a PR, review [Engineering Conventions](docs/architecture/conventions.md) and [Definition of Done](docs/guides/definition-of-done.md):
 
-| Branch        | Purpose                                  | PR from               | Merge to  | CI Time        | Protection Requirements                                    |
-| ------------- | ---------------------------------------- | --------------------- | --------- | -------------- | ---------------------------------------------------------- |
-| **`dev`**     | Active development & integration         | `feature/*`, `fix/*`  | `staging` | **~2 - 3 min** | 0 approvals (solo dev), Fast Static & Fast Unit Tests pass |
-| **`staging`** | Pre-production QA & container validation | `dev`                 | `main`    | **~9 min**     | 1 approval, 16 Gates + E2E + Build pass                    |
-| **`main`**    | Production release & release gatekeeping | `staging`, `hotfix/*` | `(tag)`   | **~10 min**    | 2 approvals, Full CI + E2E + Security Audit + Docker pass  |
-
-### Feature Development Flow (`feature -> dev -> staging -> main`)
-
-1. **Create feature branch from `dev`:**
-
-   ```bash
-   git checkout dev
-   git pull origin dev
-   git checkout -b feat/your-feature
-   ```
-
-2. **Develop, commit, and push:**
-
-   ```bash
-   git add .
-   git commit -m "feat(scope): add description"
-   git push -u origin feat/your-feature
-   ```
-
-3. **Open PR to `dev`:**
-   - Targets `dev`.
-   - Triggers `ci-feature.yml` (<3 min with paths filter fast feedback).
-   - Required status checks: `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`.
-
-4. **Promote `dev -> staging` (Pre-production QA):**
-   - Open PR: `dev` -> `staging`.
-   - Triggers `ci-staging.yml` on PR (~9 min: 16 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
-   - Once all 4 required status checks pass and PR is merged, duplicate post-merge run is automatically skipped.
-   - QA team validates against local/staging Docker environment.
-
-5. **Promote `staging -> main` (Production Release):**
-   - Open PR: `staging` -> `main`.
-   - Triggers `ci-main.yml` (~10 min: full architecture checks, Playwright E2E suite, dependency CVE audit, Docker dry-run).
-   - Requires 2 peer review approvals.
-   - Upon merge to `main`, cut release tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"` and push to trigger `cd-release.yml`.
-
-### Hotfix Flow
-
-For critical production bugs:
-
-1. Create hotfix branch from main:
-
-   ```bash
-   git checkout main
-   git pull
-   git checkout -b hotfix/fix-critical
-   ```
-
-2. Fix the bug, test locally.
-
-3. Open PR: `hotfix/fix-critical` -> `main` (fast-track).
-   - Requires 1 review (urgency).
-
-4. Merge to `main`, tag patch version:
-
-   ```bash
-   git tag -a vX.Y.Z+1 -m "Hotfix: ..."
-   ```
-
-5. Also merge to dev to keep in sync:
-   ```bash
-   git checkout dev
-   git merge hotfix/fix-critical
-   ```
-
-## 🪝 Git Hooks
-
-- **Pre-commit:** `lint-staged` (staged files only, <5s).
-- **Pre-push:** `pnpm lint` + `pnpm typecheck` (~30s).
-- **Full CI:** 16 architecture gates.
-
-## 🚀 CI Triggers
-
-| Branch      | Workflow         | Trigger                                         |
-| ----------- | ---------------- | ----------------------------------------------- |
-| `feature/*` | `ci-feature.yml` | `pull_request` → `dev`                          |
-| `dev`       | `ci-dev.yml`     | `pull_request` → `dev` + `push` (non-merge)     |
-| `staging`   | `ci-staging.yml` | `pull_request` → `staging` + `push` (non-merge) |
-| `main`      | `ci-main.yml`    | `pull_request` → `main` only                    |
-| `v*.*.*`    | `cd-release.yml` | `push` tag                                      |
-
-### Branch Protection & Layered CI Rules
-
-| Branch / Ref          | Workflow File                      | Focus & Scope                                                               |            Time Target            | Required Status Checks                                                                                                            |
-| :-------------------- | :--------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------- |
-| **`feat/*`, `fix/*`** | `.github/workflows/ci-feature.yml` | Path filter, fast lint, typecheck, unit tests                               |           **2 - 3 min**           | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`                                                                   |
-| **`dev`**             | `.github/workflows/ci-dev.yml`     | Path filter (code vs docs-only), 16 CI gates (`check:all:fast`), unit tests | **3 - 4 min** (or **~30s** docs)  | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests` (via PR)                                                          |
-| **`staging`**         | `.github/workflows/ci-staging.yml` | Path filter, 16 CI gates, coverage, Playwright E2E, build                   | **8 - 10 min** (or **~30s** docs) | `16 CI Architecture Gates`, `Unit & Integration Tests (Coverage)`, `Playwright End-to-End Suite`, `Production Build Verification` |
-| **`main`**            | `.github/workflows/ci-main.yml`    | Full checks (`check:all`), Playwright E2E, pnpm audit, Docker verify        |          **10 - 12 min**          | `Full CI Quality Pipeline`, `Playwright End-to-End Suite`, `Dependency Security Audit`, `Docker Build Dry-Run Verification`       |
-| **`v*.*.*` (Tags)**   | `.github/workflows/cd-release.yml` | Docker Buildx, GHCR publish, Trivy scan, GitHub Release                     |           **5 - 7 min**           | `Build & Publish Container Images`, `Container Vulnerability Scan`                                                                |
-
-### 🛡️ 3-Tier Security Architecture
-
-1. **Layer 1: Dependency Vulnerability Audit (`pnpm audit`)**: Enforced in `ci-main.yml` and `security-weekly.yml`. Blocks builds with High/Critical CVEs in direct runtime dependencies.
-2. **Layer 2: Automated Dependency Updates (Dependabot)**: Configured via `.github/dependabot.yml` targeting `dev` on weekly schedule for automated security patching.
-3. **Layer 3: Container Vulnerability Scanning (Trivy)**: Integrated into `cd-release.yml` scanning GHCR images for Critical/High CVEs and publishing SARIF reports.
+1. **Strict TypeScript:** Avoid `any`; model external payloads with `unknown` and narrow with `@haihire/shared` Zod schemas.
+2. **Backend Validation (`DtoPipe`):** Validate every controller input with `@Body(DtoPipe(...))` or `@Query(DtoPipe(...))` ([apps/api/src/common/dto-validation.pipe.ts](apps/api/src/common/dto-validation.pipe.ts)).
+3. **Tenant Isolation:** Every database read/write in the 8 scoped backend modules must filter by `organizationId` (or verify ownership against a parent relation in the same method) and pass `pnpm lint:tenant-scope`.
+4. **Two-Way Localization:** Keep all UI copy localized in both `en` and `vi` dictionaries (`apps/web/src/i18n/locales/en.ts` and `apps/web/src/i18n/locales/vi.ts`) and map all `APP_ERROR_CODES`.
+5. **Shadcn `base-nova` UI & Next.js 16:** Keep authentication routing in [apps/web/src/proxy.ts](apps/web/src/proxy.ts) (never `middleware.ts`), build UI primitives with `@base-ui/react` and `cn` from `"cn"`, and use `oklch` design tokens in CSS variables.
+6. **Testing & Anti-Regression:** Add Vitest unit/integration tests (including cross-tenant negative assertions for backend endpoints) and keep net test count non-decreasing (`pnpm test:diff`).
 
 ---
 
-## 📝 Commit Conventions
+## 3. Pre-PR Verification Checklist
 
-HaiHire enforces [Conventional Commits](https://www.conventionalcommits.org/) via Husky and Commitlint hooks:
-
-### Commit Message Format
-
-```
-type(scope): description
-```
-
-### Commit Types
-
-- **`feat`**: A new user-facing feature or capability
-- **`fix`**: A bug fix
-- **`refactor`**: Code restructuring without changing functionality
-- **`perf`**: A performance optimization
-- **`test`**: Adding or updating tests
-- **`docs`**: Documentation updates only
-- **`chore`**: Maintenance, build tooling, dependency updates
-- **`style`**: Formatting or linting adjustments (no production code logic changes)
-
-### Scope (Mandatory)
-
-Scope must pinpoint the affected subsystem:
-`auth`, `jobs`, `candidates`, `applications`, `interviews`, `email`, `sourcing`, `minio`, `prisma`, `i18n`, `config`, `ui`, `core`, `scripts`.
-
-### Rules
-
-- Description must be in **English only**, written in **lowercase**, with **no trailing period**.
-- _Example (Correct):_ `feat(auth): implement httponly cookie refresh rotation`
-- _Example (Incorrect):_ `Feat: Added auth cookie.` (uppercase, missing scope, trailing period)
-
-### Staging Rules
-
-When preparing commits, stage files completely:
+Run these commands from the repository root before pushing:
 
 ```bash
-git add .
-git commit -m "feat(jobs): add multi-channel sourcing tracker"
+pnpm format               # Format files with Prettier
+pnpm lint:env-sync        # Verify .env.example vs backend/frontend env schemas
+pnpm lint:i18n            # Verify vi/en i18n parity & zero hardcoded UI strings
+pnpm lint:error-i18n      # Verify 64 APP_ERROR_CODES localization parity
+pnpm lint:dtopipe         # Verify DtoPipe coverage across all controllers
+pnpm lint:tenant-scope    # Verify 100% tenant isolation across backend services
+pnpm lint:doc-links       # Verify markdown relative links
+pnpm lint:doc-sync        # Verify documentation synchronization
+pnpm lint                 # Run ESLint across workspaces
+pnpm typecheck            # Run TypeScript checks across workspaces
+pnpm test                 # Run API + Web test suites
+pnpm build                # Build shared, api (esbuild), and web (standalone)
 ```
 
-_(Never chain `git add . && git commit` in Windows PowerShell; run commands individually)._
-
----
-
-## 🛡️ The 16 CI Architecture Gates
-
-Before submitting any Pull Request or merging code, all 16 automated CI verification gates must pass:
+For full verification including Playwright E2E tests (with local PostgreSQL, Valkey, and MinIO running):
 
 ```bash
-# Execute the complete quality pipeline:
 pnpm check:all
-
-# For quick static checks before running test suites:
-pnpm check:all:fast
-
-# To include Playwright E2E browser tests:
-pnpm check:all:e2e
 ```
 
-|    Gate     | Command                            | Description                                                                   |
-| :---------: | :--------------------------------- | :---------------------------------------------------------------------------- |
-| **Gate 1**  | `pnpm lint:env-sync`               | Audits key parity across `.env` templates and Docker Compose (56 keys)        |
-| **Gate 2**  | `pnpm lint:i18n`                   | Asserts two-way i18n dictionary completeness & zero hardcoded strings         |
-| **Gate 3**  | `pnpm lint`                        | ESLint rules & static checks across backend and frontend                      |
-| **Gate 4**  | `pnpm typecheck`                   | Strict TypeScript compiler check (`tsc --noEmit`)                             |
-| **Gate 5**  | `pnpm lint:dtopipe`                | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation        |
-| **Gate 6**  | `pnpm lint:error-i18n`             | Verifies 100% `APP_ERROR_CODES` (60 codes) are localized in `vi.ts` & `en.ts` |
-| **Gate 7**  | `pnpm lint:api-contract`           | Audits 87 endpoints, zero `JSON.stringify(err)` leaks, zero `alert()` calls   |
-| **Gate 8**  | `pnpm lint:prometheus-rules`       | Verifies 14 Prometheus alert rules syntax, fields, and SRE labels             |
-| **Gate 9**  | `pnpm lint:tenant-scope`           | AST static analysis enforcing query isolation across tenant-scoped modules    |
-| **Gate 10** | `pnpm lint:doc-links`              | Verifies zero broken markdown links across all documentation                  |
-| **Gate 11** | `pnpm lint:doc-sync`               | Verifies path existence, env parity, doc stats, and ADR coverage              |
-| **Gate 12** | `pnpm check:prod-email-provider`   | Validates production email provider configuration                             |
-| **Gate 13** | `pnpm test:diff`                   | Audits test count changes against git history to detect test regression       |
-| **Gate 14** | `pnpm lint:nextjs-conventions`     | Enforces Next.js 16 `proxy.ts` convention and prohibits `middleware.ts`       |
-| **Gate 15** | `pnpm lint:github-action-versions` | Enforces Node 24 action runtime baseline across workflows                     |
-| **Gate 16** | `pnpm test`                        | Runs unit & integration test suite (1,268 tests)                              |
-
-> **Unit & Integration Test Suite:** All architecture gates are verified alongside the automated test suite (`pnpm test`), executing all 1,268 tests across backend and frontend packages.  
-> Refer to [Project Metrics (Single Source of Truth)](docs/PROJECT_METRICS.md) for live metrics.
-
 ---
 
-## 🏗️ Core Engineering Conventions
+## 4. Environment & Documentation Updates
 
-1. **100% Pure TypeScript:**
-   - No manually written `.js` or `.mjs` files (except tooling configs like `eslint.config.mjs`).
-   - Zero `any` policy across application code. Define explicit interfaces or Zod schemas.
-2. **Environment Variable Hygiene:**
-   - Never call `process.env` directly in feature modules. Always import the validated `env` singleton (`apps/api/src/config/env.ts` or `apps/web/src/lib/env.ts`).
-   - Zero fallback policy: Never provide fallback defaults for credentials, database URLs, or ports.
-3. **Internationalization (i18n):**
-   - Zero hardcoded text in frontend components. All UI copy must use `useI18n()` / `t("key.path")` with keys defined in `apps/web/src/i18n/types.ts`.
-4. **Security Baseline:**
-   - Store JWT tokens exclusively in secure HttpOnly cookies (`SameSite=Lax`, `Path=/`, `Secure`).
-   - Upload all CV files to isolated tenant paths: `tenants/{orgId}/candidates/{candId}/{uuid}-{fileName}`.
-   - PII scrubbing: Never log raw passwords, tokens, or resume text in application logs.
-5. **Database & Saga Transactions:**
-   - Multi-step relational writes must use `prisma.$transaction` or `executeTx`.
-   - Dual-resource workflows (PostgreSQL + MinIO) must implement Saga compensations with BullMQ DLQ fallback.
-6. **Package Manager:**
-   - Always use `pnpm` (version 12.x) or `pnpx`. Never use `npx` or `corepack enable`.
-
----
-
-## 🔧 Refactoring Patterns
-
-### Backend Services (NestJS)
-
-When service >500 LOC:
-
-- Refactor to Facade + Sub-services.
-- Preserve public API 1:1.
-- Polymorphic constructor for backward compatibility.
-- Register sub-services in module.
-- Export facade only.
-
-### Frontend Components (React)
-
-When component >400 LOC:
-
-- Write characterization tests FIRST.
-- Refactor to directory with `index.tsx`.
-- Separate: `hooks/`, `filters/`, `rows/`, `drawer/`, `modals/`.
-- Original file becomes 2-10 LOC shim.
-
----
-
-## 📦 Version Management & Release Process
-
-HaiHire maintains lockstep version alignment across all packages (`package.json`, `backend`, `frontend`, `packages/shared`).
-
-### Bumping Versions
-
-Use the dedicated automation scripts to bump and synchronize versions:
-
-```bash
-# Preview SemVer bump
-pnpm version:bump patch --dry-run
-pnpm version:bump minor --dry-run
-pnpm version:bump major --dry-run
-
-# Execute SemVer bump across all 4 manifests
-pnpm version:bump patch
-
-# Synchronize manifests if version drift occurred
-pnpm version:sync
-```
-
-### Creating Releases & Publishing Containers
-
-1. Bump version and create Git tag:
-   ```bash
-   pnpm version:bump patch --tag
-   ```
-2. Update [`CHANGELOG.md`](CHANGELOG.md) with release notes.
-3. Push commit and tag:
-   ```bash
-   git push origin main
-   git push origin v1.0.1
-   ```
-4. GitHub Actions will automatically verify tests, build multi-stage Docker images, push immutable images to GitHub Container Registry (GHCR), and publish a GitHub Release.
-
-For comprehensive details, refer to [`docs/runbooks/versioning.md`](docs/runbooks/versioning.md).
-
----
-
-## 🚀 Pull Request Checklist
-
-When opening a Pull Request:
-
-- [ ] Created dedicated feature branch (`feature/*`, `fix/*`).
-- [ ] Ran `pnpm check:all` locally and verified all 16 gates passed.
-- [ ] All new features include unit/integration tests (`pnpm test`).
-- [ ] No broken markdown links or outdated documentation.
-- [ ] Verified non-leakage of secrets or `.env` files.
+- Any new environment variable MUST be added simultaneously to `.env.example`, `.env.production.example`, [apps/api/src/config/env.ts](apps/api/src/config/env.ts), and (if browser/SSR-relevant) `apps/web/src/lib/env.ts`.
+- Update relevant architecture or API docs alongside code changes and regenerate embedded README/AGENTS stats blocks with `pnpm docs:stats:write`.

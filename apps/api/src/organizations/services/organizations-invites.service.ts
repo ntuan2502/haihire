@@ -463,7 +463,10 @@ export class OrganizationsInvitesService {
     let createdByName = "Team Member";
     if (link.createdById) {
       const creator = await this.prisma.user.findFirst({
-        where: { id: link.createdById as string },
+        where: {
+          id: link.createdById as string,
+          organizationId: link.organizationId,
+        },
         select: { id: true, firstName: true, lastName: true },
       });
       const resolved = formatUserDisplayName(creator, orgOrder);

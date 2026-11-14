@@ -231,4 +231,29 @@ export class PublicJobsService {
     expect(result.patternMatchCount).toBe(1);
     expect(result.violations).toHaveLength(0);
   });
+
+  it("Test 10: parent guard in an earlier method does not exempt an unscoped query in a later method", () => {
+    const testFile = path.join(tempDir, "multi-method.service.ts");
+    const code = `
+@Injectable()
+export class MultiMethodService {
+  async verifiedMethod(orgId: string, id: string) {
+    const item = await this.prisma.job.findFirst({ where: { id } });
+    if (!item || item.organizationId !== orgId) {
+      throw new AppForbiddenException("FORBIDDEN");
+    }
+    return item;
+  }
+
+  async unscopedLaterMethod(id: string) {
+    return this.prisma.candidate.findUnique({ where: { id } });
+  }
+}
+`;
+    fs.writeFileSync(testFile, code, "utf-8");
+
+    const result = checkTenantScoping({ files: [testFile] });
+    expect(result.compliant).toBe(false);
+    expect(result.violations.length).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -1,81 +1,38 @@
-# HaiHire Frontend Service
+# HaiHire Web Application (`apps/web`)
 
-> Enterprise recruitment portal and applicant tracking interface built with Next.js 16 (App Router), React 19 Server Components (RSC), Tailwind CSS v4, and TanStack Query v5.
-
----
-
-## 🛠️ Technology Stack & Architecture
-
-- **Framework:** Next.js 16.4.5 / React 19.3.1 (App Router architecture)
-- **Styling & Design System:** Tailwind CSS v4 (`@tailwindcss/postcss`), Radix UI / Base UI primitives, Lucide React icons
-- **State & Data Fetching:** `@tanstack/react-query` v5 with centralized query key factories
-- **Drag & Drop Pipeline:** `@dnd-kit/core` and `@dnd-kit/sortable` for interactive candidate Kanban boards (powered by `usePipelineKanban`)
-- **Internationalization (i18n):** Dual-language support (Vietnamese `vi` and English `en`) with strict zero-hardcoded-text enforcement
-- **Theme & Anti-FOUC:** `next-themes` with synchronous `<Script id="theme-init" strategy="beforeInteractive">` header execution
+Enterprise recruiter dashboard and public careers portal built with **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, and **Shadcn (`base-nova`)**.
 
 ---
 
-## 🌐 Network & Port Allocation
+## Stack Summary
 
-- **Development Port:** `13000` (Managed via custom dev server `scripts/dev.ts`)
-- **Backend Internal URL:** `http://127.0.0.1:13001` (SSR direct backend queries)
-- **Production Port:** `3000` (Node standalone container)
-
----
-
-## 📁 Source Code Organization
-
-```
-src/
-├── app/             # Next.js App Router (layout, providers, root routes)
-│   ├── (auth)/      # Authentication views (login, register, reset-password)
-│   ├── (dashboard)/ # Authenticated recruiter views (jobs, candidates, pipeline, settings)
-│   ├── careers/     # Public career portal powered by React Server Components (RSC)
-│   └── api/         # Next.js route handlers & proxy rewrites
-├── components/      # UI component hierarchy
-│   ├── ui/          # Pristine Shadcn UI primitives (Button, Input, Dialog, etc.)
-│   ├── shared/      # ATS components (BrandLogo, MetricCard, StageBadge, CustomSelect)
-│   └── layout/      # AppShell, TopNav, Sidebar, ThemeToggle, LanguageSwitcher
-├── hooks/           # Domain query hooks (use-jobs-queries, use-candidates-queries)
-├── lib/             # API client (Axios gatekeeper), query-keys factory, Zod env
-└── i18n/            # Localization dictionary (vi.ts, en.ts) and translation provider
-```
+- **Framework:** Next.js `16.4.5` (`output: "standalone"`, Turbopack, [next.config.ts](next.config.ts) API/MinIO rewrites, and Next.js 16 boundary proxy [src/proxy.ts](src/proxy.ts))
+- **UI & Styling:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` with `oklch(...)` tokens in [src/app/globals.css](src/app/globals.css), `shadcn@^4.23.0` (`style: "base-nova"` backed by `@base-ui/react@^1.9.0`), standalone `cn@^0.5.2` ([src/lib/utils.ts](src/lib/utils.ts)), `lucide-react@^1.70.0`
+- **Data & Real-Time:** `@tanstack/react-query@^5.107.1` ([src/hooks/query-keys.ts](src/hooks/query-keys.ts)), `axios@^1.21.0` URL Gatekeeper + 401 refresh queue ([src/lib/api/client.ts](src/lib/api/client.ts)), debounced SSE `createRealtimeInvalidator` ([src/lib/realtime-sync.ts](src/lib/realtime-sync.ts))
+- **Notifications & Localization:** `react-toastify@11.2.0` wrapped via [src/lib/toast.ts](src/lib/toast.ts) (`@/lib/toast`), 2-tier 2-way `vi` / `en` i18n (`I18nProvider` + `LocalizationProvider`)
 
 ---
 
-## ⚡ Development & Scripts
+## Architectural Conventions
 
-All scripts can be run from the root repository or inside `apps/web/`:
+- **No `middleware.ts`:** Route protection and JWT cookie session checks run inside `proxy()` exported by [src/proxy.ts](src/proxy.ts) (enforced by CI Gate 15).
+- **Controlled Forms:** Interactive forms use explicit React state + `@haihire/shared` Zod schemas with localized server error mapping via `getApiErrorMessage()`.
+- **Private Resume Downloads:** Document previews and downloads always proxy through tenant-authenticated backend endpoints (`/applications/:id/documents/download`, `/candidates/:id/documents/download`), never raw `/haihire-resumes/` paths.
+
+---
+
+## Scripts
+
+Run from repository root using `pnpm --filter web <script>` (or from `apps/web/`):
 
 ```bash
-# Start frontend dev server on port 13000
-pnpm run dev
-
-# Compile Next.js production build (.next/)
-pnpm run build
-
-# Start production server (after build)
-pnpm run start
-
-# Run unit and component test suite (Vitest + Testing Library)
-pnpm run test
-
-# Type-check TypeScript without emitting output
-pnpm run typecheck
-
-# Lint source code with ESLint
-pnpm run lint
-
-# Audit two-way key parity between vi.ts and en.ts
-pnpm run lint:i18n
+pnpm --filter web dev        # Start Next.js development server
+pnpm --filter web build      # Build standalone production output (.next/standalone)
+pnpm --filter web start      # Serve production build
+pnpm --filter web lint       # Run ESLint
+pnpm --filter web lint:i18n  # Run two-way i18n key parity & hardcoded string check
+pnpm --filter web typecheck  # Run tsc --noEmit
+pnpm --filter web test       # Run Vitest + React Testing Library jsdom suite
 ```
 
----
-
-## 🎨 Design & Coding Conventions
-
-1. **Zero Hardcoded Text:** All user-facing strings must use `useI18n()` / `t("key.path")` declared in `apps/web/src/i18n/types.ts`.
-2. **Full-Width Dashboard Layouts:** Container layouts must utilize responsive full-width classes (`px-4 sm:px-6 lg:px-8 xl:px-10 w-full`), avoiding fixed-width max-w shells.
-3. **Defensive API Gatekeeper:** Axios request interceptors validate all request URLs and immediately abort if malformed tokens (like `[object Object]`) appear in path segments.
-4. **React SyntheticEvent Hygiene:** Never pass parameterized callbacks directly to `onClick`; wrap in arrow functions (`() => onAction(id)`).
-5. **No Monolithic Files:** Component files must remain modular and focused (< 400 lines).
+Playwright end-to-end tests live in `apps/web/tests/e2e/` (`9` spec files) and run from the workspace root via `pnpm test:e2e`.

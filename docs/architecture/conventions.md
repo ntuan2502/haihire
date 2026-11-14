@@ -1,180 +1,53 @@
-# HaiHire Platform Engineering Conventions
+# Engineering Conventions (Single Source of Truth)
 
-> **This file is the SINGLE source of truth for all coding, architectural, and design conventions across the HaiHire platform. Do not duplicate rules elsewhere.**  
-> Note: Rules located inside `.agents/rules/` are auto-generated and maintained by `ag-kit`. Use this file as the authoritative operational protocol.
-
----
-
-## 1. Pure TypeScript Mandate
-
-1. **100% TypeScript Files:** Every file across `apps/api/`, `apps/web/`, `packages/shared/`, and `scripts/` must use TypeScript extensions (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in application code.
-   - _Rationale:_ Eliminates runtime type divergence and guarantees end-to-end type safety across the monorepo.
-2. **Tooling Exception:** Standard tooling configuration files required by ESM runners (e.g. `vitest.config.mts`, `eslint.config.mjs`) are permitted as build-time configurations.
-   - _Rationale:_ Necessary for external Node.js tooling compatibility.
+This document defines mandatory code, validation, security, localization, UI, and repository standards enforced across `apps/api`, `apps/web`, and `packages/shared`.
 
 ---
 
-## 2. Zero-Any Typing Policy
+## 1. TypeScript & Module Discipline
 
-1. **Strictly Prohibited `any`:** Using `any` or `as any` is strictly forbidden in all workspace packages.
-   - _Rationale:_ Bypasses the compiler, masking undefined properties and triggering runtime null/undefined crashes.
-2. **Approved Alternatives:** Use explicit interfaces, generics, `unknown` with type guards, or Zod inferred types (`z.infer<typeof Schema>`).
-   - _Rationale:_ Preserves deterministic type narrowing and compile-time contract verification.
-
----
-
-## 3. Centralized Fail-Fast Environment Validation (Zod)
-
-1. **Centralized Schemas:** All environment variables must be declared and validated via centralized Zod schemas:
-   - API: `apps/api/src/config/env.ts` (`backendEnv`)
-   - Web: `apps/web/src/lib/env.ts` (`env`)
-   - _Rationale:_ Eliminates scattered `process.env` lookups and ensures configuration integrity.
-2. **Zero Fallbacks for Secrets:** Never provide fallback defaults for security secrets (`JWT_SECRET`, `ENCRYPTION_SECRET`, `DATABASE_URL`).
-   - _Rationale:_ Prevents deploying insecure default credentials to production environments.
-3. **Fail-Fast Startup:** Missing or invalid variables must terminate bootstrap immediately (`process.exit(1)`) with descriptive field errors.
-   - _Rationale:_ Traps configuration errors before accepting traffic rather than failing under load.
-4. **No Direct `process.env` in Code:** Direct consumption of `process.env.X` inside business logic, services, or controllers is prohibited. Import typed `backendEnv` or `env`.
-   - _Rationale:_ Guarantees that code only reads validated, typed variables.
+- **TypeScript 6 Strict Mode:** Avoid `any`; model external payloads with `unknown` and narrow with `@haihire/shared` Zod schemas or explicit type guards.
+- **NestJS ESM & Explicit DI:** `apps/api` runs ESM and compiles to `dist/server.mjs` with `esbuild`. Annotate every constructor dependency with `@Inject(Token)` (and `@Optional() @Inject(Token)` when optional) so runtime injection never relies solely on emitted metadata.
+- **Zero-Duplication Contracts:** Place shared enums, permission constants, event types, error codes, and validation schemas in `packages/shared/src/` rather than duplicating across frontend and backend.
 
 ---
 
-## 4. 100% DtoPipe Validation Coverage
+## 2. Centralized Fail-Fast Environment Configuration
 
-1. **Mandatory DtoPipe Guard:** Every NestJS controller parameter decorated with `@Body()` must be protected by `@Body(DtoPipe)` or `@Body(DtoPipe(SchemaOrDto))`. `DtoPipe` uniformly supports both Zod validation schemas and class-validator DTOs without requiring legacy shim classes.
-   - _Rationale:_ Sanitizes incoming HTTP payloads and prevents prototype pollution or malformed input injection.
-2. **Enforcement:** Enforced in CI by Gate 5 (`pnpm lint:dtopipe`), asserting 100% endpoint coverage.
-   - _Rationale:_ Automated gate prevents security regression during development.
-
----
-
-## 5. Two-Way i18n Localization (Zero Hardcoded UI Strings)
-
-1. **Zero Hardcoded JSX Text:** Raw user-facing strings, labels, placeholders, and error toasts in JSX/TSX are strictly forbidden.
-   - _Rationale:_ Guarantees full localization support and prevents language leaks in bilingual ATS deployments.
-2. **Two-Way Dictionary Symmetry:** All keys must exist symmetrically in both Vietnamese (`apps/web/src/i18n/locales/vi.ts`) and English (`apps/web/src/i18n/locales/en.ts`) and be typed in `TranslationSchema`.
-   - _Rationale:_ Prevents runtime translation key misses (`[missing key]`) when switching languages.
-3. **Enforcement:** Enforced by CI Gate 2 (`pnpm lint:i18n`) and Gate 6 (`pnpm lint:error-i18n`).
-   - _Rationale:_ Traps unlocalized strings and dictionary drift before merge.
+- All environment variables are declared in [.env.example](../../.env.example) (`56` keys) and validated via Zod at startup in [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) and [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts).
+- Required core security and infrastructure keys include `DATABASE_URL`, `JWT_SECRET` (min `16` chars), `ENCRYPTION_SECRET` (min `32` chars for AES-256), `REDIS_HOST`, `MINIO_ENDPOINT`, and `FRONTEND_URL` (backend CORS origin whitelist).
+- Never bypass fail-fast schemas with scattered ad-hoc fallbacks for secrets; keep `.env.example`, `.env.production.example`, and TypeScript env schemas 100% synchronized (`pnpm lint:env-sync`).
 
 ---
 
-## 6. Language & Documentation Policy
+## 3. Backend Validation, Error Envelopes & Tenant Isolation
 
-1. **English Mandate:** All code comments, commit messages, documentation files, decisions, runbooks, and pull requests must be written in English.
-   - _Rationale:_ Standardizes enterprise engineering communications and avoids encoding ambiguities.
-2. **Localized UI Exception:** Vietnamese is reserved strictly for conversational user chat and the `vi.ts` translation dictionary.
-   - _Rationale:_ Keeps UI bilingual while keeping engineering artifacts internationally standard.
-
----
-
-## 7. Component Architecture & Frontend Conventions
-
-1. **5-Layer Modular Structure (`apps/web/src/components/`):**
-   - `ui/`: Pristine Shadcn UI primitives added via official CLI (`pnpx shadcn add`).
-   - `shared/`: Reusable ATS UI controls, custom selects, badges, and guards.
-   - `layout/`: Global navigation and layout shells.
-   - `providers/`: App-level React context and cache providers.
-   - `[feature]/`: Domain-specific components scoped by feature (e.g. `jobs/`, `candidates/`).
-   - _Rationale:_ Prevents component sprawling and establishes clear modular boundaries.
-2. **Named React Imports:** Always use named imports (e.g. `import { useState, type ReactNode } from "react"`). Never use `import React from "react"` or `React.x`.
-   - _Rationale:_ Enhances tree-shaking and adheres to React 19 standards.
-3. **The `cn` Package Standard:** Use the official `cn` package directly (`import { cn } from "cn"`). Never re-add `clsx` or `tailwind-merge`.
-   - _Rationale:_ Avoids duplicate class merging libraries in frontend bundle.
-4. **Full-Width Canvas Layout:** Application pages must span full screen width; do not box dashboards in `max-w-7xl mx-auto`.
-   - _Rationale:_ Modern enterprise ATS dashboards require high information density.
+- **`DtoPipe` Enforcement (`pnpm lint:dtopipe`):** Validate all incoming route payloads with `@Body(DtoPipe(DtoOrSchema))` or `@Query(DtoPipe(DtoOrSchema))` ([apps/api/src/common/dto-validation.pipe.ts](../../apps/api/src/common/dto-validation.pipe.ts)).
+- **Typed Error Responses (`pnpm lint:error-i18n`):** Throw typed subclasses of `AppException` ([apps/api/src/common/app-exception.ts](../../apps/api/src/common/app-exception.ts)) parameterized with one of `64` `APP_ERROR_CODES` from [packages/shared/src/errors.ts](../../packages/shared/src/errors.ts); let `GlobalExceptionFilter` format consistent JSON envelopes.
+- **Multi-Tenant Query Rule (`pnpm lint:tenant-scope`):** Every query in the `8` tenant-scoped modules must filter explicitly on `organizationId`, belong to `MODELS_WITHOUT_ORG_COLUMN` with relational parent enforcement, verify ownership inside the **same** method, or match an audited `SAFE_QUERY_PATTERNS` rule.
+- **Prisma `AsyncLocalStorage` Transactions:** Wrap multi-step state + document + activity workflows inside `runInTransaction(this.prisma, async (tx) => ...)`. Always include `deletedAt: null` when querying `Job`, `Candidate`, or `TrackingLink`.
 
 ---
 
-## 8. Network Gatekeeper & API Hygiene
+## 4. Next.js 16, Tailwind v4, Shadcn `base-nova` & Data Fetching
 
-1. **Client-Side Axios Interceptor:** Axios request interceptors must inspect outgoing URLs and reject malformed stringifications (e.g. `[object Object]`, `undefined`, `null`).
-   - _Rationale:_ Traps broken frontend string interpolations before dispatching broken network requests.
-2. **Anti-Monolith File Boundary:** Feature hooks and API clients must not exceed 400 lines; split by domain with barrel re-exports.
-   - _Rationale:_ Keeps source files readable, testable, and maintainable.
-3. **No Parameterized Callbacks in Handlers:** Wrap parameterized event handlers in arrow functions (`onClick={() => handle(item.id)}`) rather than passing raw callbacks.
-   - _Rationale:_ Prevents `MouseEvent` objects from accidentally leaking into domain payload parameters.
-
----
-
-## 9. Database, ORM & Transaction Architecture
-
-1. **Canonical Prisma Client API:** All database access must use canonical native Prisma Client methods directly on `PrismaService` (`this.prisma.<model>.<action>`). Custom query composer adapters, fake `.raw` accessors, and legacy wrappers are strictly prohibited.
-   - _Rationale:_ Eliminates indirection, aligns 100% with official NestJS and Prisma documentation, unlocks complete TypeScript IDE autocompletion, and enables high-performance native PostgreSQL batch operations (such as `deleteMany`).
-2. **Prisma Schema Architecture:** All database models live in `apps/api/src/prisma/schema.prisma`.
-   - _Rationale:_ Uses standard PostgreSQL driver adapters (`@prisma/adapter-pg`) with full type safety and zero pre-release dependencies.
-3. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
-   - _Rationale:_ Guarantees database-level atomic cascade deletion and eliminates orphan child records.
-4. **AsyncLocalStorage Transaction Propagation:** Use `runInTransaction(this.prisma, async (tx) => ...)` or `PrismaService.transaction()` / `executeTx()` for transactional business operations.
-   - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing, while gracefully falling back to mock or direct Prisma clients in unit tests.
-5. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
-   - _Rationale:_ Ensures storage and database consistency even during network or service crashes.
-6. **Explicit PostgreSQL Connection Pool:** `PrismaService` explicitly configures `pg.Pool` with bounded concurrency and retry timeouts (`PRISMA_CONNECTION_LIMIT`, `PRISMA_POOL_TIMEOUT`, `PRISMA_MAX_RETRIES`, `PRISMA_RETRY_DELAY_MS`).
-   - _Rationale:_ Prevents connection pool starvation and socket hangs during high-traffic recruitment bursts.
+- **Next.js 16 Proxy Convention (`pnpm lint:nextjs-conventions`):** Use [apps/web/src/proxy.ts](../../apps/web/src/proxy.ts) exporting `proxy(request: NextRequest)`. Never reintroduce `middleware.ts`.
+- **Tailwind CSS v4 CSS-First Tokens:** Define design variables using `oklch(...)` and `@theme inline` inside [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css) — never add `tailwind.config.js` / `.ts` or scatter hardcoded color literals where semantic tokens apply.
+- **Shadcn `base-nova` Primitives:** Use `@base-ui/react` primitives (`apps/web/components.json` -> `"style": "base-nova"`) and import `cn` from `@/lib/utils` (`export { cn } from "cn"`). Do not install `@radix-ui/*` packages.
+- **TanStack Query v5 & SSE:** Manage query keys centrally in [apps/web/src/hooks/query-keys.ts](../../apps/web/src/hooks/query-keys.ts), use object-only v5 signatures, proxy browser calls through [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) (`/api/*`), and invalidate via `createRealtimeInvalidator`.
+- **Notifications & Controlled Forms:** Always import `{ toast } from "@/lib/toast"` (wrapping `react-toastify`), avoid `useEffect` state-mirroring, and validate controlled form state cleanly before submit.
 
 ---
 
-## 10. Multi-Tenant Scoping Mandate
+## 5. Two-Way Localization (`pnpm lint:i18n`)
 
-1. **Mandatory `organizationId` Filter:** Every database query touching tenant-scoped entities must explicitly filter by `where: { organizationId }`.
-   - _Rationale:_ Prevents cross-tenant data leakage vulnerabilities.
-2. **Enforcement:** Enforced in CI by Gate 9 (`pnpm lint:tenant-scope`).
-   - _Rationale:_ Automatically detects queries lacking tenant boundary isolation.
-
----
-
-## 11. Testing & AAA Testing Standard
-
-1. **Arrange-Act-Assert Pattern:** All unit tests must structure logic using Arrange-Act-Assert.
-   - _Rationale:_ Keeps test logic clean, readable, and reproducible.
-2. **Adjacent Test Files:** Unit and integration tests must live adjacent to the source file they test (`*.spec.ts`, `*.spec.tsx`).
-   - _Rationale:_ Makes test coverage obvious and simplifies code navigation.
-3. **Zero Test Regressions:** Net test count cannot decrease. Tested via `pnpm test:diff` (CI Gate 13).
-   - _Rationale:_ Prevents accidental removal or commenting out of test cases.
-4. **No `.skip`:** Never commit `it.skip` or `describe.skip`.
-   - _Rationale:_ Hides regressions and inflates false confidence in CI pipelines.
+- Keep `apps/web/src/i18n/types.ts` (`TranslationSchema`), `apps/web/src/i18n/locales/en.ts`, and `apps/web/src/i18n/locales/vi.ts` 100% synchronized.
+- Zero hardcoded user-facing strings in UI JSX and zero unlocalized error codes (`64` codes tested via `pnpm lint:error-i18n`).
+- Follow 2-tier precedence (`user.preferredLanguage` -> cookie/storage -> `organization.defaultLanguage`, and `user.preferredTimezone` -> `organization.timezone`).
 
 ---
 
-## 12. Design Rules & UI Standards
+## 6. Documentation & Verification Discipline
 
-1. **DESIGN.md Gate:** Net-new UI features must follow design tokens specified in design documentation.
-   - _Rationale:_ Maintains consistent typography, spacing, and color schemes.
-2. **No Default Purple:** Do not use purple as a default accent unless explicitly required by brand brief.
-   - _Rationale:_ Avoids generic AI template appearances.
-3. **No Fake Screenshots:** Never build fake product screenshots out of nested `<div>` mockups.
-   - _Rationale:_ Retains clean, authentic UI presentation without clutter.
-
----
-
-## 13. Git Workflow & Conventional Commits
-
-1. **Branch Format:** Work on dedicated branches (`feat/`, `fix/`, `refactor/`).
-   - _Rationale:_ Keeps the main branch deployable and isolates feature work.
-2. **Conventional Commits with Scope:** Format messages as `type(scope): description` in lowercase English with no trailing period (e.g. `docs(architecture): consolidate system architecture documentation`).
-   - _Rationale:_ Enforces clean, machine-parseable commit history for automated changelog generation.
-
----
-
-## 14. Agent Operational & Feedback Rules
-
-Extracted from historical development feedback to govern AI pair programming:
-
-1. **Never chain commands with `&&` in Windows PowerShell:** Execute commands individually.
-   - _Rationale:_ PowerShell syntax fails on `&&` in certain Windows runtime versions.
-2. **Package.json First:** Inspect `package.json` scripts before creating or executing ad-hoc commands.
-   - _Rationale:_ Prevents running inconsistent commands or introducing shadow tools.
-3. **No Instant-Noodle Patches:** Investigate root causes and propose durable solutions rather than quick superficial fixes.
-   - _Rationale:_ Prevents compounding technical debt.
-4. **Verified-Ship Mindset:** Every claimed completion must be verified with raw execution evidence before submitting for review.
-   - _Rationale:_ Ensures code actually works rather than merely compiling.
-
----
-
-## 15. Frontend & Next.js Script Architecture
-
-1. **Next.js `<Script>` Abstraction:** Never render raw JSX `<script>` tags inside React Server Components or layout trees. Always import `Script` from `next/script` with a unique `id` and appropriate `strategy` (e.g. `strategy="beforeInteractive"` for synchronous theme initialization in `<head>`).
-   - _Rationale:_ React 19 App Router reconciler emits errors when encountering raw `<script>` tags during client hydration.
-2. **Hydration Warning Scope:** Place `suppressHydrationWarning` strictly on `<html>` in `app/layout.tsx` when manipulating root class names via theme scripts; never scatter it onto arbitrary child components.
-   - _Rationale:_ Prevents hiding genuine hydration mismatches in business UI components.
-3. **No Console Masking:** Never monkey-patch `console.error` or override browser listeners to suppress hydration or framework warnings.
-   - _Rationale:_ Masks production reconciliation bugs and blinds E2E automated test assertion listeners.
+- Never store temporary reports under root or `docs/`, never use `file://` or backslashes (`\`) in `.md` files, and never reference nonexistent repo file paths outside fenced code blocks (`pnpm lint:doc-links` & `pnpm lint:doc-sync`).
+- Keep README/AGENTS metric tables synchronized via `pnpm docs:stats:write` and ensure `pnpm check:all` passes before merge or release.

@@ -1,70 +1,48 @@
 # HaiHire Documentation Portal
 
-> Central navigation portal, architectural specifications, engineering conventions, operational runbooks, API contracts, developer guides, and decision records for the HaiHire Enterprise ATS platform.
+Central index for **HaiHire Platform** architecture, API contracts, engineering conventions, architectural decisions, developer onboarding, and site reliability runbooks.
 
 ---
 
-## 🧭 Navigation Portal
+## Architecture & API Contracts
 
-| I want to find...                    | Document to Read                                   | Brief Description                                                       |
-| :----------------------------------- | :------------------------------------------------- | :---------------------------------------------------------------------- |
-| **System Architecture Overview**     | [System Overview](architecture/system-overview.md) | Monorepo topology, core patterns, services, request flow                |
-| **Data Model & Schema**              | [Data Model](architecture/data-model.md)           | Prisma 7 models, relationships, cascading & soft-delete grace periods   |
-| **Security & RBAC Architecture**     | [Security & RBAC](architecture/security-rbac.md)   | Cookie-based JWT auth, dynamic org ownership, 5 roles, 41 permissions   |
-| **Coding & Operational Conventions** | [Conventions](architecture/conventions.md)         | Pure TypeScript, zero-any, fail-fast env, DtoPipe, i18n, tenant scoping |
-| **Architectural Decisions Log**      | [Decisions Log](decisions/DECISIONS.md)            | Consolidated architectural decisions (D-001 to D-016)                   |
-| **REST API Contracts**               | [API Overview](api/overview.md)                    | 13 controllers, 87 endpoints, standard error envelope                   |
-| **Site Reliability & Runbooks**      | [Runbooks Catalog](runbooks/alerts.md)             | Operations runbooks (alerts, backups, deployment, redis, queues)        |
-| **Release History & Changelog**      | [Changelog](../CHANGELOG.md)                       | Version history, release milestones, migration notes                    |
-| **Developer Onboarding**             | [Onboarding](guides/onboarding.md)                 | Local environment setup, dependencies, quick start                      |
-| **Definition of Done**               | [Definition of Done](guides/definition-of-done.md) | Production readiness criteria, quality gates, PR standards              |
-| **QA Test Cases Matrix**             | [Test Cases](guides/testcases.md)                  | Verification test matrix across 10 platform domains                     |
-| **Deep System Context**              | [Project Context](guides/project-context.md)       | Technical stack, services, runtime architecture                         |
-| **Product Roadmap**                  | [Roadmap](guides/roadmap.md)                       | Strategic product roadmap and release horizons                          |
-| **Project Metrics Baseline**         | [Project Metrics](PROJECT_METRICS.md)              | Test suite stats, CI quality gates, coverage, stack baseline            |
+| Document                                               | Scope                                                                                       |
+| :----------------------------------------------------- | :------------------------------------------------------------------------------------------ |
+| [System Overview](architecture/system-overview.md)     | Monorepo topology, Next.js 16 + NestJS 12 request flow, Valkey/BullMQ, MinIO                |
+| [Data Model & Schema](architecture/data-model.md)      | `22` Prisma models, `18` PostgreSQL enums, cascading deletes, `deletedAt` soft deletes      |
+| [Security & RBAC](architecture/security-rbac.md)       | Cookie JWT + `tokenVersion`, `TenantGuard`, dynamic `ownerId`, `5` roles / `41` permissions |
+| [Engineering Conventions](architecture/conventions.md) | TypeScript strictness, Zod env, `DtoPipe`, 2-way i18n, Shadcn `base-nova` + `"cn"`          |
+| [REST & SSE API Overview](api/overview.md)             | `12` controllers, `107` endpoints, `GlobalExceptionFilter`, `64` `APP_ERROR_CODES`          |
+| [Architectural Decisions](decisions/DECISIONS.md)      | Decisions `D-001` through `D-016` (including Prisma `7.10.1` Stable GA)                     |
+| [Project Metrics](PROJECT_METRICS.md)                  | Verified codebase inventory, test totals, env keys, and CI gates                            |
 
 ---
 
-## 📂 Documentation Directory Structure
+## Developer Guides
 
-```
-docs/
-├── README.md                           # Central documentation portal index (this file)
-├── PROJECT_METRICS.md                  # Project metrics baseline & test counts
-├── architecture/
-│   ├── system-overview.md              # Monorepo topology, architecture diagrams, request flow
-│   ├── data-model.md                   # 16 Prisma models, relationships, indexes, soft-delete
-│   ├── security-rbac.md                # JWT auth, dynamic ownership, 5 roles, 41 permissions
-│   └── conventions.md                  # Single source of truth for engineering conventions
-├── decisions/
-│   └── DECISIONS.md                    # Consolidated architectural decisions (D-001 to D-016)
-├── api/
-│   └── overview.md                     # 13 controllers, 87 endpoints, auth, error envelope
-├── guides/                             # Developer workflows, checklists, and specifications
-│   ├── onboarding.md                   # Step-by-step developer onboarding & quick start
-│   ├── definition-of-done.md           # Production DoD Checklist
-│   ├── testcases.md                    # Verification test matrix across 10 domains
-│   ├── project-context.md              # Deep technical stack and component specifications
-│   └── roadmap.md                      # Strategic Horizon & product roadmap
-└── runbooks/                           # Site reliability & operational SOPs (12 runbooks)
-    ├── alerts.md                       # Prometheus alerts catalog & emergency SOPs
-    ├── backup-and-restore.md           # PostgreSQL dumps, MinIO hot backup & restore drills
-    ├── branch-protection.md            # Branch protection rules, environments & security
-    ├── ci-cd.md                        # Layered CI/CD pipelines, test pyramid & gates
-    ├── dlq-recovery.md                 # BullMQ dead-letter queue triage & retry SOP
-    ├── email-queue.md                  # Resend/SendGrid queue backlog remediation
-    ├── env-management.md               # Fail-fast environment architecture & sync
-    ├── orphan-cleanup.md               # MinIO daily orphan file cleanup cron
-    ├── prisma-version-policy.md        # Prisma version upgrade policy & ADR coverage
-    ├── production-deployment-plan.md   # 5-phase deployment protocol & rollback
-    ├── redis-recovery.md               # Valkey memory exhaustion & failover SOP
-    └── versioning.md                   # Monorepo versioning, SemVer, GHCR & immutable release policy
-```
+| Guide                                              | Topic                                                                   |
+| :------------------------------------------------- | :---------------------------------------------------------------------- |
+| [Onboarding Guide](guides/onboarding.md)           | Local Docker setup, env configuration, database workflow, and dev ports |
+| [Project Context](guides/project-context.md)       | Product domains, multi-tenant workspace model, and recruiting lifecycle |
+| [Definition of Done](guides/definition-of-done.md) | Mandatory code, test, security, i18n, and CI gate checks before merge   |
+| [QA Testcases Matrix](guides/testcases.md)         | Unit, cross-tenant, static gate, and Playwright E2E coverage overview   |
+| [Platform Roadmap](guides/roadmap.md)              | Post-baseline hardening and release engineering milestones              |
 
 ---
 
-## 📝 Documentation Guidelines
+## Site Reliability & Operations Runbooks
 
-1. **Single Source of Truth:** Every concept has exactly one authoritative location. Refer to other documents via relative links instead of duplicating text.
-2. **Language Mandate:** All documentation is written strictly in **English** (zero exceptions outside of i18n localization resources).
-3. **Integrity:** Never commit broken markdown links. All links are automatically validated by CI Gate 10 (`pnpm lint:doc-links`) and Gate 12 (`pnpm lint:doc-sync`).
+| Runbook                                                              | Operational Scope                                                                                      |
+| :------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| [Alerts & Incident Triage](runbooks/alerts.md)                       | Response SOPs for Prometheus alert rules in `monitoring/prometheus/alert-rules.yml`                    |
+| [Backup & Restore](runbooks/backup-and-restore.md)                   | PostgreSQL + MinIO backup locks, retention, and verification drills                                    |
+| [Dead-Letter Queue Recovery](runbooks/dlq-recovery.md)               | Inspecting and replaying `email-dlq-queue` and `orphan-cleanup-dlq`                                    |
+| [Email Queue Operations](runbooks/email-queue.md)                    | BullMQ `email-queue` delivery, SMTP/Resend/SendGrid transporters, backlog handling                     |
+| [Orphan MinIO Cleanup](runbooks/orphan-cleanup.md)                   | Manual CLI sweep ([scripts/cleanup-orphan-minio.ts](../scripts/cleanup-orphan-minio.ts)) & Pushgateway |
+| [Valkey / Redis Recovery](runbooks/redis-recovery.md)                | Handling `noeviction` memory pressure, AOF persistence, and BullMQ recovery                            |
+| [Environment Management](runbooks/env-management.md)                 | `.env.example` / `.env.production.example` sync and rotation (`56` keys)                               |
+| [CI/CD Pipelines](runbooks/ci-cd.md)                                 | GitHub Actions feature/dev/staging/main gates and Trivy SARIF release flow                             |
+| [Branch Protection](runbooks/branch-protection.md)                   | Rules across `feature/*`, `dev`, `staging`, and `main`                                                 |
+| [Prisma Version Policy](runbooks/prisma-version-policy.md)           | Prisma `7.10.1` GA lock, `@prisma/adapter-pg`, and `pnpm` catalog policy                               |
+| [Production Deployment Plan](runbooks/production-deployment-plan.md) | `docker-compose.prod.yml` rollout, TLS/proxy checklist, and smoke tests                                |
+| [Versioning & Release Policy](runbooks/versioning.md)                | SemVer tags (`v0.1.0` baseline), `CHANGELOG.md`, and version sync scripts                              |

@@ -1,109 +1,56 @@
-# HaiHire RESTful API Overview & Specification
+# REST & SSE API Overview (`12` Controllers / `107` Endpoints)
 
-> **Base URL:** `http://localhost:13001` (Dev) \| `https://api.yourdomain.com` (Prod)  
-> **Global Prefix:** All endpoints are exposed at root (e.g. `/auth/login`, `/jobs`).
-
----
-
-## 1. Authentication & Security Architecture
-
-### 1.1 Authentication Mechanism
-
-- **Primary Auth:** HttpOnly Cookie (`haihire_token`).
-  - Flags: `HttpOnly: true`, `SameSite: Lax`, `Path: /`, `Secure: true` (in production).
-  - Auth cookies prevent client-side XSS token theft.
-- **Fallback Auth:** Standard HTTP Authorization Header:
-  ```http
-  Authorization: Bearer <JWT_ACCESS_TOKEN>
-  ```
-- **Token Payload:** Contains `sub` (userId), `email`, `role`, and `organizationId`.
-
-### 1.2 Multi-Tenant Context
-
-Every authenticated business endpoint automatically extracts the tenant identity:
-
-- Scoped to `req.user.organizationId`.
-- Super-administrators can switch tenant context via `POST /organizations/switch`.
+HaiHire exposes a REST API plus one Server-Sent Events (SSE) stream from `apps/api` (`PORT=3001` default, proxied by Next.js `/api/*` rewrites in `apps/web/next.config.ts`).
 
 ---
 
-## 2. Standard Request & Response Envelopes
+## 1. Common Request & Error Contract
 
-### 2.1 Success Response Envelope
-
-Single resource response:
+- **Authentication:** `JwtAuthGuard` accepts `haihire_token` HttpOnly cookie or `Authorization: Bearer <token>` header; `TenantGuard` enforces `organizationId` access on scoped queries/bodies/params.
+- **Validation:** Controllers validate inputs via `@Body(DtoPipe(...))` and `@Query(DtoPipe(...))`.
+- **Standard Error Envelope (`GlobalExceptionFilter`):**
 
 ```json
 {
-  "id": "11e87ea9-2edc-4186-ad0d-d322ab2f1095",
-  "name": "Acme Corp",
-  "createdAt": "2026-10-03T07:14:17.135Z"
+  "statusCode": 400,
+  "code": "VALIDATION_ERROR",
+  "message": ["email must be an email"],
+  "params": {}
 }
 ```
 
-### 2.2 Standard Paginated Result Format
-
-All list endpoints require query parameters `page` (default 1) and `limit` (default 20, max 100), and optionally `search`:
-
-```json
-{
-  "data": [ ... ],
-  "total": 384,
-  "page": 1,
-  "limit": 20,
-  "totalPages": 20
-}
-```
-
-### 2.3 Unified Error Response Envelope
-
-When an operation fails, the backend returns a standardized machine-readable envelope:
-
-```json
-{
-  "statusCode": 404,
-  "code": "JOB_NOT_FOUND",
-  "message": "Job with ID 'a213d5f1' was not found",
-  "params": {
-    "jobId": "a213d5f1"
-  },
-  "timestamp": "2026-10-03T07:14:17.135Z",
-  "path": "/jobs/a213d5f1"
-}
-```
-
-All client applications translate `code` through localized dictionaries (`vi.ts` / `en.ts`), falling back to `message` if offline.
+Every `APP_ERROR_CODES` key (`64` codes in [packages/shared/src/errors.ts](../../packages/shared/src/errors.ts)) maps to localized English and Vietnamese messages via `getApiErrorMessage()` on the frontend.
 
 ---
 
-## 3. Domain Controller Map (83 Endpoints Across 13 Controllers)
+## 2. Endpoint Surface Summary (`107` Total)
 
-| Controller                    | Base Route          | Core Capabilities                                                                                                                                                                                                                                       |
-| :---------------------------- | :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **AuthController**            | `/auth`             | Authentication, registration (`firstName`/`lastName`), refresh token rotation, HttpOnly cookie emission, and current user profile/preferences/name updates (`/auth/me`, `/auth/me/profile`, `/auth/me/preferences`). Rate limited to 5 req/min in prod. |
-| **OrganizationsController**   | `/organizations`    | Multi-tenant organization CRUD, tenant switching, invite links creation/join, member role management.                                                                                                                                                   |
-| **JobsController**            | `/jobs`             | Job postings lifecycle (Draft $\rightarrow$ Published $\rightarrow$ Closed), public career listings, and RSC job details (`/jobs/careers/:orgSlug/:jobSlug`).                                                                                           |
-| **ApplicationsController**    | `/applications`     | Candidate job applications, resume upload saga, Kanban stage updates with state machine validation, download presigned URLs.                                                                                                                            |
-| **CandidatesController**      | `/candidates`       | Candidate profiles, talent pool search, document attachments, activity history.                                                                                                                                                                         |
-| **InterviewsController**      | `/interviews`       | Interview scheduling, Google/Outlook calendar invites, interviewer scorecards, evaluation criteria.                                                                                                                                                     |
-| **EmailController**           | `/email`            | Organization email settings (SMTP / Resend / SendGrid), templates, async BullMQ dispatch, and organization delivery logs.                                                                                                                               |
-| **SourcingController**        | `/sourcing`         | Multi-channel tracking link generator (5 UTM parameters), deduplicated click analytics, source attribution logs.                                                                                                                                        |
-| **ActivitiesController**      | `/activities`       | Comprehensive audit trail logs for candidate and application mutations (PII-scrubbed).                                                                                                                                                                  |
-| **WebhookSettingsController** | `/webhook-settings` | Per-organization multi-channel notification webhook configurations (Telegram, Discord, Generic HMAC).                                                                                                                                                   |
-| **UsersController**           | `/users`            | User profile management and account preferences.                                                                                                                                                                                                        |
-| **MetricsController**         | `/metrics`          | Prometheus scraper endpoint exposing HTTP latency and BullMQ queue gauges. Requires `Authorization: Bearer <METRICS_TOKEN>` when configured; hidden (404) in production without a token.                                                                |
-| **AppController**             | `/`                 | Health check probe (`/health`) and service status endpoint.                                                                                                                                                                                             |
+| Controller                  | Prefix              | Endpoints | Highlights & Primary Auth                                                                                                                                                                                                             |
+| :-------------------------- | :------------------ | :-------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AppController`             | `/`                 |    `3`    | `GET /`, `GET /health` (Postgres/Redis/MinIO probes), `GET /metrics` (`METRICS_TOKEN` Bearer)                                                                                                                                         |
+| `AuthController`            | `/auth`             |    `9`    | `POST login/register/refresh/logout/change-password`, `GET me`, `PATCH me/profile`, `PATCH me/preferences`, `GET me/permissions`                                                                                                      |
+| `OrganizationsController`   | `/organizations`    |   `23`    | `POST /`, `POST /join`, `GET my`, `GET my/all`, `POST switch`, members CRUD, role permission overrides/resets, `GET my/audit-log`, `PATCH/DELETE my`, `POST my/transfer-ownership`, invite links CRUD/public/join, `GET public/:slug` |
+| `JobsController`            | `/jobs`             |    `7`    | `GET /`, `GET public`, `GET careers/:orgSlug/:jobSlug`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`                                                                                                                                |
+| `CandidatesController`      | `/candidates`       |   `12`    | `GET /`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`, documents upload/download/delete (`3`), notes CRUD (`4`)                                                                                                                     |
+| `ApplicationsController`    | `/applications`     |   `15`    | `GET /`, `GET stats`, `GET job/:jobId`, `GET :id`, `POST apply`, `PATCH :id/stage`, `PATCH :id`, `DELETE :id`, documents upload/download/delete (`3`), notes CRUD (`4`)                                                               |
+| `InterviewsController`      | `/interviews`       |    `6`    | `GET /`, `GET :id`, `POST /`, `PATCH :id/scorecard`, `PATCH :id`, `DELETE :id`                                                                                                                                                        |
+| `ActivitiesController`      | `/activities`       |    `3`    | `GET candidate/:candidateId`, `GET application/:applicationId`, `POST /`                                                                                                                                                              |
+| `EmailController`           | `/email`            |   `14`    | `GET variables`, templates CRUD + duplicate + `by-type/:type` (`6`), `GET flows`, `PUT flows/:flowKey`, `GET/PUT settings`, `POST send`, `POST test`, `GET logs`                                                                      |
+| `SourcingController`        | `/sourcing`         |    `8`    | `GET stats`, `GET links`, `GET links/:id`, `POST links`, `PATCH links/:id`, `DELETE links/:id`, `GET attribution-log`, `POST public/click`                                                                                            |
+| `WebhookSettingsController` | `/webhook-settings` |    `6`    | `GET /`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`, `POST test`                                                                                                                                                                  |
+| `EventsController`          | `/events`           |    `1`    | `@Sse("sse")` (`GET /events/sse`) real-time workspace event stream                                                                                                                                                                    |
 
 ---
 
-## 4. Rate Limiting Policy
+## 3. Domain Error Codes Catalog (`64` `APP_ERROR_CODES`)
 
-Rate limiting is enforced at the controller and route level using `@nestjs/throttler`:
-
-- **Sensitive Auth Routes (`/auth/login`, `/auth/register`):**
-  - Production: Strict limit of **5 requests per 60 seconds** per client IP.
-  - Development / Test: Limit of **100 requests per 60 seconds** to facilitate concurrent automated E2E test suites.
-- **Public Sourcing Clicks (`/sourcing/public/click`):**
-  - Limit of 60 clicks per minute per IP to prevent click flooding.
-- **General API Endpoints:**
-  - 100 requests per 60 seconds.
+- **Organizations (`19`):** `ORG_SLUG_ALREADY_EXISTS`, `ORG_NOT_FOUND`, `ORG_NAME_REQUIRED`, `ORG_SLUG_REQUIRED`, `ORG_MEMBER_ALREADY_EXISTS`, `ORG_INVITE_INVALID`, `ORG_INVITE_EXPIRED`, `ORG_INVITE_REVOKED`, `ORG_USER_NO_ORG`, `ORG_CANNOT_CHANGE_OWNER_ROLE`, `ORG_CANNOT_CHANGE_SELF_ROLE`, `ORG_CANNOT_REMOVE_SELF`, `ORG_CANNOT_REMOVE_OWNER`, `ORG_CANNOT_TRANSFER_TO_SELF`, `ORG_TRANSFER_TARGET_NOT_MEMBER`, `ORG_NOT_OWNER`, `ORG_MEMBER_NOT_FOUND`, `ORG_FORBIDDEN_ACTION`, `ORG_ADMIN_PERMISSIONS_IMMUTABLE`
+- **Jobs (`4`):** `JOB_NOT_FOUND`, `JOB_ID_REQUIRED`, `JOB_NOT_ACCEPTING_APPLICATIONS`, `JOB_INVALID_ORGANIZATION`
+- **Applications & Uploads (`13`):** `APPLICATION_NOT_FOUND`, `APPLICATION_INVALID_ORGANIZATION`, `APPLICATION_INVALID_STAGE_TRANSITION`, `APPLICATION_STAGE_CONFLICT`, `CANDIDATE_INFO_REQUIRED`, `CANDIDATE_ORG_MISMATCH`, `CANDIDATE_ALREADY_APPLIED`, `DOCUMENT_FILE_REQUIRED`, `DOCUMENT_UPLOAD_FAILED`, `DOCUMENT_NOT_FOUND`, `DOCUMENT_RETRIEVE_FAILED`, `UPLOAD_TRUNCATED_FILE`, `TENANT_ID_REQUIRED_FOR_UPLOAD`
+- **Candidates (`3`):** `CANDIDATE_NOT_FOUND`, `CANDIDATE_EMAIL_EXISTS`, `CANDIDATE_ORG_REQUIRED`
+- **Interviews (`3`):** `INTERVIEW_NOT_FOUND`, `INTERVIEW_APP_NOT_FOUND`, `INTERVIEW_INVALID_ORGANIZATION`
+- **Email Settings & Templates (`6`):** `EMAIL_TEMPLATE_NOT_FOUND`, `EMAIL_TEMPLATE_SYSTEM_PROTECTED`, `EMAIL_FLOW_NOT_FOUND`, `EMAIL_SETTINGS_NOT_FOUND`, `EMAIL_SETTINGS_INVALID`, `EMAIL_ORG_REQUIRED`
+- **Auth & Permissions (`8`):** `INVALID_CREDENTIALS`, `INVALID_CURRENT_PASSWORD`, `USER_EMAIL_EXISTS`, `USER_SESSION_EXPIRED`, `UNAUTHORIZED`, `FORBIDDEN`, `FORBIDDEN_READ_ONLY`, `SSE_UNAUTHORIZED`
+- **Sourcing (`1`):** `TRACKING_LINK_NOT_FOUND`
+- **Webhook Settings (`3`):** `WEBHOOK_SETTING_NOT_FOUND`, `WEBHOOK_TEST_FAILED`, `WEBHOOK_PROVIDER_MISMATCH`
+- **Common & Resources (`4`):** `GENERIC_ERROR`, `VALIDATION_ERROR`, `RESOURCE_NOT_FOUND`, `NETWORK_ERROR`

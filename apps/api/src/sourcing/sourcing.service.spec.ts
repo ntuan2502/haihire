@@ -516,4 +516,38 @@ describe("SourcingService", () => {
     expect(inMemoryClicks).toHaveLength(100);
     expect(executeTxSpy).toHaveBeenCalledTimes(100);
   }, 20000);
+
+  it("should reject getAttributionLog for a jobId belonging to another organization", async () => {
+    inMemoryJobs.push({
+      id: "job-org2",
+      title: "Other Org Job",
+      organizationId: "org-2",
+    });
+
+    await expect(
+      service.getAttributionLog("org-1", { jobId: "job-org2" }),
+    ).rejects.toThrow("Access denied to this job's attribution log");
+  });
+
+  it("should reject updateLink when dto.jobId belongs to another organization", async () => {
+    inMemoryJobs.push({
+      id: "job-org2",
+      title: "Other Org Job",
+      organizationId: "org-2",
+    });
+    inMemoryLinks.push({
+      id: "link-org1",
+      organizationId: "org-1",
+      name: "Org 1 Link",
+      token: "lnk-org1",
+      source: SourcingChannel.LINKEDIN,
+      clicksCount: 0,
+      isActive: true,
+      deletedAt: null,
+    });
+
+    await expect(
+      service.updateLink("org-1", "link-org1", { jobId: "job-org2" }),
+    ).rejects.toThrow("Job not found");
+  });
 });

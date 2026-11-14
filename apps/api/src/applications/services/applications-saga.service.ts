@@ -79,7 +79,7 @@ export class ApplicationsSagaService {
     }
 
     const job = await this.prisma.job.findFirst({
-      where: { id: dto.jobId },
+      where: { id: dto.jobId, deletedAt: null },
       select: {
         id: true,
         title: true,
@@ -210,10 +210,17 @@ export class ApplicationsSagaService {
               firstName: true,
               lastName: true,
               displayName: true,
+              deletedAt: true,
             },
           });
 
           if (existingCandidate) {
+            if (existingCandidate.deletedAt) {
+              await tx.candidate.update({
+                where: { id: existingCandidate.id },
+                data: { deletedAt: null, updatedAt: toInstant() },
+              });
+            }
             candidateId = existingCandidate.id;
             applicantName = formatCandidateDisplayName(
               existingCandidate,
@@ -241,7 +248,7 @@ export class ApplicationsSagaService {
         } else {
           // Validate candidate exists and belongs to the same organization as the target job
           const existingCandidate = await tx.candidate.findFirst({
-            where: { id: candidateId as string },
+            where: { id: candidateId as string, deletedAt: null },
             select: {
               id: true,
               firstName: true,

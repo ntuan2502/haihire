@@ -191,8 +191,8 @@ jobs:
         with:
           name: trivy-container-sarif-reports
           path: |
-            trivy-backend-results.sarif
-            trivy-frontend-results.sarif
+            trivy-api-results.sarif
+            trivy-web-results.sarif
           if-no-files-found: ignore
 
   # ============================================================================

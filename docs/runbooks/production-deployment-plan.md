@@ -1,197 +1,122 @@
-# HaiHire Production Deployment & Rollback Plan
+# Production Deployment Plan
 
-## 1. Overview & Maintenance Window
-
-This runbook provides the canonical deployment plan, pre-flight checklists, operational execution sequences, rollback strategies, and post-deployment monitoring guidelines for releasing the HaiHire ATS Enterprise Platform to production.
-
-- **Target Release:** Version 1.0.0 (Production General Availability)
-- **Designated Maintenance Window:** `02:00 - 04:00 UTC` (Period of lowest global candidate traffic)
-- **Estimated Downtime:** `0 minutes` (Zero-downtime rolling update via Docker Compose / Reverse Proxy) or maximum 2 minutes maintenance drain during database migration execution.
-- **On-Call SRE Leads:** Senior Backend Engineer + Infrastructure SRE Engineer
+> Step-by-step release, Docker Compose topology, verification, and rollback procedures for HaiHire production.
 
 ---
 
-## 2. Pre-Deployment Checklist (T-24h to T-1h)
+## 1. Production Stack Topology (`docker-compose.prod.yml`)
 
-Before commencing deployment operations, verify each item:
+| Service          | Container Name                | Image / Baseline                                                           | Port / Network                           | Healthcheck                             |
+| :--------------- | :---------------------------- | :------------------------------------------------------------------------- | :--------------------------------------- | :-------------------------------------- |
+| `postgres`       | `haihire-prod-postgres`       | `postgres:17.6-alpine`                                                     | `haihire-prod-network` (internal `5432`) | `pg_isready`                            |
+| `redis`          | `haihire-prod-redis`          | `valkey/valkey:8.0.2-alpine` (`noeviction`, AOF `everysec`, `384mb` limit) | `haihire-prod-network` (internal `6379`) | `redis-cli ping`                        |
+| `minio`          | `haihire-prod-minio`          | `alpine/minio`                                                             | `haihire-prod-network` (internal `9000`) | HTTP `/minio/health/live`               |
+| `api`            | `haihire-prod-api`            | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `${BACKEND_PORT:-3001}:3001`             | HTTP `GET /health`                      |
+| `web`            | `haihire-prod-web`            | `ghcr.io/<owner>/haihire-web:<IMAGE_TAG>`                                  | `${FRONTEND_PORT:-3000}:3000`            | Starts after healthy `api`              |
+| `orphan-cleanup` | `haihire-prod-orphan-cleanup` | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>` (`crond` daily `04:00`)          | `haihire-prod-network`                   | Depends on healthy `postgres` + `minio` |
+| `pushgateway`    | `haihire-prod-pushgateway`    | `prom/pushgateway:v1.10.0`                                                 | `${PUSHGATEWAY_PORT:-9091}:9091`         | HTTP `/-/healthy`                       |
 
-- [ ] **Data Safety Snapshot:**
-      Execute pre-release full backup across PostgreSQL and MinIO:
-  ```bash
-  node --no-warnings --experimental-strip-types scripts/backup-production.ts
-  ```
-  Verify output displays: `Backup & Restore Drill Completed Successfully!`.
-- [ ] **Clean Codebase Verification:**
-  - `pnpm test` reporting 1,268/1,268 tests passing (794 Backend + 474 Frontend) and `pnpm test:e2e` reporting 100% green.
-  - All 16 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
-  - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
-- [ ] **Container Image Availability on GHCR:**
-      Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
-  ```bash
-  export GITHUB_REPOSITORY_OWNER="ntuan2502"
-  export IMAGE_TAG="v1.0.0" # Never use 'latest' in production
-
-  docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-backend:${IMAGE_TAG}
-  docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-frontend:${IMAGE_TAG}
-  ```
-- [ ] **Stakeholder & Tenant Notification:**
-      Broadcast scheduled maintenance window notice via platform status dashboard at `status.haihire.com`.
+Persistent named volumes in [docker-compose.prod.yml](../../docker-compose.prod.yml): `haihire_prod_postgres_data`, `haihire_prod_redis_data`, `haihire_prod_minio_data`.
 
 ---
 
-## 3. Deployment Steps (T-0)
+## 2. Pre-Deployment Checklist
 
-Execute sequential deployment commands during the designated maintenance window:
-
-### Step 1: Pre-Flight Verification & Traffic Isolation
+1. **CI Release Readiness:** Confirm GitHub Actions CI ([ci-main.yml](../../.github/workflows/ci-main.yml)) and CD ([cd-release.yml](../../.github/workflows/cd-release.yml)) completed cleanly with images published to GHCR and zero blocking Trivy findings.
+2. **Release Tag Alignment:** Confirm target `IMAGE_TAG` (e.g., `v1.0.0`) matches the immutable Git tag and version in [CHANGELOG.md](../../CHANGELOG.md).
+3. **Environment Configuration:** Verify `.env.production` follows [`.env.production.example`](../../.env.production.example), has `chmod 600` permissions, sets `SEED_DEMO_ON_BOOT=false`, `NEXT_PUBLIC_ENABLE_DEMO_LOGIN=false`, strong `JWT_SECRET`, `ENCRYPTION_SECRET`, `METRICS_TOKEN` (>= 32 chars), and a non-`SIMULATED` `SYSTEM_EMAIL_PROVIDER`.
+4. **Render Validation:**
 
 ```bash
-# 1.1 SSH into production server
-ssh sre-admin@prod-cluster.haihire.internal
-
-# 1.2 Inspect cluster resource headroom (Memory > 4GB free, Disk > 20GB free)
-free -m
-df -h /var/lib/docker
-
-# 1.3 Ensure .env.production has immutable IMAGE_TAG and GITHUB_REPOSITORY_OWNER set
-# Example in .env.production:
-# GITHUB_REPOSITORY_OWNER=ntuan2502
-# IMAGE_TAG=v1.0.0
-grep -E "^(GITHUB_REPOSITORY_OWNER|IMAGE_TAG)=" .env.production
-
-# 1.4 Verify production configuration validity
-pnpm docker:prod:config
-# or: docker compose --env-file .env.production -f docker-compose.prod.yml config
+pnpm docker:prod:config > /dev/null
 ```
 
-### Step 2: Database Migration Check
+5. **Mandatory Pre-Deploy Backup:** Take a consistent backup of PostgreSQL and MinIO prior to applying schema changes or swapping images (see [Backup and Restore Runbook](backup-and-restore.md)):
 
 ```bash
-# Verify backward-compatibility of schema before stopping application
-pnpm db:status
-pnpm db:migrate
-```
-
-### Step 3: Progressive Rolling Deployment (Zero Local Build)
-
-```bash
-# 3.1 Pull verified immutable images from GHCR
-docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend orphan-cleanup
-
-# 3.2 Audit & record image digests for deployment tracking
-docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
-docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
-
-# 3.3 Deploy Backend with zero-build container start
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps backend
-
-# 3.4 Verify backend health before updating frontend
-curl -f -s http://localhost:3001/health | grep '"status":"ok"' || exit 1
-
-# 3.5 Deploy Frontend with zero-build container start
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps frontend
-
-# 3.6 Restart background worker services
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps orphan-cleanup
-```
-
-### Step 4: Post-Deployment Smoke Test
-
-Run automated synthetic smoke test suite against live production instance:
-
-```bash
-node --no-warnings --experimental-strip-types scripts/smoke-and-load-test.ts
-```
-
-Verify:
-
-1. `GET /health` returns HTTP 200 with all 3 services (`postgres`, `redis`, `minio`) in `up` state.
-2. Authenticate recruiter user $\rightarrow$ HTTP 200 + valid JWT.
-3. Candidate application submission $\rightarrow$ HTTP 201 + MinIO CV storage.
-4. Kanban stage transition $\rightarrow$ HTTP 200 + Activity log recorded.
-
----
-
-## 4. Rollback Plan (Contingency Procedure)
-
-If unrecoverable critical failures occur (P0/P1 bugs, database deadlock, or error rate > 1%), execute emergency rollback within 15 minutes of detection:
-
-### 4.1. Rollback Trigger Criteria
-
-- Backend `/health` endpoint remains down > 60 seconds after startup.
-- HTTP error rate exceeds 1% of total requests on `/metrics`.
-- Latency p95 exceeds 500ms for more than 5 consecutive minutes.
-
-### 4.2. Rollback Commands
-
-```bash
-# Step 1: Revert container image to N-1 verified release tag (Immutable Tag Policy: NEVER use latest)
-export PREVIOUS_STABLE_TAG="v0.9.9"
-
-# Update IMAGE_TAG in .env.production or pass via environment override:
-IMAGE_TAG=${PREVIOUS_STABLE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend
-IMAGE_TAG=${PREVIOUS_STABLE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps backend frontend
-
-# Step 2: In the event of schema incompatibility, restore from pre-deployment snapshot:
-# (Only if migrations made breaking structural changes)
-SNAPSHOT="./backups/haihire-db-haihire_db-PRE_DEPLOY.dump"
-docker cp "$SNAPSHOT" haihire-postgres:/tmp/rollback.dump
-docker exec -i haihire-postgres pg_restore -U haihire_user -d haihire_db --clean --if-exists /tmp/rollback.dump
-docker exec -i haihire-postgres rm -f /tmp/rollback.dump
-
-# Step 3: Verify restored state
-curl -i http://localhost:3001/health
+pnpm db:backup
 ```
 
 ---
 
-## 5. Post-Deployment Monitoring (48 Hours Observation Window)
+## 3. Deployment Execution
 
-Establish continuous SRE observation protocol across four operational milestones:
+### Step 1: Pull Target Release Images
 
-| Time Window | Monitoring Focus       | Verification Actions & Targets                                                                                                                 |
-| :---------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Hour 1**  | Immediate Stability    | Watch Prometheus Grafana dashboards: HTTP error rate $< 0.1\%$, Latency p95 $< 120\text{ms}$, Memory RSS steady.                               |
-| **Hour 6**  | Queue & Concurrency    | Inspect BullMQ Valkey/Redis queue depth ($< 10$ backlog), PostgreSQL connection pool saturation ($< 40\%$), MinIO upload success rate $100\%$. |
-| **Hour 24** | Daily Business Traffic | Review application error logs (`docker compose logs backend --since 24h \| grep ERROR`), audit trail integrity, email delivery success rate.   |
-| **Hour 48** | Final Sign-Off Review  | SRE and Engineering leadership review meeting: confirm zero regressions, close deployment ticket, declare production stable.                   |
+Update `IMAGE_TAG` in `.env.production`, then pull signed images from GHCR:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml pull api web orphan-cleanup
+```
+
+### Step 2: Apply Database Schema / Migrations (When Required)
+
+Inspect migration status before applying:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm api npx prisma migrate status
+```
+
+Apply pending migrations if clean:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+```
+
+### Step 3: Start / Recreate Stack
+
+```bash
+pnpm docker:prod:up
+```
+
+Verify all containers stabilize cleanly and report `healthy`:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
+```
 
 ---
 
-## 6. Critical Alert Rules To Watch (Prometheus / Grafana)
+## 4. Post-Deploy Verification (`scripts/smoke-and-load-test.ts`)
 
-The following Prometheus alert rules (maintained in [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)) must remain green:
+Run [scripts/smoke-and-load-test.ts](../../scripts/smoke-and-load-test.ts) against the target environment (staging or pre-cutover endpoint; note it creates a synthetic `smoke_<timestamp>@prod.test` organization/job):
 
-```yaml
-- alert: HighHttpErrorRate
-  expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 1
-  for: 2m
-  labels:
-    severity: critical
-  annotations:
-    summary: "HTTP 5xx error rate exceeds 1% on HaiHire Backend"
+- Verifies `GET /health` returns HTTP `200` with `status: "ok"`.
+- Verifies `/metrics` exposes `http_requests_total` when accessible.
+- Verifies registration, organization creation, login, job creation, and subsequent flow endpoints.
+- Executes a `500`-request / `50`-concurrency benchmark asserting `p95 < 500ms` and `0` failed requests.
 
-- alert: HighLatencyP95
-  expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
-  for: 5m
-  labels:
-    severity: warning
-  annotations:
-    summary: "p95 request latency exceeds 500ms"
+Also confirm:
 
-- alert: ServiceDown
-  expr: up{job="haihire-backend"} == 0
-  for: 1m
-  labels:
-    severity: page
-  annotations:
-    summary: "HaiHire Backend instance is unreachable"
+- Web SSR root loads cleanly (`http://localhost:${FRONTEND_PORT:-3000}`).
+- `GET /health` returns `200`.
+- Active Prometheus alert dashboard shows zero firing critical alerts ([Alerts Runbook](alerts.md)).
 
-- alert: EmailQueueBacklog
-  expr: bullmq_queue_waiting_jobs{queue="email-queue"} > 100
-  for: 5m
-  labels:
-    severity: warning
-  annotations:
-    summary: "Email dispatch queue has over 100 backlogged jobs"
+---
+
+## 5. Rollback Procedure
+
+### Application-Only Rollback (No Incompatible Schema Change)
+
+1. Revert `IMAGE_TAG` in `.env.production` to the previous known-good release tag.
+2. Recreate `api`, `web`, and `orphan-cleanup`:
+
+```bash
+pnpm docker:prod:up
 ```
+
+### Full Rollback (After Destructive / Non-Backward-Compatible Migration)
+
+1. Stop `api`, `web`, and `orphan-cleanup` (`docker compose --env-file .env.production -f docker-compose.prod.yml stop api web orphan-cleanup`).
+2. Restore PostgreSQL and MinIO from the pre-deploy backup taken in Section 2 following [Backup and Restore Runbook](backup-and-restore.md).
+3. Set `IMAGE_TAG` back to the prior release tag and start the stack (`pnpm docker:prod:up`).
+
+---
+
+## 6. Related Documentation
+
+- [CI/CD Runbook](ci-cd.md)
+- [Environment Management Runbook](env-management.md)
+- [Versioning Runbook](versioning.md)
+- [Backup and Restore Runbook](backup-and-restore.md)
+- [Redis Recovery Runbook](redis-recovery.md)

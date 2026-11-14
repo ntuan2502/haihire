@@ -24,11 +24,9 @@ function getMarkdownFiles(dir: string, fileList: string[] = []): string[] {
   return fileList;
 }
 
-const targetDirs = [
-  path.join(rootDir, "docs"),
-  path.join(rootDir, ".agents", "memory"),
-];
+const targetDirs = [path.join(rootDir, "docs")];
 const individualFiles = [
+  path.join(rootDir, "AGENTS.md"),
   path.join(rootDir, "README.md"),
   path.join(rootDir, "CHANGELOG.md"),
   path.join(rootDir, "CONTRIBUTING.md"),

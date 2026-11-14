@@ -181,12 +181,17 @@ export function checkTenantScoping(options?: {
         continue;
       }
 
-      // Step 3: Function scope detection (look backwards for parent verification)
+      // Step 3: Function scope detection (look backwards for the enclosing method/function header)
       const beforeContent = content.slice(0, matchIndex);
-      const funcMatch = beforeContent.match(
-        /(?:async|private|public|function)\s+([A-Za-z0-9_]+)\s*\([^)]*\)[\s\S]*$/,
-      );
-      const funcPrefix = funcMatch ? funcMatch[0] : "";
+      const funcHeaderRegex =
+        /(?:async|private|public|function)\s+([A-Za-z0-9_]+)\s*\([^)]*\)/g;
+      let lastHeaderIndex = -1;
+      let headerMatch: RegExpExecArray | null;
+      while ((headerMatch = funcHeaderRegex.exec(beforeContent)) !== null) {
+        lastHeaderIndex = headerMatch.index;
+      }
+      const funcPrefix =
+        lastHeaderIndex >= 0 ? beforeContent.slice(lastHeaderIndex) : "";
 
       const hasParentGuard =
         funcPrefix.includes(".organizationId !==") ||

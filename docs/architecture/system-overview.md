@@ -1,122 +1,62 @@
-# HaiHire System Architecture & Design Overview
+# System Overview
 
-> **Enterprise Multi-Tenant Applicant Tracking System (ATS)**  
-> Technical Architecture, Infrastructure Topology, and Core Design Patterns.
+HaiHire is an enterprise multi-tenant Applicant Tracking System organized as a `pnpm` + Turborepo TypeScript monorepo.
 
 ---
 
-## 1. System Topology
+## 1. High-Level Topology
 
-```mermaid
-flowchart TB
-    subgraph Clients["Clients & Edge Traffic"]
-        Browser["Desktop & Mobile Browsers"]
-        Candidate["Public Candidates (/careers/*)"]
-        Recruiter["Recruiter / Admin Portal (/dashboard/*)"]
-    end
-
-    subgraph Edge["Reverse Proxy & Edge Network"]
-        Gateway["Reverse Proxy Gateway (TLS Termination & Routing)"]
-    end
-
-    subgraph FrontendCluster["Next.js 16.4.5 Frontend App (Port 13000)"]
-        RSC["React Server Components (RSC)\n• /careers/[orgSlug]/[jobSlug]\n• Server-Side SEO & JSON-LD"]
-        ClientApp["Client Components (React 19.3.1)\n• Kanban Pipeline Board (usePipelineKanban)\n• Wizard Forms & TanStack Query"]
-        EdgeProxy["Next.js Edge Proxy (proxy.ts)\n• Auth Cookie verification & redirects"]
-        RewriteProxy["Next.js Rewrite Proxy (/api/*)\n• Backend proxy & SSR forwarding"]
-    end
-
-    subgraph BackendCluster["NestJS 12.4.0 API Server (Port 13001)"]
-        GuardLayer["Guard Pipeline\n• JwtAuthGuard (HttpOnly Cookie)\n• RolesGuard (Dynamic isOwner Bypass)\n• RequirePermissionGuard"]
-        Controllers["Modular Domain Controllers\n• Auth, Jobs, Candidates, Applications\n• Interviews, Email, Sourcing, Organizations\n• Webhooks, Users, Metrics, Health"]
-        SagaService["Application Saga Coordinator\n• MinIO Upload -> Prisma TX -> Compensating DLQ"]
-        ALS["AsyncLocalStorage Transaction Manager\n• PrismaService.executeTx()"]
-        EmailWorker["BullMQ Email Processor\n• Deterministic Idempotency Keys"]
-        OrphanWorker["Orphan File Cleanup Worker\n• Daily Cron (0 4 * * *)"]
-    end
-
-    subgraph DataTier["Data & Storage Infrastructure"]
-        Postgres[("PostgreSQL 17.6\n(Port 15432 / 5432)\nPrisma 7.10.1 Stable GA")]
-        Valkey[("Valkey 8.0.2 Cache & Queue\n(Port 16379 / 6379)\nBullMQ Engine")]
-        MinIO[("MinIO S3 Object Storage\n(Port 19000 / 9000)\nResumes & Documents")]
-    end
-
-    Browser --> Gateway
-    Candidate --> Gateway
-    Recruiter --> Gateway
-    Gateway --> FrontendCluster
-    Gateway --> BackendCluster
-
-    EdgeProxy --> ClientApp
-    ClientApp --> RewriteProxy
-    RSC -->|Internal Network| BackendCluster
-    RewriteProxy -->|Internal Network| BackendCluster
-
-    BackendCluster --> GuardLayer
-    GuardLayer --> Controllers
-    Controllers --> SagaService
-    SagaService --> ALS
-    ALS --> Postgres
-    SagaService --> MinIO
-    Controllers --> EmailWorker
-    EmailWorker --> Valkey
-    OrphanWorker --> Postgres
-    OrphanWorker --> MinIO
+```text
+Browser / Candidate Portal
+   │
+   ├── HTTP/SSE ──► Next.js 16 Frontend (apps/web, port 3000 dev/prod, 13000 E2E)
+   │                   ├── src/proxy.ts (JWT cookie check & /dashboard -> /auth/login redirect)
+   │                   ├── next.config.ts rewrites (/api/* -> API, /haihire-resumes/* -> MinIO)
+   │                   └── TanStack Query v5 + Axios (URL Gatekeeper + 401 refresh queue)
+   │
+   ▼
+NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
+   ├── Security Pipeline: CorrelationIdMiddleware -> ThrottlerGuard -> JwtAuthGuard
+   │                      -> RolesGuard (PermissionResolverService) -> TenantGuard -> DtoPipe
+   ├── Error Handling:    GlobalExceptionFilter + AppException (64 APP_ERROR_CODES)
+   │
+   ├── PostgreSQL 17.6 ◄── Prisma 7.10.1 (@prisma/adapter-pg + pg.Pool + AsyncLocalStorage tx)
+   ├── Valkey 8.0.2     ◄── ioredis + BullMQ (email-queue, email-dlq-queue, orphan-cleanup-queue,
+   │                                           orphan-cleanup-dlq, SSE event pub/sub)
+   └── MinIO S3         ◄── Private bucket `haihire-resumes` (`tenants/<orgId>/...`)
 ```
 
 ---
 
-## 2. Technology Stack Baseline
+## 2. Workspace Packages & Applications
 
-| Tier / Domain                 | Technology                |      Version       | Purpose                                                                 |
-| :---------------------------- | :------------------------ | :----------------: | :---------------------------------------------------------------------- |
-| **Runtime Environment**       | Node.js                   |       `26.x`       | Modern Active LTS runtime across Docker and CI.                         |
-| **Package Management**        | pnpm                      |      `12.6.0`      | Strict workspace dependency management, zero phantom dependencies.      |
-| **Frontend Framework**        | Next.js (App Router)      |      `16.4.5`      | Hybrid RSC + Client architecture, Turbopack, standalone output.         |
-| **UI Engine**                 | React                     |      `19.3.1`      | Modern concurrent rendering, Server Components, and transition hooks.   |
-| **Styling Engine**            | Tailwind CSS              |      `v4.0.0`      | CSS-first zero-config design tokens, Slate palette.                     |
-| **Backend Framework**         | NestJS                    |      `12.4.0`      | Modular enterprise server architecture, Express engine.                 |
-| **Database & ORM**            | PostgreSQL + Prisma       | `17.6` / `7.10.1`  | Multi-tenant datastore with canonical Prisma Client access.             |
-| **Distributed Cache & Queue** | Valkey (Redis-compatible) |      `8.0.2`       | Open-source Redis replacement for BullMQ queues and cache.              |
-| **Object Storage**            | MinIO (S3-compatible)     |   `RELEASE.2025`   | Tenant-segregated PDF/DOCX resume storage with expiring presigned URLs. |
-| **Language Baseline**         | TypeScript                |      `6.0.3`       | Strict type safety across backend, frontend, and shared packages.       |
-| **Test Runners**              | Vitest + Playwright       | `5.1.0` / `1.64.0` | Comprehensive unit/integration tests and browser E2E test suite.        |
+### `packages/shared` (`@haihire/shared`)
 
----
+Consumed directly by both `apps/api` and `apps/web` without build drift:
 
-## 3. Service Topology & Request Flow
+- `permissions.ts`: `5` roles (`ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), `41` permission strings, `PERMISSIONS` default matrix, and `hasPermission`.
+- `errors.ts`: `64` `APP_ERROR_CODES`, `ApiErrorPayload`, `ErrorLocaleDictionary`.
+- `events.ts`: `17` `APP_EVENT_TYPES` powering server SSE broadcasts and frontend cache invalidation.
+- `schemas/`: Zod contracts (`auth`, `job`, `candidate`, `application`) plus domain helpers (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `email-templates`, `webhooks`, `person-name`, `organizations`).
 
-1. **Client Ingress:** Requests hit the Edge Gateway or Next.js Frontend depending on route.
-2. **Edge Proxy Interception:** `apps/web/src/proxy.ts` inspects session authentication cookies (`haihire_token`, `haihire_has_org`) and handles server-side redirects (e.g. unauthenticated users requesting `/dashboard` are redirected to `/auth/login`).
-3. **API Routing:**
-   - Client requests to `/api/*` are forwarded via Next.js proxy rewrites to the NestJS backend on internal port `13001`.
-   - Direct requests to public career pages (`/careers/[orgSlug]/[jobSlug]`) execute as React Server Components (RSC) fetching metadata directly from the backend.
-4. **Backend Security Pipeline:**
-   - Every API request passes through `JwtAuthGuard`, extracting the user token and tenant context.
-   - `RolesGuard` evaluates dynamic ownership via `Organization.ownerId` (granting super-admin bypass) and verifies permissions declared via `@RequirePermission()`.
-   - Every controller `@Body()` parameter is validated by `DtoPipe` to enforce fail-fast Zod/class-validator schemas.
-5. **Data Persistence:**
-   - Relational entities are persisted to PostgreSQL 17 via Prisma schema (`apps/api/src/prisma/schema.prisma`).
-   - Transactions use `PrismaService.executeTx()` with `AsyncLocalStorage` for propagation.
-   - File uploads execute via the Saga coordinator combining MinIO S3 storage and DB commits with compensating rollbacks.
-   - Background tasks (emails, webhooks, metrics) are dispatched to BullMQ queues powered by Valkey.
+### `apps/api` (NestJS `12.4.0` Backend)
+
+Compiled into a single ESM artifact (`dist/server.mjs`) via `esbuild`.
+
+- **15 Domain & Infrastructure Modules** wired in [apps/api/src/app.module.ts](../../apps/api/src/app.module.ts): `PrismaModule`, `RedisModule`, `MinioModule`, `AuthModule`, `EventsModule`, `OrganizationsModule`, `JobsModule`, `ApplicationsModule`, `CandidatesModule`, `InterviewsModule`, `ActivitiesModule`, `EmailModule`, `SourcingModule`, `WebhookSettingsModule`, `MetricsModule`.
+- **12 Controllers / 107 Endpoints:** Full REST and SSE surface documented in [API Overview](../api/overview.md).
+- **Observability:** `GET /health` probes PostgreSQL, Valkey/Redis, and MinIO; `GET /metrics` exposes Prometheus gauges gated by constant-time `METRICS_TOKEN` verification (`404` in production if unset).
+
+### `apps/web` (Next.js `16.4.5` Portal)
+
+- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites.
+- **Request Boundary (`src/proxy.ts`):** Uses Next.js 16 `proxy()` convention (with zero legacy `middleware.ts` files).
+- **UI Stack:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` + `oklch(...)` variables in [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css), and Shadcn `base-nova` built on `@base-ui/react` + standalone `cn` package.
+- **Data & Real-Time Layer:** Axios interceptor chain in [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) prevents `[object Object]` URL leaks, queues concurrent `401` retries behind silent token refresh, and routes resume previews through tenant-guarded API download routes. SSE events trigger debounced (`100ms`) query prefix invalidation via `createRealtimeInvalidator` ([apps/web/src/lib/realtime-sync.ts](../../apps/web/src/lib/realtime-sync.ts)).
 
 ---
 
-## 4. Backend Modules
+## 3. Asynchronous Reliability & Storage Compensation
 
-The backend monolith is structured into domain modules located under `apps/api/src/`:
-
-- `applications/`: Candidate application submissions, pipeline progression, and distributed Saga orchestration.
-- `auth/`: Authentication, JWT issuance, cookie handling, passport strategies, and permission guards.
-- `candidates/`: Candidate profiles, resumes, tags, and PII protection.
-- `common/`: Global exception filters, `DtoPipe`, interceptors, and encryption helpers.
-- `config/`: Centralized fail-fast Zod environment schema (`env.ts`).
-- `email/`: Multi-provider transactional email delivery (Resend, SendGrid, SMTP, Simulated).
-- `interviews/`: Interview scheduling, calendar invites, and interviewer scorecards.
-- `jobs/`: Job requisitions, custom hiring pipelines, and stage management.
-- `metrics/`: Prometheus metrics collection and alerting probes.
-- `organizations/`: Multi-tenant organization boundaries, memberships, and dynamic ownership.
-- `prisma/`: Prisma schema, database client, and transaction management.
-- `sourcing/`: Sourcing channels, tracking links, and attribution analytics (decomposed into `SourcingQueryService`, `SourcingMetricsService`, and `SourcingLockService`).
-- `webhook-settings/`: Outbound tenant webhook notifications (Discord, Telegram, Generic).
+- **Application Creation Saga:** Inside `runInTransaction`, creates/restores `Candidate` (handling `deletedAt` soft-delete restoration on `(organizationId, email)` conflict), checks `Job` (`deletedAt: null`, status `PUBLISHED`), uploads resume into `tenants/<orgId>/...` in MinIO, persists `Application`, `CandidateDocument`, `ActivityLog`, triggers system/flow confirmation emails via `email-queue`, and emits real-time SSE events. On DB failure after MinIO upload, compensating deletion runs inline and falls back to `orphan-cleanup-queue` -> `orphan-cleanup-dlq`.
+- **Email Delivery Pipeline:** `EmailProcessor` processes transactional `send-email` and `send-system-email` jobs with configurable per-org/system transporters (`SMTP`, `Resend`, `SendGrid`, or `SIMULATED` in non-prod) and routes exhausted failures into `email-dlq-queue` with optional webhook alerts (`Telegram`, `Discord`, `Generic`).

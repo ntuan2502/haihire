@@ -284,21 +284,28 @@ export class ApplicationsDocumentsService {
       );
     }
 
-    if (opts?.documentId) {
-      await this.prisma.candidateDocument.deleteMany({
-        where: {
+    const deleteWhere = opts?.documentId
+      ? {
           id: opts.documentId,
           candidateId: app.candidateId,
           organizationId,
-        },
+        }
+      : opts?.url
+        ? {
+            url: opts.url,
+            candidateId: app.candidateId,
+            organizationId,
+          }
+        : null;
+
+    let docsToDelete: Array<{ url: string }> = [];
+    if (deleteWhere) {
+      docsToDelete = await this.prisma.candidateDocument.findMany({
+        where: deleteWhere,
+        select: { url: true },
       });
-    } else if (opts?.url) {
       await this.prisma.candidateDocument.deleteMany({
-        where: {
-          url: opts.url,
-          candidateId: app.candidateId,
-          organizationId,
-        },
+        where: deleteWhere,
       });
     }
 
@@ -311,6 +318,20 @@ export class ApplicationsDocumentsService {
         resumeMimeType: null,
       },
     });
+
+    if (
+      docsToDelete.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const doc of docsToDelete) {
+        if (!doc.url) continue;
+        const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+    }
 
     this.eventsService?.emit({
       type: "APPLICATIONS_CHANGED",

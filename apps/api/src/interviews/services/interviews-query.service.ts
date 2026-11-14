@@ -107,8 +107,69 @@ export class InterviewsQueryService {
     let targetAppIds: string[] | null = null;
 
     if (options?.applicationId) {
+      if (targetOrgId) {
+        const app = await this.prisma.application.findFirst({
+          where: { id: options.applicationId },
+          select: { id: true, jobId: true, candidateId: true },
+        });
+        if (!app) {
+          return {
+            data: [],
+            total: 0,
+            page: defaultPage,
+            limit: defaultLimit,
+            totalPages: 0,
+          };
+        }
+        const [orgJob, orgCandidate] = await Promise.all([
+          this.prisma.job.findFirst({
+            where: {
+              id: app.jobId,
+              organizationId: targetOrgId,
+              deletedAt: null,
+            },
+            select: { id: true },
+          }),
+          this.prisma.candidate.findFirst({
+            where: {
+              id: app.candidateId,
+              organizationId: targetOrgId,
+              deletedAt: null,
+            },
+            select: { id: true },
+          }),
+        ]);
+        if (!orgJob && !orgCandidate) {
+          return {
+            data: [],
+            total: 0,
+            page: defaultPage,
+            limit: defaultLimit,
+            totalPages: 0,
+          };
+        }
+      }
       targetAppIds = [options.applicationId];
     } else if (options?.jobId) {
+      if (targetOrgId) {
+        const orgJob = await this.prisma.job.findFirst({
+          where: {
+            id: options.jobId,
+            organizationId: targetOrgId,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (!orgJob) {
+          return {
+            data: [],
+            total: 0,
+            page: defaultPage,
+            limit: defaultLimit,
+            totalPages: 0,
+          };
+        }
+      }
       const targetApps = await this.prisma.application.findMany({
         where: { jobId: options.jobId },
         select: { id: true },
@@ -305,7 +366,10 @@ export class InterviewsQueryService {
     const candidatesMap = new Map<string, CandidateRecord>();
     if (neededCandidateIds.length > 0) {
       const candidates = await this.prisma.candidate.findMany({
-        where: { id: { in: neededCandidateIds } },
+        where: {
+          id: { in: neededCandidateIds },
+          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+        },
         select: {
           id: true,
           firstName: true,
@@ -327,7 +391,10 @@ export class InterviewsQueryService {
     const jobsMap = new Map<string, JobRecord>();
     if (neededJobIds.length > 0) {
       const jobs = await this.prisma.job.findMany({
-        where: { id: { in: neededJobIds } },
+        where: {
+          id: { in: neededJobIds },
+          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+        },
         select: {
           id: true,
           title: true,

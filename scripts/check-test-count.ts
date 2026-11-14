@@ -59,9 +59,17 @@ function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
       removedTests.forEach((t, i) => console.log(`  ${i + 1}. - ${t}`));
     }
 
+    if (netNew < 0 && process.env.ALLOW_TEST_DELETION !== "true") {
+      console.error(
+        `[FAIL] Test count regression detected (netNew=${netNew}). Set ALLOW_TEST_DELETION=true to override.`,
+      );
+      process.exit(1);
+    }
+
     return { addedCount, removedCount, netNew };
-  } catch (err: any) {
-    console.error("Failed to calculate test diff:", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Failed to calculate test diff:", message);
     process.exit(1);
   }
 }

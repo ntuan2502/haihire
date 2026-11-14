@@ -6,6 +6,16 @@ import type {
   TransporterConfig,
 } from "./transporter.interface";
 
+function parseSendGridFrom(from: string): { email: string; name?: string } {
+  const match = from.trim().match(/^(?:"?([^"]*?)"?\s*)?<([^>]+)>$/);
+  if (match) {
+    const name = match[1]?.trim();
+    const email = match[2].trim();
+    return name ? { email, name } : { email };
+  }
+  return { email: from.trim() };
+}
+
 export class SendGridTransporter implements IEmailTransporter {
   private readonly logger = new Logger(SendGridTransporter.name);
   private readonly apiKey: string;
@@ -29,7 +39,7 @@ export class SendGridTransporter implements IEmailTransporter {
               subject: payload.subject,
             },
           ],
-          from: { email: payload.from },
+          from: parseSendGridFrom(payload.from),
           content: [
             {
               type: "text/html",

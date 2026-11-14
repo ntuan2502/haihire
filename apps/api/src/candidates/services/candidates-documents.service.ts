@@ -244,22 +244,55 @@ export class CandidatesDocumentsService {
   ) {
     const candidate = await this.profileService.findOne(id, tenantOrgId);
 
-    if (opts?.documentId) {
-      await this.prisma.candidateDocument.deleteMany({
-        where: {
+    if (
+      tenantOrgId &&
+      candidate.organizationId &&
+      candidate.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
+      );
+    }
+
+    const deleteWhere = opts?.documentId
+      ? {
           id: opts.documentId,
           candidateId: id,
           organizationId: candidate.organizationId,
-        },
+        }
+      : opts?.url
+        ? {
+            url: opts.url,
+            candidateId: id,
+            organizationId: candidate.organizationId,
+          }
+        : null;
+
+    let docsToDelete: Array<{ url: string }> = [];
+    if (deleteWhere) {
+      docsToDelete = await this.prisma.candidateDocument.findMany({
+        where: deleteWhere,
+        select: { url: true },
       });
-    } else if (opts?.url) {
       await this.prisma.candidateDocument.deleteMany({
-        where: {
-          url: opts.url,
-          candidateId: id,
-          organizationId: candidate.organizationId,
-        },
+        where: deleteWhere,
       });
+    }
+
+    if (
+      docsToDelete.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const doc of docsToDelete) {
+        if (!doc.url) continue;
+        const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
     }
 
     const remainingDocs = await this.prisma.candidateDocument.findMany({

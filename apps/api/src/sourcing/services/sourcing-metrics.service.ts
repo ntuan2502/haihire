@@ -537,6 +537,13 @@ export class SourcingMetricsService {
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
+    if (pagination.jobId && !orgJobIds.has(pagination.jobId)) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Access denied to this job's attribution log",
+      );
+    }
+
     const targetJobIds = pagination.jobId
       ? [pagination.jobId]
       : Array.from(orgJobIds);

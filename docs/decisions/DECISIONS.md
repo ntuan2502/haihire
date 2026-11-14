@@ -1,190 +1,33 @@
-# Architecture Decisions — HaiHire
+# Architectural Decisions Log (`DECISIONS.md`)
 
-> Single source of truth for all architectural decisions.  
-> Each decision has: ID, Date, Decision, Rationale, Evidence, Enforcement, History.  
-> New decisions are added as new sections. Do NOT create separate ADR files.
+Authoritative Architecture Decision Records (`D-001` through `D-016`) governing **HaiHire Platform** design choices.
 
 ---
 
-## D-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation
+## Core Architecture & Toolchain (`D-001` – `D-008`)
 
-- **Date:** 2026-10-02
-- **Decision:** Adopted Prisma 8 RC (`@prisma/orm-postgres@8.0.0-rc.13`, `prisma@8.0.0-rc.19`, `effect@4.0.0-rc.118`) and accepted 11 transitive High CVEs in devDependencies via `@prisma/composer-prisma-cloud` (Hono dependency) as a formally documented Known Limitation for release `v0.3.0`.
-- **Rationale:** Upgraded to Prisma 8 RC to leverage contract-first PostgreSQL 17 features, schema compilation (`contract.prisma`), and modern TypeScript types. The 11 High CVEs originate in transitive dependencies of build/composer tooling and do not execute within the production runtime container. Full exit from this limitation will occur upon Prisma 8 GA release.
-- **Evidence:** Audit reports in `package.json`, `.github/workflows/ci-feature.yml` lines 136-137, and `scripts/check-doc-sync.ts`.
-- **Enforcement:** CI Gate 12 (`pnpm lint:doc-sync`) Check 4 verifies that all pre-release packages are covered by decisions in this file. Security audit gates in CI (`trivy-action`, `pnpm audit`) block on Critical vulnerabilities while allowing documented High build-time CVEs.
-- **History:** Formally documented in `ADR-001-prisma-8-rc.md` (superseded by this entry in Phase 4 IA refactor). Superseded by D-015 upon downgrading to Prisma 7.10.1 stable.
-
----
-
-## D-002: Next.js Proxy Rewrites without /api Prefix and v0.4.0 Standardization
-
-- **Date:** 2026-10-21
-- **Decision:** Retain legacy direct path rewrites (`/organizations/*`, `/jobs/*`, `/applications/*`, `/users/*`, `/events/*`, `/haihire-resumes/*`) alongside `/api/*` in `apps/web/next.config.ts` for release `v0.3.0`. Standardize all API routes under unified `/api/v1/*` in release `v0.4.0`.
-- **Rationale:** Multiple legacy frontend client modules make relative calls without `/api` prefixes (e.g. `axios.get('/jobs')`). Modifying all route prefixes right before the `v0.3.0` release risked introducing regressions across 963+ tests and 23 E2E specs. Retaining proxy rewrites stabilizes `v0.3.0` while scheduling full prefix alignment (`/api/v1`) for `v0.4.0`.
-- **Evidence:** Configuration in `apps/web/next.config.ts` lines 14-24.
-- **Enforcement:** Verified via automated Next.js rewrites unit tests in `apps/web/src/lib/api/client.spec.ts` and E2E Playwright specs.
-- **History:** Formally documented in `ADR-002-frontend-rewrite-path.md` (superseded by this entry in Phase 4 IA refactor).
+| ID          | Decision                                                                 | Rationale & Implementation Reference                                                                                                                                                                                                                                                                                                                                 |
+| :---------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`D-001`** | **Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`**                     | Standardized on Prisma `7.10.1` GA (eliminating pre-release ORM churn) backed by explicit `pg.Pool` + `PrismaPg` driver adapter ([apps/api/src/prisma/prisma.service.ts](../../apps/api/src/prisma/prisma.service.ts)) and [apps/api/prisma.config.ts](../../apps/api/prisma.config.ts). Enforced via [Prisma Version Policy](../runbooks/prisma-version-policy.md). |
+| **`D-002`** | **Node `26` + `pnpm@12.18.0` Catalog + Turborepo**                       | Centralizes shared dependencies (`typescript`, `vitest`, `eslint`, `prettier`, `zod`, `tsx`, `@types/node`) in [pnpm-workspace.yaml](../../pnpm-workspace.yaml) with 24h `minimumReleaseAge: 1440` supply-chain hardening.                                                                                                                                           |
+| **`D-003`** | **Dynamic `Organization.ownerId` Ownership Transfer**                    | Decoupled workspace ownership from static user roles onto `Organization.ownerId` (`Restrict` FK), allowing safe atomic ownership transfer without orphaned privilege states ([apps/api/src/auth/roles.guard.ts](../../apps/api/src/auth/roles.guard.ts)).                                                                                                            |
+| **`D-004`** | **Express ESM Bundle (`esbuild` -> `dist/server.mjs`)**                  | Bundles `apps/api` into a single fast-booting Node 26 ESM entrypoint (`--packages=external --alias:@haihire/shared=...`) paired with explicit `@Inject()` decorators and `DtoPipe` so stripped design metadata never breaks DI or validation.                                                                                                                        |
+| **`D-005`** | **Dual `DtoPipe` (`class-validator` + `@haihire/shared` Zod)**           | Enforces `expectedType` on class-validator DTOs and `.safeParse()` on shared Zod schemas ([apps/api/src/common/dto-validation.pipe.ts](../../apps/api/src/common/dto-validation.pipe.ts)), audited across all routes by `pnpm lint:dtopipe`.                                                                                                                         |
+| **`D-006`** | **`AsyncLocalStorage` Transaction Propagation (`runInTransaction`)**     | Propagates active `PrismaPg` transaction handles automatically through asynchronous service layers (`apps/api/src/prisma/prisma.service.ts`) for atomic sagas and relational integrity.                                                                                                                                                                              |
+| **`D-007`** | **Hard Row-Level Multi-Tenant Isolation & Static Gate**                  | Combines controller `tenantOrgId` forwarding, `TenantGuard`, and static AST/regex analysis ([scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts)) scoping per-method boundaries across all `8` business modules.                                                                                                                                 |
+| **`D-008`** | **Mutable 5-Role / 41-Permission Matrix (`OrganizationRolePermission`)** | Preserves shared default role behavior (`@haihire/shared`) while supporting per-organization overrides cached for `60s` (`PermissionResolverService`) with strict `ADMIN` immutability.                                                                                                                                                                              |
 
 ---
 
-## D-003: Dynamic Organization Ownership via Organization.ownerId and Deprecation of Role.OWNER
+## Frontend, Security, Reliability & CI (`D-009` – `D-016`)
 
-- **Date:** 2026-10-21
-- **Decision:** Deprecated and completely removed the static `Role.OWNER` enum value across the database schema, Prisma contract, `@haihire/shared` RBAC permissions, and frontend types. Established `Organization.ownerId` (`String`, Foreign Key referencing `User(id)` with `onDelete: Restrict`) as the dynamic, single source of truth for organization ownership.
-- **Rationale:** A static `OWNER` role attached to a user violated multi-tenant relational integrity: a user can own Tenant A but be an interviewer or member in Tenant B. Furthermore, the dual source of truth caused defect F-003 where tenant creators assigned role `ADMIN` were blocked with HTTP 403 when trying to delete their own organization. Resolving ownership dynamically at runtime (`user.isOwner = (user.id === currentOrg.ownerId)`) eliminates dual-source state collisions.
-- **Evidence:** Prisma migration in `apps/api/migrations/app/`, permission definitions in `packages/shared/src/permissions.ts`, and guard implementation in `apps/api/src/auth/roles.guard.ts`.
-- **Enforcement:** Enforced at runtime by `JwtStrategy` (injecting `isOwner`), `RolesGuard` (granting dynamic owner super-admin bypass), and tenant ownership transfer endpoint `POST /organizations/my/transfer-ownership`.
-- **History:** Initially, Branch 1 temporarily band-aided `"org:delete"` by adding `Role.ADMIN` to permissions. Branch 2 superseded this with the root-cause fix via `ADR-003-dynamic-org-ownership.md` and removed `Role.OWNER` from the codebase.
-
----
-
-## D-004: Next.js 16 Proxy Convention Adoption (proxy.ts Replaces middleware.ts)
-
-- **Date:** 2026-10-22
-- **Decision:** Use `apps/web/src/proxy.ts` and `export function proxy(request: NextRequest)` for Edge route interception and authentication redirects, following the official Next.js 16 file convention. Deprecate and prohibit `middleware.ts`.
-- **Rationale:** Next.js 16 formally deprecated the `middleware.ts` file convention and `middleware` function export, emitting build warnings (`⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.`). Adopting `proxy.ts` aligns with the modern Next.js 16 Turbopack compiler architecture and eliminates build-time deprecation warnings.
-- **Evidence:** Implementation in `apps/web/src/proxy.ts` and automated audit gate `scripts/check-nextjs-conventions.ts`.
-- **Enforcement:** CI Gate 15 (`pnpm lint:nextjs-conventions`) prohibits any `middleware.ts` or `middleware.js` in `apps/web/` and asserts the existence of `apps/web/src/proxy.ts`.
-- **History:** In commit `6593328` (September 3, 2026), `proxy.ts` was originally authored. In Phase 1 audit finding F-004, an AI agent with outdated pre-Next.js 16 training incorrectly flagged `proxy.ts` as an inactive misconfiguration and renamed it to `middleware.ts` in commit `c6c805b`. Finding F-004-R1 identified the error; commit `be46651` restored `proxy.ts` and commit `9142e05` instituted CI Gate 15 to enforce the rule permanently.
-
----
-
-## D-005: GitHub Actions dorny/paths-filter@v4 Upgrade and Node 24 Action Baseline
-
-- **Date:** 2026-10-22
-- **Decision:** Pinned all GitHub Actions workflows to modern action versions running on Node 24 runtime baseline, specifically requiring `dorny/paths-filter@v4`, `actions/checkout@v5`, `actions/setup-node@v5`, `actions/cache@v5`, and `actions/upload-artifact@v6`.
-- **Rationale:** GitHub Actions announced the deprecation and planned sunset of the Node.js 20 runner baseline. `dorny/paths-filter@v3` triggers deprecation annotations on every workflow run. Upgrading to `@v4` ensures clean CI logs, long-term compatibility, and compliance with enterprise security requirements.
-- **Evidence:** Workflows in `.github/workflows/ci-dev.yml`, `ci-feature.yml`, `ci-staging.yml`, `ci-main.yml`, and `cd-release.yml`.
-- **Enforcement:** CI Gate 16 (`pnpm lint:github-action-versions`) scans all workflow YAML files to enforce minimum action versions and prohibit deprecated actions.
-- **History:** Upgraded to `@v4` by project lead in commit `b969b13` (October 6, 2026) within `ci-cd.yml`. When layered workflows were split in commit `5f32495`, an older template with `@v3` was accidentally referenced, and subsequent deletion of `ci-cd.yml` in commit `54fc5b0` orphaned the upgrade. Re-upgraded and locked via CI Gate 16 in commit `92aeedf`.
-
----
-
-## D-006: Separation of Recruitment ActivityLog from Enterprise Tenant Administration
-
-- **Date:** 2026-10-22
-- **Decision:** Retain `model ActivityLog` in Prisma strictly for candidate recruitment lifecycle events (`APPLIED`, `STAGE_CHANGED`, `EMAIL_SENT`, `INTERVIEW_SCHEDULED`, etc.). Administrative tenant operations (such as `OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`) are logged via structured backend application logs in `v0.3.0`, and deferred to a dedicated `OrganizationAuditLog` database entity in `v0.4.0` (Finding F-017).
-- **Rationale:** In `contract.prisma`, `ActivityLog` has a non-nullable Foreign Key `candidateId String` referencing `Candidate`. Attempting to store tenant-level administrative events inside `ActivityLog` would break domain boundaries by conflating recruitment activity with tenant administration, or would require altering `candidateId` to nullable via an unnecessary breaking database migration right before `v0.3.0` release.
-- **Evidence:** Schema in `apps/api/src/prisma/contract.prisma` and architectural review finding F-017.
-- **Enforcement:** Code review gate; verified in `apps/api/src/organizations/organizations.service.ts` where ownership transfers emit structured application logs instead of touching `ActivityLog`.
-- **History:** Raised during Phase 3 Branch 2 code review (Round 3) regarding ownership transfer auditing; formally resolved as architectural finding F-017 and scheduled for `v0.4.0` implementation.
-
----
-
-## D-007: Phase 4 Information Architecture Refactor and Single Source of Truth Standardization
-
-- **Date:** 2026-10-22
-- **Decision:** Consolidated all fragmented architectural decisions into a unified `docs/decisions/DECISIONS.md` log, established four canonical architectural specifications in `docs/architecture/` (`system-overview.md`, `data-model.md`, `security-rbac.md`, and `conventions.md`), purged 12 root process reports and all 102 historical reports under `docs/reports/`, removed stale memory topic files in `.agents/memory/`, rewrote `AGENTS.md` as the authoritative single source of truth entry point, and created `docs/README.md` as the central documentation portal.
-- **Rationale:** Prior to this refactor, documentation was heavily fragmented across 12 root reports, 102 milestone reports, 5 agent memory files, and 3 standalone ADRs. This caused conflicting architectural claims (such as Fastify vs Express, Caddy vs Docker Compose, 6 roles vs 5 roles), degraded AI agent context windows, and generated discovery friction for human contributors. Consolidating documentation into single sources of truth ensures strict information integrity, zero duplication, and high operational clarity.
-- **Evidence:** Verified git commit history from baseline commit `b439cc2` through `3414851` with 16/16 CI gates passing continuously across all refactor commits.
-- **Enforcement:** Enforced by CI Gate 10 (`pnpm lint:doc-links`), CI Gate 11 (`pnpm lint:doc-sync`), and CI Gate 13 (`pnpm test:diff`).
-- **History:** Executed on dedicated branch `refactor/p4-information-architecture` from baseline commit `b439cc2` across 10 structured, atomic commits covering dependency remediation (Tasks 0.5, 0.6), decision consolidation (Task 1), architecture specifications (Task 2), reports purge (Task 3), memory cleanup (Task 4), AGENTS.md rewrite (Task 5), documentation portal establishment (Task 6), metrics synchronization (Task 7), and evidence finalization (Task 8).
-
----
-
-## D-008: Reverse Proxy Selection (Pending)
-
-- **Date:** 2026-10-22
-
-- **Decision:** TBD — Production reverse proxy technology selection (evaluating Caddy vs Nginx vs Cloudflare Tunnel) is currently deferred.
-
-- **Rationale:** The platform does not yet have an active bare-metal or cloud production deployment requiring ingress termination. In development and staging environments, client and API services bind directly to host/container ports (Next.js on port 13000, NestJS on port 13001). A formal reverse proxy architecture will be finalized alongside production infrastructure provisioning.
-
-- **Evidence:** Audit findings during Phase 2 and Phase 4 revealed phantom "Caddy 2.8" claims in legacy documentation despite no Caddy service or container definition existing in the codebase. All inaccurate claims were purged in D-007.
-
-- **Enforcement:** N/A (no reverse proxy is currently deployed or enforced).
-
-- **History:** Legacy documentation claimed Caddy 2.8 was in use for reverse proxy and TLS termination without corresponding docker-compose or container definitions. The phantom claims were removed in Phase 4 Information Architecture refactor, and this decision formally logs the selection as pending.
-
----
-
-## D-009: OrganizationAuditLog Entity for Administrative Audit Trail
-
-- **Date:** 2026-10-22
-- **Decision:** Establish a dedicated `OrganizationAuditLog` database entity and service in release `v0.4.0` for tracking tenant administrative events (`OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`, etc.), rather than extending the candidate-scoped `ActivityLog`.
-- **Rationale:** In `contract.prisma`, `ActivityLog` enforces a non-nullable Foreign Key `candidateId String` referencing `Candidate`. Attempting to record organization-level administrative operations inside `ActivityLog` would break domain boundaries by coupling tenant administration with candidate recruitment, or would require making `candidateId` nullable via an unnecessary breaking schema migration. Introducing a separate `OrganizationAuditLog` entity preserves domain isolation and satisfies SOC2/ISO27001 administrative audit trail compliance.
-- **Evidence:** Architectural review finding F-017 from Phase 3 Branch 2, and `contract.prisma` schema definition.
-- **Enforcement:** `v0.4.0` database migration and service implementation.
-- **History:** Discovered during Phase 3 Branch 2 review regarding ownership transfer auditing; formally resolved as finding F-017 and scheduled for `v0.4.0` implementation.
-
----
-
-## D-010: RFC 4122 UUID v4 Compliance for Deterministic Seed and Demo Identifiers
-
-- **Date:** 2026-10-23
-- **Decision:** Mandate strict RFC 4122 UUID version 4 compliance (`00000000-0000-4000-8000-xxxxxxxxxxxx`) for all deterministic seed, demo, and test mock UUIDs across backend seed scripts, migrations, integration tests, and frontend mocks. Reject arbitrary non-RFC compliant UUID strings (such as pseudo-UUIDs `00000000-0000-0000-0000-000000000001` with version nibble `0` and variant nibble `0`). Revert any loose `@IsString()` validations on ID fields back to strict `@IsUUID()` (`@IsUUID("4")` or standard RFC 4122 validation).
-- **Rationale:** NestJS DTO validation pipes use class-validator's `@IsUUID()` which strictly verifies RFC 4122 variant and version bits. Non-compliant mock IDs caused runtime HTTP 400 Bad Request errors on `POST /organizations/my/transfer-ownership` when using demo data. Relaxing DTO validation to `@IsString()` was a dangerous workaround that weakened API contract integrity and allowed arbitrary invalid inputs. Standardizing seed IDs to conform to RFC 4122 UUID v4 preserves strong typing, prevents silent validation bypasses, and aligns deterministic mock data with production PostgreSQL UUID generation.
-- **Evidence:** Refactored seed IDs in `apps/api/prisma/seeds/`, DTO validation in `apps/api/src/organizations/dto/transfer-ownership.dto.ts`, and updated integration tests in `apps/api/test/organizations/transfer-ownership.spec.ts`.
-- **Enforcement:** Enforced at runtime by `DtoPipe` with `@IsUUID()`, and in integration tests asserting rejection of non-RFC-compliant strings.
-- **History:** Triggered during transfer ownership debugging where seed member ID `00000000-0000-0000-0000-000000000003` caused DTO validation failures. Temporarily patched with `@IsString()` in commit `b02dd1b` (workaround); project lead mandated reverting `@IsString()` back to strict `@IsUUID()` and migrating all deterministic seeds to RFC 4122 v4 compliance in commit `5d46d48`.
-
----
-
-## D-011: Retention of ADMIN Role for Former Organization Owners Post-Transfer
-
-- **Date:** 2026-10-23
-- **Decision:** The former owner retains `ADMIN` in the transferred organization. The recipient's membership in that organization becomes `ADMIN`. The transfer updates the recipient's `User.role` only if their active organization is the one being transferred. Dynamic ownership remains in `Organization.ownerId`.
-- **Rationale:** Transferring ownership of an organization is an administrative delegation of tenant control (e.g., founder transferring executive ownership to an administrator or executive successor). Automatically demoting the former owner to a non-administrative role (`MEMBER` or `RECRUITER`) could cause immediate operational disruption, lock the primary stakeholder out of administrative configurations, or drop ongoing recruitment pipelines. Retaining `ADMIN` privileges guarantees continuity while dynamic ownership checks (`user.id === currentOrg.ownerId` per D-003) properly transition primary owner authority (e.g. org deletion, further ownership transfer).
-- **Evidence:** See the [ownership transfer flow](../architecture/security-rbac.md#7-ownership-transfer-flow) and the [HTTP regression tests](../../apps/web/tests/e2e/ownership-transfer.spec.ts).
-- **Enforcement:** The owner update matches the current owner ID within a transaction. The losing request leaves roles and audit records intact.
-- **History:** Established in commits `388d9c4` and `ac6e5fd`. Updated on 2026-11-08 to scope `User.role` to the active organization and make competing transfers safe.
-
----
-
-## D-012: Separate System and Organization Email
-
-- **Date:** 2026-11-08
-- **Decision:** System email uses deployment configuration and is dispatched by internal services and workers. Organization email APIs use the active organization's settings and return only `ORGANIZATION` delivery logs for that organization. System email routes and their former tenant permission are removed.
-- **Rationale:** Organization ownership grants authority over recruitment email. System delivery and its logs have platform-wide scope.
-- **Enforcement:** `EmailDispatchService` requires a valid organization sender and provider configuration before enqueueing and again before delivery. `SIMULATED` organization delivery is available in development and test. The email service and HTTP isolation tests cover both scopes.
-
----
-
-## D-013: Webhook Delivery Requires Public HTTPS Destinations
-
-- **Date:** 2026-11-08
-- **Decision:** Webhook tests and deliveries use one HTTPS transport with a five-second deadline. Telegram and Discord require their provider URLs. The generic provider accepts public HTTPS destinations. Private destinations and redirects are rejected, including when a previously saved setting is used.
-- **Rationale:** Tenant-supplied URLs run from the backend network. DNS answers can change between configuration and delivery, so destination checks must cover the connection itself.
-- **Enforcement:** The transport validates the DNS addresses used by the connection while preserving the destination hostname for TLS. It discards response bodies and returns only a sanitized failure or HTTP status. The HTTP isolation suite and transport tests verify the policy.
-
----
-
-## D-014: Metrics Endpoint Requires a Scrape Token in Production
-
-- **Date:** 2026-11-08
-- **Decision:** `GET /metrics` requires `Authorization: Bearer <METRICS_TOKEN>` whenever `METRICS_TOKEN` is configured. In production without a token, the endpoint returns 404. Development and test without a token remain open.
-- **Rationale:** Metrics expose queue depths, route latency, and failure rates, which reveal internal topology and activity to unauthenticated callers. A shared scrape token fits Prometheus `authorization` scrape configuration without adding user sessions to the metrics path.
-- **Enforcement:** `AppController` compares SHA-256 digests with `timingSafeEqual`. `METRICS_TOKEN` is validated in `apps/api/src/config/env.ts` (minimum 32 characters). `app.controller.spec.ts` covers the hidden, rejected, and accepted cases.
-
----
-
-## D-015: Downgrade from Prisma 8 RC to Prisma 7.10.1 Stable
-
-- **Date:** 2026-11-08
-- **Decision:** Replaced pre-release Prisma 8 RC (`@prisma/orm-postgres@8.0.0-rc.13`, `prisma@8.0.0-rc.19`, `effect@4.0.0-rc.118`) with Prisma 7.10.1 stable (`@prisma/client@7.10.1`, `prisma@7.10.1`, `@prisma/adapter-pg@7.10.1`). Standardized schema on `apps/api/src/prisma/schema.prisma` and implemented a fully typed adapter layer (`createPrisma7Adapter`) preserving backward compatibility for `db.orm.public.*` call sites and tenant scoping verification (CI Gate 9). Supersedes D-001.
-- **Rationale:** Prisma 8 RC is a pre-release Composer framework that pulled 11 High transitive CVEs from Hono/Alchemy into the dependency tree and required experimental engine overrides (`effect: 4.0.0-rc.118`). Prisma 7.10.1 is the official stable GA release of Prisma ORM, providing robust PostgreSQL driver adapter support (`@prisma/adapter-pg`), zero pre-release transitive dependencies, and complete supply-chain stability.
-- **Evidence:** `apps/api/src/prisma/schema.prisma`, `apps/api/src/prisma/db.ts`, and 690 passed backend unit tests.
-- **Enforcement:** Enforced via CI Gate 11 (`pnpm lint:doc-sync` Check 4) which now asserts 0 pre-release packages, and `pnpm lint:tenant-scope` which continues to verify 100% of Prisma queries are isolated by tenant.
-- **History:** D-001 initially accepted Prisma 8 RC and its transitive CVEs as a known limitation for `v0.3.0`. In Phase 3 refactoring, the user approved downgrading to Prisma 7.10.1 stable, fully eliminating the limitation and all 3 pre-release packages.
-
----
-
-## D-016: Retirement of Legacy Prisma Query Composer Adapter & Full Migration to Canonical Prisma Client
-
-- **Date:** 2026-11-09
-- **Decision:** Fully retired the custom query composer wrapper (`apps/api/src/prisma/db.ts`) and fake `.raw` / `.db.orm.public.*` accessors. All 38 backend NestJS services, seeders (`seed.ts`), smoke tests, and test suites now use canonical native Prisma Client methods (`this.prisma.<model>.<action>`). Transactions use canonical `$transaction` or ALS-aware `runInTransaction(this.prisma, async (tx) => ...)`.
-- **Rationale:** The legacy `.db.orm.public.*` abstraction originated from an experimental Prisma 8 Composer wrapper that was artificially adapted to Prisma 7. It introduced non-standard syntax, unnecessary indirection, confusion when reading standard NestJS/Prisma documentation, and brittle typing. Migrating to canonical Prisma Client aligns 100% with official NestJS and Prisma best practices, unlocks full IDE autocompletion, eliminates custom wrappers, and improves PostgreSQL batch performance (e.g., instant `deleteMany` in seeders).
-- **Evidence:** 38 backend services migrated, `apps/api/src/prisma/db.ts` deleted via `git rm`, 697/697 API unit tests passing, and 100% tenant scoping compliance verified by `check-tenant-scoping.ts` (231/231 queries isolated).
-- **Enforcement:** Enforced via CI Gate 9 (`pnpm lint:tenant-scope`), CI Gate 1 (`pnpm typecheck`), and CI Gate 3 (`pnpm lint`).
-- **History:** Supersedes legacy composer references in D-015.
-
----
-
-## D-017: Unified Frontend Notifications via `react-toastify` Wrapper & Hybrid Form Validation Policy
-
-- **Date:** 2026-11-12
-- **Decision:** Replaced `sonner` and all transient inline mutation/action feedback banners (`role="status"` / `role="alert"` save, invite, preference, email test, wizard save, and onboarding success banners) with a single unified toast system powered by `react-toastify` (`apps/web/src/lib/toast.ts` wrapper + `<ToastProvider />` in `apps/web/src/components/providers/toast-provider.tsx` synced with `next-themes` and `I18nProvider`). Retained inline alerts strictly for blocking page/section fetch errors, persistent contextual notices (e.g., unsaved changes in RBAC matrix), and form-level validation/submit errors on multi-field forms, modals, and public auth/career pages (Hybrid Policy).
-- **Rationale:** Mixing `sonner` floating toasts with bespoke inline status banners caused inconsistent user feedback, duplicated state boilerplate (`successMsg`/`errorMsg`/`setTimeout` cleanup), and conflicting patterns even inside single files (e.g., `members/page.tsx`, `send-email-modal.tsx`). Centralizing behind `@/lib/toast` prevents direct library coupling, preserves Light/Dark theme consistency, and enables `toastId` deduplication for SSE broadcasts while keeping blocking form/load context visible inline.
-- **Evidence:** Removed `sonner` from `apps/web/package.json`, migrated 21 source files, 11 unit specs, and 2 Playwright E2E specs (`.Toastify__toast`), and converted 10 transient inline banner screens/modals to `@/lib/toast`.
-- **Enforcement:** All frontend toast calls MUST import `{ toast } from "@/lib/toast"`; direct imports of `react-toastify` outside `apps/web/src/lib/toast.ts` and `apps/web/src/components/providers/toast-provider.tsx` are prohibited.
+| ID          | Decision                                                                       | Rationale & Implementation Reference                                                                                                                                                                                                                                                                        |
+| :---------- | :----------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`D-009`** | **Next.js `16.4.5` `src/proxy.ts` + Standalone Output**                        | Replaces deprecated `middleware.ts` with Next.js 16 `proxy()` boundary ([apps/web/src/proxy.ts](../../apps/web/src/proxy.ts)), `output: "standalone"`, and Next rewrite rules (`apps/web/next.config.ts`) verified by `pnpm lint:nextjs-conventions`.                                                       |
+| **`D-010`** | **Tailwind CSS `v4` (`oklch`) & Shadcn `base-nova` (`@base-ui/react` + `cn`)** | Adopts official Shadcn v4 `base-nova` primitives built on `@base-ui/react` with standalone `"cn"` (`^0.5.2`) class merging ([apps/web/src/lib/utils.ts](../../apps/web/src/lib/utils.ts)) and CSS-first `@theme inline` tokens in `globals.css`; unused `@radix-ui/*` packages are excluded.                |
+| **`D-011`** | **TanStack Query v5, Axios URL Gatekeeper & Debounced SSE Sync**               | Centralizes query keys ([apps/web/src/hooks/query-keys.ts](../../apps/web/src/hooks/query-keys.ts)), intercepts concurrent `401` refreshes, blocks malformed `[object Object]` URLs, and batches `17` SSE `AppEventType` broadcasts over `100ms` windows (`createRealtimeInvalidator`).                     |
+| **`D-012`** | **Two-Tier Localization (`vi` / `en`) & `64` Error Codes**                     | Combines strict compile/CI key parity across `en.ts`/`vi.ts` + `APP_ERROR_CODES` (`pnpm lint:i18n`, `pnpm lint:error-i18n`) with user-level preferences falling back to organization localization (`LocalizationProvider`).                                                                                 |
+| **`D-013`** | **HttpOnly Cookie JWT + `tokenVersion` Session Revocation**                    | Stores signed access/refresh tokens in HttpOnly cookies plus client-synced session indicators, invalidating active JWTs immediately when `User.tokenVersion` increments on logout or password rotation.                                                                                                     |
+| **`D-014`** | **Private MinIO Storage + BullMQ Saga Compensation & DLQs**                    | Isolates uploaded resumes inside private bucket `haihire-resumes` under `tenants/<orgId>/`, proxies downloads through tenant-checked endpoints, compensates failed application commits via `orphan-cleanup-queue` / `orphan-cleanup-dlq`, and routes exhausted transactional emails into `email-dlq-queue`. |
+| **`D-015`** | **AES-256 Encrypted Integration Secrets & SSRF Protection**                    | Encrypts organization SMTP/email API keys and webhook tokens via `ENCRYPTION_SECRET`, authenticates `GET /metrics` with constant-time `METRICS_TOKEN`, and validates outbound webhook/SMTP hosts against SSRF.                                                                                              |
+| **`D-016`** | **18-Gate Automated CI Pipeline (`pnpm check:all`)**                           | Enforces fail-fast env parity (`56` keys), tenant scoping, `DtoPipe`, i18n, doc link & drift integrity, non-decreasing test counts (`pnpm test:diff`), Vitest suites (`1527` tests), production builds, and Playwright E2E checks prior to release.                                                         |

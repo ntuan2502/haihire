@@ -104,23 +104,7 @@ export class AuthService {
             select: { id: true },
           });
 
-          if (!existingOrg) {
-            const newOrgId = crypto.randomUUID();
-            await this.prisma.organization.upsert({
-              where: { slug: "admin" },
-              create: {
-                id: newOrgId,
-                name: "Admin",
-                slug: "admin",
-                ownerId: adminUserId,
-                updatedAt: toInstant(),
-              },
-              update: { ownerId: adminUserId },
-            });
-            orgId = newOrgId;
-          } else {
-            orgId = existingOrg.id;
-          }
+          const orgIdToAssign = existingOrg ? existingOrg.id : null;
 
           user = await this.prisma.user.upsert({
             where: { email: normalizedEmail },
@@ -131,7 +115,7 @@ export class AuthService {
               lastName: matchedDemo.lastName,
               role: matchedDemo.role,
               password: hashedPassword,
-              organizationId: orgId,
+              organizationId: orgIdToAssign,
               updatedAt: toInstant(),
             },
             update: {
@@ -139,7 +123,7 @@ export class AuthService {
               firstName: matchedDemo.firstName,
               lastName: matchedDemo.lastName,
               role: matchedDemo.role,
-              organizationId: orgId,
+              ...(orgIdToAssign ? { organizationId: orgIdToAssign } : {}),
             },
             select: {
               ...USER_PROFILE_SELECT,
@@ -147,6 +131,29 @@ export class AuthService {
               tokenVersion: true,
             },
           });
+
+          if (!existingOrg) {
+            const newOrgId = crypto.randomUUID();
+            await this.prisma.organization.upsert({
+              where: { slug: "admin" },
+              create: {
+                id: newOrgId,
+                name: "Admin",
+                slug: "admin",
+                ownerId: user.id,
+                updatedAt: toInstant(),
+              },
+              update: { ownerId: user.id },
+            });
+            orgId = newOrgId;
+            await this.prisma.user.update({
+              where: { id: user.id },
+              data: { organizationId: orgId, updatedAt: toInstant() },
+            });
+            user = { ...user, organizationId: orgId };
+          } else {
+            orgId = existingOrg.id;
+          }
         } else {
           user = await this.prisma.user.upsert({
             where: { email: normalizedEmail },

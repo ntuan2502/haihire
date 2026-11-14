@@ -1,80 +1,75 @@
-# Prisma Version Policy (GA Stable)
+# Prisma Version & Schema Policy Runbook
 
-This runbook documents the exact version pinning policy and upgrade procedure for Prisma ORM across the HaiHire platform.
-
----
-
-## 1. Rationale: Exact Version Pinning Policy
-
-All Prisma ORM packages in [`apps/api/package.json`](../../apps/api/package.json) are pinned to **Prisma 7 GA Stable** (`7.10.1`) without caret (`^`) or tilde (`~`):
-
-```json
-{
-  "dependencies": {
-    "@prisma/adapter-pg": "7.10.1",
-    "@prisma/client": "7.10.1"
-  },
-  "devDependencies": {
-    "prisma": "7.10.1"
-  }
-}
-```
-
-### Why Strict GA Pinning is Enforced:
-
-1. **Supply-Chain Security & Zero Pre-Release CVEs:** Per decision [D-015](../decisions/DECISIONS.md#d-015-downgrade-from-prisma-8-rc-to-prisma-7101-stable), the platform deprecated Prisma 8 RC to eliminate 11 transitive High CVEs and experimental engine overrides. Prisma 7.10.1 GA provides stable, enterprise-ready database access.
-2. **Deterministic CI/CD Builds:** Exact version pinning ensures `pnpm install --frozen-lockfile` produces bit-for-bit identical dependency trees across local environments, GitHub Actions CI, and production container builds.
-3. **Database Schema & Adapter Compatibility:** The PostgreSQL driver adapter (`@prisma/adapter-pg`) must strictly match the `@prisma/client` and `prisma` CLI versions to avoid runtime interface mismatches.
+> Authoritative policy governing Prisma `7.10.1` (`@prisma/adapter-pg`), `pg.Pool` connection management, and PostgreSQL schema evolution.
 
 ---
 
-## 2. Prisma Upgrade Procedure
+## 1. Standard Stack Baseline (Decision `D-016`)
 
-Whenever upgrading Prisma to a newer stable GA version, follow this strict 6-step workflow:
+HaiHire standardizes on **Prisma `7.10.1` (Stable GA)** with the driver-adapter architecture:
 
-### Step 1: Upstream Release Review
+| Component             | Baseline                                                   | Authoritative File                                                                   |
+| :-------------------- | :--------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| **ORM & CLI**         | `prisma` & `@prisma/client` pinned in lockstep (`7.10.1`)  | [apps/api/package.json](../../apps/api/package.json)                                 |
+| **Driver Adapter**    | `@prisma/adapter-pg` + `pg.Pool`                           | [apps/api/src/prisma/prisma.service.ts](../../apps/api/src/prisma/prisma.service.ts) |
+| **Prisma CLI Config** | Explicit `prisma.config.ts` schema entry                   | [apps/api/prisma.config.ts](../../apps/api/prisma.config.ts)                         |
+| **Schema Definition** | `22` models, `18` enums (`PostgreSQL 17.6`)                | [apps/api/src/prisma/schema.prisma](../../apps/api/src/prisma/schema.prisma)         |
+| **Migration History** | Legacy migration files stored under `apps/api/migrations/` | [apps/api/migrations/](../../apps/api/migrations/)                                   |
 
-- Review upstream changelog and GitHub release notes for breaking changes, schema syntax adjustments, and driver adapter requirements.
+> [!IMPORTANT]
+> Never install a mismatched version between `prisma` and `@prisma/client`. Both packages must advance together with verified client regeneration and container build tests.
 
-### Step 2: Exact Version Update
+---
 
-- Update the version string in `apps/api/package.json` to the exact target version (no `^` or `~`):
-  - `@prisma/adapter-pg`
-  - `@prisma/client`
-  - `prisma`
+## 2. Database Workflow Commands
 
-### Step 3: Lockfile Synchronization & Client Generation
+All routine Prisma operations are exposed as root pnpm scripts:
+
+| Command            | Action                                                                                               | Use Case                                   |
+| :----------------- | :--------------------------------------------------------------------------------------------------- | :----------------------------------------- |
+| `pnpm db:generate` | Regenerate Prisma Client from `apps/api/src/prisma/schema.prisma`                                    | After any schema edit                      |
+| `pnpm db:update`   | Apply pending schema changes in development                                                          | Local setup / schema sync                  |
+| `pnpm db:migrate`  | Run Prisma migrate flow in `apps/api`                                                                | Creating or applying structured migrations |
+| `pnpm db:seed`     | Execute idempotent seed logic                                                                        | Local development bootstrap                |
+| `pnpm db:setup`    | Combined `db:update` + `db:seed`                                                                     | Fresh local workspace setup                |
+| `pnpm db:status`   | Inspect migration & schema status                                                                    | Pre-deploy verification                    |
+| `pnpm db:verify`   | Run schema/database verification check                                                               | Post-migration validation                  |
+| `pnpm db:backup`   | Run automated DB + MinIO backup ([scripts/backup-production.ts](../../scripts/backup-production.ts)) | Before production upgrades                 |
+
+---
+
+## 3. Architecture & Coding Rules
+
+1. **AsyncLocalStorage Transaction Propagation:** Multi-step mutations run inside `PrismaService.transaction()` so nested repository/service calls reuse the active `TransactionClient` seamlessly.
+2. **Multi-Tenant Query Isolation:** Every query across the `8` tenant-scoped backend modules must enforce `organizationId` scoping and pass `pnpm lint:tenant-scope`. See [Data Model Architecture](../architecture/data-model.md).
+3. **Soft-Delete Filtering:** `Job`, `Candidate`, and `TrackingLink` carry `deletedAt DateTime?`; active reads and lookups must filter `deletedAt: null` explicitly.
+4. **Build Artifact Integration:** Production Docker builds ([apps/api/Dockerfile](../../apps/api/Dockerfile)) run Prisma client generation and compile NestJS into ESM (`dist/server.mjs`).
+
+---
+
+## 4. Prisma Upgrade Procedure
+
+When upgrading `prisma` / `@prisma/client` in the future:
+
+1. Record an Architecture Decision entry in [Architectural Decisions](../decisions/DECISIONS.md) if changing major/minor policy or driver behavior.
+2. Update `prisma`, `@prisma/client`, and `@prisma/adapter-pg` compatibly in [apps/api/package.json](../../apps/api/package.json) and regenerate `pnpm-lock.yaml` via `pnpm install`.
+3. Update `pnpm-workspace.yaml` only if security/release age overrides are required.
+4. Run full verification:
 
 ```bash
-# Update pnpm lockfile
-pnpm install
-
-# Verify schema and generate Prisma client
-pnpm db:status
 pnpm db:generate
-```
-
-### Step 4: Verification of Frozen Lockfile
-
-```bash
-# Verify frozen lockfile passes without drift
-pnpm install --frozen-lockfile
-```
-
-### Step 5: Full Quality Gate & Test Suite Execution
-
-```bash
-# Run fast CI architecture gates
-pnpm check:all:fast
-
-# Run full API test suite
+pnpm lint:tenant-scope
+pnpm typecheck
 pnpm test:api
+pnpm build:api
 ```
 
-### Step 6: PR & Conventional Commit
+5. Smoke-test Docker image creation (`apps/api/Dockerfile`) before merging to `main`.
 
-- Commit with Conventional Commit standard:
-  ```bash
-  git commit -m "chore(deps): bump prisma to <exact-version>"
-  ```
-- Submit a dedicated PR for the dependency bump; do not bundle feature or refactoring code with Prisma upgrades.
+---
+
+## 5. Related Documentation
+
+- [Data Model Architecture](../architecture/data-model.md)
+- [Architectural Decisions](../decisions/DECISIONS.md)
+- [Backup and Restore Runbook](backup-and-restore.md)

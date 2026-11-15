@@ -216,10 +216,15 @@ describe("MetricsService", () => {
     expect(metrics).toContain(
       'http_request_duration_seconds_count{route="/health"} 1',
     );
+    expect(metrics).toContain("# TYPE http_request_duration_seconds histogram");
     expect(metrics).toContain(
       "# HELP db_pool_active Active connections in database pool.",
     );
     expect(metrics).toContain("db_pool_active 1");
+    expect(metrics).toContain(
+      "# HELP haihire_db_pool_active_connections Active connections in database pool.",
+    );
+    expect(metrics).toContain("haihire_db_pool_active_connections 1");
   });
 
   it("Case 6: Non-throwing guarantee when non-Error objects are thrown", async () => {

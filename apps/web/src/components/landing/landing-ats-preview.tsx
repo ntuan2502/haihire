@@ -22,6 +22,11 @@ import type {
 import { usePipelineStages, useStageInfo } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { BrandLogo } from "@/components/shared";
+import {
+  DEFAULT_MOCK_JOB,
+  DEFAULT_MOCK_APPLICATIONS,
+  DEFAULT_MOCK_INTERVIEWS_BY_CANDIDATE,
+} from "./ats-preview/ats-preview-data";
 
 export const LandingAtsPreview: React.FC = () => {
   const { t } = useI18n();
@@ -60,122 +65,12 @@ export const LandingAtsPreview: React.FC = () => {
   const [candidateNoteInput, setCandidateNoteInput] = useState("");
 
   // Mock Job object conforming strictly to Job interface
-  const mockJob: Job = useMemo(
-    () => ({
-      id: "job-demo-1",
-      organizationId: "org-demo-1",
-      title: "Senior Full-Stack Engineer",
-      department: "Engineering",
-      location: "Hanoi / Remote",
-      type: "FULL_TIME",
-      experienceLevel: "SENIOR_LEVEL",
-      workplace: "HYBRID",
-      status: "PUBLISHED",
-      description:
-        "Phát triển và mở rộng hệ thống tuyển dụng thông minh HaiHire ATS.",
-      requirements:
-        "Ít nhất 4 năm kinh nghiệm với React, Node.js, TypeScript, PostgreSQL.",
-      salaryRange: "2,500 - 3,500 USD",
-      isPublished: true,
-      createdAt: "2026-09-01T08:00:00Z",
-      updatedAt: "2026-09-24T10:00:00Z",
-    }),
-    [],
-  );
+  const mockJob: Job = useMemo(() => DEFAULT_MOCK_JOB, []);
 
   // Mock Applications list conforming strictly to Application interface
-  const [applications, setApplications] = useState<Application[]>([
-    {
-      id: "app-1",
-      candidateId: "cand-1",
-      jobId: "job-demo-1",
-      candidateName: "Trần Minh Quân",
-      candidateEmail: "quan.tran@example.com",
-      candidatePhone: "+84 912 345 678",
-      stage: "SCREENING",
-      matchScore: 95,
-      orderIndex: 0,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Tran_Minh_Quan_Senior_FullStack.pdf",
-      createdAt: "2026-09-24T08:30:00Z",
-      updatedAt: "2026-09-24T09:00:00Z",
-    },
-    {
-      id: "app-2",
-      candidateId: "cand-2",
-      jobId: "job-demo-1",
-      candidateName: "Nguyễn Hoàng Nam",
-      candidateEmail: "nam.nguyen@example.com",
-      candidatePhone: "+84 903 112 233",
-      stage: "APPLIED",
-      matchScore: 88,
-      orderIndex: 1,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Nguyen_Hoang_Nam_Frontend_Lead.pdf",
-      createdAt: "2026-09-24T07:15:00Z",
-      updatedAt: "2026-09-24T07:15:00Z",
-    },
-    {
-      id: "app-3",
-      candidateId: "cand-3",
-      jobId: "job-demo-1",
-      candidateName: "Lê Thị Thu Thảo",
-      candidateEmail: "thao.le@example.com",
-      candidatePhone: "+84 988 776 655",
-      stage: "INTERVIEW",
-      matchScore: 84,
-      orderIndex: 2,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Le_Thi_Thu_Thao_FullStack.pdf",
-      createdAt: "2026-09-23T14:20:00Z",
-      updatedAt: "2026-09-24T10:00:00Z",
-    },
-    {
-      id: "app-4",
-      candidateId: "cand-4",
-      jobId: "job-demo-1",
-      candidateName: "Phạm Đức Anh",
-      candidateEmail: "anh.pham@example.com",
-      candidatePhone: "+84 977 443 322",
-      stage: "OFFER",
-      matchScore: 92,
-      orderIndex: 3,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Pham_Duc_Anh_Backend.pdf",
-      createdAt: "2026-09-22T09:00:00Z",
-      updatedAt: "2026-09-24T11:00:00Z",
-    },
-    {
-      id: "app-5",
-      candidateId: "cand-5",
-      jobId: "job-demo-1",
-      candidateName: "Vũ Minh Tuấn",
-      candidateEmail: "tuan.vu@example.com",
-      candidatePhone: "+84 966 221 144",
-      stage: "HIRED",
-      matchScore: 96,
-      orderIndex: 4,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Vu_Minh_Tuan_Staff_Engineer.pdf",
-      createdAt: "2026-09-20T10:00:00Z",
-      updatedAt: "2026-09-25T16:00:00Z",
-    },
-    {
-      id: "app-6",
-      candidateId: "cand-6",
-      jobId: "job-demo-1",
-      candidateName: "Đặng Quốc Huy",
-      candidateEmail: "huy.dang@example.com",
-      candidatePhone: "+84 933 554 411",
-      stage: "REJECTED",
-      matchScore: 62,
-      orderIndex: 5,
-      resumeUrl: "/demo-resume.pdf",
-      resumeFileName: "CV_Dang_Quoc_Huy.pdf",
-      createdAt: "2026-09-21T11:00:00Z",
-      updatedAt: "2026-09-23T15:00:00Z",
-    },
-  ]);
+  const [applications, setApplications] = useState<Application[]>(
+    DEFAULT_MOCK_APPLICATIONS,
+  );
 
   // Stage counts derived dynamically from live state
   const stageCounts = useMemo(() => {
@@ -308,164 +203,8 @@ export const LandingAtsPreview: React.FC = () => {
     ];
   }, [selectedCandidate]);
 
-  const mockInterviewsByCandidate: Record<string, Interview[]> = useMemo(
-    () => ({
-      "app-1": [
-        {
-          id: "int-1-1",
-          applicationId: "app-1",
-          scheduledAt: "2026-09-28T03:30:00.000Z",
-          type: "TECHNICAL",
-          format: "MEET",
-          linkOrLocation: "https://meet.google.com/haihire-tech-interview",
-          interviewer: "Nguyễn Văn Trưởng (Engineering Lead)",
-          round: 1,
-          notes:
-            "Phỏng vấn kỹ thuật trực tuyến về React 19, TypeScript và tối ưu hóa hệ thống.",
-          createdAt: "2026-09-24T08:00:00Z",
-          updatedAt: "2026-09-24T08:00:00Z",
-        },
-      ],
-      "app-2": [
-        {
-          id: "int-2-1",
-          applicationId: "app-2",
-          scheduledAt: "2026-09-29T02:00:00.000Z",
-          type: "HR_SCREENING",
-          format: "MEET",
-          linkOrLocation: "https://meet.google.com/haihire-hr-screening",
-          interviewer: "Đỗ Mai Linh (Talent Acquisition Specialist)",
-          round: 1,
-          notes: "Trao đổi sơ bộ về kỳ vọng công việc và văn hóa công ty.",
-          createdAt: "2026-09-24T07:15:00Z",
-          updatedAt: "2026-09-24T07:15:00Z",
-        },
-      ],
-      "app-3": [
-        {
-          id: "int-3-1",
-          applicationId: "app-3",
-          scheduledAt: "2026-09-27T07:00:00.000Z",
-          type: "FINAL_ROUND",
-          format: "MEET",
-          linkOrLocation: "https://meet.google.com/haihire-final-round",
-          interviewer: "Hoàng Minh Tuấn (CTO)",
-          round: 2,
-          notes:
-            "Vòng phỏng vấn chuyên sâu System Design và định hướng sản phẩm.",
-          createdAt: "2026-09-23T14:20:00Z",
-          updatedAt: "2026-09-24T10:00:00Z",
-        },
-        {
-          id: "int-3-2",
-          applicationId: "app-3",
-          scheduledAt: "2026-09-25T02:30:00.000Z",
-          type: "TECHNICAL",
-          format: "MEET",
-          linkOrLocation: "https://meet.google.com/haihire-tech-interview",
-          interviewer: "Phan Đình Nam (Senior Architect)",
-          round: 1,
-          scorecard: {
-            overallRating: 4,
-            recommendation: "STRONG_YES",
-            technicalScore: 5,
-            communicationScore: 4,
-            cultureScore: 4,
-            problemSolvingScore: 5,
-            feedback:
-              "Nền tảng kỹ thuật rất tốt, giải quyết bài toán concurrency xuất sắc.",
-            evaluatedBy: "Phan Đình Nam",
-            evaluatedAt: "2026-09-25T10:45:00Z",
-          },
-          notes: "Đã hoàn thành vòng 1 xuất sắc.",
-          createdAt: "2026-09-22T08:00:00Z",
-          updatedAt: "2026-09-25T11:00:00Z",
-        },
-      ],
-      "app-4": [
-        {
-          id: "int-4-1",
-          applicationId: "app-4",
-          scheduledAt: "2026-09-22T08:00:00.000Z",
-          type: "FINAL_ROUND",
-          format: "OFFICE",
-          linkOrLocation: "Phòng họp Sapphire, Tầng 12 Tòa nhà HaiHire, Hà Nội",
-          interviewer: "Đỗ Mai Linh (Head of HR) & Ban Giám Đốc",
-          round: 2,
-          scorecard: {
-            overallRating: 5,
-            recommendation: "STRONG_YES",
-            technicalScore: 5,
-            communicationScore: 5,
-            cultureScore: 5,
-            problemSolvingScore: 5,
-            feedback:
-              "Ứng viên rất phù hợp với vị trí Backend và định hướng của công ty.",
-            evaluatedBy: "Đỗ Mai Linh",
-            evaluatedAt: "2026-09-22T16:00:00Z",
-          },
-          notes:
-            "Phỏng vấn trực tiếp tại văn phòng, thống nhất mức đãi ngộ và lộ trình công việc.",
-          createdAt: "2026-09-20T09:00:00Z",
-          updatedAt: "2026-09-22T16:00:00Z",
-        },
-      ],
-      "app-5": [
-        {
-          id: "int-5-1",
-          applicationId: "app-5",
-          scheduledAt: "2026-09-18T03:00:00.000Z",
-          type: "FINAL_ROUND",
-          format: "OFFICE",
-          linkOrLocation: "Phòng họp Diamond, Tầng 12 Tòa nhà HaiHire, Hà Nội",
-          interviewer: "CEO & CTO",
-          round: 2,
-          scorecard: {
-            overallRating: 5,
-            recommendation: "STRONG_YES",
-            technicalScore: 5,
-            communicationScore: 5,
-            cultureScore: 5,
-            problemSolvingScore: 5,
-            feedback: "Staff Engineer giàu kinh nghiệm thực chiến.",
-            evaluatedBy: "CEO",
-            evaluatedAt: "2026-09-18T11:30:00Z",
-          },
-          notes: "Đã chốt nhận việc và chuẩn bị onboarding.",
-          createdAt: "2026-09-15T09:00:00Z",
-          updatedAt: "2026-09-18T11:30:00Z",
-        },
-      ],
-      "app-6": [
-        {
-          id: "int-6-1",
-          applicationId: "app-6",
-          scheduledAt: "2026-09-22T04:00:00.000Z",
-          type: "HR_SCREENING",
-          format: "MEET",
-          linkOrLocation: "https://meet.google.com/haihire-hr-screening",
-          interviewer: "Đỗ Mai Linh (Talent Acquisition Specialist)",
-          round: 1,
-          scorecard: {
-            overallRating: 2,
-            recommendation: "NO",
-            technicalScore: 2,
-            communicationScore: 3,
-            cultureScore: 3,
-            problemSolvingScore: 2,
-            feedback:
-              "Kỹ năng nền tảng chưa đáp ứng yêu cầu của vị trí hiện tại.",
-            evaluatedBy: "Đỗ Mai Linh",
-            evaluatedAt: "2026-09-22T11:45:00Z",
-          },
-          notes: "Đã gửi email phản hồi kết quả.",
-          createdAt: "2026-09-21T11:00:00Z",
-          updatedAt: "2026-09-23T15:00:00Z",
-        },
-      ],
-    }),
-    [],
-  );
+  const mockInterviewsByCandidate: Record<string, Interview[]> =
+    DEFAULT_MOCK_INTERVIEWS_BY_CANDIDATE;
 
   const candidateInterviews: Interview[] = useMemo(() => {
     if (!selectedCandidate) return [];

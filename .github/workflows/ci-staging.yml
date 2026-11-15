@@ -359,7 +359,7 @@ jobs:
 
       - name: Pre-start services in background & wait for healthcheck
         run: |
-          pnpm dev &
+          pnpm start &
           timeout 180s bash -c '
             until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
               sleep 3

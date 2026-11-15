@@ -2,8 +2,6 @@
 
 import { useState, useMemo, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/shared/auth-guard";
-import { Navbar } from "@/components/layout";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
 import { Pagination } from "@/components/shared/pagination";
@@ -249,129 +247,114 @@ function InterviewsPageContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar */}
-      <Navbar
-        activeTab="interviews"
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={jobs.length}
-        candidatesCount={totalCandidateCount}
+    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+      {/* Standard Header Row */}
+      <InterviewsHeader
+        totalCount={totalCandidateCount}
+        canEdit={canCreateInterview}
+        onOpenScheduleModal={() => handleOpenScheduleModal()}
       />
 
-      {/* Main Content */}
-      <main
-        id="main-content"
-        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4"
-      >
-        {/* Standard Header Row */}
-        <InterviewsHeader
-          totalCount={totalCandidateCount}
-          canEdit={canCreateInterview}
-          onOpenScheduleModal={() => handleOpenScheduleModal()}
-        />
+      {/* Modern Unified Responsive Toolbar */}
+      <InterviewsFilterBar
+        tabs={interviewTabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setParam("tab", tabId)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setParam("viewMode", mode, false)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearch}
+        visibleColumns={visibleColumns}
+        onToggleColumn={toggleColumn}
+        onOpenFilterDrawer={() => setIsFilterOpen(true)}
+        selectedJobFilter={selectedJobFilter}
+        sortBy={sortBy}
+        jobs={jobs}
+        onResetFilters={handleResetFilters}
+        onClearJobFilter={() => setParam("jobId", "ALL")}
+        onClearSortFilter={() => setParam("sortBy", "upcoming")}
+      />
 
-        {/* Modern Unified Responsive Toolbar */}
-        <InterviewsFilterBar
-          tabs={interviewTabs}
-          activeTab={activeTab}
-          onTabChange={(tabId) => setParam("tab", tabId)}
-          viewMode={viewMode}
-          onViewModeChange={(mode) => setParam("viewMode", mode, false)}
-          searchQuery={searchQuery}
-          onSearchChange={setSearch}
-          visibleColumns={visibleColumns}
-          onToggleColumn={toggleColumn}
-          onOpenFilterDrawer={() => setIsFilterOpen(true)}
-          selectedJobFilter={selectedJobFilter}
-          sortBy={sortBy}
-          jobs={jobs}
-          onResetFilters={handleResetFilters}
-          onClearJobFilter={() => setParam("jobId", "ALL")}
-          onClearSortFilter={() => setParam("sortBy", "upcoming")}
-        />
-
-        {/* Content Section */}
-        {viewMode === "calendar" ? (
-          calendarLoading && !calendarInterviewsData ? (
-            <div className="py-20 flex justify-center">
-              <LoadingSpinner />
-            </div>
-          ) : (
-            <InterviewsCalendarView
-              applications={calendarApplications}
-              jobs={jobs}
-              onScheduleDate={(dateStr) =>
-                handleOpenScheduleModal(undefined, dateStr)
-              }
-              onEditSchedule={(app, intv) =>
-                handleOpenScheduleModal(
-                  app,
-                  extractDateTimeInTimezone(intv.scheduledAt, effectiveTimezone)
-                    .date,
-                  intv,
-                )
-              }
-              onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
-              onVisibleRangeChange={setCalendarRange}
-              canEdit={canCreateInterview}
-            />
-          )
-        ) : (jobsLoading || appsLoading) && !interviewsData ? (
+      {/* Content Section */}
+      {viewMode === "calendar" ? (
+        calendarLoading && !calendarInterviewsData ? (
           <div className="py-20 flex justify-center">
             <LoadingSpinner />
           </div>
-        ) : filteredAndSortedList.length === 0 ? (
-          <InterviewsEmptyState
-            canEdit={canCreateInterview}
-            onOpenScheduleModal={() => handleOpenScheduleModal()}
-          />
         ) : (
-          <InterviewsTableView
-            applications={paginatedList}
+          <InterviewsCalendarView
+            applications={calendarApplications}
             jobs={jobs}
-            visibleColumns={visibleColumns}
-            onOpenScheduleModal={handleOpenScheduleModal}
-            onOpenScorecard={handleOpenScorecard}
-            onCancelInterview={
-              canDeleteInterview
-                ? (app, interview) =>
-                    setCancelInterviewState({ app, interview })
-                : undefined
+            onScheduleDate={(dateStr) =>
+              handleOpenScheduleModal(undefined, dateStr)
             }
-            onNavigateToPipeline={(jobId, applicationId, stage) => {
-              const query = new URLSearchParams();
-              if (stage) {
-                query.set("stage", stage);
-              } else {
-                query.set("stage", "INTERVIEW");
-              }
-              if (applicationId) {
-                query.set("applicationId", applicationId);
-              }
-              router.push(
-                `/dashboard/jobs/${jobId}/pipeline?${query.toString()}`,
-              );
-            }}
+            onEditSchedule={(app, intv) =>
+              handleOpenScheduleModal(
+                app,
+                extractDateTimeInTimezone(intv.scheduledAt, effectiveTimezone)
+                  .date,
+                intv,
+              )
+            }
+            onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+            onVisibleRangeChange={setCalendarRange}
             canEdit={canCreateInterview}
           />
-        )}
+        )
+      ) : (jobsLoading || appsLoading) && !interviewsData ? (
+        <div className="py-20 flex justify-center">
+          <LoadingSpinner />
+        </div>
+      ) : filteredAndSortedList.length === 0 ? (
+        <InterviewsEmptyState
+          canEdit={canCreateInterview}
+          onOpenScheduleModal={() => handleOpenScheduleModal()}
+        />
+      ) : (
+        <InterviewsTableView
+          applications={paginatedList}
+          jobs={jobs}
+          visibleColumns={visibleColumns}
+          onOpenScheduleModal={handleOpenScheduleModal}
+          onOpenScorecard={handleOpenScorecard}
+          onCancelInterview={
+            canDeleteInterview
+              ? (app, interview) => setCancelInterviewState({ app, interview })
+              : undefined
+          }
+          onNavigateToPipeline={(jobId, applicationId, stage) => {
+            const query = new URLSearchParams();
+            if (stage) {
+              query.set("stage", stage);
+            } else {
+              query.set("stage", "INTERVIEW");
+            }
+            if (applicationId) {
+              query.set("applicationId", applicationId);
+            }
+            router.push(
+              `/dashboard/jobs/${jobId}/pipeline?${query.toString()}`,
+            );
+          }}
+          canEdit={canCreateInterview}
+        />
+      )}
 
-        {/* Pagination Bar (Only for Table mode) */}
-        {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
-          <div className="pt-2">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              pageSizeOptions={[10, 20, 50, 100]}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-              itemLabel={t("nav.interviews").toLowerCase()}
-            />
-          </div>
-        )}
-      </main>
+      {/* Pagination Bar (Only for Table mode) */}
+      {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
+        <div className="pt-2">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 20, 50, 100]}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            itemLabel={t("nav.interviews").toLowerCase()}
+          />
+        </div>
+      )}
 
       {/* Schedule Interview Reusable Modal */}
       <ScheduleInterviewModal
@@ -445,10 +428,8 @@ function InterviewsPageContent() {
 
 export default function InterviewsPage() {
   return (
-    <AuthGuard>
-      <Suspense fallback={<LoadingSpinner fullScreen />}>
-        <InterviewsPageContent />
-      </Suspense>
-    </AuthGuard>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
+      <InterviewsPageContent />
+    </Suspense>
   );
 }

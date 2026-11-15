@@ -26,7 +26,9 @@ import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.modul
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD, APP_PIPE, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
-import { RedisModule } from "./redis/redis.module";
+import { RedisModule, REDIS_CLIENT } from "./redis/redis.module";
+import { ThrottlerStorageRedisService } from "./redis/throttler-storage-redis.service";
+import type Redis from "ioredis";
 
 import { MetricsModule } from "./metrics/metrics.module";
 
@@ -48,12 +50,14 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
         ".env",
       ],
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule, RedisModule],
+      inject: [ConfigService, REDIS_CLIENT],
+      useFactory: (_config: ConfigService, redis: Redis) => ({
+        throttlers: [{ ttl: 60000, limit: 100 }],
+        storage: new ThrottlerStorageRedisService(redis),
+      }),
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -96,6 +100,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
       useValue: new ValidationPipe({
         transform: true,
         whitelist: true,
+        forbidNonWhitelisted: true,
         exceptionFactory: validationExceptionFactory,
       }),
     },

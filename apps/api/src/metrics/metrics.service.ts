@@ -1,10 +1,12 @@
-import { Injectable, Logger, Optional } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import {
   ORPHAN_CLEANUP_QUEUE,
   ORPHAN_CLEANUP_DLQ,
 } from "../applications/orphan-cleanup.processor";
+import { PrismaService } from "../prisma/prisma.service";
+import { MinioService } from "../minio/minio.service";
 
 export const EMAIL_QUEUE_NAME = "email-queue";
 export const EMAIL_DLQ_NAME = "email-dlq-queue";
@@ -21,6 +23,10 @@ export const BULLMQ_TRACKED_STATES = [
 export type BullMqTrackedState = (typeof BULLMQ_TRACKED_STATES)[number];
 
 export const QUEUE_FETCH_TIMEOUT_MS = 2500;
+
+export const HTTP_DURATION_BUCKETS = [
+  0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
+] as const;
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -51,6 +57,7 @@ export class MetricsService {
     string,
     { count: number; sumSec: number }
   >();
+  private requestBuckets = new Map<string, number>();
   private activeDbPoolConnections = 1;
 
   constructor(
@@ -60,6 +67,12 @@ export class MetricsService {
     @Optional()
     @InjectQueue(EMAIL_DLQ_NAME)
     private readonly emailDlqQueue?: Queue,
+    @Optional()
+    @Inject(PrismaService)
+    private readonly prisma?: PrismaService,
+    @Optional()
+    @Inject(MinioService)
+    private readonly minio?: MinioService,
   ) {}
 
   private static readonly MAX_CARDINALITY = 500;
@@ -83,6 +96,16 @@ export class MetricsService {
     cur.count++;
     cur.sumSec += durationMs / 1000;
     this.requestDurations.set(durKey, cur);
+
+    const durSec = durationMs / 1000;
+    for (const b of HTTP_DURATION_BUCKETS) {
+      if (durSec <= b) {
+        const bKey = `route="${normalizedRoute}",le="${b}"`;
+        this.requestBuckets.set(bKey, (this.requestBuckets.get(bKey) || 0) + 1);
+      }
+    }
+    const infKey = `route="${normalizedRoute}",le="+Inf"`;
+    this.requestBuckets.set(infKey, (this.requestBuckets.get(infKey) || 0) + 1);
   }
 
   async updateBullMqMetrics(): Promise<{
@@ -171,18 +194,47 @@ export class MetricsService {
 
     lines.push(
       "# HELP http_request_duration_seconds Total duration of HTTP requests in seconds.",
-      "# TYPE http_request_duration_seconds summary",
+      "# TYPE http_request_duration_seconds histogram",
     );
     if (this.requestDurations.size === 0) {
+      for (const b of HTTP_DURATION_BUCKETS) {
+        lines.push(
+          `http_request_duration_seconds_bucket{route="/health",le="${b}"} 0`,
+        );
+      }
+      lines.push(
+        'http_request_duration_seconds_bucket{route="/health",le="+Inf"} 0',
+      );
       lines.push('http_request_duration_seconds_sum{route="/health"} 0.0000');
       lines.push('http_request_duration_seconds_count{route="/health"} 0');
     } else {
-      for (const [labels, data] of this.requestDurations.entries()) {
+      const distinctRoutes = new Set(
+        Array.from(this.requestDurations.keys()).map((k) =>
+          k.replace('route="', "").replace('"', ""),
+        ),
+      );
+      for (const route of distinctRoutes) {
+        for (const b of HTTP_DURATION_BUCKETS) {
+          const bKey = `route="${route}",le="${b}"`;
+          const count = this.requestBuckets.get(bKey) || 0;
+          lines.push(
+            `http_request_duration_seconds_bucket{route="${route}",le="${b}"} ${count}`,
+          );
+        }
+        const infKey = `route="${route}",le="+Inf"`;
+        const infCount = this.requestBuckets.get(infKey) || 0;
         lines.push(
-          `http_request_duration_seconds_sum{${labels}} ${data.sumSec.toFixed(4)}`,
+          `http_request_duration_seconds_bucket{route="${route}",le="+Inf"} ${infCount}`,
+        );
+        const dur = this.requestDurations.get(`route="${route}"`) || {
+          count: 0,
+          sumSec: 0,
+        };
+        lines.push(
+          `http_request_duration_seconds_sum{route="${route}"} ${dur.sumSec.toFixed(4)}`,
         );
         lines.push(
-          `http_request_duration_seconds_count{${labels}} ${data.count}`,
+          `http_request_duration_seconds_count{route="${route}"} ${dur.count}`,
         );
       }
     }
@@ -201,10 +253,59 @@ export class MetricsService {
     );
     lines.push(...dlqLines);
 
+    let postgresHealth = 1;
+    if (this.prisma) {
+      try {
+        await this.prisma.$queryRaw`SELECT 1`;
+      } catch {
+        postgresHealth = 0;
+      }
+    }
+
+    let redisHealth = 1;
+    try {
+      const q = this.orphanQueue as unknown as {
+        client?: Promise<{ ping?: () => Promise<string> }>;
+      };
+      if (q && q.client) {
+        const client = await q.client;
+        if (client && typeof client.ping === "function") {
+          const res = await client.ping();
+          if (res !== "PONG") redisHealth = 0;
+        }
+      }
+    } catch {
+      redisHealth = 0;
+    }
+
+    let minioHealth = 1;
+    if (this.minio && typeof this.minio.checkHealth === "function") {
+      try {
+        minioHealth = (await this.minio.checkHealth()) ? 1 : 0;
+      } catch {
+        minioHealth = 0;
+      }
+    }
+
+    lines.push(
+      "# HELP haihire_service_health Binary health status of underlying services (1 = UP, 0 = DOWN)",
+      "# TYPE haihire_service_health gauge",
+      `haihire_service_health{service="postgres"} ${postgresHealth}`,
+      `haihire_service_health{service="redis"} ${redisHealth}`,
+      `haihire_service_health{service="minio"} ${minioHealth}`,
+    );
+
+    const activeDb =
+      this.prisma?.getPoolStats?.()?.activeCount ??
+      this.activeDbPoolConnections;
+
     lines.push(
       "# HELP db_pool_active Active connections in database pool.",
       "# TYPE db_pool_active gauge",
-      `db_pool_active ${this.activeDbPoolConnections}`,
+      `db_pool_active ${activeDb}`,
+      "# HELP haihire_db_pool_active_connections Active connections in database pool.",
+      "# TYPE haihire_db_pool_active_connections gauge",
+      `haihire_db_pool_active_connections ${activeDb}`,
     );
 
     return lines.join("\n") + "\n";

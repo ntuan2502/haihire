@@ -180,6 +180,22 @@ export class CandidatesNotesService {
     });
 
     if (!note) {
+      if (user.organizationId) {
+        const otherOrgNote = await this.prisma.candidateNote.findFirst({
+          where: { id: noteId },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrgNote &&
+          otherOrgNote.organizationId !== user.organizationId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+            "Access denied: note belongs to another organization.",
+            { noteId, candidateId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.RESOURCE_NOT_FOUND,
         `Note with ID ${noteId} not found`,
@@ -236,6 +252,22 @@ export class CandidatesNotesService {
     });
 
     if (!note) {
+      if (user.organizationId) {
+        const otherOrgNote = await this.prisma.candidateNote.findFirst({
+          where: { id: noteId },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrgNote &&
+          otherOrgNote.organizationId !== user.organizationId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+            "Access denied: note belongs to another organization.",
+            { noteId, candidateId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.RESOURCE_NOT_FOUND,
         `Note with ID ${noteId} not found`,

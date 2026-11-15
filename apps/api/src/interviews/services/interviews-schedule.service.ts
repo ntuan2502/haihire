@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   formatCandidateDisplayName,
@@ -11,7 +12,7 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CreateInterviewDto } from "../dto/create-interview.dto";
 import { UpdateInterviewDto } from "../dto/update-interview.dto";
 import { toInstant } from "../../common/date.util";
@@ -35,7 +36,7 @@ export interface InterviewUpdatePayload {
   interviewer?: string;
   round?: number;
   notes?: string | null;
-  scorecard?: string | null;
+  scorecard?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
   updatedAt?: Date;
 }
 
@@ -129,56 +130,66 @@ export class InterviewsScheduleService {
     }
     const scheduledInstant = toInstant(parsedScheduledAt);
 
-    await this.prisma.interview.create({
-      data: {
-        id,
-        organizationId: orgId || app.organizationId || organizationId || null,
-        applicationId: dto.applicationId,
-        scheduledAt: scheduledInstant,
-        type: dto.type as InterviewType,
-        format: (dto.format as InterviewFormat) || "MEET",
-        linkOrLocation: dto.linkOrLocation || "",
-        interviewer: dto.interviewer,
-        round: dto.round || 1,
-        scorecard: scorecardStr,
-        notes: dto.notes || null,
-        updatedAt: toInstant(),
-      },
-    });
+    let stageUpdated = false;
+    const previousStage = app.stage;
 
-    if (
-      app.stage !== "INTERVIEW" &&
-      app.stage !== "OFFER" &&
-      app.stage !== "HIRED"
-    ) {
-      const previousStage = app.stage;
-      await this.prisma.application.update({
-        where: { id: app.id },
+    const targetOrgId = orgId || app.organizationId || organizationId || "";
+
+    await runInTransaction(this.prisma, async (tx) => {
+      await tx.interview.create({
         data: {
-          stage: "INTERVIEW",
+          id,
+          organizationId: targetOrgId,
+          applicationId: dto.applicationId,
+          scheduledAt: scheduledInstant,
+          type: dto.type as InterviewType,
+          format: (dto.format as InterviewFormat) || "MEET",
+          linkOrLocation: dto.linkOrLocation || "",
+          interviewer: dto.interviewer,
+          round: dto.round || 1,
+          scorecard: scorecardStr ? scorecardStr : Prisma.DbNull,
+          notes: dto.notes || null,
+          updatedAt: toInstant(),
         },
       });
 
-      if (candidate && orgId) {
-        await this.activitiesService.createActivity({
-          organizationId: orgId,
-          candidateId: candidate.id,
-          applicationId: app.id,
-          type: "STAGE_CHANGED",
-          title: "Stage Changed",
-          description: `Stage updated from ${previousStage} to INTERVIEW automatically upon scheduling interview round ${dto.round || 1}.`,
-          actorName: dto.interviewer || "System",
-          actorRole: "SYSTEM",
-          metadata: {
-            fromStage: previousStage,
-            toStage: "INTERVIEW",
-            interviewId: id,
+      if (
+        app.stage !== "INTERVIEW" &&
+        app.stage !== "OFFER" &&
+        app.stage !== "HIRED"
+      ) {
+        await tx.application.update({
+          where: { id: app.id },
+          data: {
+            stage: "INTERVIEW",
           },
         });
+        stageUpdated = true;
       }
+    });
+
+    if (stageUpdated && candidate && orgId) {
+      await this.activitiesService.createActivity({
+        organizationId: orgId,
+        candidateId: candidate.id,
+        applicationId: app.id,
+        type: "STAGE_CHANGED",
+        title: "Stage Changed",
+        description: `Stage updated from ${previousStage} to INTERVIEW automatically upon scheduling interview round ${dto.round || 1}.`,
+        actorName: dto.interviewer || "System",
+        actorRole: "SYSTEM",
+        metadata: {
+          fromStage: previousStage,
+          toStage: "INTERVIEW",
+          interviewId: id,
+        },
+      });
     }
 
-    const createdInterview = await this.queryService.findOne(id);
+    const createdInterview = await this.queryService.findOne(
+      id,
+      orgId || app.organizationId || organizationId,
+    );
 
     // Record activity log & optionally send interview invitation email
     if (candidate && orgId) {
@@ -338,9 +349,8 @@ export class InterviewsScheduleService {
     if (dto.round !== undefined) updateData.round = dto.round;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
     if (dto.scorecard !== undefined) {
-      updateData.scorecard = this.scorecardService.serializeScorecard(
-        dto.scorecard,
-      );
+      const sc = this.scorecardService.serializeScorecard(dto.scorecard);
+      updateData.scorecard = sc ? sc : Prisma.DbNull;
     }
     updateData.updatedAt = toInstant();
 

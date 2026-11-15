@@ -241,19 +241,22 @@ describe("EventsService - SSE Streaming", () => {
       },
     );
 
-    it("rechecks session revocation on the heartbeat without any domain events", async () => {
+    it("does not query database on heartbeat", async () => {
       vi.useFakeTimers();
       try {
         const { events, findUnique } = setup();
-        const onError = vi.fn();
+        const received: unknown[] = [];
         const subscription = events
           .subscribeWithToken("access")
-          .subscribe({ error: onError });
+          .subscribe((message) => received.push(message.data));
         await vi.advanceTimersByTimeAsync(0);
-        findUnique.mockResolvedValue({ id: "user-1", tokenVersion: 2 });
+        expect(received).toHaveLength(1);
+        expect(findUnique).toHaveBeenCalledTimes(1);
+
         await vi.advanceTimersByTimeAsync(15000);
-        expect(onError).toHaveBeenCalledOnce();
-        expect(subscription.closed).toBe(true);
+        expect(received).toHaveLength(2);
+        expect(findUnique).toHaveBeenCalledTimes(1);
+        subscription.unsubscribe();
       } finally {
         vi.useRealTimers();
       }

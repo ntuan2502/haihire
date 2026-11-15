@@ -70,7 +70,7 @@ jobs:
   deploy:
     steps:
       - uses: docker/login-action@v3
-      - uses: aquasecurity/trivy-action@master
+      - uses: superfly/flyctl-actions/setup-flyctl@master
       - uses: custom-org/my-action@v1
 `,
     };
@@ -78,5 +78,37 @@ jobs:
     const result = checkGithubActionVersions({ files: virtualFiles });
     expect(result.passed).toBe(true);
     expect(result.violations).toHaveLength(0);
+  });
+
+  it("Test 5: fails when workflow uses unpinned aquasecurity/trivy-action and passes with v0.36.0", () => {
+    const virtualFilesFail = {
+      "cd-release.yml": `
+name: CD Release
+jobs:
+  scan:
+    steps:
+      - uses: aquasecurity/trivy-action@master
+`,
+    };
+
+    const resultFail = checkGithubActionVersions({ files: virtualFilesFail });
+    expect(resultFail.passed).toBe(false);
+    expect(resultFail.violations).toHaveLength(1);
+    expect(resultFail.violations[0].action).toBe("aquasecurity/trivy-action");
+    expect(resultFail.violations[0].minimumVersion).toBe("v0.36.0");
+
+    const virtualFilesPass = {
+      "cd-release.yml": `
+name: CD Release
+jobs:
+  scan:
+    steps:
+      - uses: aquasecurity/trivy-action@v0.36.0
+`,
+    };
+
+    const resultPass = checkGithubActionVersions({ files: virtualFilesPass });
+    expect(resultPass.passed).toBe(true);
+    expect(resultPass.violations).toHaveLength(0);
   });
 });

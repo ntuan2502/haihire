@@ -136,6 +136,10 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       data: mockJobs,
       isLoading: mockIsLoading,
     }),
+    useJob: (_id?: string | null) => ({
+      data: mockJobs[0],
+      isLoading: false,
+    }),
     useOpenJobs: () => ({
       data: mockJobs,
       isLoading: false,
@@ -252,7 +256,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
 
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getByTestId("mock-navbar")).toBeInTheDocument();
+      expect(screen.getByText("Loading workspace...")).toBeInTheDocument();
       expect(screen.queryByText("Tran Van B")).not.toBeInTheDocument();
     });
   });

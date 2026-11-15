@@ -15,8 +15,7 @@ COPY apps/api/package.json ./apps/api/
 
 # Install build dependencies using BuildKit pnpm store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @haihire/shared --filter api... --frozen-lockfile || \
-    pnpm install --filter @haihire/shared --filter api...
+    pnpm install --filter @haihire/shared --filter api... --frozen-lockfile
 
 # Copy source code
 COPY packages/shared ./packages/shared
@@ -51,8 +50,7 @@ COPY --chown=node:node apps/api/package.json ./apps/api/
 
 # Install production dependencies with cache mount (instantaneous from cache)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile || \
-    pnpm install --prod --filter @haihire/shared --filter api...
+    pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile
 
 # Copy compiled code and Prisma schema with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src

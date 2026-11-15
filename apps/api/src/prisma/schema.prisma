@@ -157,7 +157,6 @@ model Organization {
   nameDisplayOrder String                       @default("FIRST_LAST")
   defaultCurrency  String                       @default("VND")
   owner            User                         @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  users            User[]                       @relation("OrganizationUsers")
   jobs             Job[]
   candidates       Candidate[]
   applications     Application[]
@@ -193,10 +192,7 @@ model User {
   avatarUrl          String?
   preferredLanguage  String?
   preferredTimezone  String?
-  role               Role                   @default(MEMBER)
   tokenVersion       Int                    @default(0)
-  organizationId     String?
-  organization       Organization?          @relation("OrganizationUsers", fields: [organizationId], references: [id], onDelete: SetNull)
   ownedOrganizations Organization[]         @relation("OrganizationOwner")
   jobs               Job[]
   inviteLinks        InviteLink[]
@@ -207,7 +203,6 @@ model User {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
-  @@index([organizationId])
   @@map("user")
 }
 
@@ -279,6 +274,7 @@ model Job {
   organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
   trackingLinks   TrackingLink[]
+  version         Int              @default(1)
   deletedAt       DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -307,19 +303,19 @@ model Candidate {
   activityLogs   ActivityLog[]
   documents      CandidateDocument[]
   candidateNotes CandidateNote[]
+  version        Int                 @default(1)
   deletedAt      DateTime?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 
-  @@unique([organizationId, email])
   @@index([organizationId, deletedAt, createdAt])
   @@map("candidate")
 }
 
 model Application {
   id               String            @id @default(uuid())
-  organizationId   String?
-  organization     Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId   String
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidateId      String
   candidate        Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobId            String
@@ -347,12 +343,17 @@ model Application {
   emailLogs        EmailLog[]
   activityLogs     ActivityLog[]
   applicationNotes ApplicationNote[]
+  version          Int               @default(1)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
   @@unique([candidateId, jobId])
+  @@index([organizationId, jobId])
+  @@index([organizationId, candidateId])
   @@index([organizationId, stage])
   @@index([organizationId, createdAt])
+  @@index([organizationId, sourceChannel])
+  @@index([organizationId, trackingLinkId])
   @@index([jobId, stage])
   @@index([candidateId])
   @@index([trackingLinkId])
@@ -361,8 +362,8 @@ model Application {
 
 model Interview {
   id              String          @id @default(uuid())
-  organizationId  String?
-  organization    Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applicationId   String
   application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   scheduledAt     DateTime
@@ -373,8 +374,9 @@ model Interview {
   interviewerId   String?
   interviewerUser User?           @relation("InterviewAssignee", fields: [interviewerId], references: [id], onDelete: SetNull)
   round           Int             @default(1)
-  scorecard       String?
+  scorecard       Json?           @db.JsonB
   notes           String?
+  version         Int             @default(1)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -394,7 +396,7 @@ model EmailTemplate {
   body           String
   enabled        Boolean           @default(true)
   isSystem       Boolean           @default(false)
-  variables      String?
+  variables      Json?             @db.JsonB
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   flowConfigs    EmailFlowConfig[]
@@ -443,9 +445,9 @@ model EmailLog {
   id             String              @id @default(uuid())
   scope          EmailScope          @default(ORGANIZATION)
   organizationId String?
-  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   candidateId    String?
-  candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: SetNull)
   applicationId  String?
   application    Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   templateId     String?
@@ -465,6 +467,10 @@ model EmailLog {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 
+  @@index([organizationId, sentAt])
+  @@index([candidateId, sentAt])
+  @@index([applicationId])
+  @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([scope, createdAt])
   @@index([templateId])
@@ -474,7 +480,7 @@ model EmailLog {
 model ActivityLog {
   id             String       @id @default(uuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   candidateId    String
   candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
@@ -485,10 +491,12 @@ model ActivityLog {
   actorId        String?
   actorName      String
   actorRole      String?
-  metadata       String?
+  metadata       Json?        @db.JsonB
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@index([applicationId, createdAt])
+  @@index([organizationId, candidateId, createdAt])
   @@index([organizationId, createdAt])
   @@index([candidateId])
   @@map("activity_log")
@@ -518,7 +526,7 @@ model TrackingLink {
   organizationId String
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
-  token          String          @unique
+  token          String
   source         SourcingChannel @default(OTHER)
   customSource   String?
   jobId          String?
@@ -540,14 +548,17 @@ model TrackingLink {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
+  @@index([organizationId, deletedAt, isActive])
+  @@index([jobId])
+  @@index([createdById])
   @@index([organizationId, isActive])
   @@map("tracking_link")
 }
 
 model TrackingClick {
-  id             String        @id @default(uuid())
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   trackingLinkId String
   trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
   referrer       String?
@@ -589,12 +600,13 @@ model OrganizationAuditLog {
   actorId        String?
   action         String
   resource       String
-  metadata       String?
+  metadata       Json?    @db.JsonB
   createdAt      DateTime @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
+  @@index([organizationId, resource])
   @@index([organizationId, createdAt])
   @@index([organizationId, action])
   @@map("organization_audit_log")
@@ -606,7 +618,7 @@ model PlatformAuditLog {
   actorId        String
   action         String
   resource       String
-  metadata       String?
+  metadata       Json?    @db.JsonB
   createdAt      DateTime @default(now())
 
   @@index([createdAt])

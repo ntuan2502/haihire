@@ -10,6 +10,7 @@
 // or use primary key scoping.
 export const MODELS_WITHOUT_ORG_COLUMN = new Set([
   "Organization", // Primary key is `id`, queried by id or slug
+  "User", // Decoupled from single-tenant state in Milestone 2 (no organizationId column)
 ]);
 
 // 2. Non-tenant-scoped or infrastructure service files excluded from tenant audit

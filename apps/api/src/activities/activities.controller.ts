@@ -4,6 +4,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Request,
@@ -14,11 +15,12 @@ import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActivitiesService } from "./activities.service";
 import { CreateActivityRecordDto } from "./dto/create-activity-record.dto";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 
 @Controller("activities")
-@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
 export class ActivitiesController {
   constructor(
     @Inject(ActivitiesService)
@@ -28,7 +30,7 @@ export class ActivitiesController {
   @Get("candidate/:candidateId")
   @RequirePermission("candidate:view")
   findByCandidate(
-    @Param("candidateId") candidateId: string,
+    @Param("candidateId", new ParseUUIDPipe()) candidateId: string,
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
     @Query("page") page?: string,
@@ -48,7 +50,7 @@ export class ActivitiesController {
   @Get("application/:applicationId")
   @RequirePermission("candidate:view")
   findByApplication(
-    @Param("applicationId") applicationId: string,
+    @Param("applicationId", new ParseUUIDPipe()) applicationId: string,
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
     @Query("page") page?: string,

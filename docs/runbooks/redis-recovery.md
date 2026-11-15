@@ -1,6 +1,6 @@
 # Redis (Valkey) Recovery Runbook
 
-> Triage and disaster recovery procedures for HaiHire's Valkey 8.0.2 instance backing BullMQ queues and real-time SSE pub/sub.
+> Triage and disaster recovery procedures for HaiHire's Valkey 8.0.2 instance backing BullMQ queues, real-time SSE pub/sub, distributed Throttler rate limiting, and PermissionResolver multi-replica caching.
 
 ---
 
@@ -8,14 +8,14 @@
 
 Production runs **Valkey `8.0.2-alpine`** (`redis` service, container `haihire-prod-redis`) configured in [docker-compose.prod.yml](../../docker-compose.prod.yml):
 
-| Parameter           | Value                                                       | Why                                                       |
-| :------------------ | :---------------------------------------------------------- | :-------------------------------------------------------- |
-| **Image**           | `valkey/valkey:8.0.2-alpine`                                | Redis-compatible in-memory store for BullMQ + SSE         |
-| **Max Memory**      | `--maxmemory 384mb` (container limit `512M`)                | Leaves OS/overhead headroom inside container              |
-| **Eviction Policy** | `--maxmemory-policy noeviction`                             | Prevents silent dropping of BullMQ delayed/retry/DLQ keys |
-| **Persistence**     | `--appendonly yes --appendfsync everysec`                   | Caps AOF data loss on crash to at most ~1 second          |
-| **Volume**          | `redis_data` (`haihire_prod_redis_data` mounted at `/data`) | Persists AOF across container restarts                    |
-| **Auth**            | `REDIS_PASSWORD` (optional env var passed via `ARGS`)       | Authenticated `redis-cli` healthcheck & BullMQ/API access |
+| Parameter           | Value                                                       | Why                                                                                                 |
+| :------------------ | :---------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Image**           | `valkey/valkey:8.0.2-alpine`                                | Redis-compatible in-memory store for BullMQ, SSE, distributed Throttler, and Permission Resolver L2 |
+| **Max Memory**      | `--maxmemory 384mb` (container limit `512M`)                | Leaves OS/overhead headroom inside container                                                        |
+| **Eviction Policy** | `--maxmemory-policy noeviction`                             | Prevents silent dropping of BullMQ delayed/retry/DLQ keys                                           |
+| **Persistence**     | `--appendonly yes --appendfsync everysec`                   | Caps AOF data loss on crash to at most ~1 second                                                    |
+| **Volume**          | `redis_data` (`haihire_prod_redis_data` mounted at `/data`) | Persists AOF across container restarts                                                              |
+| **Auth**            | `REDIS_PASSWORD` (optional env var passed via `ARGS`)       | Authenticated `redis-cli` healthcheck & BullMQ/API access                                           |
 
 Triggers from [monitoring/prometheus/alert-rules.yml](../../monitoring/prometheus/alert-rules.yml):
 
@@ -97,6 +97,8 @@ If container logs report AOF corruption preventing Valkey from booting:
 ## 4. Impact During Redis Outage
 
 - **Read/Write Core ATS APIs:** Database-backed endpoints remain operational except enqueueing async jobs or real-time push.
+- **Distributed Rate Limiting:** `ThrottlerStorageRedisService` gracefully degrades to local memory fallback, continuing to enforce rate limits per API replica without dropping requests.
+- **Permission Resolver Caching:** `PermissionResolverService` degrades to L1 memory cache and direct PostgreSQL database queries on cache miss. Multi-replica pub/sub invalidation resumes automatically upon reconnect.
 - **SSE Events:** Connected clients may fall back cleanly on degraded polling / manual refresh until pub/sub recovers.
 - **Email & Cleanup Queues:** New jobs fail to enqueue until Valkey recovers; check `EmailLog` (`FAILED` / `PENDING`) after restoration.
 

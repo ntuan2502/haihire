@@ -62,6 +62,9 @@ Apply pending migrations if clean:
 docker compose --env-file .env.production -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
 ```
 
+> **Note on Milestone 2 Database Redesign (`20261115000000_r2_database_redesign`):**
+> This release includes a foundational schema migration decoupling `User` from single-tenant state (moving tenant memberships and roles exclusively to `OrganizationMember`), enforcing NOT NULL `organizationId` on child models (`Application`, `Interview`, `TrackingClick`), introducing partial unique indexes for soft-deleted models (`Candidate`, `TrackingLink`), and migrating string JSON to native `JsonB`. Always ensure the Step 2 pre-deploy PostgreSQL backup is taken before executing `prisma migrate deploy`.
+
 ### Step 3: Start / Recreate Stack
 
 ```bash

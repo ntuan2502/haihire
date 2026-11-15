@@ -1,9 +1,9 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
   formatCandidateDisplayName,
-  matchesPersonNameSearch,
   type PaginatedResult,
   type SourcingStats,
   type AttributionLogItem,
@@ -15,6 +15,7 @@ import {
   type TopReferrerItem,
 } from "@haihire/shared";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
+import { findMatchingCandidateIds } from "../../common/person-search.util";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -533,95 +534,127 @@ export class SourcingMetricsService {
     const limit =
       pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
-    const jobs = await this.queryService.getOrganizationJobs(organizationId);
-    const orgJobIds = new Set(jobs.map((j) => j.id));
-    const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
+    const where: Prisma.ApplicationWhereInput = {
+      organizationId,
+    };
 
-    if (pagination.jobId && !orgJobIds.has(pagination.jobId)) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
-        "Access denied to this job's attribution log",
-      );
+    if (pagination.jobId) {
+      const job = await this.prisma.job.findFirst({
+        where: { id: pagination.jobId, organizationId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!job) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+          "Access denied to this job's attribution log",
+        );
+      }
+      where.jobId = pagination.jobId;
     }
 
-    const targetJobIds = pagination.jobId
-      ? [pagination.jobId]
-      : Array.from(orgJobIds);
-    if (targetJobIds.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 1,
-      };
-    }
-
-    const allApps =
-      await this.queryService.getApplicationsForJobs(targetJobIds);
-    let filtered = allApps;
     if (pagination.source) {
-      filtered = filtered.filter((a) => a.sourceChannel === pagination.source);
+      where.sourceChannel = pagination.source;
     }
 
-    const candidateIds = Array.from(
-      new Set(filtered.map((a) => a.candidateId)),
-    );
-    const [candidates, nameOrder] = await Promise.all([
-      this.queryService.getCandidatesByIds(organizationId, candidateIds),
+    if (pagination.search && pagination.search.trim()) {
+      const q = pagination.search.trim();
+      const matchedCandidateIds = await findMatchingCandidateIds(this.prisma, {
+        organizationId,
+        rawSearch: pagination.search,
+      });
+      where.OR = [
+        ...(matchedCandidateIds.length > 0
+          ? [{ candidateId: { in: matchedCandidateIds } }]
+          : []),
+        { utmCampaign: { contains: q, mode: "insensitive" } },
+        { sourceDetails: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const [apps, total, nameOrder] = await Promise.all([
+      this.prisma.application.findMany({
+        where,
+        include: {
+          candidate: true,
+          job: { select: { title: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.application.count({ where }),
       resolveOrgNameDisplayOrder(this.prisma, organizationId),
     ]);
-    const candidateMap = new Map(
-      candidates.map((c) => [
-        c.id,
-        {
-          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
-          firstName: c.firstName ?? null,
-          lastName: c.lastName ?? null,
-          displayName: c.displayName ?? null,
-          email: c.email,
-        },
-      ]),
-    );
 
-    if (pagination.search) {
-      const searchQuery = pagination.search;
-      filtered = filtered.filter((a) => {
-        const c = candidateMap.get(a.candidateId);
-        return matchesPersonNameSearch(
+    const missingRelations = apps.some((a) => !a.candidate || !a.job);
+    let candidateMap: Map<
+      string,
+      {
+        name: string;
+        firstName: string | null;
+        lastName: string | null;
+        displayName: string | null;
+        email: string;
+      }
+    > | null = null;
+    let jobMap: Map<string, string> | null = null;
+
+    if (missingRelations && apps.length > 0) {
+      const candidateIds = Array.from(
+        new Set(apps.map((a) => a.candidateId).filter(Boolean)),
+      );
+      const jobIds = Array.from(
+        new Set(apps.map((a) => a.jobId).filter(Boolean)),
+      );
+
+      const [candidates, jobs] = await Promise.all([
+        candidateIds.length > 0
+          ? this.prisma.candidate.findMany({
+              where: { id: { in: candidateIds } },
+            })
+          : [],
+        jobIds.length > 0
+          ? this.prisma.job.findMany({
+              where: { id: { in: jobIds } },
+              select: { id: true, title: true },
+            })
+          : [],
+      ]);
+
+      candidateMap = new Map(
+        candidates.map((cand) => [
+          cand.id,
           {
-            firstName: c?.firstName,
-            lastName: c?.lastName,
-            displayName: c?.displayName,
-            email: c?.email,
-            extraFields: [a.utmCampaign],
+            name:
+              formatCandidateDisplayName(cand, nameOrder) ||
+              "Unknown Candidate",
+            firstName: cand.firstName ?? null,
+            lastName: cand.lastName ?? null,
+            displayName: cand.displayName ?? null,
+            email: cand.email,
           },
-          searchQuery,
-        );
-      });
+        ]),
+      );
+      jobMap = new Map(jobs.map((j) => [j.id, j.title]));
     }
 
-    filtered.sort(
-      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
-    );
-
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const offset = (page - 1) * limit;
-    const pageItems = filtered.slice(offset, offset + limit);
-
-    const data: AttributionLogItem[] = pageItems.map((a) => {
-      const c = candidateMap.get(a.candidateId);
+    const data: AttributionLogItem[] = apps.map((a) => {
+      const c = a.candidate;
+      const fallbackCand = candidateMap?.get(a.candidateId);
+      const candName = c
+        ? formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate"
+        : fallbackCand?.name || "Unknown Candidate";
+      const jobTitle = a.job?.title || jobMap?.get(a.jobId) || "Job";
       return {
         applicationId: a.id,
         candidateId: a.candidateId,
-        candidateName: c?.name || "Unknown Candidate",
-        firstName: c?.firstName ?? null,
-        lastName: c?.lastName ?? null,
-        displayName: c?.displayName ?? null,
-        candidateEmail: c?.email || "",
+        candidateName: candName,
+        firstName: c?.firstName ?? fallbackCand?.firstName ?? null,
+        lastName: c?.lastName ?? fallbackCand?.lastName ?? null,
+        displayName: c?.displayName ?? fallbackCand?.displayName ?? null,
+        candidateEmail: c?.email ?? fallbackCand?.email ?? "",
         jobId: a.jobId,
-        jobTitle: jobTitleMap.get(a.jobId) || "Job",
+        jobTitle,
         source: (a.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT,
         sourceDetails: a.sourceDetails,
         campaign: a.utmCampaign,
@@ -629,6 +662,8 @@ export class SourcingMetricsService {
         appliedAt: new Date(toTimestamp(a.createdAt)).toISOString(),
       };
     });
+
+    const totalPages = Math.ceil(total / limit) || 1;
 
     return {
       data,

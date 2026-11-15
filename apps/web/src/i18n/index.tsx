@@ -20,10 +20,24 @@ import {
   type I18nContextType,
   type TranslationKey,
 } from "./context";
-import { translateFromDictionary, useOptionalI18n } from "./optional";
+import {
+  translateFromDictionary,
+  useOptionalI18n,
+  setLocaleDictionary,
+  getLocaleDictionary,
+  loadLocaleDictionary,
+} from "./optional";
+import type { TranslationSchema } from "./types";
 
-export { I18nContext, translateFromDictionary, useOptionalI18n };
-export type { I18nContextType, TranslationKey };
+export {
+  I18nContext,
+  translateFromDictionary,
+  useOptionalI18n,
+  setLocaleDictionary,
+  getLocaleDictionary,
+  loadLocaleDictionary,
+};
+export type { I18nContextType, TranslationKey, TranslationSchema };
 
 /**
  * Helper to detect browser preferred language:
@@ -52,52 +66,73 @@ function detectBrowserLocale(): SupportedLocale {
 export function I18nProvider({
   children,
   initialLocale = DEFAULT_LOCALE,
+  initialDictionary,
 }: {
   children: ReactNode;
   initialLocale?: SupportedLocale;
+  initialDictionary?: TranslationSchema;
 }) {
+  if (initialDictionary && !getLocaleDictionary(initialLocale)) {
+    setLocaleDictionary(initialLocale, initialDictionary);
+  }
+
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
   const [isReady, setIsReady] = useState(false);
 
   // Initialize locale from LocalStorage, Cookie, or Browser Detect
   useEffect(() => {
-    try {
-      // 1. Try LocalStorage
-      const savedLocale = localStorage.getItem(
-        LOCALE_STORAGE_KEY,
-      ) as SupportedLocale | null;
-      if (savedLocale && savedLocale in SUPPORTED_LOCALES) {
-        setLocaleState(savedLocale);
-        setIsReady(true);
-        return;
+    let active = true;
+
+    async function initLocale() {
+      let targetLocale: SupportedLocale = initialLocale;
+      try {
+        // 1. Try LocalStorage
+        const savedLocale = localStorage.getItem(
+          LOCALE_STORAGE_KEY,
+        ) as SupportedLocale | null;
+        if (savedLocale && savedLocale in SUPPORTED_LOCALES) {
+          targetLocale = savedLocale;
+        } else {
+          // 2. Try Cookie
+          const cookieMatch = document.cookie.match(
+            new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`),
+          );
+          const cookieLocale = cookieMatch
+            ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale)
+            : null;
+          if (cookieLocale && cookieLocale in SUPPORTED_LOCALES) {
+            targetLocale = cookieLocale;
+          } else {
+            // 3. Fallback to Browser Detection
+            targetLocale = detectBrowserLocale();
+          }
+        }
+      } catch {
+        targetLocale = DEFAULT_LOCALE;
       }
 
-      // 2. Try Cookie
-      const cookieMatch = document.cookie.match(
-        new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`),
-      );
-      const cookieLocale = cookieMatch
-        ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale)
-        : null;
-      if (cookieLocale && cookieLocale in SUPPORTED_LOCALES) {
-        setLocaleState(cookieLocale);
-        setIsReady(true);
-        return;
+      if (!getLocaleDictionary(targetLocale)) {
+        await loadLocaleDictionary(targetLocale);
       }
 
-      // 3. Fallback to Browser Detection
-      const detected = detectBrowserLocale();
-      setLocaleState(detected);
-    } catch {
-      // Fallback
-      setLocaleState(DEFAULT_LOCALE);
-    } finally {
-      setIsReady(true);
+      if (active) {
+        setLocaleState(targetLocale);
+        setIsReady(true);
+      }
     }
-  }, []);
 
-  const setLocale = useCallback((newLocale: SupportedLocale) => {
+    initLocale();
+
+    return () => {
+      active = false;
+    };
+  }, [initialLocale]);
+
+  const setLocale = useCallback(async (newLocale: SupportedLocale) => {
     if (!(newLocale in SUPPORTED_LOCALES)) return;
+    if (!getLocaleDictionary(newLocale)) {
+      await loadLocaleDictionary(newLocale);
+    }
     setLocaleState(newLocale);
 
     try {

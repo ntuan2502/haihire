@@ -20,17 +20,22 @@ import {
   setHasOrgCookie,
 } from "./auth-cookies";
 import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
-import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { env } from "../config/env";
 import { AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES, Role } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  Role,
+  registerSchema,
+  updateUserProfileSchema,
+  type RegisterSchema,
+  type UpdateUserProfileSchema,
+} from "@haihire/shared";
 
 @Controller("auth")
 export class AuthController {
@@ -64,7 +69,7 @@ export class AuthController {
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   async register(
-    @Body(DtoPipe(RegisterDto)) dto: RegisterDto,
+    @Body(DtoPipe(registerSchema)) dto: RegisterSchema,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.register(dto);
@@ -177,7 +182,7 @@ export class AuthController {
   @Patch("me/profile")
   async updateProfile(
     @Request() req: { user: { id: string } },
-    @Body(DtoPipe(UpdateUserProfileDto)) dto: UpdateUserProfileDto,
+    @Body(DtoPipe(updateUserProfileSchema)) dto: UpdateUserProfileSchema,
   ) {
     return this.authService.updateProfile(req.user.id, dto);
   }

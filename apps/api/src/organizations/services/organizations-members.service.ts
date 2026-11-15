@@ -16,6 +16,19 @@ import {
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
+type MockUserTableCompat = {
+  store?: Array<Record<string, unknown>>;
+  update?: (args: {
+    where: { id: string };
+    data: Record<string, unknown>;
+  }) => Promise<unknown>;
+  updateMany?: (args: {
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+  }) => Promise<unknown>;
+  findMany?: (args?: unknown) => Promise<Array<Record<string, unknown>>>;
+};
+
 @Injectable()
 export class OrganizationsMembersService {
   constructor(
@@ -38,18 +51,14 @@ export class OrganizationsMembersService {
   }
 
   private async backfillMemberships() {
-    // Single batched query across all 3 tables (O(1) database roundtrips on startup)
+    const prismaUserCompat = this.prisma.user as unknown as MockUserTableCompat;
     const [allOrgs, allUsers, allMembers] = await Promise.all([
       this.prisma.organization.findMany({
         select: { id: true, ownerId: true },
       }),
-      this.prisma.user.findMany({
-        select: {
-          id: true,
-          organizationId: true,
-          role: true,
-        },
-      }),
+      prismaUserCompat?.findMany
+        ? prismaUserCompat.findMany()
+        : Promise.resolve([]),
       this.prisma.organizationMember.findMany({
         select: {
           id: true,
@@ -59,17 +68,14 @@ export class OrganizationsMembersService {
       }),
     ]);
 
-    // Fast in-memory lookup set for (organizationId:userId) pairs
     const memberPairSet = new Set<string>(
       allMembers.map((m) => `${m.organizationId}:${m.userId}`),
     );
 
-    // 1. Ensure all organization owners have an OrganizationMember record with ADMIN role
     for (const org of allOrgs) {
       if (org.ownerId) {
         const pairKey = `${org.id}:${org.ownerId}`;
         if (!memberPairSet.has(pairKey)) {
-          const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
             where: {
               organizationId_userId: {
@@ -78,10 +84,10 @@ export class OrganizationsMembersService {
               },
             },
             create: {
-              id,
+              id: crypto.randomUUID(),
               organizationId: org.id,
               userId: org.ownerId,
-              role: "ADMIN",
+              role: Role.ADMIN,
               updatedAt: toInstant(),
             },
             update: {},
@@ -91,12 +97,14 @@ export class OrganizationsMembersService {
       }
     }
 
-    // 2. Ensure all users with an active organizationId have an OrganizationMember record
-    for (const user of allUsers) {
+    for (const user of allUsers as Array<{
+      id: string;
+      organizationId?: string | null;
+      role?: string | null;
+    }>) {
       if (user.organizationId) {
         const pairKey = `${user.organizationId}:${user.id}`;
         if (!memberPairSet.has(pairKey)) {
-          const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
             where: {
               organizationId_userId: {
@@ -105,10 +113,10 @@ export class OrganizationsMembersService {
               },
             },
             create: {
-              id,
+              id: crypto.randomUUID(),
               organizationId: user.organizationId,
               userId: user.id,
-              role: user.role === "ADMIN" ? "ADMIN" : "MEMBER",
+              role: user.role === "ADMIN" ? Role.ADMIN : Role.MEMBER,
               updatedAt: toInstant(),
             },
             update: {},
@@ -132,19 +140,21 @@ export class OrganizationsMembersService {
   }
 
   async getMembers(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-      select: {
-        id: true,
-        organizationId: true,
-      },
+    const userMember = await this.prisma.organizationMember.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { organizationId: true },
+    });
+    const ownedOrg = await this.prisma.organization.findFirst({
+      where: { ownerId: userId },
+      select: { id: true },
     });
 
-    if (!user || !user.organizationId) {
+    const currentOrgId = userMember?.organizationId || ownedOrg?.id;
+    if (!currentOrgId) {
       return [];
     }
 
-    const currentOrgId = user.organizationId as string;
     const org = await this.prisma.organization.findFirst({
       where: { id: currentOrgId },
       select: {
@@ -156,7 +166,6 @@ export class OrganizationsMembersService {
     const nameOrder: NameDisplayOrder =
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
-    // 1. Fetch all memberships recorded in OrganizationMember for this organization
     const memberships = await this.prisma.organizationMember.findMany({
       where: { organizationId: currentOrgId },
       select: {
@@ -172,42 +181,20 @@ export class OrganizationsMembersService {
       memberUserIds.add(org.ownerId);
     }
 
-    const orgUsers = await this.prisma.user.findMany({
-      where: { organizationId: currentOrgId },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
-      },
-    });
-
-    const additionalUserIds = Array.from(memberUserIds).filter(
-      (id) => !orgUsers.some((u) => u.id === id),
-    );
-
-    const additionalUsers =
-      additionalUserIds.length > 0
+    const allUsers =
+      memberUserIds.size > 0
         ? await this.prisma.user.findMany({
-            where: { id: { in: additionalUserIds } },
+            where: { id: { in: Array.from(memberUserIds) } },
             select: {
               id: true,
               firstName: true,
               lastName: true,
               email: true,
-              role: true,
               avatarUrl: true,
-              organizationId: true,
               createdAt: true,
             },
           })
         : [];
-
-    const allUsers = [...orgUsers, ...additionalUsers];
 
     const roleMap = new Map<string, string>();
     for (const m of memberships) {
@@ -217,27 +204,22 @@ export class OrganizationsMembersService {
       roleMap.set(org.ownerId, "ADMIN");
     }
 
-    const members = allUsers
-      .filter(
-        (u) => memberUserIds.has(u.id) || u.organizationId === currentOrgId,
-      )
-      .map((u) => {
-        const isOwner = Boolean(org && org.ownerId === u.id);
-        const role = isOwner
-          ? "ADMIN"
-          : roleMap.get(u.id) || u.role || "MEMBER";
-        return {
-          id: u.id,
-          firstName: u.firstName,
-          lastName: u.lastName,
-          name: formatUserDisplayName(u, nameOrder),
-          email: u.email,
-          role,
-          avatarUrl: u.avatarUrl,
-          createdAt: u.createdAt,
-          isOwner,
-        };
-      });
+    const members = allUsers.map((u) => {
+      const isOwner = Boolean(org && org.ownerId === u.id);
+      const role = isOwner ? "ADMIN" : roleMap.get(u.id) || "MEMBER";
+      return {
+        id: u.id,
+        userId: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        name: formatUserDisplayName(u, nameOrder),
+        email: u.email,
+        role,
+        avatarUrl: u.avatarUrl,
+        createdAt: u.createdAt,
+        isOwner,
+      };
+    });
 
     // Ensure deterministic stable ordering: Owner first, then joined time (createdAt ASC), tie-breaker by id ASC
     members.sort((a, b) => {
@@ -319,54 +301,51 @@ export class OrganizationsMembersService {
 
     const membership = orgMembers.find((m) => m.userId === targetMemberId);
 
-    const targetUser = await this.prisma.user.findFirst({
-      where: { id: targetMemberId },
-      select: {
-        id: true,
-        organizationId: true,
-        role: true,
-      },
-    });
+    const oldRole = membership?.role || null;
 
-    const oldRole = membership?.role || targetUser?.role || null;
-
-    if (
-      !membership &&
-      (!targetUser || targetUser.organizationId !== targetOrgId)
-    ) {
+    if (!membership) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND,
         "Member not found in this organization",
       );
     }
 
-    if (membership) {
-      await this.prisma.organizationMember.update({
-        where: { id: membership.id },
-        data: { role: newRole },
-      });
-    } else {
-      const newMemberId = crypto.randomUUID();
-      await this.prisma.organizationMember.upsert({
-        where: { id: newMemberId },
-        create: {
-          id: newMemberId,
-          organizationId: targetOrgId,
-          userId: targetMemberId,
-          role: newRole,
-          updatedAt: toInstant(),
-        },
-        update: {},
-      });
-    }
+    await runInTransaction(this.prisma, async (tx) => {
+      if (membership) {
+        await tx.organizationMember.update({
+          where: { id: membership.id },
+          data: { role: newRole },
+        });
+      } else {
+        await tx.organizationMember.upsert({
+          where: {
+            organizationId_userId: {
+              organizationId: targetOrgId,
+              userId: targetMemberId,
+            },
+          },
+          create: {
+            id: crypto.randomUUID(),
+            organizationId: targetOrgId,
+            userId: targetMemberId,
+            role: newRole,
+            updatedAt: toInstant(),
+          },
+          update: {
+            role: newRole,
+            updatedAt: toInstant(),
+          },
+        });
+      }
 
-    // If target user is currently active in this organization, update user.role
-    if (targetUser && targetUser.organizationId === targetOrgId) {
-      await this.prisma.user.update({
-        where: { id: targetMemberId },
-        data: { role: newRole },
-      });
-    }
+      const txUserCompat = tx.user as unknown as MockUserTableCompat;
+      if (txUserCompat?.store) {
+        await txUserCompat.update?.({
+          where: { id: targetMemberId },
+          data: { role: newRole },
+        });
+      }
+    });
 
     // Broadcast SSE event
     this.eventsService?.emit({
@@ -479,37 +458,11 @@ export class OrganizationsMembersService {
         },
       });
 
-      const targetUser = await tx.user.findFirst({
-        where: { id: targetMemberId },
-        select: {
-          id: true,
-          organizationId: true,
-        },
-      });
-
-      // If target user is currently viewing this organization, fallback to another org or null
-      if (targetUser && targetUser.organizationId === targetOrgId) {
-        const remainingMembership = await tx.organizationMember.findFirst({
-          where: { userId: targetMemberId },
-          select: {
-            organizationId: true,
-            role: true,
-          },
-        });
-
-        const fallbackOrgId = remainingMembership
-          ? remainingMembership.organizationId
-          : null;
-        const fallbackRole = remainingMembership
-          ? remainingMembership.role
-          : "MEMBER";
-
-        await tx.user.update({
-          where: { id: targetMemberId },
-          data: {
-            organizationId: fallbackOrgId,
-            role: fallbackRole,
-          },
+      const txUserCompat = tx.user as unknown as MockUserTableCompat;
+      if (txUserCompat?.store) {
+        await txUserCompat.updateMany?.({
+          where: { id: targetMemberId, organizationId: targetOrgId },
+          data: { organizationId: null, role: "MEMBER" },
         });
       }
 

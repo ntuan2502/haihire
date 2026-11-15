@@ -7,8 +7,8 @@ import {
   type OnModuleInit,
   type OnModuleDestroy,
 } from "@nestjs/common";
-import { Subject, Observable, merge, interval, of } from "rxjs";
-import { concatMap, filter, map } from "rxjs/operators";
+import { Subject, Observable, merge, interval, of, defer } from "rxjs";
+import { concatMap, filter, map, switchMap } from "rxjs/operators";
 import { JwtService } from "@nestjs/jwt";
 import type Redis from "ioredis";
 import { REDIS_CLIENT } from "../redis/redis.module";
@@ -139,39 +139,78 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       );
     }
 
-    return merge(
-      of<AppEvent>({ type: "CONNECTED" }),
-      interval(15000).pipe(map((): AppEvent => ({ type: "HEARTBEAT" }))),
-      this.events$,
-    ).pipe(
-      concatMap(async (event) => {
-        try {
-          // Re-verification also expires an already open stream at token expiry.
-          const currentPayload = this.jwtService!.verify<typeof payload>(token);
-          if (!this.prisma) throw new Error("PrismaService not available");
-          const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, tokenVersion: true },
-          });
-          if (
-            !user ||
-            (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)
-          ) {
-            throw new Error("User session revoked");
-          }
-          const orgIds = await this.resolveUserOrgIds(userId);
-          const allowed = event.targetUserId
-            ? event.targetUserId === userId
-            : !event.organizationId || orgIds.has(event.organizationId);
-          return allowed ? ({ data: event } as MessageEvent) : null;
-        } catch {
-          throw new AppUnauthorizedException(
-            APP_ERROR_CODES.SSE_UNAUTHORIZED,
-            "SSE session is no longer authorized",
-          );
-        }
+    return defer(async () => {
+      if (!this.prisma) throw new Error("PrismaService not available");
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, tokenVersion: true },
+      });
+      if (!user || (user.tokenVersion ?? 0) !== (payload.tokenVersion ?? 0)) {
+        throw new AppUnauthorizedException(
+          APP_ERROR_CODES.SSE_UNAUTHORIZED,
+          "User session revoked",
+        );
+      }
+      const initialOrgIds = await this.resolveUserOrgIds(userId);
+      return { initialOrgIds };
+    }).pipe(
+      switchMap(({ initialOrgIds }) => {
+        const userOrgIds = new Set(initialOrgIds);
+
+        const initial$ = of<MessageEvent>({
+          data: { type: "CONNECTED" },
+        });
+
+        const heartbeat$ = interval(15000).pipe(
+          map((): MessageEvent => ({
+            data: { type: "HEARTBEAT" },
+          })),
+        );
+
+        const domainEvents$ = this.events$.pipe(
+          filter((event) => {
+            if (event.targetUserId) {
+              return event.targetUserId === userId;
+            }
+            if (!event.organizationId) {
+              return true;
+            }
+            return userOrgIds.has(event.organizationId);
+          }),
+          concatMap(async (event) => {
+            try {
+              const currentPayload =
+                this.jwtService!.verify<typeof payload>(token);
+              if (!this.prisma) throw new Error("PrismaService not available");
+              const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, tokenVersion: true },
+              });
+              if (
+                !user ||
+                (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)
+              ) {
+                throw new Error("User session revoked");
+              }
+              const currentOrgIds = await this.resolveUserOrgIds(userId);
+              userOrgIds.clear();
+              currentOrgIds.forEach((id) => userOrgIds.add(id));
+              const allowed = event.targetUserId
+                ? event.targetUserId === userId
+                : !event.organizationId || userOrgIds.has(event.organizationId);
+              return allowed ? ({ data: event } as MessageEvent) : null;
+            } catch {
+              throw new AppUnauthorizedException(
+                APP_ERROR_CODES.SSE_UNAUTHORIZED,
+                "SSE session is no longer authorized",
+              );
+            }
+          }),
+          filter((event): event is MessageEvent => event !== null),
+        );
+
+        return merge(initial$, heartbeat$, domainEvents$);
       }),
-      filter((event): event is MessageEvent => event !== null),
     );
   }
 

@@ -104,34 +104,33 @@ export class EmailFlowsService {
     existing: Array<{ flowKey: PrismaEmailFlowKey | string }>,
   ): Promise<void> {
     const existingKeys = new Set(existing.map((f) => f.flowKey));
+    const missingFlows = EMAIL_FLOW_KEYS.filter((k) => !existingKeys.has(k));
+    if (missingFlows.length === 0) return;
 
-    for (const flowKey of EMAIL_FLOW_KEYS) {
-      if (existingKeys.has(flowKey)) {
-        continue;
-      }
-
+    const flowsData = missingFlows.map((flowKey) => {
       const defaultType = EMAIL_FLOW_DEFINITIONS[flowKey].defaultTemplateType;
       const defaultTemplate =
         templates.find((t) => t.type === defaultType && t.isSystem) ??
         templates.find((t) => t.type === defaultType);
 
-      try {
-        await this.prisma.emailFlowConfig.create({
-          data: {
-            id: crypto.randomUUID(),
-            organizationId,
-            flowKey: flowKey as PrismaEmailFlowKey,
-            templateId: defaultTemplate?.id ?? null,
-            enabled: defaultTemplate ? defaultTemplate.enabled : false,
-            updatedAt: toInstant(),
-          },
-        });
-      } catch (err: unknown) {
-        // Ignore unique violations caused by concurrent initialization requests
-        const prismaErr = err as { code?: string };
-        if (prismaErr?.code !== "P2002") {
-          throw err;
-        }
+      return {
+        id: crypto.randomUUID(),
+        organizationId,
+        flowKey: flowKey as PrismaEmailFlowKey,
+        templateId: defaultTemplate?.id ?? null,
+        enabled: defaultTemplate ? defaultTemplate.enabled : false,
+        updatedAt: toInstant(),
+      };
+    });
+
+    if (typeof this.prisma.emailFlowConfig.createMany === "function") {
+      await this.prisma.emailFlowConfig.createMany({
+        data: flowsData,
+        skipDuplicates: true,
+      });
+    } else {
+      for (const data of flowsData) {
+        await this.prisma.emailFlowConfig.create({ data });
       }
     }
   }

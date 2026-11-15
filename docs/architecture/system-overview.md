@@ -11,18 +11,22 @@ Browser / Candidate Portal
    │
    ├── HTTP/SSE ──► Next.js 16 Frontend (apps/web, port 3000 dev/prod, 13000 E2E)
    │                   ├── src/proxy.ts (JWT cookie check & /dashboard -> /auth/login redirect)
-   │                   ├── next.config.ts rewrites (/api/* -> API, /haihire-resumes/* -> MinIO)
-   │                   └── TanStack Query v5 + Axios (URL Gatekeeper + 401 refresh queue)
+   │                   ├── next.config.ts rewrites (/api/* -> API)
+   │                   ├── Shared Dashboard Layout (src/app/dashboard/layout.tsx) & RSC pages
+   │                   ├── Lazy-Loaded i18n Dictionaries (zero-FOUC initial dictionary injection)
+   │                   └── TanStack Query v5 (orgId cache isolation) + Axios (URL Gatekeeper + 401 refresh queue)
    │
    ▼
 NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
-   ├── Security Pipeline: CorrelationIdMiddleware -> ThrottlerGuard -> JwtAuthGuard
-   │                      -> RolesGuard (PermissionResolverService) -> TenantGuard -> DtoPipe
+   ├── Security Pipeline: CorrelationIdMiddleware -> ThrottlerGuard (ThrottlerStorageRedisService)
+   │                      -> JwtAuthGuard -> RolesGuard (PermissionResolverService 2-tier cache)
+   │                      -> TenantGuard -> DtoPipe (Zod validation coverage)
    ├── Error Handling:    GlobalExceptionFilter + AppException (64 APP_ERROR_CODES)
    │
    ├── PostgreSQL 17.6 ◄── Prisma 7.10.1 (@prisma/adapter-pg + pg.Pool + AsyncLocalStorage tx)
    ├── Valkey 8.0.2     ◄── ioredis + BullMQ (email-queue, email-dlq-queue, orphan-cleanup-queue,
-   │                                           orphan-cleanup-dlq, SSE event pub/sub)
+   │                        orphan-cleanup-dlq), SSE pub/sub, Distributed Rate Limiting,
+   │                        and Permission Resolver L2 Cache with Cross-Replica Pub/Sub Invalidation
    └── MinIO S3         ◄── Private bucket `haihire-resumes` (`tenants/<orgId>/...`)
 ```
 
@@ -49,10 +53,11 @@ Compiled into a single ESM artifact (`dist/server.mjs`) via `esbuild`.
 
 ### `apps/web` (Next.js `16.4.5` Portal)
 
-- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites.
+- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites. Features shared dashboard shell (`src/app/dashboard/layout.tsx`), React Server Components (RSC) for landing, auth layouts, and careers directories, and modular UI components under 500 LOC.
 - **Request Boundary (`src/proxy.ts`):** Uses Next.js 16 `proxy()` convention (with zero legacy `middleware.ts` files).
 - **UI Stack:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` + `oklch(...)` variables in [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css), and Shadcn `base-nova` built on `@base-ui/react` + standalone `cn` package.
-- **Data & Real-Time Layer:** Axios interceptor chain in [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) prevents `[object Object]` URL leaks, queues concurrent `401` retries behind silent token refresh, and routes resume previews through tenant-guarded API download routes. SSE events trigger debounced (`100ms`) query prefix invalidation via `createRealtimeInvalidator` ([apps/web/src/lib/realtime-sync.ts](../../apps/web/src/lib/realtime-sync.ts)).
+- **Data & Real-Time Layer:** Axios interceptor chain in [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) prevents `[object Object]` URL leaks, queues concurrent `401` retries behind silent token refresh, and routes resume previews through tenant-guarded API download routes. TanStack Query v5 keys are scoped by `orgId` for strict multi-tenant cache isolation. SSE events trigger debounced (`100ms`) query prefix invalidation via `createRealtimeInvalidator` ([apps/web/src/lib/realtime-sync.ts](../../apps/web/src/lib/realtime-sync.ts)).
+- **Internationalization (i18n):** 2-tier Vietnamese/English dictionaries loaded dynamically with zero FOUC via server-side dictionary injection in root layout and client-side on-demand chunk loading.
 
 ---
 

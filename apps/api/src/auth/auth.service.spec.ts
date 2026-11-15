@@ -251,6 +251,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       sub: "usr-admin",
       email: DEMO_ACCOUNTS.ADMIN.email,
       role: DEMO_ACCOUNTS.ADMIN.role,
+      organizationId: "org-1",
       tokenVersion: 0,
     });
   });

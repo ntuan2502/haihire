@@ -54,6 +54,18 @@ const backendEnvSchema = z
     MINIO_SECRET_KEY: z.string().min(1, "MINIO_SECRET_KEY is required"),
     MINIO_BUCKET_NAME: z.string().min(1, "MINIO_BUCKET_NAME is required"),
     MINIO_PUBLIC_URL: z.string().min(1, "MINIO_PUBLIC_URL is required"),
+    // Redis / Valkey Configuration
+    REDIS_HOST: z.string().default("localhost"),
+    REDIS_PORT: z.coerce
+      .number()
+      .int("REDIS_PORT must be an integer")
+      .min(1, "REDIS_PORT must be between 1 and 65535")
+      .max(65535, "REDIS_PORT must be between 1 and 65535")
+      .default(6379),
+    REDIS_PASSWORD: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().optional(),
+    ),
     // System Email Configuration
     SYSTEM_EMAIL_PROVIDER: z.enum(["SIMULATED", "SMTP", "RESEND", "SENDGRID"]),
     SYSTEM_EMAIL_FROM_NAME: z
@@ -180,6 +192,7 @@ const rawPort = process.env.BACKEND_PORT || process.env.PORT || "3001";
 const rawFrontendPort = process.env.FRONTEND_PORT;
 const rawPostgresPort = process.env.POSTGRES_PORT;
 const rawMinioPort = process.env.MINIO_PORT;
+const rawRedisPort = process.env.REDIS_PORT;
 
 let databaseUrl = process.env.DATABASE_URL || "";
 if (rawPostgresPort && databaseUrl.includes("@localhost:")) {
@@ -223,6 +236,7 @@ if (rawMinioPort && minioPublicUrl.includes("localhost:")) {
 const envInput = {
   ...process.env,
   PORT: rawPort,
+  ...(rawRedisPort ? { REDIS_PORT: rawRedisPort } : {}),
   ...(databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
   ...(frontendUrl ? { FRONTEND_URL: frontendUrl } : {}),
   ...(rawMinioPort ? { MINIO_PORT: rawMinioPort } : {}),

@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/shared/auth-guard";
-import { Navbar, type NavTab } from "@/components/layout";
 import {
   StartRecruiting,
   DashboardMetrics,
@@ -56,7 +54,6 @@ function DashboardContent() {
     });
   const createJobMutation = useCreateJobMutation();
 
-  const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const loading =
     jobsLoading ||
     statsLoading ||
@@ -157,86 +154,64 @@ function DashboardContent() {
         status: "PUBLISHED",
         organizationId: user?.organizationId ?? null,
       });
-      setActiveTab("dashboard");
     } catch (err) {
       console.error("Create test job error", err);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/70 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Top Navigation Bar */}
-      <Navbar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={jobs.length}
-        candidatesCount={totalCandidatesCount}
-      />
+    <div className="flex-1 w-full">
+      <h1 className="sr-only">{t("dashboard.title")}</h1>
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <div className="max-w-7xl mx-auto w-full">
+          {jobs.length === 0 ? (
+            /* If no jobs yet, show Start Recruiting view */
+            <StartRecruiting
+              onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
+              onCreateTestJob={handleCreateTestJob}
+              onImportFromFile={() => router.push("/dashboard/jobs/new")}
+            />
+          ) : (
+            /* When jobs exist, display full high-fidelity Dashboard with live database metrics */
+            <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 space-y-6">
+              {/* Top Stat Cards Grid */}
+              <DashboardMetrics
+                openJobsCount={openJobsCount}
+                draftJobsCount={draftJobsCount}
+                totalCandidatesCount={totalCandidatesCount}
+                totalApplicationsCount={totalApplicationsCount}
+                toReviewCount={toReviewCount}
+              />
 
-      {/* Main Content Area */}
-      <main id="main-content" className="flex-1">
-        <h1 className="sr-only">{t("dashboard.title")}</h1>
-        {loading ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            {/* TAB 1: DASHBOARD */}
-            {activeTab === "dashboard" && (
-              <div>
-                {jobs.length === 0 ? (
-                  /* If no jobs yet, show Start Recruiting view */
-                  <StartRecruiting
-                    onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-                    onCreateTestJob={handleCreateTestJob}
-                    onImportFromFile={() => router.push("/dashboard/jobs/new")}
-                  />
-                ) : (
-                  /* When jobs exist, display full high-fidelity Dashboard with live database metrics */
-                  <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 space-y-6">
-                    {/* Top Stat Cards Grid */}
-                    <DashboardMetrics
-                      openJobsCount={openJobsCount}
-                      draftJobsCount={draftJobsCount}
-                      totalCandidatesCount={totalCandidatesCount}
-                      totalApplicationsCount={totalApplicationsCount}
-                      toReviewCount={toReviewCount}
-                    />
+              {/* Main 3-Column Equal Dashboard Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                {/* COLUMN 1: HIRING PIPELINE */}
+                <DashboardPipeline
+                  pipelineJobs={pipelineJobs}
+                  statsByJob={appStats?.byJob}
+                />
 
-                    {/* Main 3-Column Equal Dashboard Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                      {/* COLUMN 1: HIRING PIPELINE */}
-                      <DashboardPipeline
-                        pipelineJobs={pipelineJobs}
-                        statsByJob={appStats?.byJob}
-                      />
+                {/* COLUMN 2: RECENT APPLICATIONS */}
+                <DashboardRecentApplications
+                  applications={recentApplications}
+                  jobs={jobs}
+                />
 
-                      {/* COLUMN 2: RECENT APPLICATIONS */}
-                      <DashboardRecentApplications
-                        applications={recentApplications}
-                        jobs={jobs}
-                      />
-
-                      {/* COLUMN 3: UPCOMING INTERVIEWS */}
-                      <DashboardUpcomingInterviews
-                        upcomingInterviews={upcomingInterviews}
-                      />
-                    </div>
-                  </div>
-                )}
+                {/* COLUMN 3: UPCOMING INTERVIEWS */}
+                <DashboardUpcomingInterviews
+                  upcomingInterviews={upcomingInterviews}
+                />
               </div>
-            )}
-          </>
-        )}
-      </main>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function DashboardPage() {
-  return (
-    <AuthGuard>
-      <DashboardContent />
-    </AuthGuard>
-  );
+  return <DashboardContent />;
 }

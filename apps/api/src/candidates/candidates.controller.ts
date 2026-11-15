@@ -5,6 +5,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -20,16 +21,22 @@ import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
-import { CreateCandidateDto } from "./dto/create-candidate.dto";
-import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { CreateCandidateNoteDto } from "./dto/create-candidate-note.dto";
 import { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
+import { QueryCandidatesDto } from "./dto/query-candidates.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
+import {
+  createCandidateSchema,
+  updateCandidateSchema,
+  type CreateCandidateSchema,
+  type UpdateCandidateSchema,
+} from "@haihire/shared";
 
 @Controller("candidates")
-@UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard)
 export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
@@ -49,29 +56,24 @@ export class CandidatesController {
         organizationId?: string | null;
       };
     },
-    @Query("organizationId") organizationId?: string,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("search") search?: string,
+    @Query(DtoPipe(QueryCandidatesDto)) query?: QueryCandidatesDto,
   ) {
-    const pageNum = page ? parseInt(page, 10) : undefined;
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.candidatesService.findAll(
-      organizationId,
+      query?.organizationId,
       {
-        page: pageNum,
-        limit: limitNum,
-        search,
+        page: query?.page,
+        limit: query?.limit,
+        search: query?.search,
       },
       req?.user?.organizationId,
     );
   }
 
   @Get(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:view")
   findOne(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request()
     req: {
       user?: { id?: string; name?: string; organizationId?: string | null };
@@ -85,7 +87,7 @@ export class CandidatesController {
   }
 
   @Post()
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:create")
   @UseInterceptors(
     FileInterceptor("resume", {
@@ -94,7 +96,7 @@ export class CandidatesController {
     }),
   )
   create(
-    @Body(DtoPipe(CreateCandidateDto)) dto: CreateCandidateDto,
+    @Body(DtoPipe(createCandidateSchema)) dto: CreateCandidateSchema,
     @UploadedFile() file: Express.Multer.File,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
@@ -106,18 +108,18 @@ export class CandidatesController {
   }
 
   @Patch(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:update")
   update(
-    @Param("id") id: string,
-    @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(updateCandidateSchema)) dto: UpdateCandidateSchema,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.candidatesService.update(id, dto, req?.user?.organizationId);
   }
 
   @Post(":id/documents")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:document_upload")
   @UseInterceptors(
     FileInterceptor("file", {
@@ -126,7 +128,7 @@ export class CandidatesController {
     }),
   )
   uploadDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -140,10 +142,10 @@ export class CandidatesController {
   }
 
   @Get(":id/documents/download")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:document_download")
   async downloadDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
@@ -175,10 +177,10 @@ export class CandidatesController {
   }
 
   @Delete(":id/documents")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:document_delete")
   deleteDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -191,10 +193,10 @@ export class CandidatesController {
   }
 
   @Delete(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(RolesGuard)
   @RequirePermission("candidate:delete")
   remove(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.candidatesService.remove(id, req?.user?.organizationId);
@@ -204,7 +206,7 @@ export class CandidatesController {
   @UseGuards(RolesGuard)
   @RequirePermission("candidate:view")
   findNotes(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request()
     req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
@@ -213,9 +215,9 @@ export class CandidatesController {
 
   @Post(":id/notes")
   @UseGuards(RolesGuard)
-  @RequirePermission("candidate:view")
+  @RequirePermission("candidate:update")
   createNote(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(CreateCandidateNoteDto)) dto: CreateCandidateNoteDto,
     @Request()
     req: {
@@ -232,10 +234,10 @@ export class CandidatesController {
 
   @Patch(":id/notes/:noteId")
   @UseGuards(RolesGuard)
-  @RequirePermission("candidate:view")
+  @RequirePermission("candidate:update")
   updateNote(
-    @Param("id") id: string,
-    @Param("noteId") noteId: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
     @Body(DtoPipe(UpdateCandidateNoteDto)) dto: UpdateCandidateNoteDto,
     @Request()
     req: {
@@ -252,10 +254,10 @@ export class CandidatesController {
 
   @Delete(":id/notes/:noteId")
   @UseGuards(RolesGuard)
-  @RequirePermission("candidate:view")
+  @RequirePermission("candidate:update")
   deleteNote(
-    @Param("id") id: string,
-    @Param("noteId") noteId: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
     @Request()
     req: {
       user: {

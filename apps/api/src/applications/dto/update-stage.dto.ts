@@ -22,6 +22,11 @@ export class UpdateStageDto {
   @IsOptional()
   orderIndex?: number;
 
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  version?: number;
+
   @IsString()
   @MaxLength(1000)
   @IsOptional()

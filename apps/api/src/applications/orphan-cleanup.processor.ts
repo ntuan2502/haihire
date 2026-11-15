@@ -107,6 +107,42 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
       this.logger.log(
         `[OrphanCleanup] Scheduled sweep complete: scanned=${report.scannedCount}, orphans=${report.orphanCount}, deleted=${report.deletedCount}, preserved=${report.preservedGraceCount}`,
       );
+
+      const pushgatewayUrl = process.env.PUSHGATEWAY_URL;
+      if (pushgatewayUrl) {
+        try {
+          const body =
+            [
+              "# HELP haihire_orphan_cleanup_last_timestamp_seconds Timestamp of last orphan sweep",
+              "# TYPE haihire_orphan_cleanup_last_timestamp_seconds gauge",
+              `haihire_orphan_cleanup_last_timestamp_seconds ${Math.floor(Date.now() / 1000)}`,
+              "# HELP haihire_orphan_cleanup_deleted_total Number of deleted orphan files",
+              "# TYPE haihire_orphan_cleanup_deleted_total gauge",
+              `haihire_orphan_cleanup_deleted_total ${report.deletedCount}`,
+              "# HELP haihire_orphan_cleanup_scanned_total Number of scanned files in MinIO",
+              "# TYPE haihire_orphan_cleanup_scanned_total gauge",
+              `haihire_orphan_cleanup_scanned_total ${report.scannedCount}`,
+            ].join("\n") + "\n";
+          await fetch(
+            `${pushgatewayUrl.replace(/\/$/, "")}/metrics/job/orphan_cleanup`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body,
+            },
+          );
+          this.logger.log(
+            "[OrphanCleanup] Successfully pushed sweep metrics to Prometheus Pushgateway",
+          );
+        } catch (pushErr: unknown) {
+          const pushMsg =
+            pushErr instanceof Error ? pushErr.message : String(pushErr);
+          this.logger.warn(
+            `[OrphanCleanup] Skipped Pushgateway metric push: ${pushMsg}`,
+          );
+        }
+      }
+
       return {
         success: true,
         objectName: job.data?.objectName || "__scheduled_sweep__",

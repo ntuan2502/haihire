@@ -59,6 +59,10 @@ export interface MockTable<T = MockRecord> {
   select(...fields: string[]): QueryBuilder<T>;
   where(predicate: PredicateFn<T>): QueryBuilder<T>;
   create(data: Partial<T> | { data: Partial<T> }): Promise<T>;
+  createMany(args?: {
+    data: Array<Partial<T>>;
+    skipDuplicates?: boolean;
+  }): Promise<{ count: number }>;
   upsert(args: {
     create: Partial<T>;
     update: Partial<T>;
@@ -526,9 +530,33 @@ export function createMockTable<T = MockRecord>(
           (data as { data: Partial<T> }).data
             ? (data as { data: Partial<T> }).data
             : data;
-        const record = { ...payload } as T;
-        store.push(record);
-        return { ...record };
+        const record = { ...payload } as Record<string, unknown>;
+        for (const [k, v] of Object.entries(record)) {
+          if (
+            v &&
+            typeof v === "object" &&
+            (v.constructor?.name === "DbNull" ||
+              (v as Record<string | symbol, unknown>)[
+                Symbol.for("prisma.objectEnumValue")
+              ])
+          ) {
+            record[k] = null;
+          }
+        }
+        store.push(record as T);
+        return { ...record } as T;
+      },
+    ),
+    createMany: vi.fn(
+      async (args?: {
+        data: Array<Partial<T>>;
+        skipDuplicates?: boolean;
+      }): Promise<{ count: number }> => {
+        const items = Array.isArray(args?.data) ? args.data : [];
+        for (const item of items) {
+          store.push({ ...item } as T);
+        }
+        return { count: items.length };
       },
     ),
     upsert: vi.fn(
@@ -608,15 +636,24 @@ export function createMockTable<T = MockRecord>(
           matchPrismaWhere(item as MockRecord, args?.where),
         );
         if (args?.orderBy) {
-          const [sortKey, sortDir] = Object.entries(args.orderBy)[0] || [];
-          if (sortKey) {
+          const orderClauses: Array<[string, string]> = Array.isArray(
+            args.orderBy,
+          )
+            ? args.orderBy.flatMap((o: Record<string, string>) =>
+                Object.entries(o),
+              )
+            : Object.entries(args.orderBy as Record<string, string>);
+
+          if (orderClauses.length > 0) {
             filtered.sort((a, b) => {
-              const va = (a as MockRecord)[sortKey];
-              const vb = (b as MockRecord)[sortKey];
-              const sa = String(va ?? "");
-              const sb = String(vb ?? "");
-              if (sa < sb) return sortDir === "desc" ? 1 : -1;
-              if (sa > sb) return sortDir === "desc" ? -1 : 1;
+              for (const [sortKey, sortDir] of orderClauses) {
+                const va = (a as MockRecord)[sortKey];
+                const vb = (b as MockRecord)[sortKey];
+                const sa = String(va ?? "");
+                const sb = String(vb ?? "");
+                if (sa < sb) return sortDir === "desc" ? 1 : -1;
+                if (sa > sb) return sortDir === "desc" ? -1 : 1;
+              }
               return 0;
             });
           }

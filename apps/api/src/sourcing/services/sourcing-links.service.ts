@@ -1,5 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
@@ -62,102 +63,93 @@ export class SourcingLinksService {
     const limit =
       pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
-    const links = await this.prisma.trackingLink.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        organizationId: true,
-        name: true,
-        token: true,
-        source: true,
-        customSource: true,
-        jobId: true,
-        campaign: true,
-        medium: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-        utmTerm: true,
-        utmContent: true,
-        clicksCount: true,
-        isActive: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    // Filter out deleted links
-    let filtered = links.filter((l) => !l.deletedAt);
+    const where: Prisma.TrackingLinkWhereInput = {
+      organizationId,
+      deletedAt: null,
+    };
 
     if (pagination.isActive !== undefined) {
-      filtered = filtered.filter((l) => l.isActive === pagination.isActive);
+      where.isActive = pagination.isActive;
     }
 
     if (pagination.jobId) {
-      filtered = filtered.filter((l) => l.jobId === pagination.jobId);
+      where.jobId = pagination.jobId;
     }
 
     if (pagination.search) {
-      const q = pagination.search.toLowerCase();
-      filtered = filtered.filter(
-        (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.token.toLowerCase().includes(q) ||
-          (l.campaign && l.campaign.toLowerCase().includes(q)) ||
-          (l.utmCampaign && l.utmCampaign.toLowerCase().includes(q)),
-      );
+      const q = pagination.search.trim();
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { token: { contains: q, mode: "insensitive" } },
+        { campaign: { contains: q, mode: "insensitive" } },
+        { utmCampaign: { contains: q, mode: "insensitive" } },
+      ];
     }
 
-    // Sort by createdAt desc
-    filtered.sort(
-      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
+    const [links, total] = await Promise.all([
+      this.prisma.trackingLink.findMany({
+        where: { ...where, organizationId },
+        include: {
+          job: { select: { title: true } },
+          _count: {
+            select: { applications: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.trackingLink.count({
+        where: { ...where, organizationId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    let appCountMap: Map<string, number> | null = null;
+    let jobTitleMap: Map<string, string> | null = null;
+    const missingCounts = links.some(
+      (l) =>
+        (l as unknown as { _count?: { applications?: number } })._count ===
+        undefined,
     );
-
-    // Get jobs to map job titles (scoped by organizationId)
-    const jobIds = Array.from(
-      new Set(filtered.map((l) => l.jobId).filter(Boolean)),
-    ) as string[];
-    const jobs =
-      jobIds.length > 0
-        ? await this.prisma.job.findMany({
-            where: {
-              organizationId,
-              id: { in: jobIds },
-            },
-            select: { id: true, title: true },
-          })
-        : [];
-    const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
-
-    // Count applications for each link (scoped to links belonging to this organization)
-    const scopedLinkIds = filtered.map((l) => l.id);
-    const allApps =
-      scopedLinkIds.length > 0
-        ? await this.prisma.application.findMany({
-            where: {
-              trackingLinkId: { in: scopedLinkIds },
-            },
-            select: { trackingLinkId: true, organizationId: true },
-          })
-        : [];
-    const appCountMap = new Map<string, number>();
-    for (const app of allApps) {
-      if (app.trackingLinkId) {
-        appCountMap.set(
-          app.trackingLinkId,
-          (appCountMap.get(app.trackingLinkId) || 0) + 1,
-        );
+    if (missingCounts && links.length > 0) {
+      const allApps = await this.prisma.application.findMany({
+        where: {
+          organizationId,
+          trackingLinkId: { in: links.map((l) => l.id) },
+        },
+        select: { trackingLinkId: true },
+      });
+      appCountMap = new Map();
+      for (const app of allApps) {
+        if (app.trackingLinkId) {
+          appCountMap.set(
+            app.trackingLinkId,
+            (appCountMap.get(app.trackingLinkId) || 0) + 1,
+          );
+        }
       }
     }
 
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const offset = (page - 1) * limit;
-    const pageItems = filtered.slice(offset, offset + limit);
+    const missingJobRel = links.some((l) => !l.job && l.jobId);
+    if (missingJobRel) {
+      const jobIds = Array.from(
+        new Set(links.map((l) => l.jobId).filter(Boolean)),
+      ) as string[];
+      if (jobIds.length > 0) {
+        const jobs = await this.prisma.job.findMany({
+          where: { organizationId, id: { in: jobIds } },
+          select: { id: true, title: true },
+        });
+        jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
+      }
+    }
 
-    const data: TrackingLinkItem[] = pageItems.map((l) => {
-      const apps = appCountMap.get(l.id) || 0;
+    const data: TrackingLinkItem[] = links.map((l) => {
+      const apps =
+        (l as unknown as { _count?: { applications?: number } })._count
+          ?.applications ?? (appCountMap ? appCountMap.get(l.id) || 0 : 0);
       const clicks = l.clicksCount || 0;
       const cvr = clicks > 0 ? Math.round((apps / clicks) * 100) : 0;
       return {
@@ -168,7 +160,9 @@ export class SourcingLinksService {
         source: l.source as SourcingChannel,
         customSource: l.customSource,
         jobId: l.jobId,
-        jobTitle: l.jobId ? (jobTitleMap.get(l.jobId) ?? null) : null,
+        jobTitle:
+          l.job?.title ??
+          (l.jobId && jobTitleMap ? (jobTitleMap.get(l.jobId) ?? null) : null),
         campaign: l.campaign,
         medium: l.medium,
         utmSource:

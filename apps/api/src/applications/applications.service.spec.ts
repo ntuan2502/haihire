@@ -63,6 +63,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
   interface MockApp {
     id: string;
+    organizationId?: string | null;
     candidateId: string;
     jobId: string;
     stage: string;
@@ -162,6 +163,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     mockApps = [
       {
         id: "app-1",
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-org1-a",
         stage: "APPLIED",
@@ -176,6 +178,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         candidateId: "cand-2",
         jobId: "job-org1-b",
         stage: "INTERVIEW",
@@ -190,6 +193,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-3",
+        organizationId: "org-2",
         candidateId: "cand-3",
         jobId: "job-org2-c", // Belongs to org-2!
         stage: "OFFER",
@@ -880,6 +884,35 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
       const results = await service.findByJob("job-org1-a", "org-1");
       expect(results.length).toBe(120);
+    });
+
+    it("returns deterministic pagination order when orderIndex collisions occur using id tiebreaker", async () => {
+      const collidingApps = [
+        {
+          id: "app-tie-b",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-tie-a",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockApps.splice(0, mockApps.length, ...collidingApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(2);
+      expect(results[0].id).toBe("app-tie-a");
+      expect(results[1].id).toBe("app-tie-b");
     });
 
     it("aggregates SQL groupBy stage stats across multiple jobs cleanly", async () => {

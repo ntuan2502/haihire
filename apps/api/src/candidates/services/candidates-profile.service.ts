@@ -30,8 +30,13 @@ export class CandidatesProfileService {
     tenantOrgId?: string | null,
     currentUser?: { id?: string; name?: string } | null,
   ) {
+    const where: { id: string; organizationId?: string } = { id };
+    if (tenantOrgId) {
+      where.organizationId = tenantOrgId;
+    }
+
     const candidate = await this.prisma.candidate.findFirst({
-      where: { id },
+      where,
       select: {
         id: true,
         organizationId: true,
@@ -53,6 +58,23 @@ export class CandidatesProfileService {
     });
 
     if (!candidate || candidate.deletedAt) {
+      if (tenantOrgId) {
+        const otherOrg = await this.prisma.candidate.findFirst({
+          where: { id },
+          select: { id: true, organizationId: true, deletedAt: true },
+        });
+        if (
+          otherOrg &&
+          !otherOrg.deletedAt &&
+          otherOrg.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+            "Access denied: candidate belongs to another organization.",
+            { id, organizationId: otherOrg.organizationId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
         `Candidate with ID ${id} not found`,
@@ -60,21 +82,12 @@ export class CandidatesProfileService {
       );
     }
 
-    if (
-      tenantOrgId &&
-      candidate.organizationId &&
-      tenantOrgId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-
     // Fetch all applications for this candidate
     const applications = await this.prisma.application.findMany({
-      where: { candidateId: id },
+      where: {
+        candidateId: id,
+        ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+      },
       select: {
         id: true,
         candidateId: true,

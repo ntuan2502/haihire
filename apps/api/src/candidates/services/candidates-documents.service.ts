@@ -8,7 +8,7 @@ import {
   AppServiceUnavailableException,
 } from "../../common/app-exception";
 import { MinioService } from "../../minio/minio.service";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { CandidatesProfileService } from "./candidates-profile.service";
 import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
@@ -80,36 +80,37 @@ export class CandidatesDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    try {
-      await this.prisma.candidateDocument.create({
-        data: {
-          id: newDocId,
-          candidateId: id,
-          organizationId: candidate.organizationId,
-          name: cleanDocName,
-          url: uploadResult.url,
-          size: uploadResult.size ?? null,
-          mimeType: uploadResult.mimeType ?? null,
-          type: documentType || "Resume",
-          updatedAt: toInstant(),
-        },
-      });
-    } catch {
-      // ignore if mock or table unavailable in test
-    }
+    await runInTransaction(this.prisma, async (tx) => {
+      try {
+        await tx.candidateDocument.create({
+          data: {
+            id: newDocId,
+            candidateId: id,
+            organizationId: candidate.organizationId,
+            name: cleanDocName,
+            url: uploadResult.url,
+            size: uploadResult.size ?? null,
+            mimeType: uploadResult.mimeType ?? null,
+            type: documentType || "Resume",
+            updatedAt: toInstant(),
+          },
+        });
+      } catch {
+        // ignore if mock or table unavailable in test
+      }
 
-    if (!candidate.resumeUrl) {
-      // Tenant-scoped candidate: organizationId: candidate.organizationId
-      await this.prisma.candidate.update({
-        where: { id /* organizationId: candidate.organizationId */ },
-        data: {
-          resumeUrl: uploadResult.url,
-          resumeFileName: cleanDocName,
-          resumeFileSize: uploadResult.size ?? null,
-          resumeMimeType: uploadResult.mimeType ?? null,
-        },
-      });
-    }
+      if (!candidate.resumeUrl) {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: uploadResult.url,
+            resumeFileName: cleanDocName,
+            resumeFileSize: uploadResult.size ?? null,
+            resumeMimeType: uploadResult.mimeType ?? null,
+          },
+        });
+      }
+    });
 
     if (candidate.organizationId) {
       this.eventsService?.emit({
@@ -124,7 +125,7 @@ export class CandidatesDocumentsService {
       });
     }
 
-    return this.profileService.findOne(id);
+    return this.profileService.findOne(id, candidate.organizationId);
   }
 
   async prepareDocumentDownload(
@@ -276,9 +277,6 @@ export class CandidatesDocumentsService {
         where: deleteWhere,
         select: { url: true },
       });
-      await this.prisma.candidateDocument.deleteMany({
-        where: deleteWhere,
-      });
     }
 
     if (
@@ -295,44 +293,52 @@ export class CandidatesDocumentsService {
       }
     }
 
-    const remainingDocs = await this.prisma.candidateDocument.findMany({
-      where: {
-        candidateId: id,
-        organizationId: candidate.organizationId,
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-        size: true,
-        mimeType: true,
-        type: true,
-        createdAt: true,
-      },
-    });
+    await runInTransaction(this.prisma, async (tx) => {
+      if (deleteWhere) {
+        await tx.candidateDocument.deleteMany({
+          where: deleteWhere,
+        });
+      }
 
-    const primaryDoc = remainingDocs[0];
-    if (primaryDoc) {
-      await this.prisma.candidate.update({
-        where: { id },
-        data: {
-          resumeUrl: primaryDoc.url,
-          resumeFileName: primaryDoc.name,
-          resumeFileSize: primaryDoc.size ?? null,
-          resumeMimeType: primaryDoc.mimeType ?? null,
+      const remainingDocs = await tx.candidateDocument.findMany({
+        where: {
+          candidateId: id,
+          organizationId: candidate.organizationId,
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          size: true,
+          mimeType: true,
+          type: true,
+          createdAt: true,
         },
       });
-    } else {
-      await this.prisma.candidate.update({
-        where: { id },
-        data: {
-          resumeUrl: null,
-          resumeFileName: null,
-          resumeFileSize: null,
-          resumeMimeType: null,
-        },
-      });
-    }
+
+      const primaryDoc = remainingDocs[0];
+      if (primaryDoc) {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: primaryDoc.url,
+            resumeFileName: primaryDoc.name,
+            resumeFileSize: primaryDoc.size ?? null,
+            resumeMimeType: primaryDoc.mimeType ?? null,
+          },
+        });
+      } else {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: null,
+            resumeFileName: null,
+            resumeFileSize: null,
+            resumeMimeType: null,
+          },
+        });
+      }
+    });
 
     this.eventsService?.emit({
       type: "CANDIDATES_CHANGED",

@@ -516,13 +516,12 @@ describe("OrganizationsController", () => {
       };
       mockService.getAuditLogs.mockResolvedValue(mockResult);
 
-      const result = await controller.getAuditLogs(
-        ownerReq,
-        "ROLE_PERMISSIONS_UPDATED",
-        "ROLE_PERMISSIONS",
-        "20",
-        "0",
-      );
+      const result = await controller.getAuditLogs(ownerReq, {
+        action: "ROLE_PERMISSIONS_UPDATED",
+        resource: "ROLE_PERMISSIONS",
+        limit: 20,
+        offset: 0,
+      });
 
       expect(service.getAuditLogs).toHaveBeenCalledWith("user-owner", {
         action: "ROLE_PERMISSIONS_UPDATED",

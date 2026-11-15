@@ -17,6 +17,8 @@ export interface JwtPayload {
   role?: string;
   type?: string;
   tokenVersion?: number;
+  organizationId?: string | null;
+  activeOrgId?: string | null;
 }
 
 @Injectable()
@@ -67,11 +69,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
         avatarUrl: true,
         preferredLanguage: true,
         preferredTimezone: true,
-        organizationId: true,
         tokenVersion: true,
         createdAt: true,
       },
@@ -93,7 +93,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
+    const legacyUserOrgId = (
+      user as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyUserRole = (user as unknown as { role?: string })?.role;
+
+    const requestedOrgId =
+      payload.organizationId || payload.activeOrgId || legacyUserOrgId || null;
+
     let isOwner = false;
+    let activeOrgId: string | null = null;
+    let activeRole: string = legacyUserRole || payload.role || "MEMBER";
     let organization: {
       id: string;
       name: string;
@@ -106,9 +116,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       nameDisplayOrder?: string;
       defaultCurrency?: string;
     } | null = null;
-    if (user.organizationId) {
+
+    if (requestedOrgId) {
       const org = await this.prisma.organization.findUnique({
-        where: { id: user.organizationId },
+        where: { id: requestedOrgId },
         select: {
           id: true,
           name: true,
@@ -126,6 +137,50 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (org) {
         organization = org;
         isOwner = Boolean(org.ownerId === user.id);
+        activeOrgId = org.id;
+
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: org.id, userId: user.id },
+            select: { role: true },
+          });
+          if (member) {
+            activeRole = member.role;
+          } else if (isOwner) {
+            activeRole = "ADMIN";
+          }
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          const org = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              ownerId: true,
+              defaultLanguage: true,
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+              nameDisplayOrder: true,
+              defaultCurrency: true,
+            },
+          });
+          if (org) {
+            organization = org;
+            isOwner = Boolean(org.ownerId === user.id);
+            activeOrgId = org.id;
+            activeRole = isOwner ? "ADMIN" : member.role;
+          }
+        }
       }
     }
 
@@ -136,6 +191,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     return {
       ...user,
+      organizationId: activeOrgId,
+      role: activeRole,
       name: formatUserDisplayName(user, orgOrder),
       organization,
       isOwner,

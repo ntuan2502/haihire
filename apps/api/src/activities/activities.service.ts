@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
+import { Prisma } from "@prisma/client";
 import { AppForbiddenException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { toInstant } from "../common/date.util";
@@ -43,7 +44,9 @@ export class ActivitiesService {
     }
 
     const id = crypto.randomUUID();
-    const metadataStr = dto.metadata ? JSON.stringify(dto.metadata) : null;
+    const metadata = dto.metadata
+      ? (dto.metadata as Prisma.InputJsonValue)
+      : Prisma.DbNull;
 
     return this.prisma.activityLog.create({
       data: {
@@ -57,7 +60,7 @@ export class ActivitiesService {
         actorId: dto.actorId || null,
         actorName: dto.actorName,
         actorRole: dto.actorRole || null,
-        metadata: metadataStr,
+        metadata,
         updatedAt: toInstant(),
       },
     });
@@ -99,7 +102,7 @@ export class ActivitiesService {
 
     const data = activities.map((item) => ({
       ...item,
-      metadata: item.metadata ? this.safeParse(item.metadata) : null,
+      metadata: this.safeParse(item.metadata),
     }));
 
     const totalPages = Math.ceil(total / limit) || 1;
@@ -142,18 +145,22 @@ export class ActivitiesService {
 
     const data = activities.map((item) => ({
       ...item,
-      metadata: item.metadata ? this.safeParse(item.metadata) : null,
+      metadata: this.safeParse(item.metadata),
     }));
 
     const totalPages = Math.ceil(total / limit) || 1;
     return { data, total, page, limit, totalPages };
   }
 
-  private safeParse(json: string) {
-    try {
-      return JSON.parse(json);
-    } catch {
-      return null;
+  private safeParse(val: unknown) {
+    if (!val) return null;
+    if (typeof val === "string") {
+      try {
+        return JSON.parse(val);
+      } catch {
+        return null;
+      }
     }
+    return val;
   }
 }

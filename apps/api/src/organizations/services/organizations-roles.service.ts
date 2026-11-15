@@ -115,29 +115,17 @@ export class OrganizationsRolesService {
     const role = roleStr as Role;
 
     await runInTransaction(this.prisma, async (tx) => {
-      for (const update of updates) {
-        const existing = await tx.organizationRolePermission.findFirst({
-          where: {
-            organizationId,
-            role,
-            permission: update.permission,
-          },
-        });
-
-        if (existing) {
-          await tx.organizationRolePermission.update({
+      await Promise.all(
+        updates.map((update) =>
+          tx.organizationRolePermission.upsert({
             where: {
-              id: existing.id,
-              organizationId,
+              organizationId_role_permission: {
+                organizationId,
+                role,
+                permission: update.permission,
+              },
             },
-            data: {
-              granted: update.granted,
-              updatedAt: toInstant(),
-            },
-          });
-        } else {
-          await tx.organizationRolePermission.create({
-            data: {
+            create: {
               id: crypto.randomUUID(),
               organizationId,
               role,
@@ -145,9 +133,13 @@ export class OrganizationsRolesService {
               granted: update.granted,
               updatedAt: toInstant(),
             },
-          });
-        }
-      }
+            update: {
+              granted: update.granted,
+              updatedAt: toInstant(),
+            },
+          }),
+        ),
+      );
     });
 
     if (this.permissionResolver) {

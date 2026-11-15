@@ -1,10 +1,8 @@
 import "reflect-metadata";
-import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { env } from "./config/env";
 import { GlobalExceptionFilter } from "./common/http-exception.filter";
-import { validationExceptionFactory } from "./common/dto-validation.pipe";
 import { MetricsService } from "./metrics/metrics.service";
 import { CorrelationLogger } from "./common/logger/correlation-logger.service";
 import { correlationStorage } from "./common/middleware/correlation-id.middleware";
@@ -198,16 +196,6 @@ async function bootstrap() {
       }
       next();
     },
-  );
-
-  // Global validation pipe for incoming request payloads
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-      exceptionFactory: validationExceptionFactory,
-    }),
   );
 
   // Global exception filter handling Rate Limiting (429) and standard HTTP errors

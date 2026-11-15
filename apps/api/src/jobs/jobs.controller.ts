@@ -6,6 +6,7 @@ import {
   Inject,
   Optional,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -16,15 +17,22 @@ import { AuthGuard } from "@nestjs/passport";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
-import { CreateJobDto } from "./dto/create-job.dto";
-import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
-import { hasPermission, Role } from "@haihire/shared";
+import { TenantGuard } from "../common/guards/tenant.guard";
+import {
+  hasPermission,
+  Role,
+  createJobSchema,
+  updateJobSchema,
+  type CreateJobSchema,
+  type UpdateJobSchema,
+} from "@haihire/shared";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("jobs")
+@UseGuards(TenantGuard)
 export class JobsController {
   constructor(
     @Inject(JobsService)
@@ -35,7 +43,7 @@ export class JobsController {
   ) {}
 
   @Get()
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard, TenantGuard)
   findAll(
     @Request()
     req: {
@@ -90,7 +98,7 @@ export class JobsController {
   @Get(":id")
   @UseGuards(OptionalJwtAuthGuard)
   async findOne(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request()
     req?: {
       user?: {
@@ -123,7 +131,7 @@ export class JobsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:create")
   create(
-    @Body(DtoPipe(CreateJobDto)) dto: CreateJobDto,
+    @Body(DtoPipe(createJobSchema)) dto: CreateJobSchema,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
     return this.jobsService.create(
@@ -137,8 +145,8 @@ export class JobsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:update")
   update(
-    @Param("id") id: string,
-    @Body(DtoPipe(UpdateJobDto)) dto: UpdateJobDto,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(updateJobSchema)) dto: UpdateJobSchema,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.jobsService.update(id, dto, req?.user?.organizationId);
@@ -148,7 +156,7 @@ export class JobsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:delete")
   remove(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.jobsService.remove(id, req?.user?.organizationId);

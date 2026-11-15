@@ -4,18 +4,41 @@ import { useContext } from "react";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { DEFAULT_LOCALE, type SupportedLocale } from "./config";
 import type { TranslationSchema } from "./types";
-import { en } from "./locales/en";
-import { vi } from "./locales/vi";
 import {
   I18nContext,
   type I18nContextType,
   type TranslationKey,
 } from "./context";
 
-const TRANSLATIONS: Record<SupportedLocale, TranslationSchema> = {
-  en,
-  vi,
-};
+const TRANSLATIONS: Partial<Record<SupportedLocale, TranslationSchema>> = {};
+
+export function setLocaleDictionary(
+  locale: SupportedLocale,
+  dict: TranslationSchema,
+) {
+  TRANSLATIONS[locale] = dict;
+}
+
+export function getLocaleDictionary(
+  locale: SupportedLocale,
+): TranslationSchema | undefined {
+  return TRANSLATIONS[locale];
+}
+
+export async function loadLocaleDictionary(
+  locale: SupportedLocale,
+): Promise<TranslationSchema> {
+  if (TRANSLATIONS[locale]) return TRANSLATIONS[locale]!;
+  if (locale === "en") {
+    const mod = await import("./locales/en");
+    TRANSLATIONS.en = mod.en;
+    return mod.en;
+  } else {
+    const mod = await import("./locales/vi");
+    TRANSLATIONS.vi = mod.vi;
+    return mod.vi;
+  }
+}
 
 /**
  * Resolves a dot-delimited translation key from the locale dictionary with
@@ -27,6 +50,9 @@ export function translateFromDictionary(
   params?: Record<string, string | number>,
 ): string {
   const currentDict = TRANSLATIONS[locale] || TRANSLATIONS[DEFAULT_LOCALE];
+  if (!currentDict) {
+    return key;
+  }
   const keys = (key as string).split(".");
 
   let val: unknown = currentDict;

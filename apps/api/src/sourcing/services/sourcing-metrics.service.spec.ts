@@ -176,6 +176,7 @@ describe("SourcingMetricsService", () => {
     applicationTable = createMockTable([
       {
         id: "app-1",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-1",
         stage: "HIRED",
@@ -188,6 +189,7 @@ describe("SourcingMetricsService", () => {
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-2",
         stage: "INTERVIEW",
@@ -200,6 +202,7 @@ describe("SourcingMetricsService", () => {
       },
       {
         id: "app-3",
+        organizationId: "org-1",
         jobId: "job-2",
         candidateId: "cand-3",
         stage: "APPLIED",

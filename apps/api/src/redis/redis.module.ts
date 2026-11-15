@@ -1,8 +1,10 @@
 import { Global, Module, Inject, type OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
+import { ThrottlerStorageRedisService } from "./throttler-storage-redis.service";
+import { REDIS_CLIENT } from "./redis.constants";
 
-export const REDIS_CLIENT = "REDIS_CLIENT";
+export { REDIS_CLIENT } from "./redis.constants";
 
 @Global()
 @Module({
@@ -26,8 +28,9 @@ export const REDIS_CLIENT = "REDIS_CLIENT";
         });
       },
     },
+    ThrottlerStorageRedisService,
   ],
-  exports: [REDIS_CLIENT],
+  exports: [REDIS_CLIENT, ThrottlerStorageRedisService],
 })
 export class RedisModule implements OnModuleDestroy {
   constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}

@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
 

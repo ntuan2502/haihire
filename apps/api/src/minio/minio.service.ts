@@ -78,8 +78,11 @@ export class MinioService implements OnModuleInit {
     }
     const ext = extname(file.originalname).toLowerCase();
     const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
-    if (ext && !allowed.has(ext)) {
-      throw new Error(`Disallowed file extension: ${ext}`);
+    if (!ext || !allowed.has(ext)) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        `Disallowed or missing file extension: ${ext || "(none)"}`,
+      );
     }
     const orgPrefix = `tenants/${safeTenant}/`;
     const uniqueFileName = `${orgPrefix}${folder}/${Date.now()}-${randomUUID()}${ext}`;

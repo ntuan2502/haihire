@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { formatUserDisplayName } from "@haihire/shared";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -27,13 +28,16 @@ export class OrganizationsAuditLogService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private safeParse(value: string | null): unknown {
+  private safeParse(value: unknown): unknown {
     if (!value) return null;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
     }
+    return value;
   }
 
   async logOrg(
@@ -42,17 +46,19 @@ export class OrganizationsAuditLogService {
     action: string,
     resource: string,
     metadata?: Record<string, unknown> | null,
+    tx?: PrismaService,
   ) {
     const id = crypto.randomUUID();
-    const metadataStr = metadata ? JSON.stringify(metadata) : null;
-    return this.prisma.organizationAuditLog.create({
+    const meta = metadata ? (metadata as Prisma.InputJsonValue) : Prisma.DbNull;
+    const client = tx ?? this.prisma;
+    return client.organizationAuditLog.create({
       data: {
         id,
         organizationId,
         actorId: actorId || null,
         action,
         resource,
-        metadata: metadataStr,
+        metadata: meta,
         createdAt: toInstant(),
       },
     });
@@ -66,7 +72,7 @@ export class OrganizationsAuditLogService {
     metadata?: Record<string, unknown> | null,
   ) {
     const id = crypto.randomUUID();
-    const metadataStr = metadata ? JSON.stringify(metadata) : null;
+    const meta = metadata ? (metadata as Prisma.InputJsonValue) : Prisma.DbNull;
     return this.prisma.platformAuditLog.create({
       data: {
         id,
@@ -74,7 +80,7 @@ export class OrganizationsAuditLogService {
         actorId,
         action,
         resource,
-        metadata: metadataStr,
+        metadata: meta,
         createdAt: toInstant(),
       },
     });
@@ -119,9 +125,7 @@ export class OrganizationsAuditLogService {
               firstName: true,
               lastName: true,
               email: true,
-              role: true,
               avatarUrl: true,
-              organizationId: true,
             },
           })
         : [];

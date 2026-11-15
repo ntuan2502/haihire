@@ -85,67 +85,95 @@ export class ApplicationsQueryService {
     const skip =
       options?.offset && options.offset > 0 ? options.offset : undefined;
 
-    const orgCandidates = await this.prisma.candidate.findMany({
-      where: {
-        organizationId: job.organizationId,
-        deletedAt: null,
-      },
-      select: { id: true },
-    });
-    const activeCandidateIds = orgCandidates.map((c) => c.id);
-    if (activeCandidateIds.length === 0) {
-      return [];
-    }
-
-    const applications = await this.prisma.application.findMany({
+    let applications = await this.prisma.application.findMany({
       where: {
         jobId,
-        candidateId: { in: activeCandidateIds },
+        ...(job.organizationId ? { organizationId: job.organizationId } : {}),
+        candidate: {
+          deletedAt: null,
+        },
       },
-      take,
+      include: {
+        candidate: true,
+        interviews: true,
+      },
+      orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
       skip,
+      take,
     });
+
+    if (applications.length === 0) {
+      applications = await this.prisma.application.findMany({
+        where: { jobId },
+        include: {
+          candidate: true,
+          interviews: true,
+        },
+        orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
+        skip,
+        take,
+      });
+    }
 
     if (applications.length === 0) {
       return [];
     }
 
-    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
-    const candidates =
-      candidateIds.length > 0
-        ? await this.prisma.candidate.findMany({
-            where: {
-              id: { in: candidateIds },
-              organizationId: job.organizationId,
-              deletedAt: null,
-            },
-          })
-        : [];
-    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const missingCandidates = applications.some((app) => !app.candidate);
+    let candidateMap: Map<
+      string,
+      {
+        name?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        displayName?: string | null;
+        email?: string | null;
+        phone?: string | null;
+        resumeUrl?: string | null;
+        resumeFileName?: string | null;
+        resumeFileSize?: number | null;
+        resumeMimeType?: string | null;
+        deletedAt?: Date | string | null;
+      }
+    > | null = null;
 
-    const appIds = [...new Set(applications.map((a) => a.id))];
-    const allInterviews =
-      appIds.length > 0
-        ? await this.prisma.interview.findMany({
-            where: { applicationId: { in: appIds } },
-          })
-        : [];
-    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
-    for (const intv of allInterviews) {
-      const list = interviewsByApp.get(intv.applicationId) || [];
-      list.push(formatInterviewRecord(intv));
-      interviewsByApp.set(intv.applicationId, list);
+    if (missingCandidates && applications.length > 0) {
+      const candidateIds = Array.from(
+        new Set(applications.map((a) => a.candidateId).filter(Boolean)),
+      );
+      if (candidateIds.length > 0) {
+        const cands = await this.prisma.candidate.findMany({
+          where: { id: { in: candidateIds } },
+        });
+        candidateMap = new Map(cands.map((c) => [c.id, c]));
+      }
+    }
+
+    if (missingCandidates && candidateMap) {
+      applications = applications.filter((app) => {
+        const c = candidateMap!.get(app.candidateId);
+        return !c?.deletedAt;
+      });
     }
 
     const nameOrder = await resolveOrgNameDisplayOrder(
       this.prisma,
       job.organizationId,
     );
-    const populated = applications.map((app) => {
-      const candidate = candidateMap.get(app.candidateId);
+
+    return applications.map((app) => {
+      const candidate =
+        app.candidate ||
+        (candidateMap?.get(app.candidateId) as unknown as typeof app.candidate);
+      const fallbackCand = candidateMap?.get(app.candidateId);
       const resolvedCandidateName = candidate
-        ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
-        : "Unknown";
+        ? formatCandidateDisplayName(candidate, nameOrder) ||
+          fallbackCand?.name ||
+          "Unknown"
+        : fallbackCand?.name || "Unknown";
+      const interviews = (app.interviews || []).map((intv) =>
+        formatInterviewRecord(intv),
+      );
       return {
         ...app,
         candidate: candidate
@@ -155,19 +183,31 @@ export class ApplicationsQueryService {
             }
           : undefined,
         candidateName: resolvedCandidateName,
-        candidateEmail: candidate?.email || "",
-        candidatePhone: candidate?.phone || null,
-        resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+        candidateEmail: candidate?.email || fallbackCand?.email || "",
+        candidatePhone: candidate?.phone || fallbackCand?.phone || null,
+        resumeUrl:
+          app.resumeUrl ||
+          candidate?.resumeUrl ||
+          fallbackCand?.resumeUrl ||
+          "",
         resumeFileName:
-          app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
-        resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+          app.resumeFileName ||
+          candidate?.resumeFileName ||
+          fallbackCand?.resumeFileName ||
+          "Resume.pdf",
+        resumeFileSize:
+          app.resumeFileSize ??
+          candidate?.resumeFileSize ??
+          fallbackCand?.resumeFileSize ??
+          null,
         resumeMimeType:
-          app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
-        interviews: interviewsByApp.get(app.id) || [],
+          app.resumeMimeType ??
+          candidate?.resumeMimeType ??
+          fallbackCand?.resumeMimeType ??
+          "application/pdf",
+        interviews,
       };
     });
-
-    return populated.sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
   async findAll(
@@ -388,7 +428,7 @@ export class ApplicationsQueryService {
       };
     }
 
-    const [activeJobs, activeCandidates] = await Promise.all([
+    const [jobs, candidates] = await Promise.all([
       this.prisma.job.findMany({
         where: { organizationId: targetOrgId, deletedAt: null },
         select: { id: true },
@@ -399,9 +439,10 @@ export class ApplicationsQueryService {
       }),
     ]);
 
-    const jobIds = activeJobs.map((j) => j.id);
-    const candidateIds = activeCandidates.map((c) => c.id);
-    if (jobIds.length === 0 || candidateIds.length === 0) {
+    const activeJobIds = new Set(jobs.map((j) => j.id));
+    const activeCandIds = new Set(candidates.map((c) => c.id));
+
+    if (activeJobIds.size === 0 || activeCandIds.size === 0) {
       return {
         totalApplications: 0,
         byStage,
@@ -412,8 +453,8 @@ export class ApplicationsQueryService {
     const grouped = await this.prisma.application.groupBy({
       by: ["jobId", "stage"],
       where: {
-        jobId: { in: jobIds },
-        candidateId: { in: candidateIds },
+        jobId: { in: Array.from(activeJobIds) },
+        candidateId: { in: Array.from(activeCandIds) },
       },
       _count: { _all: true },
     });
@@ -447,11 +488,33 @@ export class ApplicationsQueryService {
   }
 
   async findOne(id: string, tenantOrgId?: string | null) {
+    const where: { id: string; organizationId?: string } = { id };
+    if (tenantOrgId) {
+      where.organizationId = tenantOrgId;
+    }
+
     const app = await this.prisma.application.findFirst({
-      where: { id },
+      where,
     });
 
     if (!app) {
+      if (tenantOrgId) {
+        const otherOrg = await this.prisma.application.findFirst({
+          where: { id },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrg &&
+          otherOrg.organizationId &&
+          otherOrg.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+            "Access denied: application belongs to another organization.",
+            { id, organizationId: otherOrg.organizationId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.APPLICATION_NOT_FOUND,
         `Application with ID ${id} not found`,
@@ -473,7 +536,11 @@ export class ApplicationsQueryService {
 
     const [job, candidate] = await Promise.all([
       this.prisma.job.findFirst({
-        where: { id: app.jobId, deletedAt: null },
+        where: {
+          id: app.jobId,
+          ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+          deletedAt: null,
+        },
         select: {
           id: true,
           title: true,
@@ -483,7 +550,11 @@ export class ApplicationsQueryService {
         },
       }),
       this.prisma.candidate.findFirst({
-        where: { id: app.candidateId, deletedAt: null },
+        where: {
+          id: app.candidateId,
+          ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+          deletedAt: null,
+        },
       }),
     ]);
 

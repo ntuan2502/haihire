@@ -1,20 +1,34 @@
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
-  applications: (jobId?: string | null) => ["applications", { jobId }] as const,
-  application: (id?: string | null) => ["applications", "detail", id] as const,
-  applicationNotes: (applicationId?: string | null) =>
-    ["applications", "notes", applicationId] as const,
+  applications: (jobId?: string | null, orgId?: string | null) =>
+    ["applications", { orgId, jobId }] as const,
+  application: (id?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["applications", "detail", id, { orgId }] as const)
+      : (["applications", "detail", id] as const),
+  applicationNotes: (applicationId?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["applications", "notes", applicationId, { orgId }] as const)
+      : (["applications", "notes", applicationId] as const),
   applicationStats: (orgId?: string | null) =>
     ["applications", "stats", { orgId }] as const,
   paginatedApplications: (params?: Record<string, unknown>) =>
     ["applications", "paginated", params] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
-  candidate: (id?: string | null) => ["candidates", id] as const,
-  candidateNotes: (candidateId?: string | null) =>
-    ["candidates", "notes", candidateId] as const,
+  candidate: (id?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["candidates", id, { orgId }] as const)
+      : (["candidates", id] as const),
+  candidateNotes: (candidateId?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["candidates", "notes", candidateId, { orgId }] as const)
+      : (["candidates", "notes", candidateId] as const),
   interviews: (params?: Record<string, unknown>) =>
     ["interviews", params] as const,
-  interview: (id?: string | null) => ["interviews", "detail", id] as const,
+  interview: (id?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["interviews", "detail", id, { orgId }] as const)
+      : (["interviews", "detail", id] as const),
   myOrg: () => ["organization", "my"] as const,
   myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
@@ -57,12 +71,17 @@ export const queryKeys = {
       applicationId,
       { orgId, page, limit },
     ] as const,
-  sourcingStats: (params?: { timeRange?: string; jobId?: string }) =>
-    ["sourcing", "stats", params] as const,
+  sourcingStats: (params?: {
+    timeRange?: string;
+    jobId?: string;
+    orgId?: string | null;
+  }) => ["sourcing", "stats", params] as const,
   sourcingLinks: (params?: Record<string, unknown>) =>
     ["sourcing", "links", params] as const,
-  sourcingLinkDetail: (id: string, params?: { timeRange?: string }) =>
-    ["sourcing", "links", id, params] as const,
+  sourcingLinkDetail: (
+    id: string,
+    params?: { timeRange?: string; orgId?: string | null },
+  ) => ["sourcing", "links", id, params] as const,
   sourcingAttributionLog: (params?: Record<string, unknown>) =>
     ["sourcing", "attribution-log", params] as const,
   webhookSettings: (orgId?: string | null) =>

@@ -100,6 +100,7 @@ describe("CandidatesService (Characterization Tests)", () => {
     applicationTable = createMockTable([
       {
         id: "app-1",
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-1",
         stage: "INTERVIEW",

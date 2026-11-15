@@ -322,7 +322,7 @@ export class OrganizationsInvitesService {
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
     const users = await this.prisma.user.findMany({
-      where: { organizationId: orgId },
+      where: { memberships: { some: { organizationId: orgId } } },
       select: { id: true, firstName: true, lastName: true },
     });
     const userMap = new Map(

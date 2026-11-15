@@ -233,17 +233,15 @@ function hasClientSessionState(): boolean {
   }
   return Boolean(
     document.cookie.includes("haihire_has_org=") ||
-    localStorage.getItem("haihire_recruiter_token") ||
+    document.cookie.includes("haihire_token=") ||
+    document.cookie.includes("haihire_refresh_token=") ||
     localStorage.getItem("haihire_recruiter_user"),
   );
 }
 
 async function clearServerAndClientSession(): Promise<void> {
   if (typeof window !== "undefined") {
-    localStorage.removeItem("haihire_recruiter_token");
-    localStorage.removeItem("haihire_recruiter_refresh_token");
     localStorage.removeItem("haihire_recruiter_user");
-    delete api.defaults.headers.common.Authorization;
     try {
       await axios.post(
         `${getApiBaseUrl()}/auth/logout`,
@@ -304,25 +302,10 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      const refreshToken = localStorage.getItem(
-        "haihire_recruiter_refresh_token",
-      );
-      if (!refreshToken) {
-        if (hasClientSessionState()) {
-          await clearServerAndClientSession();
-        } else {
-          clearClientAuthCookies();
-        }
-        return Promise.reject(error);
-      }
-
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({
-            resolve: (token: string) => {
-              if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-              }
+            resolve: () => {
               resolve(api.request(originalRequest));
             },
             reject,
@@ -338,39 +321,23 @@ api.interceptors.response.use(
           accessToken: string;
           refreshToken?: string;
           hasOrg?: boolean;
-        }>(
-          `${getApiBaseUrl()}/auth/refresh`,
-          { refreshToken },
-          { withCredentials: true },
-        );
-
-        const newAccessToken = refreshRes.data.accessToken;
-        const newRefreshToken = refreshRes.data.refreshToken;
-
-        localStorage.setItem("haihire_recruiter_token", newAccessToken);
-        if (newRefreshToken) {
-          localStorage.setItem(
-            "haihire_recruiter_refresh_token",
-            newRefreshToken,
-          );
-        }
+        }>(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
 
         const maxAge = 60 * 60 * 24 * 7;
         const secure = window.location.protocol === "https:" ? "; Secure" : "";
-        if (typeof refreshRes.data.hasOrg === "boolean") {
+        if (typeof refreshRes.data?.hasOrg === "boolean") {
           document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
         }
 
-        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        }
-
-        processQueue(null, newAccessToken);
+        processQueue(null, refreshRes.data?.accessToken);
         return api.request(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        await clearServerAndClientSession();
+        if (hasClientSessionState()) {
+          await clearServerAndClientSession();
+        } else {
+          clearClientAuthCookies();
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

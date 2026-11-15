@@ -5,12 +5,14 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
   Request,
   Res,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
@@ -19,9 +21,12 @@ import { Throttle } from "@nestjs/throttler";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
-import { FileInterceptor } from "@nestjs/platform-express";
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
-import { CreateApplicationDto } from "./dto/create-application.dto";
+import { PublicApplyDto } from "./dto/public-apply.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { CreateApplicationNoteDto } from "./dto/create-application-note.dto";
@@ -29,6 +34,7 @@ import { UpdateApplicationNoteDto } from "./dto/update-application-note.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -38,7 +44,7 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
   @RequirePermission("application:view")
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
@@ -65,7 +71,7 @@ export class ApplicationsController {
   }
 
   @Get("stats")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
   @RequirePermission("application:view")
   getStats(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
@@ -81,7 +87,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
   findByJob(
-    @Param("jobId") jobId: string,
+    @Param("jobId", new ParseUUIDPipe()) jobId: string,
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
@@ -102,7 +108,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
   findOne(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.findOne(id, req?.user?.organizationId);
@@ -111,27 +117,35 @@ export class ApplicationsController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("apply")
   @UseInterceptors(
-    FileInterceptor("resume", {
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-      fileFilter: resumeFileFilter,
-    }),
+    FileFieldsInterceptor(
+      [
+        { name: "resume", maxCount: 1 },
+        { name: "file", maxCount: 1 },
+      ],
+      {
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+        fileFilter: resumeFileFilter,
+      },
+    ),
   )
   create(
-    @Body(DtoPipe(CreateApplicationDto)) dto: CreateApplicationDto,
-    @UploadedFile() file: Express.Multer.File,
+    @Body(DtoPipe(PublicApplyDto)) dto: PublicApplyDto,
+    @UploadedFiles()
+    files: { resume?: Express.Multer.File[]; file?: Express.Multer.File[] },
     @Request()
     req?: {
       user?: { id?: string; role?: string; organizationId?: string | null };
     },
   ) {
-    return this.applicationsService.create(dto, file, req?.user);
+    const uploaded = files?.resume?.[0] || files?.file?.[0];
+    return this.applicationsService.create(dto, uploaded, req?.user);
   }
 
   @Patch(":id/stage")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:update_stage")
   updateStage(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateStageDto)) dto: UpdateStageDto,
     @Request()
     req?: {
@@ -155,7 +169,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:update")
   updateCandidate(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
@@ -176,7 +190,7 @@ export class ApplicationsController {
     }),
   )
   uploadDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -193,7 +207,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:document_download")
   async downloadDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
@@ -228,7 +242,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:document_delete")
   deleteDocument(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -244,7 +258,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:delete")
   remove(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.remove(id, req?.user?.organizationId);
@@ -257,7 +271,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
   findNotes(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.findNotes(id, req?.user?.organizationId);
@@ -265,9 +279,9 @@ export class ApplicationsController {
 
   @Post(":id/notes")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
-  @RequirePermission("application:view")
+  @RequirePermission("application:update")
   createNote(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(CreateApplicationNoteDto)) dto: CreateApplicationNoteDto,
     @Request()
     req: {
@@ -284,10 +298,10 @@ export class ApplicationsController {
 
   @Patch(":id/notes/:noteId")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
-  @RequirePermission("application:view")
+  @RequirePermission("application:update")
   updateNote(
-    @Param("id") id: string,
-    @Param("noteId") noteId: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
     @Body(DtoPipe(UpdateApplicationNoteDto)) dto: UpdateApplicationNoteDto,
     @Request()
     req: {
@@ -304,10 +318,10 @@ export class ApplicationsController {
 
   @Delete(":id/notes/:noteId")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
-  @RequirePermission("application:view")
+  @RequirePermission("application:update")
   deleteNote(
-    @Param("id") id: string,
-    @Param("noteId") noteId: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
     @Request()
     req: {
       user: {

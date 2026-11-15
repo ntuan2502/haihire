@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { CandidateDocument } from "@haihire/shared";
 import { CreateApplicationDto } from "./dto/create-application.dto";
+import { PublicApplyDto } from "./dto/public-apply.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { CreateApplicationNoteDto } from "./dto/create-application-note.dto";
@@ -87,7 +88,7 @@ export class ApplicationsService {
   // 2. APPLICATION CREATION SAGA
   // ==========================================
   create(
-    dto: CreateApplicationDto,
+    dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
     currentUser?: { role?: string; organizationId?: string | null } | null,
   ) {

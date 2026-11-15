@@ -153,11 +153,6 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
   });
 
   it("attempts to refresh token and retries request on 401 error", async () => {
-    localStorage.setItem(
-      "haihire_recruiter_refresh_token",
-      "valid-refresh-token",
-    );
-
     const postSpy = vi.spyOn(axios, "post").mockResolvedValueOnce({
       data: {
         accessToken: "new-access-token",
@@ -193,24 +188,14 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
 
       expect(postSpy).toHaveBeenCalledWith(
         expect.stringContaining("/auth/refresh"),
-        { refreshToken: "valid-refresh-token" },
+        {},
         { withCredentials: true },
-      );
-      expect(localStorage.getItem("haihire_recruiter_token")).toBe(
-        "new-access-token",
-      );
-      expect(localStorage.getItem("haihire_recruiter_refresh_token")).toBe(
-        "new-refresh-token",
       );
       expect(replaySpy).toHaveBeenCalled();
     }
   });
 
   it("does not loop on /auth/login or /auth/refresh 401 errors", async () => {
-    localStorage.setItem(
-      "haihire_recruiter_refresh_token",
-      "valid-refresh-token",
-    );
     const postSpy = vi.spyOn(axios, "post");
 
     const interceptor = (
@@ -231,11 +216,7 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
   });
 
   it("clears server HttpOnly cookies via /auth/logout when refresh fails on 401", async () => {
-    localStorage.setItem(
-      "haihire_recruiter_refresh_token",
-      "expired-refresh-token",
-    );
-    localStorage.setItem("haihire_recruiter_token", "expired-access-token");
+    localStorage.setItem("haihire_recruiter_user", "{}");
 
     const postSpy = vi
       .spyOn(axios, "post")
@@ -257,7 +238,7 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
       await expect(interceptor(apiError)).rejects.toThrow("Refresh rejected");
       expect(postSpy).toHaveBeenCalledWith(
         expect.stringContaining("/auth/refresh"),
-        { refreshToken: "expired-refresh-token" },
+        {},
         { withCredentials: true },
       );
       expect(postSpy).toHaveBeenCalledWith(
@@ -265,17 +246,15 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
         {},
         { withCredentials: true },
       );
-      expect(localStorage.getItem("haihire_recruiter_token")).toBeNull();
-      expect(
-        localStorage.getItem("haihire_recruiter_refresh_token"),
-      ).toBeNull();
+      expect(localStorage.getItem("haihire_recruiter_user")).toBeNull();
     }
   });
 
-  it("clears server HttpOnly cookies when 401 occurs without local refreshToken on /auth/onboarding", async () => {
+  it("clears server HttpOnly cookies when 401 occurs and refresh fails on /auth/onboarding", async () => {
     window.history.pushState({}, "", "/auth/onboarding");
     const postSpy = vi
       .spyOn(axios, "post")
+      .mockRejectedValueOnce(new Error("Unauthorized"))
       .mockResolvedValueOnce({ data: { success: true } });
 
     const interceptor = (
@@ -290,7 +269,7 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
         config: { url: "/auth/me", headers: {} },
       };
 
-      await expect(interceptor(apiError)).rejects.toEqual(apiError);
+      await expect(interceptor(apiError)).rejects.toThrow("Unauthorized");
       expect(postSpy).toHaveBeenCalledWith(
         expect.stringContaining("/auth/logout"),
         {},

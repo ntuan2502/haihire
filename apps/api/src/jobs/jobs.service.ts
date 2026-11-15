@@ -270,7 +270,8 @@ export class JobsService {
     fullCandidateAccess = true,
   ) {
     const job = await this.prisma.job.findFirst({
-      where: { id },
+      where:
+        !isPublic && tenantOrgId ? { id, organizationId: tenantOrgId } : { id },
       select: {
         id: true,
         organizationId: true,
@@ -293,6 +294,23 @@ export class JobsService {
     });
 
     if (!job || job.deletedAt) {
+      if (!isPublic && tenantOrgId) {
+        const otherOrgJob = await this.prisma.job.findFirst({
+          where: { id },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrgJob &&
+          otherOrgJob.organizationId &&
+          otherOrgJob.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+            "Access denied: job belongs to another organization.",
+            { id, organizationId: otherOrgJob.organizationId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
@@ -305,18 +323,6 @@ export class JobsService {
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
         { id },
-      );
-    }
-
-    if (
-      tenantOrgId &&
-      job.organizationId &&
-      tenantOrgId !== job.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-        "Access denied: job belongs to another organization.",
-        { id, organizationId: job.organizationId },
       );
     }
 
@@ -424,17 +430,17 @@ export class JobsService {
           candidate: candidate
             ? {
                 id: candidate.id,
-                name: resolvedCandidateName,
-                firstName: candidate.firstName,
-                lastName: candidate.lastName,
-                displayName: candidate.displayName ?? null,
-                email: candidate.email,
-                phone: candidate.phone,
+                name: "[Masked]",
+                firstName: "[Masked]",
+                lastName: "[Masked]",
+                displayName: "[Masked]",
+                email: "",
+                phone: null,
               }
             : undefined,
-          candidateName: resolvedCandidateName,
-          candidateEmail: candidate?.email || "",
-          candidatePhone: candidate?.phone || null,
+          candidateName: "[Masked]",
+          candidateEmail: "",
+          candidatePhone: null,
           interviews: [],
         };
       }
@@ -482,53 +488,53 @@ export class JobsService {
       );
     }
 
-    const jobs = await this.prisma.job.findMany({
-      where: { organizationId: org.id },
-      select: {
-        id: true,
-        title: true,
-        department: true,
-        location: true,
-        postalCode: true,
-        experienceLevel: true,
-        workplace: true,
-        type: true,
-        description: true,
-        requirements: true,
-        salaryRange: true,
-        status: true,
-        organizationId: true,
-        createdById: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
+    // First try direct lookup by ID if jobSlug is a UUID
+    let matchedJob = await this.prisma.job.findFirst({
+      where: {
+        organizationId: org.id,
+        deletedAt: null,
+        status: { in: ["PUBLISHED", "CLOSED"] },
+        id: jobSlug,
       },
+      select: { id: true },
     });
 
-    const activeJobs = jobs.filter(
-      (j) =>
-        !j.deletedAt && (j.status === "PUBLISHED" || j.status === "CLOSED"),
-    );
+    if (!matchedJob) {
+      const activeJobs = await this.prisma.job.findMany({
+        where: {
+          organizationId: org.id,
+          deletedAt: null,
+          status: { in: ["PUBLISHED", "CLOSED"] },
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+      });
 
-    const slugify = (str: string) =>
-      str
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d")
-        .replace(/Đ/g, "D")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+      const slugify = (str: string) =>
+        str
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
 
-    const matchedJob = activeJobs.find((j) => {
-      if (j.id === jobSlug) return true;
-      if (j.id.startsWith(jobSlug)) return true;
-      const titleSlug = slugify(j.title);
-      if (titleSlug === jobSlug) return true;
-      if (`${titleSlug}-${j.id.slice(0, 8)}` === jobSlug) return true;
-      if (jobSlug.endsWith(j.id)) return true;
-      return false;
-    });
+      const found = activeJobs.find((j) => {
+        if (j.id.startsWith(jobSlug)) return true;
+        const titleSlug = slugify(j.title);
+        if (titleSlug === jobSlug) return true;
+        if (`${titleSlug}-${j.id.slice(0, 8)}` === jobSlug) return true;
+        if (jobSlug.endsWith(j.id)) return true;
+        return false;
+      });
+
+      if (found) {
+        matchedJob = found;
+      }
+    }
 
     if (!matchedJob) {
       throw new AppNotFoundException(
@@ -596,7 +602,7 @@ export class JobsService {
   }
 
   async update(id: string, dto: UpdateJobDto, tenantOrgId?: string | null) {
-    const job = await this.findOne(id);
+    const job = await this.findOne(id, tenantOrgId);
 
     if (
       tenantOrgId &&
@@ -648,7 +654,7 @@ export class JobsService {
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    const job = await this.findOne(id);
+    const job = await this.findOne(id, tenantOrgId);
 
     if (
       tenantOrgId &&

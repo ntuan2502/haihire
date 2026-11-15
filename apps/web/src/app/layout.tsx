@@ -39,6 +39,11 @@ export default async function RootLayout({
   const rawLocale = cookieStore.get(LOCALE_COOKIE_KEY)?.value;
   const locale: SupportedLocale = rawLocale === "vi" ? "vi" : DEFAULT_LOCALE;
 
+  const initialDictionary =
+    locale === "vi"
+      ? (await import("@/i18n/locales/vi")).vi
+      : (await import("@/i18n/locales/en")).en;
+
   return (
     <html
       lang={locale}
@@ -66,7 +71,10 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <I18nProvider initialLocale={locale}>
+            <I18nProvider
+              initialLocale={locale}
+              initialDictionary={initialDictionary}
+            >
               <AuthProvider>
                 <LocalizationProvider>{children}</LocalizationProvider>
               </AuthProvider>

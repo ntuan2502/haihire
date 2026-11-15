@@ -92,7 +92,11 @@ async function verifySessionWithBackend(
 
 function finalizeResponse(
   response: NextResponse,
-  options: { clearAuth: boolean; syncHasOrg?: boolean },
+  options: {
+    clearAuth?: boolean;
+    clearAccessTokenOnly?: boolean;
+    syncHasOrg?: boolean;
+  },
 ): NextResponse {
   if (options.clearAuth) {
     for (const name of AUTH_COOKIE_NAMES) {
@@ -100,7 +104,14 @@ function finalizeResponse(
     }
     return response;
   }
-  if (typeof options.syncHasOrg === "boolean") {
+  if (options.clearAccessTokenOnly) {
+    response.cookies.set("haihire_token", "", { path: "/", maxAge: 0 });
+    response.cookies.set("haihire_has_org", "", { path: "/", maxAge: 0 });
+  }
+  if (
+    typeof options.syncHasOrg === "boolean" &&
+    !options.clearAccessTokenOnly
+  ) {
     response.cookies.set(
       "haihire_has_org",
       options.syncHasOrg ? "true" : "false",
@@ -127,7 +138,7 @@ export async function proxy(request: NextRequest) {
       : undefined;
   const rawHasOrgCookie = request.cookies.get("haihire_has_org")?.value;
   let hasOrg = rawHasOrgCookie === "true";
-  let shouldClearCookies = Boolean(rawToken && !token);
+  let shouldClearAccessTokenOnly = Boolean(rawToken && !token);
   let syncHasOrg: boolean | undefined;
 
   const isAuthPage =
@@ -138,7 +149,7 @@ export async function proxy(request: NextRequest) {
   if (token && isExpiredOrMalformedJwt(token)) {
     token = undefined;
     hasOrg = false;
-    shouldClearCookies = true;
+    shouldClearAccessTokenOnly = true;
   }
 
   if (token && (isAuthPage || isDashboardPage || isOnboardingPage)) {
@@ -147,7 +158,7 @@ export async function proxy(request: NextRequest) {
       if (!sessionStatus.valid) {
         token = undefined;
         hasOrg = false;
-        shouldClearCookies = true;
+        shouldClearAccessTokenOnly = true;
       } else if (typeof sessionStatus.hasOrg === "boolean") {
         hasOrg = sessionStatus.hasOrg;
         if (rawHasOrgCookie !== (hasOrg ? "true" : "false")) {
@@ -169,18 +180,18 @@ export async function proxy(request: NextRequest) {
     ) {
       return finalizeResponse(
         NextResponse.redirect(new URL(redirectParam, request.url)),
-        { clearAuth: shouldClearCookies, syncHasOrg },
+        { clearAccessTokenOnly: shouldClearAccessTokenOnly, syncHasOrg },
       );
     }
     if (!hasOrg) {
       return finalizeResponse(
         NextResponse.redirect(new URL("/auth/onboarding", request.url)),
-        { clearAuth: shouldClearCookies, syncHasOrg },
+        { clearAccessTokenOnly: shouldClearAccessTokenOnly, syncHasOrg },
       );
     }
     return finalizeResponse(
       NextResponse.redirect(new URL("/dashboard", request.url)),
-      { clearAuth: shouldClearCookies, syncHasOrg },
+      { clearAccessTokenOnly: shouldClearAccessTokenOnly, syncHasOrg },
     );
   }
 
@@ -197,7 +208,7 @@ export async function proxy(request: NextRequest) {
       loginUrl.searchParams.set("redirect", targetRedirect);
     }
     return finalizeResponse(NextResponse.redirect(loginUrl), {
-      clearAuth: shouldClearCookies,
+      clearAccessTokenOnly: shouldClearAccessTokenOnly,
       syncHasOrg,
     });
   }
@@ -206,12 +217,12 @@ export async function proxy(request: NextRequest) {
   if (isDashboardPage && token && !hasOrg) {
     return finalizeResponse(
       NextResponse.redirect(new URL("/auth/onboarding", request.url)),
-      { clearAuth: shouldClearCookies, syncHasOrg },
+      { clearAccessTokenOnly: shouldClearAccessTokenOnly, syncHasOrg },
     );
   }
 
   return finalizeResponse(NextResponse.next(), {
-    clearAuth: shouldClearCookies,
+    clearAccessTokenOnly: shouldClearAccessTokenOnly,
     syncHasOrg,
   });
 }

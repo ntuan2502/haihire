@@ -367,6 +367,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       });
       mockDbState.applications.push({
         id: "app-100",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-100",
         stage: "APPLIED",

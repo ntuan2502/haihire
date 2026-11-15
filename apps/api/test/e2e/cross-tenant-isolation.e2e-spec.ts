@@ -143,6 +143,7 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       applications: [
         {
           id: "app-alpha-1",
+          organizationId: "org-alpha-1",
           jobId: "job-alpha-1",
           candidateId: "cand-alpha-1",
           stage: "NEW",

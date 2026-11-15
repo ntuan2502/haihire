@@ -680,6 +680,18 @@ describe("EmailService", () => {
   });
 
   describe("Sub-services and Facade Coverage Augmentation", () => {
+    it("should be idempotent when seedDefaultTemplates is called multiple times", async () => {
+      const firstRun = await service.seedDefaultTemplates(
+        "org-idempotent-test",
+      );
+      const secondRun = await service.seedDefaultTemplates(
+        "org-idempotent-test",
+      );
+      expect(firstRun.length).toBe(secondRun.length);
+      const allTemplates = await service.getTemplates("org-idempotent-test");
+      expect(allTemplates.length).toBe(firstRun.length);
+    });
+
     it("should update an existing template with new subject and body", async () => {
       await service.seedDefaultTemplates("org-test");
       const updated = await service.updateTemplate(

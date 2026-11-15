@@ -1,7 +1,13 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import { vi as viLocale } from "@/i18n/locales/vi";
+import { en as enLocale } from "@/i18n/locales/en";
+import { setLocaleDictionary } from "@/i18n/optional";
 import { BRAND_CONFIG } from "@haihire/shared";
+
+// Register both dictionaries eagerly for Vitest tests
+setLocaleDictionary("vi", viLocale);
+setLocaleDictionary("en", enLocale);
 
 /**
  * Standard test translation helper that resolves against the actual Vietnamese locale dictionary

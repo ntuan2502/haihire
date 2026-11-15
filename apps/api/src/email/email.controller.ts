@@ -5,6 +5,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -26,9 +27,10 @@ import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
 
 @Controller("email")
-@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
 export class EmailController {
   constructor(
     @Inject(EmailService)
@@ -70,7 +72,7 @@ export class EmailController {
   @Post("templates/:id/duplicate")
   @RequirePermission("email:manage_templates")
   duplicateTemplate(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(DuplicateEmailTemplateDto)) dto: DuplicateEmailTemplateDto,
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -102,7 +104,7 @@ export class EmailController {
   @Put("templates/:id")
   @RequirePermission("email:manage_templates")
   updateTemplate(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -118,7 +120,7 @@ export class EmailController {
   @Delete("templates/:id")
   @RequirePermission("email:manage_templates")
   deleteTemplate(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {

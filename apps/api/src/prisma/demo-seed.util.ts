@@ -54,8 +54,6 @@ export async function ensureDefaultDemoAccounts(
       firstName: DEMO_ACCOUNTS.ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.ADMIN.lastName,
       password: hashedPassword,
-      role: "ADMIN",
-      organizationId: existingOrg ? existingOrg.id : null,
       updatedAt: toInstant(),
     },
     update: {
@@ -63,8 +61,6 @@ export async function ensureDefaultDemoAccounts(
       firstName: DEMO_ACCOUNTS.ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.ADMIN.lastName,
       password: hashedPassword,
-      role: "ADMIN",
-      ...(existingOrg ? { organizationId: existingOrg.id } : {}),
       updatedAt: toInstant(),
     },
     select: { id: true },
@@ -83,14 +79,6 @@ export async function ensureDefaultDemoAccounts(
       name: "Admin",
       slug: "admin",
       ownerId: adminUser.id,
-      updatedAt: toInstant(),
-    },
-  });
-
-  await prisma.user.update({
-    where: { id: adminUser.id },
-    data: {
-      organizationId: adminOrgId,
       updatedAt: toInstant(),
     },
   });
@@ -117,7 +105,7 @@ export async function ensureDefaultDemoAccounts(
     });
   }
 
-  await prisma.user.upsert({
+  const memberUser = await prisma.user.upsert({
     where: { email: DEMO_ACCOUNTS.MEMBER.email },
     create: {
       id: crypto.randomUUID(),
@@ -125,8 +113,6 @@ export async function ensureDefaultDemoAccounts(
       firstName: DEMO_ACCOUNTS.MEMBER.firstName,
       lastName: DEMO_ACCOUNTS.MEMBER.lastName,
       password: hashedPassword,
-      role: "MEMBER",
-      organizationId: null,
       updatedAt: toInstant(),
     },
     update: {
@@ -134,11 +120,32 @@ export async function ensureDefaultDemoAccounts(
       firstName: DEMO_ACCOUNTS.MEMBER.firstName,
       lastName: DEMO_ACCOUNTS.MEMBER.lastName,
       password: hashedPassword,
-      role: "MEMBER",
-      organizationId: null,
       updatedAt: toInstant(),
     },
+    select: { id: true },
   });
+
+  if (typeof prisma.organizationMember?.upsert === "function") {
+    await prisma.organizationMember.upsert({
+      where: {
+        organizationId_userId: {
+          organizationId: adminOrgId,
+          userId: memberUser.id,
+        },
+      },
+      create: {
+        id: crypto.randomUUID(),
+        organizationId: adminOrgId,
+        userId: memberUser.id,
+        role: "MEMBER",
+        updatedAt: toInstant(),
+      },
+      update: {
+        role: "MEMBER",
+        updatedAt: toInstant(),
+      },
+    });
+  }
 
   return { adminOrgId, adminUserId: adminUser.id };
 }

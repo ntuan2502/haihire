@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
@@ -667,7 +667,6 @@ export async function runSeed(): Promise<void> {
   await prisma.inviteLink.deleteMany();
   await prisma.organizationMember.deleteMany();
   await prisma.job.deleteMany();
-  await prisma.user.updateMany({ data: { organizationId: null } });
   await prisma.organization.deleteMany();
   await prisma.user.deleteMany();
 
@@ -689,16 +688,13 @@ export async function runSeed(): Promise<void> {
       email: DEMO_ACCOUNTS.ADMIN.email,
       firstName: DEMO_ACCOUNTS.ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-      role: DEMO_ACCOUNTS.ADMIN.role,
       password: defaultPasswordHash,
-      organizationId: null,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
       firstName: DEMO_ACCOUNTS.ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-      role: DEMO_ACCOUNTS.ADMIN.role,
     },
     where: { email: DEMO_ACCOUNTS.ADMIN.email },
   });
@@ -717,14 +713,6 @@ export async function runSeed(): Promise<void> {
       ownerId: adminUserId,
     },
     where: { slug: "admin" },
-  });
-
-  // Link Admin User to organization
-  await prisma.user.update({
-    where: { id: adminUserId },
-    data: {
-      organizationId: adminOrgId,
-    },
   });
 
   // 3. Create Org Member relationship
@@ -747,17 +735,13 @@ export async function runSeed(): Promise<void> {
       email: DEMO_ACCOUNTS.MEMBER.email,
       firstName: DEMO_ACCOUNTS.MEMBER.firstName,
       lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-      role: DEMO_ACCOUNTS.MEMBER.role,
       password: defaultPasswordHash,
-      organizationId: adminOrgId,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
       firstName: DEMO_ACCOUNTS.MEMBER.firstName,
       lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-      role: DEMO_ACCOUNTS.MEMBER.role,
-      organizationId: adminOrgId,
     },
     where: { email: DEMO_ACCOUNTS.MEMBER.email },
   });
@@ -806,16 +790,13 @@ export async function runSeed(): Promise<void> {
       email: DEMO_ACCOUNTS.BETA_ADMIN.email,
       firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
       password: defaultPasswordHash,
-      organizationId: null,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
       firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
       lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
     },
     where: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
   });
@@ -833,13 +814,6 @@ export async function runSeed(): Promise<void> {
       ownerId: betaAdminUserId,
     },
     where: { slug: "beta-financials" },
-  });
-
-  await prisma.user.update({
-    where: { id: betaAdminUserId },
-    data: {
-      organizationId: betaOrgId,
-    },
   });
 
   await prisma.organizationMember.upsert({
@@ -1792,7 +1766,7 @@ export async function runSeed(): Promise<void> {
     linkOrLocation: string;
     interviewer: string;
     round: number;
-    scorecard: string | null;
+    scorecard: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     notes: string | null;
     updatedAt: Date;
   }> = [];
@@ -1980,7 +1954,7 @@ export async function runSeed(): Promise<void> {
                 linkOrLocation: intv.linkOrLocation,
                 interviewer: intv.interviewer,
                 round: intv.round,
-                scorecard: null,
+                scorecard: Prisma.DbNull,
                 notes: intv.notes,
                 updatedAt: toInstant(),
               });
@@ -2008,11 +1982,11 @@ export async function runSeed(): Promise<void> {
               linkOrLocation: intv.linkOrLocation,
               interviewer: intv.interviewer,
               round: intv.round,
-              scorecard: JSON.stringify({
+              scorecard: {
                 overallRating: 5,
                 recommendation: "STRONG_YES",
                 feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
-              }),
+              },
               notes: intv.notes,
               updatedAt: toInstant(),
             });
@@ -2043,7 +2017,7 @@ export async function runSeed(): Promise<void> {
                 linkOrLocation: intv.linkOrLocation,
                 interviewer: intv.interviewer,
                 round: intv.round,
-                scorecard: null,
+                scorecard: Prisma.DbNull,
                 notes: intv.notes,
                 updatedAt: toInstant(),
               });

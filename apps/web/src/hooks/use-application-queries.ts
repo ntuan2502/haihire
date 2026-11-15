@@ -93,9 +93,16 @@ export function useApplicationStats(organizationId?: string | null) {
   });
 }
 
-export function useJobApplications(jobId: string | null) {
+export function useJobApplications(
+  jobId: string | null,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Application[]>({
-    queryKey: queryKeys.applications(jobId),
+    queryKey: queryKeys.applications(jobId, effectiveOrgId),
     queryFn: () => {
       if (!jobId) return [];
       return applicationsApi.getByJob(jobId);
@@ -104,9 +111,16 @@ export function useJobApplications(jobId: string | null) {
   });
 }
 
-export function useApplication(id: string | null | undefined) {
+export function useApplication(
+  id: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Application>({
-    queryKey: queryKeys.application(id),
+    queryKey: queryKeys.application(id, effectiveOrgId),
     queryFn: () => {
       if (!id) throw new Error("Application ID is required");
       return applicationsApi.getById(id);
@@ -253,9 +267,16 @@ export function useDeleteDocumentMutation() {
   });
 }
 
-export function useApplicationNotes(applicationId: string | null | undefined) {
+export function useApplicationNotes(
+  applicationId: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<ApplicationNote[]>({
-    queryKey: queryKeys.applicationNotes(applicationId),
+    queryKey: queryKeys.applicationNotes(applicationId, effectiveOrgId),
     queryFn: () => {
       if (!applicationId) return [];
       return applicationsApi.getNotes(applicationId);

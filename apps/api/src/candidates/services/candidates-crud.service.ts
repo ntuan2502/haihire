@@ -118,7 +118,10 @@ export class CandidatesCrudService {
       candidateIds.length > 0
         ? await Promise.all([
             this.prisma.application.findMany({
-              where: { candidateId: { in: candidateIds } },
+              where: {
+                candidateId: { in: candidateIds },
+                organizationId: targetOrgId,
+              },
               select: {
                 id: true,
                 candidateId: true,
@@ -412,9 +415,10 @@ export class CandidatesCrudService {
     const existing = await this.profileService.findOne(id, tenantOrgId);
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
+    const targetOrg = existing.organizationId || tenantOrgId || undefined;
     await runInTransaction(this.prisma, async (tx) => {
-      await tx.candidate.update({
-        where: { id },
+      await tx.candidate.updateMany({
+        where: { id, ...(targetOrg ? { organizationId: targetOrg } : {}) },
         data: {
           deletedAt: toInstant(),
         },

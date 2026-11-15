@@ -17,7 +17,7 @@ import { env } from "../config/env";
       global: true,
       secret: env.JWT_SECRET,
       signOptions: {
-        expiresIn: "7d",
+        expiresIn: "15m",
       },
     }),
   ],

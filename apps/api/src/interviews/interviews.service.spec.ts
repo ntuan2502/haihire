@@ -16,6 +16,7 @@ describe("InterviewsService", () => {
   let mockPrismaService: unknown;
   interface MockInterview {
     id: string;
+    organizationId?: string;
     applicationId: string;
     scheduledAt: Date;
     type: string;
@@ -27,10 +28,12 @@ describe("InterviewsService", () => {
     notes: string | null;
     createdAt: Date;
     updatedAt: Date;
+    application?: unknown;
   }
 
   interface MockApp {
     id: string;
+    organizationId?: string;
     candidateId: string;
     jobId: string;
     stage: string;
@@ -79,6 +82,7 @@ describe("InterviewsService", () => {
     mockInterviews = [
       {
         id: "intv-1",
+        organizationId: "org-1",
         applicationId: "app-1",
         scheduledAt: new Date("2026-09-20T10:00:00Z"),
         type: "Technical",
@@ -90,12 +94,38 @@ describe("InterviewsService", () => {
         notes: "Good candidate",
         createdAt: new Date(),
         updatedAt: new Date(),
+        application: {
+          id: "app-1",
+          organizationId: "org-1",
+          candidateId: "cand-1",
+          jobId: "job-1",
+          stage: "INTERVIEW",
+          matchScore: 85,
+          notes: null,
+          candidate: {
+            id: "cand-1",
+            organizationId: "org-1",
+            name: "Alice Johnson",
+            firstName: "Alice",
+            lastName: "Johnson",
+            displayName: null,
+            email: "alice@example.com",
+            phone: "123456789",
+          },
+          job: {
+            id: "job-1",
+            title: "Frontend Developer",
+            department: "Engineering",
+            organizationId: "org-1",
+          },
+        },
       },
     ];
 
     mockApps = [
       {
         id: "app-1",
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-1",
         stage: "INTERVIEW",

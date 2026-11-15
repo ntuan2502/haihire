@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -27,10 +28,12 @@ import {
   CreateInviteLinkDto,
 } from "./dto/org-actions.dto";
 import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
+import { AuditLogQueryDto } from "./dto/audit-log-query.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("organizations")
 export class OrganizationsController {
@@ -65,7 +68,7 @@ export class OrganizationsController {
     return result;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard)
   @Get("my")
   getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
@@ -93,21 +96,21 @@ export class OrganizationsController {
     return result;
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Get("my/members")
   getMembers(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMembers(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("interview:create")
   @Get("my/interviewers")
   getInterviewers(@Request() req: { user: { id: string } }) {
     return this.orgsService.getInterviewers(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Patch("my/members/:memberId/role")
   updateMemberRole(
@@ -118,7 +121,7 @@ export class OrganizationsController {
     return this.orgsService.updateMemberRole(req.user.id, memberId, body.role);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Delete("my/members/:memberId")
   removeMember(
@@ -131,14 +134,14 @@ export class OrganizationsController {
   // ==========================================
   // ROLES & PERMISSIONS MATRIX ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Get("my/roles/permissions")
   getRolePermissionsMatrix(@Request() req: { user: { id: string } }) {
     return this.orgsService.getRolePermissionsMatrix(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Patch("my/roles/:role/permissions")
   updateRolePermissions(
@@ -153,7 +156,7 @@ export class OrganizationsController {
     );
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Post("my/roles/reset")
   @HttpCode(HttpStatus.OK)
@@ -161,7 +164,7 @@ export class OrganizationsController {
     return this.orgsService.resetRolePermissions(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Post("my/roles/:role/reset")
   @HttpCode(HttpStatus.OK)
@@ -175,25 +178,22 @@ export class OrganizationsController {
   // ==========================================
   // AUDIT LOG ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:view_audit_log")
   @Get("my/audit-log")
   getAuditLogs(
     @Request() req: { user: { id: string } },
-    @Query("action") action?: string,
-    @Query("resource") resource?: string,
-    @Query("limit") limit?: string,
-    @Query("offset") offset?: string,
+    @Query(DtoPipe(AuditLogQueryDto)) query?: AuditLogQueryDto,
   ) {
     return this.orgsService.getAuditLogs(req.user.id, {
-      action,
-      resource,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      offset: offset ? parseInt(offset, 10) : undefined,
+      action: query?.action,
+      resource: query?.resource,
+      limit: query?.limit,
+      offset: query?.offset,
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:update")
   @Patch("my")
   updateMyOrg(
@@ -203,7 +203,7 @@ export class OrganizationsController {
     return this.orgsService.updateMyOrg(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:transfer_ownership")
   @Post("my/transfer-ownership")
   @HttpCode(HttpStatus.OK)
@@ -214,7 +214,7 @@ export class OrganizationsController {
     return this.orgsService.transferOwnership(req.user.id, dto.newOwnerUserId);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:delete")
   @Delete("my")
   async deleteMyOrg(
@@ -229,7 +229,7 @@ export class OrganizationsController {
   // ==========================================
   // INVITE LINKS ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Post("my/invite-links")
   createInviteLink(
@@ -239,19 +239,19 @@ export class OrganizationsController {
     return this.orgsService.createInviteLink(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Get("my/invite-links")
   getInviteLinks(@Request() req: { user: { id: string } }) {
     return this.orgsService.getInviteLinks(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Delete("my/invite-links/:id")
   revokeInviteLink(
     @Request() req: { user: { id: string } },
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     return this.orgsService.revokeInviteLink(req.user.id, id);
   }

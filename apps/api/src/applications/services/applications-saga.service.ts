@@ -23,6 +23,7 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { CreateApplicationDto } from "../dto/create-application.dto";
+import { PublicApplyDto } from "../dto/public-apply.dto";
 import {
   validateUploadedFile,
   sanitizeFilename,
@@ -60,7 +61,7 @@ export class ApplicationsSagaService {
   }
 
   async create(
-    dto: CreateApplicationDto,
+    dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
     currentUser?: { role?: string; organizationId?: string | null } | null,
   ) {
@@ -77,6 +78,11 @@ export class ApplicationsSagaService {
         "Job ID is required to create an application.",
       );
     }
+
+    const rawResumeUrl = "resumeUrl" in dto ? dto.resumeUrl : undefined;
+    const rawResumeFileName =
+      "resumeFileName" in dto ? dto.resumeFileName : undefined;
+    const rawUtmCampaign = "utmCampaign" in dto ? dto.utmCampaign : undefined;
 
     const job = await this.prisma.job.findFirst({
       where: { id: dto.jobId, deletedAt: null },
@@ -131,12 +137,12 @@ export class ApplicationsSagaService {
         fixUtf8String(file.originalname || "resume.pdf"),
       );
       uploadedFileInMinio = true;
-    } else if (dto.resumeUrl) {
+    } else if (rawResumeUrl) {
       if (job.organizationId) {
         const safeTenant = job.organizationId
           .trim()
           .replace(/[^a-zA-Z0-9_-]/g, "");
-        const objName = this.minioService.extractObjectName(dto.resumeUrl);
+        const objName = this.minioService.extractObjectName(rawResumeUrl);
         if (
           objName.startsWith("tenants/") &&
           !objName.startsWith(`tenants/${safeTenant}/`)
@@ -148,8 +154,8 @@ export class ApplicationsSagaService {
         }
       }
       uploadResult = {
-        url: dto.resumeUrl,
-        originalName: dto.resumeFileName || "Candidate Resume",
+        url: rawResumeUrl,
+        originalName: rawResumeFileName || "Candidate Resume",
         size: 0,
         mimeType: "application/pdf",
       };
@@ -166,7 +172,7 @@ export class ApplicationsSagaService {
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
-    let utmCampaign: string | null = dto.utmCampaign?.trim() || null;
+    let utmCampaign: string | null = rawUtmCampaign?.trim() || null;
 
     try {
       created = await runInTransaction(this.prisma, async (tx) => {
@@ -179,22 +185,43 @@ export class ApplicationsSagaService {
         }
 
         // 2. Resolve or create Candidate
-        let candidateId = dto.candidateId;
-        const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
+        const candidateEmail = (
+          (dto as unknown as { email?: string }).email || dto.candidateEmail
+        )
+          ?.trim()
+          .toLowerCase();
+        const candidatePhone =
+          (
+            (dto as unknown as { phone?: string }).phone || dto.candidatePhone
+          )?.trim() || null;
+        const trackingToken =
+          (
+            (dto as unknown as { trackingToken?: string }).trackingToken ||
+            dto.ref
+          )?.trim() || null;
+
+        // Strip caller-supplied admin fields if caller is anonymous / public apply
+        const isPublicApply =
+          dto instanceof PublicApplyDto ||
+          (!("candidateId" in dto) &&
+            !("sourceChannel" in dto) &&
+            "email" in dto);
+        let candidateId = isPublicApply ? undefined : dto.candidateId;
+        const nameOrder = await resolveOrgNameDisplayOrder(tx, orgId);
         let applicantName = "";
 
         if (!candidateId) {
           const firstName = normalizeNameInput(dto.firstName);
           const lastName = normalizeNameInput(dto.lastName);
-          if (!dto.candidateEmail || !firstName || !lastName) {
+          if (!candidateEmail || !firstName || !lastName) {
             throw new AppBadRequestException(
               APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
               "Either candidateId or both firstName/lastName and candidateEmail are required.",
             );
           }
 
-          const email = dto.candidateEmail.trim().toLowerCase();
-          const displayName = dto.displayName?.trim() || null;
+          const displayName =
+            (dto as CreateApplicationDto).displayName?.trim() || null;
           applicantName = formatCandidateDisplayName(
             { firstName, lastName, displayName },
             nameOrder,
@@ -203,24 +230,18 @@ export class ApplicationsSagaService {
           const existingCandidate = await tx.candidate.findFirst({
             where: {
               organizationId: orgId,
-              email,
+              email: candidateEmail,
+              deletedAt: null,
             },
             select: {
               id: true,
               firstName: true,
               lastName: true,
               displayName: true,
-              deletedAt: true,
             },
           });
 
           if (existingCandidate) {
-            if (existingCandidate.deletedAt) {
-              await tx.candidate.update({
-                where: { id: existingCandidate.id },
-                data: { deletedAt: null, updatedAt: toInstant() },
-              });
-            }
             candidateId = existingCandidate.id;
             applicantName = formatCandidateDisplayName(
               existingCandidate,
@@ -234,8 +255,8 @@ export class ApplicationsSagaService {
                 firstName,
                 lastName,
                 displayName,
-                email,
-                phone: dto.candidatePhone?.trim() || null,
+                email: candidateEmail,
+                phone: candidatePhone,
                 resumeUrl: uploadResult.url || null,
                 resumeFileName: uploadResult.originalName || null,
                 resumeFileSize: uploadResult.size || null,
@@ -282,15 +303,14 @@ export class ApplicationsSagaService {
             );
           }
 
-          if (!uploadedFileInMinio && dto.resumeUrl) {
-            const matchesPrimary =
-              existingCandidate.resumeUrl === dto.resumeUrl;
+          if (!uploadedFileInMinio && rawResumeUrl) {
+            const matchesPrimary = existingCandidate.resumeUrl === rawResumeUrl;
             let matchesDoc = false;
             if (!matchesPrimary) {
               const doc = await tx.candidateDocument.findFirst({
                 where: {
                   candidateId: existingCandidate.id,
-                  url: dto.resumeUrl,
+                  url: rawResumeUrl,
                 },
                 select: { id: true },
               });
@@ -325,21 +345,31 @@ export class ApplicationsSagaService {
           );
         }
 
-        const existingInStage = await tx.application.findMany({
-          where: { jobId: dto.jobId },
-          select: { id: true, orderIndex: true },
-        });
-
-        const maxOrder = existingInStage.reduce(
-          (max: number, item: { orderIndex: number }) =>
-            Math.max(max, item.orderIndex),
-          -1,
-        );
+        let maxOrder = -1;
+        if (
+          typeof (tx.application as { aggregate?: unknown }).aggregate ===
+          "function"
+        ) {
+          const orderAgg = await tx.application.aggregate({
+            where: { jobId: dto.jobId },
+            _max: { orderIndex: true },
+          });
+          maxOrder = orderAgg._max.orderIndex ?? -1;
+        } else {
+          const existingApps = await tx.application.findMany({
+            where: { jobId: dto.jobId },
+            select: { orderIndex: true },
+          });
+          maxOrder =
+            existingApps.length > 0
+              ? Math.max(...existingApps.map((a) => a.orderIndex || 0))
+              : -1;
+        }
 
         // 5. Resolve Sourcing / Attribution
-        if (dto.ref) {
+        if (trackingToken) {
           const link = await tx.trackingLink.findFirst({
-            where: { token: dto.ref as string },
+            where: { token: trackingToken as string },
             select: {
               id: true,
               organizationId: true,
@@ -359,7 +389,7 @@ export class ApplicationsSagaService {
           ) {
             trackingLinkId = link.id;
             sourceChannel =
-              (link.source as SourcingChannel) || SourcingChannel.OTHER;
+              (link.source as SourcingChannel) || SourcingChannel.DIRECT;
             sourceDetails = link.customSource || null;
             if (!utmCampaign && link.campaign) {
               utmCampaign = link.campaign;
@@ -367,15 +397,31 @@ export class ApplicationsSagaService {
           }
         }
 
-        if (!trackingLinkId && dto.referrer) {
-          referrerDomain = parseDomain(dto.referrer);
+        if (
+          !isPublicApply &&
+          !trackingLinkId &&
+          (dto as CreateApplicationDto).referrer
+        ) {
+          referrerDomain = parseDomain((dto as CreateApplicationDto).referrer!);
           if (referrerDomain) {
             sourceChannel = resolveChannelFromDomain(referrerDomain);
           }
         }
 
-        if (!trackingLinkId && dto.sourceChannel) {
-          sourceChannel = dto.sourceChannel as SourcingChannel;
+        if (
+          !isPublicApply &&
+          !trackingLinkId &&
+          (dto as CreateApplicationDto).sourceChannel
+        ) {
+          sourceChannel = (dto as CreateApplicationDto)
+            .sourceChannel as SourcingChannel;
+        }
+
+        if (isPublicApply) {
+          sourceChannel = trackingLinkId
+            ? sourceChannel
+            : SourcingChannel.DIRECT;
+          utmCampaign = trackingLinkId && utmCampaign ? utmCampaign : null;
         }
 
         // 6. Save Application record
@@ -471,7 +517,7 @@ export class ApplicationsSagaService {
       throw dbError;
     }
 
-    const result = await this.query.findOne(created.id);
+    const result = await this.query.findOne(created.id, job.organizationId);
 
     // Record activity log & send confirmation email
     const orgId = job.organizationId;

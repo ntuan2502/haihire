@@ -91,6 +91,21 @@ export class PrismaService
     }
   }
 
+  /**
+   * Returns current connection pool statistics from pg.Pool.
+   */
+  getPoolStats() {
+    return {
+      totalCount: this.pool?.totalCount ?? 0,
+      idleCount: this.pool?.idleCount ?? 0,
+      waitingCount: this.pool?.waitingCount ?? 0,
+      activeCount: Math.max(
+        0,
+        (this.pool?.totalCount ?? 0) - (this.pool?.idleCount ?? 0),
+      ),
+    };
+  }
+
   async onModuleDestroy() {
     await this.$disconnect();
     await this.pool?.end();

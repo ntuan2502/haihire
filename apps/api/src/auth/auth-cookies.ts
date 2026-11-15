@@ -1,7 +1,8 @@
 import type { Response } from "express";
 import { env } from "../config/env";
 
-const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const ACCESS_TOKEN_COOKIE_MAX_AGE_MS = 15 * 60 * 1000; // 15m
+const REFRESH_TOKEN_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7d
 
 /**
  * Sets the readable organization-membership indicator cookie consumed by the
@@ -16,7 +17,7 @@ export function setHasOrgCookie(
     httpOnly: false,
     secure: env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE_MS,
+    maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE_MS,
     path: "/",
   });
 }
@@ -37,7 +38,7 @@ export function setAuthCookies(
     httpOnly: true,
     secure,
     sameSite: "lax",
-    maxAge: AUTH_COOKIE_MAX_AGE_MS,
+    maxAge: ACCESS_TOKEN_COOKIE_MAX_AGE_MS,
     path: "/",
   });
   if (refreshToken) {
@@ -45,7 +46,7 @@ export function setAuthCookies(
       httpOnly: true,
       secure,
       sameSite: "lax",
-      maxAge: AUTH_COOKIE_MAX_AGE_MS,
+      maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE_MS,
       path: "/",
     });
   }

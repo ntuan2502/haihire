@@ -7,7 +7,7 @@ import {
   AppNotFoundException,
   AppServiceUnavailableException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { MinioService } from "../../minio/minio.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import {
@@ -88,40 +88,42 @@ export class ApplicationsDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    if (existing.candidateId) {
-      try {
-        const cand = await this.prisma.candidate.findFirst({
-          where: { id: existing.candidateId },
-          select: { id: true, organizationId: true },
-        });
-        if (cand) {
-          await this.prisma.candidateDocument.create({
-            data: {
-              id: newDocId,
-              candidateId: cand.id,
-              organizationId: cand.organizationId,
-              name: cleanDocName,
-              url: uploadResult.url,
-              size: uploadResult.size ?? null,
-              mimeType: uploadResult.mimeType ?? null,
-              type: documentType || "Resume",
-              updatedAt: toInstant(),
-            },
+    await runInTransaction(this.prisma, async (tx) => {
+      if (existing.candidateId) {
+        try {
+          const cand = await tx.candidate.findFirst({
+            where: { id: existing.candidateId },
+            select: { id: true, organizationId: true },
           });
+          if (cand) {
+            await tx.candidateDocument.create({
+              data: {
+                id: newDocId,
+                candidateId: cand.id,
+                organizationId: cand.organizationId,
+                name: cleanDocName,
+                url: uploadResult.url,
+                size: uploadResult.size ?? null,
+                mimeType: uploadResult.mimeType ?? null,
+                type: documentType || "Resume",
+                updatedAt: toInstant(),
+              },
+            });
+          }
+        } catch {
+          // ignore if mock or table unavailable in test
         }
-      } catch {
-        // ignore if mock or table unavailable in test
       }
-    }
 
-    await this.prisma.application.update({
-      where: { id },
-      data: {
-        resumeUrl: uploadResult.url,
-        resumeFileName: cleanDocName,
-        resumeFileSize: uploadResult.size ?? null,
-        resumeMimeType: uploadResult.mimeType ?? null,
-      },
+      await tx.application.update({
+        where: { id },
+        data: {
+          resumeUrl: uploadResult.url,
+          resumeFileName: cleanDocName,
+          resumeFileSize: uploadResult.size ?? null,
+          resumeMimeType: uploadResult.mimeType ?? null,
+        },
+      });
     });
 
     const orgId =
@@ -304,20 +306,7 @@ export class ApplicationsDocumentsService {
         where: deleteWhere,
         select: { url: true },
       });
-      await this.prisma.candidateDocument.deleteMany({
-        where: deleteWhere,
-      });
     }
-
-    await this.prisma.application.update({
-      where: { id },
-      data: {
-        resumeUrl: null,
-        resumeFileName: null,
-        resumeFileSize: null,
-        resumeMimeType: null,
-      },
-    });
 
     if (
       docsToDelete.length > 0 &&
@@ -332,6 +321,24 @@ export class ApplicationsDocumentsService {
         }
       }
     }
+
+    await runInTransaction(this.prisma, async (tx) => {
+      if (deleteWhere) {
+        await tx.candidateDocument.deleteMany({
+          where: deleteWhere,
+        });
+      }
+
+      await tx.application.update({
+        where: { id },
+        data: {
+          resumeUrl: null,
+          resumeFileName: null,
+          resumeFileSize: null,
+          resumeMimeType: null,
+        },
+      });
+    });
 
     this.eventsService?.emit({
       type: "APPLICATIONS_CHANGED",

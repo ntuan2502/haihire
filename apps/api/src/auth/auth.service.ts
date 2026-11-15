@@ -37,11 +37,9 @@ const USER_PROFILE_SELECT = {
   email: true,
   firstName: true,
   lastName: true,
-  role: true,
   avatarUrl: true,
   preferredLanguage: true,
   preferredTimezone: true,
-  organizationId: true,
   createdAt: true,
 } as const;
 
@@ -125,17 +123,67 @@ export class AuthService {
 
     const { password: _, ...sanitizedUser } = user;
 
+    const legacyOrgId = (
+      sanitizedUser as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyRole = (sanitizedUser as unknown as { role?: string })?.role;
+
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
     let organization = null;
-    if (sanitizedUser.organizationId) {
+    let isOwner = false;
+
+    if (activeOrgId) {
       organization = await this.prisma.organization.findUnique({
-        where: { id: sanitizedUser.organizationId },
+        where: { id: activeOrgId },
         select: ORG_SUMMARY_SELECT,
       });
+      if (organization) {
+        isOwner = Boolean(organization.ownerId === sanitizedUser.id);
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: {
+              organizationId: organization.id,
+              userId: sanitizedUser.id,
+            },
+            select: { role: true },
+          });
+          if (member) activeRole = member.role as Role;
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: sanitizedUser.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          activeOrgId = member.organizationId;
+          activeRole = member.role as Role;
+          organization = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: ORG_SUMMARY_SELECT,
+          });
+          if (organization) {
+            isOwner = Boolean(organization.ownerId === sanitizedUser.id);
+          }
+        }
+      }
+      if (!organization) {
+        const owned = await this.prisma.organization.findFirst({
+          where: { ownerId: sanitizedUser.id },
+          select: ORG_SUMMARY_SELECT,
+        });
+        if (owned) {
+          organization = owned;
+          activeOrgId = owned.id;
+          activeRole = Role.ADMIN;
+          isOwner = true;
+        }
+      }
     }
 
-    const isOwner = Boolean(
-      organization && organization.ownerId === sanitizedUser.id,
-    );
     const orgOrder: NameDisplayOrder =
       organization?.nameDisplayOrder === "LAST_FIRST"
         ? "LAST_FIRST"
@@ -143,6 +191,8 @@ export class AuthService {
 
     return {
       ...sanitizedUser,
+      organizationId: activeOrgId,
+      role: activeRole,
       name: formatUserDisplayName(sanitizedUser, orgOrder),
       isOwner,
       organization,
@@ -157,6 +207,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      organizationId: user.organizationId ?? undefined,
       tokenVersion,
     };
 
@@ -207,8 +258,6 @@ export class AuthService {
         firstName,
         lastName,
         password: hashedPassword,
-        role: "MEMBER",
-        organizationId: null,
         tokenVersion: 0,
         updatedAt: toInstant(),
       },
@@ -343,10 +392,29 @@ export class AuthService {
       }
     }
 
+    const legacyOrgId = (user as unknown as { organizationId?: string | null })
+      ?.organizationId;
+    const legacyRole = (user as unknown as { role?: string })?.role;
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
+
+    if (!activeOrgId && this.prisma.organizationMember?.findFirst) {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true, role: true },
+      });
+      if (member) {
+        activeOrgId = member.organizationId;
+        activeRole = member.role as Role;
+      }
+    }
+
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: activeRole,
+      organizationId: activeOrgId ?? undefined,
       tokenVersion: userTokenVersion,
     };
 
@@ -364,7 +432,7 @@ export class AuthService {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      hasOrg: Boolean(user.organizationId),
+      hasOrg: Boolean(activeOrgId),
     };
   }
 
@@ -448,11 +516,31 @@ export class AuthService {
       },
     });
 
+    const legacyOrgId = (
+      updatedUser as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyRole = (updatedUser as unknown as { role?: string })?.role;
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
+
+    if (!activeOrgId && this.prisma.organizationMember?.findFirst) {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: updatedUser.id },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true, role: true },
+      });
+      if (member) {
+        activeOrgId = member.organizationId;
+        activeRole = member.role as Role;
+      }
+    }
+
     const tokenVersion = updatedUser.tokenVersion ?? 0;
     const payload = {
       sub: updatedUser.id,
       email: updatedUser.email,
-      role: updatedUser.role,
+      role: activeRole,
+      organizationId: activeOrgId ?? undefined,
       tokenVersion,
     };
 
@@ -467,9 +555,9 @@ export class AuthService {
       { expiresIn: "7d" },
     );
 
-    const org = updatedUser.organizationId
+    const org = activeOrgId
       ? await this.prisma.organization.findUnique({
-          where: { id: updatedUser.organizationId },
+          where: { id: activeOrgId },
           select: { nameDisplayOrder: true },
         })
       : null;
@@ -486,11 +574,11 @@ export class AuthService {
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         name: formatUserDisplayName(updatedUser, orgOrder),
-        role: updatedUser.role,
+        role: activeRole,
         avatarUrl: updatedUser.avatarUrl,
         preferredLanguage: updatedUser.preferredLanguage,
         preferredTimezone: updatedUser.preferredTimezone,
-        organizationId: updatedUser.organizationId,
+        organizationId: activeOrgId,
         createdAt: updatedUser.createdAt,
       },
     };
@@ -509,16 +597,60 @@ export class AuthService {
       );
     }
 
+    const legacyOrgId = (user as unknown as { organizationId?: string | null })
+      ?.organizationId;
+    const legacyRole = (user as unknown as { role?: string })?.role;
+
     let organization = null;
     let isOwner = false;
-    if (user.organizationId) {
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
+
+    if (activeOrgId) {
       organization = await this.prisma.organization.findUnique({
-        where: { id: user.organizationId },
+        where: { id: activeOrgId },
         select: ORG_SUMMARY_SELECT,
       });
-
-      if (organization && organization.ownerId === user.id) {
-        isOwner = true;
+      if (organization) {
+        isOwner = Boolean(organization.ownerId === user.id);
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: organization.id, userId: user.id },
+            select: { role: true },
+          });
+          if (member) activeRole = member.role as Role;
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          activeOrgId = member.organizationId;
+          activeRole = member.role as Role;
+          organization = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: ORG_SUMMARY_SELECT,
+          });
+          if (organization) {
+            isOwner = Boolean(organization.ownerId === user.id);
+          }
+        }
+      }
+      if (!organization) {
+        const owned = await this.prisma.organization.findFirst({
+          where: { ownerId: user.id },
+          select: ORG_SUMMARY_SELECT,
+        });
+        if (owned) {
+          organization = owned;
+          activeOrgId = owned.id;
+          activeRole = Role.ADMIN;
+          isOwner = true;
+        }
       }
     }
 
@@ -529,6 +661,8 @@ export class AuthService {
 
     return {
       ...user,
+      organizationId: activeOrgId,
+      role: activeRole,
       name: formatUserDisplayName(user, orgOrder),
       preferredTimezone: user.preferredTimezone
         ? canonicalizeTimezone(user.preferredTimezone)

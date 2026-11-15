@@ -37,7 +37,7 @@ Definitions live in [packages/shared/src/permissions.ts](../../packages/shared/s
 
 1. **Dynamic Owner Bypass (`Organization.ownerId`):** If `user.isOwner` or `user.organization?.ownerId === user.id`, `RolesGuard` grants full privileges unconditionally; ownership transfers atomically via `POST /organizations/my/transfer-ownership`.
 2. **`ADMIN` Immutability:** `ADMIN` always resolves `true` for all `41` permissions (`ORG_ADMIN_PERMISSIONS_IMMUTABLE` blocks overrides).
-3. **Per-Org Overrides (`OrganizationRolePermission`):** `PermissionResolverService` checks PostgreSQL overrides cached in memory per `organizationId` (`60s` TTL) before falling back to `PERMISSIONS` defaults in `@haihire/shared`.
+3. **Per-Org Overrides (`OrganizationRolePermission`):** `PermissionResolverService` resolves role permissions using a 2-tier cache: L1 in-memory LRU (`60s` TTL) and L2 Valkey/Redis cache (`300s` TTL). When an admin updates or resets permissions (`POST /organizations/my/roles/permissions`), Redis pub/sub invalidation (`haihire:permissions:invalidate`) purges L1 and L2 caches instantly across all horizontal API replicas before falling back to `PERMISSIONS` defaults in `@haihire/shared`.
 
 ### 41 Permissions Inventory
 
@@ -54,7 +54,7 @@ Definitions live in [packages/shared/src/permissions.ts](../../packages/shared/s
 
 ## 4. Infrastructure, Cryptography & Edge Controls
 
-- **HTTP Hardening & Rate Limiting (`apps/api/src/main.ts`):** `ThrottlerModule` (`100` req / `60s`), strict comma-separated CORS (`FRONTEND_URL`, `credentials: true`), CSP (`default-src 'self'; frame-ancestors 'none'`), `nosniff`, `DENY` framing, and production HTTPS redirect (exempting health/metrics probes and loopback).
+- **HTTP Hardening & Distributed Rate Limiting (`apps/api/src/main.ts`):** `ThrottlerModule` backed by `ThrottlerStorageRedisService` (`100` req / `60s` window) enforces distributed rate limiting across horizontal API replicas via atomic Redis operations (`haihire:throttler:*`), with automatic in-memory fallback during Redis degradation. Strict comma-separated CORS (`FRONTEND_URL`, `credentials: true`), CSP (`default-src 'self'; frame-ancestors 'none'`), `nosniff`, `DENY` framing, and production HTTPS redirect (exempting health/metrics probes and loopback).
 - **Secrets at Rest:** Tenant SMTP passwords and Resend/SendGrid keys in `EmailSetting` as well as webhook tokens in `OrganizationWebhookSetting` are encrypted using AES-256 derived from `ENCRYPTION_SECRET` (minimum `32` chars enforced on startup).
 - **Private Storage (`MinIO`):** `haihire-resumes` bucket enforces private access with `tenants/<orgId>/...` path isolation, magic-byte upload checks, sanitized filenames, and authenticated download streaming.
 - **Metrics & SSRF Protection:** `GET /metrics` checks `METRICS_TOKEN` via `crypto.timingSafeEqual` (returning `404` in production if unset); outbound webhook and custom SMTP destinations block private/loopback DNS targets against SSRF.

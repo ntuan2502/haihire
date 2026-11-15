@@ -53,9 +53,16 @@ export function useCandidates(
   });
 }
 
-export function useCandidate(id: string | null | undefined) {
+export function useCandidate(
+  id: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Candidate>({
-    queryKey: queryKeys.candidate(id),
+    queryKey: queryKeys.candidate(id, effectiveOrgId),
     queryFn: () => {
       if (!id) throw new Error("Candidate ID is required");
       return candidatesApi.getById(id);
@@ -180,9 +187,16 @@ export function useDeleteCandidateDocumentMutation() {
   });
 }
 
-export function useCandidateNotes(candidateId: string | null | undefined) {
+export function useCandidateNotes(
+  candidateId: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<CandidateNote[]>({
-    queryKey: queryKeys.candidateNotes(candidateId),
+    queryKey: queryKeys.candidateNotes(candidateId, effectiveOrgId),
     queryFn: () => {
       if (!candidateId) return [];
       return candidatesApi.getNotes(candidateId);

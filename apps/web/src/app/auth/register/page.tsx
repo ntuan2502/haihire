@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { registerSchema } from "@haihire/shared";
 
 function RegisterForm() {
   const router = useRouter();
@@ -64,13 +65,20 @@ function RegisterForm() {
     e.preventDefault();
     const trimmedFirst = firstName.trim();
     const trimmedLast = lastName.trim();
-    if (!trimmedFirst || !trimmedLast || !email || !password) {
-      setError(t("auth.errorRegisterRequired"));
-      return;
-    }
 
-    if (password.length < 6) {
-      setError(t("auth.errorPasswordMinLength"));
+    const validation = registerSchema.safeParse({
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      email,
+      password,
+    });
+    if (!validation.success) {
+      const issue = validation.error.issues[0];
+      if (issue.path.includes("password")) {
+        setError(t("auth.errorPasswordMinLength"));
+      } else {
+        setError(t("auth.errorRegisterRequired"));
+      }
       return;
     }
 

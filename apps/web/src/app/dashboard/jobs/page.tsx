@@ -1,9 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
-import { AuthGuard } from "@/components/shared/auth-guard";
 import { ConfirmDestructiveModal } from "@/components/shared";
-import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
@@ -12,7 +10,6 @@ import { useTableParams } from "@/hooks/use-table-params";
 import {
   useJobs,
   useAllJobs,
-  useCandidates,
   useCreateJobMutation,
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
@@ -101,7 +98,6 @@ function JobsPageContent() {
     };
   }, [allJobs]);
 
-  const { data: candidatesData } = useCandidates(user?.organizationId);
   const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
 
@@ -146,100 +142,89 @@ function JobsPageContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar */}
-      <Navbar
-        activeTab="jobs"
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={stats.total}
-        candidatesCount={candidatesData?.total || 0}
-      />
-
-      {/* Main Content */}
-      <main id="main-content" className="flex-1">
-        {jobsLoading && !jobsData ? (
-          <LoadingSpinner />
-        ) : stats.total === 0 &&
-          currentPage === 1 &&
-          !search &&
-          !status &&
-          !type &&
-          !experience &&
-          !workplace ? (
-          <StartRecruiting
-            onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-            onCreateTestJob={handleCreateTestJob}
-            onImportFromFile={() => router.push("/dashboard/jobs/new")}
-          />
-        ) : (
-          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-4">
-            {/* Clean, Non-redundant Header Row with Primary CTA */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {t("jobs.title")}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                  {stats.total}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                {canCreateJob && (
-                  <Button
-                    onClick={() => router.push("/dashboard/jobs/new")}
-                    className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>{t("jobs.createJob")}</span>
-                  </Button>
-                )}
-              </div>
+    <div className="flex-1">
+      {jobsLoading && !jobsData ? (
+        <LoadingSpinner />
+      ) : stats.total === 0 &&
+        currentPage === 1 &&
+        !search &&
+        !status &&
+        !type &&
+        !experience &&
+        !workplace ? (
+        <StartRecruiting
+          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
+          onCreateTestJob={handleCreateTestJob}
+          onImportFromFile={() => router.push("/dashboard/jobs/new")}
+        />
+      ) : (
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-4">
+          {/* Clean, Non-redundant Header Row with Primary CTA */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                {t("jobs.title")}
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                {stats.total}
+              </span>
             </div>
 
-            {/* JobList component with full URL synchronized filter drawer */}
-            <JobList
-              jobs={jobs}
-              total={total}
-              statusCounts={statusCounts}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={rowsPerPage}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setRowsPerPage}
-              search={search}
-              onSearchChange={setSearch}
-              loading={jobsLoading}
-              onDeleteJob={handleJobDeleted}
-              statusFilter={status}
-              typeFilter={type}
-              expFilter={experience}
-              workplaceFilter={workplace}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onFilterChange={(filters) => {
-                setParams(
-                  {
-                    status: filters.status || null,
-                    type: filters.type || null,
-                    experience: filters.experience || null,
-                    workplace: filters.workplace || null,
-                    sortBy:
-                      filters.sortBy && filters.sortBy !== "created"
-                        ? filters.sortBy
-                        : null,
-                    sortOrder:
-                      filters.sortOrder && filters.sortOrder !== "desc"
-                        ? filters.sortOrder
-                        : null,
-                  },
-                  true,
-                );
-              }}
-            />
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {canCreateJob && (
+                <Button
+                  onClick={() => router.push("/dashboard/jobs/new")}
+                  className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{t("jobs.createJob")}</span>
+                </Button>
+              )}
+            </div>
           </div>
-        )}
-      </main>
+
+          {/* JobList component with full URL synchronized filter drawer */}
+          <JobList
+            jobs={jobs}
+            total={total}
+            statusCounts={statusCounts}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setRowsPerPage}
+            search={search}
+            onSearchChange={setSearch}
+            loading={jobsLoading}
+            onDeleteJob={handleJobDeleted}
+            statusFilter={status}
+            typeFilter={type}
+            expFilter={experience}
+            workplaceFilter={workplace}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onFilterChange={(filters) => {
+              setParams(
+                {
+                  status: filters.status || null,
+                  type: filters.type || null,
+                  experience: filters.experience || null,
+                  workplace: filters.workplace || null,
+                  sortBy:
+                    filters.sortBy && filters.sortBy !== "created"
+                      ? filters.sortBy
+                      : null,
+                  sortOrder:
+                    filters.sortOrder && filters.sortOrder !== "desc"
+                      ? filters.sortOrder
+                      : null,
+                },
+                true,
+              );
+            }}
+          />
+        </div>
+      )}
 
       {/* Delete Job Confirmation Modal */}
       {jobToDelete && (
@@ -265,10 +250,8 @@ function JobsPageContent() {
 
 export default function JobsPage() {
   return (
-    <AuthGuard>
-      <Suspense fallback={<LoadingSpinner fullScreen />}>
-        <JobsPageContent />
-      </Suspense>
-    </AuthGuard>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
+      <JobsPageContent />
+    </Suspense>
   );
 }

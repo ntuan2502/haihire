@@ -159,7 +159,7 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
     );
   });
 
-  it("clears expired JWT cookies on /auth/login instead of redirecting to /auth/onboarding", async () => {
+  it("clears expired JWT access token on /auth/login without deleting refresh token", async () => {
     const expiredJwt = makeJwtWithExp(Math.floor(Date.now() / 1000) - 60);
     const req = createMockRequest("/auth/login", {
       haihire_token: expiredJwt,
@@ -171,7 +171,7 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
     expect(res.cookies.get("haihire_token")?.value).toBe("");
-    expect(res.cookies.get("haihire_refresh_token")?.value).toBe("");
+    expect(res.cookies.get("haihire_refresh_token")).toBeUndefined();
     expect(res.cookies.get("haihire_has_org")?.value).toBe("");
   });
 
@@ -211,7 +211,7 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
     expect(res.cookies.get("haihire_token")?.value).toBe("");
-    expect(res.cookies.get("haihire_refresh_token")?.value).toBe("");
+    expect(res.cookies.get("haihire_refresh_token")).toBeUndefined();
     expect(res.cookies.get("haihire_has_org")?.value).toBe("");
   });
 

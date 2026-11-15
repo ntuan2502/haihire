@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sourcingApi } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "./query-keys";
 import type {
   CreateTrackingLinkDto,
@@ -12,8 +13,12 @@ export function useSourcingStatsQuery(params?: {
   timeRange?: TimeRangeFilter;
   jobId?: string;
 }) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: queryKeys.sourcingStats(params),
+    queryKey: queryKeys.sourcingStats({
+      ...params,
+      orgId: user?.organizationId,
+    }),
     queryFn: () => sourcingApi.getStats(params),
     staleTime: 60 * 1000,
   });
@@ -26,8 +31,12 @@ export function useTrackingLinksQuery(params?: {
   jobId?: string;
   isActive?: boolean;
 }) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: queryKeys.sourcingLinks(params as Record<string, unknown>),
+    queryKey: queryKeys.sourcingLinks({
+      ...params,
+      orgId: user?.organizationId,
+    }),
     queryFn: () => sourcingApi.getLinks(params),
     staleTime: 30 * 1000,
   });
@@ -37,8 +46,12 @@ export function useTrackingLinkDetailQuery(
   id: string,
   params?: { timeRange?: TimeRangeFilter },
 ) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: queryKeys.sourcingLinkDetail(id, params),
+    queryKey: queryKeys.sourcingLinkDetail(id, {
+      ...params,
+      orgId: user?.organizationId,
+    }),
     queryFn: () => sourcingApi.getLinkDetails(id, params),
     enabled: Boolean(id),
     staleTime: 30 * 1000,
@@ -52,10 +65,12 @@ export function useAttributionLogQuery(params?: {
   jobId?: string;
   source?: SourcingChannel;
 }) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: queryKeys.sourcingAttributionLog(
-      params as Record<string, unknown>,
-    ),
+    queryKey: queryKeys.sourcingAttributionLog({
+      ...params,
+      orgId: user?.organizationId,
+    }),
     queryFn: () => sourcingApi.getAttributionLog(params),
     staleTime: 30 * 1000,
   });

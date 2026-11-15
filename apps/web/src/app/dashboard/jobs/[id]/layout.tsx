@@ -3,16 +3,8 @@
 import { useMemo, Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
-import { AuthGuard } from "@/components/shared/auth-guard";
-import { Navbar } from "@/components/layout";
-import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import {
-  useJob,
-  useAllJobs,
-  useCandidates,
-  useUpdateJobMutation,
-} from "@/hooks/use-queries";
+import { useJob, useUpdateJobMutation } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
 import {
@@ -46,14 +38,11 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
-  const { user } = useAuth();
   const { t } = useI18n();
   const canViewSourcing = useHasPermission("sourcing:view");
   const canUpdateJob = useHasPermission("job:update");
 
-  const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: candidatesData } = useCandidates(user?.organizationId);
   const updateJobMutation = useUpdateJobMutation();
 
   // Active tab based on pathname
@@ -94,20 +83,15 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
   if (jobLoading) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <LoadingSpinner fullScreen />
+      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <LoadingSpinner />
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-        <Navbar
-          activeTab="jobs"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={jobs.length}
-        />
+      <div className="flex-1 min-h-0 w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <StatusState
           status="404"
           variant="page"
@@ -123,17 +107,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const jobTypeLabel = getJobTypeLabel(job.type, t);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden transition-colors duration-200">
-      {/* Global Navbar */}
-      <div className="shrink-0">
-        <Navbar
-          activeTab="jobs"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={jobs.length}
-          candidatesCount={candidatesData?.total || 0}
-        />
-      </div>
-
+    <div className="flex-1 min-h-0 w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden transition-colors duration-200">
       {/* 1. Job Workspace Header: Two-tier Navigation */}
       <header className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-2xs">
         {/* Tier 1: Context & Primary Actions */}
@@ -333,10 +307,8 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
 export default function JobDetailLayout({ children }: { children: ReactNode }) {
   return (
-    <AuthGuard>
-      <Suspense fallback={<LoadingSpinner fullScreen />}>
-        <JobDetailLayoutContent>{children}</JobDetailLayoutContent>
-      </Suspense>
-    </AuthGuard>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
+      <JobDetailLayoutContent>{children}</JobDetailLayoutContent>
+    </Suspense>
   );
 }

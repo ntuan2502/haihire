@@ -45,8 +45,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = "haihire_recruiter_token";
-const REFRESH_TOKEN_KEY = "haihire_recruiter_refresh_token";
 const USER_KEY = "haihire_recruiter_user";
 
 function setHasOrgCookie(hasOrg: boolean) {
@@ -98,12 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, user, t]);
 
   const setSession = useCallback(
-    (newAccessToken: string, newRefreshToken?: string, newUserData?: User) => {
+    (newAccessToken: string, _newRefreshToken?: string, newUserData?: User) => {
       setToken(newAccessToken);
-      localStorage.setItem(TOKEN_KEY, newAccessToken);
-      if (newRefreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-      }
       if (newUserData) {
         setUser(newUserData);
         localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
@@ -113,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setAuthCookies(newAccessToken, false);
       }
-      api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
     },
     [user],
   );
@@ -121,11 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     queryClient?.clear();
-    delete api.defaults.headers.common.Authorization;
     try {
       await api.post("/auth/logout");
     } catch {
@@ -139,18 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const savedToken =
-        typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
-      if (savedToken) {
-        api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
-      }
-
       const response = await api.get<User>("/auth/me");
       const latestUser = response.data;
 
       setUser(latestUser);
       localStorage.setItem(USER_KEY, JSON.stringify(latestUser));
-      setAuthCookies(savedToken, Boolean(latestUser.organizationId));
+      setAuthCookies(null, Boolean(latestUser.organizationId));
 
       // If member was removed from org and is currently in dashboard, kick out immediately!
       if (!latestUser.organizationId) {
@@ -170,7 +154,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof document !== "undefined" &&
           (document.cookie.includes("haihire_has_org=") ||
             document.cookie.includes("haihire_token=") ||
-            localStorage.getItem(TOKEN_KEY) ||
             localStorage.getItem(USER_KEY)),
         );
         const onSessionRoute =
@@ -179,11 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(null);
         setUser(null);
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         queryClient?.clear();
-        delete api.defaults.headers.common.Authorization;
 
         if (hadClientSession || onSessionRoute) {
           try {
@@ -207,15 +187,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let hasOptimisticSession = false;
     try {
-      const savedToken = localStorage.getItem(TOKEN_KEY);
       const savedUser = localStorage.getItem(USER_KEY);
 
-      if (savedToken && savedUser) {
+      if (savedUser) {
         const parsedUser: User = JSON.parse(savedUser);
-        setToken(savedToken);
         setUser(parsedUser);
-        api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
-        setAuthCookies(savedToken, Boolean(parsedUser.organizationId));
+        setAuthCookies(null, Boolean(parsedUser.organizationId));
         hasOptimisticSession = true;
       }
     } catch (err) {
@@ -377,18 +354,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-    const { accessToken, refreshToken, user: userData } = response.data;
+    const { accessToken, user: userData } = response.data;
 
     setToken(accessToken);
     setUser(userData);
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    }
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
-    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
     return userData;
   };
 
@@ -409,18 +381,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-    const { accessToken, refreshToken, user: userData } = response.data;
+    const { accessToken, user: userData } = response.data;
 
     setToken(accessToken);
     setUser(userData);
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    }
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
-    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
     return userData;
   };
 

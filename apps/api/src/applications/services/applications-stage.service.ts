@@ -79,12 +79,14 @@ export class ApplicationsStageService {
       where: {
         id,
         stage: oldStage,
+        ...(dto.version !== undefined ? { version: dto.version } : {}),
         ...(tenantOrgId && existing.organizationId
           ? { organizationId: tenantOrgId }
           : {}),
       },
       data: {
         stage: dto.stage,
+        version: { increment: 1 },
         ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
         ...(isRejecting
           ? {

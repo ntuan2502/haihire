@@ -304,7 +304,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
       expect(result.user.firstName).toBe("Member");
       expect(result.user.lastName).toBe("New");
-      expect(result.user.name).toBe("Member New");
+      expect(result.user.name).toBe("New Member");
       expect(result.user.email).toBe("newmember@company.com");
       expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();

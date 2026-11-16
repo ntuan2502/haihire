@@ -196,14 +196,14 @@ describe("InterviewsService", () => {
     expect(list.data).toHaveLength(1);
     expect(list.total).toBe(1);
     expect(list.data[0].id).toBe("intv-1");
-    expect(list.data[0].candidateName).toBe("Alice Johnson");
+    expect(list.data[0].candidateName).toBe("Johnson Alice");
     expect(list.data[0].jobTitle).toBe("Frontend Developer");
   });
 
   it("should find an interview by id", async () => {
     const intv = await service.findOne("intv-1");
     expect(intv.id).toBe("intv-1");
-    expect(intv.candidateName).toBe("Alice Johnson");
+    expect(intv.candidateName).toBe("Johnson Alice");
   });
 
   it("should throw NotFoundException when interview id does not exist", async () => {

@@ -33,7 +33,7 @@ describe("Frontend utils", () => {
     ).toMatchObject({
       firstName: "Minh",
       lastName: "Tran Van",
-      effectiveName: "Minh Tran Van",
+      effectiveName: "Tran Van Minh",
     });
 
     expect(
@@ -69,7 +69,7 @@ describe("Frontend utils", () => {
     ).toMatchObject({
       firstName: "An",
       lastName: "Nguyễn Văn",
-      effectiveName: "An Nguyễn Văn",
+      effectiveName: "Nguyễn Văn An",
     });
   });
   describe("cn (classnames utility)", () => {
@@ -144,7 +144,7 @@ describe("Frontend utils", () => {
           lastName: "Smith",
           displayName: null,
         }),
-      ).toBe("Alice Smith");
+      ).toBe("Smith Alice");
     });
 
     it("unwraps nested application.candidate fields cleanly under nameDisplayOrder", () => {

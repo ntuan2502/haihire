@@ -362,7 +362,7 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         user: userA,
       });
       expect(candidate).toBeDefined();
-      expect(candidate.name).toBe("Charlie Alpha");
+      expect(candidate.name).toBe("Alpha Charlie");
 
       const application = await applicationsController.findOne("app-alpha-1", {
         user: userA,

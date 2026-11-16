@@ -154,7 +154,7 @@ model Organization {
   timezone         String                       @default("Asia/Ho_Chi_Minh")
   dateFormat       String                       @default("DD/MM/YYYY")
   timeFormat       String                       @default("24H")
-  nameDisplayOrder String                       @default("FIRST_LAST")
+  nameDisplayOrder String                       @default("LAST_FIRST")
   defaultCurrency  String                       @default("VND")
   owner            User                         @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   jobs             Job[]

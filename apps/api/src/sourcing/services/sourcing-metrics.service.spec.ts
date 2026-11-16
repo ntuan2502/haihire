@@ -321,7 +321,7 @@ describe("SourcingMetricsService", () => {
         (a) => a.candidateEmail === "alice@example.com",
       );
       expect(appAlice).toBeDefined();
-      expect(appAlice?.candidateName).toBe("Alice Walker");
+      expect(appAlice?.candidateName).toBe("Walker Alice");
       expect(appAlice?.stage).toBe("HIRED");
     });
 
@@ -366,7 +366,7 @@ describe("SourcingMetricsService", () => {
       // app-1 was 4 days ago (in 7d); app-2 was 25 days ago (out of 7d)
       expect(details7d.stats.applications).toBe(1);
       expect(details7d.attributedApplications[0]?.candidateName).toBe(
-        "Alice Walker",
+        "Walker Alice",
       );
     });
   });
@@ -404,13 +404,13 @@ describe("SourcingMetricsService", () => {
         search: "alice",
       });
       expect(result.total).toBe(1);
-      expect(result.data[0]?.candidateName).toBe("Alice Walker");
+      expect(result.data[0]?.candidateName).toBe("Walker Alice");
 
       const reversed = await service.getAttributionLog("org-1", {
         search: "Walker Alice",
       });
       expect(reversed.total).toBe(1);
-      expect(reversed.data[0]?.candidateName).toBe("Alice Walker");
+      expect(reversed.data[0]?.candidateName).toBe("Walker Alice");
     });
 
     it("searches attribution log by candidate email", async () => {
@@ -418,7 +418,7 @@ describe("SourcingMetricsService", () => {
         search: "bob@example",
       });
       expect(result.total).toBe(1);
-      expect(result.data[0]?.candidateName).toBe("Bob Stone");
+      expect(result.data[0]?.candidateName).toBe("Stone Bob");
     });
 
     it("searches attribution log by UTM campaign", async () => {
@@ -426,7 +426,7 @@ describe("SourcingMetricsService", () => {
         search: "devops-hiring",
       });
       expect(result.total).toBe(1);
-      expect(result.data[0]?.candidateName).toBe("Charlie Brown");
+      expect(result.data[0]?.candidateName).toBe("Brown Charlie");
     });
 
     it("returns empty structure when organization has no jobs or query matches nothing", async () => {

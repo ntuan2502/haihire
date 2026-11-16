@@ -368,7 +368,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
 
       expect(created).toBeDefined();
-      expect(created.name).toBe("Minh Tran Van");
+      expect(created.name).toBe("Tran Van Minh");
       expect(created.firstName).toBe("Minh");
       expect(created.lastName).toBe("Tran Van");
       expect(created.displayName).toBeNull();
@@ -501,7 +501,7 @@ describe("CandidatesService (Characterization Tests)", () => {
 
       expect(updated).toBeDefined();
       expect(updated.firstName).toBe("A Updated");
-      expect(updated.name).toBe("A Updated Nguyen Van");
+      expect(updated.name).toBe("Nguyen Van A Updated");
       expect(updated.phone).toBe("0999888777");
       expect(updated.dateOfBirth).toBeDefined();
     });

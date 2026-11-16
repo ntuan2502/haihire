@@ -113,9 +113,8 @@ export function JobFiltersBar({
                       label: t("jobs.columns.title"),
                       locked: true,
                     },
-                    { id: "status", label: t("jobs.columns.status") },
                     { id: "pipeline", label: t("jobs.columns.pipeline") },
-                    { id: "applicants", label: t("jobs.columns.applicants") },
+                    { id: "status", label: t("jobs.columns.status") },
                   ].map((col) => {
                     const isChecked =
                       visibleColumns[col.id as keyof VisibleColumns];

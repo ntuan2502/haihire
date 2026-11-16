@@ -281,16 +281,19 @@ describe("JobList Component - Characterization Tests", () => {
       );
     });
 
-    it("renders new applicants badge with pulse indicator when count > 0", () => {
+    it("renders pipeline column before status column and omits new applicants column", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const badge = screen.getByText(/5 new/i);
-      expect(badge).toBeDefined();
-
-      fireEvent.click(badge);
-      expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/jobs/job-1/pipeline?stage=APPLIED",
-      );
+      const headers = screen
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent);
+      expect(headers).toEqual([
+        en.jobs.jobTitle,
+        en.dashboard.hiringPipeline,
+        en.jobs.status,
+        en.common.actions,
+      ]);
+      expect(screen.queryByText(/5 new/i)).toBeNull();
     });
   });
 
@@ -411,22 +414,13 @@ describe("JobList Component - Characterization Tests", () => {
       expect(handleDelete).toHaveBeenCalledWith("job-1");
     });
 
-    it("copies public job url to clipboard when clicking copy link button", async () => {
-      const writeTextMock = vi.fn().mockResolvedValue(undefined);
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: writeTextMock,
-        },
-      });
-
+    it("renders link to public job recruitment page instead of copy link button", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const copyButtons = screen.getAllByTitle(en.jobs.copyPublicApplyLink);
-      fireEvent.click(copyButtons[0]);
-
-      expect(writeTextMock).toHaveBeenCalledWith(
-        expect.stringContaining("/careers/"),
-      );
+      const publicLinks = screen.getAllByTitle(en.jobs.viewPublicPage);
+      expect(publicLinks.length).toBeGreaterThan(0);
+      expect(publicLinks[0].getAttribute("href")).toContain("/careers/");
+      expect(screen.queryByTitle(en.jobs.copyPublicApplyLink)).toBeNull();
     });
   });
 

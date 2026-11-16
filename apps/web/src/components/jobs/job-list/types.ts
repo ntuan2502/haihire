@@ -44,7 +44,6 @@ export interface JobFilterCriteria {
 }
 
 export interface JobStageCounts {
-  new: number;
   screening: number;
   interview: number;
   offer: number;
@@ -56,7 +55,6 @@ export interface JobStageCounts {
 
 export interface VisibleColumns {
   title: boolean;
-  status: boolean;
   pipeline: boolean;
-  applicants: boolean;
+  status: boolean;
 }

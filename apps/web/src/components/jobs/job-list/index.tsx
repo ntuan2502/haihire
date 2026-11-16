@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
-import { getJobPublicUrl } from "@/lib/utils";
-import type { Job } from "@/types";
 import type { JobListProps, VisibleColumns } from "./types";
 import { useJobFilters } from "./hooks/use-job-filters";
 import { useJobStageCounts } from "./hooks/use-job-stage-counts";
@@ -29,7 +27,6 @@ export function JobList(props: JobListProps) {
 
   const { t } = useI18n();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
 
   // Column Visibility Toggle State persisted in localStorage
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -38,9 +35,8 @@ export function JobList(props: JobListProps) {
     "haihire_jobs_columns_v1",
     {
       title: true,
-      status: true,
       pipeline: true,
-      applicants: true,
+      status: true,
     },
   );
 
@@ -81,16 +77,6 @@ export function JobList(props: JobListProps) {
   } = useJobFilters(props);
 
   const { getJobStageCounts } = useJobStageCounts(jobs);
-
-  const handleCopyLink = useCallback((job: Job) => {
-    if (typeof window !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(
-        `${window.location.origin}${getJobPublicUrl(job)}`,
-      );
-      setCopiedJobId(job.id);
-      setTimeout(() => setCopiedJobId(null), 2000);
-    }
-  }, []);
 
   return (
     <div className="space-y-4">
@@ -154,19 +140,14 @@ export function JobList(props: JobListProps) {
                   <th scope="col" className="py-3.5 px-5 min-w-[280px]">
                     {t("jobs.jobTitle")}
                   </th>
-                  {visibleColumns.status && (
-                    <th scope="col" className="py-3.5 px-4 min-w-[110px]">
-                      {t("jobs.status")}
-                    </th>
-                  )}
                   {visibleColumns.pipeline && (
                     <th scope="col" className="py-3.5 px-4 min-w-[340px]">
                       {t("dashboard.hiringPipeline")}
                     </th>
                   )}
-                  {visibleColumns.applicants && (
-                    <th scope="col" className="py-3.5 px-4 min-w-[130px]">
-                      {t("jobs.newApplicants")}
+                  {visibleColumns.status && (
+                    <th scope="col" className="py-3.5 px-4 min-w-[110px]">
+                      {t("jobs.status")}
                     </th>
                   )}
                   <th
@@ -184,8 +165,6 @@ export function JobList(props: JobListProps) {
                     job={job}
                     counts={getJobStageCounts(job.id)}
                     visibleColumns={visibleColumns as VisibleColumns}
-                    copiedJobId={copiedJobId}
-                    onCopyLink={handleCopyLink}
                     onDeleteJob={onDeleteJob}
                   />
                 ))}

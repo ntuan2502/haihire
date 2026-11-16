@@ -8,7 +8,6 @@ import { useI18n } from "@/i18n";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
 import { JobWizardEditor } from "@/components/jobs/job-wizard-editor";
-import { JobPipelineStagesCard } from "@/components/jobs/pipeline/job-pipeline-stages-card";
 
 function JobSettingsPageContent() {
   const params = useParams();
@@ -45,14 +44,7 @@ function JobSettingsPageContent() {
     return null;
   }
 
-  return (
-    <>
-      <JobWizardEditor mode="edit" initialJob={job} />
-      <div className="mx-auto w-full max-w-4xl px-4 pb-10 sm:px-6">
-        <JobPipelineStagesCard jobId={job.id} />
-      </div>
-    </>
-  );
+  return <JobWizardEditor mode="edit" initialJob={job} />;
 }
 
 export default function JobSettingsPage() {

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
   useJobApplications,
-  useJobStages,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
@@ -43,8 +42,7 @@ export function usePipelineKanban(jobId: string) {
   const queryClient = useQueryClient();
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: customJobStages } = useJobStages(jobId);
-  const pipelineStages = usePipelineStages(customJobStages);
+  const pipelineStages = usePipelineStages();
   const { data: jobApplications = [], isLoading: appsLoading } =
     useJobApplications(jobId);
 
@@ -287,11 +285,9 @@ export function usePipelineKanban(jobId: string) {
     >,
   ) => {
     try {
-      const matchedStage = pipelineStages.find((s) => s.id === newStage);
       await updateStageMutation.mutateAsync({
         id: candidate.id,
         stage: newStage,
-        ...(matchedStage?.stageId ? { stageId: matchedStage.stageId } : {}),
         ...(options?.rejectionReason !== undefined
           ? { rejectionReason: options.rejectionReason }
           : {}),

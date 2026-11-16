@@ -3,8 +3,10 @@ import {
   APP_ERROR_CODES,
   formatCandidateDisplayName,
   type NameDisplayOrder,
+  type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
 import {
+  ApplicationStage,
   ExperienceLevel,
   JobStatus,
   JobType,
@@ -688,5 +690,179 @@ export class JobsService {
     }
 
     return { success: true, message: `Job ${id} deleted successfully` };
+  }
+
+  async getPipelineStages(jobId: string, tenantOrgId?: string | null) {
+    const job = await this.findOne(jobId, tenantOrgId);
+    const orgId = tenantOrgId || job.organizationId;
+    if (!orgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Organization ID is required to access job pipeline stages.",
+        { jobId },
+      );
+    }
+
+    const existing = await this.prisma.pipelineStage.findMany({
+      where: { organizationId: orgId, jobId },
+      orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
+    });
+    if (existing.length > 0) {
+      return existing;
+    }
+
+    const defaultStageDefs: ReadonlyArray<{
+      name: string;
+      category: ApplicationStage;
+      orderIndex: number;
+      isTerminal: boolean;
+    }> = [
+      {
+        name: "Applied",
+        category: "APPLIED",
+        orderIndex: 0,
+        isTerminal: false,
+      },
+      {
+        name: "Screening",
+        category: "SCREENING",
+        orderIndex: 1,
+        isTerminal: false,
+      },
+      {
+        name: "Interview",
+        category: "INTERVIEW",
+        orderIndex: 2,
+        isTerminal: false,
+      },
+      { name: "Offer", category: "OFFER", orderIndex: 3, isTerminal: false },
+      { name: "Hired", category: "HIRED", orderIndex: 4, isTerminal: true },
+      {
+        name: "Rejected",
+        category: "REJECTED",
+        orderIndex: 5,
+        isTerminal: true,
+      },
+    ];
+
+    return runInTransaction(this.prisma, async (tx) => {
+      await tx.pipelineStage.createMany({
+        data: defaultStageDefs.map((s) => ({
+          id: crypto.randomUUID(),
+          organizationId: orgId,
+          jobId,
+          name: s.name,
+          category: s.category,
+          orderIndex: s.orderIndex,
+          isTerminal: s.isTerminal,
+        })),
+      });
+
+      return tx.pipelineStage.findMany({
+        where: { organizationId: orgId, jobId },
+        orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
+      });
+    });
+  }
+
+  async updatePipelineStages(
+    jobId: string,
+    dto: UpsertPipelineStagesSchema,
+    tenantOrgId?: string | null,
+  ) {
+    const job = await this.findOne(jobId, tenantOrgId);
+    const orgId = tenantOrgId || job.organizationId;
+    if (!orgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Organization ID is required to update job pipeline stages.",
+        { jobId },
+      );
+    }
+
+    const stages = await runInTransaction(this.prisma, async (tx) => {
+      const existingStages = await tx.pipelineStage.findMany({
+        where: { organizationId: orgId, jobId },
+      });
+
+      const incomingIds = new Set(
+        dto.stages
+          .map((s) => s.id)
+          .filter((stageId): stageId is string => Boolean(stageId)),
+      );
+      const removedIds = existingStages
+        .map((s) => s.id)
+        .filter((stageId) => !incomingIds.has(stageId));
+
+      if (removedIds.length > 0) {
+        const assignedAppsCount = await tx.application.count({
+          where: {
+            organizationId: orgId,
+            jobId,
+            stageId: { in: removedIds },
+          },
+        });
+        if (assignedAppsCount > 0) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.VALIDATION_ERROR,
+            "Cannot remove pipeline stage that still has applications assigned.",
+            { jobId, removedIds: removedIds.join(",") },
+          );
+        }
+
+        await tx.pipelineStage.deleteMany({
+          where: { organizationId: orgId, jobId, id: { in: removedIds } },
+        });
+      }
+
+      for (const stageInput of dto.stages) {
+        if (
+          stageInput.id &&
+          existingStages.some((e) => e.id === stageInput.id)
+        ) {
+          await tx.pipelineStage.updateMany({
+            where: {
+              id: stageInput.id,
+              organizationId: orgId,
+              jobId,
+            },
+            data: {
+              name: stageInput.name,
+              category: stageInput.category,
+              orderIndex: stageInput.orderIndex,
+              color: stageInput.color ?? null,
+              isTerminal: stageInput.isTerminal ?? false,
+              version: { increment: 1 },
+            },
+          });
+        } else {
+          await tx.pipelineStage.create({
+            data: {
+              id: stageInput.id || crypto.randomUUID(),
+              organizationId: orgId,
+              jobId,
+              name: stageInput.name,
+              category: stageInput.category,
+              orderIndex: stageInput.orderIndex,
+              color: stageInput.color ?? null,
+              isTerminal: stageInput.isTerminal ?? false,
+            },
+          });
+        }
+      }
+
+      return tx.pipelineStage.findMany({
+        where: { organizationId: orgId, jobId },
+        orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
+      });
+    });
+
+    this.eventsService?.emit({
+      type: "JOBS_CHANGED",
+      organizationId: orgId,
+      data: { jobId },
+    });
+
+    return stages;
   }
 }

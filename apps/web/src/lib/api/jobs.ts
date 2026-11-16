@@ -1,5 +1,11 @@
 import { api } from "./client";
-import type { Job, CreateJobInput, PaginatedResult } from "@/types";
+import type {
+  Job,
+  CreateJobInput,
+  PaginatedResult,
+  PipelineStageItem,
+  UpsertPipelineStagesSchema,
+} from "@/types";
 
 export const jobsApi = {
   getPublic: async (params?: {
@@ -52,6 +58,22 @@ export const jobsApi = {
     id: string,
   ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/jobs/${id}`);
+    return response.data;
+  },
+
+  getStages: async (id: string): Promise<PipelineStageItem[]> => {
+    const response = await api.get<PipelineStageItem[]>(`/jobs/${id}/stages`);
+    return response.data;
+  },
+
+  updateStages: async (
+    id: string,
+    data: UpsertPipelineStagesSchema,
+  ): Promise<PipelineStageItem[]> => {
+    const response = await api.patch<PipelineStageItem[]>(
+      `/jobs/${id}/stages`,
+      data,
+    );
     return response.data;
   },
 };

@@ -176,6 +176,7 @@ model Organization {
   auditLogs        OrganizationAuditLog[]
   applicationNotes ApplicationNote[]
   candidateNotes   CandidateNote[]
+  pipelineStages   PipelineStage[]
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
@@ -274,6 +275,7 @@ model Job {
   organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
   trackingLinks   TrackingLink[]
+  pipelineStages  PipelineStage[]
   version         Int              @default(1)
   deletedAt       DateTime?
   createdAt       DateTime         @default(now())
@@ -321,6 +323,8 @@ model Application {
   jobId            String
   job              Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   stage            ApplicationStage  @default(APPLIED)
+  stageId          String?
+  pipelineStage    PipelineStage?    @relation(fields: [stageId], references: [id], onDelete: SetNull)
   rejectionReason  String?
   rejectedAt       DateTime?
   matchScore       Int?
@@ -351,6 +355,7 @@ model Application {
   @@index([organizationId, jobId])
   @@index([organizationId, candidateId])
   @@index([organizationId, stage])
+  @@index([organizationId, stageId])
   @@index([organizationId, createdAt])
   @@index([organizationId, sourceChannel])
   @@index([organizationId, trackingLinkId])
@@ -662,4 +667,25 @@ model CandidateNote {
   @@index([organizationId, createdAt])
   @@index([candidateId, createdAt])
   @@map("candidate_note")
+}
+
+model PipelineStage {
+  id             String           @id @default(uuid())
+  organizationId String
+  jobId          String?
+  name           String
+  category       ApplicationStage
+  orderIndex     Int              @default(0)
+  color          String?
+  isTerminal     Boolean          @default(false)
+  version        Int              @default(1)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job            Job?             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applications   Application[]
+
+  @@index([organizationId, jobId, orderIndex])
+  @@map("pipeline_stage")
 }

@@ -1,5 +1,7 @@
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
+  jobStages: (jobId?: string | null, orgId?: string | null) =>
+    ["jobs", "stages", jobId, { orgId }] as const,
   applications: (jobId?: string | null, orgId?: string | null) =>
     ["applications", { orgId, jobId }] as const,
   application: (id?: string | null, orgId?: string | null) =>

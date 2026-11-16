@@ -1,6 +1,7 @@
 import {
   ApplicationStage,
   VALID_APPLICATION_STAGE_TRANSITIONS,
+  type PipelineStageItem,
 } from "@haihire/shared";
 import { useI18n } from "@/i18n";
 
@@ -8,6 +9,7 @@ export { VALID_APPLICATION_STAGE_TRANSITIONS };
 
 export interface StageConfig {
   id: ApplicationStage;
+  stageId?: string;
   label: string;
   actionLabel: string;
   stepNumber: number;
@@ -261,10 +263,28 @@ export function getStageLabel(
 }
 
 /**
- * Hook to get all pipeline stages with localized labels in order
+ * Hook to get pipeline stages with localized labels in order, or override with
+ * per-job custom PipelineStageItem rows when provided.
  */
-export function usePipelineStages(): StageConfig[] {
+export function usePipelineStages(
+  customStages?: PipelineStageItem[] | null,
+): StageConfig[] {
   const { t } = useI18n();
+
+  if (customStages && customStages.length > 0) {
+    return [...customStages]
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((custom, idx) => {
+        const base = STAGE_CONFIG_MAP[custom.category];
+        return {
+          ...base,
+          stageId: custom.id,
+          label: custom.name,
+          actionLabel: custom.name,
+          stepNumber: idx + 1,
+        };
+      });
+  }
 
   return STAGES_ORDER.map((stage) => {
     const raw = STAGE_CONFIG_MAP[stage];

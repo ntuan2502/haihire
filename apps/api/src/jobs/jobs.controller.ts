@@ -26,8 +26,10 @@ import {
   Role,
   createJobSchema,
   updateJobSchema,
+  upsertPipelineStagesSchema,
   type CreateJobSchema,
   type UpdateJobSchema,
+  type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 
@@ -160,5 +162,29 @@ export class JobsController {
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.jobsService.remove(id, req?.user?.organizationId);
+  }
+
+  @Get(":id/stages")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+  getPipelineStages(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.getPipelineStages(id, req?.user?.organizationId);
+  }
+
+  @Patch(":id/stages")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("job:update")
+  updatePipelineStages(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(upsertPipelineStagesSchema)) dto: UpsertPipelineStagesSchema,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.updatePipelineStages(
+      id,
+      dto,
+      req?.user?.organizationId,
+    );
   }
 }

@@ -48,9 +48,36 @@ export class ApplicationsStageService {
   ) {
     const existing = await this.query.findOne(id, tenantOrgId);
     const oldStage = existing.stage;
+    const effectiveOrgId = tenantOrgId || existing.organizationId;
+
+    const targetPipelineStage = dto.stageId
+      ? await this.prisma.pipelineStage.findFirst({
+          where: {
+            id: dto.stageId,
+            organizationId: effectiveOrgId,
+            jobId: existing.jobId,
+          },
+        })
+      : null;
+
+    if (dto.stageId && !targetPipelineStage) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Target pipeline stage does not belong to this job or organization.",
+        { stageId: dto.stageId, jobId: existing.jobId },
+      );
+    }
+
+    const nextStage = targetPipelineStage?.category ?? dto.stage;
+    if (!nextStage) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Target stage or stageId is required.",
+      );
+    }
 
     // Validate state transition
-    if (dto.stage !== oldStage) {
+    if (nextStage !== oldStage) {
       const allowedNextStages =
         (
           VALID_APPLICATION_STAGE_TRANSITIONS as Record<
@@ -58,18 +85,18 @@ export class ApplicationsStageService {
             readonly string[]
           >
         )[oldStage] || [];
-      if (!allowedNextStages.includes(dto.stage)) {
+      if (!allowedNextStages.includes(nextStage)) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.APPLICATION_INVALID_STAGE_TRANSITION,
-          `Cannot transition application stage from '${oldStage}' to '${dto.stage}'. Valid transitions from '${oldStage}' are: ${allowedNextStages.join(", ") || "none (terminal stage)"}.`,
-          { currentStage: oldStage, targetStage: dto.stage },
+          `Cannot transition application stage from '${oldStage}' to '${nextStage}'. Valid transitions from '${oldStage}' are: ${allowedNextStages.join(", ") || "none (terminal stage)"}.`,
+          { currentStage: oldStage, targetStage: nextStage },
         );
       }
     }
 
-    const isRejecting = dto.stage === "REJECTED";
+    const isRejecting = nextStage === "REJECTED";
     const isReopeningFromRejected =
-      oldStage === "REJECTED" && dto.stage !== "REJECTED";
+      oldStage === "REJECTED" && nextStage !== "REJECTED";
     const trimmedReason =
       typeof dto.rejectionReason === "string"
         ? dto.rejectionReason.trim()
@@ -85,7 +112,8 @@ export class ApplicationsStageService {
           : {}),
       },
       data: {
-        stage: dto.stage,
+        stage: nextStage,
+        ...(targetPipelineStage ? { stageId: targetPipelineStage.id } : {}),
         version: { increment: 1 },
         ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
         ...(isRejecting
@@ -107,7 +135,7 @@ export class ApplicationsStageService {
       throw new AppConflictException(
         APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT,
         `Application stage conflict: the application has been modified by another request. Current stage is no longer '${oldStage}'.`,
-        { currentStage: oldStage, targetStage: dto.stage },
+        { currentStage: oldStage, targetStage: nextStage },
       );
     }
 
@@ -116,13 +144,17 @@ export class ApplicationsStageService {
     // Record activity log
     const orgId =
       updated.job?.organizationId || updated.candidate?.organizationId;
-    const isOffering = dto.stage === "OFFER";
-    if (orgId && updated.candidate && oldStage !== dto.stage) {
+    const isOffering = nextStage === "OFFER";
+    if (
+      orgId &&
+      updated.candidate &&
+      (oldStage !== nextStage || Boolean(targetPipelineStage))
+    ) {
       const shouldSendRejectionEmail =
         isRejecting && dto.sendRejectionEmail !== false;
       const shouldSendOfferEmail = isOffering && dto.sendOfferEmail === true;
       const descriptionParts = [
-        `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
+        `Application moved from ${oldStage} to ${targetPipelineStage?.name || nextStage} for position ${updated.job?.title || ""}`,
       ];
       if (isRejecting && trimmedReason) {
         descriptionParts.push(`Reason: ${trimmedReason}`);
@@ -133,14 +165,16 @@ export class ApplicationsStageService {
         candidateId: updated.candidate.id,
         applicationId: updated.id,
         type: "STAGE_CHANGED",
-        title: `Stage Changed: ${oldStage} → ${dto.stage}`,
+        title: `Stage Changed: ${oldStage} → ${targetPipelineStage?.name || nextStage}`,
         description: descriptionParts.join(" — "),
         actorId: currentUser?.id,
         actorName: currentUser?.name || "HR Team",
         actorRole: currentUser?.role || "ADMIN",
         metadata: {
           fromStage: oldStage,
-          toStage: dto.stage,
+          toStage: nextStage,
+          stageId: targetPipelineStage?.id,
+          stageName: targetPipelineStage?.name,
           reopened: isReopeningFromRejected || undefined,
           rejectionReason:
             isRejecting && trimmedReason ? trimmedReason : undefined,

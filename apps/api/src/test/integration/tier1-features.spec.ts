@@ -696,4 +696,83 @@ describe("Vitest Integration: Tier 1 Feature Coverage (16 Core Features)", () =>
 
     expect(softDeleted.deletedAt).not.toBeNull();
   });
+
+  it("T1-INT-F17 [PipelineStage]: initializes default stages, supports custom stages, and blocks deleting stage in use", async () => {
+    const user = await createTestUser(ctx.prisma);
+    const org = await createTestOrg(ctx.prisma, user.id);
+    const job = await createTestJob(ctx.prisma, org.id, user.id);
+    const cand = await createTestCandidate(ctx.prisma, org.id);
+    const app = await createTestApplication(
+      ctx.prisma,
+      org.id,
+      job.id,
+      cand.id,
+    );
+
+    const agent = ctx.createAgent();
+    const cookie = generateTestAuthCookie(jwtService, user, org.id);
+    agent.setCookie("haihire_token", cookie.replace("haihire_token=", ""));
+
+    // 1. GET /jobs/:id/stages initializes 6 default stages
+    const getRes = await agent.get(`/jobs/${job.id}/stages`);
+    expect(getRes.status).toBe(200);
+    const initialStages = (await getRes.json()) as Array<{
+      id: string;
+      name: string;
+      category: string;
+      orderIndex: number;
+    }>;
+    expect(initialStages).toHaveLength(6);
+
+    // 2. PATCH /jobs/:id/stages adds custom stage under INTERVIEW category
+    const updatedStagesRes = await agent.patch(`/jobs/${job.id}/stages`, {
+      stages: [
+        ...initialStages.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: s.category,
+          orderIndex: s.orderIndex,
+        })),
+        {
+          name: "System Design Round",
+          category: "INTERVIEW",
+          orderIndex: 6,
+          isTerminal: false,
+        },
+      ],
+    });
+    expect(updatedStagesRes.status).toBe(200);
+    const updatedStages = (await updatedStagesRes.json()) as Array<{
+      id: string;
+      name: string;
+      category: string;
+    }>;
+    const customStage = updatedStages.find(
+      (s) => s.name === "System Design Round",
+    );
+    expect(customStage).toBeDefined();
+
+    // 3. Move application to custom stageId
+    const moveRes = await agent.patch(`/applications/${app.id}/stage`, {
+      stageId: customStage!.id,
+    });
+    expect(moveRes.status).toBe(200);
+    const movedApp = (await moveRes.json()) as {
+      stage: string;
+      stageId?: string | null;
+    };
+    expect(movedApp.stage).toBe("INTERVIEW");
+    expect(movedApp.stageId).toBe(customStage!.id);
+
+    // 4. Attempting to delete the stage currently assigned to app fails cleanly (400)
+    const deleteBlockedRes = await agent.patch(`/jobs/${job.id}/stages`, {
+      stages: initialStages.map((s) => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        orderIndex: s.orderIndex,
+      })),
+    });
+    expect(deleteBlockedRes.status).toBe(400);
+  });
 });

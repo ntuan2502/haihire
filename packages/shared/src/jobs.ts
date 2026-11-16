@@ -1,5 +1,5 @@
 import type { Organization } from "./organizations";
-import type { Application } from "./applications";
+import type { Application, ApplicationStage } from "./applications";
 
 export const JobType = {
   FULL_TIME: "FULL_TIME",
@@ -72,4 +72,18 @@ export interface CreateJobInput {
   status?: JobStatus;
   organizationId?: string | null;
   createdById?: string | null;
+}
+
+export interface PipelineStageItem {
+  id: string;
+  organizationId: string;
+  jobId?: string | null;
+  name: string;
+  category: ApplicationStage;
+  orderIndex: number;
+  color?: string | null;
+  isTerminal: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }

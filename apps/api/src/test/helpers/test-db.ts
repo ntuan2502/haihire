@@ -29,6 +29,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     "candidate_document",
     "interview",
     "application",
+    "pipeline_stage",
     "candidate",
     "job",
     "tracking_click",

@@ -8,7 +8,13 @@ import {
 } from "@tanstack/react-query";
 import { jobsApi, organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Job, Organization, PaginatedResult } from "@/types";
+import type {
+  Job,
+  Organization,
+  PaginatedResult,
+  PipelineStageItem,
+  UpsertPipelineStagesSchema,
+} from "@/types";
 import { queryKeys } from "./query-keys";
 
 export function useJobs(
@@ -226,6 +232,44 @@ export function useDeleteJobMutation() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useJobStages(jobId: string | null) {
+  const { user } = useAuth();
+  return useQuery<PipelineStageItem[]>({
+    queryKey: queryKeys.jobStages(jobId, user?.organizationId),
+    queryFn: () => {
+      if (!jobId) return [];
+      return jobsApi.getStages(jobId);
+    },
+    enabled: Boolean(jobId),
+  });
+}
+
+export function useUpdateJobStagesMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({
+      jobId,
+      stages,
+    }: {
+      jobId: string;
+      stages: UpsertPipelineStagesSchema["stages"];
+    }) => jobsApi.updateStages(jobId, { stages }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.jobStages(variables.jobId, user?.organizationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.jobId] });
+    },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.jobStages(variables.jobId, user?.organizationId),
+      });
     },
   });
 }

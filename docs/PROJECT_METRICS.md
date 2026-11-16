@@ -8,12 +8,12 @@ Verified inventory across source code, database schema, shared contracts, test s
 
 | Metric                               | Verified Count | Authoritative Source                                                        |
 | :----------------------------------- | :------------: | :-------------------------------------------------------------------------- |
-| **Database Models (`Prisma`)**       |      `22`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
+| **Database Models (`Prisma`)**       |      `25`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
 | **Database Enums (`Prisma`)**        |      `18`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
 | **Soft-Delete Models (`deletedAt`)** |      `3`       | `Job`, `Candidate`, `TrackingLink`                                          |
 | **Backend AppModule Sub-Modules**    |      `15`      | [apps/api/src/app.module.ts](../apps/api/src/app.module.ts)                 |
 | **Backend Controllers**              |      `12`      | [docs/api/overview.md](api/overview.md)                                     |
-| **Backend Endpoints (REST + SSE)**   |     `107`      | `106` REST routes + `1` `@Sse("sse")` stream                                |
+| **Backend Endpoints (REST + SSE)**   |     `109`      | `108` REST routes + `1` `@Sse("sse")` stream                                |
 | **RBAC Roles / Permissions**         |   `5` / `41`   | [packages/shared/src/permissions.ts](../packages/shared/src/permissions.ts) |
 | **Domain Error Codes**               |      `64`      | [packages/shared/src/errors.ts](../packages/shared/src/errors.ts)           |
 | **SSE Event Types**                  |      `17`      | [packages/shared/src/events.ts](../packages/shared/src/events.ts)           |
@@ -26,9 +26,9 @@ Verified inventory across source code, database schema, shared contracts, test s
 
 | Suite / Gate                           |            Count            | Runner / Script                                                                                  |
 | :------------------------------------- | :-------------------------: | :----------------------------------------------------------------------------------------------- |
-| **Backend Unit & Integration Suite**   |  `85` files (`936` tests)   | `pnpm test:api` (`apps/api`, `scripts/__tests__`, `monitoring`)                                  |
+| **Backend Unit & Integration Suite**   |  `90` files (`1024` tests)  | `pnpm test:api` (`apps/api`, `scripts/__tests__`, `monitoring`)                                  |
 | **Frontend Unit & Component Suite**    |  `86` files (`591` tests)   | `pnpm test:web` (Vitest + RTL `jsdom`)                                                           |
-| **Total Workspace Unit Tests**         |        `1527` tests         | `pnpm test` (`Turborepo`)                                                                        |
+| **Total Workspace Unit Tests**         |        `1615` tests         | `pnpm test` (`Turborepo`)                                                                        |
 | **Playwright E2E Suite**               | `9` spec files (`34` tests) | `pnpm test:e2e` (`apps/web/tests/e2e`)                                                           |
 | **CI Architecture Verification Gates** |         `18` / `18`         | `pnpm check:all` ([scripts/check-all.ts](../scripts/check-all.ts))                               |
 | **Tenant-Scoped Backend Modules**      | `8` (`267` queries audited) | `pnpm lint:tenant-scope` ([scripts/check-tenant-scoping.ts](../scripts/check-tenant-scoping.ts)) |

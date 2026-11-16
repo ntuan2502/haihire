@@ -9,10 +9,10 @@ Central index for **HaiHire Platform** architecture, API contracts, engineering 
 | Document                                               | Scope                                                                                       |
 | :----------------------------------------------------- | :------------------------------------------------------------------------------------------ |
 | [System Overview](architecture/system-overview.md)     | Monorepo topology, Next.js 16 + NestJS 12 request flow, Valkey/BullMQ, MinIO                |
-| [Data Model & Schema](architecture/data-model.md)      | `22` Prisma models, `18` PostgreSQL enums, cascading deletes, `deletedAt` soft deletes      |
+| [Data Model & Schema](architecture/data-model.md)      | `25` Prisma models, `18` PostgreSQL enums, cascading deletes, `deletedAt` soft deletes, RLS |
 | [Security & RBAC](architecture/security-rbac.md)       | Cookie JWT + `tokenVersion`, `TenantGuard`, dynamic `ownerId`, `5` roles / `41` permissions |
 | [Engineering Conventions](architecture/conventions.md) | TypeScript strictness, Zod env, `DtoPipe`, 2-way i18n, Shadcn `base-nova` + `"cn"`          |
-| [REST & SSE API Overview](api/overview.md)             | `12` controllers, `107` endpoints, `GlobalExceptionFilter`, `64` `APP_ERROR_CODES`          |
+| [REST & SSE API Overview](api/overview.md)             | `12` controllers, `109` endpoints, `GlobalExceptionFilter`, `64` `APP_ERROR_CODES`          |
 | [Architectural Decisions](decisions/DECISIONS.md)      | Decisions `D-001` through `D-016` (including Prisma `7.10.1` Stable GA)                     |
 | [Project Metrics](PROJECT_METRICS.md)                  | Verified codebase inventory, test totals, env keys, and CI gates                            |
 

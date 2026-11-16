@@ -48,7 +48,7 @@ Consumed directly by both `apps/api` and `apps/web` without build drift:
 Compiled into a single ESM artifact (`dist/server.mjs`) via `esbuild`.
 
 - **15 Domain & Infrastructure Modules** wired in [apps/api/src/app.module.ts](../../apps/api/src/app.module.ts): `PrismaModule`, `RedisModule`, `MinioModule`, `AuthModule`, `EventsModule`, `OrganizationsModule`, `JobsModule`, `ApplicationsModule`, `CandidatesModule`, `InterviewsModule`, `ActivitiesModule`, `EmailModule`, `SourcingModule`, `WebhookSettingsModule`, `MetricsModule`.
-- **12 Controllers / 107 Endpoints:** Full REST and SSE surface documented in [API Overview](../api/overview.md).
+- **12 Controllers / 109 Endpoints:** Full REST and SSE surface documented in [API Overview](../api/overview.md).
 - **Observability:** `GET /health` probes PostgreSQL, Valkey/Redis, and MinIO; `GET /metrics` exposes Prometheus gauges gated by constant-time `METRICS_TOKEN` verification (`404` in production if unset).
 
 ### `apps/web` (Next.js `16.4.5` Portal)

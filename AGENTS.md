@@ -44,8 +44,8 @@ All AI agents working in this repository MUST read and follow:
 | :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
 | **Runtime & Monorepo**                   | Node `26`, `pnpm@12.18.0`, `turbo@^2.11.10`, TypeScript `^6.0.3`                                                                                                                                                                     | [package.json](package.json), [pnpm-workspace.yaml](pnpm-workspace.yaml) |
 | **Shared Contracts (`@haihire/shared`)** | `5` Roles, `41` Permissions, `64` `APP_ERROR_CODES`, `17` SSE `AppEventType`s, `16` `SourcingChannel`s, Zod schemas                                                                                                                  | [packages/shared/src/index.ts](packages/shared/src/index.ts)             |
-| **Backend (`apps/api`)**                 | NestJS `^12.4.0` (Express ESM -> `dist/server.mjs`), `15` feature/infra modules imported in `AppModule`, `12` controllers, `107` endpoints, BullMQ (`email-queue`, `orphan-cleanup-queue`), MinIO (`haihire-resumes` private bucket) | [docs/api/overview.md](docs/api/overview.md)                             |
-| **Database (`PostgreSQL 17.6`)**         | Prisma `7.10.1` (`@prisma/adapter-pg` + `pg.Pool`), `22` models, `18` enums, `3` soft-delete models (`Job`, `Candidate`, `TrackingLink`)                                                                                             | [docs/architecture/data-model.md](docs/architecture/data-model.md)       |
+| **Backend (`apps/api`)**                 | NestJS `^12.4.0` (Express ESM -> `dist/server.mjs`), `15` feature/infra modules imported in `AppModule`, `12` controllers, `109` endpoints, BullMQ (`email-queue`, `orphan-cleanup-queue`), MinIO (`haihire-resumes` private bucket) | [docs/api/overview.md](docs/api/overview.md)                             |
+| **Database (`PostgreSQL 17.6`)**         | Prisma `7.10.1` (`@prisma/adapter-pg` + `pg.Pool`), `25` models, `18` enums, `3` soft-delete models (`Job`, `Candidate`, `TrackingLink`), `21`-table `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`)                                 | [docs/architecture/data-model.md](docs/architecture/data-model.md)       |
 | **Frontend (`apps/web`)**                | Next.js `16.4.5` (`output: "standalone"`, `src/proxy.ts`), React `19.3.1`, Tailwind CSS `^4.3.5` (`oklch`), Shadcn `base-nova` (`@base-ui/react` + `cn@^0.5.2`), TanStack Query `^5.107.1`                                           | [apps/web/README.md](apps/web/README.md)                                 |
 
 ---
@@ -66,11 +66,11 @@ All AI agents working in this repository MUST read and follow:
 | **Documentation Portal**             | [docs/README.md](docs/README.md)                                                         |
 | **Platform Metrics**                 | [docs/PROJECT_METRICS.md](docs/PROJECT_METRICS.md)                                       |
 | **System Overview**                  | [docs/architecture/system-overview.md](docs/architecture/system-overview.md)             |
-| **Data Model (`22` models)**         | [docs/architecture/data-model.md](docs/architecture/data-model.md)                       |
+| **Data Model (`25` models)**         | [docs/architecture/data-model.md](docs/architecture/data-model.md)                       |
 | **Security & RBAC**                  | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)                 |
 | **Conventions (SSOT)**               | [docs/architecture/conventions.md](docs/architecture/conventions.md)                     |
 | **Architectural Decisions**          | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                               |
-| **REST & SSE API (`107` endpoints)** | [docs/api/overview.md](docs/api/overview.md)                                             |
+| **REST & SSE API (`109` endpoints)** | [docs/api/overview.md](docs/api/overview.md)                                             |
 | **Developer Onboarding**             | [docs/guides/onboarding.md](docs/guides/onboarding.md)                                   |
 | **SRE & Ops Runbooks**               | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                                       |
 | **Releases & Versioning**            | [CHANGELOG.md](CHANGELOG.md), [docs/runbooks/versioning.md](docs/runbooks/versioning.md) |

@@ -1,4 +1,4 @@
-# REST & SSE API Overview (`12` Controllers / `107` Endpoints)
+# REST & SSE API Overview (`12` Controllers / `109` Endpoints)
 
 HaiHire exposes a REST API plus one Server-Sent Events (SSE) stream from `apps/api` (`PORT=3001` default, proxied by Next.js `/api/*` rewrites in `apps/web/next.config.ts`).
 
@@ -23,14 +23,14 @@ Every `APP_ERROR_CODES` key (`64` codes in [packages/shared/src/errors.ts](../..
 
 ---
 
-## 2. Endpoint Surface Summary (`107` Total)
+## 2. Endpoint Surface Summary (`109` Total)
 
 | Controller                  | Prefix              | Endpoints | Highlights & Primary Auth                                                                                                                                                                                                             |
 | :-------------------------- | :------------------ | :-------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `AppController`             | `/`                 |    `3`    | `GET /`, `GET /health` (Postgres/Redis/MinIO probes), `GET /metrics` (`METRICS_TOKEN` Bearer)                                                                                                                                         |
 | `AuthController`            | `/auth`             |    `9`    | `POST login/register/refresh/logout/change-password`, `GET me`, `PATCH me/profile`, `PATCH me/preferences`, `GET me/permissions`                                                                                                      |
 | `OrganizationsController`   | `/organizations`    |   `23`    | `POST /`, `POST /join`, `GET my`, `GET my/all`, `POST switch`, members CRUD, role permission overrides/resets, `GET my/audit-log`, `PATCH/DELETE my`, `POST my/transfer-ownership`, invite links CRUD/public/join, `GET public/:slug` |
-| `JobsController`            | `/jobs`             |    `7`    | `GET /`, `GET public`, `GET careers/:orgSlug/:jobSlug`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`                                                                                                                                |
+| `JobsController`            | `/jobs`             |    `9`    | `GET /`, `GET public`, `GET careers/:orgSlug/:jobSlug`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`, `GET :id/stages`, `PATCH :id/stages`                                                                                          |
 | `CandidatesController`      | `/candidates`       |   `12`    | `GET /`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`, documents upload/download/delete (`3`), notes CRUD (`4`)                                                                                                                     |
 | `ApplicationsController`    | `/applications`     |   `15`    | `GET /`, `GET stats`, `GET job/:jobId`, `GET :id`, `POST apply`, `PATCH :id/stage`, `PATCH :id`, `DELETE :id`, documents upload/download/delete (`3`), notes CRUD (`4`)                                                               |
 | `InterviewsController`      | `/interviews`       |    `6`    | `GET /`, `GET :id`, `POST /`, `PATCH :id/scorecard`, `PATCH :id`, `DELETE :id`                                                                                                                                                        |

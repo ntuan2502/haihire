@@ -104,10 +104,10 @@ pnpm check:all       # Full 18-gate CI architecture, security, i18n, doc, and bu
 
 - **Portal:** [docs/README.md](docs/README.md)
 - **System Overview:** [docs/architecture/system-overview.md](docs/architecture/system-overview.md)
-- **Database Schema (`22` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
+- **Database Schema (`25` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
 - **Security & RBAC:** [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)
 - **Engineering Conventions:** [docs/architecture/conventions.md](docs/architecture/conventions.md)
-- **REST & SSE API (`12` Controllers / `107` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
+- **REST & SSE API (`12` Controllers / `109` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
 - **Decisions Log:** [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)
 - **Onboarding & QA:** [docs/guides/onboarding.md](docs/guides/onboarding.md)
 - **SRE Runbooks:** [docs/runbooks/alerts.md](docs/runbooks/alerts.md)

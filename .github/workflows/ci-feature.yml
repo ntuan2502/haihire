@@ -129,6 +129,31 @@ jobs:
     needs: [path-filter, fast-checks]
     if: needs.path-filter.outputs.docs-only != 'true'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -156,11 +181,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup CI Environment & Generate Prisma Client
+      - name: Setup CI Environment & Migrate Database
         if: needs.path-filter.outputs.docs-only != 'true'
         run: |
           cp .env.example .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
           pnpm db:generate
+          pnpm db:migrate
 
       - name: Run API Unit & Integration Tests
         if: needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.ci == 'true'

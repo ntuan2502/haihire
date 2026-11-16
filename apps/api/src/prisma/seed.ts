@@ -420,6 +420,21 @@ function generate200UniqueCandidates(): Array<{
 }
 
 class InterviewSlotManager {
+  // Business-hour interview slots in Vietnam Time (UTC+7): 08:00 - 17:00 ICT
+  private static readonly DAILY_TIMES = [
+    "08:00",
+    "08:45",
+    "09:30",
+    "10:15",
+    "11:00",
+    "11:30",
+    "13:30",
+    "14:15",
+    "15:00",
+    "15:45",
+    "16:30",
+  ] as const;
+
   private usedSlots = new Set<string>();
   private upcomingSlots: Array<{ date: string; time: string }> = [];
   private pastTier1Slots: Array<{ date: string; time: string }> = [];
@@ -431,20 +446,6 @@ class InterviewSlotManager {
   }
 
   private initQueues() {
-    const DAILY_TIMES = [
-      "08:30",
-      "09:15",
-      "10:00",
-      "10:45",
-      "11:30",
-      "13:30",
-      "14:15",
-      "15:00",
-      "15:45",
-      "16:30",
-      "17:15",
-    ];
-
     const now = new Date();
 
     // 1. Upcoming slots: Day +1 to Day +50 (skipping weekends)
@@ -456,7 +457,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.upcomingSlots.push({ date: dateStr, time });
       }
     }
@@ -470,7 +471,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier3Slots.push({ date: dateStr, time });
       }
     }
@@ -483,7 +484,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier2Slots.push({ date: dateStr, time });
       }
     }
@@ -496,7 +497,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier1Slots.push({ date: dateStr, time });
       }
     }
@@ -541,19 +542,6 @@ class InterviewSlotManager {
     date: string;
     time: string;
   } {
-    const DAILY_TIMES = [
-      "08:30",
-      "09:15",
-      "10:00",
-      "10:45",
-      "11:30",
-      "13:30",
-      "14:15",
-      "15:00",
-      "15:45",
-      "16:30",
-      "17:15",
-    ];
     while (true) {
       this.fallbackCounter++;
       const now = new Date();
@@ -564,7 +552,7 @@ class InterviewSlotManager {
       d.setDate(now.getDate() + dayOffset);
       if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         const key = `${dateStr} ${time}`;
         if (!this.usedSlots.has(key)) {
           this.usedSlots.add(key);
@@ -610,7 +598,9 @@ class InterviewSlotManager {
         ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
         : `https://meet.google.com/haihire-demo-${candidateIdx}-${round}`;
 
-    const scheduledAt = toInstant(new Date(`${slot.date}T${slot.time}:00Z`));
+    const scheduledAt = toInstant(
+      new Date(`${slot.date}T${slot.time}:00+07:00`),
+    );
 
     return {
       scheduledAt,

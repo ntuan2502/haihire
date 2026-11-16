@@ -126,6 +126,12 @@ export class PrismaService
         const orgVal = tenantCtx.tenantOrgId ?? "";
         const bypassVal = tenantCtx.bypassRls ? "on" : "off";
         await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${orgVal}, true), set_config('app.bypass_rls', ${bypassVal}, true)`;
+        if (
+          typeof (txClient as { $executeRawUnsafe?: unknown })
+            .$executeRawUnsafe === "function"
+        ) {
+          await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+        }
       }
       return this.als.run(txClient as PrismaService, () =>
         fn(txClient as PrismaService),

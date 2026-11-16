@@ -18,6 +18,7 @@ export const createTrackingLinkSchema = z.object({
 export const updateTrackingLinkSchema = createTrackingLinkSchema
   .partial()
   .extend({
+    jobId: z.string().uuid().nullable().optional(),
     isActive: z.boolean().optional(),
   });
 

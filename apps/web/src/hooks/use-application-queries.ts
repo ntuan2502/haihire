@@ -150,6 +150,7 @@ export function useUpdateStageMutation() {
     mutationFn: ({
       id,
       stage,
+      stageId,
       orderIndex,
       rejectionReason,
       sendRejectionEmail,
@@ -158,6 +159,7 @@ export function useUpdateStageMutation() {
     }: {
       id: string;
       stage: ApplicationStage;
+      stageId?: string;
       orderIndex?: number;
       rejectionReason?: string;
       sendRejectionEmail?: boolean;
@@ -166,6 +168,7 @@ export function useUpdateStageMutation() {
     }) =>
       applicationsApi.updateStage(id, {
         stage,
+        stageId,
         orderIndex,
         rejectionReason,
         sendRejectionEmail,

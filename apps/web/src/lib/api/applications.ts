@@ -69,6 +69,9 @@ export const applicationsApi = {
         ? { stage: stageOrOptions, orderIndex }
         : {
             stage: stageOrOptions.stage,
+            ...(stageOrOptions.stageId !== undefined
+              ? { stageId: stageOrOptions.stageId }
+              : {}),
             orderIndex: stageOrOptions.orderIndex ?? orderIndex,
             ...(stageOrOptions.rejectionReason !== undefined
               ? { rejectionReason: stageOrOptions.rejectionReason }

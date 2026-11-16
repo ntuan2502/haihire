@@ -13,6 +13,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { Role, ApplicationStage } from "@prisma/client";
 import { env } from "../../config/env";
+import { runInTransaction } from "../../prisma/prisma.service";
 import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("Vitest Integration: Tier 2 Boundary & Corner Cases", () => {
@@ -451,5 +452,40 @@ describe("Vitest Integration: Tier 2 Boundary & Corner Cases", () => {
     expect(new Set(allCands.map((c) => c.organizationId))).toEqual(
       new Set([orgA.id, orgB.id]),
     );
+  });
+
+  it("T2-INT-24 [RLS-Auto]: PrismaService.transaction automatically applies SET LOCAL ROLE haihire_rls_user when tenantContextAls is active", async () => {
+    const userA = await createTestUser(ctx.prisma);
+    const orgA = await createTestOrg(ctx.prisma, userA.id, {
+      name: "Org A Auto RLS",
+    });
+    const userB = await createTestUser(ctx.prisma);
+    const orgB = await createTestOrg(ctx.prisma, userB.id, {
+      name: "Org B Auto RLS",
+    });
+
+    await createTestCandidate(ctx.prisma, orgA.id, {
+      email: "auto-rls-a@example.com",
+    });
+    await createTestCandidate(ctx.prisma, orgB.id, {
+      email: "auto-rls-b@example.com",
+    });
+
+    const visibleInOrgATx = await ctx.prisma.runWithTenantContext(orgA.id, () =>
+      runInTransaction(ctx.prisma, (tx) =>
+        tx.candidate.findMany({
+          where: {
+            email: { in: ["auto-rls-a@example.com", "auto-rls-b@example.com"] },
+          },
+          select: { email: true, organizationId: true },
+        }),
+      ),
+    );
+
+    expect(visibleInOrgATx).toHaveLength(1);
+    expect(visibleInOrgATx[0]).toMatchObject({
+      email: "auto-rls-a@example.com",
+      organizationId: orgA.id,
+    });
   });
 });

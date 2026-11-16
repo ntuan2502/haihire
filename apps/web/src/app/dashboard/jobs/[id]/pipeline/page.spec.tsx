@@ -72,6 +72,7 @@ const mockUseJobApplications = vi
 
 vi.mock("@/hooks/use-queries", () => ({
   useJob: () => ({ data: mockJob, isLoading: false }),
+  useJobStages: () => ({ data: undefined, isLoading: false }),
   useJobApplications: () => mockUseJobApplications(),
   useUpdateCandidateMutation: () => ({
     mutateAsync: vi.fn(),

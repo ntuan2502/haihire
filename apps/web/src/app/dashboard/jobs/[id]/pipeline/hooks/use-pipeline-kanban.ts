@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { matchesPersonNameSearch } from "@haihire/shared";
 import {
   useJob,
   useJobApplications,
+  useJobStages,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
@@ -26,14 +26,14 @@ import {
   getTransitionDisabledReason,
 } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import {
-  getCandidateDisplayName,
-  parseCandidateDocuments,
-  fixUtf8String,
-} from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
+import {
+  collectPipelineCandidateDocuments,
+  computePipelineStageCounts,
+  downloadPipelineCandidateDocument,
+  filterAndSortPipelineApplications,
+} from "./pipeline-kanban.helpers";
 
 export function usePipelineKanban(jobId: string) {
   const router = useRouter();
@@ -41,9 +41,10 @@ export function usePipelineKanban(jobId: string) {
   const { canEdit } = useAuth();
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const pipelineStages = usePipelineStages();
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
+  const { data: customJobStages } = useJobStages(jobId);
+  const pipelineStages = usePipelineStages(customJobStages);
   const { data: jobApplications = [], isLoading: appsLoading } =
     useJobApplications(jobId);
 
@@ -170,95 +171,27 @@ export function usePipelineKanban(jobId: string) {
     setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const stageCounts = useMemo(() => {
-    const counts: Record<ApplicationStage, number> = {
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
-    };
-    for (const app of jobApplications) {
-      if (counts[app.stage] !== undefined) {
-        counts[app.stage]++;
-      }
-    }
-    return counts;
-  }, [jobApplications]);
+  const stageCounts = useMemo(
+    () => computePipelineStageCounts(jobApplications),
+    [jobApplications],
+  );
 
   const currentStageConfig = useMemo(() => {
     return (
-      PIPELINE_STAGES.find((s) => s.id === selectedStage) || PIPELINE_STAGES[0]
+      pipelineStages.find((s) => s.id === selectedStage) || pipelineStages[0]
     );
-  }, [selectedStage]);
+  }, [pipelineStages, selectedStage]);
 
-  const filteredCandidates = useMemo(() => {
-    return jobApplications
-      .filter((app) => app.stage === selectedStage)
-      .filter((app) => {
-        if (!searchQuery.trim()) return true;
-        return matchesPersonNameSearch(
-          {
-            firstName: app.candidate?.firstName,
-            lastName: app.candidate?.lastName,
-            displayName: app.candidate?.displayName,
-            name: getCandidateDisplayName(app),
-            candidateName: app.candidateName,
-            email: app.candidateEmail,
-          },
-          searchQuery,
-        );
-      })
-      .sort((a, b) => {
-        if (sortBy === "score") {
-          const scoreA = (a as unknown as { matchScore?: number }).matchScore;
-          const scoreB = (b as unknown as { matchScore?: number }).matchScore;
-          if (
-            scoreA !== undefined &&
-            scoreA !== null &&
-            scoreB !== undefined &&
-            scoreB !== null &&
-            scoreA !== scoreB
-          ) {
-            return scoreB - scoreA;
-          }
-          if (
-            (scoreA === undefined || scoreA === null) &&
-            scoreB !== undefined &&
-            scoreB !== null
-          ) {
-            return 1;
-          }
-          if (
-            scoreA !== undefined &&
-            scoreA !== null &&
-            (scoreB === undefined || scoreB === null)
-          ) {
-            return -1;
-          }
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        if (sortBy === "newest") {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        if (sortBy === "oldest") {
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-        }
-        if (sortBy === "name") {
-          return getCandidateDisplayName(a).localeCompare(
-            getCandidateDisplayName(b),
-          );
-        }
-        return 0;
-      });
-  }, [jobApplications, selectedStage, searchQuery, sortBy]);
+  const filteredCandidates = useMemo(
+    () =>
+      filterAndSortPipelineApplications(
+        jobApplications,
+        selectedStage,
+        searchQuery,
+        sortBy,
+      ),
+    [jobApplications, selectedStage, searchQuery, sortBy],
+  );
 
   useEffect(() => {
     if (appsLoading) return;
@@ -336,36 +269,10 @@ export function usePipelineKanban(jobId: string) {
     }
   };
 
-  const candidateDocuments = useMemo(() => {
-    if (!selectedCandidate) return [];
-    const seenUrls = new Set<string>();
-    const allDocs: CandidateDocument[] = [];
-    const relatedApps = jobApplications.filter(
-      (a) =>
-        a.candidateEmail &&
-        a.candidateEmail === selectedCandidate.candidateEmail,
-    );
-    const appsToScan =
-      relatedApps.length > 0 ? relatedApps : [selectedCandidate];
-
-    for (const a of appsToScan) {
-      const docs = parseCandidateDocuments({
-        id: a.id,
-        resumeUrl: a.resumeUrl,
-        resumeFileName: a.resumeFileName,
-        resumeFileSize: a.resumeFileSize,
-        resumeMimeType: a.resumeMimeType,
-        createdAt: a.createdAt,
-      });
-      for (const d of docs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocs.push({ ...d, sourceApplicationId: a.id });
-        }
-      }
-    }
-    return allDocs;
-  }, [selectedCandidate, jobApplications]);
+  const candidateDocuments = useMemo(
+    () => collectPipelineCandidateDocuments(selectedCandidate, jobApplications),
+    [selectedCandidate, jobApplications],
+  );
 
   const [pendingRejectCandidate, setPendingRejectCandidate] =
     useState<Application | null>(null);
@@ -380,9 +287,11 @@ export function usePipelineKanban(jobId: string) {
     >,
   ) => {
     try {
+      const matchedStage = pipelineStages.find((s) => s.id === newStage);
       await updateStageMutation.mutateAsync({
         id: candidate.id,
         stage: newStage,
+        ...(matchedStage?.stageId ? { stageId: matchedStage.stageId } : {}),
         ...(options?.rejectionReason !== undefined
           ? { rejectionReason: options.rejectionReason }
           : {}),
@@ -504,27 +413,13 @@ export function usePipelineKanban(jobId: string) {
     filename?: string,
     targetAppId?: string,
   ) => {
-    const rawFileName = filename || "document.pdf";
-    const downloadFileName = fixUtf8String(rawFileName);
-    const queryParams = new URLSearchParams();
-    if (url) queryParams.set("url", url);
-    if (downloadFileName) queryParams.set("name", downloadFileName);
-    const queryString = queryParams.toString()
-      ? `?${queryParams.toString()}`
-      : "";
-
-    const activeAppId = targetAppId || selectedCandidate?.id;
-    if (!activeAppId) {
-      toast.error(t("errors.cannotDownloadDocument"));
-      return;
-    }
-    const downloadPath = `/applications/${activeAppId}/documents/download${queryString}`;
-
-    try {
-      await downloadAuthenticatedFile(downloadPath, downloadFileName);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, t));
-    }
+    await downloadPipelineCandidateDocument(
+      url,
+      filename,
+      targetAppId || selectedCandidate?.id,
+      () => toast.error(t("errors.cannotDownloadDocument")),
+      (err) => toast.error(getApiErrorMessage(err, t)),
+    );
   };
 
   const candidateCountText =

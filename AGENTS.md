@@ -9,8 +9,8 @@
 | Metric                           | Value                   | Reference / Notes                 |
 | :------------------------------- | :---------------------- | :-------------------------------- |
 | **Release Target**               | `Unreleased`            | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `d35615fb` (2026-11-14) | Author: ntuan2502                 |
-| **Workspace Unit Tests**         | `1527 passed`           | Backend: 936, Frontend: 591       |
+| **Commit Baseline**              | `4170b208` (2026-11-16) | Author: ntuan2502                 |
+| **Workspace Unit Tests**         | `1615 passed`           | Backend: 1024, Frontend: 591      |
 | **E2E Playwright Specs**         | `67 specs`              | End-to-end recruitment lifecycle  |
 | **CI Architecture Gates**        | `18/18 gates`           | `pnpm check:all` mandatory gates  |
 | **Environment Configuration**    | `56 keys`               | 100% key parity & codebase sync   |

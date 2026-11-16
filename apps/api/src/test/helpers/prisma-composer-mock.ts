@@ -649,10 +649,17 @@ export function createMockTable<T = MockRecord>(
               for (const [sortKey, sortDir] of orderClauses) {
                 const va = (a as MockRecord)[sortKey];
                 const vb = (b as MockRecord)[sortKey];
-                const sa = String(va ?? "");
-                const sb = String(vb ?? "");
-                if (sa < sb) return sortDir === "desc" ? 1 : -1;
-                if (sa > sb) return sortDir === "desc" ? -1 : 1;
+                let cmp = 0;
+                if (typeof va === "number" && typeof vb === "number") {
+                  cmp = va - vb;
+                } else if (va instanceof Date && vb instanceof Date) {
+                  cmp = va.getTime() - vb.getTime();
+                } else {
+                  const sa = String(va ?? "");
+                  const sb = String(vb ?? "");
+                  cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+                }
+                if (cmp !== 0) return sortDir === "desc" ? -cmp : cmp;
               }
               return 0;
             });
@@ -801,11 +808,57 @@ export function createMockPrismaService(
     },
   });
 
+  const snapshotStores = () => {
+    const snapshots = new Map<object[], object[]>();
+    const capture = (tbl: unknown) => {
+      if (
+        tbl &&
+        typeof tbl === "object" &&
+        "store" in tbl &&
+        Array.isArray((tbl as { store?: unknown }).store)
+      ) {
+        const store = (tbl as { store: object[] }).store;
+        if (!snapshots.has(store)) {
+          snapshots.set(
+            store,
+            store.map((row) =>
+              row && typeof row === "object" ? { ...row } : row,
+            ),
+          );
+        }
+      }
+    };
+    for (const [k, v] of Object.entries(tableMap)) {
+      if (Array.isArray(v)) getTable(k);
+      else capture(v);
+    }
+    Object.values(dynamicTables).forEach(capture);
+    return snapshots;
+  };
+
+  const restoreStores = (snapshots: Map<object[], object[]>) => {
+    for (const [store, copy] of snapshots.entries()) {
+      store.splice(0, store.length, ...copy);
+    }
+    for (const key of Object.keys(dynamicTables)) {
+      const store = dynamicTables[key].store as object[];
+      if (!snapshots.has(store)) {
+        store.splice(0, store.length);
+      }
+    }
+  };
+
   const txSpy = vi.fn(async (fn: unknown) => {
-    if (typeof fn === "function")
-      return (fn as (client: unknown) => unknown)(proxyInstance);
-    if (Array.isArray(fn)) return Promise.all(fn);
-    return fn;
+    const snapshots = snapshotStores();
+    try {
+      if (typeof fn === "function")
+        return await (fn as (client: unknown) => unknown)(proxyInstance);
+      if (Array.isArray(fn)) return await Promise.all(fn);
+      return fn;
+    } catch (err) {
+      restoreStores(snapshots);
+      throw err;
+    }
   });
 
   proxyTarget.$transaction = txSpy;

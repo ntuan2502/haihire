@@ -176,6 +176,9 @@ export class JobsService {
         description: true,
         requirements: true,
         salaryRange: true,
+        salaryMin: true,
+        salaryMax: true,
+        salaryCurrency: true,
         status: true,
         organizationId: true,
         createdById: true,
@@ -287,6 +290,9 @@ export class JobsService {
         description: true,
         requirements: true,
         salaryRange: true,
+        salaryMin: true,
+        salaryMax: true,
+        salaryCurrency: true,
         status: true,
         createdById: true,
         createdAt: true,
@@ -587,6 +593,9 @@ export class JobsService {
         description: dto.description,
         requirements: dto.requirements ?? null,
         salaryRange: dto.salaryRange ?? null,
+        salaryMin: dto.salaryMin ?? null,
+        salaryMax: dto.salaryMax ?? null,
+        salaryCurrency: dto.salaryCurrency ?? null,
         status: dto.status ?? "PUBLISHED",
         organizationId: targetOrgId,
         createdById: (userId || dto.createdById) ?? null,
@@ -638,6 +647,11 @@ export class JobsService {
           : {}),
         ...(dto.salaryRange !== undefined
           ? { salaryRange: dto.salaryRange }
+          : {}),
+        ...(dto.salaryMin !== undefined ? { salaryMin: dto.salaryMin } : {}),
+        ...(dto.salaryMax !== undefined ? { salaryMax: dto.salaryMax } : {}),
+        ...(dto.salaryCurrency !== undefined
+          ? { salaryCurrency: dto.salaryCurrency }
           : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
       },

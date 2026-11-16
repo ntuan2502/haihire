@@ -775,4 +775,108 @@ describe("Vitest Integration: Tier 1 Feature Coverage (16 Core Features)", () =>
     });
     expect(deleteBlockedRes.status).toBe(400);
   });
+
+  it("T1-INT-F18 [Schema-R5]: structured job salary, StoredFile relations, and OutboxEvent emission + RLS isolation", async () => {
+    const owner = await createTestUser(ctx.prisma, { role: Role.ADMIN });
+    const org = await createTestOrg(ctx.prisma, owner.id, {
+      name: "Schema R5 Org",
+    });
+    const otherOrg = await createTestOrg(ctx.prisma, owner.id, {
+      name: "Schema R5 Other Org",
+    });
+    const jwtService = new JwtService({ secret: env.JWT_SECRET });
+    const agent = ctx.createAgent();
+    const cookie = generateTestAuthCookie(jwtService, owner, org.id);
+    agent.setCookie("haihire_token", cookie.replace("haihire_token=", ""));
+
+    // 1. Create Job with structured salary fields
+    const createJobRes = await agent.post("/jobs", {
+      title: "Staff Platform Engineer",
+      department: "Platform",
+      location: "Remote",
+      description: "Build core platform reliability.",
+      salaryRange: "$4,000 - $6,000",
+      salaryMin: 4000,
+      salaryMax: 6000,
+      salaryCurrency: "USD",
+    });
+    expect(createJobRes.status).toBe(201);
+    const job = (await createJobRes.json()) as {
+      id: string;
+      salaryMin: number | null;
+      salaryMax: number | null;
+      salaryCurrency: string | null;
+    };
+    expect(job.salaryMin).toBe(4000);
+    expect(job.salaryMax).toBe(6000);
+    expect(job.salaryCurrency).toBe("USD");
+
+    // 2. StoredFile normalized registry linked to Candidate, CandidateDocument, Application
+    const storedFile = await ctx.prisma.storedFile.create({
+      data: {
+        organizationId: org.id,
+        objectKey: `${org.id}/resumes/staff-cv-${Date.now()}.pdf`,
+        originalName: "staff-cv.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 24576,
+      },
+    });
+    const candidate = await ctx.prisma.candidate.create({
+      data: {
+        organizationId: org.id,
+        firstName: "Linh",
+        lastName: "Tran",
+        email: `linh-r5-${Date.now()}@example.com`,
+        resumeFileId: storedFile.id,
+      },
+    });
+    const doc = await ctx.prisma.candidateDocument.create({
+      data: {
+        candidateId: candidate.id,
+        organizationId: org.id,
+        name: "staff-cv.pdf",
+        url: storedFile.objectKey,
+        size: storedFile.sizeBytes,
+        mimeType: storedFile.mimeType,
+        storedFileId: storedFile.id,
+      },
+    });
+    expect(doc.storedFileId).toBe(storedFile.id);
+
+    const app = await ctx.prisma.application.create({
+      data: {
+        organizationId: org.id,
+        jobId: job.id,
+        candidateId: candidate.id,
+        stage: "APPLIED",
+        resumeFileId: storedFile.id,
+      },
+    });
+    expect(app.resumeFileId).toBe(storedFile.id);
+
+    // 3. Stage update emits OutboxEvent inside the tenant
+    const moveRes = await agent.patch(`/applications/${app.id}/stage`, {
+      stage: "SCREENING",
+    });
+    expect(moveRes.status).toBe(200);
+
+    const outboxEvents = await ctx.prisma.outboxEvent.findMany({
+      where: {
+        organizationId: org.id,
+        aggregateId: app.id,
+        eventType: "APPLICATION_STAGE_CHANGED",
+      },
+    });
+    expect(outboxEvents).toHaveLength(1);
+    expect(outboxEvents[0]?.status).toBe("PENDING");
+    expect(outboxEvents[0]?.aggregateType).toBe("Application");
+
+    // 4. RLS isolates StoredFile and OutboxEvent from another tenant
+    const leaked = await ctx.prisma.withTenantRls(otherOrg.id, async (tx) => ({
+      files: await tx.storedFile.findMany({ where: { id: storedFile.id } }),
+      events: await tx.outboxEvent.findMany({ where: { aggregateId: app.id } }),
+    }));
+    expect(leaked.files).toHaveLength(0);
+    expect(leaked.events).toHaveLength(0);
+  });
 });

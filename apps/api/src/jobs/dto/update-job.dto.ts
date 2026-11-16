@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from "class-validator";
 import {
   JobStatus,
   JobType,
@@ -46,6 +53,21 @@ export class UpdateJobDto {
   @IsString()
   @IsOptional()
   salaryRange?: string;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  salaryMin?: number | null;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  salaryMax?: number | null;
+
+  @IsString()
+  @MaxLength(10)
+  @IsOptional()
+  salaryCurrency?: string | null;
 
   @IsEnum(JobStatus)
   @IsOptional()

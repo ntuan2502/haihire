@@ -57,6 +57,7 @@ export interface Application {
   candidateEmail: string;
   candidatePhone?: string | null;
   stage: ApplicationStage;
+  stageId?: string | null;
   rejectionReason?: string | null;
   rejectedAt?: string | null;
   resumeUrl: string;
@@ -104,6 +105,7 @@ export interface ApplicationNote {
 
 export interface UpdateApplicationStageInput {
   stage: ApplicationStage;
+  stageId?: string;
   orderIndex?: number;
   rejectionReason?: string;
   sendRejectionEmail?: boolean;

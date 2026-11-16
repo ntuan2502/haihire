@@ -177,6 +177,8 @@ model Organization {
   applicationNotes ApplicationNote[]
   candidateNotes   CandidateNote[]
   pipelineStages   PipelineStage[]
+  storedFiles      StoredFile[]
+  outboxEvents     OutboxEvent[]
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
@@ -268,6 +270,9 @@ model Job {
   description     String
   requirements    String?
   salaryRange     String?
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String?          @db.VarChar(10)
   status          JobStatus        @default(PUBLISHED)
   createdById     String?
   createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
@@ -300,6 +305,8 @@ model Candidate {
   resumeFileName String?
   resumeFileSize Int?
   resumeMimeType String?             @default("application/pdf")
+  resumeFileId   String?
+  resumeFile     StoredFile?         @relation(fields: [resumeFileId], references: [id], onDelete: SetNull)
   applications   Application[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
@@ -332,6 +339,8 @@ model Application {
   resumeFileName   String?
   resumeFileSize   Int?
   resumeMimeType   String?           @default("application/pdf")
+  resumeFileId     String?
+  resumeFile       StoredFile?       @relation(fields: [resumeFileId], references: [id], onDelete: SetNull)
   orderIndex       Int               @default(0)
   trackingLinkId   String?
   trackingLink     TrackingLink?     @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
@@ -518,6 +527,8 @@ model CandidateDocument {
   size           Int?
   mimeType       String?      @default("application/pdf")
   type           String?      @default("Resume")
+  storedFileId   String?
+  storedFile     StoredFile?  @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -688,4 +699,46 @@ model PipelineStage {
 
   @@index([organizationId, jobId, orderIndex])
   @@map("pipeline_stage")
+}
+
+model StoredFile {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  objectKey          String              @unique
+  bucket             String              @default("haihire-resumes")
+  originalName       String
+  mimeType           String
+  sizeBytes          Int
+  checksum           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  candidates         Candidate[]
+  applications       Application[]
+  candidateDocuments CandidateDocument[]
+
+  @@index([organizationId, createdAt])
+  @@map("stored_file")
+}
+
+model OutboxEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  eventType      String
+  aggregateType  String
+  aggregateId    String
+  payload        Json
+  status         String       @default("PENDING")
+  attempts       Int          @default(0)
+  nextAttemptAt  DateTime     @default(now())
+  processedAt    DateTime?
+  lastError      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([organizationId, createdAt])
+  @@map("outbox_event")
 }

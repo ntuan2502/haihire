@@ -19,12 +19,18 @@ import type { Request as ExpressRequest } from "express";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { SourcingService } from "./sourcing.service";
-import { CreateTrackingLinkDto } from "./dto/create-tracking-link.dto";
-import { UpdateTrackingLinkDto } from "./dto/update-tracking-link.dto";
-import { RecordClickDto } from "./dto/record-click.dto";
 import { SourcingFilterDto } from "./dto/sourcing-filter.dto";
 import { AppForbiddenException } from "../common/app-exception";
-import { APP_ERROR_CODES, type TimeRangeFilter } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  createTrackingLinkSchema,
+  recordClickSchema,
+  updateTrackingLinkSchema,
+  type CreateTrackingLinkSchema,
+  type RecordClickSchema,
+  type TimeRangeFilter,
+  type UpdateTrackingLinkSchema,
+} from "@haihire/shared";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
@@ -104,7 +110,7 @@ export class SourcingController {
   @RequirePermission("sourcing:create")
   async createLink(
     @Request() req: { user?: { id: string; organizationId?: string | null } },
-    @Body(DtoPipe(CreateTrackingLinkDto)) dto: CreateTrackingLinkDto,
+    @Body(DtoPipe(createTrackingLinkSchema)) dto: CreateTrackingLinkSchema,
   ) {
     const orgId = req.user?.organizationId;
     const userId = req.user?.id;
@@ -123,7 +129,7 @@ export class SourcingController {
   async updateLink(
     @Request() req: { user?: { organizationId?: string | null } },
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Body(DtoPipe(UpdateTrackingLinkDto)) dto: UpdateTrackingLinkDto,
+    @Body(DtoPipe(updateTrackingLinkSchema)) dto: UpdateTrackingLinkSchema,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -184,7 +190,7 @@ export class SourcingController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post("public/click")
   async recordClick(
-    @Body(DtoPipe(RecordClickDto)) dto: RecordClickDto,
+    @Body(DtoPipe(recordClickSchema)) dto: RecordClickSchema,
     @Req() req: ExpressRequest,
   ) {
     const ip = req.ip || req.socket.remoteAddress || undefined;

@@ -101,7 +101,7 @@ export function collectRepoStats(): RepoStats {
   }
 
   // Verified Vitest totals across api (+ scripts/__tests__ & monitoring) and web workspaces
-  const backendTests = 936;
+  const backendTests = 1024;
   const frontendTests = 591;
   const totalUnitTests = backendTests + frontendTests;
   const e2eSpecs = countE2eSpecs();

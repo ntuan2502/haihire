@@ -43,6 +43,8 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     "email_setting",
     "email_template",
     "invite_link",
+    "outbox_event",
+    "stored_file",
     "organization_member",
     "organization",
     "user",

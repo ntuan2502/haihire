@@ -46,6 +46,9 @@ export interface Job {
   description: string;
   requirements?: string | null;
   salaryRange?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
   status: JobStatus;
   createdById?: string | null;
   organizationId: string;
@@ -69,6 +72,9 @@ export interface CreateJobInput {
   description: string;
   requirements?: string | null;
   salaryRange?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
   status?: JobStatus;
   organizationId?: string | null;
   createdById?: string | null;

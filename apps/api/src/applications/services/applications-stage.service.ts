@@ -236,6 +236,23 @@ export class ApplicationsStageService {
           },
         });
       }
+
+      if (this.prisma.outboxEvent?.create) {
+        await this.prisma.outboxEvent.create({
+          data: {
+            organizationId: orgId,
+            eventType: "APPLICATION_STAGE_CHANGED",
+            aggregateType: "Application",
+            aggregateId: updated.id,
+            payload: {
+              applicationId: updated.id,
+              previousStage: oldStage,
+              nextStage: updated.stage,
+              stageId: updated.stageId ?? null,
+            },
+          },
+        });
+      }
     }
 
     return updated;

@@ -26,6 +26,8 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
     selectedApp: table.selectedApp,
     setSelectedApp: table.setSelectedApp,
     jobMap: table.jobMap,
+    drawerTab: props.drawerTab,
+    onDrawerTabChange: props.onDrawerTabChange,
   });
 
   return (

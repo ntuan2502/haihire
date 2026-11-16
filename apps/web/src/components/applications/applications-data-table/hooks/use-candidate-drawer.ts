@@ -35,11 +35,15 @@ import type {
   CandidateDocument,
 } from "@/types";
 
+import type { DrawerTabId } from "../types";
+
 interface UseCandidateDrawerProps {
   initialApplications: Application[];
   selectedApp: Application | null;
   setSelectedApp: Dispatch<SetStateAction<Application | null>>;
   jobMap: Map<string, Job>;
+  drawerTab?: DrawerTabId;
+  onDrawerTabChange?: (tab: DrawerTabId) => void;
 }
 
 export function useCandidateDrawer({
@@ -47,6 +51,8 @@ export function useCandidateDrawer({
   selectedApp,
   setSelectedApp,
   jobMap,
+  drawerTab: propDrawerTab,
+  onDrawerTabChange,
 }: UseCandidateDrawerProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -54,7 +60,15 @@ export function useCandidateDrawer({
   const updateStageMutation = useUpdateStageMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
-  const [drawerTab, setDrawerTab] = useState<string>("overview");
+  const [localDrawerTab, setLocalDrawerTab] = useState<string>("overview");
+  const drawerTab = propDrawerTab ?? localDrawerTab;
+  const setDrawerTab = (tab: string) => {
+    if (onDrawerTabChange) {
+      onDrawerTabChange(tab as DrawerTabId);
+    } else {
+      setLocalDrawerTab(tab);
+    }
+  };
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =

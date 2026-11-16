@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
@@ -23,12 +23,19 @@ export function useApplicationsTable({
   rowsPerPage: propRowsPerPage,
   search: propSearch,
   stageFilter,
+  scoreFilter: propScoreFilter,
+  sortField: propSortField,
+  sortDirection: propSortDirection,
+  selectedAppId: propSelectedAppId,
   stageCounts,
   jobFilter: propJobFilter,
   onPageChange,
   onLimitChange,
   onSearchChange,
   onStageFilterChange,
+  onScoreFilterChange,
+  onSortChange,
+  onSelectedAppIdChange,
   onJobFilterChange,
 }: ApplicationsDataTableProps) {
   const router = useRouter();
@@ -36,24 +43,23 @@ export function useApplicationsTable({
   const { canEdit } = useAuth();
   const deleteAppMutation = useDeleteApplicationMutation();
 
-  const isServerPaginated = Boolean(onPageChange);
+  const isServerPaginated = Boolean(
+    onPageChange && propTotalCount !== undefined,
+  );
   const [localSearch, setLocalSearch] = useState("");
-  const search =
-    isServerPaginated && propSearch !== undefined ? propSearch : localSearch;
+  const search = propSearch !== undefined ? propSearch : localSearch;
 
   const [localRowsPerPage, setLocalRowsPerPage] = useState<number>(20);
   const rowsPerPage =
-    isServerPaginated && propRowsPerPage !== undefined
-      ? propRowsPerPage
-      : localRowsPerPage;
+    propRowsPerPage !== undefined ? propRowsPerPage : localRowsPerPage;
 
   const [localCurrentPage, setLocalCurrentPage] = useState<number>(1);
   const currentPage =
-    isServerPaginated && propCurrentPage !== undefined
-      ? propCurrentPage
-      : localCurrentPage;
+    propCurrentPage !== undefined ? propCurrentPage : localCurrentPage;
 
-  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [localSelectedApp, setLocalSelectedApp] = useState<Application | null>(
+    null,
+  );
   const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(
     null,
   );
@@ -64,7 +70,20 @@ export function useApplicationsTable({
 
   // Filter Drawer State & Secondary Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [scoreFilter, setScoreFilter] = useState<string>("ALL");
+  const [localScoreFilter, setLocalScoreFilter] = useState<string>("ALL");
+  const scoreFilter =
+    propScoreFilter !== undefined ? propScoreFilter || "ALL" : localScoreFilter;
+  const setScoreFilter = useCallback(
+    (val: string) => {
+      if (onScoreFilterChange) {
+        onScoreFilterChange(val === "ALL" ? undefined : val);
+      } else {
+        setLocalScoreFilter(val);
+        setLocalCurrentPage(1);
+      }
+    },
+    [onScoreFilterChange],
+  );
   const [localJobFilter, setLocalJobFilter] = useState<string>("ALL");
   const currentJobFilter =
     propJobFilter !== undefined ? propJobFilter || "ALL" : localJobFilter;
@@ -129,6 +148,35 @@ export function useApplicationsTable({
     );
   }, [initialApplications, fixedJobId]);
 
+  const selectedApp = useMemo(() => {
+    if (propSelectedAppId !== undefined) {
+      if (!propSelectedAppId) return null;
+      return (
+        baseApplications.find(
+          (a) =>
+            String(a.id) === String(propSelectedAppId) ||
+            String(a.candidateId) === String(propSelectedAppId),
+        ) ?? null
+      );
+    }
+    return localSelectedApp;
+  }, [propSelectedAppId, baseApplications, localSelectedApp]);
+
+  const setSelectedApp = useCallback(
+    (
+      next:
+        Application | null | ((prev: Application | null) => Application | null),
+    ) => {
+      const resolved = typeof next === "function" ? next(selectedApp) : next;
+      if (onSelectedAppIdChange) {
+        onSelectedAppIdChange(resolved ? resolved.id : null);
+      } else {
+        setLocalSelectedApp(resolved);
+      }
+    },
+    [onSelectedAppIdChange, selectedApp],
+  );
+
   const setJobFilter = (val: string) => {
     if (onJobFilterChange) {
       onJobFilterChange(val === "ALL" ? undefined : val);
@@ -175,6 +223,9 @@ export function useApplicationsTable({
     setJobFilter,
     setScoreFilter,
     handleClearStages,
+    sortField: propSortField,
+    sortDirection: propSortDirection,
+    onSortChange,
   });
 
   const handleConfirmDelete = async () => {

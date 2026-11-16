@@ -5,13 +5,14 @@ import type { Application, Job } from "@/types";
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
+let mockSearchParamString = "";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     replace: mockReplace,
   }),
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => new URLSearchParams(mockSearchParamString),
 }));
 
 vi.mock("@/context/auth-context", () => ({
@@ -126,5 +127,55 @@ describe("usePipelineKanban", () => {
     });
 
     expect(result.current.overviewSections.notes).toBe(!initialShowNotes);
+  });
+
+  it("initializes and syncs search, sortBy, tab, and collapsed state with URL query params", () => {
+    mockSearchParamString =
+      "stage=INTERVIEW&search=Nguyen&sortBy=score&tab=interviews&collapsed=1";
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
+
+    const { result } = renderHook(() => usePipelineKanban("job-1"));
+
+    expect(result.current.selectedStage).toBe("INTERVIEW");
+    expect(result.current.searchQuery).toBe("Nguyen");
+    expect(result.current.sortBy).toBe("score");
+    expect(result.current.candidateTab).toBe("interviews");
+    expect(result.current.isListCollapsed).toBe(true);
+
+    act(() => {
+      result.current.setSearchQuery("Tran");
+    });
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      expect.stringContaining("search=Tran"),
+    );
+
+    act(() => {
+      result.current.setSortBy("name");
+    });
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      expect.stringContaining("sortBy=name"),
+    );
+
+    act(() => {
+      result.current.setCandidateTab("documents");
+    });
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      expect.stringContaining("tab=documents"),
+    );
+
+    act(() => {
+      result.current.setIsListCollapsed(false);
+    });
+    const lastUrl = replaceStateSpy.mock.calls.at(-1)?.[2] as string;
+    expect(lastUrl).not.toContain("collapsed=");
+
+    mockSearchParamString = "";
+    replaceStateSpy.mockRestore();
   });
 });

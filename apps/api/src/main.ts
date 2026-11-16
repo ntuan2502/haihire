@@ -1,5 +1,4 @@
 import "reflect-metadata";
-import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { env } from "./config/env";
@@ -197,15 +196,6 @@ async function bootstrap() {
       }
       next();
     },
-  );
-
-  // Global validation pipe for incoming request payloads
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
   );
 
   // Global exception filter handling Rate Limiting (429) and standard HTTP errors

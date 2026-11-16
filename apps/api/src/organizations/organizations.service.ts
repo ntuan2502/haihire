@@ -78,6 +78,10 @@ export class OrganizationsService implements OnModuleInit {
     return this.members.getMembers(userId);
   }
 
+  getInterviewers(userId: string) {
+    return this.members.getInterviewers(userId);
+  }
+
   updateMemberRole(
     userId: string,
     targetMemberId: string,

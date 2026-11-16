@@ -6,7 +6,11 @@ import type { ApplicationStage } from "@/types";
 import { ChannelBadge } from "../channel-badge";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { Pagination } from "@/components/shared/pagination";
-import { getInitials, formatRelativeTime } from "@/lib/utils";
+import {
+  getCandidateDisplayName,
+  getInitials,
+  formatRelativeTime,
+} from "@/lib/utils";
 import { Users } from "lucide-react";
 import Link from "next/link";
 
@@ -82,7 +86,8 @@ export function AttributionLogTab({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {logs.map((log) => {
-                  const initials = getInitials(log.candidateName);
+                  const displayName = getCandidateDisplayName(log);
+                  const initials = getInitials(displayName);
 
                   return (
                     <tr
@@ -100,7 +105,7 @@ export function AttributionLogTab({
                               href={`/dashboard/candidates?id=${log.candidateId}`}
                               className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
                             >
-                              {log.candidateName}
+                              {displayName}
                             </Link>
                             <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                               {log.candidateEmail}

@@ -1,185 +1,90 @@
 # Developer Onboarding Guide
 
-Welcome to the HaiHire engineering team! This guide will walk you through setting up your local development environment, understanding our system architecture, and running your first full-stack workflow.
+Welcome to **HaiHire**. This guide sets up a complete local multi-tenant workspace (Next.js 16 frontend, NestJS 12 backend, PostgreSQL 17, Valkey 8, and MinIO S3 storage).
 
 ---
 
-## 🛠️ 1. Prerequisites
+## 1. Prerequisites
 
-Before setting up the repository, verify that your local machine has the required tooling installed:
-
-| Tool                        | Required Version  | Verification Command     | Notes                                                        |
-| :-------------------------- | :---------------- | :----------------------- | :----------------------------------------------------------- |
-| **Node.js**                 | `>= 26.0.0` (LTS) | `node -v`                | Node 26 provides native Temporal and modern V8 performance.  |
-| **pnpm**                    | `>= 12.0.0`       | `pnpm -v`                | Installed via `npm install -g pnpm@12` (never use Corepack). |
-| **Docker & Docker Compose** | `>= 27.0.0`       | `docker compose version` | Used for local PostgreSQL, Valkey, and MinIO storage.        |
-| **Git**                     | `>= 2.40.0`       | `git -v`                 | Conventional Commits enforced via Husky hooks.               |
+- **Node.js `26.x`** (matching `node:26-alpine` production images and `@types/node@^26.6.6`)
+- **`pnpm@12.18.0`** (`corepack enable` or `npm i -g pnpm@12`)
+- **Docker Engine / Docker Desktop** with Compose v2
 
 ---
 
-## 🚀 2. Step-by-Step Environment Setup
-
-### Step 2.1: Clone the Repository
+## 2. Initial Workspace Bootstrap
 
 ```bash
-git clone https://github.com/ntuan2502/haihire.git
-cd haihire
-```
-
-### Step 2.2: Install Monorepo Dependencies
-
-Install all workspace dependencies using `pnpm`:
-
-```bash
+# 1. Clone and install dependencies
 pnpm install
-```
 
-### Step 2.3: Configure Environment
-
-HaiHire uses a unified single-source-of-truth environment architecture. Create your local development environment by copying the root template:
-
-```bash
+# 2. Copy root environment template (Single Source of Truth)
 cp .env.example .env
+
+# 3. Start infrastructure services (PostgreSQL 17.6, MinIO, Valkey 8.0.2)
+docker compose up -d postgres minio redis
+
+# 4. Generate Prisma 7 client and push schema
+pnpm db:generate
+pnpm db:update
+
+# 5. Populate development workspace data
+pnpm db:seed
 ```
 
-_(On Windows PowerShell, use `Copy-Item .env.example .env`)_
+---
 
-All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from this single root `.env` file. No package-level `.env` files are required.
+## 3. Running Services Locally
 
-### Step 2.4: Spin Up Infrastructure Containers
-
-Start the local PostgreSQL database, Valkey cache/queue, and MinIO S3 object storage:
-
-```bash
-pnpm docker:infra:up
-```
-
-Verify that all three containers are healthy:
-
-```bash
-docker ps
-```
-
-You should see:
-
-- `haihire-postgres` on port `15432`
-- `haihire-valkey` on port `16379`
-- `haihire-minio` on ports `19000` (API) and `19001` (Web Console)
-
-### Step 2.5: Initialize Database Schema & Demo Seed
-
-Push the Prisma contract schema to PostgreSQL and populate initial demo data (organizations, recruiter accounts, jobs, and candidate pipelines):
-
-```bash
-pnpm db:setup
-```
-
-### Step 2.6: Launch Development Servers
-
-Start both backend and frontend applications concurrently:
+Start both apps simultaneously via Turborepo:
 
 ```bash
 pnpm dev
 ```
 
-Once running, access your local services:
-
-- 🌐 **Recruiter & Candidate Web Portal:** [http://localhost:13000](http://localhost:13000)
-- 🔌 **NestJS Backend API Health:** [http://localhost:13001/health](http://localhost:13001/health)
-- 📊 **Prometheus Metrics:** [http://localhost:13001/metrics](http://localhost:13001/metrics)
-- 🗄️ **MinIO Storage Console:** [http://localhost:19001](http://localhost:19001) (User: `minioadmin`, Pass: `minioadmin`)
-
----
-
-## 🧭 3. Where to Find What
-
-| Directory                      | Scope & Purpose                                                                                                                     |
-| :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **`apps/api/src/`**            | NestJS backend source code organized into domain modules (`auth`, `jobs`, `candidates`, `applications`, `interviews`, `documents`). |
-| **`apps/api/src/prisma/`**     | Prisma schema definition (`schema.prisma`), AsyncLocalStorage transaction manager, and seed scripts.                                |
-| **`apps/web/src/app/`**        | Next.js App Router routes: `(auth)`, `(dashboard)`, and public `careers/` (React Server Components).                                |
-| **`apps/web/src/components/`** | Component library: `ui/` (Shadcn primitives), `components/shared/` (ATS controls), `layout/` (App shell).                           |
-| **`apps/web/src/i18n/`**       | Localization files: `vi.ts` and `en.ts` dictionaries. Zero hardcoded text mandate.                                                  |
-| **`packages/shared/`**         | Monorepo shared package: Canonical types, `APP_ERROR_CODES`, and brand constants.                                                   |
-| **`scripts/`**                 | Monorepo automation scripts: `check-all.ts`, `backup-production.ts`, `check-env-sync.ts`.                                           |
-| **`docs/`**                    | Central documentation repository: Architecture blueprints, API overview, and operational runbooks.                                  |
-| **`.agents/`**                 | AI agent runtime configuration, skills, and operational rules managed by AG Kit.                                                    |
-
----
-
-## 💻 4. Common Developer Commands
+Or run them independently:
 
 ```bash
-# Run full 16-gate CI verification pipeline
-pnpm check:all
+pnpm dev:api   # NestJS watch server via tsx (PORT in .env, default 3001)
+pnpm dev:web   # Next.js 16 dev server (FRONTEND_PORT in .env, default 3000)
+```
 
-# Run quick static checks before committing
-pnpm check:all:fast
+Verify core infrastructure ports from [docker-compose.yml](../../docker-compose.yml) and [.env.example](../../.env.example):
 
-# Run fast pre-commit checks (<5s via lint-staged)
-pnpm pre-commit
+| Service            | Env Variable                        | Compose Default Host Port |    Typical Dev / E2E Override    |
+| :----------------- | :---------------------------------- | :-----------------------: | :------------------------------: |
+| Next.js Portal     | `FRONTEND_PORT`                     |          `3000`           | `13000` (`playwright.config.ts`) |
+| NestJS API         | `BACKEND_PORT`                      |          `3001`           |             `13001`              |
+| PostgreSQL 17      | `POSTGRES_PORT`                     |          `5432`           |             `15432`              |
+| Valkey / Redis     | `REDIS_PORT`                        |          `6379`           |             `16379`              |
+| MinIO S3 / Console | `MINIO_PORT` / `MINIO_CONSOLE_PORT` |      `9000` / `9001`      |        `19000` / `19001`         |
 
-# Run pre-push verification (~25s lint + typecheck)
-pnpm pre-push
+---
 
-# Run all unit & integration tests (1,268 tests)
+## 4. Database, Seeding & Prisma Workflow
+
+HaiHire uses **Prisma `7.10.1`** with `@prisma/adapter-pg` and `apps/api/prisma.config.ts`:
+
+```bash
+pnpm db:verify     # Validate src/prisma/schema.prisma
+pnpm db:generate   # Regenerate Prisma Client
+pnpm db:update     # Push schema updates (prisma db push)
+pnpm db:seed       # Seed demo organization and users
+```
+
+> **Windows PowerShell Note:** Execute commands separately rather than chaining with `&&`.
+
+---
+
+## 5. First Verification Run
+
+Run unit suites and static architecture checks before opening your first PR:
+
+```bash
 pnpm test
-
-# Run web tests only
-pnpm test:web
-
-# Run api tests only
-pnpm test:api
-
-# Run Playwright E2E browser tests
-pnpm test:e2e
-
-# Build all monorepo packages for production
-pnpm build
-
-# Verify environment synchronization
-pnpm lint:env-sync
-
-# Verify i18n translation key parity
-pnpm lint:i18n
+pnpm lint
+pnpm typecheck
+pnpm check:all:fast
 ```
 
----
-
-## ❓ 5. Troubleshooting & FAQ
-
-### Issue: "Port 15432 or 13001 is already in use"
-
-**Solution:** Check if existing background containers or node processes are running:
-
-```bash
-docker compose down
-# Windows PowerShell to inspect listening ports:
-Get-NetTCPConnection -LocalPort 13001, 15432 -ErrorAction SilentlyContinue
-```
-
-### Issue: "Missing environment variable error on startup"
-
-**Solution:** Run the environment audit script to identify missing or desynchronized keys:
-
-```bash
-pnpm lint:env-sync
-```
-
-Ensure that root `.env` has been populated from `.env.example`.
-
-### Issue: "Prisma client or contract types are out of sync"
-
-**Solution:** Re-generate the Prisma client:
-
-```bash
-pnpm db:generate
-```
-
----
-
-## 📚 6. Next Steps
-
-- Read [System Architecture Overview](../architecture/system-overview.md) to understand data flows and design patterns.
-- Read [REST API Overview](../api/overview.md) to review endpoints, auth, and error codes.
-- Read [Contributing Guide](../../CONTRIBUTING.md) for branch naming, commit conventions, and CI quality gates.
+For full team expectations and coding rules, continue to [Engineering Conventions](../architecture/conventions.md) and [Definition of Done](definition-of-done.md).

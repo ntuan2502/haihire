@@ -5,6 +5,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -19,10 +20,11 @@ import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
 import { SubmitScorecardDto } from "./dto/submit-scorecard.dto";
 
 @Controller("interviews")
-@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
 export class InterviewsController {
   constructor(
     @Inject(InterviewsService)
@@ -36,6 +38,8 @@ export class InterviewsController {
     @Query("organizationId") organizationId?: string,
     @Query("jobId") jobId?: string,
     @Query("applicationId") applicationId?: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
     @Query("search") search?: string,
@@ -48,6 +52,8 @@ export class InterviewsController {
       organizationId,
       jobId,
       applicationId,
+      startDate,
+      endDate,
       page: pageNum,
       limit: limitNum,
       search,
@@ -60,14 +66,13 @@ export class InterviewsController {
   @Get(":id")
   @RequirePermission("interview:view")
   findOne(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
     return this.interviewsService.findOne(id, req?.user?.organizationId);
   }
 
   @Post()
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
   @RequirePermission("interview:create")
   create(
     @Body(DtoPipe(CreateInterviewDto)) dto: CreateInterviewDto,
@@ -77,10 +82,9 @@ export class InterviewsController {
   }
 
   @Patch(":id/scorecard")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
   @RequirePermission("interview:scorecard_submit")
   submitScorecard(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(SubmitScorecardDto)) dto: SubmitScorecardDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
@@ -92,10 +96,9 @@ export class InterviewsController {
   }
 
   @Patch(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
   @RequirePermission("interview:update")
   update(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
@@ -103,10 +106,9 @@ export class InterviewsController {
   }
 
   @Delete(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
   @RequirePermission("interview:delete")
   remove(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.interviewsService.remove(id, req?.user?.organizationId);

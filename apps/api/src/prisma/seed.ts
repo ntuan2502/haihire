@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
@@ -420,6 +420,21 @@ function generate200UniqueCandidates(): Array<{
 }
 
 class InterviewSlotManager {
+  // Business-hour interview slots in Vietnam Time (UTC+7): 08:00 - 17:00 ICT
+  private static readonly DAILY_TIMES = [
+    "08:00",
+    "08:45",
+    "09:30",
+    "10:15",
+    "11:00",
+    "11:30",
+    "13:30",
+    "14:15",
+    "15:00",
+    "15:45",
+    "16:30",
+  ] as const;
+
   private usedSlots = new Set<string>();
   private upcomingSlots: Array<{ date: string; time: string }> = [];
   private pastTier1Slots: Array<{ date: string; time: string }> = [];
@@ -431,20 +446,6 @@ class InterviewSlotManager {
   }
 
   private initQueues() {
-    const DAILY_TIMES = [
-      "08:30",
-      "09:15",
-      "10:00",
-      "10:45",
-      "11:30",
-      "13:30",
-      "14:15",
-      "15:00",
-      "15:45",
-      "16:30",
-      "17:15",
-    ];
-
     const now = new Date();
 
     // 1. Upcoming slots: Day +1 to Day +50 (skipping weekends)
@@ -456,7 +457,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.upcomingSlots.push({ date: dateStr, time });
       }
     }
@@ -470,7 +471,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier3Slots.push({ date: dateStr, time });
       }
     }
@@ -483,7 +484,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier2Slots.push({ date: dateStr, time });
       }
     }
@@ -496,7 +497,7 @@ class InterviewSlotManager {
       const dayOfWeek = d.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier1Slots.push({ date: dateStr, time });
       }
     }
@@ -541,19 +542,6 @@ class InterviewSlotManager {
     date: string;
     time: string;
   } {
-    const DAILY_TIMES = [
-      "08:30",
-      "09:15",
-      "10:00",
-      "10:45",
-      "11:30",
-      "13:30",
-      "14:15",
-      "15:00",
-      "15:45",
-      "16:30",
-      "17:15",
-    ];
     while (true) {
       this.fallbackCounter++;
       const now = new Date();
@@ -564,7 +552,7 @@ class InterviewSlotManager {
       d.setDate(now.getDate() + dayOffset);
       if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
-      for (const time of DAILY_TIMES) {
+      for (const time of InterviewSlotManager.DAILY_TIMES) {
         const key = `${dateStr} ${time}`;
         if (!this.usedSlots.has(key)) {
           this.usedSlots.add(key);
@@ -610,7 +598,9 @@ class InterviewSlotManager {
         ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
         : `https://meet.google.com/haihire-demo-${candidateIdx}-${round}`;
 
-    const scheduledAt = toInstant(new Date(`${slot.date}T${slot.time}:00Z`));
+    const scheduledAt = toInstant(
+      new Date(`${slot.date}T${slot.time}:00+07:00`),
+    );
 
     return {
       scheduledAt,
@@ -654,6 +644,7 @@ export async function runSeed(): Promise<void> {
   console.log("==================================================");
 
   await prisma.emailLog.deleteMany();
+  await prisma.emailFlowConfig.deleteMany();
   await prisma.emailSetting.deleteMany();
   await prisma.emailTemplate.deleteMany();
   await prisma.activityLog.deleteMany();
@@ -666,7 +657,6 @@ export async function runSeed(): Promise<void> {
   await prisma.inviteLink.deleteMany();
   await prisma.organizationMember.deleteMany();
   await prisma.job.deleteMany();
-  await prisma.user.updateMany({ data: { organizationId: null } });
   await prisma.organization.deleteMany();
   await prisma.user.deleteMany();
 
@@ -686,16 +676,15 @@ export async function runSeed(): Promise<void> {
     create: {
       id: adminUserId,
       email: DEMO_ACCOUNTS.ADMIN.email,
-      name: DEMO_ACCOUNTS.ADMIN.name,
-      role: DEMO_ACCOUNTS.ADMIN.role,
+      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
       password: defaultPasswordHash,
-      organizationId: null,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.ADMIN.name,
-      role: DEMO_ACCOUNTS.ADMIN.role,
+      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
     },
     where: { email: DEMO_ACCOUNTS.ADMIN.email },
   });
@@ -716,14 +705,6 @@ export async function runSeed(): Promise<void> {
     where: { slug: "admin" },
   });
 
-  // Link Admin User to organization
-  await prisma.user.update({
-    where: { id: adminUserId },
-    data: {
-      organizationId: adminOrgId,
-    },
-  });
-
   // 3. Create Org Member relationship
   await prisma.organizationMember.upsert({
     create: {
@@ -742,17 +723,15 @@ export async function runSeed(): Promise<void> {
     create: {
       id: memberUserId,
       email: DEMO_ACCOUNTS.MEMBER.email,
-      name: DEMO_ACCOUNTS.MEMBER.name,
-      role: DEMO_ACCOUNTS.MEMBER.role,
+      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
       password: defaultPasswordHash,
-      organizationId: adminOrgId,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.MEMBER.name,
-      role: DEMO_ACCOUNTS.MEMBER.role,
-      organizationId: adminOrgId,
+      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
     },
     where: { email: DEMO_ACCOUNTS.MEMBER.email },
   });
@@ -799,16 +778,15 @@ export async function runSeed(): Promise<void> {
     create: {
       id: betaAdminUserId,
       email: DEMO_ACCOUNTS.BETA_ADMIN.email,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
       password: defaultPasswordHash,
-      organizationId: null,
       updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
+      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
     },
     where: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
   });
@@ -826,13 +804,6 @@ export async function runSeed(): Promise<void> {
       ownerId: betaAdminUserId,
     },
     where: { slug: "beta-financials" },
-  });
-
-  await prisma.user.update({
-    where: { id: betaAdminUserId },
-    data: {
-      organizationId: betaOrgId,
-    },
   });
 
   await prisma.organizationMember.upsert({
@@ -876,7 +847,6 @@ export async function runSeed(): Promise<void> {
     create: {
       id: betaCandidateId,
       organizationId: betaOrgId,
-      name: "Tran Beta",
       firstName: "Beta",
       lastName: "Tran",
       email: "candidate@beta.test",
@@ -887,7 +857,8 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(),
     },
     update: {
-      name: "Tran Beta",
+      firstName: "Beta",
+      lastName: "Tran",
     },
     where: { id: betaCandidateId },
   });
@@ -895,6 +866,7 @@ export async function runSeed(): Promise<void> {
   await prisma.application.upsert({
     create: {
       id: betaAppId,
+      organizationId: betaOrgId,
       jobId: betaJobId,
       candidateId: betaCandidateId,
       stage: "SCREENING",
@@ -1557,6 +1529,7 @@ export async function runSeed(): Promise<void> {
 
   const clicksToInsert: Array<{
     id: string;
+    organizationId: string;
     trackingLinkId: string;
     referrer: string | null;
     referrerDomain: string | null;
@@ -1627,6 +1600,7 @@ export async function runSeed(): Promise<void> {
 
         clicksToInsert.push({
           id: crypto.randomUUID(),
+          organizationId: adminOrgId,
           trackingLinkId: linkId,
           referrer: `https://${domain}/jobs/feed?ref=${item.token}`,
           referrerDomain: domain,
@@ -1702,14 +1676,12 @@ export async function runSeed(): Promise<void> {
   const candidatesToInsert: Array<{
     id: string;
     organizationId: string;
-    name: string;
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | "OTHER";
     dateOfBirth: Date;
     email: string;
     phone: string;
-    notes: string;
     resumeUrl: string;
     resumeFileName: string;
     resumeFileSize: number;
@@ -1720,6 +1692,7 @@ export async function runSeed(): Promise<void> {
 
   const applicationsToInsert: Array<{
     id: string;
+    organizationId: string;
     candidateId: string;
     jobId: string;
     stage: (typeof STAGES)[number];
@@ -1728,7 +1701,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
-    notes: string;
     orderIndex: number;
     trackingLinkId: string | null;
     sourceChannel: SourcingChannel;
@@ -1743,8 +1715,35 @@ export async function runSeed(): Promise<void> {
     updatedAt: Date;
   }> = [];
 
+  const applicationNotesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    applicationId: string;
+    authorId: string;
+    authorName: string;
+    authorRole: string;
+    content: string;
+    isEdited: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
+  const candidateNotesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    candidateId: string;
+    authorId: string;
+    authorName: string;
+    authorRole: string;
+    content: string;
+    isEdited: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
   const interviewsToInsert: Array<{
     id: string;
+    organizationId: string;
     applicationId: string;
     scheduledAt: Date;
     type:
@@ -1757,7 +1756,7 @@ export async function runSeed(): Promise<void> {
     linkOrLocation: string;
     interviewer: string;
     round: number;
-    scorecard: string | null;
+    scorecard: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     notes: string | null;
     updatedAt: Date;
   }> = [];
@@ -1858,18 +1857,29 @@ export async function runSeed(): Promise<void> {
     candidatesToInsert.push({
       id: candidateId,
       organizationId: adminOrgId,
-      name: candidate.name,
       firstName,
       lastName,
       gender,
       dateOfBirth: toInstant(dateOfBirth),
       email: candidate.email,
       phone: candidate.phone,
-      notes: "Ứng viên tiềm năng trong Talent Pool.",
       resumeUrl,
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
+      createdAt: toInstant(candidateCreatedAt),
+      updatedAt: toInstant(candidateCreatedAt),
+    });
+
+    candidateNotesToInsert.push({
+      id: crypto.randomUUID(),
+      organizationId: adminOrgId,
+      candidateId,
+      authorId: adminUserId,
+      authorName: DEMO_ACCOUNTS.ADMIN.name,
+      authorRole: "ADMIN",
+      content: "Ứng viên tiềm năng trong Talent Pool.",
+      isEdited: false,
       createdAt: toInstant(candidateCreatedAt),
       updatedAt: toInstant(candidateCreatedAt),
     });
@@ -1926,6 +1936,7 @@ export async function runSeed(): Promise<void> {
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
+                organizationId: adminOrgId,
                 applicationId: appId,
                 scheduledAt: intv.scheduledAt,
                 type: intv.type,
@@ -1933,7 +1944,7 @@ export async function runSeed(): Promise<void> {
                 linkOrLocation: intv.linkOrLocation,
                 interviewer: intv.interviewer,
                 round: intv.round,
-                scorecard: null,
+                scorecard: Prisma.DbNull,
                 notes: intv.notes,
                 updatedAt: toInstant(),
               });
@@ -1953,6 +1964,7 @@ export async function runSeed(): Promise<void> {
             );
             interviewsToInsert.push({
               id: crypto.randomUUID(),
+              organizationId: adminOrgId,
               applicationId: appId,
               scheduledAt: intv.scheduledAt,
               type: intv.type,
@@ -1960,11 +1972,11 @@ export async function runSeed(): Promise<void> {
               linkOrLocation: intv.linkOrLocation,
               interviewer: intv.interviewer,
               round: intv.round,
-              scorecard: JSON.stringify({
+              scorecard: {
                 overallRating: 5,
                 recommendation: "STRONG_YES",
                 feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
-              }),
+              },
               notes: intv.notes,
               updatedAt: toInstant(),
             });
@@ -1987,6 +1999,7 @@ export async function runSeed(): Promise<void> {
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
+                organizationId: adminOrgId,
                 applicationId: appId,
                 scheduledAt: intv.scheduledAt,
                 type: intv.type,
@@ -1994,7 +2007,7 @@ export async function runSeed(): Promise<void> {
                 linkOrLocation: intv.linkOrLocation,
                 interviewer: intv.interviewer,
                 round: intv.round,
-                scorecard: null,
+                scorecard: Prisma.DbNull,
                 notes: intv.notes,
                 updatedAt: toInstant(),
               });
@@ -2057,6 +2070,7 @@ export async function runSeed(): Promise<void> {
 
         applicationsToInsert.push({
           id: appId,
+          organizationId: adminOrgId,
           candidateId,
           jobId,
           stage,
@@ -2065,7 +2079,6 @@ export async function runSeed(): Promise<void> {
           resumeFileName: fileName,
           resumeFileSize,
           resumeMimeType: "application/pdf",
-          notes,
           orderIndex,
           trackingLinkId,
           sourceChannel,
@@ -2079,6 +2092,21 @@ export async function runSeed(): Promise<void> {
           createdAt: toInstant(appCreatedAt),
           updatedAt: toInstant(appCreatedAt),
         });
+
+        if (notes) {
+          applicationNotesToInsert.push({
+            id: crypto.randomUUID(),
+            organizationId: adminOrgId,
+            applicationId: appId,
+            authorId: adminUserId,
+            authorName: DEMO_ACCOUNTS.ADMIN.name,
+            authorRole: "ADMIN",
+            content: notes,
+            isEdited: false,
+            createdAt: toInstant(appCreatedAt),
+            updatedAt: toInstant(appCreatedAt),
+          });
+        }
       }
     }
   }
@@ -2092,14 +2120,12 @@ export async function runSeed(): Promise<void> {
   candidatesToInsert.push({
     id: testCandidateId,
     organizationId: adminOrgId,
-    name: "Nguyen Test Applicant",
     firstName: "Test Applicant",
     lastName: "Nguyen",
     gender: "MALE",
     dateOfBirth: toInstant(new Date("1995-05-15T00:00:00Z")),
     email: "test-applicant@tun.io.vn",
     phone: "0901234567",
-    notes: "Ứng viên mẫu phục vụ automated tests.",
     resumeUrl: "/haihire-resumes/sample-resume.pdf",
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
@@ -2107,18 +2133,28 @@ export async function runSeed(): Promise<void> {
     createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
   });
+  candidateNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000501",
+    organizationId: adminOrgId,
+    candidateId: testCandidateId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Ứng viên mẫu phục vụ automated tests.",
+    isEdited: false,
+    createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+  });
 
   candidatesToInsert.push({
     id: kanbanCandidateId,
     organizationId: adminOrgId,
-    name: "Tran Minh Kanban",
     firstName: "Minh Kanban",
     lastName: "Tran",
     gender: "MALE",
     dateOfBirth: toInstant(new Date("1996-08-20T00:00:00Z")),
     email: "kanban-candidate@tun.io.vn",
     phone: "0908765432",
-    notes: "Ứng viên mẫu cho Kanban drag & drop test.",
     resumeUrl: "/haihire-resumes/sample-resume.pdf",
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
@@ -2126,10 +2162,24 @@ export async function runSeed(): Promise<void> {
     createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
   });
+  candidateNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000502",
+    organizationId: adminOrgId,
+    candidateId: kanbanCandidateId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Ứng viên mẫu cho Kanban drag & drop test.",
+    isEdited: false,
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
 
   // Guarantee Candidate 2 (Kanban) is in APPLIED stage for Job 1 (Senior Backend Engineer)
+  const kanbanAppId = "00000000-0000-4000-8000-000000000301";
   applicationsToInsert.push({
-    id: "00000000-0000-4000-8000-000000000301",
+    id: kanbanAppId,
+    organizationId: adminOrgId,
     candidateId: kanbanCandidateId,
     jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
     stage: "APPLIED",
@@ -2138,7 +2188,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
-    notes: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
     orderIndex: 0,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2152,11 +2201,25 @@ export async function runSeed(): Promise<void> {
     createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
   });
+  applicationNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000401",
+    organizationId: adminOrgId,
+    applicationId: kanbanAppId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
+    isEdited: false,
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
   stageStats.APPLIED++;
 
   // Guarantee Candidate 1 is in SCREENING stage for Job 1 so that both stages are available
+  const testAppId = "00000000-0000-4000-8000-000000000302";
   applicationsToInsert.push({
-    id: "00000000-0000-4000-8000-000000000302",
+    id: testAppId,
+    organizationId: adminOrgId,
     candidateId: testCandidateId,
     jobId: createdJobIds[1],
     stage: "SCREENING",
@@ -2165,7 +2228,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
-    notes: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
     orderIndex: 1,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2176,6 +2238,18 @@ export async function runSeed(): Promise<void> {
     utmCampaign: null,
     utmTerm: null,
     utmContent: null,
+    createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+  });
+  applicationNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000402",
+    organizationId: adminOrgId,
+    applicationId: testAppId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
+    isEdited: false,
     createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
   });
@@ -2214,6 +2288,38 @@ export async function runSeed(): Promise<void> {
     );
     process.stdout.write(
       `\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`,
+    );
+  }
+
+  console.log(
+    `\n⏳ Saving ${applicationNotesToInsert.length} application notes to database (batched)...`,
+  );
+  for (let b = 0; b < applicationNotesToInsert.length; b += BATCH_SIZE) {
+    const chunk = applicationNotesToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((note) =>
+        prisma.applicationNote.upsert({
+          create: note,
+          update: {},
+          where: { id: note.id },
+        }),
+      ),
+    );
+  }
+
+  console.log(
+    `\n⏳ Saving ${candidateNotesToInsert.length} candidate notes to database (batched)...`,
+  );
+  for (let b = 0; b < candidateNotesToInsert.length; b += BATCH_SIZE) {
+    const chunk = candidateNotesToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((note) =>
+        prisma.candidateNote.upsert({
+          create: note,
+          update: {},
+          where: { id: note.id },
+        }),
+      ),
     );
   }
 

@@ -1,59 +1,348 @@
-import type {
-  Application,
-  Candidate,
-  CandidateDocument,
-  Gender,
-} from "@/types";
-import { inferCandidateName } from "@haihire/shared";
+import type { CandidateDocument } from "@/types";
+import {
+  DEFAULT_ORG_LOCALIZATION,
+  formatCandidateDisplayName,
+  normalizeOrgLocalization,
+  type CurrencyCode,
+  type DateFormat,
+  type NameDisplayOrder,
+  type OrgLanguage,
+  type OrganizationLocalizationSettings,
+  type TimeFormat,
+} from "@haihire/shared";
 export { cn } from "cn";
 
+export type LocalizationOverrides = Partial<OrganizationLocalizationSettings>;
+
+let activeOrgLocalization: OrganizationLocalizationSettings | null = null;
+let activeUiLocale: OrgLanguage | null = null;
+
 /**
- * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")
+ * Activate runtime organization formatting preferences for utilities across the app.
+ */
+export function setActiveLocalization(
+  orgSettings?: Partial<OrganizationLocalizationSettings> | null,
+  uiLocale?: OrgLanguage | null,
+): void {
+  activeOrgLocalization = orgSettings
+    ? normalizeOrgLocalization(orgSettings)
+    : null;
+  activeUiLocale = uiLocale ?? activeOrgLocalization?.defaultLanguage ?? null;
+}
+
+/**
+ * Reset active runtime formatting preferences back to stateless test/default fallbacks.
+ */
+export function resetActiveLocalization(): void {
+  activeOrgLocalization = null;
+  activeUiLocale = null;
+}
+
+export function isRuntimeLocalizationActive(): boolean {
+  return activeOrgLocalization !== null;
+}
+
+export function getActiveLocalization(): OrganizationLocalizationSettings {
+  return activeOrgLocalization ?? { ...DEFAULT_ORG_LOCALIZATION };
+}
+
+/**
+ * Resolve the effective IANA timezone from LocalizationProvider state with
+ * stateless runtime/default fallback so hooks behave identically in tests.
+ */
+export function resolveEffectiveTimezone(
+  configuredTimezone?: string | null,
+  isConfigured = false,
+): string {
+  if (isConfigured && configuredTimezone) return configuredTimezone;
+  if (isRuntimeLocalizationActive()) {
+    return getActiveLocalization().timezone;
+  }
+  return (
+    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    DEFAULT_ORG_LOCALIZATION.timezone
+  );
+}
+
+/**
+ * Shift a pure YYYY-MM-DD calendar date by N days using UTC calendar math
+ * so local browser timezone DST transitions never skip or repeat dates.
+ */
+export function addDaysToYmd(ymd: string, days: number): string {
+  const parts = ymd.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return "";
+  const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+export function getActiveDefaultCurrency(): CurrencyCode | null {
+  return activeOrgLocalization ? activeOrgLocalization.defaultCurrency : null;
+}
+
+function extractCalendarParts(
+  dateInput: string | Date,
+  timezone?: string,
+): { year: number; month: number; day: number; isDateOnly: boolean } | null {
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim();
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (dateOnlyMatch) {
+      return {
+        year: Number(dateOnlyMatch[1]),
+        month: Number(dateOnlyMatch[2]),
+        day: Number(dateOnlyMatch[3]),
+        isDateOnly: true,
+      };
+    }
+  }
+
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(date.getTime())) return null;
+
+  if (timezone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(date);
+      const year = Number(parts.find((p) => p.type === "year")?.value);
+      const month = Number(parts.find((p) => p.type === "month")?.value);
+      const day = Number(parts.find((p) => p.type === "day")?.value);
+      if (year && month && day) {
+        return { year, month, day, isDateOnly: false };
+      }
+    } catch {
+      // Fall back to local calendar components when runtime rejects timezone
+    }
+  }
+
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    isDateOnly: false,
+  };
+}
+
+function formatCalendarParts(
+  parts: { year: number; month: number; day: number },
+  dateFormat: DateFormat,
+  padded: boolean,
+): string {
+  const m = padded ? String(parts.month).padStart(2, "0") : String(parts.month);
+  const d = padded ? String(parts.day).padStart(2, "0") : String(parts.day);
+  const y = String(parts.year);
+
+  if (dateFormat === "DD/MM/YYYY") return `${d}/${m}/${y}`;
+  if (dateFormat === "YYYY-MM-DD") return `${y}-${m}-${d}`;
+  return `${m}/${d}/${y}`;
+}
+
+/**
+ * Format a date into consistent string formats respecting active organization localization.
  */
 export function formatDate(
   dateInput?: string | Date | null,
   style: "standard" | "numeric" | "short" = "numeric",
+  overrides?: LocalizationOverrides,
+): string {
+  if (!dateInput) return "—";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+  const effectiveDateFormat: DateFormat =
+    overrides?.dateFormat ?? activeOrgLocalization?.dateFormat ?? "MM/DD/YYYY";
+  const effectiveLang: OrgLanguage =
+    overrides?.defaultLanguage ?? activeUiLocale ?? "en";
+
+  const parts = extractCalendarParts(dateInput, effectiveTimezone);
+  if (!parts) return "—";
+
+  if (style === "short") {
+    return formatCalendarParts(parts, effectiveDateFormat, false);
+  }
+
+  if (style === "numeric") {
+    return formatCalendarParts(parts, effectiveDateFormat, true);
+  }
+
+  const parsedDate =
+    typeof dateInput === "string"
+      ? parts.isDateOnly
+        ? new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+        : new Date(dateInput)
+      : dateInput;
+
+  return new Intl.DateTimeFormat(effectiveLang === "vi" ? "vi-VN" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    ...(parts.isDateOnly
+      ? { timeZone: "UTC" }
+      : effectiveTimezone
+        ? { timeZone: effectiveTimezone }
+        : {}),
+  }).format(parsedDate);
+}
+
+/**
+ * Format a clock string (e.g. "14:30") or timestamp according to 24H / 12H preference.
+ */
+export function formatTime(
+  timeOrDateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (!timeOrDateInput) return "—";
+  const effectiveTimeFormat: TimeFormat =
+    overrides?.timeFormat ?? activeOrgLocalization?.timeFormat ?? "24H";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+
+  let hour: number | null = null;
+  let minute: number | null = null;
+
+  if (typeof timeOrDateInput === "string") {
+    const clockMatch = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(
+      timeOrDateInput.trim(),
+    );
+    if (clockMatch) {
+      const parsedHour = Number(clockMatch[1]);
+      const parsedMin = Number(clockMatch[2]);
+      if (
+        parsedHour >= 0 &&
+        parsedHour <= 23 &&
+        parsedMin >= 0 &&
+        parsedMin <= 59
+      ) {
+        hour = parsedHour;
+        minute = parsedMin;
+      }
+    }
+  }
+
+  if (hour === null || minute === null) {
+    const date =
+      typeof timeOrDateInput === "string"
+        ? new Date(timeOrDateInput)
+        : timeOrDateInput;
+    if (isNaN(date.getTime())) {
+      return typeof timeOrDateInput === "string" ? timeOrDateInput : "—";
+    }
+    if (effectiveTimezone) {
+      try {
+        const timeParts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: effectiveTimezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).formatToParts(date);
+        const hPart = Number(timeParts.find((p) => p.type === "hour")?.value);
+        const mPart = Number(timeParts.find((p) => p.type === "minute")?.value);
+        if (!isNaN(hPart) && !isNaN(mPart)) {
+          hour = hPart === 24 ? 0 : hPart;
+          minute = mPart;
+        }
+      } catch {
+        // Fall through to local time
+      }
+    }
+    if (hour === null || minute === null) {
+      hour = date.getHours();
+      minute = date.getMinutes();
+    }
+  }
+
+  const mm = String(minute).padStart(2, "0");
+  if (effectiveTimeFormat === "12H") {
+    const period = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+    return `${h12}:${mm} ${period}`;
+  }
+
+  return `${String(hour).padStart(2, "0")}:${mm}`;
+}
+
+/**
+ * Combine localized date and time formatting.
+ */
+export function formatDateTime(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  const datePart = formatDate(dateInput, "numeric", overrides);
+  if (datePart === "—") return "—";
+  const timePart = formatTime(dateInput, overrides);
+  return timePart === "—" ? datePart : `${datePart} ${timePart}`;
+}
+
+/**
+ * Format numeric currency according to currency code and organization defaults.
+ */
+export function formatCurrency(
+  amount?: number | null,
+  currencyCode?: CurrencyCode | string | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (amount === null || amount === undefined || isNaN(amount)) return "—";
+  const currency =
+    currencyCode ??
+    overrides?.defaultCurrency ??
+    activeOrgLocalization?.defaultCurrency ??
+    DEFAULT_ORG_LOCALIZATION.defaultCurrency;
+
+  const localeByCurrency: Record<string, string> = {
+    VND: "vi-VN",
+    USD: "en-US",
+    EUR: "en-IE",
+    SGD: "en-SG",
+    JPY: "ja-JP",
+  };
+
+  try {
+    return new Intl.NumberFormat(localeByCurrency[currency] || "en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: currency === "VND" || currency === "JPY" ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
+/**
+ * Format relative time respecting active interface/organization language.
+ */
+export function formatRelativeTime(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
 ): string {
   if (!dateInput) return "—";
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   if (isNaN(date.getTime())) return "—";
 
-  if (style === "short") {
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-  }
-
-  if (style === "numeric") {
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-/**
- * Format relative time (e.g., "0m ago", "2h ago", "3d ago", "Just now")
- */
-export function formatRelativeTime(dateInput?: string | Date | null): string {
-  if (!dateInput) return "—";
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  if (isNaN(date.getTime())) return "—";
+  const lang: OrgLanguage =
+    overrides?.defaultLanguage ?? activeUiLocale ?? "en";
 
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diffInSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - date.getTime()) / 1000),
+  );
 
-  if (diffInSeconds < 60) return "Just now";
+  if (diffInSeconds < 60) return lang === "vi" ? "Vừa xong" : "Just now";
   const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 60) {
+    return lang === "vi"
+      ? `${diffInMinutes} phút trước`
+      : `${diffInMinutes}m ago`;
+  }
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInHours < 24) {
+    return lang === "vi" ? `${diffInHours} giờ trước` : `${diffInHours}h ago`;
+  }
   const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}d ago`;
+  return lang === "vi" ? `${diffInDays} ngày trước` : `${diffInDays}d ago`;
 }
 
 /**
@@ -82,15 +371,19 @@ export function getInitials(name?: string | null): string {
 /**
  * Parse metadata fields (gender, dob, firstName, lastName, displayName) from candidate notes
  */
-export function parseCandidateNotes(
-  notes?: string | null,
+/**
+ * Resolve structured candidate profile fields (name parts, gender, date of birth)
+ */
+export function resolveCandidateProfile(
   candidateName?: string | null,
   structured?: {
     firstName?: string | null;
     lastName?: string | null;
+    displayName?: string | null;
     gender?: string | null;
     dateOfBirth?: string | Date | null;
   } | null,
+  overrides?: LocalizationOverrides,
 ): {
   gender: string;
   dob: string;
@@ -98,9 +391,8 @@ export function parseCandidateNotes(
   lastName: string;
   displayName: string;
   effectiveName: string;
-  customNotes: string;
 } {
-  if (!notes && !candidateName && !structured) {
+  if (!candidateName && !structured) {
     return {
       gender: "—",
       dob: "—",
@@ -108,18 +400,12 @@ export function parseCandidateNotes(
       lastName: "",
       displayName: "",
       effectiveName: "—",
-      customNotes: "",
     };
   }
 
-  // Clean candidate notes
-  const rawCustom = (notes || "")
-    .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
-    .replace(/\|\s*\|/g, "|")
-    .trim();
-
   const parsedFirst = structured?.firstName?.trim() || "";
   const parsedLast = structured?.lastName?.trim() || "";
+  const parsedDisplay = structured?.displayName?.trim() || "";
 
   let parsedDob = "";
   if (structured?.dateOfBirth) {
@@ -130,24 +416,29 @@ export function parseCandidateNotes(
   }
 
   const parsedGender = structured?.gender?.trim() || "";
-
-  // If first/last are not in structured, infer from candidateName
-  const { firstName: inferredFirst, lastName: inferredLast } =
-    inferCandidateName(candidateName, parsedFirst, parsedLast);
+  const nameOrder: NameDisplayOrder =
+    overrides?.nameDisplayOrder ??
+    activeOrgLocalization?.nameDisplayOrder ??
+    DEFAULT_ORG_LOCALIZATION.nameDisplayOrder;
 
   const effectiveName =
-    [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
-    candidateName ||
-    "—";
+    formatCandidateDisplayName(
+      {
+        displayName: parsedDisplay || null,
+        firstName: parsedFirst,
+        lastName: parsedLast,
+        name: candidateName,
+      },
+      nameOrder,
+    ) || "—";
 
   return {
     gender: parsedGender || "—",
     dob: parsedDob || "—",
-    firstName: inferredFirst,
-    lastName: inferredLast,
-    displayName: "",
+    firstName: parsedFirst,
+    lastName: parsedLast,
+    displayName: parsedDisplay,
     effectiveName,
-    customNotes: /^[{}|\s]+$/.test(rawCustom) ? "" : rawCustom,
   };
 }
 
@@ -171,10 +462,9 @@ export function fixUtf8String(str?: string | null): string {
 }
 
 /**
- * Parse candidate documents list from candidate notes and fallback application
+ * Build candidate document entry from an application's attached resume.
  */
 export function parseCandidateDocuments(
-  _notes?: string | null,
   fallbackApp?: {
     id: string;
     resumeUrl: string;
@@ -182,7 +472,7 @@ export function parseCandidateDocuments(
     resumeFileSize?: number | null;
     resumeMimeType?: string | null;
     createdAt: string;
-  },
+  } | null,
 ): CandidateDocument[] {
   if (
     fallbackApp &&
@@ -205,223 +495,4 @@ export function parseCandidateDocuments(
   return [];
 }
 
-/**
- * Build packed metadata string for candidate notes
- */
-export function buildCandidateNotes(params: {
-  firstName?: string;
-  lastName?: string;
-  displayName?: string;
-  gender?: string;
-  dob?: string;
-  customNotes?: string;
-}): string | undefined {
-  const segments: string[] = [];
-
-  if (params.firstName?.trim()) {
-    segments.push(`FirstName: ${params.firstName.trim()}`);
-  }
-  if (params.lastName?.trim()) {
-    segments.push(`LastName: ${params.lastName.trim()}`);
-  }
-  if (params.displayName?.trim()) {
-    segments.push(`DisplayName: ${params.displayName.trim()}`);
-  }
-  if (
-    params.gender &&
-    params.gender !== "Not specified" &&
-    params.gender !== "NOT_SPECIFIED" &&
-    params.gender !== "—"
-  ) {
-    segments.push(`Gender: ${params.gender.trim()}`);
-  }
-  if (params.dob?.trim() && params.dob !== "—") {
-    segments.push(`DOB: ${params.dob.trim()}`);
-  }
-  if (params.customNotes?.trim()) {
-    segments.push(params.customNotes.trim());
-  }
-
-  return segments.length > 0 ? segments.join(" | ") : undefined;
-}
-
-/**
- * Get localized display label for candidate gender
- */
-export function getGenderLabel(
-  gender: Gender | string | null | undefined,
-  t: (key: string) => string,
-): string {
-  if (
-    !gender ||
-    gender === "—" ||
-    gender === "NOT_SPECIFIED" ||
-    gender === "Not specified"
-  ) {
-    return "—";
-  }
-  const upper = gender.toUpperCase();
-  if (upper === "MALE") return t("candidates.male");
-  if (upper === "FEMALE") return t("candidates.female");
-  if (upper === "OTHER") return t("candidates.otherGender");
-  return gender;
-}
-
-/**
- * Get unified candidate display name from candidate application or notes
- */
-export function getCandidateDisplayName(
-  candidate?: {
-    name?: string | null;
-    candidateName?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-    notes?: string | null;
-  } | null,
-): string {
-  if (!candidate) return "—";
-  if (candidate.firstName || candidate.lastName) {
-    const combined = [candidate.firstName, candidate.lastName]
-      .filter(Boolean)
-      .join(" ");
-    if (combined.trim()) return combined.trim();
-  }
-  if (candidate.candidateName) return candidate.candidateName;
-  if (candidate.name) return candidate.name;
-  const { effectiveName } = parseCandidateNotes(
-    candidate.notes,
-    candidate.candidateName,
-    candidate,
-  );
-  return effectiveName || "—";
-}
-
-/**
- * Normalize date string to YYYY-MM-DD for HTML5 date picker input
- */
-export function normalizeDateForInput(dateStr?: string | null): string {
-  if (!dateStr || dateStr === "—" || dateStr.trim() === "") return "";
-  const trimmed = dateStr.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-  const parts = trimmed.split("/");
-  if (parts.length === 3 && parts[2].length === 4) {
-    const mm = parts[0].padStart(2, "0");
-    const dd = parts[1].padStart(2, "0");
-    const yyyy = parts[2];
-    return `${yyyy}-${mm}-${dd}`;
-  }
-  const d = new Date(trimmed);
-  if (!isNaN(d.getTime())) {
-    return d.toISOString().split("T")[0];
-  }
-  return "";
-}
-
-/**
- * Validate if a string is a valid UUID format (8-4-4-4-12 hexadecimal)
- */
-export function isValidUuid(id?: string | null): boolean {
-  if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id.trim(),
-  );
-}
-
-export {
-  type StageConfig,
-  STAGES_ORDER,
-  STAGE_CONFIG_MAP,
-  PIPELINE_STAGES,
-  getStageInfo,
-} from "./stages";
-
-export interface CandidateItem {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  applicationsCount: number;
-  createdAt: string;
-  updatedAt?: string;
-  notes: string;
-  resumeUrl?: string | null;
-  resumeFileName?: string | null;
-  resumeFileSize?: number | null;
-  resumeMimeType?: string | null;
-  rawApp?: Application;
-  candidate?: Candidate;
-}
-
-/**
- * Aggregate raw application records into unique candidates in Talent Pool
- */
-export function aggregateCandidates(
-  applications: Application[],
-): CandidateItem[] {
-  const map = new Map<string, CandidateItem>();
-
-  applications.forEach((app) => {
-    const key = (app.candidateEmail || app.candidateName).toLowerCase().trim();
-    const hasJob = Boolean(app.jobId && String(app.jobId).trim() !== "");
-    const effectiveName = getCandidateDisplayName(app);
-
-    if (!map.has(key)) {
-      map.set(key, {
-        id: app.id,
-        name: effectiveName,
-        email: app.candidateEmail,
-        phone: app.candidatePhone || "",
-        applicationsCount: hasJob ? 1 : 0,
-        createdAt: app.createdAt,
-        updatedAt: app.updatedAt,
-        notes: app.notes || "",
-        rawApp: app,
-      });
-    } else {
-      const existing = map.get(key)!;
-      if (hasJob) {
-        existing.applicationsCount += 1;
-      }
-      if (new Date(app.createdAt) > new Date(existing.createdAt)) {
-        existing.createdAt = app.createdAt;
-      }
-      if (!existing.phone && app.candidatePhone) {
-        existing.phone = app.candidatePhone;
-      }
-      if (app.notes) {
-        existing.notes = app.notes;
-        existing.name = effectiveName;
-      }
-    }
-  });
-
-  return Array.from(map.values());
-}
-
-/**
- * Generate URL-friendly slug from title (e.g. "Senior Full-Stack Engineer" -> "senior-full-stack-engineer")
- */
-export function slugify(str?: string | null): string {
-  if (!str) return "";
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-/**
- * Generate public careers URL for a job: /careers/[orgSlug]/[jobSlug]
- */
-export function getJobPublicUrl(job: {
-  id: string;
-  title: string;
-  organization?: { slug?: string | null } | null;
-}): string {
-  const orgSlug = job.organization?.slug || "admin";
-  const jobSlug = slugify(job.title) || job.id;
-  return `/careers/${orgSlug}/${jobSlug}`;
-}
+export * from "./candidate-formatters";

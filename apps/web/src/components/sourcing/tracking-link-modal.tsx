@@ -16,7 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CustomSelect } from "@/components/shared/custom-select";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Lock } from "lucide-react";
 import { cn } from "cn";
 

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { describe, expect, it, vi } from "vitest";
 import { GUARDS_METADATA } from "@nestjs/common/constants";
-import type { ExecutionContext } from "@nestjs/common";
+import { BadRequestException, type ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Role } from "@haihire/shared";
 import { InterviewsController } from "./interviews.controller";
@@ -60,13 +60,24 @@ describe("Tenant read authorization regressions", () => {
 });
 
 describe("Scorecard endpoint field isolation", () => {
-  it("strips scheduling fields and forwards only the scorecard", async () => {
+  it("rejects non-whitelisted scheduling fields under forbidNonWhitelisted", async () => {
+    await expect(
+      DtoPipe(SubmitScorecardDto).transform(
+        {
+          scorecard: { rating: 4 },
+          date: "2030-01-01",
+          interviewer: "attacker",
+          notes: "changed",
+        },
+        { type: "body", metatype: SubmitScorecardDto },
+      ),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it("forwards only the scorecard when valid payload is submitted", async () => {
     const dto = await DtoPipe(SubmitScorecardDto).transform(
       {
         scorecard: { rating: 4 },
-        date: "2030-01-01",
-        interviewer: "attacker",
-        notes: "changed",
       },
       { type: "body", metatype: SubmitScorecardDto },
     );

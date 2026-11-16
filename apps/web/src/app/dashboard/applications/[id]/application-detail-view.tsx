@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
+import { StatusState } from "@/components/shared/status-state";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/i18n";
 
@@ -27,126 +26,101 @@ export function ApplicationDetailView() {
 
   if (state.loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-        <Navbar
-          activeTab="applications"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={state.jobs.length}
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
+      <div className="flex-1 flex items-center justify-center p-12">
+        <LoadingSpinner />
       </div>
     );
   }
 
   if ((!state.isAppIdValid || !state.app) && !state.loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-        <Navbar
-          activeTab="applications"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={state.jobs.length}
-        />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
-            <span className="text-lg font-black">404</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("applications.applicationNotFound")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {!state.isAppIdValid
+      <div className="flex-1 flex flex-col">
+        <StatusState
+          status="404"
+          variant="page"
+          title={t("applications.applicationNotFound")}
+          description={
+            !state.isAppIdValid
               ? t("applications.invalidAppId")
-              : t("applications.appNotFoundDesc")}
-          </p>
-          <div className="pt-2">
-            <Button
-              onClick={() => router.push("/dashboard/applications")}
-              variant="outline"
-              className="text-xs font-semibold rounded-xl"
-            >
-              {t("applications.backToApplications")}
-            </Button>
-          </div>
-        </main>
+              : t("applications.appNotFoundDesc")
+          }
+          actionLabel={t("applications.backToApplications")}
+          onAction={() => router.push("/dashboard/applications")}
+          actionVariant="outline"
+          actionIcon={ArrowLeft}
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Top Navbar */}
-      <Navbar
-        activeTab="applications"
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={state.jobs.length}
+    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
+      {/* Back Link */}
+      <div>
+        <Link
+          href="/dashboard/applications"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>{t("applications.backToApplications")}</span>
+        </Link>
+      </div>
+
+      {/* Stage Action Pipeline Bar */}
+      <ApplicationStageBar
+        app={state.app}
+        isUpdatingStage={actions.isUpdatingStage}
+        isDeleting={actions.isDeleting}
+        onSelectStage={actions.handleStageChange}
+        onOpenScheduleModal={() => {
+          state.setEditingInterview(null);
+          state.setScheduleModalOpen(true);
+        }}
+        onOpenDeleteModal={() => state.setIsDeleteModalOpen(true)}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
-        {/* Back Link */}
-        <div>
-          <Link
-            href="/dashboard/applications"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("applications.backToApplications")}</span>
-          </Link>
-        </div>
+      {/* Candidate Header Card */}
+      <ApplicationDetailHeader
+        initials={state.initials}
+        candidateName={state.candidateName}
+        stage={state.app?.stage}
+        rejectionReason={state.app?.rejectionReason}
+        candidateEmail={state.candidateEmail}
+        candidatePhone={state.candidatePhone}
+        jobTitle={state.jobTitle}
+        appliedDate={state.appliedDate}
+        onOpenSendEmail={() => state.setIsSendEmailOpen(true)}
+      />
 
-        {/* Stage Action Pipeline Bar */}
-        <ApplicationStageBar
-          app={state.app}
-          isUpdatingStage={actions.isUpdatingStage}
-          isDeleting={actions.isDeleting}
-          onSelectStage={actions.handleStageChange}
-          onOpenDeleteModal={() => state.setIsDeleteModalOpen(true)}
-        />
+      {/* Sub-Navigation Tabs */}
+      <ApplicationNavTabs
+        activeTab={state.activeTab}
+        setActiveTab={state.setActiveTab}
+        overviewSections={state.overviewSections}
+        setOverviewSections={state.setOverviewSections}
+        isOverviewPopoverOpen={state.isOverviewPopoverOpen}
+        setIsOverviewPopoverOpen={state.setIsOverviewPopoverOpen}
+        overviewBtnRef={state.overviewBtnRef}
+        candidateDocumentsCount={state.candidateDocuments.length}
+      />
 
-        {/* Candidate Header Card */}
-        <ApplicationDetailHeader
-          initials={state.initials}
-          candidateName={state.candidateName}
-          stage={state.app?.stage}
-          candidateEmail={state.candidateEmail}
-          candidatePhone={state.candidatePhone}
-          jobTitle={state.jobTitle}
-          appliedDate={state.appliedDate}
-          onOpenSendEmail={() => state.setIsSendEmailOpen(true)}
-        />
-
-        {/* Sub-Navigation Tabs */}
-        <ApplicationNavTabs
-          activeTab={state.activeTab}
-          setActiveTab={state.setActiveTab}
-          overviewSections={state.overviewSections}
-          setOverviewSections={state.setOverviewSections}
-          isOverviewPopoverOpen={state.isOverviewPopoverOpen}
-          setIsOverviewPopoverOpen={state.setIsOverviewPopoverOpen}
-          overviewBtnRef={state.overviewBtnRef}
-          candidateDocumentsCount={state.candidateDocuments.length}
-        />
-
-        {/* Active Tab Body Content */}
-        <ApplicationTabContent
-          activeTab={state.activeTab}
-          app={state.app}
-          canEdit={state.canEdit}
-          candidateDocuments={state.candidateDocuments}
-          candidateName={state.candidateName}
-          candidateEmail={state.candidateEmail}
-          overviewSections={state.overviewSections}
-          onPreviewDoc={(doc) => state.setPreviewDoc(doc)}
-          onDownloadDoc={actions.handleDownloadDoc}
-          onScheduleInterview={(intv) => {
-            state.setEditingInterview(intv || null);
-            state.setScheduleModalOpen(true);
-          }}
-          onCancelInterview={actions.handleCancelInterview}
-        />
-      </main>
+      {/* Active Tab Body Content */}
+      <ApplicationTabContent
+        activeTab={state.activeTab}
+        app={state.app}
+        canEdit={state.canEdit}
+        candidateDocuments={state.candidateDocuments}
+        candidateName={state.candidateName}
+        candidateEmail={state.candidateEmail}
+        overviewSections={state.overviewSections}
+        onPreviewDoc={(doc) => state.setPreviewDoc(doc)}
+        onDownloadDoc={actions.handleDownloadDoc}
+        onScheduleInterview={(intv) => {
+          state.setEditingInterview(intv || null);
+          state.setScheduleModalOpen(true);
+        }}
+        onCancelInterview={actions.handleCancelInterview}
+      />
 
       {/* Modals Orchestration */}
       <ApplicationDetailModals
@@ -164,6 +138,13 @@ export function ApplicationDetailView() {
         onCloseDeleteModal={() => state.setIsDeleteModalOpen(false)}
         onConfirmDelete={actions.handleConfirmDelete}
         isDeleting={actions.isDeleting}
+        isRejectModalOpen={actions.isRejectModalOpen}
+        onCloseRejectModal={() => actions.setIsRejectModalOpen(false)}
+        onConfirmReject={actions.handleConfirmReject}
+        isOfferModalOpen={actions.isOfferModalOpen}
+        onCloseOfferModal={() => actions.setIsOfferModalOpen(false)}
+        onConfirmOffer={actions.handleConfirmOffer}
+        isUpdatingStage={actions.isUpdatingStage}
         scheduleModalOpen={state.scheduleModalOpen}
         onCloseScheduleModal={() => {
           state.setScheduleModalOpen(false);

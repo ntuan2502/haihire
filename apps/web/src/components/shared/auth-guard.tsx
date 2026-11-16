@@ -25,28 +25,19 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/auth/login");
+        router.replace("/auth/login");
       } else if (requireOrg && user && !user.organizationId) {
         router.replace("/auth/onboarding");
       }
     }
   }, [isAuthenticated, user, loading, requireOrg, router]);
 
-  if (loading) {
-    return (
-      <LoadingSpinner
-        fullScreen
-        text={t("common.loading") || "Loading workspace..."}
-      />
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (requireOrg && user && !user.organizationId) {
-    return null;
+  if (
+    loading ||
+    !isAuthenticated ||
+    (requireOrg && user && !user.organizationId)
+  ) {
+    return <LoadingSpinner fullScreen text={t("common.loadingWorkspace")} />;
   }
 
   return <>{children}</>;

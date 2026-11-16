@@ -59,6 +59,10 @@ export interface MockTable<T = MockRecord> {
   select(...fields: string[]): QueryBuilder<T>;
   where(predicate: PredicateFn<T>): QueryBuilder<T>;
   create(data: Partial<T> | { data: Partial<T> }): Promise<T>;
+  createMany(args?: {
+    data: Array<Partial<T>>;
+    skipDuplicates?: boolean;
+  }): Promise<{ count: number }>;
   upsert(args: {
     create: Partial<T>;
     update: Partial<T>;
@@ -66,6 +70,11 @@ export interface MockTable<T = MockRecord> {
     where?: Record<string, unknown>;
   }): Promise<T>;
   count(args?: { where?: unknown }): Promise<number>;
+  groupBy(args: {
+    by: string[];
+    where?: unknown;
+    _count?: boolean | Record<string, boolean>;
+  }): Promise<Array<Record<string, unknown>>>;
   store: T[];
   // Canonical Prisma Client methods
   findMany(args?: {
@@ -521,9 +530,33 @@ export function createMockTable<T = MockRecord>(
           (data as { data: Partial<T> }).data
             ? (data as { data: Partial<T> }).data
             : data;
-        const record = { ...payload } as T;
-        store.push(record);
-        return { ...record };
+        const record = { ...payload } as Record<string, unknown>;
+        for (const [k, v] of Object.entries(record)) {
+          if (
+            v &&
+            typeof v === "object" &&
+            (v.constructor?.name === "DbNull" ||
+              (v as Record<string | symbol, unknown>)[
+                Symbol.for("prisma.objectEnumValue")
+              ])
+          ) {
+            record[k] = null;
+          }
+        }
+        store.push(record as T);
+        return { ...record } as T;
+      },
+    ),
+    createMany: vi.fn(
+      async (args?: {
+        data: Array<Partial<T>>;
+        skipDuplicates?: boolean;
+      }): Promise<{ count: number }> => {
+        const items = Array.isArray(args?.data) ? args.data : [];
+        for (const item of items) {
+          store.push({ ...item } as T);
+        }
+        return { count: items.length };
       },
     ),
     upsert: vi.fn(
@@ -558,6 +591,38 @@ export function createMockTable<T = MockRecord>(
         matchPrismaWhere(item as MockRecord, args.where),
       ).length;
     }),
+    groupBy: vi.fn(
+      async (args: {
+        by: string[];
+        where?: unknown;
+        _count?: boolean | Record<string, boolean>;
+      }): Promise<Array<Record<string, unknown>>> => {
+        const filtered = args.where
+          ? store.filter((item) =>
+              matchPrismaWhere(item as MockRecord, args.where),
+            )
+          : store;
+        const groups = new Map<string, Record<string, unknown>>();
+        for (const item of filtered) {
+          const rec = item as MockRecord;
+          const keyParts = args.by.map((field) => String(rec[field] ?? ""));
+          const compositeKey = keyParts.join("\u0000");
+          const existing = groups.get(compositeKey);
+          if (existing) {
+            const countObj = existing._count as Record<string, number>;
+            countObj._all += 1;
+          } else {
+            const entry: Record<string, unknown> = {};
+            for (const field of args.by) {
+              entry[field] = rec[field];
+            }
+            entry._count = { _all: 1 };
+            groups.set(compositeKey, entry);
+          }
+        }
+        return Array.from(groups.values());
+      },
+    ),
     findMany: vi.fn(
       async (args?: {
         where?: unknown;
@@ -571,15 +636,31 @@ export function createMockTable<T = MockRecord>(
           matchPrismaWhere(item as MockRecord, args?.where),
         );
         if (args?.orderBy) {
-          const [sortKey, sortDir] = Object.entries(args.orderBy)[0] || [];
-          if (sortKey) {
+          const orderClauses: Array<[string, string]> = Array.isArray(
+            args.orderBy,
+          )
+            ? args.orderBy.flatMap((o: Record<string, string>) =>
+                Object.entries(o),
+              )
+            : Object.entries(args.orderBy as Record<string, string>);
+
+          if (orderClauses.length > 0) {
             filtered.sort((a, b) => {
-              const va = (a as MockRecord)[sortKey];
-              const vb = (b as MockRecord)[sortKey];
-              const sa = String(va ?? "");
-              const sb = String(vb ?? "");
-              if (sa < sb) return sortDir === "desc" ? 1 : -1;
-              if (sa > sb) return sortDir === "desc" ? -1 : 1;
+              for (const [sortKey, sortDir] of orderClauses) {
+                const va = (a as MockRecord)[sortKey];
+                const vb = (b as MockRecord)[sortKey];
+                let cmp = 0;
+                if (typeof va === "number" && typeof vb === "number") {
+                  cmp = va - vb;
+                } else if (va instanceof Date && vb instanceof Date) {
+                  cmp = va.getTime() - vb.getTime();
+                } else {
+                  const sa = String(va ?? "");
+                  const sb = String(vb ?? "");
+                  cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+                }
+                if (cmp !== 0) return sortDir === "desc" ? -cmp : cmp;
+              }
               return 0;
             });
           }
@@ -727,11 +808,57 @@ export function createMockPrismaService(
     },
   });
 
+  const snapshotStores = () => {
+    const snapshots = new Map<object[], object[]>();
+    const capture = (tbl: unknown) => {
+      if (
+        tbl &&
+        typeof tbl === "object" &&
+        "store" in tbl &&
+        Array.isArray((tbl as { store?: unknown }).store)
+      ) {
+        const store = (tbl as { store: object[] }).store;
+        if (!snapshots.has(store)) {
+          snapshots.set(
+            store,
+            store.map((row) =>
+              row && typeof row === "object" ? { ...row } : row,
+            ),
+          );
+        }
+      }
+    };
+    for (const [k, v] of Object.entries(tableMap)) {
+      if (Array.isArray(v)) getTable(k);
+      else capture(v);
+    }
+    Object.values(dynamicTables).forEach(capture);
+    return snapshots;
+  };
+
+  const restoreStores = (snapshots: Map<object[], object[]>) => {
+    for (const [store, copy] of snapshots.entries()) {
+      store.splice(0, store.length, ...copy);
+    }
+    for (const key of Object.keys(dynamicTables)) {
+      const store = dynamicTables[key].store as object[];
+      if (!snapshots.has(store)) {
+        store.splice(0, store.length);
+      }
+    }
+  };
+
   const txSpy = vi.fn(async (fn: unknown) => {
-    if (typeof fn === "function")
-      return (fn as (client: unknown) => unknown)(proxyInstance);
-    if (Array.isArray(fn)) return Promise.all(fn);
-    return fn;
+    const snapshots = snapshotStores();
+    try {
+      if (typeof fn === "function")
+        return await (fn as (client: unknown) => unknown)(proxyInstance);
+      if (Array.isArray(fn)) return await Promise.all(fn);
+      return fn;
+    } catch (err) {
+      restoreStores(snapshots);
+      throw err;
+    }
   });
 
   proxyTarget.$transaction = txSpy;

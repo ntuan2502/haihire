@@ -1,7 +1,9 @@
 import { useState } from "react";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
+import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { canTransition, getTransitionDisabledReason } from "@/lib/stages";
@@ -31,6 +33,8 @@ export function useApplicationStageActions({
   const queryClient = useQueryClient();
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -43,6 +47,14 @@ export function useApplicationStageActions({
       toast.error(reason);
       return;
     }
+    if (newStage === "REJECTED" && app.stage !== "REJECTED") {
+      setIsRejectModalOpen(true);
+      return;
+    }
+    if (newStage === "OFFER" && app.stage !== "OFFER") {
+      setIsOfferModalOpen(true);
+      return;
+    }
     try {
       await updateStageMutation.mutateAsync({
         id: app.id,
@@ -52,6 +64,51 @@ export function useApplicationStageActions({
       console.error("Failed to update stage:", err);
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+    }
+  };
+
+  const handleConfirmReject = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!app) return;
+    try {
+      await updateStageMutation.mutateAsync({
+        id: app.id,
+        stage: "REJECTED",
+        rejectionReason: payload.rejectionReason,
+        sendRejectionEmail: payload.sendRejectionEmail,
+        ...(payload.emailTemplateId
+          ? { emailTemplateId: payload.emailTemplateId }
+          : {}),
+      });
+      setIsRejectModalOpen(false);
+    } catch (err) {
+      console.error("Failed to reject application:", err);
+      toast.error(getApiErrorMessage(err, t));
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+    }
+  };
+
+  const handleConfirmOffer = async (
+    payload: OfferApplicationConfirmPayload,
+  ) => {
+    if (!app) return;
+    try {
+      await updateStageMutation.mutateAsync({
+        id: app.id,
+        stage: "OFFER",
+        sendOfferEmail: payload.sendOfferEmail,
+        ...(payload.emailTemplateId
+          ? { emailTemplateId: payload.emailTemplateId }
+          : {}),
+      });
+      setIsOfferModalOpen(false);
+    } catch (err) {
+      console.error("Failed to move application to offer:", err);
+      toast.error(getApiErrorMessage(err, t));
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
     }
@@ -135,7 +192,13 @@ export function useApplicationStageActions({
   return {
     isDeleting,
     isUpdatingStage: updateStageMutation.isPending,
+    isRejectModalOpen,
+    setIsRejectModalOpen,
+    isOfferModalOpen,
+    setIsOfferModalOpen,
     handleStageChange,
+    handleConfirmReject,
+    handleConfirmOffer,
     handleCancelInterview,
     handleConfirmDelete,
     handleDownloadDoc,

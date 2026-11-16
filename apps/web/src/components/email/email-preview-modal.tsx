@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "cn";
 import { EmailHtmlPreview } from "./email-html-preview";
 import { useI18n } from "@/i18n";
+import { formatDateTime } from "@/lib/utils";
 import type { EmailDeliveryStatus } from "@/lib/email-templates";
 import {
   CustomModal,
@@ -64,23 +65,7 @@ export function EmailPreviewModal({
       .map((w) => w[0]?.toUpperCase())
       .join("") || "E";
 
-  const displayDate = date
-    ? new Date(date).toLocaleString("vi-VN", {
-        weekday: "short",
-        day: "numeric",
-        month: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : new Date().toLocaleDateString("vi-VN", {
-        weekday: "short",
-        day: "numeric",
-        month: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  const displayDate = formatDateTime(date ?? new Date());
 
   const modalTitle = title || templateName || subject || t("email.livePreview");
 
@@ -145,7 +130,7 @@ export function EmailPreviewModal({
             >
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between mt-1">
                 <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  ‹ Inbox
+                  {t("email.mobileBackToInbox")}
                 </span>
                 <div className="flex items-center gap-2">
                   {status && statusBadge}
@@ -176,9 +161,7 @@ export function EmailPreviewModal({
                       {t("email.statusFailed")}
                     </div>
                     <div className="text-[11px] text-rose-600/90 dark:text-rose-300/90 leading-relaxed font-mono break-words break-all [overflow-wrap:anywhere] bg-rose-100/50 dark:bg-rose-900/30 p-2 rounded-lg border border-rose-200/60 dark:border-rose-800/60 max-h-32 overflow-y-auto">
-                      {errorMessage ||
-                        t("email.deliveryFailedDesc") ||
-                        "Không thể gửi thư hoặc bị máy chủ từ chối."}
+                      {errorMessage || t("email.deliveryFailedDesc")}
                     </div>
                   </div>
                 </div>

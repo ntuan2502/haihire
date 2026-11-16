@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
+import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { getCandidateDisplayName } from "@/lib/utils";
@@ -101,11 +103,6 @@ function JobPipelinePageContent() {
             pipeline.setEditingInterview(intv || null);
             pipeline.setScheduleModalOpen(true);
           }}
-          candidateNotesList={pipeline.candidateNotesList}
-          candidateNoteInput={pipeline.candidateNoteInput}
-          onChangeNoteInput={pipeline.setCandidateNoteInput}
-          onAddNote={pipeline.handleAddNote}
-          isUpdatingNote={pipeline.isUpdatingNote}
           onDeleteApplication={() => pipeline.setDeleteAppModalOpen(true)}
         />
       </main>
@@ -128,6 +125,42 @@ function JobPipelinePageContent() {
           candidateName={getCandidateDisplayName(pipeline.selectedCandidate)}
           jobTitle={pipeline.job.title}
           isDeleting={pipeline.isDeletingApp}
+        />
+      )}
+
+      {/* Reject Application Confirmation Modal */}
+      {pipeline.pendingRejectCandidate && (
+        <RejectApplicationModal
+          isOpen={!!pipeline.pendingRejectCandidate}
+          onClose={() => pipeline.setPendingRejectCandidate(null)}
+          onConfirm={pipeline.handleConfirmRejectCandidate}
+          candidateName={getCandidateDisplayName(
+            pipeline.pendingRejectCandidate,
+          )}
+          candidateEmail={
+            pipeline.pendingRejectCandidate.candidateEmail ??
+            pipeline.pendingRejectCandidate.candidate?.email
+          }
+          jobTitle={pipeline.job.title}
+          isSubmitting={pipeline.isMovingStage}
+        />
+      )}
+
+      {/* Offer Application Confirmation Modal */}
+      {pipeline.pendingOfferCandidate && (
+        <OfferApplicationModal
+          isOpen={!!pipeline.pendingOfferCandidate}
+          onClose={() => pipeline.setPendingOfferCandidate(null)}
+          onConfirm={pipeline.handleConfirmOfferCandidate}
+          candidateName={getCandidateDisplayName(
+            pipeline.pendingOfferCandidate,
+          )}
+          candidateEmail={
+            pipeline.pendingOfferCandidate.candidateEmail ??
+            pipeline.pendingOfferCandidate.candidate?.email
+          }
+          jobTitle={pipeline.job.title}
+          isSubmitting={pipeline.isMovingStage}
         />
       )}
 

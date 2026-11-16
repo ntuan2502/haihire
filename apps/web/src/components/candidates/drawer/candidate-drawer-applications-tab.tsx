@@ -12,11 +12,13 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { formatDate, type CandidateItem } from "@/lib/utils";
+import { getStageLabel } from "@/lib/stages";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerApplicationsTabProps {
@@ -41,7 +43,7 @@ export interface CandidateDrawerApplicationsTabProps {
 export function CandidateDrawerApplicationsTab({
   candidate,
   jobs,
-  canEdit,
+  canEdit: _canEdit,
   stageFilter,
   onStageFilterChange,
   applications,
@@ -51,6 +53,8 @@ export function CandidateDrawerApplicationsTab({
   onCancelInterview,
 }: CandidateDrawerApplicationsTabProps) {
   const { t } = useI18n();
+  const canCreateApplication = useHasPermission("application:create");
+  const canCreateInterview = useHasPermission("interview:create");
 
   return (
     <div className="space-y-3">
@@ -71,7 +75,7 @@ export function CandidateDrawerApplicationsTab({
           triggerClassName="h-7 w-28 text-[11px] font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
         />
 
-        {canEdit && (
+        {canCreateApplication && (
           <button
             type="button"
             onClick={() => onApplyToJob(candidate)}
@@ -109,10 +113,10 @@ export function CandidateDrawerApplicationsTab({
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-0.5 min-w-0">
                     <h4 className="font-bold text-slate-900 dark:text-white truncate">
-                      {job?.title || "Position"}
+                      {job?.title || t("common.positionFallback")}
                     </h4>
                     <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                      {t("common.status")}: {app.stage} •{" "}
+                      {t("common.status")}: {getStageLabel(app.stage, t)} •{" "}
                       {t("applications.appliedBadge")}{" "}
                       {formatDate(app.createdAt, "short")}
                     </p>
@@ -126,7 +130,7 @@ export function CandidateDrawerApplicationsTab({
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
-                    {canEdit && allInterviews.length === 0 && (
+                    {canCreateInterview && allInterviews.length === 0 && (
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app)}
@@ -141,18 +145,19 @@ export function CandidateDrawerApplicationsTab({
 
                 <CandidateInterviewsList
                   application={app}
-                  notes={app.notes}
                   onSchedule={(intv) => onScheduleInterview(app, intv)}
                   onCancelInterview={(intv) => onCancelInterview(app, intv)}
-                  canEdit={canEdit}
+                  canEdit={canCreateInterview}
                   showSectionHeader={false}
                   hideIfEmpty={allInterviews.length === 0}
                 />
 
-                {app.notes && (
+                {app.applicationNotes && app.applicationNotes.length > 0 && (
                   <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
                     <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
-                    <span className="line-clamp-2">{app.notes}</span>
+                    <span className="line-clamp-2">
+                      {app.applicationNotes[0]?.content}
+                    </span>
                   </div>
                 )}
               </div>

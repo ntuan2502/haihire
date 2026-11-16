@@ -37,14 +37,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
       <div className="grid grid-cols-6 gap-1">
         {pipelineStages.map((stage) => {
           const count = counts.byStage[stage.id] || 0;
-          const displayLabel =
-            stage.id === "OFFER" && stage.label.includes("Đề nghị")
-              ? "Đề nghị"
-              : stage.id === "APPLIED" && stage.label.includes("Đã nộp")
-                ? "Đã nộp"
-                : stage.id === "HIRED" && stage.label.includes("Đã tuyển")
-                  ? "Đã tuyển"
-                  : stage.label;
+          const displayLabel = stage.label;
 
           return (
             <button

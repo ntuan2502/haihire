@@ -18,8 +18,7 @@ COPY apps/web/package.json apps/web/tsconfig.json ./apps/web/
 
 # Install build dependencies using BuildKit pnpm store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @haihire/shared --filter web... --frozen-lockfile || \
-    pnpm install --filter @haihire/shared --filter web...
+    pnpm install --filter @haihire/shared --filter web... --frozen-lockfile
 
 # Copy source code
 COPY packages/shared ./packages/shared

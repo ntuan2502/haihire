@@ -1,16 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
-import crypto from "node:crypto";
-import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
-import { toInstant } from "../common/date.util";
+import { DEMO_ACCOUNTS } from "../auth/constants";
 import { backendEnv } from "../config/env";
+import { ensureDefaultDemoAccounts } from "./demo-seed.util";
 
 const connectionString = backendEnv.DATABASE_URL;
+
+export interface TenantRlsContext {
+  tenantOrgId?: string | null;
+  bypassRls?: boolean;
+}
 
 @Injectable()
 export class PrismaService
@@ -19,6 +22,7 @@ export class PrismaService
 {
   private readonly pool: Pool;
   private readonly als = new AsyncLocalStorage<PrismaService>();
+  private readonly tenantContextAls = new AsyncLocalStorage<TenantRlsContext>();
   private readonly self: PrismaService;
 
   constructor() {
@@ -42,6 +46,72 @@ export class PrismaService
   }
 
   /**
+   * Binds tenant RLS metadata into AsyncLocalStorage for the duration of `fn`.
+   */
+  runWithTenantContext<T>(
+    tenantOrgId: string | null | undefined,
+    fn: () => T,
+    options?: { bypassRls?: boolean },
+  ): T {
+    return this.tenantContextAls.run(
+      {
+        tenantOrgId: tenantOrgId ?? null,
+        bypassRls: options?.bypassRls ?? false,
+      },
+      fn,
+    );
+  }
+
+  /**
+   * Returns the active AsyncLocalStorage tenant RLS context if present.
+   */
+  getCurrentTenantContext(): TenantRlsContext | undefined {
+    return this.tenantContextAls.getStore();
+  }
+
+  /**
+   * Runs a callback inside a PostgreSQL transaction with Row-Level Security enforced
+   * under the non-superuser `haihire_rls_user` role for the given tenant.
+   */
+  async withTenantRls<T>(
+    tenantOrgId: string,
+    fn: (tx: PrismaService) => Promise<T>,
+  ): Promise<T> {
+    if (!tenantOrgId) {
+      throw new Error("withTenantRls requires a non-empty tenantOrgId.");
+    }
+    return this.$transaction(async (txClient) => {
+      await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantOrgId}, true), set_config('app.bypass_rls', 'off', true)`;
+      await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+      return this.tenantContextAls.run({ tenantOrgId, bypassRls: false }, () =>
+        this.als.run(txClient as PrismaService, () =>
+          fn(txClient as PrismaService),
+        ),
+      );
+    }) as Promise<T>;
+  }
+
+  /**
+   * Runs a system/background callback inside a PostgreSQL transaction under
+   * `haihire_rls_user` with explicit transaction-local `app.bypass_rls = 'on'`.
+   */
+  async withSystemRlsBypass<T>(
+    fn: (tx: PrismaService) => Promise<T>,
+  ): Promise<T> {
+    return this.$transaction(async (txClient) => {
+      await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', '', true), set_config('app.bypass_rls', 'on', true)`;
+      await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+      return this.tenantContextAls.run(
+        { tenantOrgId: null, bypassRls: true },
+        () =>
+          this.als.run(txClient as PrismaService, () =>
+            fn(txClient as PrismaService),
+          ),
+      );
+    }) as Promise<T>;
+  }
+
+  /**
    * Executes a callback within a database transaction, automatically propagating
    * AsyncLocalStorage context so nested transactional calls reuse the same transaction.
    */
@@ -50,7 +120,19 @@ export class PrismaService
     if (existing) {
       return fn(existing);
     }
+    const tenantCtx = this.tenantContextAls.getStore();
     return this.$transaction(async (txClient) => {
+      if (tenantCtx?.tenantOrgId || tenantCtx?.bypassRls) {
+        const orgVal = tenantCtx.tenantOrgId ?? "";
+        const bypassVal = tenantCtx.bypassRls ? "on" : "off";
+        await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${orgVal}, true), set_config('app.bypass_rls', ${bypassVal}, true)`;
+        if (
+          typeof (txClient as { $executeRawUnsafe?: unknown })
+            .$executeRawUnsafe === "function"
+        ) {
+          await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+        }
+      }
       return this.als.run(txClient as PrismaService, () =>
         fn(txClient as PrismaService),
       );
@@ -65,6 +147,14 @@ export class PrismaService
     try {
       await this.$connect();
 
+      try {
+        await this.$executeRawUnsafe(
+          "CREATE EXTENSION IF NOT EXISTS unaccent;",
+        );
+      } catch {
+        // Non-superuser or non-Postgres environments may ignore extension creation; search falls back in JS.
+      }
+
       if (
         backendEnv.SEED_DEMO_ON_BOOT &&
         backendEnv.NODE_ENV !== "production"
@@ -73,67 +163,7 @@ export class PrismaService
           select: { id: true },
         });
         if (!existingUser) {
-          const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
-          const adminUserId = crypto.randomUUID();
-          const adminOrgId = crypto.randomUUID();
-          const memberUserId = crypto.randomUUID();
-
-          await this.organization.upsert({
-            where: { id: adminOrgId },
-            create: {
-              id: adminOrgId,
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUserId,
-              updatedAt: toInstant(),
-            },
-            update: {
-              name: "Admin",
-              slug: "admin",
-              ownerId: adminUserId,
-              updatedAt: toInstant(),
-            },
-          });
-
-          await this.user.upsert({
-            where: { email: DEMO_ACCOUNTS.ADMIN.email },
-            create: {
-              id: adminUserId,
-              email: DEMO_ACCOUNTS.ADMIN.email,
-              name: "Demo Admin",
-              password: hashedPassword,
-              role: "ADMIN",
-              organizationId: adminOrgId,
-              updatedAt: toInstant(),
-            },
-            update: {
-              email: DEMO_ACCOUNTS.ADMIN.email,
-              name: "Demo Admin",
-              password: hashedPassword,
-              role: "ADMIN",
-              organizationId: adminOrgId,
-              updatedAt: toInstant(),
-            },
-          });
-
-          await this.user.upsert({
-            where: { email: DEMO_ACCOUNTS.MEMBER.email },
-            create: {
-              id: memberUserId,
-              email: DEMO_ACCOUNTS.MEMBER.email,
-              name: "Demo Member",
-              password: hashedPassword,
-              role: "MEMBER",
-              updatedAt: toInstant(),
-            },
-            update: {
-              email: DEMO_ACCOUNTS.MEMBER.email,
-              name: "Demo Member",
-              password: hashedPassword,
-              role: "MEMBER",
-              updatedAt: toInstant(),
-            },
-          });
+          await ensureDefaultDemoAccounts(this);
           console.log(
             `Initialized default demo accounts: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - Org Admin), ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER - No Org)`,
           );
@@ -143,6 +173,21 @@ export class PrismaService
       const msg = error instanceof Error ? error.message : String(error);
       console.warn("Database connection pending or initializing...", msg);
     }
+  }
+
+  /**
+   * Returns current connection pool statistics from pg.Pool.
+   */
+  getPoolStats() {
+    return {
+      totalCount: this.pool?.totalCount ?? 0,
+      idleCount: this.pool?.idleCount ?? 0,
+      waitingCount: this.pool?.waitingCount ?? 0,
+      activeCount: Math.max(
+        0,
+        (this.pool?.totalCount ?? 0) - (this.pool?.idleCount ?? 0),
+      ),
+    };
   }
 
   async onModuleDestroy() {

@@ -4,13 +4,18 @@ import { useState, useMemo } from "react";
 import { useTableParams } from "@/hooks/use-table-params";
 import { useCandidates } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";
-import type { CandidateItem } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
+import { getCandidateDisplayName, type CandidateItem } from "@/lib/utils";
 
 export type SortField = "name" | "email" | "phone" | "applications" | "added";
 export type SortDirection = "asc" | "desc";
 
-export function useCandidatesFilterSort(organizationId?: string | null) {
+export function useCandidatesFilterSort(
+  organizationId?: string | null,
+  options?: { enabled?: boolean },
+) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
 
   // URL Query State for Pagination & Search
   const {
@@ -29,6 +34,7 @@ export function useCandidatesFilterSort(organizationId?: string | null) {
       page: currentPage,
       limit: rowsPerPage,
       search: search.trim() || undefined,
+      enabled: options?.enabled,
     },
   );
 
@@ -49,21 +55,22 @@ export function useCandidatesFilterSort(organizationId?: string | null) {
   const candidateRows: CandidateItem[] = useMemo(() => {
     return rawCandidates.map((cand) => ({
       id: cand.id,
-      name: cand.name,
+      name: getCandidateDisplayName(cand, localization),
       email: cand.email,
       phone: cand.phone || "—",
       applicationsCount:
         cand.applicationsCount ?? cand.applications?.length ?? 0,
       createdAt: cand.createdAt,
       updatedAt: cand.updatedAt,
-      notes: cand.notes || "",
+      latestNote: cand.latestNote ?? cand.candidateNotes?.[0] ?? null,
+      notesCount: cand.notesCount ?? cand.candidateNotes?.length ?? 0,
       resumeUrl: cand.resumeUrl,
       resumeFileName: cand.resumeFileName,
       resumeFileSize: cand.resumeFileSize,
       resumeMimeType: cand.resumeMimeType,
       candidate: cand,
     }));
-  }, [rawCandidates]);
+  }, [rawCandidates, localization]);
 
   // Compute status counts for segmented tabs
   const candidateCounts = useMemo(() => {

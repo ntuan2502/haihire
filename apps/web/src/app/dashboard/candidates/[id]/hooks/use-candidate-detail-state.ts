@@ -1,30 +1,40 @@
 import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useAllJobs, useCandidate } from "@/hooks/use-queries";
+import {
+  useAllJobs,
+  useCandidate,
+  useCandidateNotes,
+} from "@/hooks/use-queries";
 import {
   isValidUuid,
   formatDate,
-  parseCandidateNotes,
+  resolveCandidateProfile,
   parseCandidateDocuments,
+  getCandidateDisplayName,
 } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 
 export function useCandidateDetailState() {
   const params = useParams();
   const { user, canEdit } = useAuth();
+  const { localization } = useLocalization();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const isCandidateIdValid = isValidUuid(candidateIdStr);
   const { data: candidate, isLoading: candidateLoading } = useCandidate(
     isCandidateIdValid ? candidateIdStr : null,
   );
+  const { data: candidateNotesList } = useCandidateNotes(
+    isCandidateIdValid ? candidateIdStr : undefined,
+  );
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
 
-  const [activeTab, setActiveTab] = useState<"applications" | "documents">(
-    "applications",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "applications" | "documents" | "notes"
+  >("applications");
   const [stageFilter, setStageFilter] = useState("ALL");
   const [documentFilter, setDocumentFilter] = useState("Resume");
 
@@ -42,7 +52,7 @@ export function useCandidateDetailState() {
     if (candidate.allDocuments && candidate.allDocuments.length > 0) {
       return candidate.allDocuments;
     }
-    const directDocs = parseCandidateDocuments(candidate.notes, {
+    const directDocs = parseCandidateDocuments({
       id: candidate.id,
       resumeUrl: candidate.resumeUrl || "",
       resumeFileName: candidate.resumeFileName || "Resume.pdf",
@@ -54,7 +64,7 @@ export function useCandidateDetailState() {
     const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
 
     for (const app of candidateApps) {
-      const appDocs = parseCandidateDocuments(app.notes, {
+      const appDocs = parseCandidateDocuments({
         id: app.id,
         resumeUrl: app.resumeUrl || "",
         resumeFileName: app.resumeFileName || "Application_Resume.pdf",
@@ -84,12 +94,18 @@ export function useCandidateDetailState() {
     );
   }, [candidateDocuments, documentFilter]);
 
-  const parsedNotes = parseCandidateNotes(candidate?.notes, candidate?.name);
+  const parsedNotes = resolveCandidateProfile(
+    candidate?.name,
+    candidate,
+    localization,
+  );
   const gender = candidate?.gender || parsedNotes.gender;
   const dob = candidate?.dateOfBirth
     ? formatDate(candidate.dateOfBirth)
     : parsedNotes.dob;
-  const candidateName = candidate?.name || "Candidate";
+  const candidateName = candidate
+    ? getCandidateDisplayName(candidate, localization)
+    : "Candidate";
   const candidateEmail = candidate?.email || "—";
   const candidatePhone = candidate?.phone || "";
   const candidateCreated = formatDate(candidate?.createdAt);
@@ -97,6 +113,9 @@ export function useCandidateDetailState() {
     candidate?.updatedAt || candidate?.createdAt,
   );
 
+  const notesCount = candidateNotesList
+    ? candidateNotesList.length
+    : (candidate?.notesCount ?? 0);
   const loading = candidateLoading || jobsLoading;
 
   return {
@@ -106,6 +125,7 @@ export function useCandidateDetailState() {
     jobs,
     canEdit,
     loading,
+    notesCount,
     activeTab,
     setActiveTab,
     stageFilter,

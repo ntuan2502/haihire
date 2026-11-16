@@ -163,6 +163,37 @@ describe("Organizations Extended DTO Specs", () => {
       expect(errors.length).toBe(0);
     });
 
+    it("should pass for all valid system roles", async () => {
+      for (const role of [
+        "ADMIN",
+        "RECRUITER",
+        "HIRING_MANAGER",
+        "INTERVIEWER",
+        "MEMBER",
+      ]) {
+        const dto = plainToInstance(CreateInviteLinkDto, { role });
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+        expect(dto.role).toBe(role);
+      }
+    });
+
+    it("should trim and uppercase legacy mixed-case role input", async () => {
+      const dto = plainToInstance(CreateInviteLinkDto, { role: "  Member  " });
+      const errors = await validate(dto);
+      expect(errors).toHaveLength(0);
+      expect(dto.role).toBe("MEMBER");
+    });
+
+    it("should fail when role is an invalid string value", async () => {
+      const dto = plainToInstance(CreateInviteLinkDto, { role: "SUPERUSER" });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints?.isIn).toBe(
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+      );
+    });
+
     it("should fail when role is non-string (number)", async () => {
       const dto = plainToInstance(CreateInviteLinkDto, { role: 123 });
       const errors = await validate(dto);

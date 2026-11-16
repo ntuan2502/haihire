@@ -209,6 +209,7 @@ jobs:
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
           pnpm db:generate
+          pnpm db:migrate
 
       - name: Audit Test Count Delta (Anti-Regression)
         run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD

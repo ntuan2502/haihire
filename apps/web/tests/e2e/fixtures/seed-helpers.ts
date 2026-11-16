@@ -50,24 +50,34 @@ export async function loginAsAdmin(
     );
   }
 
-  // 1. Capture Set-Cookie header if provided
+  // 1. Capture and parse all Set-Cookie headers
   const headers = loginRes.headersArray();
-  const setCookieHeader =
-    headers.find((h) => h.name.toLowerCase() === "set-cookie")?.value || "";
-  const cookieMatch = setCookieHeader.match(/haihire_token=([^;]+)/);
-  if (cookieMatch) {
-    return `haihire_token=${cookieMatch[1]}`;
-  }
+  const setCookieHeaders = headers.filter(
+    (h) => h.name.toLowerCase() === "set-cookie",
+  );
 
-  // 2. Fallback to accessToken from JSON body
-  try {
-    const body = await loginRes.json();
-    if (body?.accessToken) {
-      return `haihire_token=${body.accessToken}`;
+  let tokenCookie: string | undefined;
+  let refreshCookie: string | undefined;
+
+  for (const h of setCookieHeaders) {
+    const tokenMatch = h.value.match(/haihire_token=([^;]+)/);
+    if (tokenMatch) {
+      tokenCookie = tokenMatch[1];
     }
-  } catch {
-    // Body was not json
+    const refreshMatch = h.value.match(/haihire_refresh_token=([^;]+)/);
+    if (refreshMatch) {
+      refreshCookie = refreshMatch[1];
+    }
   }
 
-  throw new Error("Could not extract haihire_token from login response");
+  if (!tokenCookie) {
+    throw new Error(
+      `Could not extract haihire_token from Set-Cookie headers in login response. Status: ${loginRes.status()}`,
+    );
+  }
+
+  // Return composite Cookie header string containing both cookies if present
+  return refreshCookie
+    ? `haihire_token=${tokenCookie}; haihire_refresh_token=${refreshCookie}`
+    : `haihire_token=${tokenCookie}`;
 }

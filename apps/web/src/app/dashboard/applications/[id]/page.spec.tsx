@@ -79,9 +79,43 @@ let currentApp: typeof defaultApplicationData | null = {
 const mockUpdateStageMutateAsync = vi.fn();
 const mockDeleteAppMutateAsync = vi.fn();
 const mockUpdateCandidateMutateAsync = vi.fn();
+const mockAddApplicationNoteMutateAsync = vi.fn();
 const mockDeleteInterviewMutateAsync = vi.fn();
 const mockSendEmailMutateAsync = vi.fn();
 const mockDownloadAuthenticatedFile = vi.fn();
+
+const mockNotesList = [
+  {
+    id: "note-1",
+    applicationId: VALID_APP_ID,
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Experienced backend engineer",
+    isEdited: false,
+    createdAt: "2026-03-01T10:00:00.000Z",
+    updatedAt: "2026-03-01T10:00:00.000Z",
+  },
+  {
+    id: "note-2",
+    applicationId: VALID_APP_ID,
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Strong TypeScript",
+    isEdited: false,
+    createdAt: "2026-03-01T11:00:00.000Z",
+    updatedAt: "2026-03-01T11:00:00.000Z",
+  },
+];
+
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/app-detail-preview.pdf",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -89,6 +123,8 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     downloadAuthenticatedFile: (...args: unknown[]) =>
       mockDownloadAuthenticatedFile(...args),
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
   };
 });
 
@@ -99,6 +135,10 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
     useAllJobs: () => ({
       data: mockJobs,
       isLoading: mockIsLoading,
+    }),
+    useJob: (_id?: string | null) => ({
+      data: mockJobs[0],
+      isLoading: false,
     }),
     useOpenJobs: () => ({
       data: mockJobs,
@@ -141,6 +181,22 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       isPending: false,
     }),
     useUpdateInterviewMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useApplicationNotes: (appId?: string | null) => ({
+      data: appId === VALID_APP_ID ? mockNotesList : [],
+      isLoading: false,
+    }),
+    useAddApplicationNoteMutation: () => ({
+      mutateAsync: mockAddApplicationNoteMutateAsync,
+      isPending: false,
+    }),
+    useUpdateApplicationNoteMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useDeleteApplicationNoteMutation: () => ({
       mutateAsync: vi.fn(),
       isPending: false,
     }),
@@ -200,7 +256,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
 
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getByTestId("mock-navbar")).toBeInTheDocument();
+      expect(screen.getByText("Loading workspace...")).toBeInTheDocument();
       expect(screen.queryByText("Tran Van B")).not.toBeInTheDocument();
     });
   });
@@ -236,7 +292,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(offerBtn).toBeDisabled();
       expect(offerBtn).toHaveAttribute("title");
       expect(offerBtn.getAttribute("title")).toContain(
-        "Không thể chuyển từ APPLIED sang OFFER",
+        "Không thể chuyển từ Ứng tuyển sang Đề nghị",
       );
     });
 
@@ -338,7 +394,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       ).toBeInTheDocument();
     });
 
-    it("switches to other tab panels: ai, notes, properties, timeline, documents", () => {
+    it("switches to other tab panels: ai, notes, timeline, documents", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       // AI tab
@@ -351,13 +407,6 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       fireEvent.click(notesTab);
       expect(
         screen.getByPlaceholderText("Nhập ghi chú tại đây..."),
-      ).toBeInTheDocument();
-
-      // Properties tab
-      const propTab = screen.getByRole("button", { name: "Thuộc tính" });
-      fireEvent.click(propTab);
-      expect(
-        screen.getByText(/\+? Thêm thuộc tính tổ chức/i),
       ).toBeInTheDocument();
 
       // Timeline tab
@@ -376,7 +425,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     it("opens overview sections popover when toggle button is clicked", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      const popoverToggle = screen.getByLabelText("Toggle overview sections");
+      const popoverToggle = screen.getByLabelText("Hiển thị phần");
       fireEvent.click(popoverToggle);
 
       expect(screen.getByText("Các phần hiển thị")).toBeInTheDocument();
@@ -413,8 +462,10 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("Strong TypeScript")).toBeInTheDocument();
     });
 
-    it("dispatches update mutation with delimited string when note is added", async () => {
-      mockUpdateCandidateMutateAsync.mockResolvedValueOnce({ success: true });
+    it("dispatches add note mutation when note is added", async () => {
+      mockAddApplicationNoteMutateAsync.mockResolvedValueOnce({
+        id: "note-new",
+      });
 
       renderWithClient(<ApplicationDetailPage />);
 
@@ -423,15 +474,13 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
         target: { value: "Great system design skills" },
       });
 
-      const saveBtn = screen.getByRole("button", { name: "Lưu thay đổi" });
-      fireEvent.click(saveBtn);
+      const addBtn = screen.getByRole("button", { name: "Thêm ghi chú" });
+      fireEvent.click(addBtn);
 
       await waitFor(() => {
-        expect(mockUpdateCandidateMutateAsync).toHaveBeenCalledWith({
-          id: VALID_APP_ID,
-          data: {
-            notes: expect.stringContaining("Great system design skills"),
-          },
+        expect(mockAddApplicationNoteMutateAsync).toHaveBeenCalledWith({
+          applicationId: VALID_APP_ID,
+          content: "Great system design skills",
         });
       });
     });
@@ -440,7 +489,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       expect(
-        screen.queryByRole("button", { name: "Lưu thay đổi" }),
+        screen.queryByRole("button", { name: "Thêm ghi chú" }),
       ).not.toBeInTheDocument();
     });
   });

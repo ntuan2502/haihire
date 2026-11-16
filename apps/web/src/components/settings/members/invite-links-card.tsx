@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Role } from "@haihire/shared";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared/custom-select";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "@/components/shared/custom-select";
 import {
   Link2,
   Plus,
@@ -14,13 +18,16 @@ import {
   Loader2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 import { useCreateInviteLinkMutation } from "@/hooks/use-queries";
 import type { InviteLink } from "@/types";
 
 interface InviteLinksCardProps {
   canEdit: boolean;
+  roleOptions?: CustomSelectOption<Role>[];
+  getRoleLabel?: (role: string) => string;
   serverInviteLinks: InviteLink[];
   refetchLinks: () => void;
   onRevokeClick: (linkId: string) => void;
@@ -32,6 +39,8 @@ interface InviteLinksCardProps {
 
 export function InviteLinksCard({
   canEdit,
+  roleOptions,
+  getRoleLabel,
   serverInviteLinks,
   refetchLinks,
   onRevokeClick,
@@ -44,12 +53,16 @@ export function InviteLinksCard({
   const createInviteMutation = useCreateInviteLinkMutation();
 
   const [isCreateLinkOpen, setIsCreateLinkOpen] = useState(false);
-  const [linkRole, setLinkRole] = useState("MEMBER");
+  const [linkRole, setLinkRole] = useState<Role>(Role.MEMBER);
   const [linkExpiresIn, setLinkExpiresIn] = useState("7 days");
   const [linkMaxUses, setLinkMaxUses] = useState("1");
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   if (!canEdit) return null;
+
+  const resolvedRoleOptions = roleOptions ?? getOrgRoleOptions(t);
+  const resolveRoleLabel = (role: string) =>
+    getRoleLabel ? getRoleLabel(role) : getOrgRoleLabel(role, t);
 
   const handleCreateLink = async () => {
     try {
@@ -141,11 +154,8 @@ export function InviteLinksCard({
               <CustomSelect
                 value={linkRole}
                 onChange={(val) => setLinkRole(val)}
-                options={[
-                  { value: "MEMBER", label: t("members.roleMember") },
-                  { value: "ADMIN", label: t("members.roleAdmin") },
-                ]}
-                className="w-32"
+                options={resolvedRoleOptions}
+                className="w-48"
                 triggerClassName="h-9 text-xs font-semibold"
               />
             </div>
@@ -158,7 +168,7 @@ export function InviteLinksCard({
                 value={linkExpiresIn}
                 onChange={(val) => setLinkExpiresIn(val)}
                 options={[
-                  { value: "1 day", label: "1 day" },
+                  { value: "1 day", label: t("members.expires1Day") },
                   { value: "7 days", label: t("members.expires7Days") },
                   { value: "30 days", label: t("members.expires30Days") },
                   { value: "Never", label: t("members.expiresNever") },
@@ -177,8 +187,8 @@ export function InviteLinksCard({
                 onChange={(val) => setLinkMaxUses(val)}
                 options={[
                   { value: "1", label: t("members.uses1") },
-                  { value: "5", label: "5 uses" },
-                  { value: "10", label: "10 uses" },
+                  { value: "5", label: t("members.uses5") },
+                  { value: "10", label: t("members.uses10") },
                   { value: "Unlimited", label: t("members.usesUnlimited") },
                 ]}
                 className="w-36"
@@ -248,7 +258,7 @@ export function InviteLinksCard({
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <Shield className="h-3 w-3 text-slate-400" />
-                        <span>{link.role}</span>
+                        <span>{resolveRoleLabel(link.role)}</span>
                       </span>
 
                       {isInactive && (
@@ -265,7 +275,8 @@ export function InviteLinksCard({
                       {" • "}
                       {t("members.expiresInLabel")} {daysRemaining}
                       {" • "}
-                      {t("common.created")}: {link.createdByName || "Admin"}
+                      {t("common.created")}:{" "}
+                      {link.createdByName || t("members.roleAdmin")}
                     </p>
                   </div>
                 </div>

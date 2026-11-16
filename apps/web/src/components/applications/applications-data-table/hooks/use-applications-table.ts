@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";

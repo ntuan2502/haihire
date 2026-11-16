@@ -74,7 +74,13 @@ const mockCandidates: CandidateItem[] = [
     resumeFileName: "nguyen-van-a.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
-    notes: "Top candidate for senior role",
+    latestNote: {
+      id: "cnote-1",
+      content: "Top candidate for senior role",
+      authorName: "Recruiter Admin",
+      createdAt: "2026-03-02T10:00:00.000Z",
+    },
+    notesCount: 2,
     applicationsCount: 2,
     candidate: {
       id: "cand-1",
@@ -85,7 +91,13 @@ const mockCandidates: CandidateItem[] = [
       updatedAt: "2026-03-01T10:00:00.000Z",
       resumeUrl: "https://minio.local/cv/nguyen-van-a.pdf",
       resumeFileName: "nguyen-van-a.pdf",
-      notes: "Top candidate for senior role",
+      latestNote: {
+        id: "cnote-1",
+        content: "Top candidate for senior role",
+        authorName: "Recruiter Admin",
+        createdAt: "2026-03-02T10:00:00.000Z",
+      },
+      notesCount: 2,
       applicationsCount: 2,
       applications: [
         {
@@ -116,7 +128,13 @@ const mockCandidates: CandidateItem[] = [
     resumeFileName: null,
     resumeFileSize: null,
     resumeMimeType: null,
-    notes: "Requires portfolio review",
+    latestNote: {
+      id: "cnote-2",
+      content: "Requires portfolio review",
+      authorName: "Recruiter Admin",
+      createdAt: "2026-03-05T10:00:00.000Z",
+    },
+    notesCount: 1,
     applicationsCount: 0,
     candidate: {
       id: "cand-2",
@@ -125,7 +143,13 @@ const mockCandidates: CandidateItem[] = [
       phone: "0912345678",
       createdAt: "2026-03-05T10:00:00.000Z",
       updatedAt: "2026-03-05T10:00:00.000Z",
-      notes: "Requires portfolio review",
+      latestNote: {
+        id: "cnote-2",
+        content: "Requires portfolio review",
+        authorName: "Recruiter Admin",
+        createdAt: "2026-03-05T10:00:00.000Z",
+      },
+      notesCount: 1,
       applicationsCount: 0,
       applications: [],
     } as unknown as CandidateItem["candidate"],
@@ -141,7 +165,8 @@ const mockCandidates: CandidateItem[] = [
     resumeFileName: "le-van-c.pdf",
     resumeFileSize: 204800,
     resumeMimeType: "application/pdf",
-    notes: "",
+    latestNote: null,
+    notesCount: 0,
     applicationsCount: 1,
     candidate: {
       id: "cand-3",
@@ -196,6 +221,10 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       data: mockCandidates.find((c) => c.id === id)?.candidate || null,
       isLoading: false,
     }),
+    useCandidateNotes: () => ({
+      data: [],
+      isLoading: false,
+    }),
     useDeleteCandidateMutation: () => ({
       mutateAsync: mockDeleteCandidateMutateAsync,
       isPending: false,
@@ -230,6 +259,11 @@ describe("CandidatesPage Component - Characterization Tests", () => {
       expect(screen.getByText("Nguyen Van A")).toBeInTheDocument();
       expect(screen.getByText("Tran Thi B")).toBeInTheDocument();
       expect(screen.getByText("Le Van C")).toBeInTheDocument();
+      expect(
+        screen.getByText("Top candidate for senior role"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("+1")).toBeInTheDocument();
+      expect(screen.getByText("Requires portfolio review")).toBeInTheDocument();
     });
 
     it("displays pagination controls with total candidate count", () => {

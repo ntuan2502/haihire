@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useCandidateDrawerState } from "./use-candidate-drawer-state";
 import { downloadAuthenticatedFile } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { CandidateItem } from "@/lib/utils";
 
 vi.mock("@/lib/api", () => ({
   downloadAuthenticatedFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
@@ -24,6 +24,7 @@ vi.mock("@/i18n", () => ({
 
 vi.mock("@/hooks/use-queries", () => ({
   useCandidate: () => ({ data: null }),
+  useCandidateNotes: () => ({ data: [] }),
   useUploadCandidateDocumentMutation: () => ({
     mutateAsync: vi.fn(),
     isPending: false,

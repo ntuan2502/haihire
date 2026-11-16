@@ -1,47 +1,49 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { Send, Eye, Edit3, Sparkles, User, Briefcase } from "lucide-react";
 import {
-  Send,
-  Eye,
-  Edit3,
-  Sparkles,
-  CheckCircle2,
-  User,
-  Briefcase,
-} from "lucide-react";
-import {
+  type EmailFlowKey,
   type EmailTemplateType,
   type EmailLog,
   DEFAULT_EMAIL_TEMPLATES,
   TEMPLATE_VARIABLES,
+  getEmailTemplateTypeLabel,
   interpolateTemplate,
 } from "@/lib/email-templates";
 import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { EmailHtmlPreview } from "./email-html-preview";
-
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useEmailFlows } from "@/hooks/use-email-queries";
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
+
+const ADHOC_TEMPLATE_VALUE = "__ADHOC__";
+const STATIC_TEMPLATE_PREFIX = "__STATIC__";
 
 export interface SendEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
   candidate?: {
     id?: string;
-    name: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    displayName?: string | null;
     email: string;
     phone?: string | null;
   } | null;
   jobTitle?: string;
   organizationName?: string;
   defaultTemplateType?: EmailTemplateType;
+  defaultFlowKey?: EmailFlowKey;
   interviewDetails?: {
-    date?: string;
-    time?: string;
+    scheduledAt?: string;
     format?: string;
     linkOrLocation?: string;
     interviewer?: string;
@@ -56,35 +58,109 @@ export function SendEmailModal({
   jobTitle,
   organizationName,
   defaultTemplateType = "APPLICATION_CONFIRMATION",
+  defaultFlowKey,
   interviewDetails,
   onSendSuccess,
 }: SendEmailModalProps) {
   const { t } = useI18n();
+  const canViewEmail = useHasPermission("email:view");
 
+  const candidateDisplayName = candidate
+    ? getCandidateDisplayName(candidate)
+    : "";
   const effectiveJobTitle = jobTitle || t("email.defaultJobTitle");
   const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
   const { data: remoteTemplates } = useEmailTemplates();
+  const { data: remoteFlows } = useEmailFlows(undefined, {
+    enabled: isOpen && canViewEmail && Boolean(defaultFlowKey),
+  });
   const sendEmailMutation = useSendEmailMutation();
 
-  const [selectedType, setSelectedType] =
-    useState<EmailTemplateType>(defaultTemplateType);
+  const activeTemplates = useMemo(
+    () => (remoteTemplates ?? []).filter((tpl) => Boolean(tpl.enabled)),
+    [remoteTemplates],
+  );
+
+  const templateOptions = useMemo(() => {
+    if (activeTemplates.length > 0) {
+      return [
+        ...activeTemplates.map((tpl) => ({
+          value: tpl.id,
+          label: `${tpl.name} (${getEmailTemplateTypeLabel(tpl.type, t)})`,
+        })),
+        {
+          value: ADHOC_TEMPLATE_VALUE,
+          label: `✏️ ${t("email.customAdHocOption")}`,
+        },
+      ];
+    }
+
+    const staticTypes: EmailTemplateType[] = [
+      "APPLICATION_CONFIRMATION",
+      "INTERVIEW_INVITATION",
+      "REJECTION",
+      "OFFER",
+    ];
+    return [
+      ...staticTypes.map((typeKey) => ({
+        value: `${STATIC_TEMPLATE_PREFIX}${typeKey}`,
+        label: getEmailTemplateTypeLabel(typeKey, t),
+      })),
+      {
+        value: ADHOC_TEMPLATE_VALUE,
+        label: `✏️ ${t("email.customAdHocOption")}`,
+      },
+    ];
+  }, [activeTemplates, t]);
+
+  const resolvedDefaultValue = useMemo(() => {
+    if (defaultFlowKey && remoteFlows) {
+      const matchedFlow = remoteFlows.find(
+        (flow) => flow.flowKey === defaultFlowKey,
+      );
+      if (
+        matchedFlow?.templateId &&
+        activeTemplates.some((tpl) => tpl.id === matchedFlow.templateId)
+      ) {
+        return matchedFlow.templateId;
+      }
+    }
+    if (activeTemplates.length > 0) {
+      const byType = activeTemplates.find(
+        (tpl) => tpl.type === defaultTemplateType,
+      );
+      return byType ? byType.id : activeTemplates[0].id;
+    }
+    if (defaultTemplateType === "CUSTOM") {
+      return ADHOC_TEMPLATE_VALUE;
+    }
+    return `${STATIC_TEMPLATE_PREFIX}${defaultTemplateType}`;
+  }, [defaultFlowKey, remoteFlows, activeTemplates, defaultTemplateType]);
+
+  const [selectedValue, setSelectedValue] =
+    useState<string>(resolvedDefaultValue);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const bodyInputRef = useRef<HTMLTextAreaElement>(null);
+  const wasOpenRef = useRef(false);
+  const hasManualSelectionRef = useRef(false);
 
   // Variables map for interpolation
   const variablesMap = useMemo(() => {
     return {
-      candidate_name: candidate?.name || t("email.defaultCandidateName"),
+      candidate_name: candidateDisplayName || t("email.defaultCandidateName"),
       candidate_email: candidate?.email || "candidate@example.com",
       job_title: effectiveJobTitle,
       company_name: effectiveOrgName,
-      interview_date: interviewDetails?.date || "22/09/2026",
-      interview_time: interviewDetails?.time || "14:30",
+      interview_date: interviewDetails?.scheduledAt
+        ? formatDate(interviewDetails.scheduledAt)
+        : "22/09/2026",
+      interview_time: interviewDetails?.scheduledAt
+        ? formatTime(interviewDetails.scheduledAt)
+        : "14:30",
       interview_format: interviewDetails?.format || "Google Meet",
       interview_link:
         interviewDetails?.linkOrLocation ||
@@ -93,21 +169,64 @@ export function SendEmailModal({
         interviewDetails?.interviewer || t("email.defaultInterviewerName"),
       sender_name: t("email.defaultSenderName"),
     };
-  }, [candidate, effectiveJobTitle, effectiveOrgName, interviewDetails, t]);
+  }, [
+    candidateDisplayName,
+    candidate?.email,
+    effectiveJobTitle,
+    effectiveOrgName,
+    interviewDetails,
+    t,
+  ]);
 
-  // Sync template when selected type changes or modal opens
-  useEffect(() => {
-    if (isOpen) {
-      const matchRemote = remoteTemplates?.find((t) => t.type === selectedType);
-      const template = matchRemote || DEFAULT_EMAIL_TEMPLATES[selectedType];
-      if (template) {
+  const applyTemplateByValue = useCallback(
+    (value: string) => {
+      if (value === ADHOC_TEMPLATE_VALUE) {
+        const template = DEFAULT_EMAIL_TEMPLATES.CUSTOM;
         setSubject(interpolateTemplate(template.subject, variablesMap));
         setBody(interpolateTemplate(template.body, variablesMap));
+        return;
       }
-      setIsPreviewMode(false);
-      setShowSuccessToast(false);
+      if (value.startsWith(STATIC_TEMPLATE_PREFIX)) {
+        const typeKey = value.slice(
+          STATIC_TEMPLATE_PREFIX.length,
+        ) as EmailTemplateType;
+        const template =
+          DEFAULT_EMAIL_TEMPLATES[typeKey] || DEFAULT_EMAIL_TEMPLATES.CUSTOM;
+        setSubject(interpolateTemplate(template.subject, variablesMap));
+        setBody(interpolateTemplate(template.body, variablesMap));
+        return;
+      }
+      const matched = activeTemplates.find((tpl) => tpl.id === value);
+      if (matched) {
+        setSubject(interpolateTemplate(matched.subject, variablesMap));
+        setBody(interpolateTemplate(matched.body, variablesMap));
+      }
+    },
+    [activeTemplates, variablesMap],
+  );
+
+  // Sync default template when modal opens or templates resolve asynchronously
+  useEffect(() => {
+    if (!isOpen) {
+      wasOpenRef.current = false;
+      hasManualSelectionRef.current = false;
+      return;
     }
-  }, [isOpen, selectedType, variablesMap, remoteTemplates]);
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
+      setIsPreviewMode(false);
+    }
+    if (!hasManualSelectionRef.current) {
+      setSelectedValue(resolvedDefaultValue);
+      applyTemplateByValue(resolvedDefaultValue);
+    }
+  }, [isOpen, resolvedDefaultValue, applyTemplateByValue]);
+
+  const handleSelectTemplate = (nextValue: string) => {
+    hasManualSelectionRef.current = true;
+    setSelectedValue(nextValue);
+    applyTemplateByValue(nextValue);
+  };
 
   if (!isOpen || !candidate) return null;
 
@@ -129,21 +248,37 @@ export function SendEmailModal({
 
   const handleSend = async () => {
     try {
+      const selectedTemplate = activeTemplates.find(
+        (tpl) => tpl.id === selectedValue,
+      );
+      const templateType: EmailTemplateType = selectedTemplate
+        ? selectedTemplate.type
+        : selectedValue.startsWith(STATIC_TEMPLATE_PREFIX)
+          ? (selectedValue.slice(
+              STATIC_TEMPLATE_PREFIX.length,
+            ) as EmailTemplateType)
+          : "CUSTOM";
+      const templateId = selectedTemplate ? selectedTemplate.id : undefined;
+      const templateName = selectedTemplate
+        ? selectedTemplate.name
+        : selectedValue === ADHOC_TEMPLATE_VALUE
+          ? t("email.customAdHocOption")
+          : undefined;
+
       const log = await sendEmailMutation.mutateAsync({
         to: candidate.email,
-        recipientName: candidate.name,
+        recipientName: candidateDisplayName,
         subject,
         body,
-        templateType: selectedType,
+        ...(templateId ? { templateId } : {}),
+        ...(templateName ? { templateName } : {}),
+        templateType,
         candidateId: candidate.id,
       });
 
-      setShowSuccessToast(true);
+      toast.success(t("email.sendSuccessToast"));
       onSendSuccess?.(log);
-
-      setTimeout(() => {
-        onClose();
-      }, 900);
+      onClose();
     } catch (err) {
       console.error("Failed to send email:", err);
       toast.error(getApiErrorMessage(err, t));
@@ -159,7 +294,7 @@ export function SendEmailModal({
       title={t("email.modalTitle")}
       badge={
         <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-          {candidate.name}
+          {candidateDisplayName}
         </span>
       }
       size="lg"
@@ -169,7 +304,7 @@ export function SendEmailModal({
       <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-900 dark:text-white">
-            {candidate.name}
+            {candidateDisplayName}
           </span>
           <span className="text-slate-400">•</span>
           <span className="text-slate-500 dark:text-slate-400">
@@ -180,43 +315,15 @@ export function SendEmailModal({
 
       {/* Modal Body */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {showSuccessToast && (
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span>{t("email.sendSuccessToast")}</span>
-          </div>
-        )}
-
         {/* Template Selector */}
         <div>
           <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
             {t("email.selectTemplate")}
           </label>
           <CustomSelect
-            value={selectedType}
-            onChange={(val) => setSelectedType(val as EmailTemplateType)}
-            options={[
-              {
-                value: "APPLICATION_CONFIRMATION",
-                label: "✉️ " + t("email.optApplicationConfirmation"),
-              },
-              {
-                value: "INTERVIEW_INVITATION",
-                label: "📅 " + t("email.optInterviewInvitation"),
-              },
-              {
-                value: "REJECTION",
-                label: "🤝 " + t("email.optRejection"),
-              },
-              {
-                value: "OFFER",
-                label: "🏆 " + t("email.optOffer"),
-              },
-              {
-                value: "CUSTOM",
-                label: "✏️ " + t("email.optCustom"),
-              },
-            ]}
+            value={selectedValue}
+            onChange={handleSelectTemplate}
+            options={templateOptions}
             className="w-full"
             triggerClassName="h-9 text-xs"
           />
@@ -228,7 +335,7 @@ export function SendEmailModal({
             <User className="h-3.5 w-3.5 text-slate-400" />
             <span>{t("email.recipient")}:</span>
             <strong className="font-semibold text-slate-900 dark:text-white">
-              {candidate.name}
+              {candidateDisplayName}
             </strong>
             <span className="text-slate-400">({candidate.email})</span>
           </div>
@@ -335,7 +442,7 @@ export function SendEmailModal({
                 <strong className="text-slate-700 dark:text-slate-300">
                   {t("email.thRecipient")}:
                 </strong>{" "}
-                {candidate.name} &lt;{candidate.email}&gt;
+                {candidateDisplayName} &lt;{candidate.email}&gt;
               </div>
             </div>
             <EmailHtmlPreview

@@ -35,14 +35,18 @@ export const resetWarnedMissingDemoPassword = (): void => {
 export const DEMO_ACCOUNTS = {
   ADMIN: {
     email: "admin@tun.io.vn",
-    name: "Admin",
+    firstName: "Demo",
+    lastName: "Admin",
+    name: "Demo Admin",
     role: "ADMIN" as const,
     badge: "Admin",
     description: "Full management access (Add, edit, delete)",
   },
   MEMBER: {
     email: "member@tun.io.vn",
-    name: "Member",
+    firstName: "Demo",
+    lastName: "Member",
+    name: "Demo Member",
     role: "MEMBER" as const,
     badge: "Member",
     description: "Read-only access (Cannot add, edit, or delete)",

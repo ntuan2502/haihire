@@ -5,22 +5,57 @@ import type { Application } from "@/types";
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, params?: Record<string, string | number>) => {
+      const dict: Record<string, string> = {
+        "pipeline.viewCandidateLabel": "View candidate {name}, stage {stage}",
+      };
+      let text = dict[key] || key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          text = text.replace(`{${k}}`, String(v));
+        }
+      }
+      return text;
+    },
   }),
 }));
 
 describe("PipelineCandidateCard Component", () => {
   const mockCandidate: Application = {
     id: "app-101",
+    candidateId: "cand-1",
     jobId: "job-1",
     candidateName: "Le Van Test",
     candidateEmail: "test@haihire.vn",
     candidatePhone: "0901234567",
     stage: "SCREENING",
     orderIndex: 0,
+    resumeUrl: "/resumes/test.pdf",
+    resumeFileName: "test.pdf",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    notes: "Top candidate with strong React skills",
+    candidate: {
+      id: "cand-1",
+      name: "Le Van Test",
+      email: "test@haihire.vn",
+      notes: "Top candidate with strong React skills",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    applicationNotes: [
+      {
+        id: "note-1",
+        organizationId: "org-1",
+        applicationId: "app-101",
+        authorId: "user-1",
+        authorName: "Recruiter",
+        authorRole: "RECRUITER",
+        content: "Top candidate with strong React skills",
+        isEdited: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
   };
 
   it("renders candidate name, email, and notes icon correctly", () => {

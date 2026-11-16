@@ -1,37 +1,32 @@
 "use client";
 
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useMemo, useRef, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CustomSelect, CustomModal } from "@/components/shared";
-import {
-  Calendar,
-  Clock,
-  Video,
-  MapPin,
-  User,
-  Briefcase,
-  AlertCircle,
-  FileText,
-  Link as LinkIcon,
-  Layers,
-  Mail,
-} from "lucide-react";
+import { CustomModal, CustomSelect } from "@/components/shared";
+import { useFlowTemplateSelection } from "@/components/email/flow-template-selector";
+import { AlertCircle, Briefcase } from "lucide-react";
+import { ScheduleInterviewTimingFields } from "./schedule/schedule-interview-timing-fields";
+import { ScheduleInterviewInterviewerFields } from "./schedule/schedule-interview-interviewer-fields";
 import {
   useCreateInterviewMutation,
   useUpdateInterviewMutation,
   useUpdateStageMutation,
-  useOrgMembers,
+  useOrgInterviewers,
 } from "@/hooks/use-queries";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import {
+  extractDateTimeInTimezone,
+  combineDateTimeInTimezone,
+} from "@haihire/shared";
+import { getCandidateDisplayName, resolveEffectiveTimezone } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   normalizeInterviewType,
-  INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
 import { canTransition } from "@/lib/stages";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type {
   Application,
@@ -65,8 +60,16 @@ export function ScheduleInterviewModal({
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
   const queryClient = useQueryClient();
-  const { data: members = [] } = useOrgMembers();
+  const canManageInterviews = useHasPermission("interview:create");
+  const { data: members = [] } = useOrgInterviewers({
+    enabled: isOpen && canManageInterviews,
+  });
   const createInterviewMutation = useCreateInterviewMutation();
   const updateInterviewMutation = useUpdateInterviewMutation();
   const updateStageMutation = useUpdateStageMutation();
@@ -83,7 +86,21 @@ export function ScheduleInterviewModal({
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
+  const hasTouchedEmailRef = useRef(false);
+  const hasTouchedTemplateRef = useRef(false);
+
+  const {
+    canViewEmail,
+    activeTemplates,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  } = useFlowTemplateSelection(
+    "INTERVIEW_SCHEDULED",
+    isOpen && !editingInterview,
+  );
 
   // Filter candidates for selected job
   const modalCandidates = useMemo(() => {
@@ -97,6 +114,29 @@ export function ScheduleInterviewModal({
   const currentCandidate = useMemo(() => {
     return applications.find((a) => a.id === modalCandidateId);
   }, [applications, modalCandidateId]);
+
+  // Sync invitation email defaults from configured INTERVIEW_SCHEDULED flow
+  useEffect(() => {
+    if (!isOpen || editingInterview) {
+      hasTouchedEmailRef.current = false;
+      hasTouchedTemplateRef.current = false;
+      setSendEmailInvite(true);
+      setSelectedTemplateId("");
+      return;
+    }
+    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+      setSendEmailInvite(defaultSendEnabled);
+    }
+    if (!hasTouchedTemplateRef.current) {
+      setSelectedTemplateId(defaultTemplateId);
+    }
+  }, [
+    isOpen,
+    editingInterview,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  ]);
 
   // Sync state when modal opens or selections change
   useEffect(() => {
@@ -117,12 +157,16 @@ export function ScheduleInterviewModal({
     if (editingInterview) {
       // Update schedule: populate form fields with existing interview data
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
+      const { date, time } = extractDateTimeInTimezone(
+        editingInterview.scheduledAt,
+        effectiveTimezone,
+      );
       setModalJobId(initialJobId);
       setModalCandidateId(
         editingInterview.applicationId || selectedApplicationId || "",
       );
-      setInterviewDate(editingInterview.date || "");
-      setInterviewTime(editingInterview.time || "");
+      setInterviewDate(date);
+      setInterviewTime(time);
       setInterviewType(normalizeInterviewType(editingInterview.type));
       setInterviewFormat(
         (editingInterview.format as InterviewFormat) || "MEET",
@@ -150,6 +194,7 @@ export function ScheduleInterviewModal({
     initialDate,
     editingInterview,
     applications,
+    effectiveTimezone,
   ]);
 
   // When candidate changes manually, keep other fields empty
@@ -192,26 +237,30 @@ export function ScheduleInterviewModal({
       return;
     }
 
-    const interviewInfo: ScheduledInterviewInfo = {
-      id: editingInterview?.id,
-      applicationId: candidate.id,
-      date: interviewDate,
-      time: interviewTime,
-      type: interviewType as InterviewType,
-      format: interviewFormat as InterviewFormat,
-      linkOrLocation: linkOrLocation.trim(),
-      interviewer: interviewerName.trim(),
-      notes: interviewNotes.trim(),
-    };
-
     try {
+      const scheduledAt = combineDateTimeInTimezone(
+        interviewDate,
+        interviewTime,
+        effectiveTimezone,
+      );
+
+      const interviewInfo: ScheduledInterviewInfo = {
+        id: editingInterview?.id,
+        applicationId: candidate.id,
+        scheduledAt,
+        type: interviewType as InterviewType,
+        format: interviewFormat as InterviewFormat,
+        linkOrLocation: linkOrLocation.trim(),
+        interviewer: interviewerName.trim(),
+        notes: interviewNotes.trim(),
+      };
+
       if (editingInterview?.id) {
         // Update existing interview schedule
         await updateInterviewMutation.mutateAsync({
           id: editingInterview.id,
           data: {
-            date: interviewDate,
-            time: interviewTime,
+            scheduledAt,
             type: interviewType as InterviewType,
             format: (interviewFormat as InterviewFormat) || "MEET",
             linkOrLocation: linkOrLocation.trim(),
@@ -223,14 +272,17 @@ export function ScheduleInterviewModal({
         // Create new interview schedule
         await createInterviewMutation.mutateAsync({
           applicationId: candidate.id,
-          date: interviewDate,
-          time: interviewTime,
+          scheduledAt,
           type: interviewType as InterviewType,
           format: (interviewFormat as InterviewFormat) || "MEET",
           linkOrLocation: linkOrLocation.trim(),
           interviewer: interviewerName.trim(),
           notes: interviewNotes.trim() || undefined,
           round: (candidate.interviews?.length || 0) + 1,
+          sendInvitationEmail: sendEmailInvite,
+          ...(sendEmailInvite && selectedTemplateId
+            ? { templateId: selectedTemplateId }
+            : {}),
         });
 
         // If candidate stage can transition to INTERVIEW stage according to state machine, advance
@@ -377,200 +429,42 @@ export function ScheduleInterviewModal({
             </div>
           </div>
 
-          {/* Section 2: Date, Time & Round Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Interview Date */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                <span>
-                  {t("interviews.interviewDate")}{" "}
-                  <span className="text-rose-500">*</span>
-                </span>
-              </label>
-              <Input
-                type="date"
-                value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                required
-              />
-            </div>
+          {/* Section 2, 3, 4: Timing, Round, Format, Location */}
+          <ScheduleInterviewTimingFields
+            interviewDate={interviewDate}
+            onDateChange={setInterviewDate}
+            interviewTime={interviewTime}
+            onTimeChange={setInterviewTime}
+            interviewType={interviewType}
+            onTypeChange={setInterviewType}
+            interviewFormat={interviewFormat}
+            onFormatChange={setInterviewFormat}
+            linkOrLocation={linkOrLocation}
+            onLinkOrLocationChange={setLinkOrLocation}
+          />
 
-            {/* Interview Time */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-slate-400" />
-                <span>
-                  {t("interviews.interviewTime")}{" "}
-                  <span className="text-rose-500">*</span>
-                </span>
-              </label>
-              <Input
-                type="time"
-                value={interviewTime}
-                onChange={(e) => setInterviewTime(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Section 3: Round & Format Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Round Type */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Layers className="h-3.5 w-3.5 text-slate-400" />
-                <span>
-                  {t("interviews.roundType")}{" "}
-                  <span className="text-rose-500">*</span>
-                </span>
-              </label>
-              <CustomSelect
-                value={interviewType}
-                onChange={(val) => setInterviewType(val as InterviewType)}
-                placeholder={t("interviews.placeholders.selectRoundType")}
-                options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
-                  value: opt.value,
-                  label: t(opt.labelKey),
-                }))}
-                className="w-full"
-                triggerClassName="h-10 text-xs font-medium"
-              />
-            </div>
-
-            {/* Meeting Format */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                {interviewFormat === "OFFICE" ? (
-                  <MapPin className="h-3.5 w-3.5 text-rose-500" />
-                ) : (
-                  <Video className="h-3.5 w-3.5 text-emerald-500" />
-                )}
-                <span>
-                  {t("interviews.formatLabel")}{" "}
-                  <span className="text-rose-500">*</span>
-                </span>
-              </label>
-              <CustomSelect
-                value={interviewFormat}
-                onChange={(val) => setInterviewFormat(val as InterviewFormat)}
-                placeholder={t("interviews.placeholders.selectFormat")}
-                options={[
-                  { value: "MEET", label: t("interviews.formats.meet") },
-                  { value: "ZOOM", label: t("interviews.formats.zoom") },
-                  { value: "TEAMS", label: t("interviews.formats.teams") },
-                  { value: "OFFICE", label: t("interviews.formats.office") },
-                ]}
-                className="w-full"
-                triggerClassName="h-10 text-xs font-medium"
-              />
-            </div>
-          </div>
-
-          {/* Section 4: Meeting Link or Office Location */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-              <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
-              <span>
-                {interviewFormat === "OFFICE"
-                  ? t("interviews.officeAddressLabel")
-                  : t("interviews.meetingUrlLabel")}
-              </span>
-            </label>
-            <Input
-              type="text"
-              placeholder={
-                interviewFormat === "OFFICE"
-                  ? t("interviews.placeholders.officeLocation")
-                  : t("interviews.placeholders.meetingUrl")
-              }
-              value={linkOrLocation}
-              onChange={(e) => setLinkOrLocation(e.target.value)}
-              className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-            />
-          </div>
-
-          {/* Section 5: Interviewer & Team */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                <span className="flex items-center gap-1">
-                  <User className="h-3.5 w-3.5 text-slate-400" />
-                  <span>
-                    {t("interviews.primaryInterviewer")}{" "}
-                    <span className="text-rose-500">*</span>
-                  </span>
-                </span>
-                {members.length > 0 && (
-                  <CustomSelect
-                    size="sm"
-                    align="right"
-                    value=""
-                    placeholder={t("interviews.selectFromMembers")}
-                    onChange={(val) => {
-                      if (val) setInterviewerName(val);
-                    }}
-                    options={[
-                      {
-                        value: "",
-                        label: t("interviews.selectFromMembers"),
-                        disabled: true,
-                      },
-                      ...members.map((m) => ({
-                        value: `${m.name} (${m.role})`,
-                        label: `${m.name} (${m.email})`,
-                      })),
-                    ]}
-                    className="w-auto"
-                    triggerClassName="h-6 py-0.5 px-2 text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 rounded-lg"
-                    popupClassName="min-w-[220px]"
-                  />
-                )}
-              </label>
-              <Input
-                type="text"
-                placeholder={t("interviews.placeholders.interviewer")}
-                value={interviewerName}
-                onChange={(e) => setInterviewerName(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5 text-slate-400" />
-                <span>{t("interviews.notesOrRequirements")}</span>
-              </label>
-              <Input
-                type="text"
-                placeholder={t("interviews.placeholders.notes")}
-                value={interviewNotes}
-                onChange={(e) => setInterviewNotes(e.target.value)}
-                className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-              />
-            </div>
-
-            {/* Send Email Invitation Checkbox */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <input
-                type="checkbox"
-                id="sendEmailInviteCheckbox"
-                checked={sendEmailInvite}
-                onChange={(e) => setSendEmailInvite(e.target.checked)}
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
-              />
-              <label
-                htmlFor="sendEmailInviteCheckbox"
-                className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1.5"
-              >
-                <Mail className="h-3.5 w-3.5 text-blue-500" />
-                <span>{t("email.sendEmailInviteCheckbox")}</span>
-              </label>
-            </div>
-          </div>
+          {/* Section 5: Interviewer, Notes, Email */}
+          <ScheduleInterviewInterviewerFields
+            interviewerName={interviewerName}
+            onInterviewerNameChange={setInterviewerName}
+            interviewNotes={interviewNotes}
+            onNotesChange={setInterviewNotes}
+            members={members}
+            isEditing={Boolean(editingInterview)}
+            sendEmailInvite={sendEmailInvite}
+            onSendEmailInviteChange={(val) => {
+              hasTouchedEmailRef.current = true;
+              setSendEmailInvite(val);
+            }}
+            canViewEmail={canViewEmail}
+            selectedTemplateId={selectedTemplateId}
+            onSelectedTemplateIdChange={(val) => {
+              hasTouchedTemplateRef.current = true;
+              setSelectedTemplateId(val);
+            }}
+            activeTemplates={activeTemplates}
+            isSaving={isSaving}
+          />
 
           <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-end gap-3">
             <Button

@@ -67,7 +67,7 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.actorId).toBe("user-1");
       expect(result.action).toBe("ROLE_PERMISSIONS_UPDATED");
       expect(result.resource).toBe("ROLE_PERMISSIONS");
-      expect(result.metadata).toContain('"role":"RECRUITER"');
+      expect(result.metadata).toMatchObject({ role: "RECRUITER" });
       expect(mockOrgLogs).toHaveLength(1);
     });
 
@@ -99,7 +99,7 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.organizationId).toBe("org-deleted-id");
       expect(result.actorId).toBe("user-admin");
       expect(result.action).toBe("ORG_DELETED");
-      expect(result.metadata).toContain('"organizationName":"Acme Corp"');
+      expect(result.metadata).toMatchObject({ organizationName: "Acme Corp" });
       expect(mockPlatformLogs).toHaveLength(1);
     });
   });

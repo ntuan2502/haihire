@@ -5,6 +5,7 @@ import "./src/config/env.ts";
 export default defineConfig({
   test: {
     environment: "node",
+    fileParallelism: false,
     coverage: {
       provider: "v8",
       exclude: ["service.ts"],

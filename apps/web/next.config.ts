@@ -23,13 +23,9 @@ if (fs.existsSync(rootEnv)) {
 
 const frontendPort = process.env.FRONTEND_PORT || process.env.PORT || "3000";
 const backendPort = process.env.BACKEND_PORT || "3001";
-const minioPort = process.env.MINIO_PORT || "9000";
 const backendUrl = process.env.BACKEND_HOST
   ? `http://${process.env.BACKEND_HOST}:${backendPort}`
   : process.env.INTERNAL_API_URL || `http://127.0.0.1:${backendPort}`;
-const minioUrl = process.env.MINIO_HOST
-  ? `http://${process.env.MINIO_HOST}:${minioPort}`
-  : `http://127.0.0.1:${minioPort}`;
 
 function getAllowedDevOrigins(): string[] {
   const origins = new Set<string>([
@@ -123,10 +119,6 @@ const nextConfig: NextConfig = {
       {
         source: "/events/:path*",
         destination: `${backendUrl}/events/:path*`,
-      },
-      {
-        source: "/haihire-resumes/:path*",
-        destination: `${minioUrl}/haihire-resumes/:path*`,
       },
     ];
   },

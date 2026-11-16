@@ -2,11 +2,20 @@
 
 import Link from "next/link";
 import { Calendar, ArrowRight, Video, MapPin, User } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { extractDateTimeInTimezone } from "@haihire/shared";
+import {
+  addDaysToYmd,
+  formatDate,
+  formatTime,
+  getCandidateDisplayName,
+  getInitials,
+  resolveEffectiveTimezone,
+} from "@/lib/utils";
 import {
   getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type { Job, Application } from "@/types";
 
@@ -20,42 +29,20 @@ interface DashboardUpcomingInterviewsProps {
   upcomingInterviews: DashboardInterviewItem[];
 }
 
-function formatInterviewDate(dateStr: string, timeStr?: string) {
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
-
-  const timeSuffix = timeStr ? ` ${timeStr}` : "";
-
-  if (dateStr === todayStr) {
-    return { type: "today" as const, timeSuffix, isToday: true, label: "" };
-  }
-  if (dateStr === tomorrowStr) {
-    return {
-      type: "tomorrow" as const,
-      timeSuffix,
-      isTomorrow: true,
-      label: "",
-    };
-  }
-  const parts = dateStr.split("-");
-  const d = parts[2] || "";
-  const m = parts[1] || "";
-  return {
-    type: "future" as const,
-    label: `${d}/${m}${timeSuffix}`,
-    isFuture: true,
-    timeSuffix,
-  };
-}
-
 export function DashboardUpcomingInterviews({
   upcomingInterviews,
 }: DashboardUpcomingInterviewsProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
+  const todayYmd = extractDateTimeInTimezone(
+    new Date(),
+    effectiveTimezone,
+  ).date;
+  const tomorrowYmd = addDaysToYmd(todayYmd, 1);
 
   return (
     <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -104,24 +91,30 @@ export function DashboardUpcomingInterviews({
         <div className="flex-1 overflow-y-auto pt-1 pr-1.5 -mr-1.5 divide-y divide-slate-100 dark:divide-slate-800/80">
           {upcomingInterviews.map((item, idx) => {
             const { application: app, interview: intv, job } = item;
-            const dateMeta = formatInterviewDate(intv.date, intv.time);
+            const dateYmd = extractDateTimeInTimezone(
+              intv.scheduledAt,
+              effectiveTimezone,
+            ).date;
+            const formattedTime = formatTime(intv.scheduledAt);
+            const isToday = Boolean(dateYmd && dateYmd === todayYmd);
+            const isTomorrow = Boolean(dateYmd && dateYmd === tomorrowYmd);
             const isOnline = intv.format !== "OFFICE";
-            const dateBadgeText =
-              dateMeta.type === "today"
-                ? `${t("dashboard.today")}${dateMeta.timeSuffix}`
-                : dateMeta.type === "tomorrow"
-                  ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
-                  : dateMeta.label;
+            const candidateDisplay = getCandidateDisplayName(app);
+            const dateBadgeText = isToday
+              ? `${t("dashboard.today")} ${formattedTime}`
+              : isTomorrow
+                ? `${t("dashboard.tomorrow")} ${formattedTime}`
+                : `${formatDate(intv.scheduledAt)} ${formattedTime}`;
 
             return (
               <div
-                key={`${app.id}-${intv.date}-${intv.time}-${idx}`}
+                key={intv.id || `${app.id}-${intv.scheduledAt}-${idx}`}
                 className="py-3 px-1 space-y-2 group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="h-8 w-8 rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
-                      {getInitials(app.candidateName)}
+                      {getInitials(candidateDisplay)}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -129,7 +122,7 @@ export function DashboardUpcomingInterviews({
                           href="/dashboard/interviews"
                           className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate max-w-[130px]"
                         >
-                          {app.candidateName}
+                          {candidateDisplay}
                         </Link>
                         <span className="text-[10px] text-slate-400 shrink-0">
                           •
@@ -147,9 +140,9 @@ export function DashboardUpcomingInterviews({
                   {/* Date pill */}
                   <span
                     className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
-                      dateMeta.isToday
+                      isToday
                         ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
-                        : dateMeta.isTomorrow
+                        : isTomorrow
                           ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
                     }`}

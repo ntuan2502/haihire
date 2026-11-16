@@ -3,6 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { useMyOrg } from "@/hooks/use-organization-queries";
 import { useJob, useAllJobs } from "@/hooks/use-queries";
@@ -21,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/search-input";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
 import { Plus } from "lucide-react";
 
 function JobTrackingPageContent() {
@@ -28,8 +30,13 @@ function JobTrackingPageContent() {
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
-  const { user, canEdit } = useAuth();
+  const { user } = useAuth();
   const { t } = useI18n();
+
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canCreateLink = useHasPermission("sourcing:create");
+  const canUpdateLink = useHasPermission("sourcing:update");
+  const canDeleteLink = useHasPermission("sourcing:delete");
 
   const {
     page: currentPage,
@@ -77,6 +84,20 @@ function JobTrackingPageContent() {
     deleteLinkMutation.mutate(id);
   };
 
+  if (!canViewSourcing) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
+        <StatusState
+          status="403"
+          variant="card"
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+          className="w-full max-w-lg"
+        />
+      </div>
+    );
+  }
+
   if (jobLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
@@ -103,7 +124,7 @@ function JobTrackingPageContent() {
           />
         </div>
 
-        {canEdit && (
+        {canCreateLink && (
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
@@ -124,9 +145,9 @@ function JobTrackingPageContent() {
         onPageChange={(p) => setCurrentPage(p)}
         onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
         orgSlug={orgSlug}
-        onToggleStatus={handleToggleStatus}
-        onDeleteLink={handleDeleteLink}
-        onEditLink={canEdit ? (link) => setEditingLink(link) : undefined}
+        onToggleStatus={canUpdateLink ? handleToggleStatus : undefined}
+        onDeleteLink={canDeleteLink ? handleDeleteLink : undefined}
+        onEditLink={canUpdateLink ? (link) => setEditingLink(link) : undefined}
       />
 
       {/* Create Link Modal */}

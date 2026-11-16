@@ -1,5 +1,6 @@
 import {
   Module,
+  ValidationPipe,
   type MiddlewareConsumer,
   type NestModule,
 } from "@nestjs/common";
@@ -7,6 +8,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import path from "node:path";
 import { BullModule } from "@nestjs/bullmq";
 import { CorrelationIdMiddleware } from "./common/middleware/correlation-id.middleware";
+import { validationExceptionFactory } from "./common/dto-validation.pipe";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
@@ -22,18 +24,15 @@ import { EmailModule } from "./email/email.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD, Reflector } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
-import { RedisModule } from "./redis/redis.module";
+import { TenantRlsInterceptor } from "./common/interceptors/tenant-rls.interceptor";
+import { createThrottlerReflectorProviders } from "./common/providers/throttler-reflector.provider";
+import { RedisModule, REDIS_CLIENT } from "./redis/redis.module";
+import { ThrottlerStorageRedisService } from "./redis/throttler-storage-redis.service";
+import type Redis from "ioredis";
 
 import { MetricsModule } from "./metrics/metrics.module";
-
-// Resolve ThrottlerGuard parameter token to bridge CJS/ESM dual package hazard under tsx in dev
-const throttlerParamTypes =
-  (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (
-    ...args: unknown[]
-  ) => unknown)[]) || [];
-const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
 
 @Module({
   imports: [
@@ -46,12 +45,14 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
         ".env",
       ],
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule, RedisModule],
+      inject: [ConfigService, REDIS_CLIENT],
+      useFactory: (_config: ConfigService, redis: Redis) => ({
+        throttlers: [{ ttl: 60000, limit: 100 }],
+        storage: new ThrottlerStorageRedisService(redis),
+      }),
+    }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -82,12 +83,23 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   controllers: [AppController],
   providers: [
     AppService,
-    ...(throttlerReflectorToken !== Reflector
-      ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]
-      : []),
+    ...createThrottlerReflectorProviders(),
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantRlsInterceptor,
+    },
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        exceptionFactory: validationExceptionFactory,
+      }),
     },
   ],
   exports: [MetricsModule],

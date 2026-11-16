@@ -203,4 +203,52 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     fireEvent.keyDown(trigger, { key: "Tab" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
+
+  it("filters options via search input when searchable is true and shows emptyText on no match", () => {
+    const handleChange = vi.fn();
+    const timezoneLikeOptions = [
+      {
+        value: "Asia/Ho_Chi_Minh",
+        label: "(UTC+07:00) Ho Chi Minh City — Asia/Ho_Chi_Minh",
+      },
+      { value: "Asia/Tokyo", label: "(UTC+09:00) Tokyo — Asia/Tokyo" },
+      {
+        value: "America/New_York",
+        label: "(UTC-05:00) New York — America/New_York",
+      },
+    ];
+
+    render(
+      <CustomSelect
+        id="tz-select"
+        value="Asia/Ho_Chi_Minh"
+        onChange={handleChange}
+        options={timezoneLikeOptions}
+        searchable
+        searchPlaceholder="Search timezone..."
+        emptyText="No timezone match"
+        aria-label="Timezone selection"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /timezone selection/i });
+    fireEvent.click(trigger);
+
+    const searchInput = screen.getByPlaceholderText("Search timezone...");
+    expect(searchInput).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "tokyo" } });
+    const filtered = screen.getAllByRole("option");
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]).toHaveTextContent("Asia/Tokyo");
+
+    fireEvent.click(filtered[0]);
+    expect(handleChange).toHaveBeenCalledWith("Asia/Tokyo");
+
+    fireEvent.click(trigger);
+    const secondSearch = screen.getByPlaceholderText("Search timezone...");
+    fireEvent.change(secondSearch, { target: { value: "Atlantis" } });
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    expect(screen.getByText("No timezone match")).toBeInTheDocument();
+  });
 });

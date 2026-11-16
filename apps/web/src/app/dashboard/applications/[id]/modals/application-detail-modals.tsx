@@ -1,7 +1,17 @@
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import {
+  RejectApplicationModal,
+  type RejectApplicationConfirmPayload,
+} from "@/components/applications/reject-application-modal";
+import {
+  OfferApplicationModal,
+  type OfferApplicationConfirmPayload,
+} from "@/components/applications/offer-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { SendEmailModal } from "@/components/email/send-email-modal";
+import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import type { Application, CandidateDocument, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
@@ -20,6 +30,13 @@ interface ApplicationDetailModalsProps {
   onCloseDeleteModal: () => void;
   onConfirmDelete: () => void;
   isDeleting: boolean;
+  isRejectModalOpen: boolean;
+  onCloseRejectModal: () => void;
+  onConfirmReject: (payload: RejectApplicationConfirmPayload) => Promise<void>;
+  isOfferModalOpen?: boolean;
+  onCloseOfferModal?: () => void;
+  onConfirmOffer?: (payload: OfferApplicationConfirmPayload) => Promise<void>;
+  isUpdatingStage: boolean;
   scheduleModalOpen: boolean;
   onCloseScheduleModal: () => void;
   editingInterview: ScheduledInterviewInfo | null;
@@ -42,12 +59,21 @@ export function ApplicationDetailModals({
   onCloseDeleteModal,
   onConfirmDelete,
   isDeleting,
+  isRejectModalOpen,
+  onCloseRejectModal,
+  onConfirmReject,
+  isOfferModalOpen = false,
+  onCloseOfferModal,
+  onConfirmOffer,
+  isUpdatingStage,
   scheduleModalOpen,
   onCloseScheduleModal,
   editingInterview,
   isSendEmailOpen,
   onCloseSendEmailModal,
 }: ApplicationDetailModalsProps) {
+  const { t } = useI18n();
+
   return (
     <>
       {/* Document Preview Modal matching Screenshot 2 */}
@@ -68,6 +94,32 @@ export function ApplicationDetailModals({
           candidateName={candidateName}
           jobTitle={jobTitle}
           isDeleting={isDeleting}
+        />
+      )}
+
+      {/* Reject Application Confirmation Modal */}
+      {app && (
+        <RejectApplicationModal
+          isOpen={isRejectModalOpen}
+          onClose={onCloseRejectModal}
+          onConfirm={onConfirmReject}
+          candidateName={candidateName}
+          candidateEmail={candidateEmail}
+          jobTitle={jobTitle}
+          isSubmitting={isUpdatingStage}
+        />
+      )}
+
+      {/* Offer Application Confirmation Modal */}
+      {app && onCloseOfferModal && onConfirmOffer && (
+        <OfferApplicationModal
+          isOpen={isOfferModalOpen}
+          onClose={onCloseOfferModal}
+          onConfirm={onConfirmOffer}
+          candidateName={candidateName}
+          candidateEmail={candidateEmail}
+          jobTitle={jobTitle}
+          isSubmitting={isUpdatingStage}
         />
       )}
 
@@ -97,7 +149,9 @@ export function ApplicationDetailModals({
           }}
           jobTitle={jobTitle}
           organizationName={
-            job?.department ? `${job.department} Department` : "Nexus ATS"
+            job?.department
+              ? t("common.departmentSuffix", { department: job.department })
+              : BRAND_CONFIG.name
           }
         />
       )}

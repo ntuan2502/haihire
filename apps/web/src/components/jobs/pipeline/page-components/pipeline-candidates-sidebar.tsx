@@ -83,7 +83,7 @@ export function PipelineCandidatesSidebar({
             type="button"
             disabled
             className="h-6 w-6 rounded-md flex items-center justify-center text-slate-400 opacity-40 cursor-not-allowed transition-colors"
-            title="Filter options"
+            title={t("pipeline.filterOptions")}
           >
             <Menu className="h-3 w-3" />
           </button>

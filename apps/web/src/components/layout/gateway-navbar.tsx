@@ -8,6 +8,8 @@ import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import { Menu, X } from "lucide-react";
 import { cn } from "cn";
 
@@ -21,6 +23,7 @@ export function GatewayNavbar({
   maxWidthClassName = "max-w-7xl",
 }: GatewayNavbarProps) {
   const { isAuthenticated, user } = useAuth();
+  const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -40,7 +43,7 @@ export function GatewayNavbar({
           {/* Left: Brand Identity with link to home */}
           <Link
             href="/"
-            aria-label="HaiHire Home"
+            aria-label={BRAND_CONFIG.name}
             className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           >
             <BrandLogo size="md" />
@@ -62,7 +65,7 @@ export function GatewayNavbar({
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label="Toggle Navigation Menu"
+              aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5 stroke-[2]" />

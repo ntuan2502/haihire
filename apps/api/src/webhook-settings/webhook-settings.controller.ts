@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Request,
@@ -15,7 +16,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
-import { TenantGuard } from "../common/guards/tenant.guard";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { WebhookSettingsService } from "./webhook-settings.service";
 import { CreateWebhookSettingDto } from "./dto/create-webhook-setting.dto";
@@ -34,7 +35,7 @@ interface AuthenticatedRequest {
 }
 
 @Controller("webhook-settings")
-@UseGuards(AuthGuard("jwt"), TenantGuard, RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
 @RequirePermission("settings:manage_integrations")
 export class WebhookSettingsController {
   constructor(
@@ -62,7 +63,10 @@ export class WebhookSettingsController {
 
   @Get(":id")
   @RequirePermission("settings:manage_integrations")
-  async findOne(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
+  async findOne(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const orgId = this.getOrgId(req);
     return this.service.findOne(id, orgId);
   }
@@ -81,7 +85,7 @@ export class WebhookSettingsController {
   @Patch(":id")
   @RequirePermission("settings:manage_integrations")
   async update(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req: AuthenticatedRequest,
     @Body(DtoPipe(UpdateWebhookSettingDto)) dto: UpdateWebhookSettingDto,
   ) {
@@ -92,7 +96,10 @@ export class WebhookSettingsController {
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
   @RequirePermission("settings:manage_integrations")
-  async delete(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
+  async delete(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const orgId = this.getOrgId(req);
     return this.service.delete(id, orgId);
   }

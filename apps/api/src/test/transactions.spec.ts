@@ -275,7 +275,8 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       const result = await appService.create(
         {
           jobId: "job-1",
-          candidateName: "John Doe",
+          firstName: "John",
+          lastName: "Doe",
           candidateEmail: "john@example.com",
         },
         mockFile,
@@ -335,7 +336,8 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "Fatal Candidate",
+            firstName: "Fatal",
+            lastName: "Candidate",
             candidateEmail: "fatal@example.com",
           },
           mockFile,
@@ -357,8 +359,15 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
 
   describe("ApplicationsService::remove", () => {
     it("deletes application and interviews atomically inside transaction", async () => {
+      mockDbState.candidates.push({
+        id: "cand-100",
+        organizationId: "org-1",
+        name: "Test Candidate",
+        email: "cand100@example.com",
+      });
       mockDbState.applications.push({
         id: "app-100",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-100",
         stage: "APPLIED",

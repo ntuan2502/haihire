@@ -41,7 +41,11 @@ export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<
   ],
   [ApplicationStage.OFFER]: [ApplicationStage.HIRED, ApplicationStage.REJECTED],
   [ApplicationStage.HIRED]: [],
-  [ApplicationStage.REJECTED]: [],
+  [ApplicationStage.REJECTED]: [
+    ApplicationStage.APPLIED,
+    ApplicationStage.SCREENING,
+    ApplicationStage.INTERVIEW,
+  ],
 };
 
 export interface Application {
@@ -53,11 +57,14 @@ export interface Application {
   candidateEmail: string;
   candidatePhone?: string | null;
   stage: ApplicationStage;
+  stageId?: string | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
   resumeUrl: string;
   resumeFileName: string;
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
-  notes?: string | null;
+  applicationNotes?: ApplicationNote[];
   orderIndex: number;
   matchScore?: number | null;
   interviews?: Interview[];
@@ -72,11 +79,47 @@ export interface Application {
 export interface CreateApplicationInput {
   jobId: string;
   candidateId?: string;
-  candidateName?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string | null;
   candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
   resumeFile?: unknown;
+}
+
+export interface ApplicationNote {
+  id: string;
+  organizationId: string;
+  applicationId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateApplicationStageInput {
+  stage: ApplicationStage;
+  stageId?: string;
+  orderIndex?: number;
+  rejectionReason?: string;
+  sendRejectionEmail?: boolean;
+  sendOfferEmail?: boolean;
+  emailTemplateId?: string;
+}
+
+export interface ApplicationJobStats {
+  total: number;
+  byStage: Record<ApplicationStage, number>;
+}
+
+export interface ApplicationStats {
+  totalApplications: number;
+  byStage: Record<ApplicationStage, number>;
+  byJob: Record<string, ApplicationJobStats>;
 }

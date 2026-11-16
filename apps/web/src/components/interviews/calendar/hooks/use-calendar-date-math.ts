@@ -1,4 +1,10 @@
 import { useState, useMemo } from "react";
+import {
+  combineDateTimeInTimezone,
+  extractDateTimeInTimezone,
+} from "@haihire/shared";
+import { resolveEffectiveTimezone } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type {
   CalendarDateInfo,
@@ -20,13 +26,18 @@ export function formatLocalDate(
 
 export function useCalendarDateMath(initialDate: Date = new Date()) {
   const { t, locale } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
   const [calendarMode, setCalendarMode] = useState<CalendarViewMode>("month");
   const [currentDate, setCurrentDate] = useState<Date>(() => initialDate);
 
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  }, []);
+  const todayStr = useMemo(
+    () => extractDateTimeInTimezone(new Date(), effectiveTimezone).date,
+    [effectiveTimezone],
+  );
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -178,6 +189,28 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     [t],
   );
 
+  const visibleRange = useMemo(() => {
+    const start =
+      calendarMode === "week" ? weekDays[0]?.dateStr : monthDays[0]?.dateStr;
+    const end =
+      calendarMode === "week"
+        ? weekDays[weekDays.length - 1]?.dateStr
+        : monthDays[monthDays.length - 1]?.dateStr;
+
+    const startDate = start
+      ? combineDateTimeInTimezone(start, "00:00", effectiveTimezone)
+      : undefined;
+    const endDate = end
+      ? new Date(
+          new Date(
+            combineDateTimeInTimezone(end, "23:59", effectiveTimezone),
+          ).getTime() + 59999,
+        ).toISOString()
+      : undefined;
+
+    return { startDate, endDate };
+  }, [calendarMode, monthDays, weekDays, effectiveTimezone]);
+
   return {
     calendarMode,
     setCalendarMode,
@@ -186,6 +219,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     currentDate,
     setCurrentDate,
     todayStr,
+    visibleRange,
     handlePrevMonth,
     handleNextMonth,
     handlePrev: handlePrevMonth,

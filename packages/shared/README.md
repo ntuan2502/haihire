@@ -1,50 +1,22 @@
-# @haihire/shared
+# HaiHire Shared Package (`@haihire/shared`)
 
-> Canonical domain types, error codes, and shared contracts for the HaiHire Enterprise ATS platform.
-
----
-
-## 📦 Overview
-
-`@haihire/shared` serves as the single source of truth across the monorepo, shared by both `apps/api/` and `apps/web/`. It eliminates interface divergence and guarantees type safety across the network boundary.
+Zero-duplication TypeScript domain contracts consumed directly by both `apps/api` and `apps/web`.
 
 ---
 
-## 📁 Domain Module Exports
+## Contents (`src/`)
 
-The package exports domain models and utilities organized under `src/`:
-
-| Module                   | Contents                                                                                                                   |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **`brand.ts`**           | `BRAND_CONFIG` constants: product name (`HaiHire`), monogram (`H`), legal name, and default tenant slug                    |
-| **`errors.ts`**          | `APP_ERROR_CODES` enum (60 standardized codes), `AppErrorEnvelope`, and HTTP status mappings                               |
-| **`common.ts`**          | Standardized pagination interfaces (`PaginationParams`, `PaginatedResult<T>`), sorting, and date helpers                   |
-| **`jobs.ts`**            | Job entity schemas, requisition statuses (`DRAFT`, `PUBLISHED`, `CLOSED`), requirements, and department enums              |
-| **`candidates.ts`**      | Candidate profiles, contact details, resume metadata, and deduplication types                                              |
-| **`applications.ts`**    | Recruitment pipeline stages (`APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `HIRED`, `REJECTED`), reviews, notes            |
-| **`interviews.ts`**      | Scheduled interview formats (`IN_PERSON`, `VIDEO`, `PHONE`), scorecards, ratings, and time slots                           |
-| **`organizations.ts`**   | Organization boundaries, 5 membership roles (`ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), invitations |
-| **`email-templates.ts`** | System email template definitions and interpolation variable schemas                                                       |
-| **`sourcing.ts`**        | Tracking links, UTM parameters, `resolveChannelFromDomain` helper, attribution clicks                                      |
+- **Error Codes & Payloads (`src/errors.ts`):** `64` strongly-typed `APP_ERROR_CODES` (`AppErrorCode`, `ApiErrorPayload`, `ErrorLocaleDictionary`) shared by backend `AppException`s and frontend `getApiErrorMessage`.
+- **RBAC Matrix (`src/permissions.ts`):** `5` roles (`ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), `41` `Permission` keys, default `PERMISSIONS` mapping, and `hasPermission(role, permission, isOwner)`.
+- **Real-Time Events (`src/events.ts`):** `17` `APP_EVENT_TYPES` (`AppEventType`, `AppEvent`, `isAppEventType`).
+- **Validation Schemas (`src/schemas/`):** Pure Zod schemas (`auth`, `job`, `candidate`, `application`) usable with backend `DtoPipe(...)` and frontend form validation.
+- **Domain Modules:** `applications.ts`, `brand.ts`, `candidates.ts`, `common.ts`, `email-templates.ts`, `interviews.ts`, `jobs.ts`, `organizations.ts`, `person-name.ts`, `sourcing.ts`, `webhooks.ts` (including `16` `SourcingChannel` values, stage transition helpers, and localization defaults).
 
 ---
 
-## ⚡ Usage in Workspace
-
-Import directly into backend or frontend files:
-
-```typescript
-import {
-  APP_ERROR_CODES,
-  PaginatedResult,
-  JobStatus,
-  BRAND_CONFIG,
-} from "@haihire/shared";
-```
-
-### Build & Verification
+## Verification
 
 ```bash
-# Verify shared package type safety
-pnpm --filter @haihire/shared run build
+pnpm --filter @haihire/shared build
+pnpm --filter @haihire/shared typecheck
 ```

@@ -21,7 +21,7 @@ import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useSubmitScorecardMutation } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   type InterviewScorecard,
@@ -212,7 +212,8 @@ export function InterviewScorecardModal({
           <div className="flex items-center gap-1 font-medium">
             <Calendar className="h-3.5 w-3.5 text-emerald-500" />
             <span>
-              {interview.date} ({interview.time})
+              {formatDate(interview.scheduledAt)} (
+              {formatTime(interview.scheduledAt)})
             </span>
           </div>
 

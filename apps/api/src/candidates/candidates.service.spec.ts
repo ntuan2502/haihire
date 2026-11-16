@@ -29,6 +29,7 @@ describe("CandidatesService (Characterization Tests)", () => {
   let jobTable: MockTable<Record<string, unknown>>;
   let interviewTable: MockTable<Record<string, unknown>>;
   let candidateDocTable: MockTable<Record<string, unknown>>;
+  let candidateNoteTable: MockTable<Record<string, unknown>>;
 
   let mockPrisma: PrismaService;
   let mockMinio: MinioService;
@@ -39,12 +40,10 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-1",
         organizationId: "org-1",
-        name: "Nguyen Van A",
         firstName: "A",
         lastName: "Nguyen Van",
         email: "nguyenvana@example.com",
         phone: "0901234567",
-        notes: "Experienced TypeScript developer",
         resumeUrl: "https://minio.local/resumes/org-1/resume-1.pdf",
         resumeFileName: "resume-1.pdf",
         resumeFileSize: 1024,
@@ -58,12 +57,10 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-2",
         organizationId: "org-1",
-        name: "Tran Thi B",
         firstName: "B",
         lastName: "Tran Thi",
         email: "tranthib@example.com",
         phone: "0912345678",
-        notes: "Junior React developer",
         resumeUrl: null,
         resumeFileName: null,
         resumeFileSize: null,
@@ -77,12 +74,10 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-deleted",
         organizationId: "org-1",
-        name: "Le Van C",
         firstName: "C",
         lastName: "Le Van",
         email: "levanc@example.com",
         phone: null,
-        notes: "Soft deleted candidate",
         resumeUrl: null,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -91,12 +86,10 @@ describe("CandidatesService (Characterization Tests)", () => {
       {
         id: "cand-other-org",
         organizationId: "org-2",
-        name: "Pham Van D",
         firstName: "D",
         lastName: "Pham Van",
         email: "phamvand@example.com",
         phone: null,
-        notes: "Belongs to Org 2",
         resumeUrl: null,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -107,6 +100,7 @@ describe("CandidatesService (Characterization Tests)", () => {
     applicationTable = createMockTable([
       {
         id: "app-1",
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-1",
         stage: "INTERVIEW",
@@ -114,7 +108,6 @@ describe("CandidatesService (Characterization Tests)", () => {
         resumeFileName: "app-resume-1.pdf",
         resumeFileSize: 2048,
         resumeMimeType: "application/pdf",
-        notes: "Solid technical background",
         orderIndex: 0,
         createdAt: toInstant(),
         updatedAt: toInstant(),
@@ -155,6 +148,45 @@ describe("CandidatesService (Characterization Tests)", () => {
       },
     ]);
 
+    candidateNoteTable = createMockTable([
+      {
+        id: "cnote-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Initial phone screen passed",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-2",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Strong Rust and TypeScript background",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-3",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Portfolio link verified",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+      },
+    ]);
+
     const mockOrm = {
       public: {
         Candidate: candidateTable,
@@ -162,6 +194,7 @@ describe("CandidatesService (Characterization Tests)", () => {
         Job: jobTable,
         Interview: interviewTable,
         CandidateDocument: candidateDocTable,
+        CandidateNote: candidateNoteTable,
       },
     };
 
@@ -175,6 +208,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       Job: jobTable,
       Interview: interviewTable,
       CandidateDocument: candidateDocTable,
+      CandidateNote: candidateNoteTable,
     }) as unknown as PrismaService;
 
     mockMinio = {
@@ -234,6 +268,19 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(paged.total).toBe(2);
       expect(paged.totalPages).toBe(2);
       expect(paged.data).toHaveLength(1);
+    });
+
+    it("returns latestNote, notesCount, and matches search terms inside candidateNote content", async () => {
+      const result = await service.findAll("org-1", { search: "Strong Rust" });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe("cand-1");
+      expect(result.data[0].notesCount).toBe(2);
+      expect(result.data[0].latestNote).toMatchObject({
+        id: "cnote-2",
+        content: "Strong Rust and TypeScript background",
+        authorName: "Recruiter Alice",
+      });
     });
   });
 
@@ -296,7 +343,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Duplicate Email Candidate",
+            firstName: "Duplicate",
+            lastName: "Email Candidate",
             email: "nguyenvana@example.com",
             organizationId: "org-1",
           },
@@ -306,25 +354,39 @@ describe("CandidatesService (Characterization Tests)", () => {
       ).rejects.toThrow(AppConflictException);
     });
 
-    it("parses full name into first/last and parses dateOfBirth into Temporal.Instant", async () => {
+    it("computes search name from structured firstName/lastName/displayName and parses dateOfBirth", async () => {
       const created = await service.create(
         {
-          name: "Tran Van Minh",
+          firstName: "Minh",
+          lastName: "Tran Van",
           email: "tranvanminh@example.com",
           dateOfBirth: "1995-05-20",
           phone: "0988776655",
-          notes: "Initial screening notes",
         },
         undefined,
         "org-1",
       );
 
       expect(created).toBeDefined();
-      expect(created.name).toBe("Tran Van Minh");
-      expect(created.firstName).toBe("Tran");
-      expect(created.lastName).toBe("Van Minh");
+      expect(created.name).toBe("Minh Tran Van");
+      expect(created.firstName).toBe("Minh");
+      expect(created.lastName).toBe("Tran Van");
+      expect(created.displayName).toBeNull();
       expect(created.email).toBe("tranvanminh@example.com");
       expect(created.dateOfBirth).toBeDefined();
+
+      const customCreated = await service.create(
+        {
+          firstName: "An",
+          lastName: "Nguyen Van",
+          displayName: "Andy Nguyen",
+          email: "andynguyen@example.com",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(customCreated.displayName).toBe("Andy Nguyen");
+      expect(customCreated.name).toBe("Andy Nguyen");
     });
   });
 
@@ -373,6 +435,42 @@ describe("CandidatesService (Characterization Tests)", () => {
         }),
       );
     });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const candRow = candidateTable.store.find((c) => c.id === "cand-1");
+      if (candRow) {
+        candRow.resumeMimeType = null;
+      }
+
+      const inferred = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+        "resume-1.pdf",
+        "org-1",
+      );
+      expect(inferred.mimeType).toBe("application/pdf");
+
+      await candidateDocTable.create({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://minio.local/resumes/org-1/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
+    });
   });
 
   describe("A.1.5: remove", () => {
@@ -393,18 +491,18 @@ describe("CandidatesService (Characterization Tests)", () => {
       const updated = await service.update(
         "cand-1",
         {
-          name: "Nguyen Van A Updated",
+          firstName: "A Updated",
+          lastName: "Nguyen Van",
           phone: "0999888777",
-          notes: "Updated senior developer notes",
           dateOfBirth: "1992-08-15",
         },
         "org-1",
       );
 
       expect(updated).toBeDefined();
-      expect(updated.name).toBe("Nguyen Van A Updated");
+      expect(updated.firstName).toBe("A Updated");
+      expect(updated.name).toBe("A Updated Nguyen Van");
       expect(updated.phone).toBe("0999888777");
-      expect(updated.notes).toBe("Updated senior developer notes");
       expect(updated.dateOfBirth).toBeDefined();
     });
 
@@ -456,7 +554,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Hacker Candidate",
+            firstName: "Hacker",
+            lastName: "Candidate",
             email: "hacker@test.local",
             organizationId: "org-1",
             resumeUrl:
@@ -485,7 +584,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Attacker",
+            firstName: "Attacker",
+            lastName: "User",
             email: "attacker@example.com",
             organizationId: "org-2",
           },

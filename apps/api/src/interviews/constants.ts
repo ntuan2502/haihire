@@ -25,7 +25,7 @@ export interface RawInterviewLike {
 
 /**
  * Normalizes a raw Interview database record into the shared domain contract,
- * extracting date (YYYY-MM-DD) and time (HH:mm) from scheduledAt and parsing scorecard JSON.
+ * normalizing scheduledAt to an ISO-8601 UTC string and parsing scorecard JSON.
  */
 export function formatInterviewRecord<T extends RawInterviewLike>(intv: T) {
   let parsedScorecard: Record<string, unknown> | null = null;
@@ -42,17 +42,13 @@ export function formatInterviewRecord<T extends RawInterviewLike>(intv: T) {
   }
 
   const ms = toTimestamp(intv.scheduledAt);
-  const dt = ms ? new Date(ms) : new Date();
-  const date = dt.toISOString().split("T")[0];
-  const time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+  const scheduledAt = (ms ? new Date(ms) : new Date()).toISOString();
 
   return {
     ...intv,
     id: intv.id as string,
     applicationId: intv.applicationId as string,
-    date,
-    time,
-    scheduledAt: intv.scheduledAt,
+    scheduledAt,
     type: (intv.type as string) || "",
     linkOrLocation: (intv.linkOrLocation as string) || "",
     interviewer: (intv.interviewer as string) || "",

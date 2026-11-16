@@ -19,15 +19,18 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { registerSchema } from "@haihire/shared";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const { register, isAuthenticated, user, loading: authLoading } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const isLastFirst = locale === "vi";
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,20 +63,29 @@ function RegisterForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) {
-      setError(t("auth.errorRegisterRequired"));
-      return;
-    }
+    const trimmedFirst = firstName.trim();
+    const trimmedLast = lastName.trim();
 
-    if (password.length < 6) {
-      setError(t("auth.errorPasswordMinLength"));
+    const validation = registerSchema.safeParse({
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      email,
+      password,
+    });
+    if (!validation.success) {
+      const issue = validation.error.issues[0];
+      if (issue.path.includes("password")) {
+        setError(t("auth.errorPasswordMinLength"));
+      } else {
+        setError(t("auth.errorRegisterRequired"));
+      }
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const user = await register(name, email, password);
+      const user = await register(trimmedFirst, trimmedLast, email, password);
 
       // Smart routing: if coming from invite link (/auth/join/[token]), return there!
       if (redirectUrl) {
@@ -90,6 +102,40 @@ function RegisterForm() {
       setLoading(false);
     }
   };
+
+  const nameFields = isLastFirst
+    ? [
+        {
+          id: "register-lastName",
+          label: t("auth.lastNameLabel"),
+          placeholder: t("auth.lastNamePlaceholder"),
+          value: lastName,
+          onChange: setLastName,
+        },
+        {
+          id: "register-firstName",
+          label: t("auth.firstNameLabel"),
+          placeholder: t("auth.firstNamePlaceholder"),
+          value: firstName,
+          onChange: setFirstName,
+        },
+      ]
+    : [
+        {
+          id: "register-firstName",
+          label: t("auth.firstNameLabel"),
+          placeholder: t("auth.firstNamePlaceholder"),
+          value: firstName,
+          onChange: setFirstName,
+        },
+        {
+          id: "register-lastName",
+          label: t("auth.lastNameLabel"),
+          placeholder: t("auth.lastNamePlaceholder"),
+          value: lastName,
+          onChange: setLastName,
+        },
+      ];
 
   const loginHref = redirectUrl
     ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}`
@@ -123,23 +169,27 @@ function RegisterForm() {
 
       {/* Register Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="register-name"
-            className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
-          >
-            <UserIcon className="h-3.5 w-3.5 text-slate-400" />{" "}
-            {t("auth.fullNameLabel")}
-          </label>
-          <Input
-            id="register-name"
-            type="text"
-            placeholder={t("auth.fullNamePlaceholder")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
-            required
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {nameFields.map((field) => (
+            <div key={field.id}>
+              <label
+                htmlFor={field.id}
+                className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+              >
+                <UserIcon className="h-3.5 w-3.5 text-slate-400" />{" "}
+                {field.label}
+              </label>
+              <Input
+                id={field.id}
+                type="text"
+                placeholder={field.placeholder}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
+                required
+              />
+            </div>
+          ))}
         </div>
 
         <div>
@@ -221,6 +271,7 @@ function RegisterForm() {
         <span>{t("auth.hasAccount")}</span>
         <Link
           href={loginHref}
+          prefetch={false}
           className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
         >
           <LogIn className="h-3.5 w-3.5" />

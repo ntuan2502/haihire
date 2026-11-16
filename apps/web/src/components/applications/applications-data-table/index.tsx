@@ -1,8 +1,11 @@
 "use client";
 
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { getCandidateDisplayName } from "@/lib/utils";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
+import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import type { ApplicationsDataTableProps } from "./types";
 import { useApplicationsTable } from "./hooks/use-applications-table";
@@ -102,10 +105,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         drawerOverviewBtnRef={drawer.drawerOverviewBtnRef}
         allScheduledInterviews={drawer.allScheduledInterviews}
         drawerCandidateDocuments={drawer.drawerCandidateDocuments}
-        drawerNotesList={drawer.drawerNotesList}
-        drawerNoteInput={drawer.drawerNoteInput}
-        onDrawerNoteInputChange={drawer.setDrawerNoteInput}
-        onAddDrawerNote={drawer.handleAddDrawerNote}
         onScheduleInterview={(intv) => {
           table.setEditingInterview(intv || null);
           table.setIsScheduleModalOpen(true);
@@ -136,7 +135,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           isOpen={true}
           onClose={() => table.setDeleteModalApp(null)}
           onConfirm={table.handleConfirmDelete}
-          candidateName={table.deleteModalApp.candidateName}
+          candidateName={getCandidateDisplayName(table.deleteModalApp)}
           jobTitle={
             table.deleteModalApp.jobId &&
             table.jobMap.get(table.deleteModalApp.jobId)
@@ -152,6 +151,40 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
               : t("applications.applyingForPosition")
           }
           isDeleting={table.isDeleting}
+        />
+      )}
+
+      {/* Reject Application Confirmation Modal */}
+      {drawer.pendingRejectApp && (
+        <RejectApplicationModal
+          isOpen={!!drawer.pendingRejectApp}
+          onClose={() => drawer.setPendingRejectApp(null)}
+          onConfirm={drawer.handleConfirmReject}
+          candidateName={getCandidateDisplayName(drawer.pendingRejectApp)}
+          candidateEmail={drawer.pendingRejectApp.candidateEmail}
+          jobTitle={
+            table.jobMap.get(drawer.pendingRejectApp.jobId)?.title ||
+            drawer.selectedJobTitle ||
+            ""
+          }
+          isSubmitting={drawer.isStageUpdatePending}
+        />
+      )}
+
+      {/* Offer Application Confirmation Modal */}
+      {drawer.pendingOfferApp && (
+        <OfferApplicationModal
+          isOpen={!!drawer.pendingOfferApp}
+          onClose={() => drawer.setPendingOfferApp(null)}
+          onConfirm={drawer.handleConfirmOffer}
+          candidateName={getCandidateDisplayName(drawer.pendingOfferApp)}
+          candidateEmail={drawer.pendingOfferApp.candidateEmail}
+          jobTitle={
+            table.jobMap.get(drawer.pendingOfferApp.jobId)?.title ||
+            drawer.selectedJobTitle ||
+            ""
+          }
+          isSubmitting={drawer.isStageUpdatePending}
         />
       )}
 

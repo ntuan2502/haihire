@@ -90,9 +90,10 @@ describe("ActivitiesService", () => {
 
     expect(activity).toBeDefined();
     expect(activity.organizationId).toBe("org-1");
-    expect(activity.metadata).toBe(
-      JSON.stringify({ fromStage: "APPLIED", toStage: "INTERVIEW" }),
-    );
+    expect(activity.metadata).toEqual({
+      fromStage: "APPLIED",
+      toStage: "INTERVIEW",
+    });
   });
 
   it("should paginate activities and parse JSON metadata safely", async () => {

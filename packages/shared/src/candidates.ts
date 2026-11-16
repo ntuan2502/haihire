@@ -1,18 +1,31 @@
 import type { Application } from "./applications";
+import type { NameDisplayOrder } from "./organizations";
+import { formatPersonDisplayName } from "./person-name";
 
-export function inferCandidateName(
-  name?: string | null,
-  firstName?: string | null,
-  lastName?: string | null,
-): { firstName: string; lastName: string } {
-  const first = firstName?.trim() || "";
-  const last = lastName?.trim() || "";
-  if (first || last) return { firstName: first, lastName: last };
-  const parts = name?.trim().split(/\s+/) || [];
-  return {
-    firstName: parts[0] || "",
-    lastName: parts.slice(1).join(" "),
-  };
+export function formatCandidateDisplayName(
+  candidate:
+    | {
+        displayName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        name?: string | null;
+        candidateName?: string | null;
+      }
+    | null
+    | undefined,
+  order: NameDisplayOrder = "FIRST_LAST",
+): string {
+  if (!candidate) return "";
+  return formatPersonDisplayName(
+    {
+      displayName: candidate.displayName,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      name: candidate.name,
+      fallbackName: candidate.candidateName,
+    },
+    order,
+  );
 }
 
 export const Gender = {
@@ -34,17 +47,25 @@ export interface CandidateDocument {
   jobTitle?: string;
 }
 
+export interface CandidateLatestNoteSummary {
+  id: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export interface Candidate {
   id: string;
   organizationId: string;
-  name: string;
+  /** Computed dynamically on serialization from firstName / lastName / displayName. */
+  name?: string;
   firstName?: string | null;
   lastName?: string | null;
+  displayName?: string | null;
   gender?: Gender | null;
   dateOfBirth?: string | null;
   email: string;
   phone?: string | null;
-  notes?: string | null;
   resumeUrl?: string | null;
   resumeFileName?: string | null;
   resumeFileSize?: number | null;
@@ -55,17 +76,32 @@ export interface Candidate {
   applicationsCount?: number;
   applications?: Application[];
   allDocuments?: CandidateDocument[];
+  candidateNotes?: CandidateNote[];
+  latestNote?: CandidateLatestNoteSummary | null;
+  notesCount?: number;
+}
+
+export interface CandidateNote {
+  id: string;
+  organizationId: string;
+  candidateId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCandidateInput {
-  name: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string | null;
   gender?: Gender;
   dateOfBirth?: string;
   email: string;
   phone?: string;
-  notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
   resumeFile?: unknown;
@@ -73,14 +109,13 @@ export interface CreateCandidateInput {
 }
 
 export interface UpdateCandidateInput {
-  name?: string;
   firstName?: string;
   lastName?: string;
+  displayName?: string | null;
   gender?: Gender;
   dateOfBirth?: string;
   email?: string;
   phone?: string;
-  notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
 }

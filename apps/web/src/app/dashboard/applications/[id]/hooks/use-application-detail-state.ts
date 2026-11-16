@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useApplication, useAllJobs } from "@/hooks/use-queries";
+import { useApplication, useJob } from "@/hooks/use-queries";
 import {
   DEFAULT_OVERVIEW_SECTIONS,
   type OverviewSectionsState,
@@ -15,12 +15,12 @@ import {
 } from "@/lib/utils";
 import { getJobTypeLabel } from "@/lib/jobs";
 import { useI18n } from "@/i18n";
-import type { CandidateDocument } from "@/types";
+import type { CandidateDocument, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
 export function useApplicationDetailState() {
   const params = useParams();
-  const { user, canEdit } = useAuth();
+  const { canEdit } = useAuth();
   const { t } = useI18n();
 
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
@@ -29,11 +29,15 @@ export function useApplicationDetailState() {
   const { data: app, isLoading: appLoading } = useApplication(
     isAppIdValid ? appIdStr : null,
   );
-  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
-    user?.organizationId,
+  const { data: fetchedJob, isLoading: jobLoading } = useJob(
+    app?.job ? null : (app?.jobId ?? null),
   );
 
-  const loading = appLoading || jobsLoading;
+  const job = (app?.job ?? fetchedJob) as Job | undefined;
+  const jobs = useMemo(() => (job ? [job as unknown as Job] : []), [job]);
+
+  const loading =
+    appLoading || (!app?.job && Boolean(app?.jobId) && jobLoading);
 
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -48,14 +52,9 @@ export function useApplicationDetailState() {
   const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
   const overviewBtnRef = useRef<HTMLButtonElement>(null);
 
-  const job = useMemo(
-    () => jobs.find((j) => j.id === app?.jobId),
-    [jobs, app?.jobId],
-  );
-
   const candidateDocuments = useMemo(() => {
     if (!app) return [];
-    return parseCandidateDocuments(app.notes, {
+    return parseCandidateDocuments({
       id: app.id,
       resumeUrl: app.resumeUrl,
       resumeFileName: app.resumeFileName,

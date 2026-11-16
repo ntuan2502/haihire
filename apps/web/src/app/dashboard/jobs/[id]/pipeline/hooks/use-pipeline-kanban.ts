@@ -5,18 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
   useJobApplications,
-  useUpdateCandidateMutation,
+  useJobStages,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import type { ApplicationStage, CandidateDocument } from "@/types";
+import type { Application, ApplicationStage, CandidateDocument } from "@/types";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
+import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import {
   PIPELINE_STAGES,
   usePipelineStages,
@@ -24,14 +26,14 @@ import {
   getTransitionDisabledReason,
 } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import {
-  parseCandidateDocuments,
-  parseCandidateNotes,
-  fixUtf8String,
-} from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
+import {
+  collectPipelineCandidateDocuments,
+  computePipelineStageCounts,
+  downloadPipelineCandidateDocument,
+  filterAndSortPipelineApplications,
+} from "./pipeline-kanban.helpers";
 
 export function usePipelineKanban(jobId: string) {
   const router = useRouter();
@@ -39,15 +41,15 @@ export function usePipelineKanban(jobId: string) {
   const { canEdit } = useAuth();
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const pipelineStages = usePipelineStages();
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
+  const { data: customJobStages } = useJobStages(jobId);
+  const pipelineStages = usePipelineStages(customJobStages);
   const { data: jobApplications = [], isLoading: appsLoading } =
     useJobApplications(jobId);
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const initialStageParam = searchParams.get(
     "stage",
@@ -99,10 +101,6 @@ export function usePipelineKanban(jobId: string) {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
-
-  const [candidateNotesList, setCandidateNotesList] = useState<string[]>([]);
-  const [candidateNoteInput, setCandidateNoteInput] = useState("");
-  const [isUpdatingNote, setIsUpdatingNote] = useState(false);
 
   useEffect(() => {
     const targetId =
@@ -173,87 +171,27 @@ export function usePipelineKanban(jobId: string) {
     setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const stageCounts = useMemo(() => {
-    const counts: Record<ApplicationStage, number> = {
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
-    };
-    for (const app of jobApplications) {
-      if (counts[app.stage] !== undefined) {
-        counts[app.stage]++;
-      }
-    }
-    return counts;
-  }, [jobApplications]);
+  const stageCounts = useMemo(
+    () => computePipelineStageCounts(jobApplications),
+    [jobApplications],
+  );
 
   const currentStageConfig = useMemo(() => {
     return (
-      PIPELINE_STAGES.find((s) => s.id === selectedStage) || PIPELINE_STAGES[0]
+      pipelineStages.find((s) => s.id === selectedStage) || pipelineStages[0]
     );
-  }, [selectedStage]);
+  }, [pipelineStages, selectedStage]);
 
-  const filteredCandidates = useMemo(() => {
-    return jobApplications
-      .filter((app) => app.stage === selectedStage)
-      .filter((app) => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-          app.candidateName.toLowerCase().includes(q) ||
-          app.candidateEmail.toLowerCase().includes(q)
-        );
-      })
-      .sort((a, b) => {
-        if (sortBy === "score") {
-          const scoreA = (a as unknown as { matchScore?: number }).matchScore;
-          const scoreB = (b as unknown as { matchScore?: number }).matchScore;
-          if (
-            scoreA !== undefined &&
-            scoreA !== null &&
-            scoreB !== undefined &&
-            scoreB !== null &&
-            scoreA !== scoreB
-          ) {
-            return scoreB - scoreA;
-          }
-          if (
-            (scoreA === undefined || scoreA === null) &&
-            scoreB !== undefined &&
-            scoreB !== null
-          ) {
-            return 1;
-          }
-          if (
-            scoreA !== undefined &&
-            scoreA !== null &&
-            (scoreB === undefined || scoreB === null)
-          ) {
-            return -1;
-          }
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        if (sortBy === "newest") {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        if (sortBy === "oldest") {
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-        }
-        if (sortBy === "name") {
-          return a.candidateName.localeCompare(b.candidateName);
-        }
-        return 0;
-      });
-  }, [jobApplications, selectedStage, searchQuery, sortBy]);
+  const filteredCandidates = useMemo(
+    () =>
+      filterAndSortPipelineApplications(
+        jobApplications,
+        selectedStage,
+        searchQuery,
+        sortBy,
+      ),
+    [jobApplications, selectedStage, searchQuery, sortBy],
+  );
 
   useEffect(() => {
     if (appsLoading) return;
@@ -331,72 +269,58 @@ export function usePipelineKanban(jobId: string) {
     }
   };
 
-  const candidateDocuments = useMemo(() => {
-    if (!selectedCandidate) return [];
-    const seenUrls = new Set<string>();
-    const allDocs: CandidateDocument[] = [];
-    const relatedApps = jobApplications.filter(
-      (a) =>
-        a.candidateEmail &&
-        a.candidateEmail === selectedCandidate.candidateEmail,
-    );
-    const appsToScan =
-      relatedApps.length > 0 ? relatedApps : [selectedCandidate];
+  const candidateDocuments = useMemo(
+    () => collectPipelineCandidateDocuments(selectedCandidate, jobApplications),
+    [selectedCandidate, jobApplications],
+  );
 
-    for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
-        id: a.id,
-        resumeUrl: a.resumeUrl,
-        resumeFileName: a.resumeFileName,
-        resumeFileSize: a.resumeFileSize,
-        resumeMimeType: a.resumeMimeType,
-        createdAt: a.createdAt,
-      });
-      for (const d of docs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocs.push(d);
-        }
-      }
-    }
-    return allDocs;
-  }, [selectedCandidate, jobApplications]);
+  const [pendingRejectCandidate, setPendingRejectCandidate] =
+    useState<Application | null>(null);
+  const [pendingOfferCandidate, setPendingOfferCandidate] =
+    useState<Application | null>(null);
 
-  useEffect(() => {
-    if (selectedCandidate) {
-      const parsed = parseCandidateNotes(
-        selectedCandidate.notes,
-        selectedCandidate.candidateName,
-      );
-      const noteText = parsed.customNotes || selectedCandidate.notes || "";
-      const items = noteText
-        ? noteText.split(/\s*\|\s*|\n+/).filter(Boolean)
-        : [];
-      setCandidateNotesList(items);
-      setCandidateNoteInput("");
-    } else {
-      setCandidateNotesList([]);
-    }
-  }, [selectedCandidate]);
-
-  const handleAddNote = async () => {
-    if (!candidateNoteInput.trim() || !selectedCandidate) return;
-    const trimmed = candidateNoteInput.trim();
-    const updated = [...candidateNotesList, trimmed];
-    setCandidateNotesList(updated);
-    setCandidateNoteInput("");
+  const executeMoveCandidateStage = async (
+    candidate: Application,
+    newStage: ApplicationStage,
+    options?: Partial<
+      RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
+    >,
+  ) => {
     try {
-      setIsUpdatingNote(true);
-      await updateCandidateMutation.mutateAsync({
-        id: selectedCandidate.id,
-        data: {
-          notes: updated.join(" | "),
-        },
+      const matchedStage = pipelineStages.find((s) => s.id === newStage);
+      await updateStageMutation.mutateAsync({
+        id: candidate.id,
+        stage: newStage,
+        ...(matchedStage?.stageId ? { stageId: matchedStage.stageId } : {}),
+        ...(options?.rejectionReason !== undefined
+          ? { rejectionReason: options.rejectionReason }
+          : {}),
+        ...(options?.sendRejectionEmail !== undefined
+          ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
+        ...(options?.sendOfferEmail !== undefined
+          ? { sendOfferEmail: options.sendOfferEmail }
+          : {}),
+        ...(options?.emailTemplateId
+          ? { emailTemplateId: options.emailTemplateId }
+          : {}),
       });
+      setSelectedStage(newStage);
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set("stage", newStage);
+      newParams.set("applicationId", candidate.id);
+      router.replace(
+        `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
+        {
+          scroll: false,
+        },
+      );
     } catch (err) {
-      console.error("Failed to save pipeline candidate note:", err);
-    } finally {
-      setIsUpdatingNote(false);
+      console.error("Failed to move candidate stage", err);
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
     }
   };
 
@@ -415,27 +339,42 @@ export function usePipelineKanban(jobId: string) {
       return;
     }
 
+    if (newStage === "REJECTED" && candidate.stage !== "REJECTED") {
+      setPendingRejectCandidate(candidate);
+      return;
+    }
+
+    if (newStage === "OFFER" && candidate.stage !== "OFFER") {
+      setPendingOfferCandidate(candidate);
+      return;
+    }
+
+    await executeMoveCandidateStage(candidate, newStage);
+  };
+
+  const handleConfirmRejectCandidate = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!pendingRejectCandidate) return;
+    const target = pendingRejectCandidate;
     try {
-      await updateStageMutation.mutateAsync({
-        id: candidate.id,
-        stage: newStage,
-      });
-      setSelectedStage(newStage);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("stage", newStage);
-      newParams.set("applicationId", candidate.id);
-      router.replace(
-        `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
-        {
-          scroll: false,
-        },
-      );
-    } catch (err) {
-      console.error("Failed to move candidate stage", err);
-      const errorMsg = getApiErrorMessage(err, t);
-      toast.error(errorMsg);
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
+      await executeMoveCandidateStage(target, "REJECTED", payload);
+      setPendingRejectCandidate(null);
+    } catch {
+      // Error already surfaced via executeMoveCandidateStage
+    }
+  };
+
+  const handleConfirmOfferCandidate = async (
+    payload: OfferApplicationConfirmPayload,
+  ) => {
+    if (!pendingOfferCandidate) return;
+    const target = pendingOfferCandidate;
+    try {
+      await executeMoveCandidateStage(target, "OFFER", payload);
+      setPendingOfferCandidate(null);
+    } catch {
+      // Error already surfaced via executeMoveCandidateStage
     }
   };
 
@@ -474,27 +413,13 @@ export function usePipelineKanban(jobId: string) {
     filename?: string,
     targetAppId?: string,
   ) => {
-    const rawFileName = filename || "document.pdf";
-    const downloadFileName = fixUtf8String(rawFileName);
-    const queryParams = new URLSearchParams();
-    if (url) queryParams.set("url", url);
-    if (downloadFileName) queryParams.set("name", downloadFileName);
-    const queryString = queryParams.toString()
-      ? `?${queryParams.toString()}`
-      : "";
-
-    const activeAppId = targetAppId || selectedCandidate?.id;
-    if (!activeAppId) {
-      toast.error(t("errors.cannotDownloadDocument"));
-      return;
-    }
-    const downloadPath = `/applications/${activeAppId}/documents/download${queryString}`;
-
-    try {
-      await downloadAuthenticatedFile(downloadPath, downloadFileName);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, t));
-    }
+    await downloadPipelineCandidateDocument(
+      url,
+      filename,
+      targetAppId || selectedCandidate?.id,
+      () => toast.error(t("errors.cannotDownloadDocument")),
+      (err) => toast.error(getApiErrorMessage(err, t)),
+    );
   };
 
   const candidateCountText =
@@ -528,14 +453,15 @@ export function usePipelineKanban(jobId: string) {
     previewDoc,
     setPreviewDoc,
     handleDownloadDoc,
-    candidateNotesList,
-    candidateNoteInput,
-    setCandidateNoteInput,
-    isUpdatingNote,
-    handleAddNote,
     isMovingStage: updateStageMutation.isPending,
     handleMoveCandidateStage,
     handleDropCandidate,
+    pendingRejectCandidate,
+    setPendingRejectCandidate,
+    handleConfirmRejectCandidate,
+    pendingOfferCandidate,
+    setPendingOfferCandidate,
+    handleConfirmOfferCandidate,
     deleteAppModalOpen,
     setDeleteAppModalOpen,
     isDeletingApp,

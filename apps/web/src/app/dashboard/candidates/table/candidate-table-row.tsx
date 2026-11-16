@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { Mail, Phone, Eye, Pencil, Trash2 } from "lucide-react";
-import { formatDate, type CandidateItem } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import {
+  formatDate,
+  getCandidateDisplayName,
+  type CandidateItem,
+} from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { CandidateVisibleColumns } from "../toolbar/candidates-column-picker";
 
@@ -17,12 +22,14 @@ export interface CandidateTableRowProps {
 export function CandidateTableRow({
   candidate,
   visibleColumns,
-  canEdit,
+  canEdit: _canEdit,
   onSelect,
   onDelete,
 }: CandidateTableRowProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const canUpdateCandidate = useHasPermission("candidate:update");
+  const canDeleteCandidate = useHasPermission("candidate:delete");
 
   return (
     <tr
@@ -41,7 +48,7 @@ export function CandidateTableRow({
             }}
             className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
           >
-            {candidate.name}
+            {getCandidateDisplayName(candidate.candidate ?? candidate)}
           </button>
         </td>
       )}
@@ -84,16 +91,23 @@ export function CandidateTableRow({
         </td>
       )}
 
-      {/* Quick notes */}
+      {/* Latest note */}
       {visibleColumns.quickNotes && (
         <td className="py-4 px-5 max-w-xs">
-          {candidate.notes ? (
-            <span
-              className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[220px]"
-              title={candidate.notes}
-            >
-              {candidate.notes}
-            </span>
+          {candidate.latestNote?.content ? (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[190px]"
+                title={candidate.latestNote.content}
+              >
+                {candidate.latestNote.content}
+              </span>
+              {(candidate.notesCount ?? 0) > 1 && (
+                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                  +{candidate.notesCount! - 1}
+                </span>
+              )}
+            </div>
           ) : (
             <span className="text-slate-300 dark:text-slate-600">—</span>
           )}
@@ -118,21 +132,23 @@ export function CandidateTableRow({
           </button>
 
           {/* Quick Edit (Dedicated Edit Page) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/dashboard/candidates/${candidate.id}/edit`);
-            }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {canUpdateCandidate && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/dashboard/candidates/${candidate.id}/edit`);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
 
           {/* Quick Delete */}
-          {canEdit && (
+          {canDeleteCandidate && (
             <button
               type="button"
               onClick={(e) => {

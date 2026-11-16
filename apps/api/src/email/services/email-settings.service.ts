@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { isEmail } from "class-validator";
 import { APP_ERROR_CODES } from "@haihire/shared";
@@ -13,6 +13,7 @@ import { UpdateEmailSettingDto } from "../dto/update-setting.dto";
 import { toInstant } from "../../common/date.util";
 import { validatePublicHost } from "../../common/network.util";
 import { env } from "../../config/env";
+import { EventsService } from "../../events/events.service";
 
 @Injectable()
 export class EmailSettingsService {
@@ -21,6 +22,9 @@ export class EmailSettingsService {
     private readonly prisma: PrismaService,
     @Inject(EncryptionService)
     private readonly encryptionService: EncryptionService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   resolveOrgId(
@@ -243,6 +247,12 @@ export class EmailSettingsService {
     await this.prisma.emailSetting.update({
       where: { id: currentId },
       data: updateData,
+    });
+
+    this.eventsService?.emit({
+      type: "EMAIL_CHANGED",
+      organizationId: targetOrgId,
+      data: { settingId: currentId },
     });
 
     return this.getSettings(targetOrgId);

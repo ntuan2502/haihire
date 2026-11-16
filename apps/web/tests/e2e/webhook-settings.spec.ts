@@ -200,7 +200,9 @@ test.describe("Webhook Settings E2E Flow", () => {
     await testRowBtn.click();
 
     // Verify toast notification appears
-    const toast = page.locator("[data-sonner-toast], div[role='status']");
+    const toast = page.locator(
+      ".Toastify__toast, div[role='alert'], div[role='status']",
+    );
     await expect(toast.first()).toBeVisible({ timeout: 5000 });
   });
 

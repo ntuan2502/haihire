@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -15,14 +17,20 @@ import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { EmailService } from "./email.service";
 import { AVAILABLE_VARIABLES } from "./variable-registry";
-import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
+import { CreateEmailTemplateDto } from "./dto/create-template.dto";
+import {
+  DuplicateEmailTemplateDto,
+  UpdateEmailTemplateDto,
+} from "./dto/update-template.dto";
+import { UpdateEmailFlowDto } from "./dto/update-flow.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
 
 @Controller("email")
-@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
 export class EmailController {
   constructor(
     @Inject(EmailService)
@@ -47,9 +55,39 @@ export class EmailController {
     );
   }
 
-  @Put("templates/:type")
+  @Post("templates")
   @RequirePermission("email:manage_templates")
-  updateTemplate(
+  createTemplate(
+    @Body(DtoPipe(CreateEmailTemplateDto)) dto: CreateEmailTemplateDto,
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.createTemplate(
+      organizationId,
+      dto,
+      req.user.organizationId,
+    );
+  }
+
+  @Post("templates/:id/duplicate")
+  @RequirePermission("email:manage_templates")
+  duplicateTemplate(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(DuplicateEmailTemplateDto)) dto: DuplicateEmailTemplateDto,
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.duplicateTemplate(
+      organizationId,
+      id,
+      dto,
+      req.user.organizationId,
+    );
+  }
+
+  @Put("templates/by-type/:type")
+  @RequirePermission("email:manage_templates")
+  updateTemplateByType(
     @Param("type") type: string,
     @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
     @Request() req: { user: { organizationId?: string | null } },
@@ -58,6 +96,61 @@ export class EmailController {
     return this.emailService.updateTemplate(
       organizationId,
       type,
+      dto,
+      req.user.organizationId,
+    );
+  }
+
+  @Put("templates/:id")
+  @RequirePermission("email:manage_templates")
+  updateTemplate(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.updateTemplate(
+      organizationId,
+      id,
+      dto,
+      req.user.organizationId,
+    );
+  }
+
+  @Delete("templates/:id")
+  @RequirePermission("email:manage_templates")
+  deleteTemplate(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.deleteTemplate(
+      organizationId,
+      id,
+      req.user.organizationId,
+    );
+  }
+
+  @Get("flows")
+  @RequirePermission("email:view")
+  getFlows(
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.getFlows(organizationId, req.user.organizationId);
+  }
+
+  @Put("flows/:flowKey")
+  @RequirePermission("email:manage_templates")
+  updateFlow(
+    @Param("flowKey") flowKey: string,
+    @Body(DtoPipe(UpdateEmailFlowDto)) dto: UpdateEmailFlowDto,
+    @Request() req: { user: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    return this.emailService.updateFlow(
+      organizationId,
+      flowKey,
       dto,
       req.user.organizationId,
     );

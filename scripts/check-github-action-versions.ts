@@ -27,12 +27,25 @@ export const MINIMUM_ACTION_VERSIONS: Record<string, string> = {
   "actions/cache": "v5",
   "actions/upload-artifact": "v6",
   "actions/download-artifact": "v6",
+  "aquasecurity/trivy-action": "v0.36.0",
 };
 
 export function parseMajorVersion(versionStr: string): number | null {
   const clean = versionStr.replace(/^v/i, "").trim();
   const major = parseInt(clean.split(".")[0], 10);
   return isNaN(major) ? null : major;
+}
+
+export function parseSemver(
+  versionStr: string,
+): [number, number, number] | null {
+  const clean = versionStr.replace(/^v/i, "").trim();
+  const parts = clean.split(".");
+  const major = parseInt(parts[0], 10);
+  if (isNaN(major)) return null;
+  const minor = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  const patch = parts.length > 2 ? parseInt(parts[2], 10) : 0;
+  return [major, isNaN(minor) ? 0 : minor, isNaN(patch) ? 0 : patch];
 }
 
 export function auditWorkflowContent(
@@ -55,17 +68,39 @@ export function auditWorkflowContent(
     const minVersionStr = MINIMUM_ACTION_VERSIONS[action];
     if (!minVersionStr) continue; // Skip unknown actions
 
-    const currentMajor = parseMajorVersion(version);
-    const minMajor = parseMajorVersion(minVersionStr);
+    const currentSem = parseSemver(version);
+    const minSem = parseSemver(minVersionStr);
 
-    if (currentMajor !== null && minMajor !== null && currentMajor < minMajor) {
+    let isOlder = false;
+    if (!currentSem) {
+      isOlder = true; // unparsed branch or tag (e.g. master)
+    } else if (minSem) {
+      if (currentSem[0] < minSem[0]) {
+        isOlder = true;
+      } else if (currentSem[0] === minSem[0] && currentSem[1] < minSem[1]) {
+        isOlder = true;
+      } else if (
+        currentSem[0] === minSem[0] &&
+        currentSem[1] === minSem[1] &&
+        currentSem[2] < minSem[2]
+      ) {
+        isOlder = true;
+      }
+    }
+
+    if (isOlder) {
+      const message =
+        action === "aquasecurity/trivy-action"
+          ? `${action}@${version} is deprecated or unpinned. Use ${action}@${minVersionStr} or newer.`
+          : `${action}@${version} is deprecated (Node 20). Use ${action}@${minVersionStr} or newer.`;
+
       violations.push({
         file: filePath,
         line: i + 1,
         action,
         currentVersion: version,
         minimumVersion: minVersionStr,
-        message: `${action}@${version} is deprecated (Node 20). Use ${action}@${minVersionStr} or newer.`,
+        message,
       });
     }
   }

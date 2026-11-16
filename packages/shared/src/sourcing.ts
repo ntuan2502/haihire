@@ -69,6 +69,9 @@ export interface RecentAttributedCandidateItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobTitle: string;
   source: SourcingChannel;
@@ -107,6 +110,9 @@ export interface AttributionLogItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobId: string;
   jobTitle: string;
@@ -159,6 +165,9 @@ export interface AttributedApplicationDetailItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobId: string;
   jobTitle: string;

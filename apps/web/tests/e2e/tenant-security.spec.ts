@@ -239,7 +239,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       const response = await anonymous.post("/api/applications/apply", {
         data: {
           jobId: betaJobId,
-          candidateName: "Public Applicant",
+          firstName: "Public",
+          lastName: "Applicant",
           candidateEmail: `public-response-${randomUUID()}@example.com`,
           candidatePhone: "+84900000000",
           notes: "Private application note",
@@ -285,7 +286,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     const slug = `email-isolation-${randomUUID()}`;
     const registration = await request.post("/api/auth/register", {
       data: {
-        name: "Email Isolation Test",
+        firstName: "Email",
+        lastName: "Isolation Test",
         email: `${slug}@example.com`,
         password: "TenantIsolationTest2026!",
       },
@@ -327,7 +329,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
 
     const registration = await request.post("/api/auth/register", {
       data: {
-        name: "Tenant Isolation Test",
+        firstName: "Tenant",
+        lastName: "Isolation Test",
         email: `tenant-isolation-${randomUUID()}@example.com`,
         password: "TenantIsolationTest2026!",
       },

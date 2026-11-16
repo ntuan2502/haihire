@@ -11,12 +11,15 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { CustomSelect } from "@/components/shared/custom-select";
-import { getDocumentUrl } from "@/lib/api";
+import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
 import { formatDate } from "@/lib/utils";
+import { getDocumentTypeLabel } from "@/lib/roles";
 import type { CandidateDocument } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerDocumentsTabProps {
+  candidateId?: string;
   canEdit: boolean;
   docFilter: string;
   onDocFilterChange: (filter: string) => void;
@@ -34,7 +37,8 @@ export interface CandidateDrawerDocumentsTabProps {
 }
 
 export function CandidateDrawerDocumentsTab({
-  canEdit,
+  candidateId,
+  canEdit: _canEdit,
   docFilter,
   onDocFilterChange,
   documents,
@@ -47,6 +51,10 @@ export function CandidateDrawerDocumentsTab({
 }: CandidateDrawerDocumentsTabProps) {
   const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canUploadDoc = useHasPermission("candidate:document_upload");
+  const canDownloadDoc = useHasPermission("candidate:document_download");
+  const canDeleteDoc = useHasPermission("candidate:document_delete");
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -96,12 +104,10 @@ export function CandidateDrawerDocumentsTab({
         </div>
 
         <div className="w-full h-[500px] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
-          <iframe
-            src={getDocumentUrl(previewDoc.url)}
-            className="w-full h-full border-0"
-            sandbox="allow-scripts allow-same-origin"
-            referrerPolicy="no-referrer"
-            title={previewDoc.name}
+          <AuthenticatedDocumentViewer
+            document={previewDoc}
+            candidateId={candidateId}
+            onDownload={onDownloadDoc}
           />
         </div>
       </div>
@@ -127,7 +133,7 @@ export function CandidateDrawerDocumentsTab({
           triggerClassName="h-7 w-28 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
         />
 
-        {canEdit && (
+        {canUploadDoc && (
           <div>
             <button
               type="button"
@@ -172,7 +178,7 @@ export function CandidateDrawerDocumentsTab({
                     {doc.name}
                   </h4>
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
-                    <span>{doc.type || t("candidates.resume")}</span>
+                    <span>{getDocumentTypeLabel(doc.type, t)}</span>
                     <span>•</span>
                     <span>{formatDate(doc.createdAt, "short")}</span>
                     <span>•</span>
@@ -197,18 +203,20 @@ export function CandidateDrawerDocumentsTab({
                   <Eye className="h-3.5 w-3.5" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    onDownloadDoc(doc.url, doc.name, doc.sourceApplicationId)
-                  }
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title={t("common.download")}
-                >
-                  <Download className="h-3.5 w-3.5" />
-                </button>
+                {canDownloadDoc && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onDownloadDoc(doc.url, doc.name, doc.sourceApplicationId)
+                    }
+                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title={t("common.download")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                )}
 
-                {canEdit && (
+                {canDeleteDoc && (
                   <button
                     type="button"
                     onClick={() => onDeleteDoc(doc)}
@@ -223,10 +231,7 @@ export function CandidateDrawerDocumentsTab({
           ))}
         </div>
       ) : (
-        <label
-          htmlFor="drawer-doc-upload"
-          className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors block"
-        >
+        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center space-y-1.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 mb-0.5">
             <FileText className="h-4 w-4" aria-hidden="true" />
           </div>
@@ -234,9 +239,11 @@ export function CandidateDrawerDocumentsTab({
             {t("candidates.noDocuments")}
           </h4>
           <p className="text-[10px] text-slate-400 max-w-xs">
-            {t("candidates.uploadDocHint")}
+            {canUploadDoc
+              ? t("candidates.uploadDocHint")
+              : t("candidates.noDocuments")}
           </p>
-        </label>
+        </div>
       )}
     </div>
   );

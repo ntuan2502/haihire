@@ -1,5 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
+import { formatUserDisplayName } from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { toInstant } from "../../common/date.util";
 
@@ -25,13 +28,16 @@ export class OrganizationsAuditLogService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private safeParse(value: string | null): unknown {
+  private safeParse(value: unknown): unknown {
     if (!value) return null;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
     }
+    return value;
   }
 
   async logOrg(
@@ -40,17 +46,19 @@ export class OrganizationsAuditLogService {
     action: string,
     resource: string,
     metadata?: Record<string, unknown> | null,
+    tx?: PrismaService,
   ) {
     const id = crypto.randomUUID();
-    const metadataStr = metadata ? JSON.stringify(metadata) : null;
-    return this.prisma.organizationAuditLog.create({
+    const meta = metadata ? (metadata as Prisma.InputJsonValue) : Prisma.DbNull;
+    const client = tx ?? this.prisma;
+    return client.organizationAuditLog.create({
       data: {
         id,
         organizationId,
         actorId: actorId || null,
         action,
         resource,
-        metadata: metadataStr,
+        metadata: meta,
         createdAt: toInstant(),
       },
     });
@@ -64,7 +72,7 @@ export class OrganizationsAuditLogService {
     metadata?: Record<string, unknown> | null,
   ) {
     const id = crypto.randomUUID();
-    const metadataStr = metadata ? JSON.stringify(metadata) : null;
+    const meta = metadata ? (metadata as Prisma.InputJsonValue) : Prisma.DbNull;
     return this.prisma.platformAuditLog.create({
       data: {
         id,
@@ -72,7 +80,7 @@ export class OrganizationsAuditLogService {
         actorId,
         action,
         resource,
-        metadata: metadataStr,
+        metadata: meta,
         createdAt: toInstant(),
       },
     });
@@ -103,22 +111,34 @@ export class OrganizationsAuditLogService {
       new Set(pagedLogs.map((l) => l.actorId).filter(Boolean)),
     ) as string[];
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      organizationId,
+    );
+
     const actors =
       actorIds.length > 0
         ? await this.prisma.user.findMany({
             where: { id: { in: actorIds } },
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
-              role: true,
               avatarUrl: true,
-              organizationId: true,
             },
           })
         : [];
 
-    const actorMap = new Map(actors.map((u) => [u.id, u]));
+    const actorMap = new Map(
+      actors.map((u) => [
+        u.id,
+        {
+          ...u,
+          name: formatUserDisplayName(u, nameOrder),
+        },
+      ]),
+    );
 
     const data = pagedLogs.map((log) => ({
       id: log.id,

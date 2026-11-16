@@ -45,7 +45,6 @@ export interface TranslationSchema {
     other: string;
     updated: string;
     details: string;
-    properties: string;
     yes: string;
     no: string;
     preview: string;
@@ -64,6 +63,28 @@ export interface TranslationSchema {
     cancelConfirmWord: string;
     revokeConfirmWord: string;
     skipToContent: string;
+    accessDenied: string;
+    loadingWorkspace: string;
+    clearSearch: string;
+    removeFilter: string;
+    removeSpecificFilter: string;
+    maximize: string;
+    restore: string;
+    userProfile: string;
+    toggleNavigationMenu: string;
+    positionFallback: string;
+    openRoleFallback: string;
+    departmentSuffix: string;
+    unknownUserFallback: string;
+    filterStatusTabs: string;
+    organizationFallback: string;
+    systemNotifications: string;
+    closeModal: string;
+    docTypes: {
+      resume: string;
+      coverLetter: string;
+      other: string;
+    };
   };
   errors: {
     generic: string;
@@ -112,6 +133,8 @@ export interface TranslationSchema {
     INTERVIEW_APP_NOT_FOUND: string;
     INTERVIEW_INVALID_ORGANIZATION: string;
     EMAIL_TEMPLATE_NOT_FOUND: string;
+    EMAIL_TEMPLATE_SYSTEM_PROTECTED: string;
+    EMAIL_FLOW_NOT_FOUND: string;
     EMAIL_SETTINGS_NOT_FOUND: string;
     EMAIL_SETTINGS_INVALID: string;
     EMAIL_ORG_REQUIRED: string;
@@ -146,6 +169,10 @@ export interface TranslationSchema {
       title: string;
       description: string;
       goHome: string;
+    };
+    forbidden: {
+      title: string;
+      description: string;
     };
   };
   nav: {
@@ -194,6 +221,10 @@ export interface TranslationSchema {
     registerSubtitle: string;
     fullNameLabel: string;
     fullNamePlaceholder: string;
+    firstNameLabel: string;
+    firstNamePlaceholder: string;
+    lastNameLabel: string;
+    lastNamePlaceholder: string;
     signUpButton: string;
     signingUp: string;
     hasAccount: string;
@@ -228,6 +259,9 @@ export interface TranslationSchema {
     featureLifecycle: string;
     featureInvites: string;
     footerNote: string;
+    sseRoleChanged: string;
+    sseOrgRemoved: string;
+    ssePermissionsChanged: string;
   };
   landing: {
     product: string;
@@ -477,7 +511,6 @@ export interface TranslationSchema {
     noResponsesTitle: string;
     noResponsesSubtitle: string;
     timelineApplied: string;
-    noCustomProperties: string;
     noCandidatesInStage: string;
     switchStageHint: string;
     tooltips: {
@@ -486,6 +519,10 @@ export interface TranslationSchema {
       cannotMoveRejected: string;
       dragNotAllowed: string;
     };
+    focusCandidate: string;
+    viewCandidateLabel: string;
+    noEmail: string;
+    filterOptions: string;
   };
   jobs: {
     title: string;
@@ -531,6 +568,9 @@ export interface TranslationSchema {
     draftStatus: string;
     closedStatus: string;
     moreOptions: string;
+    defaultLocation: string;
+    competitiveSalary: string;
+    noDescription: string;
     tabs: {
       pipeline: string;
       promote: string;
@@ -872,10 +912,13 @@ export interface TranslationSchema {
     noDocuments: string;
     candidateDetail: string;
     openFullPage: string;
-    addProperty: string;
     allStages: string;
     backToDocuments: string;
     clickToPreview: string;
+    loadingPreview: string;
+    previewUnavailable: string;
+    previewUnsupportedFormat: string;
+    retryPreview: string;
     uploadDocHint: string;
     noApplicationsYet: string;
     noApplicationsMatchingStage: string;
@@ -889,10 +932,16 @@ export interface TranslationSchema {
       phone: string;
       dob: string;
     };
+    errors: {
+      firstNameRequired: string;
+      lastNameRequired: string;
+      validEmailRequired: string;
+    };
     createFailed: string;
     updateFailed: string;
     invalidCandidateId: string;
     candidateNotFound: string;
+    notesTitle: string;
   };
   applications: {
     title: string;
@@ -902,6 +951,26 @@ export interface TranslationSchema {
     status: string;
     score: string;
     matchScore: string;
+    matchScoreUnrated: string;
+    rejectionReasonLabel: string;
+    rejectModal: {
+      title: string;
+      description: string;
+      reasonLabel: string;
+      reasonPlaceholder: string;
+      sendEmailLabel: string;
+      selectTemplateLabel: string;
+      noEmailHint: string;
+      confirmButton: string;
+    };
+    offerModal: {
+      title: string;
+      description: string;
+      sendEmailLabel: string;
+      selectTemplateLabel: string;
+      noEmailHint: string;
+      confirmButton: string;
+    };
     applied: string;
     actions: string;
     noApplicationsFound: string;
@@ -916,7 +985,25 @@ export interface TranslationSchema {
     notes: string;
     addNote: string;
     notePlaceholder: string;
+    notesStream: {
+      title: string;
+      subtitle: string;
+      placeholder: string;
+      addNote: string;
+      editNote: string;
+      deleteNote: string;
+      deleteConfirm: string;
+      edited: string;
+      empty: string;
+      emptyCompact: string;
+      cancel: string;
+      save: string;
+      keyboardHint: string;
+      saving: string;
+      deleting: string;
+    };
     toggleSections: string;
+    comingSoonTooltip: string;
     views: string;
     columnsToggle: string;
     columns: {
@@ -950,8 +1037,6 @@ export interface TranslationSchema {
     noInterviewsDesc: string;
     noResponses: string;
     noDocumentsUploaded: string;
-    addOrgProperty: string;
-    manageJobProperties: string;
     submitApplicationTitle: string;
     submitApplicationDesc: string;
     applicationSubmittedSuccess: string;
@@ -993,7 +1078,6 @@ export interface TranslationSchema {
       responses: string;
       notes: string;
       timeline: string;
-      properties: string;
     };
     sections: {
       sectionsTitle: string;
@@ -1006,7 +1090,6 @@ export interface TranslationSchema {
       documents: string;
       responses: string;
       notes: string;
-      properties: string;
     };
     placeholders: {
       firstName: string;
@@ -1230,6 +1313,7 @@ export interface TranslationSchema {
     close: string;
     cancelInterviewTitle: string;
     cancelInterviewWarning: string;
+    interviewEventAria: string;
     errors: {
       selectCandidate: string;
       selectDate: string;
@@ -1276,15 +1360,21 @@ export interface TranslationSchema {
     roleHiringManager: string;
     roleInterviewer: string;
     roleMember: string;
+    expires1Day: string;
     expires7Days: string;
     expires30Days: string;
     expiresNever: string;
     uses1: string;
+    uses5: string;
+    uses10: string;
     usesUnlimited: string;
     noActiveInviteLinks: string;
     noActiveInviteLinksDesc: string;
     updateRoleSuccess: string;
     updateRoleError: string;
+    memberActionsTitle: string;
+    inviteEmailRequired: string;
+    inviteSentSuccess: string;
   };
   onboarding: {
     selectOrgTitle: string;
@@ -1387,6 +1477,36 @@ export interface TranslationSchema {
     passwordMismatchError: string;
     passwordTooShortError: string;
     currentPasswordRequiredError: string;
+    backToSettings: string;
+    generalProfileDesc: string;
+    accountProfileDesc: string;
+    accountInfoSub: string;
+    accountProfile: {
+      firstNameLabel: string;
+      firstNamePlaceholder: string;
+      lastNameLabel: string;
+      lastNamePlaceholder: string;
+      saveBtn: string;
+      savingBtn: string;
+      saveSuccess: string;
+      saveError: string;
+      nameRequiredError: string;
+    };
+    openPublicCareers: string;
+    workspaceSummaryDesc: string;
+    accountPreferences: {
+      title: string;
+      subtitle: string;
+      languageLabel: string;
+      languageHint: string;
+      timezoneLabel: string;
+      timezoneHint: string;
+      followOrgDefault: string;
+      saveBtn: string;
+      savingBtn: string;
+      saveSuccess: string;
+      saveError: string;
+    };
     tabs: {
       general: string;
       generalSub: string;
@@ -1420,6 +1540,58 @@ export interface TranslationSchema {
     placeholders: {
       orgName: string;
       orgSlug: string;
+    };
+    localization: {
+      title: string;
+      description: string;
+      personalCardTitle: string;
+      personalCardSub: string;
+      personalLanguageLabel: string;
+      personalLanguageHint: string;
+      orgCardTitle: string;
+      orgCardSub: string;
+      defaultLanguageLabel: string;
+      defaultLanguageHint: string;
+      timezoneLabel: string;
+      timezoneHint: string;
+      timezoneSearchPlaceholder: string;
+      timezoneNoMatch: string;
+      dateFormatLabel: string;
+      dateFormatHint: string;
+      timeFormatLabel: string;
+      timeFormat24H: string;
+      timeFormat12H: string;
+      nameOrderLabel: string;
+      nameOrderFirstLast: string;
+      nameOrderFirstLastExample: string;
+      nameOrderLastFirst: string;
+      nameOrderLastFirstExample: string;
+      currencyLabel: string;
+      currencyHint: string;
+      previewTitle: string;
+      previewSub: string;
+      previewCandidateName: string;
+      previewDate: string;
+      previewTime: string;
+      previewRelativeTime: string;
+      previewSalary: string;
+      previewTimezone: string;
+      resetButton: string;
+      saveSuccess: string;
+      saveError: string;
+      adminOnlyHint: string;
+      unsavedChanges: string;
+      currencies: {
+        VND: string;
+        USD: string;
+        EUR: string;
+        SGD: string;
+        JPY: string;
+      };
+      languages: {
+        vi: string;
+        en: string;
+      };
     };
     integrations: {
       title: string;
@@ -1485,7 +1657,6 @@ export interface TranslationSchema {
     rolesMatrix: {
       title: string;
       description: string;
-      badge: string;
       readOnlyBadge: string;
       readOnlyNotice: string;
       saveButton: string;
@@ -1518,12 +1689,53 @@ export interface TranslationSchema {
       roleInterviewer: string;
       roleMember: string;
       tableSummary: string;
+      permissions: {
+        org_view: string;
+        org_update: string;
+        org_delete: string;
+        org_manage_members: string;
+        org_manage_roles: string;
+        org_manage_billing: string;
+        org_transfer_ownership: string;
+        org_view_audit_log: string;
+        job_view: string;
+        job_create: string;
+        job_update: string;
+        job_delete: string;
+        candidate_view: string;
+        candidate_create: string;
+        candidate_update: string;
+        candidate_delete: string;
+        candidate_document_upload: string;
+        candidate_document_download: string;
+        candidate_document_delete: string;
+        application_view: string;
+        application_create: string;
+        application_update: string;
+        application_update_stage: string;
+        application_delete: string;
+        application_document_upload: string;
+        application_document_download: string;
+        application_document_delete: string;
+        interview_view: string;
+        interview_create: string;
+        interview_update: string;
+        interview_delete: string;
+        interview_scorecard_submit: string;
+        sourcing_view: string;
+        sourcing_create: string;
+        sourcing_update: string;
+        sourcing_delete: string;
+        email_view: string;
+        email_send: string;
+        email_manage_templates: string;
+        email_manage_settings: string;
+        settings_manage_integrations: string;
+      };
     };
     auditLog: {
       title: string;
       description: string;
-      badge: string;
-      accessDenied: string;
       filterAllActions: string;
       filterAction: string;
       colTimestamp: string;
@@ -1543,6 +1755,30 @@ export interface TranslationSchema {
       actionMemberRoleChanged: string;
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
+      actionOrgLocalizationUpdated: string;
+      resources: {
+        ORGANIZATION: string;
+        MEMBER: string;
+        ROLE_PERMISSIONS: string;
+        SYSTEM: string;
+        OTHER: string;
+      };
+      metadataLabels: {
+        roleTarget: string;
+        allRoles: string;
+        roleChanged: string;
+        permissionsUpdated: string;
+        ownershipTransferred: string;
+        localizationUpdated: string;
+        localizationFields: {
+          timezone: string;
+          defaultLocale: string;
+          defaultCurrency: string;
+          nameDisplayOrder: string;
+          dateFormat: string;
+          timeFormat: string;
+        };
+      };
     };
   };
   theme: {
@@ -1683,6 +1919,7 @@ export interface TranslationSchema {
     insertVariable: string;
     insertVariableHint: string;
     livePreview: string;
+    previewDeviceControls: string;
     previewDeviceDesktop: string;
     previewDeviceTablet: string;
     previewDeviceMobile: string;
@@ -1701,6 +1938,7 @@ export interface TranslationSchema {
     providerSendGrid: string;
     providerSendGridDesc: string;
     senderName: string;
+    senderNamePlaceholder: string;
     senderEmail: string;
     smtpHost: string;
     smtpPort: string;
@@ -1785,6 +2023,7 @@ export interface TranslationSchema {
     subjectPlaceholder: string;
     tabCompose: string;
     htmlAndVariables: string;
+    mobileBackToInbox: string;
     bodyPlaceholder: string;
     varCandidateName: string;
     varCandidateEmail: string;
@@ -1796,6 +2035,49 @@ export interface TranslationSchema {
     varInterviewLink: string;
     varInterviewerName: string;
     varSenderName: string;
+    flowsSectionTitle: string;
+    flowsSectionDesc: string;
+    flowApplicationReceivedTitle: string;
+    flowApplicationReceivedDesc: string;
+    flowInterviewScheduledTitle: string;
+    flowInterviewScheduledDesc: string;
+    flowApplicationRejectedTitle: string;
+    flowApplicationRejectedDesc: string;
+    flowApplicationOfferTitle: string;
+    flowApplicationOfferDesc: string;
+    flowAutoEnabled: string;
+    flowAutoDisabled: string;
+    flowUnassigned: string;
+    flowWarningUnassigned: string;
+    flowWarningTemplateDisabled: string;
+    flowSavedSuccess: string;
+    libraryTitle: string;
+    libraryDesc: string;
+    newTemplateBtn: string;
+    createModalTitle: string;
+    createSuccess: string;
+    duplicateBtn: string;
+    duplicateSuccess: string;
+    deleteBtn: string;
+    deleteConfirmTitle: string;
+    deleteConfirmDesc: string;
+    deleteConfirmAssignedWarning: string;
+    deleteSuccess: string;
+    systemBadge: string;
+    customBadge: string;
+    systemProtectedHint: string;
+    assignedFlowsLabel: string;
+    templateTitleLabel: string;
+    templateTitlePlaceholder: string;
+    templateCategoryLabel: string;
+    templateEnabledLabel: string;
+    templateEnabledDesc: string;
+    copySuffix: string;
+    selectTemplateOption: string;
+    noActiveTemplates: string;
+    customAdHocOption: string;
+    interviewTemplateSelectLabel: string;
+    customEmailOverrideNote: string;
   };
   timeline: {
     title: string;

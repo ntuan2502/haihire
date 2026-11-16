@@ -20,8 +20,11 @@ describe("OrganizationsController", () => {
   const mockService = {
     create: vi.fn(),
     getMyOrg: vi.fn(),
+    updateMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
     transferOwnership: vi.fn(),
+    getMembers: vi.fn(),
+    getInterviewers: vi.fn(),
     updateMemberRole: vi.fn(),
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
@@ -198,6 +201,91 @@ describe("OrganizationsController", () => {
         Role.RECRUITER,
       );
       expect(result).toEqual({ success: true, role: Role.RECRUITER });
+    });
+  });
+
+  describe("Members & Interviewers RBAC Endpoints", () => {
+    describe("GET /organizations/my/members", () => {
+      it("allows ADMIN with org:manage_members and delegates to getMembers", async () => {
+        const context = createMockContext(
+          nonOwnerAdminReq,
+          controller.getMembers,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        const members = [
+          {
+            id: "u-1",
+            name: "Admin",
+            email: "admin@haihire.local",
+            role: Role.ADMIN,
+          },
+        ];
+        mockService.getMembers.mockResolvedValueOnce(members);
+
+        const result = await controller.getMembers(nonOwnerAdminReq);
+        expect(mockService.getMembers).toHaveBeenCalledWith("user-admin-other");
+        expect(result).toEqual(members);
+      });
+
+      it("rejects MEMBER without org:manage_members -> 403 Forbidden", () => {
+        const context = createMockContext(memberReq, controller.getMembers);
+        expect(() => rolesGuard.canActivate(context)).toThrow(
+          AppForbiddenException,
+        );
+        expect(mockService.getMembers).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("GET /organizations/my/interviewers", () => {
+      it("allows ADMIN and RECRUITER with interview:create and delegates to getInterviewers", async () => {
+        const adminContext = createMockContext(
+          nonOwnerAdminReq,
+          controller.getInterviewers,
+        );
+        expect(rolesGuard.canActivate(adminContext)).toBe(true);
+
+        const recruiterReq = {
+          user: {
+            id: "user-recruiter",
+            email: "recruiter@haihire.local",
+            role: Role.RECRUITER,
+            organizationId: "org-1",
+          },
+        };
+        const recruiterContext = createMockContext(
+          recruiterReq,
+          controller.getInterviewers,
+        );
+        expect(rolesGuard.canActivate(recruiterContext)).toBe(true);
+
+        const interviewers = [
+          {
+            id: "user-recruiter",
+            name: "Recruiter",
+            email: "recruiter@haihire.local",
+            role: Role.RECRUITER,
+          },
+        ];
+        mockService.getInterviewers.mockResolvedValueOnce(interviewers);
+
+        const result = await controller.getInterviewers(recruiterReq);
+        expect(mockService.getInterviewers).toHaveBeenCalledWith(
+          "user-recruiter",
+        );
+        expect(result).toEqual(interviewers);
+      });
+
+      it("rejects MEMBER without interview:create -> 403 Forbidden", () => {
+        const context = createMockContext(
+          memberReq,
+          controller.getInterviewers,
+        );
+        expect(() => rolesGuard.canActivate(context)).toThrow(
+          AppForbiddenException,
+        );
+        expect(mockService.getInterviewers).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -428,13 +516,12 @@ describe("OrganizationsController", () => {
       };
       mockService.getAuditLogs.mockResolvedValue(mockResult);
 
-      const result = await controller.getAuditLogs(
-        ownerReq,
-        "ROLE_PERMISSIONS_UPDATED",
-        "ROLE_PERMISSIONS",
-        "20",
-        "0",
-      );
+      const result = await controller.getAuditLogs(ownerReq, {
+        action: "ROLE_PERMISSIONS_UPDATED",
+        resource: "ROLE_PERMISSIONS",
+        limit: 20,
+        offset: 0,
+      });
 
       expect(service.getAuditLogs).toHaveBeenCalledWith("user-owner", {
         action: "ROLE_PERMISSIONS_UPDATED",
@@ -453,6 +540,50 @@ describe("OrganizationsController", () => {
 
     it("rejects regular MEMBER without org:view_audit_log -> 403 Forbidden", () => {
       const context = createMockContext(memberReq, controller.getAuditLogs);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+  });
+
+  describe("GET /organizations/my/invite-links", () => {
+    it("allows ADMIN access to invite links via RolesGuard", async () => {
+      const context = createMockContext(ownerReq, controller.getInviteLinks);
+      const allowed = await rolesGuard.canActivate(context);
+      expect(allowed).toBe(true);
+    });
+
+    it("rejects regular MEMBER without org:manage_members -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.getInviteLinks);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+  });
+
+  describe("PATCH /organizations/my", () => {
+    it("allows ADMIN with org:update to update localization fields", async () => {
+      const context = createMockContext(ownerReq, controller.updateMyOrg);
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      const dto = {
+        defaultLanguage: "vi" as const,
+        timezone: "Asia/Ho_Chi_Minh",
+        dateFormat: "DD/MM/YYYY" as const,
+        timeFormat: "24H" as const,
+        nameDisplayOrder: "LAST_FIRST" as const,
+        defaultCurrency: "VND" as const,
+      };
+      const expected = { id: "org-1", name: "Acme", slug: "acme", ...dto };
+      mockService.updateMyOrg.mockResolvedValueOnce(expected);
+
+      const result = await controller.updateMyOrg(ownerReq, dto);
+      expect(mockService.updateMyOrg).toHaveBeenCalledWith("user-owner", dto);
+      expect(result).toEqual(expected);
+    });
+
+    it("rejects non-admin MEMBER without org:update -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.updateMyOrg);
       expect(() => rolesGuard.canActivate(context)).toThrow(
         AppForbiddenException,
       );

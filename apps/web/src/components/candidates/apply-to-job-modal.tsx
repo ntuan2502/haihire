@@ -73,13 +73,9 @@ export function ApplyToJobModal({
       const formData = new FormData();
       formData.append("jobId", String(job.id));
       formData.append("candidateId", candidate.id);
-      formData.append("candidateName", candidate.name);
       formData.append("candidateEmail", candidate.email);
       if (candidate.phone) {
         formData.append("candidatePhone", candidate.phone);
-      }
-      if (candidate.notes) {
-        formData.append("notes", candidate.notes);
       }
 
       const effectiveResumeUrl =
@@ -159,7 +155,9 @@ export function ApplyToJobModal({
                     </h4>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate pl-8">
-                    {job.location || job.department || "Remote"}
+                    {job.location ||
+                      job.department ||
+                      t("jobs.defaultLocation")}
                   </p>
                 </div>
 

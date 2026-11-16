@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { AppController } from "./app.controller";
 import type { AppService, HealthCheckResult } from "./app.service";
 import type { MetricsService } from "./metrics/metrics.service";
-import { ServiceUnavailableException } from "@nestjs/common";
+import {
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { env } from "./config/env";
 
 describe("AppController", () => {
@@ -79,13 +82,22 @@ describe("AppController", () => {
     }
   });
 
-  it("should return metrics string from MetricsService", async () => {
+  it("should return metrics string from MetricsService with valid token", async () => {
+    const previousToken = env.METRICS_TOKEN;
+    const token = "a".repeat(32);
+    env.METRICS_TOKEN = token;
     const mockService = {};
     const controller = new AppController(
       mockService as unknown as AppService,
       mockMetrics as unknown as MetricsService,
     );
-    expect(await controller.getMetrics()).toBe("# HELP metrics\n");
+    try {
+      expect(await controller.getMetrics(`Bearer ${token}`)).toBe(
+        "# HELP metrics\n",
+      );
+    } finally {
+      env.METRICS_TOKEN = previousToken;
+    }
   });
 
   it("hides production metrics when the scrape token is absent", async () => {
@@ -101,6 +113,25 @@ describe("AppController", () => {
       await expect(controller.getMetrics()).rejects.toMatchObject({
         status: 404,
       });
+    } finally {
+      env.NODE_ENV = previousMode;
+      env.METRICS_TOKEN = previousToken;
+    }
+  });
+
+  it("throws UnauthorizedException when the scrape token is absent in non-production", async () => {
+    const previousMode = env.NODE_ENV;
+    const previousToken = env.METRICS_TOKEN;
+    env.NODE_ENV = "development";
+    env.METRICS_TOKEN = undefined;
+    const controller = new AppController(
+      {} as AppService,
+      mockMetrics as unknown as MetricsService,
+    );
+    try {
+      await expect(controller.getMetrics()).rejects.toThrow(
+        UnauthorizedException,
+      );
     } finally {
       env.NODE_ENV = previousMode;
       env.METRICS_TOKEN = previousToken;

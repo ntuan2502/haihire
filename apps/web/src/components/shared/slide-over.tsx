@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "cn";
+import { useOptionalI18n } from "@/i18n/optional";
 
 export interface SlideOverProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ export function SlideOver({
   className,
   panelClassName,
 }: SlideOverProps) {
+  const { t } = useOptionalI18n();
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -58,7 +61,7 @@ export function SlideOver({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Close panel"
+        aria-label={t("common.close")}
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         onKeyDown={(e) => {
@@ -92,6 +95,7 @@ export function SlideOver({
               </div>
               <button
                 type="button"
+                aria-label={t("common.close")}
                 onClick={onClose}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >

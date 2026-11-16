@@ -185,8 +185,10 @@ export function JobFiltersBar({
                 type="button"
                 onClick={() => onToggleFilter("type", typeFilters, tf)}
                 className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
-                title="Remove filter"
-                aria-label={`${t("common.remove")} ${getJobTypeLabel(tf, t)} ${t("common.filter")}`}
+                title={t("common.removeFilter")}
+                aria-label={t("common.removeSpecificFilter", {
+                  label: getJobTypeLabel(tf, t),
+                })}
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>
@@ -202,8 +204,10 @@ export function JobFiltersBar({
                 type="button"
                 onClick={() => onToggleFilter("exp", expFilters, ef)}
                 className="hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
-                title="Remove filter"
-                aria-label={`${t("common.remove")} ${getExperienceLevelLabel(ef, t)} ${t("common.filter")}`}
+                title={t("common.removeFilter")}
+                aria-label={t("common.removeSpecificFilter", {
+                  label: getExperienceLevelLabel(ef, t),
+                })}
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>
@@ -221,8 +225,10 @@ export function JobFiltersBar({
                   onToggleFilter("workplace", workplaceFilters, wf)
                 }
                 className="hover:text-teal-900 dark:hover:text-teal-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
-                title="Remove filter"
-                aria-label={`${t("common.remove")} ${getWorkplaceLabel(wf, t)} ${t("common.filter")}`}
+                title={t("common.removeFilter")}
+                aria-label={t("common.removeSpecificFilter", {
+                  label: getWorkplaceLabel(wf, t),
+                })}
               >
                 <X className="h-3 w-3" aria-hidden="true" />
               </button>

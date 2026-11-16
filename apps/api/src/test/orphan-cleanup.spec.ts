@@ -161,7 +161,8 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "John",
+            firstName: "John",
+            lastName: "Doe",
             candidateEmail: "john@test.com",
           },
           mockFile,
@@ -206,7 +207,8 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "John",
+            firstName: "John",
+            lastName: "Doe",
             candidateEmail: "john@test.com",
           },
           mockFile,
@@ -414,38 +416,28 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       } as unknown as Minio.Client;
 
       const mockDb = {
-        orm: {
-          public: {
-            CandidateDocument: {
-              select: vi.fn().mockReturnValue({
-                all: vi.fn().mockResolvedValue([
-                  {
-                    url: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-1.pdf",
-                  },
-                ]),
-              }),
+        candidateDocument: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              url: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-1.pdf",
             },
-            Application: {
-              select: vi.fn().mockReturnValue({
-                all: vi.fn().mockResolvedValue([
-                  {
-                    resumeUrl:
-                      "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-2.pdf",
-                  },
-                ]),
-              }),
+          ]),
+        },
+        application: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              resumeUrl:
+                "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-2.pdf",
             },
-            Candidate: {
-              select: vi.fn().mockReturnValue({
-                all: vi.fn().mockResolvedValue([
-                  {
-                    resumeUrl:
-                      "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-3.pdf",
-                  },
-                ]),
-              }),
+          ]),
+        },
+        candidate: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              resumeUrl:
+                "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-3.pdf",
             },
-          },
+          ]),
         },
       } as unknown as CleanupOptions["dbClient"];
 
@@ -514,24 +506,14 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       } as unknown as Minio.Client;
 
       const mockDb = {
-        orm: {
-          public: {
-            CandidateDocument: {
-              select: vi
-                .fn()
-                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
-            },
-            Application: {
-              select: vi
-                .fn()
-                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
-            },
-            Candidate: {
-              select: vi
-                .fn()
-                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
-            },
-          },
+        candidateDocument: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        application: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        candidate: {
+          findMany: vi.fn().mockResolvedValue([]),
         },
       } as unknown as CleanupOptions["dbClient"];
 

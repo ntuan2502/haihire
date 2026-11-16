@@ -47,7 +47,6 @@ export const en: TranslationSchema = {
     other: "Other",
     updated: "Updated",
     details: "Details",
-    properties: "Properties",
     yes: "Yes",
     no: "No",
     preview: "Preview",
@@ -66,6 +65,28 @@ export const en: TranslationSchema = {
     cancelConfirmWord: "CANCEL",
     revokeConfirmWord: "REVOKE",
     skipToContent: "Skip to main content",
+    accessDenied: "Access Denied",
+    loadingWorkspace: "Loading workspace...",
+    clearSearch: "Clear search",
+    removeFilter: "Remove filter",
+    removeSpecificFilter: "Remove {label} filter",
+    maximize: "Maximize",
+    restore: "Restore",
+    userProfile: "User profile",
+    toggleNavigationMenu: "Toggle navigation menu",
+    positionFallback: "Position",
+    openRoleFallback: "Open position",
+    departmentSuffix: "{department} Department",
+    unknownUserFallback: "Member",
+    filterStatusTabs: "Filter status tabs",
+    organizationFallback: "Organization",
+    closeModal: "Close modal",
+    systemNotifications: "Notifications",
+    docTypes: {
+      resume: "Resume",
+      coverLetter: "Cover Letter",
+      other: "Other",
+    },
   },
   errors: {
     generic: "An unexpected error occurred. Please try again later.",
@@ -134,8 +155,10 @@ export const en: TranslationSchema = {
       "Application record ({applicationId}) for interview not found.",
     INTERVIEW_INVALID_ORGANIZATION:
       "Interview schedule ({id}) does not belong to your organization.",
-    EMAIL_TEMPLATE_NOT_FOUND:
-      "Requested email template '{templateType}' not found.",
+    EMAIL_TEMPLATE_NOT_FOUND: "Requested email template was not found.",
+    EMAIL_TEMPLATE_SYSTEM_PROTECTED:
+      "System default email templates cannot be deleted.",
+    EMAIL_FLOW_NOT_FOUND: "Requested email flow configuration was not found.",
     EMAIL_SETTINGS_NOT_FOUND:
       "Email settings not configured for this organization.",
     EMAIL_SETTINGS_INVALID:
@@ -181,6 +204,11 @@ export const en: TranslationSchema = {
       description:
         "The page you're looking for doesn't exist or has been moved.",
       goHome: "Go home",
+    },
+    forbidden: {
+      title: "Access Denied",
+      description:
+        "You do not have permission to access this section. Please contact your administrator if you need access.",
     },
   },
   nav: {
@@ -229,6 +257,10 @@ export const en: TranslationSchema = {
     registerSubtitle: "Start streamlining your hiring process today.",
     fullNameLabel: "Full Name",
     fullNamePlaceholder: "John Doe",
+    firstNameLabel: "First name",
+    firstNamePlaceholder: "John",
+    lastNameLabel: "Last name",
+    lastNamePlaceholder: "Doe",
     signUpButton: "Create Account",
     signingUp: "Creating account...",
     hasAccount: "Already have an account?",
@@ -266,6 +298,11 @@ export const en: TranslationSchema = {
     featureLifecycle: "End-to-end recruitment lifecycle management",
     featureInvites: "Instant team invitations & role assignment",
     footerNote: "{brand} • Internal Hiring Team Workspace • Domain @{domain}",
+    sseRoleChanged: "Your role has been updated to {role}.",
+    sseOrgRemoved:
+      "You have been removed from this organization or the workspace was deleted.",
+    ssePermissionsChanged:
+      "Role permissions in your organization have been updated.",
   },
   landing: {
     product: "Product",
@@ -550,15 +587,19 @@ export const en: TranslationSchema = {
     noResponsesSubtitle:
       "Candidate has not submitted any application form responses yet.",
     timelineApplied: "Applied to {job} on {date}",
-    noCustomProperties: "No custom properties defined for this candidate yet.",
     noCandidatesInStage: "No candidates in {stage}",
     switchStageHint: "Switch to another pipeline stage to review candidates.",
     tooltips: {
       invalidTransition: "Cannot transition from {from} to {to}",
-      cannotMoveHired: "Candidate is HIRED and cannot transition to {to}",
-      cannotMoveRejected: "Candidate is REJECTED and cannot transition to {to}",
+      cannotMoveHired: "Candidate is Hired and cannot transition to {to}",
+      cannotMoveRejected:
+        "Candidate is Rejected. Reopen to Applied, Screening, or Interview before moving to {to}",
       dragNotAllowed: "Cannot drag candidate to this stage",
     },
+    focusCandidate: "Focus candidate in pipeline",
+    viewCandidateLabel: "View candidate {name}, stage {stage}",
+    noEmail: "No email",
+    filterOptions: "Filter options",
   },
   jobs: {
     title: "Job Openings",
@@ -606,6 +647,9 @@ export const en: TranslationSchema = {
     draftStatus: "Draft",
     closedStatus: "Closed",
     moreOptions: "More options",
+    defaultLocation: "Remote",
+    competitiveSalary: "Competitive",
+    noDescription: "No description provided.",
     tabs: {
       pipeline: "Pipeline",
       promote: "Promote",
@@ -935,7 +979,7 @@ export const en: TranslationSchema = {
       phone: "Phone",
       applications: "Applications",
       added: "Added",
-      quickNotes: "Quick notes",
+      quickNotes: "Notes",
     },
     filters: "Filters",
     withCv: "With CV",
@@ -952,9 +996,9 @@ export const en: TranslationSchema = {
     chooseFile: "Choose a file",
     cvAttached: "CV attached ({size} KB)",
     removeFile: "Remove file",
-    firstName: "First Name",
-    lastName: "Last Name",
-    displayName: "Display Name",
+    firstName: "First name",
+    lastName: "Last name",
+    displayName: "Display name",
     displayNameHint: "(optional — overrides default name format)",
     gender: "Gender",
     dateOfBirth: "Date of Birth",
@@ -981,10 +1025,14 @@ export const en: TranslationSchema = {
     noDocuments: "No documents attached.",
     candidateDetail: "Candidate Detail",
     openFullPage: "Open full page",
-    addProperty: "Add org-wide property",
     allStages: "All stages",
     backToDocuments: "Back to documents",
     clickToPreview: "Click to preview",
+    loadingPreview: "Loading document preview...",
+    previewUnavailable: "Unable to load document preview.",
+    previewUnsupportedFormat:
+      "Inline preview is not supported for this file format. Please download the file to view it.",
+    retryPreview: "Retry",
     uploadDocHint:
       "Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).",
     noApplicationsYet: "No applications yet.",
@@ -1000,12 +1048,18 @@ export const en: TranslationSchema = {
       phone: "e.g. +1 (555) 123-4567",
       dob: "mm/dd/yyyy",
     },
+    errors: {
+      firstNameRequired: "First name is required.",
+      lastNameRequired: "Last name is required.",
+      validEmailRequired: "Please enter a valid email address.",
+    },
     createFailed: "Failed to create candidate. Please try again.",
     updateFailed: "Failed to update candidate. Please try again.",
     invalidCandidateId:
       "The candidate ID provided is invalid. A valid UUID is required.",
     candidateNotFound:
       "The candidate you are trying to edit does not exist or has been removed.",
+    notesTitle: "Candidate Notes",
   },
   applications: {
     title: "Applications",
@@ -1015,6 +1069,29 @@ export const en: TranslationSchema = {
     status: "Status",
     score: "Score",
     matchScore: "Match score",
+    matchScoreUnrated: "Not evaluated",
+    rejectionReasonLabel: "Rejection reason",
+    rejectModal: {
+      title: "Reject Candidate",
+      description: "Confirm moving {name} ({job}) to Rejected.",
+      reasonLabel: "Rejection reason (optional)",
+      reasonPlaceholder:
+        "e.g. Lacking required experience, compensation mismatch...",
+      sendEmailLabel: "Send automated rejection email to {email}",
+      selectTemplateLabel: "Email template",
+      noEmailHint:
+        "Candidate has no email on file; automated email cannot be sent.",
+      confirmButton: "Confirm Reject",
+    },
+    offerModal: {
+      title: "Move to Job Offer",
+      description: "Confirm moving {name} ({job}) to the Offer stage.",
+      sendEmailLabel: "Send automated offer email to {email}",
+      selectTemplateLabel: "Email template",
+      noEmailHint:
+        "Candidate has no email on file; automated email cannot be sent.",
+      confirmButton: "Confirm Offer",
+    },
     applied: "Applied",
     actions: "Actions",
     noApplicationsFound: "No applications found",
@@ -1030,7 +1107,26 @@ export const en: TranslationSchema = {
     notes: "Notes",
     addNote: "Add note",
     notePlaceholder: "Type a note...",
+    notesStream: {
+      title: "Notes & Comments",
+      subtitle: "Internal notes and comments between hiring team members",
+      placeholder: "Write a note or comment for this candidate...",
+      addNote: "Add note",
+      editNote: "Edit",
+      deleteNote: "Delete",
+      deleteConfirm: "Are you sure you want to delete this note?",
+      edited: "(edited)",
+      empty:
+        "No notes yet. Add the first note to start collaborating with your team.",
+      emptyCompact: "No notes yet",
+      cancel: "Cancel",
+      save: "Save note",
+      keyboardHint: "Ctrl+Enter to save",
+      saving: "Saving...",
+      deleting: "Deleting...",
+    },
     toggleSections: "Sections",
+    comingSoonTooltip: "{action} (Coming soon)",
     views: "Views",
     columnsToggle: "TOGGLE COLUMNS",
     columns: {
@@ -1065,8 +1161,6 @@ export const en: TranslationSchema = {
     noInterviewsDesc: "Schedule an interview to start the process.",
     noResponses: "No application form responses.",
     noDocumentsUploaded: "No documents uploaded.",
-    addOrgProperty: "+ Add org-wide property",
-    manageJobProperties: "Manage job-specific properties",
     submitApplicationTitle: "Submit Candidate Application",
     submitApplicationDesc:
       "Upload candidate resume (PDF) and store directly into MinIO object storage.",
@@ -1119,7 +1213,6 @@ export const en: TranslationSchema = {
       responses: "Responses",
       notes: "Notes",
       timeline: "Timeline",
-      properties: "Properties",
     },
     sections: {
       sectionsTitle: "Sections",
@@ -1132,7 +1225,6 @@ export const en: TranslationSchema = {
       documents: "Documents",
       responses: "Responses",
       notes: "Notes",
-      properties: "Properties",
     },
     placeholders: {
       firstName: "e.g. Jane",
@@ -1368,6 +1460,7 @@ export const en: TranslationSchema = {
     cancelInterviewTitle: "Cancel Scheduled Interview",
     cancelInterviewWarning:
       "This interview will be cancelled and removed from the schedule. This action cannot be undone.",
+    interviewEventAria: "Interview with {candidate} at {time}",
     errors: {
       selectCandidate: "Please select a candidate.",
       selectDate: "Please select an interview date.",
@@ -1420,16 +1513,22 @@ export const en: TranslationSchema = {
     roleHiringManager: "Hiring Manager",
     roleInterviewer: "Interviewer",
     roleMember: "Member",
+    expires1Day: "1 day",
     expires7Days: "7 days",
     expires30Days: "30 days",
     expiresNever: "Never",
     uses1: "1 use",
+    uses5: "5 uses",
+    uses10: "10 uses",
     usesUnlimited: "Unlimited uses",
     noActiveInviteLinks: "No active invite links",
     noActiveInviteLinksDesc:
       "Generate expiring or single-use invite links with specific roles to invite your team.",
     updateRoleSuccess: "Member role updated successfully.",
     updateRoleError: "Failed to update member role.",
+    memberActionsTitle: "Member actions",
+    inviteEmailRequired: "Please enter an email address.",
+    inviteSentSuccess: 'Invitation sent to {email} with role "{role}".',
   },
   onboarding: {
     selectOrgTitle: "Select an organization",
@@ -1546,6 +1645,43 @@ export const en: TranslationSchema = {
     passwordMismatchError: "New passwords do not match.",
     passwordTooShortError: "Password must be at least 6 characters.",
     currentPasswordRequiredError: "Current password is required.",
+    backToSettings: "Back to Settings",
+    generalProfileDesc:
+      "Manage your organization's display name, public careers URL, and basic workspace details.",
+    accountProfileDesc:
+      "Manage your account identity, password security, and personal workspace preferences.",
+    accountInfoSub:
+      "Basic account identity details associated with your login.",
+    accountProfile: {
+      firstNameLabel: "First name",
+      firstNamePlaceholder: "Enter first name",
+      lastNameLabel: "Last name",
+      lastNamePlaceholder: "Enter last name",
+      saveBtn: "Save Changes",
+      savingBtn: "Saving...",
+      saveSuccess: "Profile information updated.",
+      saveError: "Failed to update profile information. Please try again.",
+      nameRequiredError: "Please enter your first and last name.",
+    },
+    openPublicCareers: "Open Careers Page",
+    workspaceSummaryDesc:
+      "Summary of your organization workspace and public career board URL.",
+    accountPreferences: {
+      title: "Language & Timezone Preferences",
+      subtitle:
+        "Override organization defaults for your personal workspace interface and schedule times.",
+      languageLabel: "Preferred interface language",
+      languageHint:
+        "Choose a personal UI language or automatically follow the organization default.",
+      timezoneLabel: "Preferred timezone",
+      timezoneHint:
+        "Used when rendering interview schedules and activity timestamps for your account.",
+      followOrgDefault: "Follow organization default",
+      saveBtn: "Save Preferences",
+      savingBtn: "Saving...",
+      saveSuccess: "Personal language & timezone preferences saved.",
+      saveError: "Failed to save personal preferences. Please try again.",
+    },
     tabs: {
       general: "General",
       generalSub: "Organization profile",
@@ -1579,6 +1715,67 @@ export const en: TranslationSchema = {
     placeholders: {
       orgName: "e.g. Acme Corp",
       orgSlug: "company-slug",
+    },
+    localization: {
+      title: "Language & Region",
+      description:
+        "Configure organization-wide regional formats, timezone, currency defaults, and your personal interface language.",
+      personalCardTitle: "Personal Interface Language",
+      personalCardSub:
+        "Applies immediately to your current session across navigation, buttons, and messages.",
+      personalLanguageLabel: "Interface language",
+      personalLanguageHint:
+        "Your personal choice overrides the organization default language on this browser.",
+      orgCardTitle: "Organization Regional Standards",
+      orgCardSub:
+        "Workspace-wide defaults applied across candidate profiles, interviews, timestamps, and new jobs.",
+      defaultLanguageLabel: "Default organization language",
+      defaultLanguageHint:
+        "Used for workspace members who have not chosen a personal language override.",
+      timezoneLabel: "Timezone",
+      timezoneHint:
+        "Used when rendering scheduled interview dates and activity timestamps.",
+      timezoneSearchPlaceholder: "Search timezone, city, or UTC offset...",
+      timezoneNoMatch: "No matching timezone found.",
+      dateFormatLabel: "Date format",
+      dateFormatHint: "Example for August 27, 2026.",
+      timeFormatLabel: "Time format",
+      timeFormat24H: "24-hour clock (14:30)",
+      timeFormat12H: "12-hour clock (2:30 PM)",
+      nameOrderLabel: "Candidate name display order",
+      nameOrderFirstLast: "First name + Last name",
+      nameOrderFirstLastExample: "e.g. An Nguyễn Văn",
+      nameOrderLastFirst: "Last name + First name",
+      nameOrderLastFirstExample: "e.g. Nguyễn Văn An",
+      currencyLabel: "Default salary currency",
+      currencyHint:
+        "Automatically pre-selected when creating new job openings.",
+      previewTitle: "Live Format Preview",
+      previewSub:
+        "Verify how names, schedules, timestamps, and salaries appear with these settings.",
+      previewCandidateName: "Candidate Name",
+      previewDate: "Date Format",
+      previewTime: "Interview Time",
+      previewRelativeTime: "Activity Timestamp",
+      previewSalary: "Salary Sample",
+      previewTimezone: "Active Timezone",
+      resetButton: "Reset",
+      saveSuccess: "Localization & regional settings saved successfully.",
+      saveError: "Failed to save localization settings. Please try again.",
+      adminOnlyHint:
+        "Organization regional defaults are managed by Admins. You can still customize your personal interface language above.",
+      unsavedChanges: "Unsaved regional changes",
+      currencies: {
+        VND: "VND (₫) — Vietnamese Dong",
+        USD: "USD ($) — US Dollar",
+        EUR: "EUR (€) — Euro",
+        SGD: "SGD (S$) — Singapore Dollar",
+        JPY: "JPY (¥) — Japanese Yen",
+      },
+      languages: {
+        vi: "Vietnamese (Tiếng Việt)",
+        en: "English (US/UK)",
+      },
     },
     integrations: {
       title: "Integrations & Webhooks",
@@ -1649,7 +1846,6 @@ export const en: TranslationSchema = {
       title: "Roles & Permissions Matrix",
       description:
         "Manage and customize granular role permissions for your organization.",
-      badge: "RBAC Matrix",
       readOnlyBadge: "Read-only View",
       readOnlyNotice:
         "You do not have permission to modify roles. Contact an administrator to adjust permissions.",
@@ -1688,13 +1884,54 @@ export const en: TranslationSchema = {
       roleMember: "Member",
       tableSummary:
         "Editable role permissions matrix across 5 organizational roles",
+      permissions: {
+        org_view: "View organization profile",
+        org_update: "Update organization settings",
+        org_delete: "Delete organization",
+        org_manage_members: "Manage members & invites",
+        org_manage_roles: "Manage roles & permissions",
+        org_manage_billing: "Manage billing & subscription",
+        org_transfer_ownership: "Transfer organization ownership",
+        org_view_audit_log: "View audit log",
+        job_view: "View jobs",
+        job_create: "Create jobs",
+        job_update: "Edit jobs",
+        job_delete: "Delete jobs",
+        candidate_view: "View candidates",
+        candidate_create: "Add candidates",
+        candidate_update: "Edit candidates",
+        candidate_delete: "Delete candidates",
+        candidate_document_upload: "Upload candidate documents",
+        candidate_document_download: "Download candidate documents",
+        candidate_document_delete: "Delete candidate documents",
+        application_view: "View applications",
+        application_create: "Create applications",
+        application_update: "Update application details",
+        application_update_stage: "Move pipeline stages",
+        application_delete: "Delete applications",
+        application_document_upload: "Upload application documents",
+        application_document_download: "Download application documents",
+        application_document_delete: "Delete application documents",
+        interview_view: "View interviews",
+        interview_create: "Schedule interviews",
+        interview_update: "Reschedule or edit interviews",
+        interview_delete: "Cancel or delete interviews",
+        interview_scorecard_submit: "Submit interview scorecards",
+        sourcing_view: "View source tracking",
+        sourcing_create: "Create tracking links",
+        sourcing_update: "Edit tracking links",
+        sourcing_delete: "Delete tracking links",
+        email_view: "View email templates & logs",
+        email_send: "Send emails to candidates",
+        email_manage_templates: "Manage email templates",
+        email_manage_settings: "Manage email & SMTP settings",
+        settings_manage_integrations: "Manage webhooks & integrations",
+      },
     },
     auditLog: {
       title: "Audit Log",
       description:
         "Track administrative changes, role permission updates, and member lifecycle events across your organization.",
-      badge: "Security & Governance",
-      accessDenied: "You do not have permission to view the audit log.",
       filterAllActions: "All Actions",
       filterAction: "Filter by action",
       colTimestamp: "Timestamp",
@@ -1715,6 +1952,30 @@ export const en: TranslationSchema = {
       actionMemberRoleChanged: "Member Role Changed",
       actionOwnershipTransferred: "Ownership Transferred",
       actionOrgDeleted: "Organization Deleted",
+      actionOrgLocalizationUpdated: "Localization Updated",
+      resources: {
+        ORGANIZATION: "Organization",
+        MEMBER: "Member",
+        ROLE_PERMISSIONS: "Role Permissions",
+        SYSTEM: "System",
+        OTHER: "Other",
+      },
+      metadataLabels: {
+        roleTarget: "Role: {role}",
+        allRoles: "All roles",
+        roleChanged: "{oldRole} → {newRole}",
+        permissionsUpdated: "{count} permissions updated",
+        ownershipTransferred: "Organization ownership transferred",
+        localizationUpdated: "Updated localization: {fields}",
+        localizationFields: {
+          timezone: "Timezone",
+          defaultLocale: "Default Language",
+          defaultCurrency: "Default Currency",
+          nameDisplayOrder: "Name Order",
+          dateFormat: "Date Format",
+          timeFormat: "Time Format",
+        },
+      },
     },
   },
   theme: {
@@ -1816,7 +2077,7 @@ export const en: TranslationSchema = {
     applicationFormTitle: "Submit Your Application",
     applicationFormSubtitle:
       "Fill in your information and attach your CV to apply for this role.",
-    lastName: "Last name & Middle name",
+    lastName: "Last name",
     firstName: "First name",
     email: "Email address",
     phone: "Phone number (Optional)",
@@ -1835,7 +2096,7 @@ export const en: TranslationSchema = {
     contactEmail: "Contact email:",
     attachedFile: "Attached resume:",
     applyAnother: "Apply for another position",
-    errorLastName: "Please enter your last name and middle name.",
+    errorLastName: "Please enter your last name.",
     errorFirstName: "Please enter your first name.",
     errorEmail: "Please enter a valid email address.",
     errorResume: "Please attach your resume file (PDF/DOCX).",
@@ -1844,9 +2105,9 @@ export const en: TranslationSchema = {
     fileInvalidType:
       "Unsupported file format. Please upload PDF, DOC, or DOCX.",
     placeholders: {
-      lastName: "e.g. John",
-      firstName: "e.g. Doe",
-      email: "john.doe@example.com",
+      lastName: "e.g. Doe",
+      firstName: "e.g. Jane",
+      email: "jane.doe@example.com",
       phone: "+1 (555) 123-4567",
       notes:
         "Share more about yourself, your availability, or why you are interested in this position...",
@@ -1875,6 +2136,7 @@ export const en: TranslationSchema = {
     insertVariableHint:
       "Click any variable chip below to insert it at your current cursor position:",
     livePreview: "Live Preview",
+    previewDeviceControls: "Device Preview Controls",
     previewDeviceDesktop: "Desktop",
     previewDeviceTablet: "Tablet",
     previewDeviceMobile: "Mobile",
@@ -1897,6 +2159,7 @@ export const en: TranslationSchema = {
     providerSendGridDesc:
       "Twilio's scalable cloud email delivery infrastructure.",
     senderName: "Sender Name (From Name)",
+    senderNamePlaceholder: "e.g. HaiHire Recruitment Team",
     senderEmail: "Sender Email (From Email)",
     smtpHost: "SMTP Host Server",
     smtpPort: "SMTP Port",
@@ -1985,6 +2248,7 @@ export const en: TranslationSchema = {
     subjectPlaceholder: "Enter email subject...",
     tabCompose: "Compose",
     htmlAndVariables: "HTML & Dynamic Variables",
+    mobileBackToInbox: "‹ Inbox",
     bodyPlaceholder: "Enter email message body...",
     varCandidateName: "Candidate Name",
     varCandidateEmail: "Candidate Email",
@@ -1996,6 +2260,61 @@ export const en: TranslationSchema = {
     varInterviewLink: "Interview Link / Location",
     varInterviewerName: "Interviewer Name",
     varSenderName: "Sender Name",
+    flowsSectionTitle: "Email Flow Assignments",
+    flowsSectionDesc:
+      "Assign the default email template used automatically at each stage of the hiring workflow.",
+    flowApplicationReceivedTitle: "Application Received",
+    flowApplicationReceivedDesc:
+      "Automatically sent when a candidate submits an application.",
+    flowInterviewScheduledTitle: "Interview Scheduled",
+    flowInterviewScheduledDesc:
+      "Default template preselected when scheduling a new interview (overridable in modal).",
+    flowApplicationRejectedTitle: "Application Rejected",
+    flowApplicationRejectedDesc:
+      "Default template preselected when moving an application to Rejected.",
+    flowApplicationOfferTitle: "Job Offer",
+    flowApplicationOfferDesc:
+      "Default template preselected when moving an application to Offer.",
+    flowAutoEnabled: "Active",
+    flowAutoDisabled: "Paused",
+    flowUnassigned: "No template assigned",
+    flowWarningUnassigned:
+      "No template is assigned to this flow, so automatic emails will not be sent.",
+    flowWarningTemplateDisabled:
+      "The assigned template is currently paused — re-enable it or choose another template.",
+    flowSavedSuccess: "Email flow configuration updated",
+    libraryTitle: "Email Template Library",
+    libraryDesc:
+      "Create, customize, or duplicate email templates across recruitment scenarios.",
+    newTemplateBtn: "New Template",
+    createModalTitle: "Create New Email Template",
+    createSuccess: "Email template created",
+    duplicateBtn: "Duplicate",
+    duplicateSuccess: "Email template duplicated",
+    deleteBtn: "Delete",
+    deleteConfirmTitle: "Delete Email Template",
+    deleteConfirmDesc:
+      'Are you sure you want to delete "{name}"? This action cannot be undone.',
+    deleteConfirmAssignedWarning:
+      "This template is currently assigned to: {flows}. Deleting it will unlink and pause automatic sending on those flows.",
+    deleteSuccess: "Email template deleted",
+    systemBadge: "System Default",
+    customBadge: "Custom",
+    systemProtectedHint:
+      "System default template: editable and duplicatable, protected from deletion.",
+    assignedFlowsLabel: "Assigned to:",
+    templateTitleLabel: "Template Name",
+    templateTitlePlaceholder: "e.g. Technical Round Invitation...",
+    templateCategoryLabel: "Category",
+    templateEnabledLabel: "Template Active",
+    templateEnabledDesc:
+      "When paused, this template cannot send via automated flows or appear in manual send options.",
+    copySuffix: "Copy",
+    selectTemplateOption: "Select an email template...",
+    noActiveTemplates: "No active email templates are currently available.",
+    customAdHocOption: "Blank custom email (ad-hoc)",
+    interviewTemplateSelectLabel: "Interview invitation template",
+    customEmailOverrideNote: "Choose the template to apply for this email",
   },
   timeline: {
     title: "Activity Timeline",

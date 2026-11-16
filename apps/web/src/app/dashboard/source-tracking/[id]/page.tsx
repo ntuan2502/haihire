@@ -2,8 +2,6 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { AuthGuard } from "@/components/shared/auth-guard";
-import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { useMyOrg } from "@/hooks/use-organization-queries";
@@ -21,11 +19,12 @@ import {
   EditLinkModal,
 } from "@/components/sourcing";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { StatusState } from "@/components/shared/status-state";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "@/lib/toast";
 import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
 import { slugify } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 function TrackingLinkDetailContent() {
   const params = useParams();
@@ -33,6 +32,9 @@ function TrackingLinkDetailContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { t } = useI18n();
+
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canUpdateLink = useHasPermission("sourcing:update");
 
   const rawId = params?.id;
   const linkId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
@@ -103,109 +105,101 @@ function TrackingLinkDetailContent() {
     }
   };
 
+  if (!canViewSourcing) {
+    return (
+      <div className="flex-1 flex flex-col">
+        <StatusState
+          status="403"
+          variant="page"
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      <Navbar
-        activeTab="sourcing"
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={rawJobs.length}
-        candidatesCount={detail?.stats?.applications ?? 0}
-      />
+    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-24 space-y-4">
+          <LoadingSpinner />
+        </div>
+      ) : isError || !detail ? (
+        <StatusState
+          status="404"
+          variant="card"
+          title={t("sourcing.details.notFoundTitle")}
+          description={t("sourcing.details.notFoundDesc")}
+          actionLabel={t("sourcing.details.backToTracking")}
+          onAction={() => router.push("/dashboard/source-tracking")}
+          actionVariant="outline"
+          actionIcon={ArrowLeft}
+          className="max-w-md mx-auto my-12"
+        />
+      ) : (
+        <>
+          {/* Header */}
+          <LinkHeader
+            link={detail.link}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+            onOpenEdit={
+              canUpdateLink ? () => setIsEditModalOpen(true) : undefined
+            }
+            onCopyUrl={handleCopy}
+            isCopied={isCopied}
+          />
 
-      {/* Full-width container per HaiHire design system mandate (no max-w-7xl) */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-24 space-y-4">
-            <LoadingSpinner />
+          {/* URL Banner */}
+          <LinkUrlBanner
+            url={trackingUrl}
+            onCopy={handleCopy}
+            isCopied={isCopied}
+          />
+
+          {/* 5 KPI Metric Cards */}
+          <LinkStatsCards stats={detail.stats} />
+
+          {/* Two-Column Responsive Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
+            {/* Left Column (Pipeline + Trend Chart + Attributed Applications) */}
+            <div className="lg:col-span-2 space-y-4">
+              <LinkPipelineCard
+                breakdown={detail.pipeline.stages}
+                totalApplications={detail.pipeline.total}
+              />
+
+              <LinkTrendCard data={detail.applicationsOverTime} />
+
+              <LinkAttributedTable items={detail.attributedApplications} />
+            </div>
+
+            {/* Right Column (Link Configuration + Referrer Domains) */}
+            <div className="space-y-4">
+              <LinkConfigCard link={detail.link} />
+
+              <LinkReferrersCard referrers={detail.referrerDomains} />
+            </div>
           </div>
-        ) : isError || !detail ? (
-          <div className="p-12 text-center space-y-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-md mx-auto my-12">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-500">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {t("sourcing.details.notFoundTitle")}
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("sourcing.details.notFoundDesc")}
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/dashboard/source-tracking")}
-              className="rounded-xl text-xs font-semibold cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-              <span>{t("sourcing.details.backToTracking")}</span>
-            </Button>
-          </div>
-        ) : (
-          <>
-            {/* Header */}
-            <LinkHeader
-              link={detail.link}
-              timeRange={timeRange}
-              onTimeRangeChange={setTimeRange}
-              onOpenEdit={() => setIsEditModalOpen(true)}
-              onCopyUrl={handleCopy}
-              isCopied={isCopied}
-            />
 
-            {/* URL Banner */}
-            <LinkUrlBanner
-              url={trackingUrl}
-              onCopy={handleCopy}
-              isCopied={isCopied}
-            />
-
-            {/* 5 KPI Metric Cards */}
-            <LinkStatsCards stats={detail.stats} />
-
-            {/* Two-Column Responsive Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
-              {/* Left Column (Pipeline + Trend Chart + Attributed Applications) */}
-              <div className="lg:col-span-2 space-y-4">
-                <LinkPipelineCard
-                  breakdown={detail.pipeline.stages}
-                  totalApplications={detail.pipeline.total}
-                />
-
-                <LinkTrendCard data={detail.applicationsOverTime} />
-
-                <LinkAttributedTable items={detail.attributedApplications} />
-              </div>
-
-              {/* Right Column (Link Configuration + Referrer Domains) */}
-              <div className="space-y-4">
-                <LinkConfigCard link={detail.link} />
-
-                <LinkReferrersCard referrers={detail.referrerDomains} />
-              </div>
-            </div>
-
-            {/* Edit Modal */}
-            <EditLinkModal
-              isOpen={isEditModalOpen}
-              onClose={() => setIsEditModalOpen(false)}
-              link={detail.link}
-              jobs={jobsList}
-              orgSlug={orgSlug}
-            />
-          </>
-        )}
-      </main>
+          {/* Edit Modal */}
+          <EditLinkModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            link={detail.link}
+            jobs={jobsList}
+            orgSlug={orgSlug}
+          />
+        </>
+      )}
     </div>
   );
 }
 
 export default function SourceTrackingDetailPage() {
   return (
-    <AuthGuard>
-      <Suspense fallback={<LoadingSpinner fullScreen />}>
-        <TrackingLinkDetailContent />
-      </Suspense>
-    </AuthGuard>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
+      <TrackingLinkDetailContent />
+    </Suspense>
   );
 }

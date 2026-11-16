@@ -103,10 +103,12 @@ describe("SourcingLinksService", () => {
     applicationTable = createMockTable([
       {
         id: "app-1",
+        organizationId: "org-1",
         trackingLinkId: "link-1",
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         trackingLinkId: "link-1",
       },
     ]);

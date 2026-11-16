@@ -16,6 +16,8 @@ vi.mock("next/navigation", () => ({
 const mockUser: User = {
   id: "user-1",
   email: "admin@haihire.vn",
+  firstName: "Hai",
+  lastName: "Admin",
   name: "Hai Admin",
   role: "ADMIN",
   organizationId: "org-1",
@@ -80,7 +82,7 @@ describe("UserMenu Accessibility", () => {
   it("renders trigger and opens menu with keyboard-accessible items", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     expect(trigger).toBeInTheDocument();
 
     fireEvent.click(trigger);
@@ -100,7 +102,7 @@ describe("UserMenu Accessibility", () => {
   it("has keyboard-accessible organization switcher and items", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     fireEvent.click(trigger);
 
     await waitFor(() => {
@@ -131,7 +133,7 @@ describe("UserMenu Accessibility", () => {
   it("has keyboard-accessible settings button", async () => {
     render(<UserMenu />);
 
-    const trigger = screen.getByRole("button", { name: "User Profile" });
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
     fireEvent.click(trigger);
 
     await waitFor(() => {
@@ -146,5 +148,7 @@ describe("UserMenu Accessibility", () => {
 
     fireEvent.click(settingsBtn);
     expect(mockPush).toHaveBeenCalledWith("/dashboard/settings");
+    expect(screen.queryByText("Updates & changelog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Report issue")).not.toBeInTheDocument();
   });
 });

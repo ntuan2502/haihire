@@ -17,16 +17,68 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@/lib/api", () => ({
-  getDocumentUrl: (url: string) => url,
-  downloadAuthenticatedFile: (...args: unknown[]) =>
-    mockDownloadAuthenticatedFile(...args),
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/cand-doc-preview",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
+
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    downloadAuthenticatedFile: (...args: unknown[]) =>
+      mockDownloadAuthenticatedFile(...args),
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
+  };
+});
+
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: {
+      id: "user-1",
+      name: "Recruiter Admin",
+      role: "ADMIN",
+      organizationId: "org-1",
+      isOwner: true,
+    },
+  }),
 }));
 
 vi.mock("@/hooks/use-queries", () => ({
   useCandidate: () => ({
     data: null,
     isLoading: false,
+  }),
+  useCandidateNotes: () => ({
+    data: [
+      {
+        id: "cnote-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Admin",
+        authorRole: "ADMIN",
+        content: "Ứng viên có nền tảng hệ thống tốt",
+        isEdited: false,
+        createdAt: "2026-03-01T10:00:00.000Z",
+        updatedAt: "2026-03-01T10:00:00.000Z",
+      },
+    ],
+    isLoading: false,
+  }),
+  useAddCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
+  }),
+  useUpdateCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
+  }),
+  useDeleteCandidateNoteMutation: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({}),
+    isPending: false,
   }),
   useUploadCandidateDocumentMutation: () => ({
     mutateAsync: mockUploadDocMutateAsync,
@@ -65,7 +117,6 @@ vi.mock("@/i18n", () => ({
           "Không có hồ sơ trong giai đoạn này",
         "candidates.applyCandidateHint": "Gán ứng viên vào công việc",
         "candidates.trySelectingDifferentStage": "Thử chọn giai đoạn khác",
-        "candidates.addProperty": "Thêm thuộc tính",
         "candidates.resume": "CV",
         "candidates.coverLetter": "Thư xin việc",
         "candidates.uploadDocHint": "Kéo thả hoặc nhấn để tải lên",
@@ -82,7 +133,6 @@ vi.mock("@/i18n", () => ({
         "applications.viewApplication": "Xem hồ sơ",
         "common.overview": "Tổng quan",
         "common.details": "Chi tiết",
-        "common.properties": "Thuộc tính",
         "common.edit": "Chỉnh sửa",
         "common.preview": "Xem trước",
         "common.download": "Tải xuống",
@@ -421,7 +471,7 @@ describe("CandidateDrawer Component", () => {
     expect(screen.getByText("Chưa có tài liệu nào")).toBeInTheDocument();
   });
 
-  it("previews a document and returns back to the document list", () => {
+  it("previews a document and returns back to the document list", async () => {
     render(
       <CandidateDrawer
         candidate={mockCandidate}
@@ -438,12 +488,24 @@ describe("CandidateDrawer Component", () => {
 
     // In preview mode
     expect(screen.getByText("Quay lại danh sách")).toBeInTheDocument();
-    const previewIframe = screen.getByTitle("Pham_Thi_Ung_Vien_CV.pdf");
+    await waitFor(() => {
+      expect(mockFetchAuthenticatedDocumentPreview).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^\/candidates\/cand-1\/documents\/download\?.*disposition=inline/,
+        ),
+        expect.objectContaining({
+          fileName: "Pham_Thi_Ung_Vien_CV.pdf",
+          url: "https://minio.local/cv.pdf",
+        }),
+      );
+    });
+    const previewIframe = await screen.findByTitle("Pham_Thi_Ung_Vien_CV.pdf");
     expect(previewIframe).toBeInTheDocument();
     expect(previewIframe).toHaveAttribute(
-      "sandbox",
-      "allow-scripts allow-same-origin",
+      "src",
+      "blob:http://localhost/cand-doc-preview",
     );
+    expect(previewIframe).not.toHaveAttribute("sandbox");
     expect(previewIframe).toHaveAttribute("referrerPolicy", "no-referrer");
 
     // Click back to document list
@@ -538,5 +600,26 @@ describe("CandidateDrawer Component", () => {
         url: "https://minio.local/cv.pdf",
       });
     });
+  });
+
+  it("switches to notes tab right next to documents and renders CandidateNotesStream", () => {
+    render(
+      <CandidateDrawer
+        candidate={mockCandidate}
+        onClose={vi.fn()}
+        jobs={mockJobs}
+        canEdit={true}
+        onApplyToJob={vi.fn()}
+        onScheduleInterview={vi.fn()}
+      />,
+    );
+
+    const notesTabBtn = screen.getByRole("button", { name: /Ghi chú \(1\)/i });
+    expect(notesTabBtn).toBeInTheDocument();
+    fireEvent.click(notesTabBtn);
+
+    expect(
+      screen.getByText("Ứng viên có nền tảng hệ thống tốt"),
+    ).toBeInTheDocument();
   });
 });

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Navbar } from "@/components/layout";
+import { toast } from "@/lib/toast";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Button } from "@/components/ui/button";
+import { StatusState } from "@/components/shared/status-state";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
   useDeleteCandidateMutation,
@@ -21,11 +21,13 @@ import { CandidateProfileCard } from "./sections/candidate-profile-card";
 import { CandidateApplicationsTab } from "./sections/candidate-applications-tab";
 import { CandidateDocumentsTab } from "./sections/candidate-documents-tab";
 import { CandidateDocumentPreview } from "./sections/candidate-document-preview";
+import { CandidateNotesStream } from "@/components/candidates/candidate-notes-stream";
 import { CandidateDetailModals } from "./modals/candidate-detail-modals";
 
 export function CandidateDetailView() {
   const router = useRouter();
   const { t } = useI18n();
+  const canViewCandidates = useHasPermission("candidate:view");
 
   const state = useCandidateDetailState();
   const docActions = useCandidateDocumentActions({
@@ -88,174 +90,177 @@ export function CandidateDetailView() {
     }
   };
 
+  if (!canViewCandidates) {
+    return (
+      <div className="flex-1 flex flex-col">
+        <StatusState
+          status="403"
+          variant="page"
+          actionLabel={t("common.dashboard")}
+          actionHref="/dashboard"
+        />
+      </div>
+    );
+  }
+
   if (state.loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-        <Navbar
-          activeTab="candidates"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={state.jobs.length}
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
+      <div className="flex-1 flex items-center justify-center p-12">
+        <LoadingSpinner />
       </div>
     );
   }
 
   if ((!state.isCandidateIdValid || !state.candidate) && !state.loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-        <Navbar
-          activeTab="candidates"
-          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          jobsCount={state.jobs.length}
+      <div className="flex-1 flex flex-col">
+        <StatusState
+          status="404"
+          variant="page"
+          title={t("candidates.noCandidatesYet")}
+          description={t(
+            !state.isCandidateIdValid
+              ? "candidates.invalidCandidateId"
+              : "candidates.candidateNotFound",
+          )}
+          actionLabel={`${t("common.back")}: ${t("candidates.title")}`}
+          onAction={() => router.push("/dashboard/candidates")}
+          actionVariant="outline"
         />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
-            <span className="text-lg font-black">404</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {t("candidates.noCandidatesYet")}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {!state.isCandidateIdValid
-              ? "The candidate ID provided is invalid. A valid UUID is required."
-              : "The candidate you are looking for does not exist or has been removed."}
-          </p>
-          <div className="pt-2">
-            <Button
-              onClick={() => router.push("/dashboard/candidates")}
-              variant="outline"
-              className="text-xs font-semibold rounded-xl"
-            >
-              {t("common.back")}: {t("candidates.title")}
-            </Button>
-          </div>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      <Navbar
-        activeTab="candidates"
-        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={state.jobs.length}
+    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
+      <CandidateDetailHeader
+        candidateId={state.candidate?.id || state.candidateIdStr || ""}
+        candidateName={state.candidateName}
+        candidateEmail={state.candidateEmail}
+        candidatePhone={state.candidatePhone}
+        canEdit={state.canEdit}
+        isDeleting={isDeletingCandidate}
+        onOpenSendEmail={() => setIsSendEmailOpen(true)}
+        onOpenDeleteModal={() => setIsDeleteModalOpen(true)}
       />
 
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
-        <CandidateDetailHeader
-          candidateId={state.candidate?.id || state.candidateIdStr || ""}
-          candidateName={state.candidateName}
-          candidateEmail={state.candidateEmail}
-          candidatePhone={state.candidatePhone}
-          canEdit={state.canEdit}
-          isDeleting={isDeletingCandidate}
-          onOpenSendEmail={() => setIsSendEmailOpen(true)}
-          onOpenDeleteModal={() => setIsDeleteModalOpen(true)}
-        />
+      <CandidateProfileCard
+        candidateName={state.candidateName}
+        candidateEmail={state.candidateEmail}
+        candidatePhone={state.candidatePhone}
+        gender={state.gender}
+        dob={state.dob}
+        candidateCreated={state.candidateCreated}
+        candidateUpdated={state.candidateUpdated}
+        parsedNotes={state.parsedNotes}
+      />
 
-        <CandidateProfileCard
-          candidateName={state.candidateName}
-          candidateEmail={state.candidateEmail}
-          candidatePhone={state.candidatePhone}
-          candidateNotes={state.candidate?.notes}
-          gender={state.gender}
-          dob={state.dob}
-          candidateCreated={state.candidateCreated}
-          candidateUpdated={state.candidateUpdated}
-          parsedNotes={state.parsedNotes}
-        />
-
-        {/* Card 2: Tabs (Applications / Documents) */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-6 text-xs font-bold -mb-px">
-              <button
-                type="button"
-                onClick={() => state.setActiveTab("applications")}
-                className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  state.activeTab === "applications"
-                    ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                    : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
-                }`}
-              >
-                {t("candidates.applicationsTab")} ({state.candidateApps.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => state.setActiveTab("documents")}
-                className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  state.activeTab === "documents"
-                    ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                    : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
-                }`}
-              >
-                {t("candidates.documentsTab")} (
-                {state.candidateDocuments.length})
-              </button>
-            </div>
+      {/* Card 2: Tabs (Applications / Documents / Notes) */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-6 text-xs font-bold -mb-px">
+            <button
+              type="button"
+              onClick={() => state.setActiveTab("applications")}
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                state.activeTab === "applications"
+                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+              }`}
+            >
+              {t("candidates.applicationsTab")} ({state.candidateApps.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => state.setActiveTab("documents")}
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                state.activeTab === "documents"
+                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+              }`}
+            >
+              {t("candidates.documentsTab")} ({state.candidateDocuments.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => state.setActiveTab("notes")}
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                state.activeTab === "notes"
+                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+              }`}
+            >
+              {t("candidates.notes")} ({state.notesCount})
+            </button>
           </div>
-
-          {state.activeTab === "applications" && (
-            <CandidateApplicationsTab
-              jobs={state.jobs}
-              stageFilter={state.stageFilter}
-              setStageFilter={state.setStageFilter}
-              filteredCandidateApps={state.filteredCandidateApps}
-              canEdit={state.canEdit}
-              onOpenApplyModal={() => setApplyModalOpen(true)}
-              onScheduleInterview={(app, intv) => {
-                setScheduleInterviewApp(app);
-                setEditingInterview(intv);
-              }}
-              onCancelInterview={handleCancelInterview}
-            />
-          )}
-
-          {state.activeTab === "documents" && (
-            <>
-              {docActions.previewDoc ? (
-                <CandidateDocumentPreview
-                  previewDoc={docActions.previewDoc}
-                  onClose={() => docActions.setPreviewDoc(null)}
-                  onDownload={() =>
-                    docActions.handleDownloadDoc(
-                      docActions.previewDoc!.url,
-                      docActions.previewDoc!.name,
-                      docActions.previewDoc!.sourceApplicationId,
-                    )
-                  }
-                />
-              ) : (
-                <CandidateDocumentsTab
-                  documentFilter={state.documentFilter}
-                  setDocumentFilter={state.setDocumentFilter}
-                  filteredDocuments={state.filteredDocuments}
-                  canEdit={state.canEdit}
-                  isUploadingDoc={docActions.isUploadingDoc}
-                  docInputRef={docActions.docInputRef}
-                  onDocumentUpload={docActions.handleDocumentUpload}
-                  onPreviewDoc={(doc) => docActions.setPreviewDoc(doc)}
-                  onDownloadDoc={docActions.handleDownloadDoc}
-                  onDeleteDoc={(doc) => docActions.setDocToDelete(doc)}
-                />
-              )}
-            </>
-          )}
         </div>
 
-        {/* Card 5: Activity & Email Timeline */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-          <CandidateTimeline
-            candidateId={state.candidate?.id || state.candidateIdStr}
-            candidateName={state.candidateName}
-            candidateEmail={state.candidateEmail}
+        {state.activeTab === "applications" && (
+          <CandidateApplicationsTab
+            jobs={state.jobs}
+            stageFilter={state.stageFilter}
+            setStageFilter={state.setStageFilter}
+            filteredCandidateApps={state.filteredCandidateApps}
+            canEdit={state.canEdit}
+            onOpenApplyModal={() => setApplyModalOpen(true)}
+            onScheduleInterview={(app, intv) => {
+              setScheduleInterviewApp(app);
+              setEditingInterview(intv);
+            }}
+            onCancelInterview={handleCancelInterview}
           />
-        </div>
-      </main>
+        )}
+
+        {state.activeTab === "documents" && (
+          <>
+            {docActions.previewDoc ? (
+              <CandidateDocumentPreview
+                previewDoc={docActions.previewDoc}
+                candidateId={state.candidate?.id || state.candidateIdStr}
+                onClose={() => docActions.setPreviewDoc(null)}
+                onDownload={() =>
+                  docActions.handleDownloadDoc(
+                    docActions.previewDoc!.url,
+                    docActions.previewDoc!.name,
+                    docActions.previewDoc!.sourceApplicationId,
+                  )
+                }
+              />
+            ) : (
+              <CandidateDocumentsTab
+                documentFilter={state.documentFilter}
+                setDocumentFilter={state.setDocumentFilter}
+                filteredDocuments={state.filteredDocuments}
+                canEdit={state.canEdit}
+                isUploadingDoc={docActions.isUploadingDoc}
+                docInputRef={docActions.docInputRef}
+                onDocumentUpload={docActions.handleDocumentUpload}
+                onPreviewDoc={(doc) => docActions.setPreviewDoc(doc)}
+                onDownloadDoc={docActions.handleDownloadDoc}
+                onDeleteDoc={(doc) => docActions.setDocToDelete(doc)}
+              />
+            )}
+          </>
+        )}
+
+        {state.activeTab === "notes" && (
+          <div className="pt-2">
+            <CandidateNotesStream
+              candidateId={state.candidate?.id || state.candidateIdStr || ""}
+              showHeader={false}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Card 5: Activity & Email Timeline */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <CandidateTimeline
+          candidateId={state.candidate?.id || state.candidateIdStr}
+          candidateName={state.candidateName}
+          candidateEmail={state.candidateEmail}
+        />
+      </div>
 
       <CandidateDetailModals
         candidate={state.candidate}

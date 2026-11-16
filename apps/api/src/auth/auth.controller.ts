@@ -5,24 +5,37 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Patch,
   Post,
   Request,
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
+import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { AuthService } from "./auth.service";
+import {
+  clearAuthCookies,
+  setAuthCookies,
+  setHasOrgCookie,
+} from "./auth-cookies";
 import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { ChangePasswordDto } from "./dto/change-password.dto";
+import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { env } from "../config/env";
 import { AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES, Role } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  Role,
+  registerSchema,
+  updateUserProfileSchema,
+  type RegisterSchema,
+  type UpdateUserProfileSchema,
+} from "@haihire/shared";
 
 @Controller("auth")
 export class AuthController {
@@ -30,45 +43,6 @@ export class AuthController {
     @Inject(AuthService)
     private readonly authService: AuthService,
   ) {}
-
-  private setAuthCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken?: string,
-  ) {
-    if (res?.cookie) {
-      res.cookie("haihire_token", accessToken, {
-        httpOnly: true,
-        secure: env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: "/",
-      });
-      if (refreshToken) {
-        res.cookie("haihire_refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          path: "/",
-        });
-      }
-    }
-  }
-
-  private clearAuthCookies(res: Response) {
-    if (res?.cookie) {
-      const cookieOptions = {
-        httpOnly: true,
-        secure: env.NODE_ENV === "production",
-        sameSite: "lax" as const,
-        maxAge: 0,
-        path: "/",
-      };
-      res.cookie("haihire_token", "", cookieOptions);
-      res.cookie("haihire_refresh_token", "", cookieOptions);
-    }
-  }
 
   @Throttle({
     default: { limit: env.NODE_ENV === "production" ? 5 : 100, ttl: 60000 },
@@ -80,7 +54,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      Boolean(result.user?.organizationId),
+    );
     return result;
   }
 
@@ -90,11 +69,16 @@ export class AuthController {
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   async register(
-    @Body(DtoPipe(RegisterDto)) dto: RegisterDto,
+    @Body(DtoPipe(registerSchema)) dto: RegisterSchema,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.register(dto);
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      Boolean(result.user?.organizationId),
+    );
     return result;
   }
 
@@ -123,14 +107,27 @@ export class AuthController {
       }
     }
     if (!token) {
+      clearAuthCookies(res);
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.USER_SESSION_EXPIRED,
         "No refresh token provided",
       );
     }
-    const result = await this.authService.refreshToken({ refreshToken: token });
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
-    return result;
+    try {
+      const result = await this.authService.refreshToken({
+        refreshToken: token,
+      });
+      setAuthCookies(
+        res,
+        result.accessToken,
+        result.refreshToken,
+        result.hasOrg,
+      );
+      return result;
+    } catch (err) {
+      clearAuthCookies(res);
+      throw err;
+    }
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -143,7 +140,7 @@ export class AuthController {
     if (req?.user?.id) {
       await this.authService.logout(req.user.id);
     }
-    this.clearAuthCookies(res);
+    clearAuthCookies(res);
     return { success: true };
   }
 
@@ -160,14 +157,43 @@ export class AuthController {
       dto.currentPassword,
       dto.newPassword,
     );
-    this.setAuthCookies(res, result.accessToken);
+    setAuthCookies(
+      res,
+      result.accessToken,
+      result.refreshToken,
+      Boolean(result.user?.organizationId),
+    );
     return result;
   }
 
+  @SkipThrottle()
   @UseGuards(JwtAuthGuard)
   @Get("me")
-  getProfile(@Request() req: { user: { id: string } }) {
-    return this.authService.getProfile(req.user.id);
+  async getProfile(
+    @Request() req: { user: { id: string } },
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const user = await this.authService.getProfile(req.user.id);
+    setHasOrgCookie(res, Boolean(user?.organizationId));
+    return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch("me/profile")
+  async updateProfile(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(updateUserProfileSchema)) dto: UpdateUserProfileSchema,
+  ) {
+    return this.authService.updateProfile(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch("me/preferences")
+  async updatePreferences(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(UpdateUserPreferencesDto)) dto: UpdateUserPreferencesDto,
+  ) {
+    return this.authService.updatePreferences(req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)

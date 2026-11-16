@@ -6,25 +6,29 @@ import {
   useEffect,
   useCallback,
   useId,
-  type ReactNode,
+  useMemo,
   type ComponentType,
 } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
+import {
+  CustomSelectPopup,
+  type PopupCoords,
+  type CustomSelectOptionItem,
+} from "./custom-select-popup";
 
-export interface CustomSelectOption<T extends string = string> {
-  value: T;
-  label: ReactNode;
-  icon?: ComponentType<{ className?: string }>;
-  disabled?: boolean;
-}
+export type CustomSelectOption<T extends string = string> =
+  CustomSelectOptionItem<T>;
 
 export interface CustomSelectProps<T extends string = string> {
   value: T;
   onChange: (value: T) => void;
   options: CustomSelectOption<T>[];
   placeholder?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  emptyText?: string;
   className?: string;
   triggerClassName?: string;
   popupClassName?: string;
@@ -39,18 +43,14 @@ export interface CustomSelectProps<T extends string = string> {
   "aria-label"?: string;
 }
 
-interface PopupCoords {
-  top?: number;
-  bottom?: number;
-  left: number;
-  minWidth: number;
-}
-
 export function CustomSelect<T extends string = string>({
   value,
   onChange,
   options,
   placeholder,
+  searchable = false,
+  searchPlaceholder = "",
+  emptyText = "—",
   className,
   triggerClassName,
   popupClassName,
@@ -68,6 +68,7 @@ export function CustomSelect<T extends string = string>({
   const [mounted, setMounted] = useState(false);
   const [coords, setCoords] = useState<PopupCoords | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const reactId = useId();
   const selectId = id || reactId;
@@ -76,6 +77,23 @@ export function CustomSelect<T extends string = string>({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) return options;
+    const query = searchQuery.trim().toLowerCase();
+    return options.filter((opt) => {
+      const labelText =
+        typeof opt.label === "string" || typeof opt.label === "number"
+          ? String(opt.label)
+          : "";
+      return (
+        labelText.toLowerCase().includes(query) ||
+        opt.value.toLowerCase().includes(query) ||
+        (opt.keywords?.toLowerCase().includes(query) ?? false)
+      );
+    });
+  }, [options, searchable, searchQuery]);
 
   useEffect(() => {
     setMounted(true);
@@ -130,6 +148,7 @@ export function CustomSelect<T extends string = string>({
     if (nextCoords) {
       setCoords(nextCoords);
     }
+    setSearchQuery("");
     const selectedIdx = options.findIndex((opt) => opt.value === value);
     if (selectedIdx >= 0) {
       setFocusedIndex(selectedIdx);
@@ -138,10 +157,16 @@ export function CustomSelect<T extends string = string>({
       setFocusedIndex(firstNonDisabled >= 0 ? firstNonDisabled : 0);
     }
     setIsOpen(true);
-  }, [disabled, calculateCoords, options, value]);
+    if (searchable) {
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+    }
+  }, [disabled, calculateCoords, options, value, searchable]);
 
   const closeSelect = useCallback((restoreFocus = true) => {
     setIsOpen(false);
+    setSearchQuery("");
     if (restoreFocus) {
       triggerRef.current?.focus();
     }
@@ -227,36 +252,42 @@ export function CustomSelect<T extends string = string>({
       e.preventDefault();
       setFocusedIndex((prev) => {
         let next = prev + 1;
-        while (next < options.length && options[next].disabled) {
+        while (
+          next < filteredOptions.length &&
+          filteredOptions[next].disabled
+        ) {
           next++;
         }
-        return next < options.length ? next : prev;
+        return next < filteredOptions.length ? next : prev;
       });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setFocusedIndex((prev) => {
         let next = prev - 1;
-        while (next >= 0 && options[next].disabled) {
+        while (next >= 0 && filteredOptions[next].disabled) {
           next--;
         }
         return next >= 0 ? next : prev;
       });
     } else if (e.key === "Home") {
       e.preventDefault();
-      const first = options.findIndex((opt) => !opt.disabled);
+      const first = filteredOptions.findIndex((opt) => !opt.disabled);
       if (first >= 0) setFocusedIndex(first);
     } else if (e.key === "End") {
       e.preventDefault();
-      for (let i = options.length - 1; i >= 0; i--) {
-        if (!options[i].disabled) {
+      for (let i = filteredOptions.length - 1; i >= 0; i--) {
+        if (!filteredOptions[i].disabled) {
           setFocusedIndex(i);
           break;
         }
       }
     } else if (e.key === "Enter" || e.key === " ") {
+      if (e.key === " " && document.activeElement === searchInputRef.current) {
+        return;
+      }
       e.preventDefault();
-      if (focusedIndex >= 0 && focusedIndex < options.length) {
-        const opt = options[focusedIndex];
+      if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
+        const opt = filteredOptions[focusedIndex];
         if (!opt.disabled) {
           onChange(opt.value);
           closeSelect(true);
@@ -271,104 +302,31 @@ export function CustomSelect<T extends string = string>({
   const isLanding = variant === "landing";
   const SelectedIcon = selectedOption?.icon || LeadingIcon;
 
-  const dropdownPopup = isOpen && mounted && coords && (
-    <div
-      ref={popupRef}
-      id={listboxId}
-      role="listbox"
-      tabIndex={-1}
-      aria-label={
-        ariaLabel || (typeof placeholder === "string" ? placeholder : undefined)
-      }
-      aria-activedescendant={
-        focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined
-      }
-      style={{
-        position: "fixed",
-        ...(coords.top !== undefined ? { top: `${coords.top}px` } : {}),
-        ...(coords.bottom !== undefined
-          ? { bottom: `${coords.bottom}px` }
-          : {}),
-        left: `${coords.left}px`,
-        minWidth: `${coords.minWidth}px`,
-        maxWidth: "calc(100vw - 16px)",
-      }}
-      className={cn(
-        "max-h-60 overflow-y-auto overflow-x-hidden rounded-2xl p-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-150 border shadow-2xl custom-scrollbar focus:outline-none",
-        isLanding
-          ? "bg-[#0b152d]/95 backdrop-blur-xl border-white/15 text-white"
-          : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200",
-        popupClassName,
-      )}
-    >
-      {options.map((option, index) => {
-        const isSelected = option.value === value;
-        const isFocused = index === focusedIndex;
-        const OptionIcon = option.icon;
-
-        return (
-          <button
-            key={option.value}
-            id={`${listboxId}-opt-${index}`}
-            type="button"
-            role="option"
-            aria-selected={isSelected}
-            disabled={option.disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onChange(option.value);
-              closeSelect(true);
-            }}
-            onMouseEnter={() => {
-              if (!option.disabled) setFocusedIndex(index);
-            }}
-            className={cn(
-              "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer min-w-0 max-w-full focus:outline-none",
-              option.disabled
-                ? "opacity-40 cursor-not-allowed pointer-events-none"
-                : "",
-              isSelected
-                ? isLanding
-                  ? "bg-blue-600/30 text-cyan-300 font-bold border border-blue-400/20 shadow-xs"
-                  : "bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold"
-                : isLanding
-                  ? isFocused
-                    ? "bg-white/15 text-white"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white"
-                  : isFocused
-                    ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80",
-            )}
-          >
-            <div className="flex items-center gap-2 truncate min-w-0 flex-1">
-              {OptionIcon && (
-                <OptionIcon
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0",
-                    isSelected
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-400 dark:text-slate-400",
-                  )}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="truncate block">{option.label}</span>
-            </div>
-            {isSelected && (
-              <Check
-                className={cn(
-                  "h-3.5 w-3.5 shrink-0 ml-2",
-                  isLanding
-                    ? "text-cyan-300"
-                    : "text-blue-600 dark:text-blue-400",
-                )}
-                aria-hidden="true"
-              />
-            )}
-          </button>
-        );
-      })}
-    </div>
+  const dropdownPopup = (
+    <CustomSelectPopup
+      isOpen={isOpen}
+      mounted={mounted}
+      coords={coords}
+      listboxId={listboxId}
+      popupRef={popupRef}
+      ariaLabel={ariaLabel}
+      placeholder={typeof placeholder === "string" ? placeholder : undefined}
+      isLanding={isLanding}
+      popupClassName={popupClassName}
+      searchable={searchable}
+      searchInputRef={searchInputRef}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      setFocusedIndex={setFocusedIndex}
+      handleKeyDown={handleKeyDown}
+      searchPlaceholder={searchPlaceholder}
+      emptyText={emptyText}
+      filteredOptions={filteredOptions}
+      value={value}
+      focusedIndex={focusedIndex}
+      onChange={onChange}
+      closeSelect={closeSelect}
+    />
   );
 
   return (
@@ -440,7 +398,10 @@ export function CustomSelect<T extends string = string>({
       </button>
 
       {/* Render dropdown menu in Portal so it never gets clipped by parent overflow */}
-      {dropdownPopup && createPortal(dropdownPopup, document.body)}
+      {isOpen &&
+        mounted &&
+        coords &&
+        createPortal(dropdownPopup, document.body)}
     </div>
   );
 }

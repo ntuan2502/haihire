@@ -1,12 +1,18 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { Prisma } from "@prisma/client";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  formatInterviewDateTimeInTimezone,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import {
   AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CreateInterviewDto } from "../dto/create-interview.dto";
 import { UpdateInterviewDto } from "../dto/update-interview.dto";
 import { toInstant } from "../../common/date.util";
@@ -15,6 +21,7 @@ import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { InterviewsQueryService } from "./interviews-query.service";
 import { InterviewsScorecardService } from "./interviews-scorecard.service";
+import { EventsService } from "../../events/events.service";
 
 export type InterviewType =
   "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
@@ -29,7 +36,7 @@ export interface InterviewUpdatePayload {
   interviewer?: string;
   round?: number;
   notes?: string | null;
-  scorecard?: string | null;
+  scorecard?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
   updatedAt?: Date;
 }
 
@@ -46,11 +53,21 @@ export class InterviewsScheduleService {
     private readonly queryService: InterviewsQueryService,
     @Inject(InterviewsScorecardService)
     private readonly scorecardService: InterviewsScorecardService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
     const app = await this.prisma.application.findFirst({
       where: { id: dto.applicationId },
+      select: {
+        id: true,
+        organizationId: true,
+        candidateId: true,
+        jobId: true,
+        stage: true,
+      },
     });
     if (!app) {
       throw new AppNotFoundException(
@@ -60,10 +77,22 @@ export class InterviewsScheduleService {
       );
     }
 
+    if (
+      organizationId &&
+      app.organizationId &&
+      app.organizationId !== organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { applicationId: dto.applicationId, organizationId },
+      );
+    }
+
     if (app.stage === "REJECTED") {
       throw new AppBadRequestException(
         APP_ERROR_CODES.VALIDATION_ERROR,
-        "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
+        "Cannot schedule an interview for a rejected application.",
       );
     }
 
@@ -92,70 +121,115 @@ export class InterviewsScheduleService {
       dto.scorecard,
     );
 
-    let scheduledInstant: Date;
-    if (dto.scheduledAt) {
-      const parsed = new Date(dto.scheduledAt);
-      scheduledInstant = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
-    } else {
-      const rawDate = dto.date || new Date().toISOString().split("T")[0];
-      const rawTime =
-        dto.time && dto.time.length === 5
-          ? `${dto.time}:00`
-          : dto.time || "00:00:00";
-      const parsed = new Date(`${rawDate}T${rawTime}Z`);
-      scheduledInstant = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
+    const parsedScheduledAt = new Date(dto.scheduledAt);
+    if (isNaN(parsedScheduledAt.getTime())) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Invalid scheduledAt timestamp.",
       );
     }
+    const scheduledInstant = toInstant(parsedScheduledAt);
 
-    await this.prisma.interview.create({
-      data: {
-        id,
-        applicationId: dto.applicationId,
-        scheduledAt: scheduledInstant,
-        type: dto.type as InterviewType,
-        format: (dto.format as InterviewFormat) || "MEET",
-        linkOrLocation: dto.linkOrLocation || "",
-        interviewer: dto.interviewer,
-        round: dto.round || 1,
-        scorecard: scorecardStr,
-        notes: dto.notes || null,
-        updatedAt: toInstant(),
-      },
+    let stageUpdated = false;
+    const previousStage = app.stage;
+
+    const targetOrgId = orgId || app.organizationId || organizationId || "";
+
+    await runInTransaction(this.prisma, async (tx) => {
+      await tx.interview.create({
+        data: {
+          id,
+          organizationId: targetOrgId,
+          applicationId: dto.applicationId,
+          scheduledAt: scheduledInstant,
+          type: dto.type as InterviewType,
+          format: (dto.format as InterviewFormat) || "MEET",
+          linkOrLocation: dto.linkOrLocation || "",
+          interviewer: dto.interviewer,
+          round: dto.round || 1,
+          scorecard: scorecardStr ? scorecardStr : Prisma.DbNull,
+          notes: dto.notes || null,
+          updatedAt: toInstant(),
+        },
+      });
+
+      if (
+        app.stage !== "INTERVIEW" &&
+        app.stage !== "OFFER" &&
+        app.stage !== "HIRED"
+      ) {
+        await tx.application.update({
+          where: { id: app.id },
+          data: {
+            stage: "INTERVIEW",
+          },
+        });
+        stageUpdated = true;
+      }
     });
 
-    if (
-      app.stage !== "INTERVIEW" &&
-      app.stage !== "OFFER" &&
-      app.stage !== "HIRED"
-    ) {
-      await this.prisma.application.update({
-        where: { id: app.id },
-        data: {
-          stage: "INTERVIEW",
+    if (stageUpdated && candidate && orgId) {
+      await this.activitiesService.createActivity({
+        organizationId: orgId,
+        candidateId: candidate.id,
+        applicationId: app.id,
+        type: "STAGE_CHANGED",
+        title: "Stage Changed",
+        description: `Stage updated from ${previousStage} to INTERVIEW automatically upon scheduling interview round ${dto.round || 1}.`,
+        actorName: dto.interviewer || "System",
+        actorRole: "SYSTEM",
+        metadata: {
+          fromStage: previousStage,
+          toStage: "INTERVIEW",
+          interviewId: id,
         },
       });
     }
 
-    const createdInterview = await this.queryService.findOne(id);
+    const createdInterview = await this.queryService.findOne(
+      id,
+      orgId || app.organizationId || organizationId,
+    );
 
     // Record activity log & optionally send interview invitation email
     if (candidate && orgId) {
+      const orgSettings = this.prisma.organization?.findFirst
+        ? await this.prisma.organization.findFirst({
+            where: { id: orgId },
+            select: {
+              name: true,
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+              nameDisplayOrder: true,
+            },
+          })
+        : null;
+      const orgOrder: NameDisplayOrder =
+        orgSettings?.nameDisplayOrder === "LAST_FIRST"
+          ? "LAST_FIRST"
+          : "FIRST_LAST";
+      const resolvedCandidateName = formatCandidateDisplayName(
+        candidate,
+        orgOrder,
+      );
+      const formattedEmailDt = formatInterviewDateTimeInTimezone(
+        scheduledInstant,
+        orgSettings ?? undefined,
+      );
+
       await this.activitiesService.createActivity({
         organizationId: orgId,
         candidateId: candidate.id,
         applicationId: app.id,
         type: "INTERVIEW_SCHEDULED",
         title: `Interview Scheduled (${dto.type})`,
-        description: `Round ${dto.round || 1} interview on ${dto.date} at ${dto.time} with ${dto.interviewer}`,
+        description: `Round ${dto.round || 1} interview on ${formattedEmailDt.date} at ${formattedEmailDt.time} with ${dto.interviewer}`,
         actorName: dto.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
-          date: dto.date,
-          time: dto.time,
+          scheduledAt: scheduledInstant.toISOString(),
           format: dto.format || "MEET",
           type: dto.type,
           interviewer: dto.interviewer,
@@ -165,32 +239,34 @@ export class InterviewsScheduleService {
 
       if (dto.sendInvitationEmail && candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(
-            orgId,
-            "INTERVIEW_INVITATION",
-          );
+          const template =
+            typeof this.emailService.resolveFlowTemplate === "function"
+              ? await this.emailService.resolveFlowTemplate(
+                  orgId,
+                  "INTERVIEW_SCHEDULED",
+                  dto.templateId,
+                )
+              : await this.emailService.getTemplateByType(
+                  orgId,
+                  "INTERVIEW_INVITATION",
+                );
           if (template && template.enabled) {
-            let orgName = "Company";
-            const org = await this.prisma.organization.findFirst({
-              where: { id: orgId },
-              select: { name: true },
-            });
-            if (org?.name) {
-              orgName = org.name;
-            }
+            const orgName = orgSettings?.name || "Company";
 
             await this.emailService.sendEmail(
               {
                 to: candidate.email,
-                recipientName: candidate.name,
+                recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
-                templateType: "INTERVIEW_INVITATION",
+                templateType: template.type || "INTERVIEW_INVITATION",
+                templateId: template.id,
+                templateName: template.name,
                 candidateId: candidate.id,
                 applicationId: app.id,
                 variables: buildDynamicEmailContext({
                   candidate: {
-                    name: candidate.name,
+                    name: resolvedCandidateName,
                     email: candidate.email,
                     phone: candidate.phone,
                   },
@@ -201,8 +277,8 @@ export class InterviewsScheduleService {
                   },
                   organization: { name: orgName },
                   interview: {
-                    date: dto.date,
-                    time: dto.time,
+                    date: formattedEmailDt.date,
+                    time: formattedEmailDt.time,
                     format: dto.format || "Google Meet",
                     linkOrLocation:
                       dto.linkOrLocation || "https://meet.google.com",
@@ -224,6 +300,24 @@ export class InterviewsScheduleService {
       }
     }
 
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { interviewId: id, applicationId: dto.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: dto.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: candidate?.id, applicationId: dto.applicationId },
+      });
+    }
+
     return createdInterview;
   }
 
@@ -232,25 +326,18 @@ export class InterviewsScheduleService {
     dto: UpdateInterviewDto,
     tenantOrgId?: string | null,
   ) {
-    const existing = await this.queryService.findOne(id, tenantOrgId);
+    await this.queryService.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.scheduledAt !== undefined) {
       const parsed = new Date(dto.scheduledAt);
-      updateData.scheduledAt = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
-    } else if (dto.date !== undefined || dto.time !== undefined) {
-      const newDate = dto.date !== undefined ? dto.date : existing.date;
-      const rawTime = dto.time !== undefined ? dto.time : existing.time;
-      const newTime =
-        rawTime && rawTime.length === 5
-          ? `${rawTime}:00`
-          : rawTime || "00:00:00";
-      const parsed = new Date(`${newDate}T${newTime}Z`);
-      updateData.scheduledAt = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
+      if (isNaN(parsed.getTime())) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid scheduledAt timestamp.",
+        );
+      }
+      updateData.scheduledAt = toInstant(parsed);
     }
 
     if (dto.type !== undefined) updateData.type = dto.type as InterviewType;
@@ -262,9 +349,8 @@ export class InterviewsScheduleService {
     if (dto.round !== undefined) updateData.round = dto.round;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
     if (dto.scorecard !== undefined) {
-      updateData.scorecard = this.scorecardService.serializeScorecard(
-        dto.scorecard,
-      );
+      const sc = this.scorecardService.serializeScorecard(dto.scorecard);
+      updateData.scorecard = sc ? sc : Prisma.DbNull;
     }
     updateData.updatedAt = toInstant();
 
@@ -277,6 +363,20 @@ export class InterviewsScheduleService {
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
       const isScorecardUpdate = dto.scorecard !== undefined;
+      const orgSettings = this.prisma.organization?.findFirst
+        ? await this.prisma.organization.findFirst({
+            where: { id: candidate.organizationId },
+            select: {
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+            },
+          })
+        : null;
+      const formattedUpdateDt = formatInterviewDateTimeInTimezone(
+        updated.scheduledAt,
+        orgSettings ?? undefined,
+      );
       await this.activitiesService.createActivity({
         organizationId: candidate.organizationId,
         candidateId: candidate.id,
@@ -287,28 +387,65 @@ export class InterviewsScheduleService {
           : `Interview Updated (${updated.type})`,
         description: isScorecardUpdate
           ? `Scorecard submitted by ${updated.interviewer}`
-          : `Interview schedule updated to ${updated.time} on ${updated.date}`,
+          : `Interview schedule updated to ${formattedUpdateDt.time} on ${formattedUpdateDt.date}`,
         actorName: updated.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
           type: updated.type,
           interviewer: updated.interviewer,
-          date: updated.date,
-          time: updated.time,
+          scheduledAt: updated.scheduledAt,
           changes: Object.keys(updateData),
         },
       });
+    }
+
+    const updateOrgId = candidate?.organizationId || tenantOrgId;
+    if (updateOrgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: updateOrgId,
+        data: { interviewId: id, applicationId: updated.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: updateOrgId,
+        data: { applicationId: updated.applicationId },
+      });
+      if (candidate) {
+        this.eventsService?.emit({
+          type: "ACTIVITIES_CHANGED",
+          organizationId: updateOrgId,
+          data: {
+            candidateId: candidate.id,
+            applicationId: updated.applicationId,
+          },
+        });
+      }
     }
 
     return updated;
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    await this.queryService.findOne(id, tenantOrgId);
+    const existing = await this.queryService.findOne(id, tenantOrgId);
     await this.prisma.interview.delete({
       where: { id },
     });
+    const orgId =
+      existing.application?.candidate?.organizationId || tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { interviewId: id, applicationId: existing.applicationId },
+      });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: existing.applicationId },
+      });
+    }
     return { success: true, message: `Interview ${id} deleted successfully` };
   }
 }

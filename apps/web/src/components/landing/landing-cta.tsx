@@ -42,6 +42,7 @@ export const LandingCta: React.FC = () => {
             ) : (
               <Link
                 href="/auth/register"
+                prefetch={false}
                 className="inline-flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 px-8 py-4 text-sm font-black text-white shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all"
               >
                 <span>{t("landing.ctaButton")}</span>

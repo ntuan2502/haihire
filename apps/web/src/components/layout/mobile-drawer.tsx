@@ -52,7 +52,7 @@ export function MobileDrawer({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Close menu"
+        aria-label={t("common.close")}
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {

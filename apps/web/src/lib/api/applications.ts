@@ -1,5 +1,11 @@
 import { api } from "./client";
-import type { Application, PaginatedResult } from "@/types";
+import type {
+  Application,
+  ApplicationNote,
+  ApplicationStats,
+  PaginatedResult,
+  UpdateApplicationStageInput,
+} from "@/types";
 
 export const applicationsApi = {
   getAll: async (params?: {
@@ -14,6 +20,13 @@ export const applicationsApi = {
       "/applications",
       { params },
     );
+    return response.data;
+  },
+
+  getStats: async (organizationId?: string): Promise<ApplicationStats> => {
+    const response = await api.get<ApplicationStats>("/applications/stats", {
+      params: organizationId ? { organizationId } : undefined,
+    });
     return response.data;
   },
 
@@ -48,23 +61,46 @@ export const applicationsApi = {
 
   updateStage: async (
     id: string,
-    stage: string,
+    stageOrOptions: string | UpdateApplicationStageInput,
     orderIndex = 0,
   ): Promise<Application> => {
-    const response = await api.patch<Application>(`/applications/${id}/stage`, {
-      stage,
-      orderIndex,
-    });
+    const payload =
+      typeof stageOrOptions === "string"
+        ? { stage: stageOrOptions, orderIndex }
+        : {
+            stage: stageOrOptions.stage,
+            ...(stageOrOptions.stageId !== undefined
+              ? { stageId: stageOrOptions.stageId }
+              : {}),
+            orderIndex: stageOrOptions.orderIndex ?? orderIndex,
+            ...(stageOrOptions.rejectionReason !== undefined
+              ? { rejectionReason: stageOrOptions.rejectionReason }
+              : {}),
+            ...(stageOrOptions.sendRejectionEmail !== undefined
+              ? { sendRejectionEmail: stageOrOptions.sendRejectionEmail }
+              : {}),
+            ...(stageOrOptions.sendOfferEmail !== undefined
+              ? { sendOfferEmail: stageOrOptions.sendOfferEmail }
+              : {}),
+            ...(stageOrOptions.emailTemplateId !== undefined
+              ? { emailTemplateId: stageOrOptions.emailTemplateId }
+              : {}),
+          };
+    const response = await api.patch<Application>(
+      `/applications/${id}/stage`,
+      payload,
+    );
     return response.data;
   },
 
   updateCandidate: async (
     id: string,
     data: {
-      candidateName?: string;
+      firstName?: string;
+      lastName?: string;
+      displayName?: string | null;
       candidateEmail?: string;
       candidatePhone?: string;
-      notes?: string;
       resumeUrl?: string;
       resumeFileName?: string;
     },
@@ -108,6 +144,46 @@ export const applicationsApi = {
     id: string,
   ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/applications/${id}`);
+    return response.data;
+  },
+
+  getNotes: async (applicationId: string): Promise<ApplicationNote[]> => {
+    const response = await api.get<ApplicationNote[]>(
+      `/applications/${applicationId}/notes`,
+    );
+    return response.data;
+  },
+
+  addNote: async (
+    applicationId: string,
+    content: string,
+  ): Promise<ApplicationNote> => {
+    const response = await api.post<ApplicationNote>(
+      `/applications/${applicationId}/notes`,
+      { content },
+    );
+    return response.data;
+  },
+
+  updateNote: async (
+    applicationId: string,
+    noteId: string,
+    content: string,
+  ): Promise<ApplicationNote> => {
+    const response = await api.patch<ApplicationNote>(
+      `/applications/${applicationId}/notes/${noteId}`,
+      { content },
+    );
+    return response.data;
+  },
+
+  deleteNote: async (
+    applicationId: string,
+    noteId: string,
+  ): Promise<{ success: boolean; id: string }> => {
+    const response = await api.delete<{ success: boolean; id: string }>(
+      `/applications/${applicationId}/notes/${noteId}`,
+    );
     return response.data;
   },
 };

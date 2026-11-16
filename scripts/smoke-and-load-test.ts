@@ -85,7 +85,12 @@ async function runSmokeTest(): Promise<void> {
   const regRes = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, name: "Production Recruiter" }),
+    body: JSON.stringify({
+      email,
+      password,
+      firstName: "Recruiter",
+      lastName: "Production",
+    }),
   });
   const regData = (await regRes.json()) as AuthRegisterResponse;
   const initToken = regData.accessToken;

@@ -6,7 +6,7 @@ import { Role } from "@haihire/shared";
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     success: (...args: unknown[]) => mockToastSuccess(...args),
     error: (...args: unknown[]) => mockToastError(...args),
@@ -53,14 +53,19 @@ let mockMatrixData: Record<Role, Record<string, boolean>> = {
   MEMBER: {},
 };
 
+let capturedMatrixOptions: { enabled?: boolean } | undefined;
+
 vi.mock("@/hooks/use-queries", () => ({
-  useRolePermissionsMatrix: () => ({
-    data: mockMatrixData,
-    isLoading: mockMatrixLoading,
-    isError: Boolean(mockMatrixError),
-    error: mockMatrixError,
-    refetch: vi.fn(),
-  }),
+  useRolePermissionsMatrix: (options?: { enabled?: boolean }) => {
+    capturedMatrixOptions = options;
+    return {
+      data: mockMatrixData,
+      isLoading: mockMatrixLoading,
+      isError: Boolean(mockMatrixError),
+      error: mockMatrixError,
+      refetch: vi.fn(),
+    };
+  },
   useUpdateRolePermissionsMutation: () => ({
     mutateAsync: mockUpdateRolePermissionsMutateAsync,
     isPending: false,
@@ -117,6 +122,13 @@ vi.mock("@/i18n", () => ({
         "settings.rolesMatrix.categorySourcing": "Talent Sourcing",
         "settings.rolesMatrix.categoryEmail": "Email & Communication",
         "settings.rolesMatrix.categorySettings": "Settings & Audit",
+        "settings.rolesMatrix.permissions.org_view":
+          "View organization details",
+        "settings.rolesMatrix.permissions.org_delete": "Delete organization",
+        "settings.rolesMatrix.permissions.org_manage_roles":
+          "Manage role permissions",
+        "settings.rolesMatrix.permissions.job_view": "View jobs",
+        "settings.rolesMatrix.permissions.job_delete": "Delete jobs",
       };
       return dict[key] || key;
     },
@@ -126,6 +138,7 @@ vi.mock("@/i18n", () => ({
 describe("RolesPermissionsSettingsPage Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedMatrixOptions = undefined;
     mockCanManageRoles = true;
     mockMatrixLoading = false;
     mockMatrixError = null;
@@ -166,6 +179,9 @@ describe("RolesPermissionsSettingsPage Component", () => {
 
     expect(screen.getByText("Role & Permissions Matrix")).toBeInTheDocument();
     expect(
+      screen.queryByText(/RBAC Matrix|settings\.rolesMatrix\.badge/),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("table", {
         name: "Matrix of roles and permissions in this organization",
       }),
@@ -182,25 +198,31 @@ describe("RolesPermissionsSettingsPage Component", () => {
     expect(screen.getByText("Organization Management")).toBeInTheDocument();
     expect(screen.getByText("Job Management")).toBeInTheDocument();
     expect(screen.getByText("Candidate Pipeline")).toBeInTheDocument();
+
+    // Raw permission keys and role enum codes must never appear in the rendered table
+    expect(screen.queryByText("ADMIN")).not.toBeInTheDocument();
+    expect(screen.queryByText("RECRUITER")).not.toBeInTheDocument();
+    expect(screen.queryByText("org:view")).not.toBeInTheDocument();
+    expect(screen.getByText("View organization details")).toBeInTheDocument();
   });
 
   it("disables all admin permissions checkboxes unconditionally", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const adminManageRolesCheckbox = screen.getByRole("checkbox", {
-      name: "Admin: org:manage_roles",
+      name: "Admin: Manage role permissions",
     });
     expect(adminManageRolesCheckbox).toBeDisabled();
     expect(adminManageRolesCheckbox).toBeChecked();
 
     const adminDeleteCheckbox = screen.getByRole("checkbox", {
-      name: "Admin: org:delete",
+      name: "Admin: Delete organization",
     });
     expect(adminDeleteCheckbox).toBeDisabled();
     expect(adminDeleteCheckbox).toBeChecked();
 
     const adminJobViewCheckbox = screen.getByRole("checkbox", {
-      name: "Admin: job:view",
+      name: "Admin: View jobs",
     });
     expect(adminJobViewCheckbox).toBeDisabled();
     expect(adminJobViewCheckbox).toBeChecked();
@@ -223,7 +245,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const adminOrgView = screen.getByRole("checkbox", {
-      name: "Admin: org:view",
+      name: "Admin: View organization details",
     });
     expect(adminOrgView).toBeChecked();
 
@@ -243,12 +265,12 @@ describe("RolesPermissionsSettingsPage Component", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const adminOrgView = screen.getByRole("checkbox", {
-      name: "Admin: org:view",
+      name: "Admin: View organization details",
     });
     fireEvent.click(adminOrgView);
 
     const recruiterJobDelete = screen.getByRole("checkbox", {
-      name: "Recruiter: job:delete",
+      name: "Recruiter: Delete jobs",
     });
     fireEvent.click(recruiterJobDelete);
 
@@ -280,7 +302,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
 
     // Check cells title attribute
     const adminOrgView = screen.getByRole("checkbox", {
-      name: "Admin: org:view",
+      name: "Admin: View organization details",
     });
     expect(adminOrgView).toHaveAttribute(
       "title",
@@ -298,7 +320,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
 
     // Toggle a non-core permission for RECRUITER (e.g., job:delete)
     const recruiterJobDelete = screen.getByRole("checkbox", {
-      name: "Recruiter: job:delete",
+      name: "Recruiter: Delete jobs",
     });
     expect(recruiterJobDelete).not.toBeChecked();
 
@@ -313,7 +335,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const recruiterJobDelete = screen.getByRole("checkbox", {
-      name: "Recruiter: job:delete",
+      name: "Recruiter: Delete jobs",
     });
     expect(recruiterJobDelete).not.toBeChecked();
 
@@ -338,7 +360,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const recruiterJobDelete = screen.getByRole("checkbox", {
-      name: "Recruiter: job:delete",
+      name: "Recruiter: Delete jobs",
     });
     fireEvent.click(recruiterJobDelete);
 
@@ -369,7 +391,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const recruiterJobDelete = screen.getByRole("checkbox", {
-      name: "Recruiter: job:delete",
+      name: "Recruiter: Delete jobs",
     });
     fireEvent.click(recruiterJobDelete);
 
@@ -383,25 +405,26 @@ describe("RolesPermissionsSettingsPage Component", () => {
     });
   });
 
-  it("locks all checkboxes and shows read-only notice when user lacks org:manage_roles", () => {
+  it("renders access denied alert and hides permission matrix when user lacks org:manage_roles", () => {
     mockCanManageRoles = false;
     render(<RolesPermissionsSettingsPage />);
 
+    expect(capturedMatrixOptions).toEqual({ enabled: false });
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Access Denied");
+    expect(alert).toHaveTextContent(
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
+    );
     expect(
-      screen.getByText(
-        "You are viewing the permission matrix in read-only mode.",
-      ),
-    ).toBeInTheDocument();
-
-    // Checkboxes should all be disabled
-    const recruiterJobView = screen.getByRole("checkbox", {
-      name: "Recruiter: job:view",
-    });
-    expect(recruiterJobView).toBeDisabled();
-
-    // Action buttons (Save/Reset) are not rendered in read-only mode
+      screen.queryByRole("table", {
+        name: "Matrix of roles and permissions in this organization",
+      }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Save Changes" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Reset to Default/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -468,14 +491,14 @@ describe("RolesPermissionsSettingsPage Component", () => {
       expect(mockResetRolePermissionsMutateAsync).not.toHaveBeenCalled();
     });
 
-    it("disables reset to default button when user lacks org:manage_roles", () => {
+    it("does not expose reset to default action when user lacks org:manage_roles", () => {
       mockCanManageRoles = false;
       render(<RolesPermissionsSettingsPage />);
 
-      const resetDefaultBtn = screen.getByRole("button", {
-        name: /Reset to Default/i,
-      });
-      expect(resetDefaultBtn).toBeDisabled();
+      expect(
+        screen.queryByRole("button", { name: /Reset to Default/i }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("alert")).toBeInTheDocument();
     });
   });
 });

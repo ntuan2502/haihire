@@ -1,5 +1,10 @@
 import { api, getApiBaseUrl } from "./client";
-import type { Candidate, UpdateCandidateInput, PaginatedResult } from "@/types";
+import type {
+  Candidate,
+  CandidateNote,
+  UpdateCandidateInput,
+  PaginatedResult,
+} from "@/types";
 
 export const candidatesApi = {
   getAll: async (params?: {
@@ -81,5 +86,45 @@ export const candidatesApi = {
     const encodedUrl = encodeURIComponent(url);
     const encodedName = encodeURIComponent(name);
     return `${baseUrl}/candidates/${id}/documents/download?url=${encodedUrl}&name=${encodedName}`;
+  },
+
+  getNotes: async (candidateId: string): Promise<CandidateNote[]> => {
+    const response = await api.get<CandidateNote[]>(
+      `/candidates/${candidateId}/notes`,
+    );
+    return response.data;
+  },
+
+  addNote: async (
+    candidateId: string,
+    content: string,
+  ): Promise<CandidateNote> => {
+    const response = await api.post<CandidateNote>(
+      `/candidates/${candidateId}/notes`,
+      { content },
+    );
+    return response.data;
+  },
+
+  updateNote: async (
+    candidateId: string,
+    noteId: string,
+    content: string,
+  ): Promise<CandidateNote> => {
+    const response = await api.patch<CandidateNote>(
+      `/candidates/${candidateId}/notes/${noteId}`,
+      { content },
+    );
+    return response.data;
+  },
+
+  deleteNote: async (
+    candidateId: string,
+    noteId: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/candidates/${candidateId}/notes/${noteId}`,
+    );
+    return response.data;
   },
 };

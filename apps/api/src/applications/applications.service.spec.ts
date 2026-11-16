@@ -29,6 +29,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     createActivity: ReturnType<typeof vi.fn>;
     findByCandidate: ReturnType<typeof vi.fn>;
   };
+  let mockEmailService: {
+    getTemplateByType: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
+  };
 
   interface MockJob {
     id: string;
@@ -37,6 +41,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     department?: string;
     location?: string;
     status?: string;
+    deletedAt?: Date | null;
   }
 
   interface MockCandidate {
@@ -47,17 +52,18 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     lastName?: string;
     email: string;
     phone: string;
-    notes?: string | null;
     resumeUrl?: string | null;
     resumeFileName?: string | null;
     resumeFileSize?: number | null;
     resumeMimeType?: string | null;
+    deletedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
   }
 
   interface MockApp {
     id: string;
+    organizationId?: string | null;
     candidateId: string;
     jobId: string;
     stage: string;
@@ -123,7 +129,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "alice.pdf",
         resumeFileSize: 1024,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -137,7 +142,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "bob.pdf",
         resumeFileSize: 2048,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -151,7 +155,6 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         resumeFileName: "charlie.pdf",
         resumeFileSize: 3072,
         resumeMimeType: "application/pdf",
-        notes: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -160,6 +163,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     mockApps = [
       {
         id: "app-1",
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-org1-a",
         stage: "APPLIED",
@@ -174,6 +178,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         candidateId: "cand-2",
         jobId: "job-org1-b",
         stage: "INTERVIEW",
@@ -188,6 +193,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-3",
+        organizationId: "org-2",
         candidateId: "cand-3",
         jobId: "job-org2-c", // Belongs to org-2!
         stage: "OFFER",
@@ -246,8 +252,14 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       findByCandidate: vi.fn().mockResolvedValue([]),
     };
 
-    const mockEmailService = {
-      getTemplateByType: vi.fn().mockResolvedValue(null),
+    mockEmailService = {
+      getTemplateByType: vi.fn().mockResolvedValue({
+        id: "tpl-rej",
+        type: "REJECTION",
+        enabled: true,
+        subject: "Application Update",
+        body: "Hello {{candidateName}}",
+      }),
       sendEmail: vi.fn().mockResolvedValue({}),
     };
 
@@ -477,7 +489,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
     it("should update candidate personal information", async () => {
       const updated = await service.updateCandidate("app-1", {
-        candidateName: "Alice Nguyen (Updated)",
+        firstName: "Alice",
+        lastName: "Nguyen",
+        displayName: "Alice Nguyen (Updated)",
         candidatePhone: "0999999999",
       });
 
@@ -497,7 +511,8 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       await expect(
         service.create({
           jobId: "non-existent-job",
-          candidateName: "Test Candidate",
+          firstName: "Test",
+          lastName: "Candidate",
           candidateEmail: "test@example.com",
         }),
       ).rejects.toThrow();
@@ -534,7 +549,8 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("should create application and new candidate when valid info provided", async () => {
       const created = await service.create({
         jobId: "job-org1-a",
-        candidateName: "David Beckham",
+        firstName: "David",
+        lastName: "Beckham",
         candidateEmail: "david@example.com",
         candidatePhone: "0123456789",
       });
@@ -602,8 +618,44 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       );
 
       expect(download.cleanFileName).toBe("bob.pdf");
+      expect(download.mimeType).toBe("application/pdf");
       expect(download.stream).toBeDefined();
       expect(mockMinioService.getObjectStream).toHaveBeenCalled();
+    });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const targetApp = mockApps.find((a) => a.id === "app-2");
+      if (targetApp) {
+        targetApp.resumeMimeType = null;
+      }
+
+      const inferredDownload = await service.prepareDocumentDownload(
+        "app-2",
+        "https://s3.local/resumes/bob.pdf",
+        "bob.pdf",
+        "org-1",
+      );
+      expect(inferredDownload.mimeType).toBe("application/pdf");
+
+      mockCandidateDocs.push({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://s3.local/resumes/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: new Date(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "app-1",
+        "https://s3.local/resumes/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
     });
 
     it("should block document download if targetUrl does not belong to application (SSRF guard)", async () => {
@@ -659,6 +711,241 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("should reject findByJob if job belongs to another organization", async () => {
       // job-org2-c belongs to org-2
       await expect(service.findByJob("job-org2-c", "org-1")).rejects.toThrow();
+    });
+  });
+
+  describe("Rejection, Reopening, Soft-Delete & Stats Integrity", () => {
+    it("saves rejectionReason & rejectedAt and suppresses automated email when sendRejectionEmail=false", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "  Missing Go experience  ",
+        sendRejectionEmail: false,
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(updated.rejectionReason).toBe("Missing Go experience");
+      expect(updated.rejectedAt).toBeInstanceOf(Date);
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("sends automated rejection email when sendRejectionEmail=true", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Role filled",
+        sendRejectionEmail: true,
+      });
+
+      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it("passes override emailTemplateId on rejection and supports opt-in OFFER flow with sender context", async () => {
+      const resolveFlowMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          id: "tpl-custom-rej",
+          name: "Custom Reject",
+          type: "REJECTION",
+          enabled: true,
+          subject: "Custom Update",
+          body: "<p>Sorry {{candidate_name}}</p>",
+        })
+        .mockResolvedValueOnce({
+          id: "tpl-custom-offer",
+          name: "Senior Offer",
+          type: "OFFER",
+          enabled: true,
+          subject: "Offer {{job_title}}",
+          body: "<p>Congrats {{candidate_name}} from {{sender_name}}</p>",
+        });
+
+      (
+        mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+      ).resolveFlowTemplate = resolveFlowMock;
+
+      try {
+        await service.updateStage("app-1", {
+          stage: "REJECTED",
+          rejectionReason: "Cultural mismatch",
+          sendRejectionEmail: true,
+          emailTemplateId: "tpl-custom-rej",
+        });
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_REJECTED",
+          "tpl-custom-rej",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-rej",
+            templateName: "Custom Reject",
+            templateType: "REJECTION",
+          }),
+          "org-1",
+        );
+
+        vi.mocked(mockEmailService.sendEmail).mockClear();
+
+        // Moving to OFFER without sendOfferEmail=true does NOT auto-dispatch email
+        await service.updateStage("app-2", {
+          stage: "OFFER",
+        });
+        expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+
+        // Reset app-2 back cleanly to INTERVIEW via REOPEN -> INTERVIEW? Move app-2 to HIRED isn't offer; instead test OFFER from INTERVIEW after resetting mockApps or creating stage transition:
+        mockApps[1].stage = "INTERVIEW";
+
+        await service.updateStage(
+          "app-2",
+          {
+            stage: "OFFER",
+            sendOfferEmail: true,
+            emailTemplateId: "tpl-custom-offer",
+          },
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter", role: "RECRUITER" },
+        );
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_OFFER",
+          "tpl-custom-offer",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-offer",
+            templateName: "Senior Offer",
+            templateType: "OFFER",
+            variables: expect.objectContaining({
+              sender_name: "Nguyen Recruiter",
+            }),
+          }),
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter" },
+        );
+      } finally {
+        delete (
+          mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+        ).resolveFlowTemplate;
+      }
+    });
+
+    it("allows reopening REJECTED application to SCREENING and clears rejection metadata", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Initial mismatch",
+        sendRejectionEmail: false,
+      });
+
+      const reopened = await service.updateStage("app-1", {
+        stage: "SCREENING",
+      });
+
+      expect(reopened.stage).toBe("SCREENING");
+      expect(reopened.rejectionReason).toBeNull();
+      expect(reopened.rejectedAt).toBeNull();
+      expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "STAGE_CHANGED",
+          metadata: expect.objectContaining({
+            fromStage: "REJECTED",
+            toStage: "SCREENING",
+            reopened: true,
+          }),
+        }),
+      );
+    });
+
+    it("excludes soft-deleted jobs and candidates from findAll, findByJob, findOne, and getStats", async () => {
+      mockJobs[1].deletedAt = new Date();
+      mockCandidates[0].deletedAt = new Date();
+
+      const all = await service.findAll("org-1");
+      expect(all.data).toHaveLength(0);
+
+      await expect(service.findByJob("job-org1-b", "org-1")).rejects.toThrow();
+      await expect(service.findOne("app-1", "org-1")).rejects.toThrow();
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(0);
+    });
+
+    it("returns more than 100 applications from findByJob without silent 100-item truncation", async () => {
+      const manyApps = Array.from({ length: 120 }, (_, i) => ({
+        id: `bulk-app-${i}`,
+        candidateId: "cand-1",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        orderIndex: i,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      mockApps.splice(0, mockApps.length, ...manyApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(120);
+    });
+
+    it("returns deterministic pagination order when orderIndex collisions occur using id tiebreaker", async () => {
+      const collidingApps = [
+        {
+          id: "app-tie-b",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-tie-a",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockApps.splice(0, mockApps.length, ...collidingApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(2);
+      expect(results[0].id).toBe("app-tie-a");
+      expect(results[1].id).toBe("app-tie-b");
+    });
+
+    it("aggregates SQL groupBy stage stats across multiple jobs cleanly", async () => {
+      mockApps.push(
+        {
+          id: "app-4",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "SCREENING",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-5",
+          candidateId: "cand-2",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 2,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      );
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(4);
+      expect(stats.byStage.APPLIED).toBe(2);
+      expect(stats.byStage.SCREENING).toBe(1);
+      expect(stats.byStage.INTERVIEW).toBe(1);
+      expect(stats.byJob["job-org1-a"]?.total).toBe(3);
+      expect(stats.byJob["job-org1-a"]?.byStage.APPLIED).toBe(2);
+      expect(stats.byJob["job-org1-a"]?.byStage.SCREENING).toBe(1);
+      expect(stats.byJob["job-org1-b"]?.total).toBe(1);
     });
   });
 });

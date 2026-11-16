@@ -8,15 +8,16 @@ import {
   AppServiceUnavailableException,
 } from "../../common/app-exception";
 import { MinioService } from "../../minio/minio.service";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { CandidatesProfileService } from "./candidates-profile.service";
-import { fixUtf8String } from "../../common/doc-utils";
+import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import {
   validateUploadedFile,
   sanitizeFilename,
 } from "../../common/upload-utils";
 import { toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 
 @Injectable()
 export class CandidatesDocumentsService {
@@ -30,6 +31,9 @@ export class CandidatesDocumentsService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async uploadDocument(
@@ -76,38 +80,52 @@ export class CandidatesDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    try {
-      await this.prisma.candidateDocument.create({
-        data: {
-          id: newDocId,
-          candidateId: id,
-          organizationId: candidate.organizationId,
-          name: cleanDocName,
-          url: uploadResult.url,
-          size: uploadResult.size ?? null,
-          mimeType: uploadResult.mimeType ?? null,
-          type: documentType || "Resume",
-          updatedAt: toInstant(),
-        },
+    await runInTransaction(this.prisma, async (tx) => {
+      try {
+        await tx.candidateDocument.create({
+          data: {
+            id: newDocId,
+            candidateId: id,
+            organizationId: candidate.organizationId,
+            name: cleanDocName,
+            url: uploadResult.url,
+            size: uploadResult.size ?? null,
+            mimeType: uploadResult.mimeType ?? null,
+            type: documentType || "Resume",
+            updatedAt: toInstant(),
+          },
+        });
+      } catch {
+        // ignore if mock or table unavailable in test
+      }
+
+      if (!candidate.resumeUrl) {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: uploadResult.url,
+            resumeFileName: cleanDocName,
+            resumeFileSize: uploadResult.size ?? null,
+            resumeMimeType: uploadResult.mimeType ?? null,
+          },
+        });
+      }
+    });
+
+    if (candidate.organizationId) {
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: candidate.organizationId,
+        data: { candidateId: id },
       });
-    } catch {
-      // ignore if mock or table unavailable in test
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: candidate.organizationId,
+        data: { candidateId: id },
+      });
     }
 
-    if (!candidate.resumeUrl) {
-      // Tenant-scoped candidate: organizationId: candidate.organizationId
-      await this.prisma.candidate.update({
-        where: { id /* organizationId: candidate.organizationId */ },
-        data: {
-          resumeUrl: uploadResult.url,
-          resumeFileName: cleanDocName,
-          resumeFileSize: uploadResult.size ?? null,
-          resumeMimeType: uploadResult.mimeType ?? null,
-        },
-      });
-    }
-
-    return this.profileService.findOne(id);
+    return this.profileService.findOne(id, candidate.organizationId);
   }
 
   async prepareDocumentDownload(
@@ -128,36 +146,49 @@ export class CandidatesDocumentsService {
     }
 
     // SSRF prevention: Verify that targetUrl belongs to this candidate
+    let matchedDocMimeType: string | null | undefined =
+      candidate.resumeMimeType;
     if (targetUrl) {
-      const allowedUrls: string[] = [];
-      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const allowedEntries: Array<{ url: string; mimeType?: string | null }> =
+        [];
+      if (candidate.resumeUrl) {
+        allowedEntries.push({
+          url: candidate.resumeUrl,
+          mimeType: candidate.resumeMimeType,
+        });
+      }
       if (Array.isArray(candidate.allDocuments)) {
         for (const doc of candidate.allDocuments) {
           if (doc && typeof doc.url === "string") {
-            allowedUrls.push(doc.url);
+            allowedEntries.push({ url: doc.url, mimeType: doc.mimeType });
           }
         }
       }
 
-      const targetObj = this.minioService.extractObjectName(targetUrl);
-      const isAllowed = allowedUrls.some(
-        (u) =>
-          u === targetUrl ||
-          this.minioService.extractObjectName(u) === targetObj,
+      const matchedEntry = allowedEntries.find(
+        (entry) =>
+          entry.url === targetUrl ||
+          this.minioService.extractObjectName(entry.url) === targetObj,
       );
-      if (!isAllowed) {
+      if (!matchedEntry) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this candidate.",
           { id },
         );
       }
+      matchedDocMimeType = matchedEntry.mimeType ?? matchedDocMimeType;
     }
 
     const rawName = targetName || candidate.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+    const resolvedMimeType = resolveDocumentMimeType(
+      matchedDocMimeType,
+      cleanFileName || downloadUrl,
+    );
 
     let stream: NodeJS.ReadableStream;
     try {
@@ -202,7 +233,7 @@ export class CandidatesDocumentsService {
       cleanFileName,
       asciiFallback,
       encodedFileName,
-      mimeType: candidate.resumeMimeType,
+      mimeType: resolvedMimeType,
       stream,
     };
   }
@@ -214,62 +245,111 @@ export class CandidatesDocumentsService {
   ) {
     const candidate = await this.profileService.findOne(id, tenantOrgId);
 
-    if (opts?.documentId) {
-      await this.prisma.candidateDocument.deleteMany({
-        where: {
+    if (
+      tenantOrgId &&
+      candidate.organizationId &&
+      candidate.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
+      );
+    }
+
+    const deleteWhere = opts?.documentId
+      ? {
           id: opts.documentId,
           candidateId: id,
           organizationId: candidate.organizationId,
-        },
+        }
+      : opts?.url
+        ? {
+            url: opts.url,
+            candidateId: id,
+            organizationId: candidate.organizationId,
+          }
+        : null;
+
+    let docsToDelete: Array<{ url: string }> = [];
+    if (deleteWhere) {
+      docsToDelete = await this.prisma.candidateDocument.findMany({
+        where: deleteWhere,
+        select: { url: true },
       });
-    } else if (opts?.url) {
-      await this.prisma.candidateDocument.deleteMany({
+    }
+
+    if (
+      docsToDelete.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const doc of docsToDelete) {
+        if (!doc.url) continue;
+        const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+    }
+
+    await runInTransaction(this.prisma, async (tx) => {
+      if (deleteWhere) {
+        await tx.candidateDocument.deleteMany({
+          where: deleteWhere,
+        });
+      }
+
+      const remainingDocs = await tx.candidateDocument.findMany({
         where: {
-          url: opts.url,
           candidateId: id,
           organizationId: candidate.organizationId,
         },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          size: true,
+          mimeType: true,
+          type: true,
+          createdAt: true,
+        },
       });
-    }
 
-    const remainingDocs = await this.prisma.candidateDocument.findMany({
-      where: {
-        candidateId: id,
-        organizationId: candidate.organizationId,
-      },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-        size: true,
-        mimeType: true,
-        type: true,
-        createdAt: true,
-      },
+      const primaryDoc = remainingDocs[0];
+      if (primaryDoc) {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: primaryDoc.url,
+            resumeFileName: primaryDoc.name,
+            resumeFileSize: primaryDoc.size ?? null,
+            resumeMimeType: primaryDoc.mimeType ?? null,
+          },
+        });
+      } else {
+        await tx.candidate.update({
+          where: { id },
+          data: {
+            resumeUrl: null,
+            resumeFileName: null,
+            resumeFileSize: null,
+            resumeMimeType: null,
+          },
+        });
+      }
     });
 
-    const primaryDoc = remainingDocs[0];
-    if (primaryDoc) {
-      await this.prisma.candidate.update({
-        where: { id },
-        data: {
-          resumeUrl: primaryDoc.url,
-          resumeFileName: primaryDoc.name,
-          resumeFileSize: primaryDoc.size ?? null,
-          resumeMimeType: primaryDoc.mimeType ?? null,
-        },
-      });
-    } else {
-      await this.prisma.candidate.update({
-        where: { id },
-        data: {
-          resumeUrl: null,
-          resumeFileName: null,
-          resumeFileSize: null,
-          resumeMimeType: null,
-        },
-      });
-    }
+    this.eventsService?.emit({
+      type: "CANDIDATES_CHANGED",
+      organizationId: candidate.organizationId,
+      data: { candidateId: id },
+    });
+    this.eventsService?.emit({
+      type: "APPLICATIONS_CHANGED",
+      organizationId: candidate.organizationId,
+      data: { candidateId: id },
+    });
 
     return this.profileService.findOne(id, tenantOrgId);
   }

@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from "class-validator";
 
 import {
   JobType,
@@ -49,6 +57,21 @@ export class CreateJobDto {
   @IsString()
   @IsOptional()
   salaryRange?: string;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  salaryMin?: number | null;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  salaryMax?: number | null;
+
+  @IsString()
+  @MaxLength(10)
+  @IsOptional()
+  salaryCurrency?: string | null;
 
   @IsEnum(JobStatus)
   @IsOptional()

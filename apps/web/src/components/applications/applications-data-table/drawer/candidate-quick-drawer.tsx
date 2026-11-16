@@ -16,7 +16,6 @@ import {
   CandidateResponsesTab,
   CandidateInboxTab,
   CandidateTimelineTab,
-  CandidatePropertiesTab,
 } from "./candidate-misc-tabs";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
@@ -39,10 +38,6 @@ interface CandidateQuickDrawerProps {
   drawerOverviewBtnRef: RefObject<HTMLButtonElement | null>;
   allScheduledInterviews: ScheduledInterviewInfo[];
   drawerCandidateDocuments: CandidateDocument[];
-  drawerNotesList: string[];
-  drawerNoteInput: string;
-  onDrawerNoteInputChange: (val: string) => void;
-  onAddDrawerNote: () => void;
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
   onPreviewDoc: (doc: CandidateDocument) => void;
@@ -75,10 +70,6 @@ export function CandidateQuickDrawer({
   drawerOverviewBtnRef,
   allScheduledInterviews,
   drawerCandidateDocuments,
-  drawerNotesList,
-  drawerNoteInput,
-  onDrawerNoteInputChange,
-  onAddDrawerNote,
   onScheduleInterview,
   onCancelInterview,
   onPreviewDoc,
@@ -146,8 +137,8 @@ export function CandidateQuickDrawer({
                   onToggleDrawerOverviewPopover();
                 }}
                 className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                aria-label="Toggle overview sections"
-                title="Toggle overview sections"
+                aria-label={t("applications.toggleSections")}
+                title={t("applications.toggleSections")}
               >
                 <ChevronDown
                   className={`h-3 w-3 transition-transform duration-200 ${
@@ -183,7 +174,6 @@ export function CandidateQuickDrawer({
             { id: "responses", label: t("applications.tabs.responses") },
             { id: "notes", label: t("applications.tabs.notes") },
             { id: "timeline", label: t("applications.tabs.timeline") },
-            { id: "properties", label: t("applications.tabs.properties") },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -210,10 +200,6 @@ export function CandidateQuickDrawer({
               currentApp={currentApp}
               drawerOverviewSections={drawerOverviewSections}
               drawerCandidateDocuments={drawerCandidateDocuments}
-              drawerNotesList={drawerNotesList}
-              drawerNoteInput={drawerNoteInput}
-              onDrawerNoteInputChange={onDrawerNoteInputChange}
-              onAddDrawerNote={onAddDrawerNote}
               onScheduleInterview={onScheduleInterview}
               onCancelInterview={onCancelInterview}
               onPreviewDoc={onPreviewDoc}
@@ -234,7 +220,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "interviews" && (
             <CandidateInterviewsTab
               application={currentApp}
-              notes={currentApp.notes}
               onSchedule={onScheduleInterview}
               onCancelInterview={onCancelInterview}
               canEdit={canEdit}
@@ -248,12 +233,7 @@ export function CandidateQuickDrawer({
           )}
 
           {drawerTab === "notes" && (
-            <CandidateNotesTab
-              notesList={drawerNotesList}
-              noteInput={drawerNoteInput}
-              onNoteInputChange={onDrawerNoteInputChange}
-              onAddNote={onAddDrawerNote}
-            />
+            <CandidateNotesTab applicationId={currentApp.id} />
           )}
 
           {drawerTab === "inbox" && <CandidateInboxTab />}
@@ -261,8 +241,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "timeline" && (
             <CandidateTimelineTab currentApp={currentApp} />
           )}
-
-          {drawerTab === "properties" && <CandidatePropertiesTab />}
         </div>
       </div>
     </SlideOver>

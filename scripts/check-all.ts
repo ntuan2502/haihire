@@ -41,14 +41,14 @@ const fastOnly = args.includes("--fast") || args.includes("--quick");
 const steps: Step[] = [
   {
     id: "lint:env-sync",
-    name: "Environment Variables Synchronization & Parity",
+    name: "CI Gate 1: Environment Variables Synchronization & Parity",
     command: "pnpm lint:env-sync",
     category: "env",
     description: "Verify 100% key parity and Docker compose variable coverage",
   },
   {
     id: "lint:i18n",
-    name: "Two-Way i18n & Zero Hardcoded Strings (pnpm lint:i18n)",
+    name: "CI Gate 2: Two-Way i18n & Zero Hardcoded Strings",
     command: "pnpm lint:i18n",
     category: "lint",
     description:
@@ -56,21 +56,21 @@ const steps: Step[] = [
   },
   {
     id: "lint",
-    name: "ESLint Code Quality (API + Web)",
+    name: "CI Gate 3: ESLint Code Quality (API + Web)",
     command: "pnpm lint",
     category: "lint",
     description: "Run ESLint and static checks across all workspace projects",
   },
   {
     id: "typecheck",
-    name: "TypeScript Type Safety",
+    name: "CI Gate 4: TypeScript Type Safety",
     command: "pnpm typecheck",
     category: "typecheck",
     description: "Run tsc --noEmit across api and web packages",
   },
   {
     id: "lint:dtopipe",
-    name: "CI Gate 3: DtoPipe Validation Coverage",
+    name: "CI Gate 5: DtoPipe Validation Coverage",
     command: "pnpm lint:dtopipe",
     category: "gate",
     description:
@@ -78,14 +78,14 @@ const steps: Step[] = [
   },
   {
     id: "lint:error-i18n",
-    name: "CI Gate 4: Error Code i18n Localization",
+    name: "CI Gate 6: Error Code i18n Localization",
     command: "pnpm lint:error-i18n",
     category: "gate",
-    description: "Assert all 60 domain error codes exist in vi.ts and en.ts",
+    description: "Assert all domain error codes exist in vi.ts and en.ts",
   },
   {
     id: "lint:api-contract",
-    name: "CI Gate 5: API Contract & Leaks Audit",
+    name: "CI Gate 7: API Contract & Leaks Audit",
     command: "pnpm lint:api-contract",
     category: "gate",
     description:
@@ -93,7 +93,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:prometheus-rules",
-    name: "CI Gate 6: Prometheus Alert Rules Audit",
+    name: "CI Gate 8: Prometheus Alert Rules Audit",
     command: "pnpm lint:prometheus-rules",
     category: "gate",
     description:
@@ -101,7 +101,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:tenant-scope",
-    name: "CI Gate 10: Tenant Scoping Static Analysis",
+    name: "CI Gate 9: Tenant Scoping Static Analysis",
     command: "pnpm lint:tenant-scope",
     category: "gate",
     description:
@@ -109,7 +109,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:doc-links",
-    name: "CI Gate 11: Documentation Markdown Link Integrity",
+    name: "CI Gate 10: Documentation Markdown Link Integrity",
     command: "pnpm lint:doc-links",
     category: "gate",
     description:
@@ -117,7 +117,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:doc-sync",
-    name: "CI Gate 12: Documentation Synchronization & Drift Gate",
+    name: "CI Gate 11: Documentation Synchronization & Drift Gate",
     command: "pnpm lint:doc-sync",
     category: "gate",
     description:
@@ -125,7 +125,7 @@ const steps: Step[] = [
   },
   {
     id: "check:prod-email-provider",
-    name: "CI Gate 13: Production Email Provider Validation",
+    name: "CI Gate 12: Production Email Provider Validation",
     command: "pnpm check:prod-email-provider",
     category: "gate",
     description:
@@ -133,7 +133,7 @@ const steps: Step[] = [
   },
   {
     id: "test:diff",
-    name: "Test Count Delta & Anti-Regression",
+    name: "CI Gate 13: Test Count Delta & Anti-Regression",
     command: "pnpm test:diff",
     category: "gate",
     description:
@@ -141,7 +141,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:nextjs-conventions",
-    name: "CI Gate 15: Next.js 16 File Conventions Audit",
+    name: "CI Gate 14: Next.js 16 File Conventions Audit",
     command: "pnpm lint:nextjs-conventions",
     category: "gate",
     description:
@@ -149,7 +149,7 @@ const steps: Step[] = [
   },
   {
     id: "lint:github-action-versions",
-    name: "CI Gate 16: GitHub Action Minimum Versions Audit",
+    name: "CI Gate 15: GitHub Action Minimum Versions Audit",
     command: "pnpm lint:github-action-versions",
     category: "gate",
     description:
@@ -161,10 +161,10 @@ const steps: Step[] = [
 if (!fastOnly) {
   steps.push({
     id: "test",
-    name: "Unit & Integration Test Suite",
+    name: "CI Gate 16: Unit & Integration Test Suite",
     command: "pnpm test",
     category: "test",
-    description: "Run all 1,268 unit and integration tests across api and web",
+    description: "Run all unit and integration tests across api and web",
   });
 }
 
@@ -172,7 +172,7 @@ if (!fastOnly) {
 if (withBuild) {
   steps.push({
     id: "build",
-    name: "Production Build Verification",
+    name: "CI Gate 17: Production Build Verification",
     command: "pnpm build",
     category: "build",
     description: "Compile and bundle shared, api, and web packages",
@@ -183,11 +183,10 @@ if (withBuild) {
 if (withE2e) {
   steps.push({
     id: "test:e2e",
-    name: "CI Gate 6: Playwright E2E Test Suite",
+    name: "CI Gate 18: Playwright E2E Test Suite",
     command: "pnpm test:e2e",
     category: "e2e",
-    description:
-      "Run 10 critical end-to-end user journeys in headless Chromium",
+    description: "Run critical end-to-end user journeys in headless Chromium",
   });
 }
 

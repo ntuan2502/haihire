@@ -7,8 +7,6 @@ import {
   Check,
   Plus,
   Settings,
-  Sparkles,
-  MessageSquareWarning,
   LogOut,
   Building2,
 } from "lucide-react";
@@ -21,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
-import { getInitials } from "@/lib/utils";
+import { getInitials, getUserDisplayName } from "@/lib/utils";
+import { getOrgRoleBadgeClass, getOrgRoleLabel } from "@/lib/roles";
 
 export interface UserMenuProps {
   className?: string;
@@ -30,13 +29,16 @@ export interface UserMenuProps {
 
 export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
   const router = useRouter();
-  const { user, logout, isOwner, isAdmin } = useAuth();
+  const { user, logout, isOwner } = useAuth();
   const { t } = useI18n();
-  const { data: myOrgs = [] } = useMyOrgs();
+  const { data: myOrgs = [] } = useMyOrgs({ enabled: Boolean(user) });
   const switchOrgMutation = useSwitchOrgMutation();
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 
   if (!user) return null;
+
+  const displayRole = isOwner ? "OWNER" : user.role;
+  const displayName = getUserDisplayName(user);
 
   return (
     <DropdownMenu>
@@ -45,10 +47,10 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
           "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-800 transition-all cursor-pointer outline-none select-none",
           className,
         )}
-        aria-label="User Profile"
+        aria-label={t("common.userProfile")}
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
-          {getInitials(user.name)}
+          {getInitials(displayName)}
         </div>
       </DropdownMenuTrigger>
 
@@ -60,24 +62,17 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         <div className="px-2 pt-1 pb-1">
           <div className="flex items-center justify-between gap-1.5">
             <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
-              {user.name}
+              {displayName}
             </span>
             {user.organizationId && (
-              <>
-                {isOwner ? (
-                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 rounded-md border border-amber-200/60 dark:border-amber-800/60 shrink-0">
-                    {t("members.roleOwner")}
-                  </span>
-                ) : isAdmin ? (
-                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 rounded-md border border-blue-200/60 dark:border-blue-800/60 shrink-0">
-                    {t("members.roleAdmin")}
-                  </span>
-                ) : (
-                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700 shrink-0">
-                    {t("members.roleMember")}
-                  </span>
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 text-[10px] font-semibold rounded-md border shrink-0",
+                  getOrgRoleBadgeClass(displayRole),
                 )}
-              </>
+              >
+                {getOrgRoleLabel(displayRole, t)}
+              </span>
             )}
           </div>
           <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
@@ -197,34 +192,6 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
             <span>{t("nav.settings")}</span>
           </button>
         )}
-
-        {/* Updates & changelog (Coming Soon) */}
-        <div
-          aria-disabled="true"
-          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
-        >
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="h-4 w-4 text-slate-400" />
-            <span>{t("nav.updatesChangelog")}</span>
-          </div>
-          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-            {t("common.soon")}
-          </span>
-        </div>
-
-        {/* Report issue (Coming Soon) */}
-        <div
-          aria-disabled="true"
-          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
-        >
-          <div className="flex items-center gap-2.5">
-            <MessageSquareWarning className="h-4 w-4 text-slate-400" />
-            <span>{t("nav.reportIssue")}</span>
-          </div>
-          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-            {t("common.soon")}
-          </span>
-        </div>
 
         {/* Divider */}
         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />

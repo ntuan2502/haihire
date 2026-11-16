@@ -30,7 +30,8 @@ interface MockDb {
   candidates: Array<{
     id: string;
     organizationId: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
     resumeUrl: string;
@@ -127,7 +128,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         {
           id: "cand-alpha-1",
           organizationId: "org-alpha-1",
-          name: "Charlie Alpha",
+          firstName: "Charlie",
+          lastName: "Alpha",
           email: "charlie@alpha-candidate.com",
           phone: "+84901234567",
           resumeUrl:
@@ -141,6 +143,7 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       applications: [
         {
           id: "app-alpha-1",
+          organizationId: "org-alpha-1",
           jobId: "job-alpha-1",
           candidateId: "cand-alpha-1",
           stage: "NEW",
@@ -314,7 +317,7 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       await expect(
         candidatesController.update(
           "cand-alpha-1",
-          { name: "MALICIOUS OVERWRITE BY USER B" },
+          { firstName: "MALICIOUS" },
           { user: userB },
         ),
       ).rejects.toSatisfy((err: unknown) => {
@@ -327,7 +330,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
 
       // Verify DB integrity - Candidate A is completely untouched
       const candidateA = db.candidates.find((c) => c.id === "cand-alpha-1");
-      expect(candidateA?.name).toBe("Charlie Alpha");
+      expect(candidateA?.firstName).toBe("Charlie");
+      expect(candidateA?.lastName).toBe("Alpha");
     });
 
     it("Case 6: User B calling PATCH /applications/:id/stage (Application A) throws 403/404 and does NOT mutate stage", async () => {

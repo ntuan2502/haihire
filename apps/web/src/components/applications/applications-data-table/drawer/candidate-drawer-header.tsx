@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { StageSelector } from "@/components/jobs/pipeline/stage-selector";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getInitials, formatDate } from "@/lib/utils";
+import { getCandidateDisplayName, getInitials, formatDate } from "@/lib/utils";
 import type { Application, ApplicationStage } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -66,7 +66,7 @@ export function CandidateDrawerHeader({
                 onClose();
               }}
               className="h-8 px-2.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900/60 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-              title="Focus candidate in Pipeline"
+              title={t("pipeline.focusCandidate")}
             >
               <Columns3 className="h-3.5 w-3.5" />
               <span>{t("applications.viewInPipeline")}</span>
@@ -131,13 +131,13 @@ export function CandidateDrawerHeader({
       {/* Candidate Header Card */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
         <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-          {getInitials(currentApp.candidateName)}
+          {getInitials(getCandidateDisplayName(currentApp))}
         </div>
 
         <div className="space-y-1 flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-              {currentApp.candidateName}
+              {getCandidateDisplayName(currentApp)}
             </h2>
             <StageBadge stage={currentApp.stage} />
           </div>
@@ -165,6 +165,14 @@ export function CandidateDrawerHeader({
               {t("applications.applied")} {formatDate(currentApp.createdAt)}
             </span>
           </p>
+          {currentApp.stage === "REJECTED" && currentApp.rejectionReason && (
+            <div className="mt-2 rounded-lg border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/30 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300">
+              <span className="font-medium">
+                {t("applications.rejectionReasonLabel")}:{" "}
+              </span>
+              <span>{currentApp.rejectionReason}</span>
+            </div>
+          )}
         </div>
       </div>
     </>

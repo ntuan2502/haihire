@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthService } from "./auth.service";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 
 describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;
@@ -13,15 +13,18 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   };
 
   const validPassword = DEMO_PASSWORD;
-  const hashedPassword = bcrypt.hashSync(validPassword, 10);
+  const hashedPassword = bcrypt.hashSync(validPassword, BCRYPT_SALT_ROUNDS);
 
   let mockUsers: Array<{
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     password: string;
     role: "ADMIN" | "MEMBER";
     avatarUrl: string | null;
+    preferredLanguage?: string | null;
+    preferredTimezone?: string | null;
     organizationId: string | null;
     tokenVersion: number;
     createdAt: Date;
@@ -33,10 +36,13 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       {
         id: "usr-admin",
         email: DEMO_ACCOUNTS.ADMIN.email,
-        name: DEMO_ACCOUNTS.ADMIN.name,
+        firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+        lastName: DEMO_ACCOUNTS.ADMIN.lastName,
         password: hashedPassword,
         role: DEMO_ACCOUNTS.ADMIN.role,
         avatarUrl: null,
+        preferredLanguage: null,
+        preferredTimezone: null,
         organizationId: "org-1",
         tokenVersion: 0,
         createdAt: new Date(),
@@ -44,10 +50,13 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       {
         id: "usr-member",
         email: DEMO_ACCOUNTS.MEMBER.email,
-        name: DEMO_ACCOUNTS.MEMBER.name,
+        firstName: DEMO_ACCOUNTS.MEMBER.firstName,
+        lastName: DEMO_ACCOUNTS.MEMBER.lastName,
         password: hashedPassword,
         role: DEMO_ACCOUNTS.MEMBER.role,
         avatarUrl: null,
+        preferredLanguage: null,
+        preferredTimezone: null,
         organizationId: "org-1",
         tokenVersion: 0,
         createdAt: new Date(),
@@ -148,6 +157,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
             data: {
               tokenVersion?: number | { increment?: number };
               password?: string;
+              firstName?: string;
+              lastName?: string;
+              preferredLanguage?: string | null;
+              preferredTimezone?: string | null;
             };
           }) => {
             const user = mockUsers.find((u) => u.id === where.id);
@@ -162,6 +175,18 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
               }
               if (data.password) {
                 user.password = data.password;
+              }
+              if (data.firstName !== undefined) {
+                user.firstName = data.firstName;
+              }
+              if (data.lastName !== undefined) {
+                user.lastName = data.lastName;
+              }
+              if (data.preferredLanguage !== undefined) {
+                user.preferredLanguage = data.preferredLanguage;
+              }
+              if (data.preferredTimezone !== undefined) {
+                user.preferredTimezone = data.preferredTimezone;
               }
             }
             return user;
@@ -226,6 +251,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       sub: "usr-admin",
       email: DEMO_ACCOUNTS.ADMIN.email,
       role: DEMO_ACCOUNTS.ADMIN.role,
+      organizationId: "org-1",
       tokenVersion: 0,
     });
   });
@@ -268,14 +294,17 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   describe("Registration Flow", () => {
     it("6. Should register a new user successfully with default MEMBER role", async () => {
       const result = await authService.register({
-        name: "New Member",
+        firstName: "Member",
+        lastName: "New",
         email: "newmember@company.com",
         password: "securepassword",
       });
 
       expect(result).toBeDefined();
       expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
-      expect(result.user.name).toBe("New Member");
+      expect(result.user.firstName).toBe("Member");
+      expect(result.user.lastName).toBe("New");
+      expect(result.user.name).toBe("Member New");
       expect(result.user.email).toBe("newmember@company.com");
       expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();
@@ -285,7 +314,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
     it("7. Should throw ConflictException if email is already registered", async () => {
       await expect(
         authService.register({
-          name: "Duplicate Admin",
+          firstName: "Admin",
+          lastName: "Duplicate",
           email: DEMO_ACCOUNTS.ADMIN.email,
           password: DEMO_PASSWORD,
         }),
@@ -426,6 +456,46 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         "MEMBER",
         false,
       );
+    });
+
+    it("16. Should persist and clear user personal language and timezone overrides", async () => {
+      const updated = await authService.updatePreferences("usr-member", {
+        preferredLanguage: "en",
+        preferredTimezone: "Asia/Tokyo",
+      });
+
+      expect(updated.preferredLanguage).toBe("en");
+      expect(updated.preferredTimezone).toBe("Asia/Tokyo");
+      expect(mockUsers[1].preferredLanguage).toBe("en");
+      expect(mockUsers[1].preferredTimezone).toBe("Asia/Tokyo");
+
+      const cleared = await authService.updatePreferences("usr-member", {
+        preferredLanguage: null,
+        preferredTimezone: null,
+      });
+
+      expect(cleared.preferredLanguage).toBeNull();
+      expect(cleared.preferredTimezone).toBeNull();
+    });
+
+    it("17. Should update firstName and lastName via updateProfile and reject blank names", async () => {
+      const updated = await authService.updateProfile("usr-member", {
+        firstName: "Tuấn",
+        lastName: "Nguyễn Anh",
+      });
+
+      expect(updated.firstName).toBe("Tuấn");
+      expect(updated.lastName).toBe("Nguyễn Anh");
+      expect(updated.name).toBe("Tuấn Nguyễn Anh");
+      expect(mockUsers[1].firstName).toBe("Tuấn");
+      expect(mockUsers[1].lastName).toBe("Nguyễn Anh");
+
+      await expect(
+        authService.updateProfile("usr-member", {
+          firstName: "   ",
+          lastName: "Nguyễn",
+        }),
+      ).rejects.toThrow();
     });
   });
 });

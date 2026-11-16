@@ -8,9 +8,18 @@ export const ALLOWED_RESUME_MIME_TYPES = new Set([
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/octet-stream", // Fallback for some OS/browser uploads of docx
+  "image/png",
+  "image/jpeg",
 ]);
 
-export const ALLOWED_RESUME_EXTENSIONS = new Set([".pdf", ".doc", ".docx"]);
+export const ALLOWED_RESUME_EXTENSIONS = new Set([
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".png",
+  ".jpg",
+  ".jpeg",
+]);
 
 /**
  * Sanitize filename to prevent path traversal attacks.
@@ -81,10 +90,14 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
   // 4. Images if used for avatars or attachments
   if (normalizedExt === ".png") {
     return (
-      buffer[0] === 0x89 &&
-      buffer[1] === 0x50 &&
-      buffer[2] === 0x4e &&
-      buffer[3] === 0x47
+      (buffer[0] === 0x89 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x4e &&
+        buffer[3] === 0x47) ||
+      (buffer[0] === 0xc2 &&
+        buffer[1] === 0x89 &&
+        buffer[2] === 0x50 &&
+        buffer[3] === 0x4e)
     );
   }
 

@@ -86,6 +86,7 @@ jobs:
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
           pnpm db:generate
+          pnpm db:migrate
 
       - name: Run Full CI Architecture Checks & Tests
         run: pnpm check:all
@@ -227,7 +228,7 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter api run db:update
+          pnpm db:migrate
           pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
@@ -249,7 +250,7 @@ jobs:
 
       - name: Pre-start services in background & wait for healthcheck
         run: |
-          pnpm dev &
+          pnpm start &
           timeout 180s bash -c '
             until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
               sleep 3

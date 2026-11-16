@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createQueryBuilder,
   createMockTable,
+  createMockPrismaService,
   evaluatePredicate,
   type ProxyRecord,
 } from "./prisma-composer-mock";
@@ -163,6 +164,83 @@ describe("prisma-composer-mock helper", () => {
       });
       expect(newItem.id).toBe("6");
       expect(await table.count()).toBe(5);
+    });
+
+    it("sorts findMany orderBy numerically and by Date instead of string order", async () => {
+      const mock = createMockPrismaService({
+        candidate: [
+          {
+            id: "c1",
+            orderIndex: 10,
+            createdAt: new Date("2026-01-03T00:00:00Z"),
+          },
+          {
+            id: "c2",
+            orderIndex: 2,
+            createdAt: new Date("2026-01-01T00:00:00Z"),
+          },
+          {
+            id: "c3",
+            orderIndex: 1,
+            createdAt: new Date("2026-01-02T00:00:00Z"),
+          },
+        ],
+      });
+
+      const byNum = await (
+        mock.candidate as unknown as {
+          findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+        }
+      ).findMany({ orderBy: { orderIndex: "asc" } });
+      expect(byNum.map((r) => r.id)).toEqual(["c3", "c2", "c1"]);
+
+      const byDateDesc = await (
+        mock.candidate as unknown as {
+          findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+        }
+      ).findMany({ orderBy: { createdAt: "desc" } });
+      expect(byDateDesc.map((r) => r.id)).toEqual(["c1", "c3", "c2"]);
+    });
+
+    it("rolls back store mutations when a $transaction callback throws", async () => {
+      const mock = createMockPrismaService({
+        job: [{ id: "j1", title: "Original Title" }],
+      });
+
+      await expect(
+        mock.$transaction(async (tx) => {
+          await (
+            tx.job as unknown as {
+              update: (args: unknown) => Promise<unknown>;
+            }
+          ).update({
+            where: { id: "j1" },
+            data: { title: "Mutated Title" },
+          });
+          await (
+            tx.activityLog as unknown as {
+              create: (args: unknown) => Promise<unknown>;
+            }
+          ).create({
+            data: { id: "a1", action: "SHOULD_ROLLBACK" },
+          });
+          throw new Error("Simulated failure");
+        }),
+      ).rejects.toThrow("Simulated failure");
+
+      const job = await (
+        mock.job as unknown as {
+          findFirst: (args: unknown) => Promise<{ title: string } | null>;
+        }
+      ).findFirst({ where: { id: "j1" } });
+      expect(job?.title).toBe("Original Title");
+
+      const logs = await (
+        mock.activityLog as unknown as {
+          findMany: () => Promise<unknown[]>;
+        }
+      ).findMany();
+      expect(logs).toHaveLength(0);
     });
   });
 });

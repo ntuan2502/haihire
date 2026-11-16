@@ -1,13 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { CandidateDocument } from "@haihire/shared";
 import { CreateApplicationDto } from "./dto/create-application.dto";
+import { PublicApplyDto } from "./dto/public-apply.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
+import { CreateApplicationNoteDto } from "./dto/create-application-note.dto";
+import { UpdateApplicationNoteDto } from "./dto/update-application-note.dto";
 import {
   ApplicationsQueryService,
   ApplicationsSagaService,
   ApplicationsStageService,
   ApplicationsDocumentsService,
+  ApplicationsNotesService,
   fixUtf8String,
 } from "./services";
 
@@ -17,6 +21,7 @@ export {
   ApplicationsSagaService,
   ApplicationsStageService,
   ApplicationsDocumentsService,
+  ApplicationsNotesService,
 };
 
 @Injectable()
@@ -30,6 +35,8 @@ export class ApplicationsService {
     private readonly stage: ApplicationsStageService,
     @Inject(ApplicationsDocumentsService)
     private readonly documents: ApplicationsDocumentsService,
+    @Inject(ApplicationsNotesService)
+    private readonly notes: ApplicationsNotesService,
   ) {}
 
   // ==========================================
@@ -57,6 +64,10 @@ export class ApplicationsService {
     return this.query.findAll(organizationId, options, tenantOrgId);
   }
 
+  getStats(organizationId?: string, tenantOrgId?: string | null) {
+    return this.query.getStats(organizationId, tenantOrgId);
+  }
+
   findOne(id: string, tenantOrgId?: string | null) {
     return this.query.findOne(id, tenantOrgId);
   }
@@ -77,7 +88,7 @@ export class ApplicationsService {
   // 2. APPLICATION CREATION SAGA
   // ==========================================
   create(
-    dto: CreateApplicationDto,
+    dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
     currentUser?: { role?: string; organizationId?: string | null } | null,
   ) {
@@ -134,5 +145,52 @@ export class ApplicationsService {
 
   getCandidateDocuments(candidateId: string): Promise<CandidateDocument[]> {
     return this.documents.getCandidateDocuments(candidateId);
+  }
+
+  // ==========================================
+  // 4. NOTE OPERATIONS (Trello-style Comments)
+  // ==========================================
+  findNotes(applicationId: string, tenantOrgId?: string | null) {
+    return this.notes.findNotes(applicationId, tenantOrgId);
+  }
+
+  createNote(
+    applicationId: string,
+    dto: CreateApplicationNoteDto,
+    user: {
+      id: string;
+      name?: string;
+      role?: string;
+      organizationId?: string | null;
+    },
+  ) {
+    return this.notes.createNote(applicationId, dto, user);
+  }
+
+  updateNote(
+    applicationId: string,
+    noteId: string,
+    dto: UpdateApplicationNoteDto,
+    user: {
+      id: string;
+      role?: string;
+      isOwner?: boolean;
+      organizationId?: string | null;
+    },
+  ) {
+    return this.notes.updateNote(applicationId, noteId, dto, user);
+  }
+
+  deleteNote(
+    applicationId: string,
+    noteId: string,
+    user: {
+      id: string;
+      role?: string;
+      isOwner?: boolean;
+      organizationId?: string | null;
+    },
+  ) {
+    return this.notes.deleteNote(applicationId, noteId, user);
   }
 }

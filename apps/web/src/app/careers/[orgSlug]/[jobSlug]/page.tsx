@@ -140,7 +140,7 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
       ? {
           baseSalary: {
             "@type": "MonetaryAmount",
-            currency: "VND",
+            currency: org?.defaultCurrency || "VND",
             value: job.salaryRange,
           },
         }

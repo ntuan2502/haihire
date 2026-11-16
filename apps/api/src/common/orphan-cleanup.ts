@@ -71,25 +71,6 @@ export async function cleanupOrphans(
     candidate?: {
       findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
     };
-    orm?: {
-      public: {
-        CandidateDocument: {
-          select(field: string): {
-            all(): Promise<Array<{ url?: string | null }>>;
-          };
-        };
-        Application: {
-          select(field: string): {
-            all(): Promise<Array<{ resumeUrl?: string | null }>>;
-          };
-        };
-        Candidate: {
-          select(field: string): {
-            all(): Promise<Array<{ resumeUrl?: string | null }>>;
-          };
-        };
-      };
-    };
   }
   const activeDb: DbQueryable =
     options.dbClient ||
@@ -107,9 +88,7 @@ export async function cleanupOrphans(
   try {
     const candidateDocs = activeDb.candidateDocument
       ? await activeDb.candidateDocument.findMany({ select: { url: true } })
-      : activeDb.orm
-        ? await activeDb.orm.public.CandidateDocument.select("url").all()
-        : [];
+      : [];
     for (const doc of candidateDocs) {
       if (doc.url) {
         const objName = extractObjectNameFromUrl(doc.url, bucketName);
@@ -127,9 +106,7 @@ export async function cleanupOrphans(
   try {
     const apps = activeDb.application
       ? await activeDb.application.findMany({ select: { resumeUrl: true } })
-      : activeDb.orm
-        ? await activeDb.orm.public.Application.select("resumeUrl").all()
-        : [];
+      : [];
     for (const app of apps) {
       if (app.resumeUrl) {
         const objName = extractObjectNameFromUrl(app.resumeUrl, bucketName);
@@ -147,9 +124,7 @@ export async function cleanupOrphans(
   try {
     const candidates = activeDb.candidate
       ? await activeDb.candidate.findMany({ select: { resumeUrl: true } })
-      : activeDb.orm
-        ? await activeDb.orm.public.Candidate.select("resumeUrl").all()
-        : [];
+      : [];
     for (const cand of candidates) {
       if (cand.resumeUrl) {
         const objName = extractObjectNameFromUrl(cand.resumeUrl, bucketName);

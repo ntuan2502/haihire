@@ -1,16 +1,18 @@
 import { ArrowLeft, Download, FileText } from "lucide-react";
-import { getDocumentUrl } from "@/lib/api";
+import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
 import { useI18n } from "@/i18n";
 import type { CandidateDocument } from "@/types";
 
 interface CandidateDocumentPreviewProps {
   previewDoc: CandidateDocument;
+  candidateId?: string;
   onClose: () => void;
   onDownload: () => void;
 }
 
 export function CandidateDocumentPreview({
   previewDoc,
+  candidateId,
   onClose,
   onDownload,
 }: CandidateDocumentPreviewProps) {
@@ -47,10 +49,10 @@ export function CandidateDocumentPreview({
 
       {/* Embedded Document Viewer */}
       <div className="w-full h-[650px] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
-        <iframe
-          src={getDocumentUrl(previewDoc.url)}
-          className="w-full h-full border-0"
-          title={previewDoc.name}
+        <AuthenticatedDocumentViewer
+          document={previewDoc}
+          candidateId={candidateId}
+          onDownload={() => onDownload()}
         />
       </div>
     </div>

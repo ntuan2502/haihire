@@ -9,6 +9,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
+import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
@@ -16,14 +18,43 @@ import {
 } from "../common/app-exception";
 import {
   APP_ERROR_CODES,
+  canonicalizeTimezone,
+  formatUserDisplayName,
+  normalizeNameInput,
   Role,
+  type NameDisplayOrder,
   type Permission,
   PERMISSIONS,
   hasPermission,
 } from "@haihire/shared";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { ensureDefaultDemoAccounts } from "../prisma/demo-seed.util";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
+
+const USER_PROFILE_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+  preferredLanguage: true,
+  preferredTimezone: true,
+  createdAt: true,
+} as const;
+
+const ORG_SUMMARY_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  ownerId: true,
+  defaultLanguage: true,
+  timezone: true,
+  dateFormat: true,
+  timeFormat: true,
+  nameDisplayOrder: true,
+  defaultCurrency: true,
+} as const;
 
 @Injectable()
 export class AuthService {
@@ -46,20 +77,15 @@ export class AuthService {
     let user = await this.prisma.user.findFirst({
       where: { email: normalizedEmail },
       select: {
-        id: true,
-        email: true,
-        name: true,
+        ...USER_PROFILE_SELECT,
         password: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
         tokenVersion: true,
-        createdAt: true,
       },
     });
 
-    // Auto-provision demo accounts in non-production environments if database is fresh
-    const isDevOrDemoEnabled = env.NODE_ENV !== "production";
+    // Auto-provision demo accounts in non-production environments if SEED_DEMO_ON_BOOT is enabled
+    const isDevOrDemoEnabled =
+      env.NODE_ENV !== "production" && env.SEED_DEMO_ON_BOOT;
 
     if (!user && isDevOrDemoEnabled) {
       const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
@@ -67,95 +93,16 @@ export class AuthService {
         (a) => a.email.toLowerCase() === normalizedEmail,
       );
 
-      if (matchedDemo && dto.password === DEMO_PASSWORD) {
-        const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
-        let orgId: string | null = null;
-
-        if (matchedDemo.role === "ADMIN") {
-          const adminUserId = crypto.randomUUID();
-          const existingOrg = await this.prisma.organization.findUnique({
-            where: { slug: "admin" },
-            select: { id: true },
-          });
-
-          if (!existingOrg) {
-            const newOrgId = crypto.randomUUID();
-            await this.prisma.organization.upsert({
-              where: { slug: "admin" },
-              create: {
-                id: newOrgId,
-                name: "Admin",
-                slug: "admin",
-                ownerId: adminUserId,
-                updatedAt: toInstant(),
-              },
-              update: { ownerId: adminUserId },
-            });
-            orgId = newOrgId;
-          } else {
-            orgId = existingOrg.id;
-          }
-
-          user = await this.prisma.user.upsert({
-            where: { email: normalizedEmail },
-            create: {
-              id: adminUserId,
-              email: normalizedEmail,
-              name: matchedDemo.name,
-              role: matchedDemo.role,
-              password: hashedPassword,
-              organizationId: orgId,
-              updatedAt: toInstant(),
-            },
-            update: {
-              password: hashedPassword,
-              name: matchedDemo.name,
-              role: matchedDemo.role,
-              organizationId: orgId,
-            },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              password: true,
-              role: true,
-              avatarUrl: true,
-              organizationId: true,
-              tokenVersion: true,
-              createdAt: true,
-            },
-          });
-        } else {
-          user = await this.prisma.user.upsert({
-            where: { email: normalizedEmail },
-            create: {
-              id: crypto.randomUUID(),
-              email: normalizedEmail,
-              name: matchedDemo.name,
-              role: matchedDemo.role,
-              password: hashedPassword,
-              organizationId: null,
-              updatedAt: toInstant(),
-            },
-            update: {
-              password: hashedPassword,
-              name: matchedDemo.name,
-              role: matchedDemo.role,
-              organizationId: null,
-            },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              password: true,
-              role: true,
-              avatarUrl: true,
-              organizationId: true,
-              tokenVersion: true,
-              createdAt: true,
-            },
-          });
-        }
+      if (matchedDemo && DEMO_PASSWORD && dto.password === DEMO_PASSWORD) {
+        await ensureDefaultDemoAccounts(this.prisma);
+        user = await this.prisma.user.findFirst({
+          where: { email: normalizedEmail },
+          select: {
+            ...USER_PROFILE_SELECT,
+            password: true,
+            tokenVersion: true,
+          },
+        });
       }
     }
 
@@ -176,25 +123,77 @@ export class AuthService {
 
     const { password: _, ...sanitizedUser } = user;
 
+    const legacyOrgId = (
+      sanitizedUser as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyRole = (sanitizedUser as unknown as { role?: string })?.role;
+
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
     let organization = null;
-    if (sanitizedUser.organizationId) {
+    let isOwner = false;
+
+    if (activeOrgId) {
       organization = await this.prisma.organization.findUnique({
-        where: { id: sanitizedUser.organizationId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-        },
+        where: { id: activeOrgId },
+        select: ORG_SUMMARY_SELECT,
       });
+      if (organization) {
+        isOwner = Boolean(organization.ownerId === sanitizedUser.id);
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: {
+              organizationId: organization.id,
+              userId: sanitizedUser.id,
+            },
+            select: { role: true },
+          });
+          if (member) activeRole = member.role as Role;
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: sanitizedUser.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          activeOrgId = member.organizationId;
+          activeRole = member.role as Role;
+          organization = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: ORG_SUMMARY_SELECT,
+          });
+          if (organization) {
+            isOwner = Boolean(organization.ownerId === sanitizedUser.id);
+          }
+        }
+      }
+      if (!organization) {
+        const owned = await this.prisma.organization.findFirst({
+          where: { ownerId: sanitizedUser.id },
+          select: ORG_SUMMARY_SELECT,
+        });
+        if (owned) {
+          organization = owned;
+          activeOrgId = owned.id;
+          activeRole = Role.ADMIN;
+          isOwner = true;
+        }
+      }
     }
 
-    const isOwner = Boolean(
-      organization && organization.ownerId === sanitizedUser.id,
-    );
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
 
     return {
       ...sanitizedUser,
+      organizationId: activeOrgId,
+      role: activeRole,
+      name: formatUserDisplayName(sanitizedUser, orgOrder),
       isOwner,
       organization,
     };
@@ -208,6 +207,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      organizationId: user.organizationId ?? undefined,
       tokenVersion,
     };
 
@@ -226,6 +226,15 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const normalizedEmail = dto.email.toLowerCase().trim();
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "First name and last name are required.",
+      );
+    }
 
     const existing = await this.prisma.user.findFirst({
       where: { email: normalizedEmail },
@@ -239,28 +248,32 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(dto.password, 10);
+    const hashedPassword = bcrypt.hashSync(dto.password, BCRYPT_SALT_ROUNDS);
     const id = crypto.randomUUID();
 
     await this.prisma.user.create({
       data: {
         id,
         email: normalizedEmail,
-        name: dto.name.trim(),
+        firstName,
+        lastName,
         password: hashedPassword,
-        role: "MEMBER",
-        organizationId: null,
         tokenVersion: 0,
         updatedAt: toInstant(),
       },
     });
 
+    const displayName = formatUserDisplayName({ firstName, lastName });
     const user = {
       id,
       email: normalizedEmail,
-      name: dto.name.trim(),
+      firstName,
+      lastName,
+      name: displayName,
       role: "MEMBER" as const,
       avatarUrl: null,
+      preferredLanguage: null,
+      preferredTimezone: null,
       organizationId: null,
       organization: null,
       isOwner: false,
@@ -328,7 +341,8 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         organizationId: true,
         tokenVersion: true,
@@ -378,10 +392,29 @@ export class AuthService {
       }
     }
 
+    const legacyOrgId = (user as unknown as { organizationId?: string | null })
+      ?.organizationId;
+    const legacyRole = (user as unknown as { role?: string })?.role;
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
+
+    if (!activeOrgId && this.prisma.organizationMember?.findFirst) {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true, role: true },
+      });
+      if (member) {
+        activeOrgId = member.organizationId;
+        activeRole = member.role as Role;
+      }
+    }
+
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: activeRole,
+      organizationId: activeOrgId ?? undefined,
       tokenVersion: userTokenVersion,
     };
 
@@ -399,6 +432,7 @@ export class AuthService {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
+      hasOrg: Boolean(activeOrgId),
     };
   }
 
@@ -433,9 +467,13 @@ export class AuthService {
     user: {
       id: string;
       email: string;
+      firstName: string;
+      lastName: string;
       name: string;
       role: string;
       avatarUrl: string | null;
+      preferredLanguage: string | null;
+      preferredTimezone: string | null;
       organizationId: string | null;
       createdAt: Date | string;
     };
@@ -443,13 +481,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
+        ...USER_PROFILE_SELECT,
         password: true,
         tokenVersion: true,
       },
@@ -470,7 +502,7 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(newPass, 10);
+    const hashedPassword = bcrypt.hashSync(newPass, BCRYPT_SALT_ROUNDS);
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -479,22 +511,36 @@ export class AuthService {
         updatedAt: toInstant(),
       },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
+        ...USER_PROFILE_SELECT,
         tokenVersion: true,
       },
     });
+
+    const legacyOrgId = (
+      updatedUser as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyRole = (updatedUser as unknown as { role?: string })?.role;
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
+
+    if (!activeOrgId && this.prisma.organizationMember?.findFirst) {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: updatedUser.id },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true, role: true },
+      });
+      if (member) {
+        activeOrgId = member.organizationId;
+        activeRole = member.role as Role;
+      }
+    }
 
     const tokenVersion = updatedUser.tokenVersion ?? 0;
     const payload = {
       sub: updatedUser.id,
       email: updatedUser.email,
-      role: updatedUser.role,
+      role: activeRole,
+      organizationId: activeOrgId ?? undefined,
       tokenVersion,
     };
 
@@ -509,6 +555,15 @@ export class AuthService {
       { expiresIn: "7d" },
     );
 
+    const org = activeOrgId
+      ? await this.prisma.organization.findUnique({
+          where: { id: activeOrgId },
+          select: { nameDisplayOrder: true },
+        })
+      : null;
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+
     return {
       success: true,
       accessToken,
@@ -516,10 +571,14 @@ export class AuthService {
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
-        name: updatedUser.name,
-        role: updatedUser.role,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        name: formatUserDisplayName(updatedUser, orgOrder),
+        role: activeRole,
         avatarUrl: updatedUser.avatarUrl,
-        organizationId: updatedUser.organizationId,
+        preferredLanguage: updatedUser.preferredLanguage,
+        preferredTimezone: updatedUser.preferredTimezone,
+        organizationId: activeOrgId,
         createdAt: updatedUser.createdAt,
       },
     };
@@ -528,15 +587,7 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
-      },
+      select: USER_PROFILE_SELECT,
     });
 
     if (!user) {
@@ -546,29 +597,135 @@ export class AuthService {
       );
     }
 
+    const legacyOrgId = (user as unknown as { organizationId?: string | null })
+      ?.organizationId;
+    const legacyRole = (user as unknown as { role?: string })?.role;
+
     let organization = null;
     let isOwner = false;
-    if (user.organizationId) {
-      organization = await this.prisma.organization.findUnique({
-        where: { id: user.organizationId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-        },
-      });
+    let activeOrgId: string | null = legacyOrgId ?? null;
+    let activeRole: Role = ((legacyRole as Role) || "MEMBER") as Role;
 
-      if (organization && organization.ownerId === user.id) {
-        isOwner = true;
+    if (activeOrgId) {
+      organization = await this.prisma.organization.findUnique({
+        where: { id: activeOrgId },
+        select: ORG_SUMMARY_SELECT,
+      });
+      if (organization) {
+        isOwner = Boolean(organization.ownerId === user.id);
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: organization.id, userId: user.id },
+            select: { role: true },
+          });
+          if (member) activeRole = member.role as Role;
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          activeOrgId = member.organizationId;
+          activeRole = member.role as Role;
+          organization = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: ORG_SUMMARY_SELECT,
+          });
+          if (organization) {
+            isOwner = Boolean(organization.ownerId === user.id);
+          }
+        }
+      }
+      if (!organization) {
+        const owned = await this.prisma.organization.findFirst({
+          where: { ownerId: user.id },
+          select: ORG_SUMMARY_SELECT,
+        });
+        if (owned) {
+          organization = owned;
+          activeOrgId = owned.id;
+          activeRole = Role.ADMIN;
+          isOwner = true;
+        }
       }
     }
 
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
+
     return {
       ...user,
+      organizationId: activeOrgId,
+      role: activeRole,
+      name: formatUserDisplayName(user, orgOrder),
+      preferredTimezone: user.preferredTimezone
+        ? canonicalizeTimezone(user.preferredTimezone)
+        : user.preferredTimezone,
       isOwner,
-      organization,
+      organization: organization
+        ? {
+            ...organization,
+            timezone: canonicalizeTimezone(organization.timezone),
+          }
+        : organization,
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateUserProfileDto) {
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "First name and last name are required.",
+      );
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName,
+        lastName,
+        updatedAt: toInstant(),
+      },
+      select: { id: true },
+    });
+
+    return this.getProfile(userId);
+  }
+
+  async updatePreferences(userId: string, dto: UpdateUserPreferencesDto) {
+    const data: {
+      preferredLanguage?: string | null;
+      preferredTimezone?: string | null;
+      updatedAt: Date;
+    } = {
+      updatedAt: toInstant(),
+    };
+
+    if (dto.preferredLanguage !== undefined) {
+      data.preferredLanguage = dto.preferredLanguage;
+    }
+    if (dto.preferredTimezone !== undefined) {
+      data.preferredTimezone = dto.preferredTimezone
+        ? canonicalizeTimezone(dto.preferredTimezone)
+        : null;
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true },
+    });
+
+    return this.getProfile(userId);
   }
 
   async getMyPermissions(user: {

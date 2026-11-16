@@ -7,15 +7,16 @@ import {
   AppNotFoundException,
   AppServiceUnavailableException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { MinioService } from "../../minio/minio.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import {
   validateUploadedFile,
   sanitizeFilename,
 } from "../../common/upload-utils";
-import { fixUtf8String } from "../../common/doc-utils";
+import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import { toTimestamp, toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -33,6 +34,9 @@ export class ApplicationsDocumentsService {
     @Optional()
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -84,41 +88,60 @@ export class ApplicationsDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    if (existing.candidateId) {
-      try {
-        const cand = await this.prisma.candidate.findFirst({
-          where: { id: existing.candidateId },
-          select: { id: true, organizationId: true },
-        });
-        if (cand) {
-          await this.prisma.candidateDocument.create({
-            data: {
-              id: newDocId,
-              candidateId: cand.id,
-              organizationId: cand.organizationId,
-              name: cleanDocName,
-              url: uploadResult.url,
-              size: uploadResult.size ?? null,
-              mimeType: uploadResult.mimeType ?? null,
-              type: documentType || "Resume",
-              updatedAt: toInstant(),
-            },
+    await runInTransaction(this.prisma, async (tx) => {
+      if (existing.candidateId) {
+        try {
+          const cand = await tx.candidate.findFirst({
+            where: { id: existing.candidateId },
+            select: { id: true, organizationId: true },
           });
+          if (cand) {
+            await tx.candidateDocument.create({
+              data: {
+                id: newDocId,
+                candidateId: cand.id,
+                organizationId: cand.organizationId,
+                name: cleanDocName,
+                url: uploadResult.url,
+                size: uploadResult.size ?? null,
+                mimeType: uploadResult.mimeType ?? null,
+                type: documentType || "Resume",
+                updatedAt: toInstant(),
+              },
+            });
+          }
+        } catch {
+          // ignore if mock or table unavailable in test
         }
-      } catch {
-        // ignore if mock or table unavailable in test
       }
-    }
 
-    await this.prisma.application.update({
-      where: { id },
-      data: {
-        resumeUrl: uploadResult.url,
-        resumeFileName: cleanDocName,
-        resumeFileSize: uploadResult.size ?? null,
-        resumeMimeType: uploadResult.mimeType ?? null,
-      },
+      await tx.application.update({
+        where: { id },
+        data: {
+          resumeUrl: uploadResult.url,
+          resumeFileName: cleanDocName,
+          resumeFileSize: uploadResult.size ?? null,
+          resumeMimeType: uploadResult.mimeType ?? null,
+        },
+      });
     });
+
+    const orgId =
+      existing.job?.organizationId ||
+      existing.candidate?.organizationId ||
+      tenantOrgId;
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: existing.candidateId },
+      });
+    }
 
     return this.query.findOne(id, tenantOrgId);
   }
@@ -141,40 +164,56 @@ export class ApplicationsDocumentsService {
     }
 
     // SSRF prevention: Verify that targetUrl belongs to this application
+    let matchedDocMimeType: string | null | undefined = app.resumeMimeType;
     if (targetUrl) {
-      const allowedUrls: string[] = [];
-      if (app.resumeUrl) allowedUrls.push(app.resumeUrl);
-      if (app.candidate?.resumeUrl) allowedUrls.push(app.candidate.resumeUrl);
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const allowedEntries: Array<{ url: string; mimeType?: string | null }> =
+        [];
+      if (app.resumeUrl) {
+        allowedEntries.push({
+          url: app.resumeUrl,
+          mimeType: app.resumeMimeType,
+        });
+      }
+      if (app.candidate?.resumeUrl) {
+        allowedEntries.push({ url: app.candidate.resumeUrl });
+      }
       if (app.candidateId) {
         try {
           const candDocs = await this.getCandidateDocuments(app.candidateId);
           for (const doc of candDocs) {
-            if (doc?.url) allowedUrls.push(doc.url);
+            if (doc?.url) {
+              allowedEntries.push({ url: doc.url, mimeType: doc.mimeType });
+            }
           }
         } catch {
           // ignore
         }
       }
 
-      const targetObj = this.minioService.extractObjectName(targetUrl);
-      const isAllowed = allowedUrls.some(
-        (u) =>
-          u === targetUrl ||
-          this.minioService.extractObjectName(u) === targetObj,
+      const matchedEntry = allowedEntries.find(
+        (entry) =>
+          entry.url === targetUrl ||
+          this.minioService.extractObjectName(entry.url) === targetObj,
       );
-      if (!isAllowed) {
+      if (!matchedEntry) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this application.",
           { id },
         );
       }
+      matchedDocMimeType = matchedEntry.mimeType ?? matchedDocMimeType;
     }
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+    const resolvedMimeType = resolveDocumentMimeType(
+      matchedDocMimeType,
+      cleanFileName || downloadUrl,
+    );
 
     const appOrgId =
       app?.job?.organizationId ||
@@ -226,7 +265,7 @@ export class ApplicationsDocumentsService {
       cleanFileName,
       asciiFallback,
       encodedFileName,
-      mimeType: app.resumeMimeType,
+      mimeType: resolvedMimeType,
       stream,
     };
   }
@@ -247,32 +286,69 @@ export class ApplicationsDocumentsService {
       );
     }
 
-    if (opts?.documentId) {
-      await this.prisma.candidateDocument.deleteMany({
-        where: {
+    const deleteWhere = opts?.documentId
+      ? {
           id: opts.documentId,
           candidateId: app.candidateId,
           organizationId,
-        },
-      });
-    } else if (opts?.url) {
-      await this.prisma.candidateDocument.deleteMany({
-        where: {
-          url: opts.url,
-          candidateId: app.candidateId,
-          organizationId,
-        },
+        }
+      : opts?.url
+        ? {
+            url: opts.url,
+            candidateId: app.candidateId,
+            organizationId,
+          }
+        : null;
+
+    let docsToDelete: Array<{ url: string }> = [];
+    if (deleteWhere) {
+      docsToDelete = await this.prisma.candidateDocument.findMany({
+        where: deleteWhere,
+        select: { url: true },
       });
     }
 
-    await this.prisma.application.update({
-      where: { id },
-      data: {
-        resumeUrl: null,
-        resumeFileName: null,
-        resumeFileSize: null,
-        resumeMimeType: null,
-      },
+    if (
+      docsToDelete.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const doc of docsToDelete) {
+        if (!doc.url) continue;
+        const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+    }
+
+    await runInTransaction(this.prisma, async (tx) => {
+      if (deleteWhere) {
+        await tx.candidateDocument.deleteMany({
+          where: deleteWhere,
+        });
+      }
+
+      await tx.application.update({
+        where: { id },
+        data: {
+          resumeUrl: null,
+          resumeFileName: null,
+          resumeFileSize: null,
+          resumeMimeType: null,
+        },
+      });
+    });
+
+    this.eventsService?.emit({
+      type: "APPLICATIONS_CHANGED",
+      organizationId,
+      data: { applicationId: id },
+    });
+    this.eventsService?.emit({
+      type: "CANDIDATES_CHANGED",
+      organizationId,
+      data: { candidateId: app.candidateId },
     });
 
     return this.query.findOne(id, tenantOrgId);

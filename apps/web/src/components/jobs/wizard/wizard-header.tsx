@@ -36,6 +36,11 @@ export function WizardHeader({
 }: WizardHeaderProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const visibleSteps = steps.filter((s) => s.implemented);
+  const currentStepIndex = Math.max(
+    1,
+    visibleSteps.findIndex((s) => s.id === currentStep) + 1,
+  );
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3 shadow-2xs shrink-0">
@@ -65,55 +70,40 @@ export function WizardHeader({
 
           {/* Stepper Wizard Bar (Desktop) */}
           <div className="hidden sm:flex items-center gap-2 sm:gap-3 flex-wrap">
-            {steps.map((step) => {
+            {visibleSteps.map((step, index) => {
+              const displayNumber = index + 1;
               const isActive = step.id === currentStep;
               const isPassed = step.id < currentStep;
-              const isImplemented = step.implemented;
 
               return (
                 <button
                   key={step.id}
                   type="button"
-                  disabled={!isImplemented}
-                  onClick={() => isImplemented && onStepClick(step.id)}
-                  title={
-                    !isImplemented
-                      ? `${step.label} (${t("jobs.wizard.comingSoon")})`
-                      : undefined
-                  }
-                  className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 ${
-                    !isImplemented
-                      ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
-                      : isActive
-                        ? "font-bold text-slate-900 dark:text-white cursor-pointer"
-                        : isPassed
-                          ? "font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
-                          : "font-normal text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  onClick={() => onStepClick(step.id)}
+                  className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                    isActive
+                      ? "font-bold text-slate-900 dark:text-white"
+                      : isPassed
+                        ? "font-medium text-slate-600 dark:text-slate-300"
+                        : "font-normal text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                      !isImplemented
-                        ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
-                        : isActive
-                          ? "bg-blue-600 text-white"
-                          : isPassed
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : isPassed
+                          ? "bg-emerald-500 text-white"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                     }`}
                   >
                     {isPassed ? (
                       <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
                     ) : (
-                      step.id
+                      displayNumber
                     )}
                   </span>
                   <span>{step.label}</span>
-                  {!isImplemented && (
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      ({t("jobs.wizard.comingSoon")})
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -122,7 +112,7 @@ export function WizardHeader({
           {/* Stepper Wizard (Mobile Compact) */}
           <div className="flex sm:hidden items-center gap-2">
             <div className="flex items-center gap-1">
-              {steps.map((s) => {
+              {visibleSteps.map((s) => {
                 const isCurrent = s.id === currentStep;
                 const isPassed = s.id < currentStep;
                 return (
@@ -141,7 +131,8 @@ export function WizardHeader({
               })}
             </div>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {currentStep}/4: {steps.find((s) => s.id === currentStep)?.label}
+              {currentStepIndex}/{visibleSteps.length}:{" "}
+              {visibleSteps.find((s) => s.id === currentStep)?.label}
             </span>
           </div>
         </div>

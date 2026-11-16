@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-import { Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared";
 import { cn } from "cn";
 import { useI18n } from "@/i18n";
 import type { JobType, ExperienceLevel, WorkplaceType } from "@/types";
+import { WizardStepClassificationFields } from "./step-details/wizard-step-classification-fields";
+import { WizardStepCompensationAccordion } from "./step-details/wizard-step-compensation-accordion";
 
 export type Step1Field =
   | "title"
@@ -234,279 +235,38 @@ export function WizardStepDetails({
         </div>
 
         {/* Field 4, 5, 6: Employment type, Experience level, Workplace */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-          <div>
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.employmentTypeLabel")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <CustomSelect
-              value={employmentType || ""}
-              onChange={(val) => {
-                setEmploymentType(val as JobType);
-                setTouched((prev) => ({ ...prev, employmentType: true }));
-              }}
-              placeholder={t("jobs.wizard.selectEmploymentType")}
-              options={[
-                { value: "FULL_TIME", label: t("jobs.fullTime") },
-                { value: "PART_TIME", label: t("jobs.partTime") },
-                { value: "CONTRACT", label: t("jobs.contract") },
-                { value: "INTERNSHIP", label: t("jobs.internship") },
-              ]}
-              className="w-full"
-              triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showEmploymentTypeError &&
-                  "border-rose-500 ring-1 ring-rose-500",
-              )}
-            />
-            {showEmploymentTypeError && (
-              <p className="text-[11px] text-rose-500 mt-1 font-medium">
-                {t("jobs.wizard.employmentTypeError")}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.experienceLevelLabel")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <CustomSelect
-              value={experienceLevel || ""}
-              onChange={(val) => {
-                setExperienceLevel(val as ExperienceLevel);
-                setTouched((prev) => ({ ...prev, experienceLevel: true }));
-              }}
-              placeholder={t("jobs.wizard.selectExperienceLevel")}
-              options={[
-                { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
-                { value: "MID_LEVEL", label: t("jobs.experience.mid") },
-                { value: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
-                { value: "LEAD", label: t("jobs.experience.lead") },
-                { value: "EXECUTIVE", label: t("jobs.experience.executive") },
-              ]}
-              className="w-full"
-              triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showExperienceLevelError &&
-                  "border-rose-500 ring-1 ring-rose-500",
-              )}
-            />
-            {showExperienceLevelError && (
-              <p className="text-[11px] text-rose-500 mt-1 font-medium">
-                {t("jobs.wizard.experienceLevelError")}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.workplaceLabel")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <CustomSelect
-              value={workplace || ""}
-              onChange={(val) => {
-                setWorkplace(val as WorkplaceType);
-                setTouched((prev) => ({ ...prev, workplace: true }));
-              }}
-              placeholder={t("jobs.wizard.selectWorkplace")}
-              options={[
-                { value: "ON_SITE", label: t("jobs.workplace.onsite") },
-                { value: "HYBRID", label: t("jobs.workplace.hybrid") },
-                { value: "REMOTE", label: t("jobs.workplace.remote") },
-              ]}
-              className="w-full"
-              triggerClassName={cn(
-                "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showWorkplaceError && "border-rose-500 ring-1 ring-rose-500",
-              )}
-            />
-            {showWorkplaceError && (
-              <p className="text-[11px] text-rose-500 mt-1 font-medium">
-                {t("jobs.wizard.workplaceError")}
-              </p>
-            )}
-          </div>
-        </div>
+        <WizardStepClassificationFields
+          employmentType={employmentType}
+          setEmploymentType={setEmploymentType}
+          experienceLevel={experienceLevel}
+          setExperienceLevel={setExperienceLevel}
+          workplace={workplace}
+          setWorkplace={setWorkplace}
+          showEmploymentTypeError={showEmploymentTypeError}
+          showExperienceLevelError={showExperienceLevelError}
+          showWorkplaceError={showWorkplaceError}
+          setTouched={setTouched}
+        />
 
         {/* Field 7: Compensation Accordion Card */}
-        <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 transition-all">
-          <button
-            type="button"
-            onClick={() => setCompensationOpen(!compensationOpen)}
-            className={cn(
-              "w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors",
-              !compensationOpen ? "rounded-xl" : "rounded-t-xl",
-            )}
-          >
-            <div className="flex items-center gap-2">
-              {compensationOpen ? (
-                <ChevronDown className="h-4 w-4 text-slate-500" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-slate-500" />
-              )}
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {t("jobs.wizard.compensationTitle")}
-              </span>
-              <span className="rounded-md bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-                {t("jobs.wizard.compensationOptional")}
-              </span>
-            </div>
-          </button>
-
-          {!compensationOpen ? (
-            <div className="px-4 pb-4 pt-0 text-[11px] text-slate-500 dark:text-slate-400">
-              {t("jobs.wizard.compensationHintClosed")}
-            </div>
-          ) : (
-            <div className="px-4 pb-5 pt-0 space-y-4 border-t border-slate-200/60 dark:border-slate-800/80">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-3">
-                {t("jobs.wizard.compensationHintOpen")}
-              </p>
-
-              <label
-                htmlFor="pay-negotiable-checkbox"
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <input
-                  id="pay-negotiable-checkbox"
-                  name="payNegotiable"
-                  aria-label={t("jobs.wizard.payNegotiableDetail")}
-                  type="checkbox"
-                  checked={payNegotiable}
-                  onChange={(e) => setPayNegotiable(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
-                />
-                <span className="text-xs text-slate-700 dark:text-slate-300">
-                  {t("jobs.wizard.payNegotiableDetail")}
-                </span>
-              </label>
-
-              {!payNegotiable && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {t("jobs.wizard.minSalary")}
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder={t("jobs.wizard.placeholders.minSalary")}
-                      value={minSalary}
-                      onChange={(e) => {
-                        setMinSalary(e.target.value);
-                        if (e.target.value.trim().length > 0) {
-                          setTouched((prev) => ({
-                            ...prev,
-                            currency: true,
-                            salaryPer: true,
-                          }));
-                        }
-                      }}
-                      className="h-9 text-xs bg-white dark:bg-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {t("jobs.wizard.maxSalary")}
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder={t("jobs.wizard.placeholders.maxSalary")}
-                      value={maxSalary}
-                      onChange={(e) => {
-                        setMaxSalary(e.target.value);
-                        if (e.target.value.trim().length > 0) {
-                          setTouched((prev) => ({
-                            ...prev,
-                            currency: true,
-                            salaryPer: true,
-                          }));
-                        }
-                      }}
-                      className="h-9 text-xs bg-white dark:bg-slate-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {t("jobs.wizard.currency")}
-                      {hasSalaryData && (
-                        <span className="text-rose-500 ml-0.5">*</span>
-                      )}
-                    </label>
-                    <CustomSelect
-                      value={currency || ""}
-                      onChange={(val) => {
-                        setCurrency(val);
-                        setTouched((prev) => ({ ...prev, currency: true }));
-                      }}
-                      placeholder={t("jobs.wizard.selectCurrency")}
-                      options={[
-                        { value: "USD", label: "USD ($)" },
-                        { value: "VND", label: "VND (₫)" },
-                        { value: "EUR", label: "EUR (€)" },
-                        { value: "NOK", label: "NOK (kr)" },
-                        { value: "GBP", label: "GBP (£)" },
-                        { value: "SGD", label: "SGD (S$)" },
-                      ]}
-                      className="w-full"
-                      triggerClassName={cn(
-                        "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
-                        showCurrencyError &&
-                          "border-rose-500 ring-1 ring-rose-500",
-                      )}
-                    />
-                    {showCurrencyError && (
-                      <p className="text-[11px] text-rose-500 mt-1 font-medium">
-                        {t("jobs.wizard.currencyError")}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {t("jobs.wizard.perPeriod")}
-                      {hasSalaryData && (
-                        <span className="text-rose-500 ml-0.5">*</span>
-                      )}
-                    </label>
-                    <CustomSelect
-                      value={salaryPer || ""}
-                      onChange={(val) => {
-                        setSalaryPer(val);
-                        setTouched((prev) => ({ ...prev, salaryPer: true }));
-                      }}
-                      placeholder={t("jobs.wizard.selectSalaryPer")}
-                      align="right"
-                      options={[
-                        { value: "Year", label: t("jobs.wizard.periods.year") },
-                        {
-                          value: "Month",
-                          label: t("jobs.wizard.periods.month"),
-                        },
-                        { value: "Hour", label: t("jobs.wizard.periods.hour") },
-                      ]}
-                      className="w-full"
-                      triggerClassName={cn(
-                        "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
-                        showSalaryPerError &&
-                          "border-rose-500 ring-1 ring-rose-500",
-                      )}
-                    />
-                    {showSalaryPerError && (
-                      <p className="text-[11px] text-rose-500 mt-1 font-medium">
-                        {t("jobs.wizard.salaryPerError")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <WizardStepCompensationAccordion
+          compensationOpen={compensationOpen}
+          setCompensationOpen={setCompensationOpen}
+          payNegotiable={payNegotiable}
+          setPayNegotiable={setPayNegotiable}
+          minSalary={minSalary}
+          setMinSalary={setMinSalary}
+          maxSalary={maxSalary}
+          setMaxSalary={setMaxSalary}
+          currency={currency}
+          setCurrency={setCurrency}
+          salaryPer={salaryPer}
+          setSalaryPer={setSalaryPer}
+          hasSalaryData={hasSalaryData}
+          showCurrencyError={showCurrencyError}
+          showSalaryPerError={showSalaryPerError}
+          setTouched={setTouched}
+        />
 
         {/* Field 8: Description */}
         <div>

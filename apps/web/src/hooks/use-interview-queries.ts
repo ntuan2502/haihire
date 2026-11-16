@@ -21,6 +21,8 @@ export function useInterviews(params?: {
   organizationId?: string | null;
   jobId?: string | null;
   applicationId?: string | null;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -39,6 +41,8 @@ export function useInterviews(params?: {
       orgId: effectiveOrgId,
       jobId: params?.jobId,
       applicationId: params?.applicationId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
       page: params?.page,
       limit: params?.limit,
       search: params?.search,
@@ -59,6 +63,8 @@ export function useInterviews(params?: {
         organizationId: effectiveOrgId || undefined,
         jobId: params?.jobId || undefined,
         applicationId: params?.applicationId || undefined,
+        startDate: params?.startDate,
+        endDate: params?.endDate,
         page: params?.page,
         limit: params?.limit,
         search: params?.search,
@@ -71,9 +77,16 @@ export function useInterviews(params?: {
   });
 }
 
-export function useInterview(id: string | null | undefined) {
+export function useInterview(
+  id: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Interview>({
-    queryKey: queryKeys.interview(id),
+    queryKey: queryKeys.interview(id, effectiveOrgId),
     queryFn: () => {
       if (!id) throw new Error("Interview ID is required");
       return interviewsApi.getById(id);

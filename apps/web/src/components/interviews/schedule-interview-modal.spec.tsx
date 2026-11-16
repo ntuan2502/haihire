@@ -1,9 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { combineDateTimeInTimezone } from "@haihire/shared";
+import { setActiveLocalization, resetActiveLocalization } from "@/lib/utils";
 import { ScheduleInterviewModal } from "./schedule-interview-modal";
 import type { Application, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
+import type { EmailFlowConfig, EmailTemplate } from "@/lib/email-templates";
+
+let mockCanViewEmail = false;
+let mockEmailTemplates: EmailTemplate[] = [];
+let mockEmailFlows: EmailFlowConfig[] = [];
+
+vi.mock("@/hooks/use-has-permission", () => ({
+  useHasPermission: () => mockCanViewEmail,
+}));
+
+vi.mock("@/hooks/use-email-queries", () => ({
+  useEmailTemplates: () => ({ data: mockEmailTemplates, isLoading: false }),
+  useEmailFlows: () => ({ data: mockEmailFlows, isLoading: false }),
+}));
+
+afterEach(() => {
+  resetActiveLocalization();
+});
 
 const mockCreateMutateAsync = vi.fn();
 const mockUpdateMutateAsync = vi.fn();
@@ -22,7 +42,7 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockUpdateStageMutateAsync,
     isPending: false,
   }),
-  useOrgMembers: () => ({
+  useOrgInterviewers: () => ({
     data: [
       { id: "mem-1", name: "Nguyen Recruiter", email: "recruiter@haihire.vn" },
       { id: "mem-2", name: "Tran Tech Lead", email: "techlead@haihire.vn" },
@@ -90,6 +110,9 @@ describe("ScheduleInterviewModal Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCanViewEmail = false;
+    mockEmailTemplates = [];
+    mockEmailFlows = [];
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -152,14 +175,19 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("submits update when editing an existing interview", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
     mockUpdateMutateAsync.mockResolvedValueOnce({ id: "int-existing" });
     const handleClose = vi.fn();
 
+    const expectedIso = combineDateTimeInTimezone(
+      "2026-10-20",
+      "15:00",
+      "Asia/Ho_Chi_Minh",
+    );
     const existingInterview: ScheduledInterviewInfo = {
       id: "int-existing",
       applicationId: "app-1",
-      date: "2026-10-20",
-      time: "15:00",
+      scheduledAt: expectedIso,
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
@@ -187,8 +215,51 @@ describe("ScheduleInterviewModal Component", () => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
         id: "int-existing",
         data: expect.objectContaining({
-          date: "2026-10-20",
-          time: "15:00",
+          scheduledAt: "2026-10-20T08:00:00.000Z",
+          interviewer: "Tran Tech Lead",
+        }),
+      });
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("decodes and re-encodes scheduledAt in non-local organization timezone (America/New_York)", async () => {
+    setActiveLocalization({ timezone: "America/New_York" });
+    mockUpdateMutateAsync.mockResolvedValueOnce({ id: "int-ny" });
+    const handleClose = vi.fn();
+
+    // 2026-10-20 15:00 EDT (UTC-4) = 19:00:00Z
+    const existingInterview: ScheduledInterviewInfo = {
+      id: "int-ny",
+      applicationId: "app-1",
+      scheduledAt: "2026-10-20T19:00:00.000Z",
+      type: "TECHNICAL",
+      format: "MEET",
+      interviewer: "Tran Tech Lead",
+    };
+
+    renderWithClient(
+      <ScheduleInterviewModal
+        isOpen={true}
+        onClose={handleClose}
+        jobs={[mockJob]}
+        applications={[mockCandidate]}
+        selectedApplicationId="app-1"
+        selectedJobId="job-1"
+        editingInterview={existingInterview}
+      />,
+    );
+
+    const updateBtn = screen.getByRole("button", {
+      name: "Cập nhật lịch phỏng vấn",
+    });
+    fireEvent.click(updateBtn);
+
+    await waitFor(() => {
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
+        id: "int-ny",
+        data: expect.objectContaining({
+          scheduledAt: "2026-10-20T19:00:00.000Z",
           interviewer: "Tran Tech Lead",
         }),
       });
@@ -197,13 +268,13 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("invalidates queries on error in catch block (e.g. 409 conflict)", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
     mockUpdateMutateAsync.mockRejectedValueOnce(new Error("Conflict 409"));
 
     const existingInterview: ScheduledInterviewInfo = {
       id: "int-existing",
       applicationId: "app-1",
-      date: "2026-10-20",
-      time: "15:00",
+      scheduledAt: "2026-10-20T08:00:00.000Z",
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
@@ -231,6 +302,103 @@ describe("ScheduleInterviewModal Component", () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: ["applications"],
       });
+    });
+  });
+
+  it("allows overriding the INTERVIEW_SCHEDULED email template when scheduling a new interview", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
+    mockCanViewEmail = true;
+    mockEmailTemplates = [
+      {
+        id: "tpl-intv-r1",
+        type: "INTERVIEW_INVITATION",
+        name: "Phỏng vấn Vòng 1",
+        subject: "Invite {{candidate_name}}",
+        body: "<p>R1</p>",
+        enabled: true,
+        isSystem: true,
+      },
+      {
+        id: "tpl-intv-r2",
+        type: "INTERVIEW_INVITATION",
+        name: "Phỏng vấn Vòng 2",
+        subject: "Invite R2 {{candidate_name}}",
+        body: "<p>R2</p>",
+        enabled: true,
+        isSystem: false,
+      },
+    ];
+    mockEmailFlows = [
+      {
+        id: "flow-intv",
+        flowKey: "INTERVIEW_SCHEDULED",
+        templateId: "tpl-intv-r1",
+        enabled: true,
+        template: mockEmailTemplates[0],
+      },
+    ];
+    mockCreateMutateAsync.mockResolvedValueOnce({ id: "int-new" });
+    const handleClose = vi.fn();
+
+    const { container } = renderWithClient(
+      <ScheduleInterviewModal
+        isOpen={true}
+        onClose={handleClose}
+        jobs={[mockJob]}
+        applications={[mockCandidate]}
+        selectedApplicationId="app-1"
+        selectedJobId="job-1"
+      />,
+    );
+
+    const dateInput = container.querySelector(
+      'input[type="date"]',
+    ) as HTMLInputElement;
+    const timeInput = container.querySelector(
+      'input[type="time"]',
+    ) as HTMLInputElement;
+    fireEvent.change(dateInput, { target: { value: "2026-10-25" } });
+    fireEvent.change(timeInput, { target: { value: "14:00" } });
+
+    fireEvent.click(
+      screen.getByText("interviews.placeholders.selectRoundType"),
+    );
+    fireEvent.click((await screen.findAllByRole("option"))[0]);
+
+    fireEvent.click(screen.getByText("interviews.placeholders.selectFormat"));
+    fireEvent.click((await screen.findAllByRole("option"))[0]);
+
+    const interviewerInput = screen.getByPlaceholderText(
+      "interviews.placeholders.interviewer",
+    );
+    fireEvent.change(interviewerInput, { target: { value: "Tran Tech Lead" } });
+
+    const inviteCheckbox = document.getElementById(
+      "sendEmailInviteCheckbox",
+    ) as HTMLInputElement;
+    expect(inviteCheckbox.checked).toBe(true);
+
+    const templateTrigger = document.getElementById(
+      "interview-email-template-select-trigger",
+    );
+    expect(templateTrigger).toBeTruthy();
+    fireEvent.click(templateTrigger!);
+
+    const r2Option = await screen.findByText(/Phỏng vấn Vòng 2/);
+    fireEvent.click(r2Option);
+
+    const submitBtn = screen.getByRole("button", { name: "Xác nhận lên lịch" });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          applicationId: "app-1",
+          sendInvitationEmail: true,
+          templateId: "tpl-intv-r2",
+        }),
+      );
+      expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });
 });

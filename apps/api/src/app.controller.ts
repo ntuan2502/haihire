@@ -54,9 +54,8 @@ export class AppController {
   private assertMetricsAccess(authorization?: string): void {
     const token = env.METRICS_TOKEN;
     if (!token) {
-      // Production requires a scrape token; without one the endpoint is hidden.
       if (env.NODE_ENV === "production") throw new NotFoundException();
-      return;
+      throw new UnauthorizedException("METRICS_TOKEN is not configured");
     }
     // Compare fixed-length digests so the check does not leak token length or content.
     if (

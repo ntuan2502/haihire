@@ -5,9 +5,11 @@ import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
-  inferCandidateName,
+  formatCandidateDisplayName,
+  normalizeNameInput,
   resolveChannelFromDomain,
 } from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
 import {
   AppBadRequestException,
@@ -21,12 +23,14 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { CreateApplicationDto } from "../dto/create-application.dto";
+import { PublicApplyDto } from "../dto/public-apply.dto";
 import {
   validateUploadedFile,
   sanitizeFilename,
 } from "../../common/upload-utils";
 import { fixUtf8String } from "../../common/doc-utils";
 import { toInstant } from "../../common/date.util";
+import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -48,13 +52,16 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
   }
 
   async create(
-    dto: CreateApplicationDto,
+    dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
     currentUser?: { role?: string; organizationId?: string | null } | null,
   ) {
@@ -72,8 +79,13 @@ export class ApplicationsSagaService {
       );
     }
 
+    const rawResumeUrl = "resumeUrl" in dto ? dto.resumeUrl : undefined;
+    const rawResumeFileName =
+      "resumeFileName" in dto ? dto.resumeFileName : undefined;
+    const rawUtmCampaign = "utmCampaign" in dto ? dto.utmCampaign : undefined;
+
     const job = await this.prisma.job.findFirst({
-      where: { id: dto.jobId },
+      where: { id: dto.jobId, deletedAt: null },
       select: {
         id: true,
         title: true,
@@ -125,12 +137,12 @@ export class ApplicationsSagaService {
         fixUtf8String(file.originalname || "resume.pdf"),
       );
       uploadedFileInMinio = true;
-    } else if (dto.resumeUrl) {
+    } else if (rawResumeUrl) {
       if (job.organizationId) {
         const safeTenant = job.organizationId
           .trim()
           .replace(/[^a-zA-Z0-9_-]/g, "");
-        const objName = this.minioService.extractObjectName(dto.resumeUrl);
+        const objName = this.minioService.extractObjectName(rawResumeUrl);
         if (
           objName.startsWith("tenants/") &&
           !objName.startsWith(`tenants/${safeTenant}/`)
@@ -142,8 +154,8 @@ export class ApplicationsSagaService {
         }
       }
       uploadResult = {
-        url: dto.resumeUrl,
-        originalName: dto.resumeFileName || "Candidate Resume",
+        url: rawResumeUrl,
+        originalName: rawResumeFileName || "Candidate Resume",
         size: 0,
         mimeType: "application/pdf",
       };
@@ -160,59 +172,91 @@ export class ApplicationsSagaService {
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
-    let utmCampaign: string | null = dto.utmCampaign?.trim() || null;
+    let utmCampaign: string | null = rawUtmCampaign?.trim() || null;
 
     try {
       created = await runInTransaction(this.prisma, async (tx) => {
+        const orgId = job.organizationId;
+        if (!orgId) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+            "Target job does not belong to a valid organization.",
+          );
+        }
+
         // 2. Resolve or create Candidate
-        let candidateId = dto.candidateId;
+        const candidateEmail = (
+          (dto as unknown as { email?: string }).email || dto.candidateEmail
+        )
+          ?.trim()
+          .toLowerCase();
+        const candidatePhone =
+          (
+            (dto as unknown as { phone?: string }).phone || dto.candidatePhone
+          )?.trim() || null;
+        const trackingToken =
+          (
+            (dto as unknown as { trackingToken?: string }).trackingToken ||
+            dto.ref
+          )?.trim() || null;
+
+        // Strip caller-supplied admin fields if caller is anonymous / public apply
+        const isPublicApply =
+          dto instanceof PublicApplyDto ||
+          (!("candidateId" in dto) &&
+            !("sourceChannel" in dto) &&
+            "email" in dto);
+        let candidateId = isPublicApply ? undefined : dto.candidateId;
+        const nameOrder = await resolveOrgNameDisplayOrder(tx, orgId);
+        let applicantName = "";
 
         if (!candidateId) {
-          if (!dto.candidateEmail || !dto.candidateName) {
+          const firstName = normalizeNameInput(dto.firstName);
+          const lastName = normalizeNameInput(dto.lastName);
+          if (!candidateEmail || !firstName || !lastName) {
             throw new AppBadRequestException(
               APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-              "Either candidateId or both candidateName and candidateEmail are required.",
+              "Either candidateId or both firstName/lastName and candidateEmail are required.",
             );
           }
 
-          const email = dto.candidateEmail.trim().toLowerCase();
-          const orgId = job.organizationId;
-          if (!orgId) {
-            throw new AppBadRequestException(
-              APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-              "Target job does not belong to a valid organization.",
-            );
-          }
+          const displayName =
+            (dto as CreateApplicationDto).displayName?.trim() || null;
+          applicantName = formatCandidateDisplayName(
+            { firstName, lastName, displayName },
+            nameOrder,
+          );
 
           const existingCandidate = await tx.candidate.findFirst({
             where: {
               organizationId: orgId,
-              email,
+              email: candidateEmail,
+              deletedAt: null,
             },
-            select: { id: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
+            },
           });
 
           if (existingCandidate) {
             candidateId = existingCandidate.id;
-          } else {
-            const inferredName = inferCandidateName(
-              dto.candidateName,
-              dto.firstName,
-              dto.lastName,
+            applicantName = formatCandidateDisplayName(
+              existingCandidate,
+              nameOrder,
             );
-            const firstName = inferredName.firstName || null;
-            const lastName = inferredName.lastName || null;
-
+          } else {
             const newCandidate = await tx.candidate.create({
               data: {
                 id: crypto.randomUUID(),
                 organizationId: orgId,
-                name: dto.candidateName.trim(),
                 firstName,
                 lastName,
-                email,
-                phone: dto.candidatePhone?.trim() || null,
-                notes: dto.notes || null,
+                displayName,
+                email: candidateEmail,
+                phone: candidatePhone,
                 resumeUrl: uploadResult.url || null,
                 resumeFileName: uploadResult.originalName || null,
                 resumeFileSize: uploadResult.size || null,
@@ -225,9 +269,12 @@ export class ApplicationsSagaService {
         } else {
           // Validate candidate exists and belongs to the same organization as the target job
           const existingCandidate = await tx.candidate.findFirst({
-            where: { id: candidateId as string },
+            where: { id: candidateId as string, deletedAt: null },
             select: {
               id: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
               organizationId: true,
               resumeUrl: true,
               resumeFileName: true,
@@ -242,6 +289,10 @@ export class ApplicationsSagaService {
               `Candidate with ID ${candidateId} not found`,
             );
           }
+          applicantName = formatCandidateDisplayName(
+            existingCandidate,
+            nameOrder,
+          );
           if (
             job.organizationId &&
             existingCandidate.organizationId !== job.organizationId
@@ -252,15 +303,14 @@ export class ApplicationsSagaService {
             );
           }
 
-          if (!uploadedFileInMinio && dto.resumeUrl) {
-            const matchesPrimary =
-              existingCandidate.resumeUrl === dto.resumeUrl;
+          if (!uploadedFileInMinio && rawResumeUrl) {
+            const matchesPrimary = existingCandidate.resumeUrl === rawResumeUrl;
             let matchesDoc = false;
             if (!matchesPrimary) {
               const doc = await tx.candidateDocument.findFirst({
                 where: {
                   candidateId: existingCandidate.id,
-                  url: dto.resumeUrl,
+                  url: rawResumeUrl,
                 },
                 select: { id: true },
               });
@@ -295,21 +345,31 @@ export class ApplicationsSagaService {
           );
         }
 
-        const existingInStage = await tx.application.findMany({
-          where: { jobId: dto.jobId },
-          select: { id: true, orderIndex: true },
-        });
-
-        const maxOrder = existingInStage.reduce(
-          (max: number, item: { orderIndex: number }) =>
-            Math.max(max, item.orderIndex),
-          -1,
-        );
+        let maxOrder = -1;
+        if (
+          typeof (tx.application as { aggregate?: unknown }).aggregate ===
+          "function"
+        ) {
+          const orderAgg = await tx.application.aggregate({
+            where: { jobId: dto.jobId },
+            _max: { orderIndex: true },
+          });
+          maxOrder = orderAgg._max.orderIndex ?? -1;
+        } else {
+          const existingApps = await tx.application.findMany({
+            where: { jobId: dto.jobId },
+            select: { orderIndex: true },
+          });
+          maxOrder =
+            existingApps.length > 0
+              ? Math.max(...existingApps.map((a) => a.orderIndex || 0))
+              : -1;
+        }
 
         // 5. Resolve Sourcing / Attribution
-        if (dto.ref) {
+        if (trackingToken) {
           const link = await tx.trackingLink.findFirst({
-            where: { token: dto.ref as string },
+            where: { token: trackingToken as string },
             select: {
               id: true,
               organizationId: true,
@@ -329,7 +389,7 @@ export class ApplicationsSagaService {
           ) {
             trackingLinkId = link.id;
             sourceChannel =
-              (link.source as SourcingChannel) || SourcingChannel.OTHER;
+              (link.source as SourcingChannel) || SourcingChannel.DIRECT;
             sourceDetails = link.customSource || null;
             if (!utmCampaign && link.campaign) {
               utmCampaign = link.campaign;
@@ -337,21 +397,38 @@ export class ApplicationsSagaService {
           }
         }
 
-        if (!trackingLinkId && dto.referrer) {
-          referrerDomain = parseDomain(dto.referrer);
+        if (
+          !isPublicApply &&
+          !trackingLinkId &&
+          (dto as CreateApplicationDto).referrer
+        ) {
+          referrerDomain = parseDomain((dto as CreateApplicationDto).referrer!);
           if (referrerDomain) {
             sourceChannel = resolveChannelFromDomain(referrerDomain);
           }
         }
 
-        if (!trackingLinkId && dto.sourceChannel) {
-          sourceChannel = dto.sourceChannel as SourcingChannel;
+        if (
+          !isPublicApply &&
+          !trackingLinkId &&
+          (dto as CreateApplicationDto).sourceChannel
+        ) {
+          sourceChannel = (dto as CreateApplicationDto)
+            .sourceChannel as SourcingChannel;
+        }
+
+        if (isPublicApply) {
+          sourceChannel = trackingLinkId
+            ? sourceChannel
+            : SourcingChannel.DIRECT;
+          utmCampaign = trackingLinkId && utmCampaign ? utmCampaign : null;
         }
 
         // 6. Save Application record
-        return await tx.application.create({
+        const savedApp = await tx.application.create({
           data: {
             id: crypto.randomUUID(),
+            organizationId: orgId,
             candidateId: candidateId as string,
             jobId: dto.jobId,
             stage: "APPLIED",
@@ -359,7 +436,6 @@ export class ApplicationsSagaService {
             resumeFileName: uploadResult.originalName || null,
             resumeFileSize: uploadResult.size || null,
             resumeMimeType: uploadResult.mimeType || "application/pdf",
-            notes: dto.notes || null,
             orderIndex: maxOrder + 1,
             trackingLinkId,
             sourceChannel,
@@ -369,6 +445,21 @@ export class ApplicationsSagaService {
             updatedAt: toInstant(),
           },
         });
+
+        if (dto.notes && dto.notes.trim()) {
+          await tx.applicationNote.create({
+            data: {
+              organizationId: orgId,
+              applicationId: savedApp.id,
+              authorId: candidateId as string,
+              authorName: applicantName || "Applicant",
+              authorRole: "APPLICANT",
+              content: dto.notes.trim(),
+            },
+          });
+        }
+
+        return savedApp;
       });
     } catch (dbError) {
       // Step 3: Compensating action — rollback MinIO uploaded file
@@ -426,7 +517,7 @@ export class ApplicationsSagaService {
       throw dbError;
     }
 
-    const result = await this.query.findOne(created.id);
+    const result = await this.query.findOne(created.id, job.organizationId);
 
     // Record activity log & send confirmation email
     const orgId = job.organizationId;
@@ -438,7 +529,7 @@ export class ApplicationsSagaService {
         type: "APPLIED",
         title: "Application Submitted",
         description: `Applied for ${job.title}`,
-        actorName: result.candidate.name,
+        actorName: result.candidateName || result.candidate.name,
         actorRole: "CANDIDATE",
         metadata: {
           jobId: job.id,
@@ -452,32 +543,48 @@ export class ApplicationsSagaService {
 
       if (result.candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(
-            orgId,
-            "APPLICATION_CONFIRMATION",
-          );
+          const template =
+            typeof this.emailService.resolveFlowTemplate === "function"
+              ? await this.emailService.resolveFlowTemplate(
+                  orgId,
+                  "APPLICATION_RECEIVED",
+                )
+              : await this.emailService.getTemplateByType(
+                  orgId,
+                  "APPLICATION_CONFIRMATION",
+                );
           if (template && template.enabled) {
             let orgName = "Company";
+            let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
             const org = await this.prisma.organization.findFirst({
               where: { id: orgId },
-              select: { name: true },
+              select: { name: true, nameDisplayOrder: true },
             });
             if (org?.name) {
               orgName = org.name;
             }
+            if (org?.nameDisplayOrder === "LAST_FIRST") {
+              orgOrder = "LAST_FIRST";
+            }
+            const resolvedCandidateName = formatCandidateDisplayName(
+              result.candidate,
+              orgOrder,
+            );
 
             await this.emailService.sendEmail(
               {
                 to: result.candidate.email,
-                recipientName: result.candidate.name,
+                recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
-                templateType: "APPLICATION_CONFIRMATION",
+                templateType: template.type || "APPLICATION_CONFIRMATION",
+                templateId: template.id,
+                templateName: template.name,
                 candidateId: result.candidate.id,
                 applicationId: result.id,
                 variables: buildDynamicEmailContext({
                   candidate: {
-                    name: result.candidate.name,
+                    name: resolvedCandidateName,
                     email: result.candidate.email,
                     phone: result.candidate.phone,
                   },
@@ -496,6 +603,29 @@ export class ApplicationsSagaService {
           console.warn("Failed to send confirmation email:", emailErr);
         }
       }
+    }
+
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: result.id, jobId: result.jobId },
+      });
+      this.eventsService?.emit({
+        type: "CANDIDATES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: result.candidate?.id },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: result.candidate?.id, applicationId: result.id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { jobId: job.id },
+      });
     }
 
     if (!currentUser) {

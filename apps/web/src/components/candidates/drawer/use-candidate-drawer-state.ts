@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   useCandidate,
+  useCandidateNotes,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
@@ -12,12 +13,13 @@ import {
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   formatDate,
-  parseCandidateNotes,
-  parseCandidateDocuments,
+  resolveCandidateProfile,
   fixUtf8String,
   getGenderLabel,
+  getCandidateDisplayName,
   type CandidateItem,
 } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -34,14 +36,16 @@ export function useCandidateDrawerState({
   candidate,
 }: UseCandidateDrawerStateProps) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
 
-  // Fetch full details of the candidate
+  // Fetch full details and notes count of the candidate
   const { data: fullCandidate } = useCandidate(candidate?.id || null);
+  const { data: candidateNotesList } = useCandidateNotes(candidate?.id);
 
   // Drawer Tabs State
-  const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
-    "applications",
-  );
+  const [drawerTab, setDrawerTab] = useState<
+    "applications" | "documents" | "notes"
+  >("applications");
   const [drawerStageFilter, setDrawerStageFilter] = useState<string>("ALL");
   const [drawerDocFilter, setDrawerDocFilter] = useState<string>("All");
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
@@ -65,13 +69,13 @@ export function useCandidateDrawerState({
         firstName: "",
         lastName: "",
         displayName: "",
-        customNotes: "",
       };
     }
     const cand = fullCandidate || candidate.candidate;
-    const notesParsed = parseCandidateNotes(
-      cand?.notes,
+    const profile = resolveCandidateProfile(
       cand?.name || candidate.name,
+      cand,
+      localization,
     );
     const genderLabel = getGenderLabel(cand?.gender, t);
     const dobFormatted = cand?.dateOfBirth
@@ -80,12 +84,14 @@ export function useCandidateDrawerState({
     return {
       gender: genderLabel,
       dob: dobFormatted,
-      firstName: cand?.firstName || "",
-      lastName: cand?.lastName || "",
-      displayName: cand?.name || candidate.name || "",
-      customNotes: notesParsed.customNotes || cand?.notes || "",
+      firstName: cand?.firstName || profile.firstName || "",
+      lastName: cand?.lastName || profile.lastName || "",
+      displayName:
+        profile.displayName ||
+        getCandidateDisplayName(cand ?? candidate, localization) ||
+        "",
     };
-  }, [candidate, fullCandidate, t]);
+  }, [candidate, fullCandidate, localization, t]);
 
   const selectedCandidateApps = useMemo(() => {
     if (!candidate) return [];
@@ -107,8 +113,7 @@ export function useCandidateDrawerState({
       return fullCandidate.allDocuments;
     }
     const cand = fullCandidate || candidate.candidate;
-    const docs = parseCandidateDocuments(cand?.notes);
-    if (docs.length === 0 && cand?.resumeUrl) {
+    if (cand?.resumeUrl) {
       return [
         {
           id: `resume-${cand.id}`,
@@ -121,8 +126,12 @@ export function useCandidateDrawerState({
         },
       ];
     }
-    return docs;
+    return [];
   }, [candidate, fullCandidate]);
+
+  const drawerNotesCount = candidateNotesList
+    ? candidateNotesList.length
+    : (candidate?.notesCount ?? candidate?.candidate?.notesCount ?? 0);
 
   const filteredDrawerDocuments = useMemo(() => {
     if (drawerDocFilter === "All") return drawerCandidateDocuments;
@@ -258,6 +267,7 @@ export function useCandidateDrawerState({
     filteredDrawerApps,
     drawerCandidateDocuments,
     filteredDrawerDocuments,
+    drawerNotesCount,
     handleDownloadDoc,
     handleUploadDoc,
     handleConfirmDeleteDrawerDoc,

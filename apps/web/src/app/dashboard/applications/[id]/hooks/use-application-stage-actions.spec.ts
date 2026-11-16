@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useApplicationStageActions } from "./use-application-stage-actions";
 import { downloadAuthenticatedFile } from "@/lib/api";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Application } from "@/types";
 
 vi.mock("@/lib/api", () => ({
   downloadAuthenticatedFile: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
@@ -111,5 +111,23 @@ describe("useApplicationStageActions (Caller #3)", () => {
 
     expect(downloadAuthenticatedFile).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("errors.cannotDownloadDocument");
+  });
+
+  it("opens reject modal on REJECTED transition instead of mutating immediately and forwards payload on confirm", async () => {
+    const { result } = renderHook(() =>
+      useApplicationStageActions({
+        app: mockApp,
+        appIdStr: "app-3",
+        setIsDeleteModalOpen: vi.fn(),
+      }),
+    );
+
+    expect(result.current.isRejectModalOpen).toBe(false);
+
+    await act(async () => {
+      await result.current.handleStageChange("REJECTED");
+    });
+
+    expect(result.current.isRejectModalOpen).toBe(true);
   });
 });

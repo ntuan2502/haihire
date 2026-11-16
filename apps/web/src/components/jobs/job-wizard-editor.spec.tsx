@@ -89,14 +89,18 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
   // A.1.1: Rendering
   describe("A.1.1: Rendering", () => {
-    it("renders wizard header with steps and back navigation", () => {
+    it("renders wizard header with implemented steps and back navigation", () => {
       render(<JobWizardEditor mode="create" />);
 
-      // Wizard header steps
+      // Implemented wizard header steps
       expect(screen.getByText("Thông tin vị trí")).toBeInTheDocument();
-      expect(screen.getByText("Biểu mẫu ứng tuyển")).toBeInTheDocument();
-      expect(screen.getByText("Tiêu chí chấm điểm AI")).toBeInTheDocument();
       expect(screen.getByText("Xuất bản & Phân phối")).toBeInTheDocument();
+
+      // Coming soon placeholder steps are hidden
+      expect(screen.queryByText("Biểu mẫu ứng tuyển")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Tiêu chí chấm điểm AI"),
+      ).not.toBeInTheDocument();
 
       // Back navigation link to jobs list
       expect(screen.getByText("Tin tuyển dụng")).toBeInTheDocument();
@@ -193,12 +197,13 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
       });
     });
 
-    it("does not navigate when clicking unimplemented steps in header", () => {
+    it("hides unimplemented coming soon steps from header", () => {
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // Click on step 2 (Application Form, implemented: false)
-      const step2Btn = screen.getByText("Biểu mẫu ứng tuyển");
-      fireEvent.click(step2Btn);
+      expect(screen.queryByText("Biểu mẫu ứng tuyển")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Tiêu chí chấm điểm AI"),
+      ).not.toBeInTheDocument();
 
       // Remains on Step 1
       expect(screen.getByText("Chức danh công việc")).toBeInTheDocument();

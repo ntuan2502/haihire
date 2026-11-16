@@ -30,6 +30,10 @@ describe("CandidatesController", () => {
     findOne: vi.fn(),
     uploadDocument: vi.fn(),
     prepareDocumentDownload: vi.fn(),
+    findNotes: vi.fn(),
+    createNote: vi.fn(),
+    updateNote: vi.fn(),
+    deleteNote: vi.fn(),
   };
 
   const recruiterReq = {
@@ -62,37 +66,65 @@ describe("CandidatesController", () => {
     rolesGuard = new RolesGuard(reflector);
   });
 
-  it("allows MEMBER basic list access without exposing CVs or private notes", async () => {
-    const context = {
-      getHandler: () => controller.findAll,
-      getClass: () => CandidatesController,
-      switchToHttp: () => ({ getRequest: () => memberReq }),
-    } as unknown as ExecutionContext;
-    expect(rolesGuard.canActivate(context)).toBe(true);
-    mockService.findAll.mockResolvedValue({
-      total: 1,
-      data: [
+  describe("GET /candidates (candidate:view permission)", () => {
+    it("rejects Role.MEMBER with 403 AppForbiddenException", () => {
+      const context = {
+        getHandler: () => controller.findAll,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => memberReq }),
+      } as unknown as ExecutionContext;
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+
+    it("allows Role.RECRUITER and delegates to service.findAll", async () => {
+      const context = {
+        getHandler: () => controller.findAll,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => recruiterReq }),
+      } as unknown as ExecutionContext;
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      const mockResult = {
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        data: [
+          {
+            id: "candidate-1",
+            name: "Alice",
+            email: "alice@example.com",
+            phone: "123",
+            latestNote: {
+              id: "note-1",
+              content: "internal notes",
+              authorName: "Recruiter",
+              createdAt: new Date().toISOString(),
+            },
+            notesCount: 1,
+            resumeUrl: "https://storage.haihire.local/resume.pdf",
+            documents: [{ id: "doc-1" }],
+            applications: [],
+            applicationsCount: 0,
+          },
+        ],
+      };
+      mockService.findAll.mockResolvedValue(mockResult);
+
+      const result = await controller.findAll(recruiterReq);
+      expect(result).toEqual(mockResult);
+      expect(mockService.findAll).toHaveBeenCalledWith(
+        undefined,
         {
-          id: "candidate-1",
-          name: "Alice",
-          email: "alice@example.com",
-          phone: "123",
-          notes: "private",
-          resumeUrl: "private-url",
-          documents: [{ id: "secret" }],
-          applications: [],
-          applicationsCount: 0,
+          page: undefined,
+          limit: undefined,
+          search: undefined,
         },
-      ],
+        "org-1",
+      );
     });
-    const result = await controller.findAll(memberReq);
-    expect(result.data[0]).toMatchObject({
-      name: "Alice",
-      email: "alice@example.com",
-    });
-    expect(result.data[0]).not.toHaveProperty("notes");
-    expect(result.data[0]).not.toHaveProperty("resumeUrl");
-    expect(result.data[0]).not.toHaveProperty("documents");
   });
 
   const createMockContext = (req: { user?: unknown }): ExecutionContext =>
@@ -166,6 +198,46 @@ describe("CandidatesController", () => {
         AppUnauthorizedException,
       );
     });
+
+    it("Case 4: allows dynamic organization owner (isOwner: true) to preview inline documents", async () => {
+      const ownerReq = {
+        user: {
+          id: "owner-1",
+          email: "owner@haihire.local",
+          role: Role.MEMBER,
+          isOwner: true,
+          organizationId: "org-1",
+        },
+      };
+      const context = createMockContext(ownerReq);
+      mockService.prepareDocumentDownload.mockResolvedValue({
+        asciiFallback: "owner-cand.pdf",
+        encodedFileName: "owner-cand.pdf",
+        mimeType: "application/pdf",
+        stream: mockStream,
+      });
+
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      await controller.downloadDocument(
+        "cand-1",
+        "/haihire-resumes/tenants/org-1/resumes/owner-cand.pdf",
+        "owner-cand.pdf",
+        mockRes,
+        ownerReq,
+        "inline",
+      );
+
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        "inline; filename=\"owner-cand.pdf\"; filename*=UTF-8''owner-cand.pdf",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "application/pdf",
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
   });
 
   describe("GET /candidates/:id (candidate:view permission)", () => {
@@ -210,6 +282,68 @@ describe("CandidatesController", () => {
         recruiterReq.user,
       );
       expect(result).toEqual({ id: "cand-1", name: "Test Candidate" });
+    });
+  });
+
+  describe("Candidate Notes Endpoints", () => {
+    it("delegates findNotes to candidatesService.findNotes", async () => {
+      mockService.findNotes.mockResolvedValue([{ id: "n-1", content: "test" }]);
+      const res = await controller.findNotes("cand-1", recruiterReq);
+      expect(mockService.findNotes).toHaveBeenCalledWith("cand-1", "org-1");
+      expect(res).toEqual([{ id: "n-1", content: "test" }]);
+    });
+
+    it("delegates createNote to candidatesService.createNote", async () => {
+      mockService.createNote.mockResolvedValue({
+        id: "n-2",
+        content: "new note",
+      });
+      const res = await controller.createNote(
+        "cand-1",
+        { content: "new note" },
+        recruiterReq as never,
+      );
+      expect(mockService.createNote).toHaveBeenCalledWith(
+        "cand-1",
+        { content: "new note" },
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ id: "n-2", content: "new note" });
+    });
+
+    it("delegates updateNote to candidatesService.updateNote", async () => {
+      mockService.updateNote.mockResolvedValue({
+        id: "n-2",
+        content: "updated",
+      });
+      const res = await controller.updateNote(
+        "cand-1",
+        "n-2",
+        { content: "updated" },
+        recruiterReq as never,
+      );
+      expect(mockService.updateNote).toHaveBeenCalledWith(
+        "cand-1",
+        "n-2",
+        { content: "updated" },
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ id: "n-2", content: "updated" });
+    });
+
+    it("delegates deleteNote to candidatesService.deleteNote", async () => {
+      mockService.deleteNote.mockResolvedValue({ success: true });
+      const res = await controller.deleteNote(
+        "cand-1",
+        "n-2",
+        recruiterReq as never,
+      );
+      expect(mockService.deleteNote).toHaveBeenCalledWith(
+        "cand-1",
+        "n-2",
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ success: true });
     });
   });
 });

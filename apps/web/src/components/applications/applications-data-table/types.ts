@@ -33,5 +33,4 @@ export type DrawerTabId =
   | "documents"
   | "responses"
   | "notes"
-  | "timeline"
-  | "properties";
+  | "timeline";

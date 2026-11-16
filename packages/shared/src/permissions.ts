@@ -14,6 +14,14 @@ export const Role = {
 
 export type Role = (typeof Role)[keyof typeof Role];
 
+export const ROLE_LIST: readonly Role[] = [
+  Role.ADMIN,
+  Role.RECRUITER,
+  Role.HIRING_MANAGER,
+  Role.INTERVIEWER,
+  Role.MEMBER,
+];
+
 export type Permission =
   // Organization Management
   | "org:view"
@@ -31,7 +39,6 @@ export type Permission =
   | "job:delete"
   // Candidate Profile Management
   | "candidate:view"
-  | "candidate:view_basic"
   | "candidate:create"
   | "candidate:update"
   | "candidate:delete"
@@ -97,13 +104,6 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
 
   // Candidates
   "candidate:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
-  "candidate:view_basic": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.INTERVIEWER,
-    Role.MEMBER,
-  ],
   "candidate:create": [Role.ADMIN, Role.RECRUITER],
   "candidate:update": [Role.ADMIN, Role.RECRUITER],
   "candidate:delete": [Role.ADMIN, Role.RECRUITER],
@@ -145,9 +145,9 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
     Role.INTERVIEWER,
     Role.MEMBER,
   ],
-  "interview:create": [Role.ADMIN, Role.RECRUITER],
-  "interview:update": [Role.ADMIN, Role.RECRUITER],
-  "interview:delete": [Role.ADMIN, Role.RECRUITER],
+  "interview:create": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:update": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:delete": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "interview:scorecard_submit": [
     Role.ADMIN,
     Role.RECRUITER,
@@ -156,12 +156,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   ],
 
   // Sourcing
-  "sourcing:view": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.MEMBER,
-  ],
+  "sourcing:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "sourcing:create": [Role.ADMIN, Role.RECRUITER],
   "sourcing:update": [Role.ADMIN, Role.RECRUITER],
   "sourcing:delete": [Role.ADMIN, Role.RECRUITER],

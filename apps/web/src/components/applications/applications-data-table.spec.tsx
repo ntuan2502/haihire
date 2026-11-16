@@ -53,7 +53,7 @@ vi.mock("@/context/auth-context", () => ({
 
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: {
     error: (...args: unknown[]) => mockToastError(...args),
     success: (...args: unknown[]) => mockToastSuccess(...args),
@@ -61,11 +61,21 @@ vi.mock("sonner", () => ({
 }));
 
 const mockDownloadAuthenticatedFile = vi.fn().mockResolvedValue(undefined);
-vi.mock("@/lib/api", () => ({
-  downloadAuthenticatedFile: (...args: unknown[]) =>
-    mockDownloadAuthenticatedFile(...args),
-  getDocumentUrl: (url: string) => url,
-}));
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/app-doc-preview",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    downloadAuthenticatedFile: (...args: unknown[]) =>
+      mockDownloadAuthenticatedFile(...args),
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
+  };
+});
 
 const mockUpdateStage = vi
   .fn()
@@ -75,6 +85,38 @@ const mockUpdateCandidate = vi.fn().mockResolvedValue({ id: "app-1" });
 const mockDeleteInterview = vi.fn().mockResolvedValue({ success: true });
 const mockCreateInterview = vi.fn().mockResolvedValue({ id: "intv-new" });
 const mockUpdateInterview = vi.fn().mockResolvedValue({ id: "intv-1" });
+const mockAddApplicationNote = vi.fn().mockResolvedValue({ id: "note-new" });
+const mockUpdateApplicationNote = vi.fn().mockResolvedValue({ id: "note-1" });
+const mockDeleteApplicationNote = vi
+  .fn()
+  .mockResolvedValue({ success: true, id: "note-1" });
+
+const mockNotesList = [
+  {
+    id: "note-1",
+    applicationId: "app-1",
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Top candidate from referral",
+    isEdited: false,
+    createdAt: "2026-01-15T10:00:00.000Z",
+    updatedAt: "2026-01-15T10:00:00.000Z",
+  },
+  {
+    id: "note-2",
+    applicationId: "app-1",
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Speaks fluent English",
+    isEdited: false,
+    createdAt: "2026-01-15T11:00:00.000Z",
+    updatedAt: "2026-01-15T11:00:00.000Z",
+  },
+];
 
 vi.mock("@/hooks/use-queries", () => ({
   useUpdateStageMutation: () => ({
@@ -101,7 +143,7 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockUpdateInterview,
     isPending: false,
   }),
-  useOrgMembers: () => ({
+  useOrgInterviewers: () => ({
     data: [
       {
         id: "mem-1",
@@ -110,6 +152,22 @@ vi.mock("@/hooks/use-queries", () => ({
       },
     ],
     isLoading: false,
+  }),
+  useApplicationNotes: (appId?: string) => ({
+    data: appId === "app-1" ? mockNotesList : [],
+    isLoading: false,
+  }),
+  useAddApplicationNoteMutation: () => ({
+    mutateAsync: mockAddApplicationNote,
+    isPending: false,
+  }),
+  useUpdateApplicationNoteMutation: () => ({
+    mutateAsync: mockUpdateApplicationNote,
+    isPending: false,
+  }),
+  useDeleteApplicationNoteMutation: () => ({
+    mutateAsync: mockDeleteApplicationNote,
+    isPending: false,
   }),
 }));
 
@@ -534,7 +592,7 @@ describe("ApplicationsDataTable Component", () => {
       expect(screen.getByText("Speaks fluent English")).toBeInTheDocument();
     });
 
-    it("submits a new note and calls updateCandidateMutation", async () => {
+    it("submits a new note and calls addApplicationNoteMutation", async () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
@@ -550,11 +608,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(addBtn);
 
       await waitFor(() => {
-        expect(mockUpdateCandidate).toHaveBeenCalledWith({
-          id: "app-1",
-          data: {
-            notes: expect.stringContaining("Completed background check"),
-          },
+        expect(mockAddApplicationNote).toHaveBeenCalledWith({
+          applicationId: "app-1",
+          content: "Completed background check",
         });
       });
     });
@@ -615,7 +671,7 @@ describe("ApplicationsDataTable Component", () => {
       expect(screen.getByText("Nguyen_Van_An_CV.pdf")).toBeInTheDocument();
     });
 
-    it("opens document preview modal on preview click", () => {
+    it("opens document preview modal on preview click", async () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
@@ -625,7 +681,13 @@ describe("ApplicationsDataTable Component", () => {
       });
       fireEvent.click(previewBtn);
 
-      expect(screen.getByTitle("Nguyen_Van_An_CV.pdf")).toBeInTheDocument();
+      const previewIframe = await screen.findByTitle("Nguyen_Van_An_CV.pdf");
+      expect(previewIframe).toBeInTheDocument();
+      expect(previewIframe).toHaveAttribute(
+        "src",
+        "blob:http://localhost/app-doc-preview",
+      );
+      expect(previewIframe).not.toHaveAttribute("sandbox");
     });
 
     it("triggers authenticated file download when clicking download button", async () => {

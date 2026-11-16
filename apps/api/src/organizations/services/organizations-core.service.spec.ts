@@ -219,6 +219,37 @@ describe("OrganizationsCoreService", () => {
         code: APP_ERROR_CODES.ORG_NOT_FOUND,
       });
     });
+
+    it("updates organization localization settings and returns normalized fields", async () => {
+      const updated = await service.updateMyOrg("user-owner", {
+        defaultLanguage: "en",
+        timezone: "Asia/Tokyo",
+        dateFormat: "YYYY-MM-DD",
+        timeFormat: "12H",
+        nameDisplayOrder: "LAST_FIRST",
+        defaultCurrency: "JPY",
+      });
+
+      expect(updated).toMatchObject({
+        id: "org-1",
+        defaultLanguage: "en",
+        timezone: "Asia/Tokyo",
+        dateFormat: "YYYY-MM-DD",
+        timeFormat: "12H",
+        nameDisplayOrder: "LAST_FIRST",
+        defaultCurrency: "JPY",
+      });
+
+      const fetched = await service.getMyOrg("user-owner");
+      expect(fetched).toMatchObject({
+        defaultLanguage: "en",
+        timezone: "Asia/Tokyo",
+        dateFormat: "YYYY-MM-DD",
+        timeFormat: "12H",
+        nameDisplayOrder: "LAST_FIRST",
+        defaultCurrency: "JPY",
+      });
+    });
   });
 
   describe("Group 2: getPublicOrg", () => {

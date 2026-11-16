@@ -9,10 +9,8 @@
 // (schema.prisma). These models inherit tenant context from relational parents
 // or use primary key scoping.
 export const MODELS_WITHOUT_ORG_COLUMN = new Set([
-  "Interview", // Inherits tenant context via applicationId -> job.organizationId
-  "Application", // Inherits tenant context via jobId -> job.organizationId & candidateId
-  "TrackingClick", // Inherits tenant context via trackingLinkId -> trackingLink.organizationId
   "Organization", // Primary key is `id`, queried by id or slug
+  "User", // Decoupled from single-tenant state in Milestone 2 (no organizationId column)
 ]);
 
 // 2. Non-tenant-scoped or infrastructure service files excluded from tenant audit

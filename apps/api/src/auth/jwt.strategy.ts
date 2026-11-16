@@ -1,6 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatUserDisplayName,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import type { Request } from "express";
@@ -13,6 +17,8 @@ export interface JwtPayload {
   role?: string;
   type?: string;
   tokenVersion?: number;
+  organizationId?: string | null;
+  activeOrgId?: string | null;
 }
 
 @Injectable()
@@ -61,10 +67,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: {
         id: true,
         email: true,
-        name: true,
-        role: true,
+        firstName: true,
+        lastName: true,
         avatarUrl: true,
-        organizationId: true,
+        preferredLanguage: true,
+        preferredTimezone: true,
         tokenVersion: true,
         createdAt: true,
       },
@@ -86,32 +93,107 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
+    const legacyUserOrgId = (
+      user as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const legacyUserRole = (user as unknown as { role?: string })?.role;
+
+    const requestedOrgId =
+      payload.organizationId || payload.activeOrgId || legacyUserOrgId || null;
+
     let isOwner = false;
+    let activeOrgId: string | null = null;
+    let activeRole: string = legacyUserRole || payload.role || "MEMBER";
     let organization: {
       id: string;
       name: string;
       slug: string;
       ownerId: string;
+      defaultLanguage?: string;
+      timezone?: string;
+      dateFormat?: string;
+      timeFormat?: string;
+      nameDisplayOrder?: string;
+      defaultCurrency?: string;
     } | null = null;
-    if (user.organizationId) {
+
+    if (requestedOrgId) {
       const org = await this.prisma.organization.findUnique({
-        where: { id: user.organizationId },
+        where: { id: requestedOrgId },
         select: {
           id: true,
           name: true,
           slug: true,
           ownerId: true,
+          defaultLanguage: true,
+          timezone: true,
+          dateFormat: true,
+          timeFormat: true,
+          nameDisplayOrder: true,
+          defaultCurrency: true,
         },
       });
 
       if (org) {
         organization = org;
         isOwner = Boolean(org.ownerId === user.id);
+        activeOrgId = org.id;
+
+        if (this.prisma.organizationMember?.findFirst) {
+          const member = await this.prisma.organizationMember.findFirst({
+            where: { organizationId: org.id, userId: user.id },
+            select: { role: true },
+          });
+          if (member) {
+            activeRole = member.role;
+          } else if (isOwner) {
+            activeRole = "ADMIN";
+          }
+        }
+      }
+    } else {
+      if (this.prisma.organizationMember?.findFirst) {
+        const member = await this.prisma.organizationMember.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: "asc" },
+          select: { organizationId: true, role: true },
+        });
+        if (member) {
+          const org = await this.prisma.organization.findUnique({
+            where: { id: member.organizationId },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              ownerId: true,
+              defaultLanguage: true,
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+              nameDisplayOrder: true,
+              defaultCurrency: true,
+            },
+          });
+          if (org) {
+            organization = org;
+            isOwner = Boolean(org.ownerId === user.id);
+            activeOrgId = org.id;
+            activeRole = isOwner ? "ADMIN" : member.role;
+          }
+        }
       }
     }
 
+    const orgOrder: NameDisplayOrder =
+      organization?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
+
     return {
       ...user,
+      organizationId: activeOrgId,
+      role: activeRole,
+      name: formatUserDisplayName(user, orgOrder),
       organization,
       isOwner,
     };

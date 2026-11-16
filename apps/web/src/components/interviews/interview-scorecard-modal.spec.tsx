@@ -65,8 +65,7 @@ describe("InterviewScorecardModal Component", () => {
   const mockInterview: ScheduledInterviewInfo = {
     id: "int-100",
     applicationId: "app-1",
-    date: "2026-10-15",
-    time: "10:00",
+    scheduledAt: "2026-10-15T03:00:00.000Z",
     type: "TECHNICAL",
     format: "MEET",
     interviewer: "Recruiter Alice",

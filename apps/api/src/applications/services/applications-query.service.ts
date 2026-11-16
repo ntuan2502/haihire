@@ -1,13 +1,35 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import { APP_ERROR_CODES } from "@haihire/shared";
 import {
+  APP_ERROR_CODES,
+  APPLICATION_STAGES,
+  foldVietnameseAccents,
+  formatCandidateDisplayName,
+  normalizeNameInput,
+  type ApplicationStage,
+  type ApplicationStats,
+} from "@haihire/shared";
+import {
+  AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
+import { findMatchingCandidateIds } from "../../common/person-search.util";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
+import { EventsService } from "../../events/events.service";
+
+function createEmptyStageCounts(): Record<ApplicationStage, number> {
+  return APPLICATION_STAGES.reduce(
+    (acc, stage) => {
+      acc[stage] = 0;
+      return acc;
+    },
+    {} as Record<ApplicationStage, number>,
+  );
+}
 
 @Injectable()
 export class ApplicationsQueryService {
@@ -17,6 +39,9 @@ export class ApplicationsQueryService {
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async findByJob(
@@ -25,7 +50,7 @@ export class ApplicationsQueryService {
     options?: { limit?: number; offset?: number },
   ) {
     const job = await this.prisma.job.findFirst({
-      where: { id: jobId },
+      where: { id: jobId, deletedAt: null },
       select: {
         id: true,
         title: true,
@@ -52,66 +77,137 @@ export class ApplicationsQueryService {
       );
     }
 
+    // Pipeline Kanban loads all job applications unless caller explicitly limits pagination
     const take =
-      options?.limit && options.limit > 0 ? Math.min(options.limit, 100) : 100;
+      options?.limit && options.limit > 0
+        ? Math.min(options.limit, 1000)
+        : undefined;
     const skip =
       options?.offset && options.offset > 0 ? options.offset : undefined;
 
-    const applications = await this.prisma.application.findMany({
-      where: { jobId },
-      take,
+    let applications = await this.prisma.application.findMany({
+      where: {
+        jobId,
+        ...(job.organizationId ? { organizationId: job.organizationId } : {}),
+        candidate: {
+          deletedAt: null,
+        },
+      },
+      include: {
+        candidate: true,
+        interviews: true,
+      },
+      orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
       skip,
+      take,
     });
+
+    if (applications.length === 0) {
+      applications = await this.prisma.application.findMany({
+        where: { jobId },
+        include: {
+          candidate: true,
+          interviews: true,
+        },
+        orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
+        skip,
+        take,
+      });
+    }
 
     if (applications.length === 0) {
       return [];
     }
 
-    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
-    const candidates =
-      candidateIds.length > 0
-        ? await this.prisma.candidate.findMany({
-            where: {
-              id: { in: candidateIds },
-              organizationId: job.organizationId,
-            },
-          })
-        : [];
-    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const missingCandidates = applications.some((app) => !app.candidate);
+    let candidateMap: Map<
+      string,
+      {
+        name?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        displayName?: string | null;
+        email?: string | null;
+        phone?: string | null;
+        resumeUrl?: string | null;
+        resumeFileName?: string | null;
+        resumeFileSize?: number | null;
+        resumeMimeType?: string | null;
+        deletedAt?: Date | string | null;
+      }
+    > | null = null;
 
-    const appIds = [...new Set(applications.map((a) => a.id))];
-    const allInterviews =
-      appIds.length > 0
-        ? await this.prisma.interview.findMany({
-            where: { applicationId: { in: appIds } },
-          })
-        : [];
-    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
-    for (const intv of allInterviews) {
-      const list = interviewsByApp.get(intv.applicationId) || [];
-      list.push(formatInterviewRecord(intv));
-      interviewsByApp.set(intv.applicationId, list);
+    if (missingCandidates && applications.length > 0) {
+      const candidateIds = Array.from(
+        new Set(applications.map((a) => a.candidateId).filter(Boolean)),
+      );
+      if (candidateIds.length > 0) {
+        const cands = await this.prisma.candidate.findMany({
+          where: { id: { in: candidateIds } },
+        });
+        candidateMap = new Map(cands.map((c) => [c.id, c]));
+      }
     }
 
-    const populated = applications.map((app) => {
-      const candidate = candidateMap.get(app.candidateId);
+    if (missingCandidates && candidateMap) {
+      applications = applications.filter((app) => {
+        const c = candidateMap!.get(app.candidateId);
+        return !c?.deletedAt;
+      });
+    }
+
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      job.organizationId,
+    );
+
+    return applications.map((app) => {
+      const candidate =
+        app.candidate ||
+        (candidateMap?.get(app.candidateId) as unknown as typeof app.candidate);
+      const fallbackCand = candidateMap?.get(app.candidateId);
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, nameOrder) ||
+          fallbackCand?.name ||
+          "Unknown"
+        : fallbackCand?.name || "Unknown";
+      const interviews = (app.interviews || []).map((intv) =>
+        formatInterviewRecord(intv),
+      );
       return {
         ...app,
-        candidate,
-        candidateName: candidate?.name || "Unknown",
-        candidateEmail: candidate?.email || "",
-        candidatePhone: candidate?.phone || null,
-        resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+        candidate: candidate
+          ? {
+              ...candidate,
+              name: resolvedCandidateName,
+            }
+          : undefined,
+        candidateName: resolvedCandidateName,
+        candidateEmail: candidate?.email || fallbackCand?.email || "",
+        candidatePhone: candidate?.phone || fallbackCand?.phone || null,
+        resumeUrl:
+          app.resumeUrl ||
+          candidate?.resumeUrl ||
+          fallbackCand?.resumeUrl ||
+          "",
         resumeFileName:
-          app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
-        resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+          app.resumeFileName ||
+          candidate?.resumeFileName ||
+          fallbackCand?.resumeFileName ||
+          "Resume.pdf",
+        resumeFileSize:
+          app.resumeFileSize ??
+          candidate?.resumeFileSize ??
+          fallbackCand?.resumeFileSize ??
+          null,
         resumeMimeType:
-          app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
-        interviews: interviewsByApp.get(app.id) || [],
+          app.resumeMimeType ??
+          candidate?.resumeMimeType ??
+          fallbackCand?.resumeMimeType ??
+          "application/pdf",
+        interviews,
       };
     });
-
-    return populated.sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
   async findAll(
@@ -147,18 +243,25 @@ export class ApplicationsQueryService {
       };
     }
 
-    const jobs = await this.prisma.job.findMany({
-      where: { organizationId: targetOrgId },
-      select: {
-        id: true,
-        title: true,
-        department: true,
-        location: true,
-      },
-    });
+    const [jobs, activeCandidates] = await Promise.all([
+      this.prisma.job.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: {
+          id: true,
+          title: true,
+          department: true,
+          location: true,
+        },
+      }),
+      this.prisma.candidate.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
 
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
-    if (jobMap.size === 0) {
+    const activeCandidateIds = activeCandidates.map((c) => c.id);
+    if (jobMap.size === 0 || activeCandidateIds.length === 0) {
       return {
         data: [],
         total: 0,
@@ -184,6 +287,7 @@ export class ApplicationsQueryService {
 
     const appWhere: Record<string, unknown> = {
       jobId: { in: jobIds },
+      candidateId: { in: activeCandidateIds },
     };
 
     if (options?.stage) {
@@ -194,24 +298,17 @@ export class ApplicationsQueryService {
     }
 
     if (options?.search && options.search.trim() !== "") {
-      const q = options.search.trim();
-      const matchedCandidates = await this.prisma.candidate.findMany({
-        where: {
-          organizationId: targetOrgId,
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { email: { contains: q, mode: "insensitive" } },
-            { phone: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        select: { id: true },
+      const q = foldVietnameseAccents(options.search);
+      const matchedCandidateIds = await findMatchingCandidateIds(this.prisma, {
+        organizationId: targetOrgId,
+        rawSearch: options.search,
       });
       const matchingJobIds = jobs
-        .filter((j) => j.title.toLowerCase().includes(q.toLowerCase()))
+        .filter((j) => foldVietnameseAccents(j.title).includes(q))
         .map((j) => j.id);
 
       appWhere.OR = [
-        { candidateId: { in: matchedCandidates.map((c) => c.id) } },
+        { candidateId: { in: matchedCandidateIds } },
         { jobId: { in: matchingJobIds } },
       ];
     }
@@ -248,6 +345,7 @@ export class ApplicationsQueryService {
             where: {
               id: { in: neededCandidateIds },
               organizationId: targetOrgId,
+              deletedAt: null,
             },
           })
         : [];
@@ -267,14 +365,26 @@ export class ApplicationsQueryService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      targetOrgId,
+    );
     const data = pagedApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
+        : "Unknown";
       return {
         ...app,
         job,
-        candidate,
-        candidateName: candidate?.name || "Unknown",
+        candidate: candidate
+          ? {
+              ...candidate,
+              name: resolvedCandidateName,
+            }
+          : undefined,
+        candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -296,12 +406,115 @@ export class ApplicationsQueryService {
     };
   }
 
+  async getStats(
+    organizationId?: string,
+    tenantOrgId?: string | null,
+  ): Promise<ApplicationStats> {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: cannot access applications from another organization.",
+        { organizationId },
+      );
+    }
+
+    const targetOrgId = tenantOrgId || organizationId || undefined;
+    const byStage = createEmptyStageCounts();
+    if (!targetOrgId) {
+      return {
+        totalApplications: 0,
+        byStage,
+        byJob: {},
+      };
+    }
+
+    const [jobs, candidates] = await Promise.all([
+      this.prisma.job.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+      this.prisma.candidate.findMany({
+        where: { organizationId: targetOrgId, deletedAt: null },
+        select: { id: true },
+      }),
+    ]);
+
+    const activeJobIds = new Set(jobs.map((j) => j.id));
+    const activeCandIds = new Set(candidates.map((c) => c.id));
+
+    if (activeJobIds.size === 0 || activeCandIds.size === 0) {
+      return {
+        totalApplications: 0,
+        byStage,
+        byJob: {},
+      };
+    }
+
+    const grouped = await this.prisma.application.groupBy({
+      by: ["jobId", "stage"],
+      where: {
+        jobId: { in: Array.from(activeJobIds) },
+        candidateId: { in: Array.from(activeCandIds) },
+      },
+      _count: { _all: true },
+    });
+
+    const byJob: ApplicationStats["byJob"] = {};
+    let totalApplications = 0;
+
+    for (const row of grouped) {
+      const stageKey = row.stage as ApplicationStage;
+      const count = row._count._all;
+      if (!(stageKey in byStage)) continue;
+
+      totalApplications += count;
+      byStage[stageKey] += count;
+
+      if (!byJob[row.jobId]) {
+        byJob[row.jobId] = {
+          total: 0,
+          byStage: createEmptyStageCounts(),
+        };
+      }
+      byJob[row.jobId].total += count;
+      byJob[row.jobId].byStage[stageKey] += count;
+    }
+
+    return {
+      totalApplications,
+      byStage,
+      byJob,
+    };
+  }
+
   async findOne(id: string, tenantOrgId?: string | null) {
+    const where: { id: string; organizationId?: string } = { id };
+    if (tenantOrgId) {
+      where.organizationId = tenantOrgId;
+    }
+
     const app = await this.prisma.application.findFirst({
-      where: { id },
+      where,
     });
 
     if (!app) {
+      if (tenantOrgId) {
+        const otherOrg = await this.prisma.application.findFirst({
+          where: { id },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrg &&
+          otherOrg.organizationId &&
+          otherOrg.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+            "Access denied: application belongs to another organization.",
+            { id, organizationId: otherOrg.organizationId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.APPLICATION_NOT_FOUND,
         `Application with ID ${id} not found`,
@@ -309,20 +522,41 @@ export class ApplicationsQueryService {
       );
     }
 
-    const job = await this.prisma.job.findFirst({
-      where: { id: app.jobId },
-      select: {
-        id: true,
-        title: true,
-        department: true,
-        location: true,
-        organizationId: true,
-      },
-    });
+    if (
+      tenantOrgId &&
+      app.organizationId &&
+      app.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { id, organizationId: app.organizationId },
+      );
+    }
 
-    const candidate = await this.prisma.candidate.findFirst({
-      where: { id: app.candidateId },
-    });
+    const [job, candidate] = await Promise.all([
+      this.prisma.job.findFirst({
+        where: {
+          id: app.jobId,
+          ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          title: true,
+          department: true,
+          location: true,
+          organizationId: true,
+        },
+      }),
+      this.prisma.candidate.findFirst({
+        where: {
+          id: app.candidateId,
+          ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+          deletedAt: null,
+        },
+      }),
+    ]);
 
     const appOrgId = job?.organizationId || candidate?.organizationId;
     if (tenantOrgId && appOrgId && tenantOrgId !== appOrgId) {
@@ -333,17 +567,39 @@ export class ApplicationsQueryService {
       );
     }
 
+    if (!job || !candidate) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+        `Application with ID ${id} not found`,
+        { id },
+      );
+    }
+
     const appInterviews = (
       await this.prisma.interview.findMany({
         where: { applicationId: id },
       })
     ).map((intv) => formatInterviewRecord(intv));
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      appOrgId || tenantOrgId,
+    );
+
+    const resolvedCandidateName = candidate
+      ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
+      : "Unknown";
+
     return {
       ...app,
       job: job || null,
-      candidate: candidate || null,
-      candidateName: candidate?.name || "Unknown",
+      candidate: candidate
+        ? {
+            ...candidate,
+            name: resolvedCandidateName,
+          }
+        : null,
+      candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
       resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -366,13 +622,33 @@ export class ApplicationsQueryService {
     // Update candidate profile directly
     if (existing.candidateId) {
       const candidateUpdate: Record<string, unknown> = {};
-      if (dto.candidateName !== undefined)
-        candidateUpdate.name = dto.candidateName;
+      if (dto.firstName !== undefined) {
+        const trimmed = normalizeNameInput(dto.firstName);
+        if (!trimmed) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+            "First name cannot be empty.",
+          );
+        }
+        candidateUpdate.firstName = trimmed;
+      }
+      if (dto.lastName !== undefined) {
+        const trimmed = normalizeNameInput(dto.lastName);
+        if (!trimmed) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+            "Last name cannot be empty.",
+          );
+        }
+        candidateUpdate.lastName = trimmed;
+      }
+      if (dto.displayName !== undefined) {
+        candidateUpdate.displayName = dto.displayName?.trim() || null;
+      }
       if (dto.candidateEmail !== undefined)
         candidateUpdate.email = dto.candidateEmail.toLowerCase();
       if (dto.candidatePhone !== undefined)
         candidateUpdate.phone = dto.candidatePhone;
-      if (dto.notes !== undefined) candidateUpdate.notes = dto.notes;
       if (dto.resumeUrl !== undefined)
         candidateUpdate.resumeUrl = dto.resumeUrl;
       if (dto.resumeFileName !== undefined)
@@ -382,6 +658,23 @@ export class ApplicationsQueryService {
         where: { id: existing.candidateId },
         data: candidateUpdate,
       });
+
+      const orgId =
+        existing.job?.organizationId ||
+        existing.candidate?.organizationId ||
+        tenantOrgId;
+      if (orgId) {
+        this.eventsService?.emit({
+          type: "APPLICATIONS_CHANGED",
+          organizationId: orgId,
+          data: { applicationId: id, candidateId: existing.candidateId },
+        });
+        this.eventsService?.emit({
+          type: "CANDIDATES_CHANGED",
+          organizationId: orgId,
+          data: { candidateId: existing.candidateId },
+        });
+      }
     }
 
     return this.findOne(id, tenantOrgId);
@@ -389,9 +682,21 @@ export class ApplicationsQueryService {
 
   async remove(id: string, tenantOrgId?: string | null) {
     const existing = await this.findOne(id, tenantOrgId);
+    if (
+      tenantOrgId &&
+      existing.organizationId &&
+      existing.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { id, organizationId: existing.organizationId },
+      );
+    }
     const orgId =
       existing.job?.organizationId ||
       existing.candidate?.organizationId ||
+      existing.organizationId ||
       tenantOrgId;
 
     if (orgId && existing.candidate) {
@@ -409,7 +714,7 @@ export class ApplicationsQueryService {
             metadata: {
               action: "APPLICATION_DELETED",
               applicationId: existing.id,
-              candidateName: existing.candidate.name,
+              candidateName: existing.candidateName || existing.candidate.name,
               candidateEmail: existing.candidate.email,
               jobId: existing.job?.id,
               jobTitle: existing.job?.title,
@@ -428,7 +733,12 @@ export class ApplicationsQueryService {
     await runInTransaction(this.prisma, async (tx) => {
       try {
         await tx.interview.deleteMany({
-          where: { applicationId: id },
+          where: {
+            applicationId: id,
+            ...(orgId && existing.organizationId
+              ? { organizationId: orgId }
+              : {}),
+          },
         });
       } catch {
         // Cascade handles if schema level onDelete: Cascade is configured
@@ -437,6 +747,28 @@ export class ApplicationsQueryService {
         where: { id },
       });
     });
+    if (orgId) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "JOBS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: existing.job?.id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: existing.candidate?.id },
+      });
+    }
     return { success: true, message: `Application ${id} deleted successfully` };
   }
 }

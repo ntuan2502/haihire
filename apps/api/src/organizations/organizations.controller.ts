@@ -7,13 +7,17 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { OrganizationsService } from "./organizations.service";
+import { setHasOrgCookie } from "../auth/auth-cookies";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
@@ -24,10 +28,12 @@ import {
   CreateInviteLinkDto,
 } from "./dto/org-actions.dto";
 import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
+import { AuditLogQueryDto } from "./dto/audit-log-query.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("organizations")
 export class OrganizationsController {
@@ -39,24 +45,30 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
+  async create(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(CreateOrgDto)) dto: CreateOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.create(req.user.id, dto);
+    const org = await this.orgsService.create(req.user.id, dto);
+    setHasOrgCookie(res, true);
+    return org;
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("join")
   @HttpCode(HttpStatus.OK)
-  join(
+  async join(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(JoinOrgDto)) dto: JoinOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.join(req.user.id, dto);
+    const result = await this.orgsService.join(req.user.id, dto);
+    setHasOrgCookie(res, true);
+    return result;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard)
   @Get("my")
   getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
@@ -71,20 +83,34 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post("switch")
   @HttpCode(HttpStatus.OK)
-  switchOrg(
+  async switchOrg(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(SwitchOrgDto)) body: SwitchOrgDto,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.switchOrg(req.user.id, body.organizationId);
+    const result = await this.orgsService.switchOrg(
+      req.user.id,
+      body.organizationId,
+    );
+    setHasOrgCookie(res, true);
+    return result;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Get("my/members")
   getMembers(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMembers(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("interview:create")
+  @Get("my/interviewers")
+  getInterviewers(@Request() req: { user: { id: string } }) {
+    return this.orgsService.getInterviewers(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Patch("my/members/:memberId/role")
   updateMemberRole(
@@ -95,7 +121,7 @@ export class OrganizationsController {
     return this.orgsService.updateMemberRole(req.user.id, memberId, body.role);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Delete("my/members/:memberId")
   removeMember(
@@ -108,14 +134,14 @@ export class OrganizationsController {
   // ==========================================
   // ROLES & PERMISSIONS MATRIX ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Get("my/roles/permissions")
   getRolePermissionsMatrix(@Request() req: { user: { id: string } }) {
     return this.orgsService.getRolePermissionsMatrix(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Patch("my/roles/:role/permissions")
   updateRolePermissions(
@@ -130,7 +156,7 @@ export class OrganizationsController {
     );
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Post("my/roles/reset")
   @HttpCode(HttpStatus.OK)
@@ -138,7 +164,7 @@ export class OrganizationsController {
     return this.orgsService.resetRolePermissions(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_roles")
   @Post("my/roles/:role/reset")
   @HttpCode(HttpStatus.OK)
@@ -152,25 +178,22 @@ export class OrganizationsController {
   // ==========================================
   // AUDIT LOG ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:view_audit_log")
   @Get("my/audit-log")
   getAuditLogs(
     @Request() req: { user: { id: string } },
-    @Query("action") action?: string,
-    @Query("resource") resource?: string,
-    @Query("limit") limit?: string,
-    @Query("offset") offset?: string,
+    @Query(DtoPipe(AuditLogQueryDto)) query?: AuditLogQueryDto,
   ) {
     return this.orgsService.getAuditLogs(req.user.id, {
-      action,
-      resource,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      offset: offset ? parseInt(offset, 10) : undefined,
+      action: query?.action,
+      resource: query?.resource,
+      limit: query?.limit,
+      offset: query?.offset,
     });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:update")
   @Patch("my")
   updateMyOrg(
@@ -180,7 +203,7 @@ export class OrganizationsController {
     return this.orgsService.updateMyOrg(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:transfer_ownership")
   @Post("my/transfer-ownership")
   @HttpCode(HttpStatus.OK)
@@ -191,17 +214,22 @@ export class OrganizationsController {
     return this.orgsService.transferOwnership(req.user.id, dto.newOwnerUserId);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:delete")
   @Delete("my")
-  deleteMyOrg(@Request() req: { user: { id: string } }) {
-    return this.orgsService.deleteMyOrg(req.user.id);
+  async deleteMyOrg(
+    @Request() req: { user: { id: string } },
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const result = await this.orgsService.deleteMyOrg(req.user.id);
+    setHasOrgCookie(res, false);
+    return result;
   }
 
   // ==========================================
   // INVITE LINKS ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Post("my/invite-links")
   createInviteLink(
@@ -211,18 +239,19 @@ export class OrganizationsController {
     return this.orgsService.createInviteLink(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Get("my/invite-links")
   getInviteLinks(@Request() req: { user: { id: string } }) {
     return this.orgsService.getInviteLinks(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:manage_members")
   @Delete("my/invite-links/:id")
   revokeInviteLink(
     @Request() req: { user: { id: string } },
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     return this.orgsService.revokeInviteLink(req.user.id, id);
   }
@@ -236,11 +265,14 @@ export class OrganizationsController {
   // Auth endpoint to accept invite and join org
   @UseGuards(JwtAuthGuard)
   @Post("invite-links/join/:token")
-  joinByToken(
+  async joinByToken(
     @Request() req: { user: { id: string } },
     @Param("token") token: string,
+    @Res({ passthrough: true }) res?: Response,
   ) {
-    return this.orgsService.joinByToken(req.user.id, token);
+    const result = await this.orgsService.joinByToken(req.user.id, token);
+    setHasOrgCookie(res, true);
+    return result;
   }
 
   // Public endpoint to view organization profile by slug (no auth needed)

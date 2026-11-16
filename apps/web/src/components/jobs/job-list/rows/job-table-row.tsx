@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { JobStageCounts, VisibleColumns } from "../types";
 import { JobStageBadgeGroup } from "./job-stage-badge-group";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 export interface JobTableRowProps {
   job: Job;
@@ -28,6 +29,8 @@ export function JobTableRow({
   onDeleteJob,
 }: JobTableRowProps) {
   const router = useRouter();
+  const canUpdateJob = useHasPermission("job:update");
+  const canDeleteJob = useHasPermission("job:delete");
   const { t } = useI18n();
 
   return (
@@ -43,7 +46,7 @@ export function JobTableRow({
           </Link>
           <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 flex-wrap">
             <span className="font-medium text-slate-600 dark:text-slate-300">
-              {job.department || "General"}
+              {job.department || t("jobs.wizard.generalDepartment")}
             </span>
             <span>•</span>
             <span>{getJobTypeLabel(job.type, t)}</span>
@@ -53,7 +56,7 @@ export function JobTableRow({
                 className="h-3 w-3 text-slate-400 shrink-0"
                 aria-hidden="true"
               />
-              {job.location || "Remote"}
+              {job.location || t("jobs.defaultLocation")}
             </span>
           </div>
         </div>
@@ -133,29 +136,33 @@ export function JobTableRow({
           </Link>
 
           {/* Quick Edit (Settings) */}
-          <Link
-            href={`/dashboard/jobs/${job.id}/settings`}
-            onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
-            title={t("common.edit")}
-            aria-label={`${t("common.edit")}: ${job.title}`}
-          >
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          {canUpdateJob && (
+            <Link
+              href={`/dashboard/jobs/${job.id}/settings`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              title={t("common.edit")}
+              aria-label={`${t("common.edit")}: ${job.title}`}
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          )}
 
           {/* Quick Delete */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteJob(job.id);
-            }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
-            title={t("common.delete")}
-            aria-label={`${t("common.delete")}: ${job.title}`}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </button>
+          {canDeleteJob && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteJob(job.id);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+              title={t("common.delete")}
+              aria-label={`${t("common.delete")}: ${job.title}`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </td>
     </tr>

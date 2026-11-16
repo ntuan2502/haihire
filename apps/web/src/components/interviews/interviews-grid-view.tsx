@@ -14,7 +14,12 @@ import {
   Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getInitials, getCandidateDisplayName } from "@/lib/utils";
+import {
+  formatDate,
+  formatTime,
+  getInitials,
+  getCandidateDisplayName,
+} from "@/lib/utils";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
@@ -134,13 +139,13 @@ export function InterviewsGridView({
                       <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
                         <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                         <span className="whitespace-nowrap">
-                          {currentInterview.date}
+                          {formatDate(currentInterview.scheduledAt)}
                         </span>
                         <span className="text-slate-300 dark:text-slate-600">
                           •
                         </span>
                         <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                          {currentInterview.time}
+                          {formatTime(currentInterview.scheduledAt)}
                         </span>
                       </div>
                       {currentInterview.round ? (
@@ -300,12 +305,13 @@ export function InterviewsGridView({
                       <div className="space-y-2 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 divide-y divide-slate-100 dark:divide-slate-800">
                         {previousInterviews.map((prev, pIdx) => (
                           <div
-                            key={`${prev.date}-${prev.time}-${pIdx}`}
+                            key={prev.id || `${prev.scheduledAt}-${pIdx}`}
                             className={`text-[11px] space-y-1 ${pIdx > 0 ? "pt-2" : ""}`}
                           >
                             <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
                               <span className="whitespace-nowrap">
-                                {prev.date} ({prev.time})
+                                {formatDate(prev.scheduledAt)} (
+                                {formatTime(prev.scheduledAt)})
                               </span>
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
                                 {prev.round

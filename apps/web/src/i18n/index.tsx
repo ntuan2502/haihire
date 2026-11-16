@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  createContext,
   useContext,
   useState,
   useEffect,
@@ -16,32 +15,29 @@ import {
   LOCALE_STORAGE_KEY,
   LOCALE_COOKIE_KEY,
 } from "./config";
+import {
+  I18nContext,
+  type I18nContextType,
+  type TranslationKey,
+} from "./context";
+import {
+  translateFromDictionary,
+  useOptionalI18n,
+  setLocaleDictionary,
+  getLocaleDictionary,
+  loadLocaleDictionary,
+} from "./optional";
 import type { TranslationSchema } from "./types";
-import { en } from "./locales/en";
-import { vi } from "./locales/vi";
-import { BRAND_CONFIG } from "@haihire/shared";
 
-const TRANSLATIONS: Record<SupportedLocale, TranslationSchema> = {
-  en,
-  vi,
+export {
+  I18nContext,
+  translateFromDictionary,
+  useOptionalI18n,
+  setLocaleDictionary,
+  getLocaleDictionary,
+  loadLocaleDictionary,
 };
-
-type NestedKeyOf<ObjectType extends object> = {
-  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
-    ? `${Key}.${NestedKeyOf<ObjectType[Key]>}`
-    : `${Key}`;
-}[keyof ObjectType & (string | number)];
-
-export type TranslationKey = NestedKeyOf<TranslationSchema> | (string & {});
-
-interface I18nContextType {
-  locale: SupportedLocale;
-  setLocale: (locale: SupportedLocale) => void;
-  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
-  isReady: boolean;
-}
-
-export const I18nContext = createContext<I18nContextType | null>(null);
+export type { I18nContextType, TranslationKey, TranslationSchema };
 
 /**
  * Helper to detect browser preferred language:
@@ -70,52 +66,73 @@ function detectBrowserLocale(): SupportedLocale {
 export function I18nProvider({
   children,
   initialLocale = DEFAULT_LOCALE,
+  initialDictionary,
 }: {
   children: ReactNode;
   initialLocale?: SupportedLocale;
+  initialDictionary?: TranslationSchema;
 }) {
+  if (initialDictionary && !getLocaleDictionary(initialLocale)) {
+    setLocaleDictionary(initialLocale, initialDictionary);
+  }
+
   const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
   const [isReady, setIsReady] = useState(false);
 
   // Initialize locale from LocalStorage, Cookie, or Browser Detect
   useEffect(() => {
-    try {
-      // 1. Try LocalStorage
-      const savedLocale = localStorage.getItem(
-        LOCALE_STORAGE_KEY,
-      ) as SupportedLocale | null;
-      if (savedLocale && savedLocale in SUPPORTED_LOCALES) {
-        setLocaleState(savedLocale);
-        setIsReady(true);
-        return;
+    let active = true;
+
+    async function initLocale() {
+      let targetLocale: SupportedLocale = initialLocale;
+      try {
+        // 1. Try LocalStorage
+        const savedLocale = localStorage.getItem(
+          LOCALE_STORAGE_KEY,
+        ) as SupportedLocale | null;
+        if (savedLocale && savedLocale in SUPPORTED_LOCALES) {
+          targetLocale = savedLocale;
+        } else {
+          // 2. Try Cookie
+          const cookieMatch = document.cookie.match(
+            new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`),
+          );
+          const cookieLocale = cookieMatch
+            ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale)
+            : null;
+          if (cookieLocale && cookieLocale in SUPPORTED_LOCALES) {
+            targetLocale = cookieLocale;
+          } else {
+            // 3. Fallback to Browser Detection
+            targetLocale = detectBrowserLocale();
+          }
+        }
+      } catch {
+        targetLocale = DEFAULT_LOCALE;
       }
 
-      // 2. Try Cookie
-      const cookieMatch = document.cookie.match(
-        new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`),
-      );
-      const cookieLocale = cookieMatch
-        ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale)
-        : null;
-      if (cookieLocale && cookieLocale in SUPPORTED_LOCALES) {
-        setLocaleState(cookieLocale);
-        setIsReady(true);
-        return;
+      if (!getLocaleDictionary(targetLocale)) {
+        await loadLocaleDictionary(targetLocale);
       }
 
-      // 3. Fallback to Browser Detection
-      const detected = detectBrowserLocale();
-      setLocaleState(detected);
-    } catch {
-      // Fallback
-      setLocaleState(DEFAULT_LOCALE);
-    } finally {
-      setIsReady(true);
+      if (active) {
+        setLocaleState(targetLocale);
+        setIsReady(true);
+      }
     }
-  }, []);
 
-  const setLocale = useCallback((newLocale: SupportedLocale) => {
+    initLocale();
+
+    return () => {
+      active = false;
+    };
+  }, [initialLocale]);
+
+  const setLocale = useCallback(async (newLocale: SupportedLocale) => {
     if (!(newLocale in SUPPORTED_LOCALES)) return;
+    if (!getLocaleDictionary(newLocale)) {
+      await loadLocaleDictionary(newLocale);
+    }
     setLocaleState(newLocale);
 
     try {
@@ -136,74 +153,8 @@ export function I18nProvider({
   }, [locale]);
 
   const t = useCallback(
-    (key: TranslationKey, params?: Record<string, string | number>): string => {
-      const currentDict = TRANSLATIONS[locale] || TRANSLATIONS[DEFAULT_LOCALE];
-      const keys = (key as string).split(".");
-
-      // Traverse dictionary
-      let val: unknown = currentDict;
-      for (const k of keys) {
-        if (
-          val &&
-          typeof val === "object" &&
-          k in (val as Record<string, unknown>)
-        ) {
-          val = (val as Record<string, unknown>)[k];
-        } else {
-          // Fallback to English
-          let fallbackVal: unknown = TRANSLATIONS[DEFAULT_LOCALE];
-          for (const fk of keys) {
-            if (
-              fallbackVal &&
-              typeof fallbackVal === "object" &&
-              fk in (fallbackVal as Record<string, unknown>)
-            ) {
-              fallbackVal = (fallbackVal as Record<string, unknown>)[fk];
-            } else {
-              fallbackVal = key;
-              break;
-            }
-          }
-          val = fallbackVal;
-          break;
-        }
-      }
-
-      if (typeof val !== "string") {
-        return key;
-      }
-
-      // Inject default brand context + custom parameters
-      const resolvedId =
-        params?.id ||
-        params?.applicationId ||
-        params?.candidateId ||
-        params?.jobId ||
-        params?.interviewId;
-      const mergedParams: Record<string, string | number> = {
-        brand: BRAND_CONFIG.name,
-        brandLegal: BRAND_CONFIG.legalName,
-        brandMonogram: BRAND_CONFIG.monogram,
-        domain: BRAND_CONFIG.domain,
-        ...(resolvedId !== undefined ? { id: resolvedId } : {}),
-        ...params,
-      };
-
-      let text = val;
-      Object.entries(mergedParams).forEach(([paramKey, paramVal]) => {
-        text = text.replace(
-          new RegExp(`\\{${paramKey}\\}`, "g"),
-          String(paramVal),
-        );
-      });
-
-      // Gracefully clean up any unsupplied placeholders so literal `{param}` never leaks to users
-      text = text.replace(/\s*\(\{[a-zA-Z0-9_]+\}\)/g, "");
-      text = text.replace(/['"]\{[a-zA-Z0-9_]+\}['"]\s*/g, "");
-      text = text.replace(/\{[a-zA-Z0-9_]+\}/g, "");
-      text = text.replace(/\s{2,}/g, " ").trim();
-      return text;
-    },
+    (key: TranslationKey, params?: Record<string, string | number>): string =>
+      translateFromDictionary(locale, key, params),
     [locale],
   );
 

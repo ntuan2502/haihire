@@ -14,6 +14,7 @@ import { SendEmailDto, SendTestEmailDto } from "../dto/send-email.dto";
 import { EmailTransporterFactory } from "../transporters/transporter.factory";
 import { toInstant } from "../../common/date.util";
 import type { GetLogsOptions } from "./email-system.service";
+import { EventsService } from "../../events/events.service";
 
 @Injectable()
 export class EmailDispatchService {
@@ -27,6 +28,9 @@ export class EmailDispatchService {
     @Optional()
     @InjectQueue("email-queue")
     private readonly emailQueue?: Queue,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   async sendEmail(
@@ -45,7 +49,7 @@ export class EmailDispatchService {
       try {
         const candidateKey = dto.candidateId || dto.to.toLowerCase();
         const appKey = dto.applicationId || "general";
-        const templateKey = dto.templateType || "custom";
+        const templateKey = dto.templateId || dto.templateType || "custom";
         const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
         const deterministicJobId = `email-${crypto
           .createHash("sha256")
@@ -141,6 +145,8 @@ export class EmailDispatchService {
         senderEmail: fromEmail,
         recipientEmail: dto.to,
         recipientName: dto.recipientName,
+        templateId: dto.templateId || null,
+        templateName: dto.templateName || null,
         templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
         subject: renderedSubject,
         body: renderedBody,
@@ -164,6 +170,8 @@ export class EmailDispatchService {
         actorRole: "ADMIN",
         metadata: {
           emailLogId: logId,
+          templateId: dto.templateId || null,
+          templateName: dto.templateName || null,
           templateType: dto.templateType || "CUSTOM",
           subject: renderedSubject,
           status: sendResult.status,
@@ -171,7 +179,21 @@ export class EmailDispatchService {
           recipientName: dto.recipientName,
         },
       });
+      this.eventsService?.emit({
+        type: "ACTIVITIES_CHANGED",
+        organizationId,
+        data: {
+          candidateId: dto.candidateId,
+          applicationId: dto.applicationId || null,
+        },
+      });
     }
+
+    this.eventsService?.emit({
+      type: "EMAIL_CHANGED",
+      organizationId,
+      data: { emailLogId: logId, status: sendResult.status },
+    });
 
     return log;
   }

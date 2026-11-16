@@ -9,6 +9,7 @@ import { EmailService } from "./email.service";
 import {
   EmailDispatchService,
   EmailTemplatesService,
+  EmailFlowsService,
   EmailSettingsService,
   EmailSystemService,
 } from "./services";
@@ -37,6 +38,7 @@ import {
     EmailService,
     EmailDispatchService,
     EmailTemplatesService,
+    EmailFlowsService,
     EmailSettingsService,
     EmailSystemService,
     EmailProcessor,
@@ -45,6 +47,7 @@ import {
     EmailService,
     EmailDispatchService,
     EmailTemplatesService,
+    EmailFlowsService,
     EmailSettingsService,
     EmailSystemService,
     EncryptionService,

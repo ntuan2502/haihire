@@ -8,7 +8,13 @@ import {
 } from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Application, ApplicationStage, PaginatedResult } from "@/types";
+import type {
+  Application,
+  ApplicationNote,
+  ApplicationStage,
+  ApplicationStats,
+  PaginatedResult,
+} from "@/types";
 import { queryKeys } from "./query-keys";
 
 export function useApplications(params?: {
@@ -18,6 +24,7 @@ export function useApplications(params?: {
   search?: string;
   jobId?: string;
   stage?: string;
+  enabled?: boolean;
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -53,33 +60,49 @@ export function useApplications(params?: {
         stage: params?.stage,
       });
     },
-    enabled: Boolean(effectiveOrgId),
+    enabled: (params?.enabled ?? true) && Boolean(effectiveOrgId),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useAllApplications(organizationId?: string | null) {
+export function useApplicationStats(organizationId?: string | null) {
   const { user } = useAuth();
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
-  return useQuery<Application[]>({
-    queryKey: queryKeys.allApplications(effectiveOrgId),
-    queryFn: async () => {
-      if (!effectiveOrgId) return [];
-      const res = await applicationsApi.getAll({
-        organizationId: effectiveOrgId,
-        limit: 100,
-      });
-      return res.data;
+  return useQuery<ApplicationStats>({
+    queryKey: queryKeys.applicationStats(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) {
+        return {
+          totalApplications: 0,
+          byStage: {
+            APPLIED: 0,
+            SCREENING: 0,
+            INTERVIEW: 0,
+            OFFER: 0,
+            HIRED: 0,
+            REJECTED: 0,
+          },
+          byJob: {},
+        };
+      }
+      return applicationsApi.getStats(effectiveOrgId);
     },
     enabled: Boolean(effectiveOrgId),
   });
 }
 
-export function useJobApplications(jobId: string | null) {
+export function useJobApplications(
+  jobId: string | null,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Application[]>({
-    queryKey: queryKeys.applications(jobId),
+    queryKey: queryKeys.applications(jobId, effectiveOrgId),
     queryFn: () => {
       if (!jobId) return [];
       return applicationsApi.getByJob(jobId);
@@ -88,9 +111,16 @@ export function useJobApplications(jobId: string | null) {
   });
 }
 
-export function useApplication(id: string | null | undefined) {
+export function useApplication(
+  id: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Application>({
-    queryKey: queryKeys.application(id),
+    queryKey: queryKeys.application(id, effectiveOrgId),
     queryFn: () => {
       if (!id) throw new Error("Application ID is required");
       return applicationsApi.getById(id);
@@ -120,12 +150,31 @@ export function useUpdateStageMutation() {
     mutationFn: ({
       id,
       stage,
+      stageId,
       orderIndex,
+      rejectionReason,
+      sendRejectionEmail,
+      sendOfferEmail,
+      emailTemplateId,
     }: {
       id: string;
       stage: ApplicationStage;
+      stageId?: string;
       orderIndex?: number;
-    }) => applicationsApi.updateStage(id, stage, orderIndex),
+      rejectionReason?: string;
+      sendRejectionEmail?: boolean;
+      sendOfferEmail?: boolean;
+      emailTemplateId?: string;
+    }) =>
+      applicationsApi.updateStage(id, {
+        stage,
+        stageId,
+        orderIndex,
+        rejectionReason,
+        sendRejectionEmail,
+        sendOfferEmail,
+        emailTemplateId,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
@@ -217,6 +266,88 @@ export function useDeleteDocumentMutation() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useApplicationNotes(
+  applicationId: string | null | undefined,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<ApplicationNote[]>({
+    queryKey: queryKeys.applicationNotes(applicationId, effectiveOrgId),
+    queryFn: () => {
+      if (!applicationId) return [];
+      return applicationsApi.getNotes(applicationId);
+    },
+    enabled: Boolean(applicationId),
+  });
+}
+
+export function useAddApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      content,
+    }: {
+      applicationId: string;
+      content: string;
+    }) => applicationsApi.addNote(applicationId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useUpdateApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      noteId,
+      content,
+    }: {
+      applicationId: string;
+      noteId: string;
+      content: string;
+    }) => applicationsApi.updateNote(applicationId, noteId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      noteId,
+    }: {
+      applicationId: string;
+      noteId: string;
+    }) => applicationsApi.deleteNote(applicationId, noteId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 }

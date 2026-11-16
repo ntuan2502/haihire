@@ -51,7 +51,6 @@ export function useJobWizardValidation({
     !payNegotiable &&
     (minSalary.trim().length > 0 ||
       maxSalary.trim().length > 0 ||
-      currency !== null ||
       salaryPer !== null);
   const isCurrencyValid = !hasSalaryData || Boolean(currency);
   const isSalaryPerValid = !hasSalaryData || Boolean(salaryPer);

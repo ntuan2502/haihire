@@ -22,9 +22,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "pnpm dev",
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: process.env.CI ? 300000 : 120000,
     stdout: "pipe",
     stderr: "pipe",

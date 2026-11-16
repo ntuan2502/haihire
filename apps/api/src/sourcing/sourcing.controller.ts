@@ -5,6 +5,7 @@ import {
   Get,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -18,13 +19,20 @@ import type { Request as ExpressRequest } from "express";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { SourcingService } from "./sourcing.service";
-import { CreateTrackingLinkDto } from "./dto/create-tracking-link.dto";
-import { UpdateTrackingLinkDto } from "./dto/update-tracking-link.dto";
-import { RecordClickDto } from "./dto/record-click.dto";
 import { SourcingFilterDto } from "./dto/sourcing-filter.dto";
 import { AppForbiddenException } from "../common/app-exception";
-import { APP_ERROR_CODES, type TimeRangeFilter } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  createTrackingLinkSchema,
+  recordClickSchema,
+  updateTrackingLinkSchema,
+  type CreateTrackingLinkSchema,
+  type RecordClickSchema,
+  type TimeRangeFilter,
+  type UpdateTrackingLinkSchema,
+} from "@haihire/shared";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("sourcing")
 export class SourcingController {
@@ -34,10 +42,11 @@ export class SourcingController {
   ) {}
 
   @Get("stats")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("sourcing:view")
   async getStats(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Query() filter: SourcingFilterDto,
+    @Query(DtoPipe(SourcingFilterDto)) filter: SourcingFilterDto,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -50,10 +59,11 @@ export class SourcingController {
   }
 
   @Get("links")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("sourcing:view")
   async getLinks(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Query() filter: SourcingFilterDto,
+    @Query(DtoPipe(SourcingFilterDto)) filter: SourcingFilterDto,
     @Query("isActive") isActive?: string,
   ) {
     const orgId = req.user?.organizationId;
@@ -78,10 +88,11 @@ export class SourcingController {
   }
 
   @Get("links/:id")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("sourcing:view")
   async getLinkDetails(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
     @Query("timeRange") timeRange?: TimeRangeFilter,
   ) {
     const orgId = req.user?.organizationId;
@@ -95,11 +106,11 @@ export class SourcingController {
   }
 
   @Post("links")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("sourcing:create")
   async createLink(
     @Request() req: { user?: { id: string; organizationId?: string | null } },
-    @Body(DtoPipe(CreateTrackingLinkDto)) dto: CreateTrackingLinkDto,
+    @Body(DtoPipe(createTrackingLinkSchema)) dto: CreateTrackingLinkSchema,
   ) {
     const orgId = req.user?.organizationId;
     const userId = req.user?.id;
@@ -113,12 +124,12 @@ export class SourcingController {
   }
 
   @Patch("links/:id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("sourcing:update")
   async updateLink(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Param("id") id: string,
-    @Body(DtoPipe(UpdateTrackingLinkDto)) dto: UpdateTrackingLinkDto,
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(updateTrackingLinkSchema)) dto: UpdateTrackingLinkSchema,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -132,11 +143,11 @@ export class SourcingController {
   }
 
   @Delete("links/:id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("sourcing:delete")
   async deleteLink(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -150,10 +161,11 @@ export class SourcingController {
   }
 
   @Get("attribution-log")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("sourcing:view")
   async getAttributionLog(
     @Request() req: { user?: { organizationId?: string | null } },
-    @Query() filter: SourcingFilterDto,
+    @Query(DtoPipe(SourcingFilterDto)) filter: SourcingFilterDto,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -178,7 +190,7 @@ export class SourcingController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post("public/click")
   async recordClick(
-    @Body(DtoPipe(RecordClickDto)) dto: RecordClickDto,
+    @Body(DtoPipe(recordClickSchema)) dto: RecordClickSchema,
     @Req() req: ExpressRequest,
   ) {
     const ip = req.ip || req.socket.remoteAddress || undefined;

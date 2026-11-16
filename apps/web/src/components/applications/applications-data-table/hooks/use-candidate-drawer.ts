@@ -4,26 +4,20 @@ import {
   useState,
   useMemo,
   useRef,
-  useEffect,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { canTransition, getTransitionDisabledReason } from "@/lib/stages";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
-  useUpdateCandidateMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import {
-  parseCandidateNotes,
-  parseCandidateDocuments,
-  fixUtf8String,
-} from "@/lib/utils";
+import { parseCandidateDocuments, fixUtf8String } from "@/lib/utils";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -32,6 +26,8 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
+import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
+import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import type {
   Job,
   Application,
@@ -56,12 +52,9 @@ export function useCandidateDrawer({
   const queryClient = useQueryClient();
 
   const updateStageMutation = useUpdateStageMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [drawerTab, setDrawerTab] = useState<string>("overview");
-  const [drawerNoteInput, setDrawerNoteInput] = useState("");
-  const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =
@@ -71,6 +64,12 @@ export function useCandidateDrawer({
   const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
+  const [pendingRejectApp, setPendingRejectApp] = useState<Application | null>(
+    null,
+  );
+  const [pendingOfferApp, setPendingOfferApp] = useState<Application | null>(
+    null,
+  );
 
   // Current selected application with fresh state from latest applications
   const currentApp = useMemo(() => {
@@ -83,41 +82,6 @@ export function useCandidateDrawer({
   const allScheduledInterviews = useMemo(() => {
     return getInterviewsFromApplication(currentApp);
   }, [currentApp]);
-
-  useEffect(() => {
-    if (currentApp?.notes) {
-      const { customNotes } = parseCandidateNotes(
-        currentApp.notes,
-        currentApp.candidateName,
-      );
-      const noteText = customNotes || currentApp.notes;
-      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
-      setDrawerNotesList(items);
-    } else {
-      setDrawerNotesList([]);
-    }
-  }, [currentApp?.notes, currentApp?.candidateName]);
-
-  const handleAddDrawerNote = async () => {
-    if (!drawerNoteInput.trim() || !currentApp) return;
-    const trimmed = drawerNoteInput.trim();
-    const updated = [trimmed, ...drawerNotesList];
-    setDrawerNotesList(updated);
-    setDrawerNoteInput("");
-    try {
-      await updateCandidateMutation.mutateAsync({
-        id: currentApp.id,
-        data: {
-          notes: updated.join(" | "),
-        },
-      });
-      setSelectedApp((prev) =>
-        prev ? { ...prev, notes: updated.join(" | ") } : null,
-      );
-    } catch (err) {
-      console.error("Failed to save drawer application note:", err);
-    }
-  };
 
   const handleCancelInterview = async (
     interviewOrId?: ScheduledInterviewInfo | string,
@@ -150,6 +114,51 @@ export function useCandidateDrawer({
     }
   };
 
+  const executeStageChange = async (
+    targetApp: Application,
+    newStage: ApplicationStage,
+    options?: Partial<
+      RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
+    >,
+  ) => {
+    try {
+      const updated = await updateStageMutation.mutateAsync({
+        id: targetApp.id,
+        stage: newStage,
+        ...(options?.rejectionReason !== undefined
+          ? { rejectionReason: options.rejectionReason }
+          : {}),
+        ...(options?.sendRejectionEmail !== undefined
+          ? { sendRejectionEmail: options.sendRejectionEmail }
+          : {}),
+        ...(options?.sendOfferEmail !== undefined
+          ? { sendOfferEmail: options.sendOfferEmail }
+          : {}),
+        ...(options?.emailTemplateId
+          ? { emailTemplateId: options.emailTemplateId }
+          : {}),
+      });
+      setSelectedApp((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: updated?.stage || newStage,
+              rejectionReason:
+                updated?.rejectionReason ??
+                (newStage === "REJECTED"
+                  ? options?.rejectionReason || null
+                  : null),
+            }
+          : null,
+      );
+    } catch (err) {
+      console.error("Failed to update stage:", err);
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    }
+  };
+
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!currentApp) return;
     if (!canTransition(currentApp.stage, newStage)) {
@@ -157,18 +166,33 @@ export function useCandidateDrawer({
       toast.error(reason);
       return;
     }
-    try {
-      await updateStageMutation.mutateAsync({
-        id: currentApp.id,
-        stage: newStage,
-      });
-      setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
-    } catch (err) {
-      console.error("Failed to update stage:", err);
-      const errorMsg = getApiErrorMessage(err, t);
-      toast.error(errorMsg);
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    if (newStage === "REJECTED" && currentApp.stage !== "REJECTED") {
+      setPendingRejectApp(currentApp);
+      return;
     }
+    if (newStage === "OFFER" && currentApp.stage !== "OFFER") {
+      setPendingOfferApp(currentApp);
+      return;
+    }
+    await executeStageChange(currentApp, newStage);
+  };
+
+  const handleConfirmReject = async (
+    payload: RejectApplicationConfirmPayload,
+  ) => {
+    if (!pendingRejectApp) return;
+    const target = pendingRejectApp;
+    await executeStageChange(target, "REJECTED", payload);
+    setPendingRejectApp(null);
+  };
+
+  const handleConfirmOffer = async (
+    payload: OfferApplicationConfirmPayload,
+  ) => {
+    if (!pendingOfferApp) return;
+    const target = pendingOfferApp;
+    await executeStageChange(target, "OFFER", payload);
+    setPendingOfferApp(null);
   };
 
   const handleDownloadDoc = async (
@@ -209,7 +233,7 @@ export function useCandidateDrawer({
     const appsToScan = relatedApps.length > 0 ? relatedApps : [currentApp];
 
     for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
+      const docs = parseCandidateDocuments({
         id: a.id,
         resumeUrl: a.resumeUrl,
         resumeFileName: a.resumeFileName,
@@ -220,7 +244,7 @@ export function useCandidateDrawer({
       for (const d of docs) {
         if (d.url && !seenUrls.has(d.url)) {
           seenUrls.add(d.url);
-          allDocs.push(d);
+          allDocs.push({ ...d, sourceApplicationId: a.id });
         }
       }
     }
@@ -244,12 +268,14 @@ export function useCandidateDrawer({
     currentApp,
     drawerTab,
     setDrawerTab,
-    drawerNoteInput,
-    setDrawerNoteInput,
-    drawerNotesList,
-    handleAddDrawerNote,
     handleCancelInterview,
     handleStageChange,
+    pendingRejectApp,
+    setPendingRejectApp,
+    handleConfirmReject,
+    pendingOfferApp,
+    setPendingOfferApp,
+    handleConfirmOffer,
     handleDownloadDoc,
     drawerOverviewSections,
     setDrawerOverviewSections,

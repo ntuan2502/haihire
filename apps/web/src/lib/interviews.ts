@@ -108,8 +108,7 @@ export function getRecommendationLabel(
 export interface ScheduledInterviewInfo {
   id?: string;
   applicationId?: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
+  scheduledAt: string; // UTC ISO-8601
   type: InterviewType;
   format: InterviewFormat;
   linkOrLocation: string;
@@ -117,6 +116,12 @@ export interface ScheduledInterviewInfo {
   notes?: string;
   round?: number;
   scorecard?: InterviewScorecard;
+}
+
+function toIsoStringSafe(value?: string | Date | null): string {
+  if (!value) return "";
+  const dt = value instanceof Date ? value : new Date(value);
+  return isNaN(dt.getTime()) ? "" : dt.toISOString();
 }
 
 /**
@@ -128,8 +133,6 @@ export function getInterviewsFromApplication(
       id?: string;
       applicationId?: string;
       scheduledAt?: string | Date;
-      date?: string;
-      time?: string;
       type?: InterviewType | string;
       format?: InterviewFormat | string;
       linkOrLocation: string;
@@ -162,22 +165,10 @@ export function getInterviewsFromApplication(
         }
       }
 
-      let date = inv.date || "";
-      let time = inv.time || "";
-      if ((!date || !time) && inv.scheduledAt) {
-        const dt = new Date(inv.scheduledAt);
-        if (!isNaN(dt.getTime())) {
-          if (!date) date = dt.toISOString().split("T")[0];
-          if (!time)
-            time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
-        }
-      }
-
       return {
         id: inv.id,
         applicationId: inv.applicationId,
-        date,
-        time,
+        scheduledAt: toIsoStringSafe(inv.scheduledAt),
         type: normalizeInterviewType(inv.type),
         format: (inv.format as InterviewFormat) || "MEET",
         linkOrLocation: inv.linkOrLocation,
@@ -189,9 +180,9 @@ export function getInterviewsFromApplication(
     });
 
     list.sort((a, b) => {
-      const dtA = `${a.date} ${a.time || "00:00"}`;
-      const dtB = `${b.date} ${b.time || "00:00"}`;
-      return dtB.localeCompare(dtA);
+      const msA = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+      const msB = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+      return msB - msA;
     });
 
     return list;
@@ -208,10 +199,9 @@ export function getLatestInterviewFromApplication(
     interviews?: Array<{
       id?: string;
       applicationId?: string;
-      date: string;
-      time: string;
-      type: string;
-      format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+      scheduledAt?: string | Date;
+      type?: InterviewType | string;
+      format?: InterviewFormat | string;
       linkOrLocation: string;
       interviewer: string;
       round?: number;
@@ -223,8 +213,10 @@ export function getLatestInterviewFromApplication(
 ): ScheduledInterviewInfo | null {
   const all = getInterviewsFromApplication(app);
   if (!all.length) return null;
-  const today = new Date().toISOString().split("T")[0];
-  const upcomingList = all.filter((item) => item.date >= today);
+  const nowMs = Date.now();
+  const upcomingList = all.filter(
+    (item) => item.scheduledAt && new Date(item.scheduledAt).getTime() >= nowMs,
+  );
   if (upcomingList.length > 0) {
     return upcomingList[upcomingList.length - 1];
   }

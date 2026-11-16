@@ -30,6 +30,7 @@ vi.mock("@/context/auth-context", () => ({
 // Mock i18n
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
+    locale: "vi",
     t: (key: string) => {
       const translations: Record<string, string> = {
         "auth.recruiterSignUp": "Đăng ký tuyển dụng",
@@ -38,8 +39,10 @@ vi.mock("@/i18n", () => ({
         "auth.errorRegisterRequired":
           "Vui lòng nhập đầy đủ họ tên, email và mật khẩu.",
         "auth.errorPasswordMinLength": "Mật khẩu phải có tối thiểu 6 ký tự.",
-        "auth.fullNameLabel": "Họ và tên",
-        "auth.fullNamePlaceholder": "Nguyễn Văn A",
+        "auth.firstNameLabel": "Tên",
+        "auth.firstNamePlaceholder": "Văn A",
+        "auth.lastNameLabel": "Họ và tên đệm",
+        "auth.lastNamePlaceholder": "Nguyễn",
         "auth.emailLabel": "Địa chỉ Email",
         "auth.emailPlaceholder": "recruiter@company.com",
         "auth.passwordLabel": "Mật khẩu",
@@ -64,7 +67,8 @@ describe("RegisterPage Component Tests", () => {
     render(<RegisterPage />);
 
     expect(screen.getByText("Tạo tài khoản mới")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Nguyễn Văn A")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Nguyễn")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Văn A")).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText("recruiter@company.com"),
     ).toBeInTheDocument();
@@ -87,11 +91,13 @@ describe("RegisterPage Component Tests", () => {
   it("shows error when password is less than 6 characters", async () => {
     render(<RegisterPage />);
 
-    const nameInput = screen.getByPlaceholderText("Nguyễn Văn A");
+    const lastNameInput = screen.getByPlaceholderText("Nguyễn");
+    const firstNameInput = screen.getByPlaceholderText("Văn A");
     const emailInput = screen.getByPlaceholderText("recruiter@company.com");
     const passwordInput = screen.getByPlaceholderText("••••••••");
 
-    fireEvent.change(nameInput, { target: { value: "Nguyễn HR" } });
+    fireEvent.change(lastNameInput, { target: { value: "Nguyễn" } });
+    fireEvent.change(firstNameInput, { target: { value: "HR" } });
     fireEvent.change(emailInput, { target: { value: "hr@company.com" } });
     fireEvent.change(passwordInput, { target: { value: "12345" } });
 
@@ -114,11 +120,13 @@ describe("RegisterPage Component Tests", () => {
 
     render(<RegisterPage />);
 
-    const nameInput = screen.getByPlaceholderText("Nguyễn Văn A");
+    const lastNameInput = screen.getByPlaceholderText("Nguyễn");
+    const firstNameInput = screen.getByPlaceholderText("Văn A");
     const emailInput = screen.getByPlaceholderText("recruiter@company.com");
     const passwordInput = screen.getByPlaceholderText("••••••••");
 
-    fireEvent.change(nameInput, { target: { value: "Trần Tuyển Dụng" } });
+    fireEvent.change(lastNameInput, { target: { value: "Trần" } });
+    fireEvent.change(firstNameInput, { target: { value: "Tuyển Dụng" } });
     fireEvent.change(emailInput, { target: { value: "tran@company.com" } });
     fireEvent.change(passwordInput, { target: { value: "Password123!" } });
 
@@ -127,7 +135,8 @@ describe("RegisterPage Component Tests", () => {
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith(
-        "Trần Tuyển Dụng",
+        "Tuyển Dụng",
+        "Trần",
         "tran@company.com",
         "Password123!",
       );

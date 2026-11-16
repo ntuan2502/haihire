@@ -121,7 +121,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Block Release on API CRITICAL Vulnerabilities (D-015 verified)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.API_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "table"
@@ -133,7 +133,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy Scanner on API Image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.API_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "sarif"
@@ -153,7 +153,7 @@ jobs:
           category: "trivy-api"
 
       - name: Block Release on Web CRITICAL Vulnerabilities (D-015 verified)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.WEB_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "table"
@@ -165,7 +165,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy Scanner on Web Image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         if: always()
         with:
           image-ref: ${{ env.WEB_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
@@ -191,8 +191,8 @@ jobs:
         with:
           name: trivy-container-sarif-reports
           path: |
-            trivy-backend-results.sarif
-            trivy-frontend-results.sarif
+            trivy-api-results.sarif
+            trivy-web-results.sarif
           if-no-files-found: ignore
 
   # ============================================================================

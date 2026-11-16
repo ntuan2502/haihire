@@ -1,164 +1,95 @@
-# Runbook: Environment Variable Management & Architecture
+# Environment Management Runbook
 
-> **Single Source of Truth & Zero-Leakage Environment System**  
-> Covers configuration structure, loading mechanics, synchronization protocols, and Docker deployment workflows.
-
----
-
-## 1. Environment Files Architecture
-
-Following the Task #11 unification, HaiHire employs a unified **Single Source of Truth (SSOT)** environment architecture. All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from a single root configuration. Package-level environment files (`apps/api/.env*` and `apps/web/.env*`) have been eliminated.
-
-| File Path                            | Target Scope & Responsibility                                                                                                                              | Loaded By                                                                                                                                      |       Committed to Git?        |
-| :----------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------: |
-| **`.env`** (Root)                    | Local machine host ports, secrets, database, Redis, S3, mailers, and Next.js endpoints. **Single Source of Truth for local development and local Docker.** | Backend (`apps/api/src/config/env.ts`), Frontend (`apps/web/next.config.ts`, `apps/web/scripts/dev.ts`), Docker Compose (`docker-compose.yml`) |    ❌ **NO** (`.gitignore`)    |
-| **`.env.example`** (Root)            | Complete standardized 10-section template for local development and Docker Compose.                                                                        | Reference template (`cp .env.example .env`)                                                                                                    |           ✅ **YES**           |
-| **`.env.production.example`** (Root) | Standardized 10-section production template for secure deployments. Contains production metadata, domains, and security recommendations.                   | Reference template (`cp .env.production.example .env.production`)                                                                              |           ✅ **YES**           |
-| **`.env.production`** (Root)         | Real production secrets and endpoints on secure production servers (chmod 600).                                                                            | `docker compose --env-file .env.production -f docker-compose.prod.yml`                                                                         | ❌ **NO** (Strictly forbidden) |
+> Governance, Zod runtime validation, parity enforcement, and secret rotation for HaiHire environment configuration.
 
 ---
 
-## 2. Standardized 10-Section Structure
+## 1. Authoritative Configuration Files
 
-Both `.env.example` and `.env.production.example` follow a unified 10-section organization:
-
-1. **Application Runtime & Ports:** `NODE_ENV`, `BACKEND_PORT`, `FRONTEND_PORT` (eliminates unnamespaced `PORT` collision).
-2. **PostgreSQL Database & Prisma ORM:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `DATABASE_URL`.
-3. **Valkey / Redis Distributed Cache & Queue:** `REDIS_PORT`, `REDIS_PASSWORD`.
-4. **MinIO S3 Object Storage:** `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_CONSOLE_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`, `MINIO_PUBLIC_URL`.
-5. **Security & Cryptographic Secrets:** `JWT_SECRET`, `ENCRYPTION_SECRET`, `DEMO_SEED_PASSWORD`.
-6. **Networking, CORS & API Endpoints:** `FRONTEND_URL`, `INTERNAL_API_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_MINIO_URL`.
-7. **System Email Dispatch:** `SYSTEM_EMAIL_PROVIDER`, `SYSTEM_EMAIL_FROM_NAME`, `SYSTEM_EMAIL_FROM_EMAIL`, `SYSTEM_EMAIL_SMTP_HOST`, `SYSTEM_EMAIL_SMTP_PORT`, `SYSTEM_EMAIL_SMTP_USER`, `SYSTEM_EMAIL_SMTP_PASS`, `SYSTEM_EMAIL_RESEND_API_KEY`, `SYSTEM_EMAIL_SENDGRID_API_KEY`.
-8. **Multi-Channel Webhook Notifications:** `WEBHOOK_PROVIDER`, `WEBHOOK_URL`, `WEBHOOK_SECRET_TOKEN`, `WEBHOOK_CHAT_ID`.
-9. **Prometheus Metrics:** `PUSHGATEWAY_PORT`, `PUSHGATEWAY_URL`, `METRICS_TOKEN` (bearer token for backend `/metrics`; required in production, where the endpoint returns 404 when unset).
-10. _(Production Template only — Section 1)_ **Production Deployment Metadata:** `GITHUB_REPOSITORY_OWNER`, `IMAGE_TAG`.
+| Artifact                                                       | Purpose                                                                      | Access / Git Policy             |
+| :------------------------------------------------------------- | :--------------------------------------------------------------------------- | :------------------------------ |
+| [`.env.example`](../../.env.example)                           | Local development template (`56` keys)                                       | Committed (SSOT for key parity) |
+| [`.env.production.example`](../../.env.production.example)     | Production deployment template (`chmod 600` on server)                       | Committed template only         |
+| `.env` / `.env.production`                                     | Active local / server runtime secrets                                        | **Git-ignored — NEVER commit**  |
+| [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) | Backend startup Zod schema + cross-field `superRefine` checks                | Enforced at API boot            |
+| [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts)       | Frontend split validation (`NEXT_PUBLIC_*` client vs `INTERNAL_API_URL` SSR) | Enforced on server & browser    |
+| [scripts/check-env-sync.ts](../../scripts/check-env-sync.ts)   | Static parity & Compose coverage gate (`pnpm lint:env-sync`)                 | Required CI gate                |
 
 ---
 
-## 3. Environment Loading Protocols
+## 2. Parity Enforcement (`pnpm lint:env-sync`)
 
-### 3.1 Local Development Mode (`pnpm dev`)
+Whenever you add, rename, or remove an environment variable:
 
-When executing `pnpm dev` from the repository root:
-
-1. **Backend / API Loading:**
-   - [`apps/api/src/config/env.ts`](../../apps/api/src/config/env.ts) locates the repository root and loads root `.env`.
-   - Dynamic port synchronization automatically maps `BACKEND_PORT` to `PORT`, and ensures localhost URLs for Postgres, MinIO, and Frontend align.
-   - NestJS [`apps/api/src/app.module.ts`](../../apps/api/src/app.module.ts) configures `ConfigModule` to search `['../../.env', '../.env', '.env']`.
-2. **Frontend / Web Loading:**
-   - [`apps/web/scripts/dev.ts`](../../apps/web/scripts/dev.ts) loads root `.env` and sets `process.env.PORT` from `FRONTEND_PORT`.
-   - [`apps/web/next.config.ts`](../../apps/web/next.config.ts) loads root `.env` to configure API rewrites (`/api/*` -> `http://127.0.0.1:13001`) and allowed dev origins.
-   - Runtime Zod validation in [`apps/web/src/lib/env.ts`](../../apps/web/src/lib/env.ts) ensures `INTERNAL_API_URL` is set during SSR.
-3. **Prisma CLI Loading:**
-   - Prisma CLI automatically climbs parent directories and loads root `..\..\.env` when executing from `apps/api/`.
-
----
-
-### 3.2 Build-Time vs Runtime (`NEXT_PUBLIC_*`)
-
-> ⚠️ **CRITICAL ARCHITECTURAL DISTINCTION**:  
-> Variables prefixed with `NEXT_PUBLIC_` are **inlined statically into the JavaScript client bundle at build-time** (`next build`).
-
-```
-                    ┌────────────────────────────────────────────────────────┐
-                    │                      BUILD TIME                        │
-                    │               (pnpm run build:frontend)                │
-                    └──────────────────────────┬─────────────────────────────┘
-                                               │
-                                 Evaluates NEXT_PUBLIC_*
-                                               │
-                                               ▼
-                              Inlined directly into .next/static/*.js
-                                               │
-                                               ▼
-┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       RUN TIME                                             │
-├─────────────────────────────────────────┬──────────────────────────────────────────────────┤
-│           BROWSER CLIENT                │                 NODE.JS SSR SERVER               │
-│                                         │                                                  │
-│ Reads inlined strings from *.js chunks. │ Reads process.env.INTERNAL_API_URL dynamically   │
-│ Does NOT read process.env at runtime!   │ from container/host environment.                 │
-└─────────────────────────────────────────┴──────────────────────────────────────────────────┘
-```
-
-#### Key Rules:
-
-1. If deploying frontend and backend to distinct public domains (e.g. `https://api.example.com`), provide `NEXT_PUBLIC_API_URL` during `docker build` using BuildKit build arguments:
-   ```dockerfile
-   ARG NEXT_PUBLIC_API_URL=""
-   ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-   ```
-2. When left as an empty string (`""`), client-side API requests call relative paths (`/api/...`), and Next.js proxy rewrites handle routing to `INTERNAL_API_URL`.
-
----
-
-### 3.3 Production Docker Compose Deployment
-
-Always use standardized npm commands or pass `--env-file .env.production`:
+1. Update `.env.example` and `.env.production.example` together with accurate defaults/placeholders.
+2. Update the Zod schema in [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) or [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts).
+3. Pass any container-required overrides into [docker-compose.yml](../../docker-compose.yml) and [docker-compose.prod.yml](../../docker-compose.prod.yml).
+4. Run verification before committing:
 
 ```bash
-# Verify configuration without starting containers:
-pnpm docker:prod:config
-
-# Start production cluster:
-pnpm docker:prod:up
-
-# Stop production cluster:
-pnpm docker:prod:down
+pnpm lint:env-sync
+pnpm check:prod-email-provider
 ```
 
-Equivalent native CLI command:
+`scripts/check-env-sync.ts` audits key parity against `.env.example` and checks that environment variable references across the codebase resolve cleanly.
+
+---
+
+## 3. Production Security Guardrails
+
+At startup, [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) fails fast if any production safety invariant is violated:
+
+| Variable                        | Production Rule                                                        | Reason                                                          |
+| :------------------------------ | :--------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `NODE_ENV`                      | Must equal `production`                                                | Enables production security checks & disables demo boot seeding |
+| `SEED_DEMO_ON_BOOT`             | **Must be `false`** when `NODE_ENV=production`                         | Prevents seeding demo credentials in live databases             |
+| `JWT_SECRET`                    | Random cryptographically strong secret (never default/placeholder)     | Signs auth cookies & access tokens                              |
+| `ENCRYPTION_SECRET`             | Random cryptographically strong secret                                 | Encrypts sensitive credentials at rest                          |
+| `METRICS_TOKEN`                 | Min `32` chars when set; required in production                        | `/metrics` returns `404` in production when unset               |
+| `SYSTEM_EMAIL_PROVIDER`         | Cannot be `SIMULATED` in production (`pnpm check:prod-email-provider`) | Enforces real SMTP or Resend delivery                           |
+| `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` | `false`                                                                | Hides demo quick-login controls on login screen                 |
+| `INTERNAL_API_URL`              | Required non-empty URL on Next.js server (e.g., `http://api:3001`)     | Powers SSR & internal proxy routing in `apps/web`               |
+
+Provider-specific cross-field rules enforced by `superRefine`:
+
+- If `SYSTEM_EMAIL_PROVIDER=SMTP`: `SYSTEM_EMAIL_SMTP_HOST`, `SYSTEM_EMAIL_SMTP_USER`, and `SYSTEM_EMAIL_SMTP_PASS` must all be non-empty.
+- If `SYSTEM_EMAIL_PROVIDER=RESEND`: `SYSTEM_EMAIL_RESEND_API_KEY` must be non-empty.
+- If `WEBHOOK_PROVIDER` is set: `WEBHOOK_URL` is required; if `WEBHOOK_PROVIDER=TELEGRAM`, `WEBHOOK_CHAT_ID` is also required.
+
+---
+
+## 4. Provisioning & Rotating Secrets
+
+### Generating High-Entropy Secrets
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+# Generate 32-byte (64-hex-char) values for JWT_SECRET, ENCRYPTION_SECRET, and METRICS_TOKEN
+openssl rand -hex 32
 ```
 
-> **Why `--env-file` is mandatory:**  
-> Docker Compose performs variable interpolation (`${VAR}`) in the YAML file _before_ service definitions are parsed. Specifying `--env-file .env.production` ensures `${POSTGRES_USER}`, `${JWT_SECRET}`, and `${ENCRYPTION_SECRET}` are substituted without relying on dev `.env`.
+Ensure `.env.production` on the host restricts read/write access strictly to the deploy user:
+
+```bash
+chmod 600 .env.production
+```
+
+### Quarterly Rotation Procedure
+
+1. **Non-Data Secrets (`JWT_SECRET`, `METRICS_TOKEN`, `REDIS_PASSWORD`, `MINIO_SECRET_KEY`, `POSTGRES_PASSWORD`):**
+   - Generate a new value, update `.env.production` and any dependent Prometheus scraper config (for `METRICS_TOKEN`), and perform a rolling restart via `pnpm docker:prod:up`.
+   - Note: Rotating `JWT_SECRET` signs out active user sessions cleanly on next token verification.
+2. **Data Encryption Key (`ENCRYPTION_SECRET`):**
+   - Never overwrite `ENCRYPTION_SECRET` in-place while encrypted tenant records (`EmailSetting` / `OrganizationWebhookSetting` credentials) are stored in PostgreSQL without first decrypting or re-encrypting stored ciphertexts during a planned maintenance window.
+3. **Validate Compose Rendering Before Restart:**
+
+```bash
+pnpm docker:prod:config > /dev/null
+```
 
 ---
 
-## 4. Synchronization Protocol & CI Quality Gate
+## 5. Related Documentation
 
-### 4.1 Adding a New Environment Variable
-
-Whenever introducing a new environment variable:
-
-1. Add the variable to the relevant Zod schema:
-   - Backend: `apps/api/src/config/env.ts`
-   - Frontend: `apps/web/src/lib/env.ts`
-2. Add the variable to `.env.example` in the root directory under the appropriate section with documentation.
-3. If applicable for production, add it to `.env.production.example` and `docker-compose.prod.yml`.
-4. Update local `.env`.
-5. Run the verification gate:
-   ```bash
-   pnpm lint:env-sync
-   ```
-
-### 4.2 Automated CI Gate (`pnpm lint:env-sync`)
-
-The gate script [`scripts/check-env-sync.ts`](../../scripts/check-env-sync.ts) runs automatically during CI (Gate 6) and pre-commit checks:
-
-- Verifies 100% key parity between root `.env` and `.env.example`.
-- Ensures all `${VAR}` substitutions in `docker-compose.prod.yml` exist in `.env.production.example`.
-- Confirms internal consistency between `BACKEND_PORT`, `FRONTEND_PORT`, `INTERNAL_API_URL`, and `FRONTEND_URL`.
-- Rejects undocumented or extra keys immediately.
-
----
-
-## 5. Troubleshooting Common Issues
-
-### Issue 1: `Critical Configuration Error: Invalid / Missing Environment`
-
-- **Cause:** A required variable in root `.env` is missing or secrets are shorter than security thresholds (JWT < 16 chars, Encryption < 32 chars).
-- **Fix:** Check startup terminal output for the exact key and update root `.env`.
-
-### Issue 2: `docker compose: variable is not set. Defaulting to a blank string.`
-
-- **Cause:** Running `docker compose -f docker-compose.prod.yml up` without specifying `--env-file .env.production`.
-- **Fix:** Use `pnpm docker:prod:up` or pass `--env-file .env.production`.
-
-### Issue 3: Client calls point to localhost instead of production API
-
-- **Cause:** `NEXT_PUBLIC_API_URL` was baked during build with a localhost value, or left empty when on a separated domain.
-- **Fix:** Rebuild the frontend container providing `args: NEXT_PUBLIC_API_URL: https://api.yourdomain.com`.
+- [Engineering Conventions](../architecture/conventions.md)
+- [Production Deployment Plan](production-deployment-plan.md)
+- [Alerts Runbook](alerts.md)

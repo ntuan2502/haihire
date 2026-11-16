@@ -46,7 +46,6 @@ describe("JobsController public directory and detail privacy", () => {
             jobId: "job-a",
             candidateId: "candidate-1",
             stage: "APPLIED",
-            notes: "Private notes",
             resumeUrl: "private-cv",
           },
         ]),
@@ -54,7 +53,8 @@ describe("JobsController public directory and detail privacy", () => {
           {
             id: "candidate-1",
             organizationId: "org-a",
-            name: "Alice",
+            firstName: "Alice",
+            lastName: "",
             email: "alice@example.com",
             resumeUrl: "private-cv",
           },
@@ -76,17 +76,27 @@ describe("JobsController public directory and detail privacy", () => {
     expect(result.data.every((job) => job.applicationsCount === 0)).toBe(true);
   });
 
-  it("MEMBER sees basic applicants without CVs, notes or scorecards", async () => {
+  it("MEMBER sees basic applicants without CVs, notes or scorecards and with masked PII", async () => {
     const result = await new JobsController(makeService()).findOne("job-a", {
       user: { organizationId: "org-a", role: Role.MEMBER },
     });
     expect(result.applications[0]).toMatchObject({
-      candidateName: "Alice",
+      candidateName: "[Masked]",
       stage: "APPLIED",
     });
     expect(JSON.stringify(result.applications)).not.toContain("Private");
     expect(JSON.stringify(result.applications)).not.toContain("private-cv");
     expect(JSON.stringify(result.applications)).not.toContain("rating");
+  });
+
+  it("RECRUITER with candidate:view sees unmasked applicant PII", async () => {
+    const result = await new JobsController(makeService()).findOne("job-a", {
+      user: { organizationId: "org-a", role: Role.RECRUITER },
+    });
+    expect(result.applications[0]).toMatchObject({
+      candidateName: "Alice",
+      stage: "APPLIED",
+    });
   });
 
   it("honors tenant permission overrides when projecting details", async () => {

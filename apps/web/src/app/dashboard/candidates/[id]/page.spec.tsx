@@ -22,6 +22,21 @@ vi.mock("next/navigation", () => ({
   usePathname: () => `/dashboard/candidates/${currentCandidateId}`,
 }));
 
+const mockFetchAuthenticatedDocumentPreview = vi.fn().mockResolvedValue({
+  blobUrl: "blob:http://localhost/nguyen-van-a.pdf",
+  mimeType: "application/pdf",
+  kind: "pdf" as const,
+});
+
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    fetchAuthenticatedDocumentPreview: (...args: unknown[]) =>
+      mockFetchAuthenticatedDocumentPreview(...args),
+  };
+});
+
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
     user: {
@@ -59,7 +74,6 @@ const defaultCandidateData = {
   phone: "0901234567",
   gender: "MALE",
   dateOfBirth: "1995-05-15T00:00:00.000Z",
-  notes: "Experienced full-stack engineer",
   resumeUrl: "https://minio.local/cv/nguyen-van-a.pdf",
   resumeFileName: "nguyen-van-a-cv.pdf",
   resumeFileSize: 102400,
@@ -132,6 +146,23 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       data: { data: [] },
       isLoading: false,
     }),
+    useCandidateNotes: () => ({
+      data: [
+        {
+          id: "cnote-1",
+          organizationId: "org-1",
+          candidateId: VALID_CANDIDATE_ID,
+          authorId: "user-1",
+          authorName: "Recruiter Admin",
+          authorRole: "ADMIN",
+          content: "Experienced full-stack engineer",
+          isEdited: false,
+          createdAt: "2026-03-01T10:00:00.000Z",
+          updatedAt: "2026-03-01T10:00:00.000Z",
+        },
+      ],
+      isLoading: false,
+    }),
     useEmailTemplates: () => ({
       data: [],
       isLoading: false,
@@ -196,7 +227,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("404")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "The candidate ID provided is invalid. A valid UUID is required.",
+          "Mã định danh ứng viên không hợp lệ. Cần một mã UUID hợp lệ.",
         ),
       ).toBeInTheDocument();
       expect(
@@ -250,11 +281,14 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       expect(phoneLink).toHaveAttribute("href", "tel:0901234567");
     });
 
-    it("displays candidate personal details in the overview card", () => {
+    it("displays candidate personal details in the overview card and notes stream in the notes tab", () => {
       renderWithClient(<CandidateDetailPage />);
 
       expect(screen.getByText("Tổng quan")).toBeInTheDocument();
       expect(screen.getByText("Nam")).toBeInTheDocument();
+
+      const notesTab = screen.getByRole("button", { name: /Ghi chú \(1\)/i });
+      fireEvent.click(notesTab);
       expect(
         screen.getByText("Experienced full-stack engineer"),
       ).toBeInTheDocument();
@@ -318,7 +352,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("Nguyen_Van_A_Resume.pdf")).toBeInTheDocument();
     });
 
-    it("switches to PDF preview mode when clicking preview button", () => {
+    it("switches to PDF preview mode when clicking preview button", async () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
@@ -327,13 +361,14 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       const previewBtn = screen.getByRole("button", { name: "Xem trước" });
       fireEvent.click(previewBtn);
 
-      expect(screen.getByTitle("Nguyen_Van_A_Resume.pdf")).toBeInTheDocument();
+      expect(
+        await screen.findByTitle("Nguyen_Van_A_Resume.pdf"),
+      ).toBeInTheDocument();
     });
 
     it("shows empty state when candidate has no documents", () => {
       if (currentCandidate) {
         currentCandidate.allDocuments = [];
-        currentCandidate.notes = "";
         currentCandidate.resumeUrl = "";
         currentCandidate.resumeFileName = "";
       }
@@ -351,7 +386,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
 
   // A.1.5: PDF viewer
   describe("A.1.5: PDF viewer", () => {
-    it("renders iframe pointing to document URL in preview mode", () => {
+    it("renders iframe pointing to document URL in preview mode", async () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
@@ -360,12 +395,27 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       const previewBtn = screen.getByRole("button", { name: "Xem trước" });
       fireEvent.click(previewBtn);
 
-      const iframe = screen.getByTitle("Nguyen_Van_A_Resume.pdf");
+      await waitFor(() => {
+        expect(mockFetchAuthenticatedDocumentPreview).toHaveBeenCalledWith(
+          expect.stringMatching(
+            new RegExp(
+              `^/candidates/${VALID_CANDIDATE_ID}/documents/download\\?.*disposition=inline`,
+            ),
+          ),
+          expect.objectContaining({
+            fileName: "Nguyen_Van_A_Resume.pdf",
+            url: "https://minio.local/cv/nguyen-van-a.pdf",
+          }),
+        );
+      });
+
+      const iframe = await screen.findByTitle("Nguyen_Van_A_Resume.pdf");
       expect(iframe).toBeInTheDocument();
       expect(iframe).toHaveAttribute(
         "src",
-        expect.stringContaining("nguyen-van-a.pdf"),
+        "blob:http://localhost/nguyen-van-a.pdf",
       );
+      expect(iframe).not.toHaveAttribute("sandbox");
     });
 
     it("closes PDF viewer and returns to document list when clicking back", () => {
@@ -392,9 +442,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
     it("renders activity timeline container", () => {
       renderWithClient(<CandidateDetailPage />);
 
-      expect(
-        screen.getByText("Dòng thời gian Hoạt động (Activity Timeline)"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Dòng thời gian hoạt động")).toBeInTheDocument();
     });
   });
 

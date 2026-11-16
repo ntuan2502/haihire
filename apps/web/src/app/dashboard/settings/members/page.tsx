@@ -12,11 +12,12 @@ import {
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
-import type { CustomSelectOption } from "@/components/shared/custom-select";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
+import { getUserDisplayName } from "@/lib/utils";
 import {
   InviteMemberCard,
   InviteLinksCard,
@@ -26,46 +27,31 @@ import {
   RevokeLinkModal,
   type MemberModalTarget,
 } from "@/components/settings/members";
+import { Button } from "@/components/ui/button";
+import { PageHeader, StatusState } from "@/components/shared";
 
 export default function MembersSettingsPage() {
   const { user, canEdit, isOwner, refreshUser } = useAuth();
   const { t } = useI18n();
   const canManageMembers = useHasPermission("org:manage_members");
+  const canInviteAdmin = Boolean(isOwner || user?.role === Role.ADMIN);
 
-  const roleOptions: CustomSelectOption<Role>[] = useMemo(
-    () => [
-      { value: Role.ADMIN, label: t("members.roleAdmin") },
-      { value: Role.RECRUITER, label: t("members.roleRecruiter") },
-      { value: Role.HIRING_MANAGER, label: t("members.roleHiringManager") },
-      { value: Role.INTERVIEWER, label: t("members.roleInterviewer") },
-      { value: Role.MEMBER, label: t("members.roleMember") },
-    ],
-    [t],
+  const roleOptions = useMemo(() => getOrgRoleOptions(t), [t]);
+  const inviteRoleOptions = useMemo(
+    () => getOrgRoleOptions(t, { excludeAdmin: !canInviteAdmin }),
+    [t, canInviteAdmin],
   );
 
   const getRoleLabel = useCallback(
-    (role: string): string => {
-      switch (role?.toUpperCase()) {
-        case Role.ADMIN:
-          return t("members.roleAdmin");
-        case Role.RECRUITER:
-          return t("members.roleRecruiter");
-        case Role.HIRING_MANAGER:
-          return t("members.roleHiringManager");
-        case Role.INTERVIEWER:
-          return t("members.roleInterviewer");
-        case Role.MEMBER:
-          return t("members.roleMember");
-        default:
-          return role || t("members.roleMember");
-      }
-    },
+    (role: string): string => getOrgRoleLabel(role, t),
     [t],
   );
 
-  const { data: members = [], refetch: refetchMembers } = useOrgMembers();
+  const { data: members = [], refetch: refetchMembers } = useOrgMembers({
+    enabled: canManageMembers,
+  });
   const { data: serverInviteLinks = [], refetch: refetchLinks } =
-    useInviteLinks();
+    useInviteLinks({ enabled: canManageMembers });
   const revokeInviteMutation = useRevokeInviteLinkMutation();
   const updateMemberRoleMutation = useUpdateMemberRoleMutation();
   const removeMemberMutation = useRemoveMemberMutation();
@@ -80,9 +66,7 @@ export default function MembersSettingsPage() {
   const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
-  const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   const [appHost, setAppHost] = useState("");
   useEffect(() => {
@@ -97,12 +81,11 @@ export default function MembersSettingsPage() {
   }, []);
 
   const handleInviteSuccess = (msg: string) => {
-    setInviteSuccessMsg(msg);
-    setTimeout(() => setInviteSuccessMsg(null), 4000);
+    toast.success(msg);
   };
 
   const handleInviteError = (msg: string) => {
-    setInviteErrorMsg(msg);
+    toast.error(msg);
   };
 
   const handleConfirmRevokeLink = async () => {
@@ -115,7 +98,6 @@ export default function MembersSettingsPage() {
     } catch (err) {
       console.error(err);
       const msg = getApiErrorMessage(err, t);
-      setInviteErrorMsg(msg);
       toast.error(msg);
       refetchLinks?.();
     } finally {
@@ -177,7 +159,9 @@ export default function MembersSettingsPage() {
       return members
         .map((m) => ({
           id: m.id,
-          name: m.name,
+          name: getUserDisplayName(m),
+          firstName: m.firstName ?? null,
+          lastName: m.lastName ?? null,
           email: m.email,
           role: m.role || "MEMBER",
           avatarUrl: m.avatarUrl,
@@ -202,7 +186,9 @@ export default function MembersSettingsPage() {
       return [
         {
           id: user.id,
-          name: user.name,
+          name: getUserDisplayName(user),
+          firstName: user.firstName ?? null,
+          lastName: user.lastName ?? null,
           email: user.email,
           role: user.role,
           avatarUrl: user.avatarUrl,
@@ -219,49 +205,67 @@ export default function MembersSettingsPage() {
     return [];
   }, [members, user]);
 
+  const header = (
+    <PageHeader
+      title={t("members.title")}
+      subtitle={t("members.subtitle")}
+      icon={Users}
+      bordered
+      actions={
+        canManageMembers && !isInviteOpen ? (
+          <Button
+            type="button"
+            onClick={() => setIsInviteOpen(true)}
+            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-2 shadow-sm shadow-blue-600/20"
+          >
+            <UserPlus className="h-4 w-4 shrink-0" />
+            <span>{t("members.inviteMemberTitle")}</span>
+          </Button>
+        ) : undefined
+      }
+    />
+  );
+
+  if (!canManageMembers) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-200">
+        {header}
+        <StatusState
+          status="403"
+          variant="card"
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/dashboard/settings"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Page Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            {t("members.title")}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {t("members.subtitle")}
-          </p>
-        </div>
-      </div>
-
-      {/* Action Notification */}
-      {inviteSuccessMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{inviteSuccessMsg}</span>
-        </div>
-      )}
-      {inviteErrorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-          <span>{inviteErrorMsg}</span>
-        </div>
-      )}
+      {header}
 
       {/* Top Action + Invite team member card */}
       <InviteMemberCard
-        canEdit={canEdit}
+        canEdit={canManageMembers}
+        roleOptions={inviteRoleOptions}
+        getRoleLabel={getRoleLabel}
         onInviteSuccess={handleInviteSuccess}
         onInviteError={handleInviteError}
+        isOpen={isInviteOpen}
+        onOpenChange={setIsInviteOpen}
+        hideTrigger
       />
 
       {/* Invite links card */}
       <InviteLinksCard
-        canEdit={canEdit}
+        canEdit={canManageMembers}
+        roleOptions={inviteRoleOptions}
+        getRoleLabel={getRoleLabel}
         serverInviteLinks={serverInviteLinks}
         refetchLinks={refetchLinks}
         onRevokeClick={(linkId) => setLinkToRevoke(linkId)}
         revokingId={revokingId}
-        onError={(msg) => setInviteErrorMsg(msg)}
+        onError={(msg) => toast.error(msg)}
         displayHost={appHost || "localhost:3000"}
         mountedTime={mountedTime}
       />

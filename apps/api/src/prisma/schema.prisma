@@ -6,8 +6,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
-
 enum Role {
   ADMIN
   RECRUITER
@@ -88,6 +86,13 @@ enum EmailTemplateType {
   CUSTOM
 }
 
+enum EmailFlowKey {
+  APPLICATION_RECEIVED
+  INTERVIEW_SCHEDULED
+  APPLICATION_REJECTED
+  APPLICATION_OFFER
+}
+
 enum EmailDeliveryStatus {
   SENT
   SIMULATED
@@ -141,52 +146,66 @@ enum WebhookProviderType {
 }
 
 model Organization {
-  id              String                      @id @default(uuid())
-  name            String
-  slug            String                      @unique
-  ownerId         String
-  owner           User                        @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  users           User[]                      @relation("OrganizationUsers")
-  jobs            Job[]
-  candidates      Candidate[]
-  inviteLinks     InviteLink[]
-  members         OrganizationMember[]
-  emailTemplates  EmailTemplate[]
-  emailSettings   EmailSetting?
-  emailLogs       EmailLog[]
-  activityLogs    ActivityLog[]
-  documents       CandidateDocument[]
-  trackingLinks   TrackingLink[]
-  webhookSettings OrganizationWebhookSetting[]
-  rolePermissions OrganizationRolePermission[]
-  auditLogs       OrganizationAuditLog[]
-  createdAt       DateTime                    @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String                       @id @default(uuid())
+  name             String
+  slug             String                       @unique
+  ownerId          String
+  defaultLanguage  String                       @default("vi")
+  timezone         String                       @default("Asia/Ho_Chi_Minh")
+  dateFormat       String                       @default("DD/MM/YYYY")
+  timeFormat       String                       @default("24H")
+  nameDisplayOrder String                       @default("FIRST_LAST")
+  defaultCurrency  String                       @default("VND")
+  owner            User                         @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  jobs             Job[]
+  candidates       Candidate[]
+  applications     Application[]
+  interviews       Interview[]
+  trackingClicks   TrackingClick[]
+  inviteLinks      InviteLink[]
+  members          OrganizationMember[]
+  emailTemplates   EmailTemplate[]
+  emailFlows       EmailFlowConfig[]
+  emailSettings    EmailSetting?
+  emailLogs        EmailLog[]
+  activityLogs     ActivityLog[]
+  documents        CandidateDocument[]
+  trackingLinks    TrackingLink[]
+  webhookSettings  OrganizationWebhookSetting[]
+  rolePermissions  OrganizationRolePermission[]
+  auditLogs        OrganizationAuditLog[]
+  applicationNotes ApplicationNote[]
+  candidateNotes   CandidateNote[]
+  pipelineStages   PipelineStage[]
+  storedFiles      StoredFile[]
+  outboxEvents     OutboxEvent[]
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
 
   @@index([ownerId])
   @@map("organization")
 }
 
 model User {
-  id             String               @id @default(uuid())
-  email          String               @unique
-  name           String
-  password       String?
-  avatarUrl      String?
-  role           Role                 @default(MEMBER)
-  tokenVersion   Int                  @default(0)
-  organizationId String?
-  organization   Organization?        @relation("OrganizationUsers", fields: [organizationId], references: [id])
-  ownedOrganizations Organization[]       @relation("OrganizationOwner")
-  jobs           Job[]
-  inviteLinks    InviteLink[]
-  trackingLinks  TrackingLink[]
-  memberships    OrganizationMember[]
-  auditLogs      OrganizationAuditLog[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String                 @id @default(uuid())
+  email              String                 @unique
+  firstName          String                 @default("")
+  lastName           String                 @default("")
+  password           String?
+  avatarUrl          String?
+  preferredLanguage  String?
+  preferredTimezone  String?
+  tokenVersion       Int                    @default(0)
+  ownedOrganizations Organization[]         @relation("OrganizationOwner")
+  jobs               Job[]
+  inviteLinks        InviteLink[]
+  trackingLinks      TrackingLink[]
+  assignedInterviews Interview[]            @relation("InterviewAssignee")
+  memberships        OrganizationMember[]
+  auditLogs          OrganizationAuditLog[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
-  @@index([organizationId])
   @@map("user")
 }
 
@@ -195,13 +214,13 @@ model OrganizationMember {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           Role         @default(MEMBER)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, userId])
-  @@index([organizationId, userId])
+  @@index([userId])
   @@map("organization_member")
 }
 
@@ -212,7 +231,7 @@ model OrganizationRolePermission {
   permission     String
   granted        Boolean      @default(true)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, role, permission])
@@ -231,102 +250,124 @@ model InviteLink {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String?
-  createdBy      User?        @relation(fields: [createdById], references: [id])
+  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
 
+  @@index([organizationId, status])
   @@map("invite_link")
 }
 
 model Job {
-  id              String        @id @default(uuid())
+  id              String           @id @default(uuid())
   title           String
   department      String
   location        String
   postalCode      String?
   experienceLevel ExperienceLevel?
   workplace       WorkplaceType?
-  type            JobType       @default(FULL_TIME)
+  type            JobType          @default(FULL_TIME)
   description     String
   requirements    String?
   salaryRange     String?
-  status          JobStatus     @default(PUBLISHED)
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String?          @db.VarChar(10)
+  status          JobStatus        @default(PUBLISHED)
   createdById     String?
-  createdBy       User?         @relation(fields: [createdById], references: [id])
+  createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   organizationId  String
-  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
   trackingLinks   TrackingLink[]
+  pipelineStages  PipelineStage[]
+  version         Int              @default(1)
   deletedAt       DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  @@index([organizationId, status])
-  @@index([organizationId, deletedAt])
+  @@index([organizationId, deletedAt, status, createdAt])
   @@map("job")
 }
 
 model Candidate {
-  id             String        @id @default(uuid())
+  id             String              @id @default(uuid())
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name           String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   firstName      String?
   lastName       String?
+  displayName    String?
   gender         Gender?
   dateOfBirth    DateTime?
   email          String
   phone          String?
-  notes          String?
   resumeUrl      String?
   resumeFileName String?
   resumeFileSize Int?
-  resumeMimeType String?       @default("application/pdf")
+  resumeMimeType String?             @default("application/pdf")
+  resumeFileId   String?
+  resumeFile     StoredFile?         @relation(fields: [resumeFileId], references: [id], onDelete: SetNull)
   applications   Application[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
   documents      CandidateDocument[]
+  candidateNotes CandidateNote[]
+  version        Int                 @default(1)
   deletedAt      DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
-  @@unique([organizationId, email])
-  @@index([organizationId, createdAt])
-  @@index([organizationId, deletedAt])
+  @@index([organizationId, deletedAt, createdAt])
   @@map("candidate")
 }
 
 model Application {
-  id             String           @id @default(uuid())
-  candidateId    String
-  candidate      Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  jobId          String
-  job            Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  stage          ApplicationStage @default(APPLIED)
-  matchScore     Int?
-  resumeUrl      String?
-  resumeFileName String?
-  resumeFileSize Int?
-  resumeMimeType String?          @default("application/pdf")
-  notes          String?
-  orderIndex     Int              @default(0)
-  trackingLinkId String?
-  trackingLink   TrackingLink?    @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
-  sourceChannel  SourcingChannel  @default(DIRECT)
-  sourceDetails  String?
-  referrerDomain String?
-  utmSource      String?
-  utmMedium      String?
-  utmCampaign    String?
-  utmTerm        String?
-  utmContent     String?
-  interviews     Interview[]
-  emailLogs      EmailLog[]
-  activityLogs   ActivityLog[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String            @id @default(uuid())
+  organizationId   String
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidateId      String
+  candidate        Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId            String
+  job              Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  stage            ApplicationStage  @default(APPLIED)
+  stageId          String?
+  pipelineStage    PipelineStage?    @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  rejectionReason  String?
+  rejectedAt       DateTime?
+  matchScore       Int?
+  resumeUrl        String?
+  resumeFileName   String?
+  resumeFileSize   Int?
+  resumeMimeType   String?           @default("application/pdf")
+  resumeFileId     String?
+  resumeFile       StoredFile?       @relation(fields: [resumeFileId], references: [id], onDelete: SetNull)
+  orderIndex       Int               @default(0)
+  trackingLinkId   String?
+  trackingLink     TrackingLink?     @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
+  sourceChannel    SourcingChannel   @default(DIRECT)
+  sourceDetails    String?
+  referrerDomain   String?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  interviews       Interview[]
+  emailLogs        EmailLog[]
+  activityLogs     ActivityLog[]
+  applicationNotes ApplicationNote[]
+  version          Int               @default(1)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@unique([candidateId, jobId])
+  @@index([organizationId, jobId])
+  @@index([organizationId, candidateId])
+  @@index([organizationId, stage])
+  @@index([organizationId, stageId])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, sourceChannel])
+  @@index([organizationId, trackingLinkId])
   @@index([jobId, stage])
   @@index([candidateId])
   @@index([trackingLinkId])
@@ -334,21 +375,28 @@ model Application {
 }
 
 model Interview {
-  id             String      @id @default(uuid())
-  applicationId  String
-  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  scheduledAt    DateTime
-  type           InterviewType   @default(TECHNICAL)
-  format         InterviewFormat @default(MEET)
-  linkOrLocation String
-  interviewer    String
-  round          Int         @default(1)
-  scorecard      String?
-  notes          String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String          @id @default(uuid())
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId   String
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt     DateTime
+  type            InterviewType   @default(TECHNICAL)
+  format          InterviewFormat @default(MEET)
+  linkOrLocation  String
+  interviewer     String
+  interviewerId   String?
+  interviewerUser User?           @relation("InterviewAssignee", fields: [interviewerId], references: [id], onDelete: SetNull)
+  round           Int             @default(1)
+  scorecard       Json?           @db.JsonB
+  notes           String?
+  version         Int             @default(1)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([applicationId])
+  @@index([organizationId, scheduledAt])
+  @@index([interviewerId])
   @@map("interview")
 }
 
@@ -356,17 +404,36 @@ model EmailTemplate {
   id             String            @id @default(uuid())
   organizationId String
   organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  type           EmailTemplateType
+  type           EmailTemplateType @default(CUSTOM)
   name           String
   subject        String
   body           String
   enabled        Boolean           @default(true)
-  variables      String?
+  isSystem       Boolean           @default(false)
+  variables      Json?             @db.JsonB
   createdAt      DateTime          @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime          @updatedAt
+  flowConfigs    EmailFlowConfig[]
+  emailLogs      EmailLog[]
 
-  @@unique([organizationId, type])
+  @@index([organizationId, enabled])
   @@map("email_template")
+}
+
+model EmailFlowConfig {
+  id             String         @id @default(uuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  flowKey        EmailFlowKey
+  templateId     String?
+  template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  enabled        Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([organizationId, flowKey])
+  @@index([organizationId])
+  @@map("email_flow_config")
 }
 
 model EmailSetting {
@@ -383,7 +450,7 @@ model EmailSetting {
   resendApiKey   String?
   sendgridApiKey String?
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
 
   @@map("email_setting")
 }
@@ -392,11 +459,14 @@ model EmailLog {
   id             String              @id @default(uuid())
   scope          EmailScope          @default(ORGANIZATION)
   organizationId String?
-  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   candidateId    String?
-  candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: SetNull)
   applicationId  String?
-  application    Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application    Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  templateId     String?
+  template       EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateName   String?
   senderId       String?
   senderName     String
   senderEmail    String
@@ -409,31 +479,38 @@ model EmailLog {
   errorMessage   String?
   sentAt         DateTime            @default(now())
   createdAt      DateTime            @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime            @updatedAt
 
+  @@index([organizationId, sentAt])
+  @@index([candidateId, sentAt])
+  @@index([applicationId])
+  @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([scope, createdAt])
+  @@index([templateId])
   @@map("email_log")
 }
 
 model ActivityLog {
   id             String       @id @default(uuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   candidateId    String
   candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
-  application    Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   type           ActivityType
   title          String
   description    String
   actorId        String?
   actorName      String
   actorRole      String?
-  metadata       String?
+  metadata       Json?        @db.JsonB
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
 
+  @@index([applicationId, createdAt])
+  @@index([organizationId, candidateId, createdAt])
   @@index([organizationId, createdAt])
   @@index([candidateId])
   @@map("activity_log")
@@ -450,8 +527,10 @@ model CandidateDocument {
   size           Int?
   mimeType       String?      @default("application/pdf")
   type           String?      @default("Resume")
+  storedFileId   String?
+  storedFile     StoredFile?  @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime     @updatedAt
 
   @@index([candidateId])
   @@index([organizationId])
@@ -459,15 +538,15 @@ model CandidateDocument {
 }
 
 model TrackingLink {
-  id             String           @id @default(uuid())
+  id             String          @id @default(uuid())
   organizationId String
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
-  token          String           @unique
-  source         SourcingChannel  @default(OTHER)
+  token          String
+  source         SourcingChannel @default(OTHER)
   customSource   String?
   jobId          String?
-  job            Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  job            Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
   campaign       String?
   medium         String?
   utmSource      String?
@@ -475,23 +554,27 @@ model TrackingLink {
   utmCampaign    String?
   utmTerm        String?
   utmContent     String?
-  clicksCount    Int              @default(0)
-  isActive       Boolean          @default(true)
+  clicksCount    Int             @default(0)
+  isActive       Boolean         @default(true)
   createdById    String?
-  createdBy      User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy      User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
   applications   Application[]
   clicks         TrackingClick[]
   deletedAt      DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
+  @@index([organizationId, deletedAt, isActive])
+  @@index([jobId])
+  @@index([createdById])
   @@index([organizationId, isActive])
-  @@index([token])
   @@map("tracking_link")
 }
 
 model TrackingClick {
-  id             String        @id @default(uuid())
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   trackingLinkId String
   trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
   referrer       String?
@@ -500,26 +583,27 @@ model TrackingClick {
   userAgent      String?
   createdAt      DateTime      @default(now())
 
+  @@index([organizationId, createdAt])
   @@index([trackingLinkId, createdAt])
   @@index([referrerDomain])
   @@map("tracking_click")
 }
 
 model OrganizationWebhookSetting {
-  id              String              @id @default(uuid())
-  organizationId  String
-  eventType       WebhookEventType
-  provider        WebhookProviderType
-  webhookUrl      String
-  secretToken     String?
-  chatId          String?
-  isEnabled       Boolean             @default(true)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime @updatedAt
-  createdBy       String?
-  updatedBy       String?
+  id             String              @id @default(uuid())
+  organizationId String
+  eventType      WebhookEventType
+  provider       WebhookProviderType
+  webhookUrl     String
+  secretToken    String?
+  chatId         String?
+  isEnabled      Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  createdBy      String?
+  updatedBy      String?
 
-  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, eventType, provider])
   @@index([organizationId])
@@ -527,17 +611,18 @@ model OrganizationWebhookSetting {
 }
 
 model OrganizationAuditLog {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   organizationId String
   actorId        String?
   action         String
   resource       String
-  metadata       String?
-  createdAt      DateTime     @default(now())
+  metadata       Json?    @db.JsonB
+  createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  actor          User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
+  @@index([organizationId, resource])
   @@index([organizationId, createdAt])
   @@index([organizationId, action])
   @@map("organization_audit_log")
@@ -549,7 +634,7 @@ model PlatformAuditLog {
   actorId        String
   action         String
   resource       String
-  metadata       String?
+  metadata       Json?    @db.JsonB
   createdAt      DateTime @default(now())
 
   @@index([createdAt])
@@ -557,4 +642,103 @@ model PlatformAuditLog {
   @@map("platform_audit_log")
 }
 
+model ApplicationNote {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId  String
+  application    Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorId       String
+  authorName     String
+  authorRole     String
+  content        String       @db.Text
+  isEdited       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
+  @@index([organizationId, createdAt])
+  @@index([applicationId, createdAt])
+  @@map("application_note")
+}
+
+model CandidateNote {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  authorId       String
+  authorName     String
+  authorRole     String
+  content        String       @db.Text
+  isEdited       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([candidateId, createdAt])
+  @@map("candidate_note")
+}
+
+model PipelineStage {
+  id             String           @id @default(uuid())
+  organizationId String
+  jobId          String?
+  name           String
+  category       ApplicationStage
+  orderIndex     Int              @default(0)
+  color          String?
+  isTerminal     Boolean          @default(false)
+  version        Int              @default(1)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job            Job?             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applications   Application[]
+
+  @@index([organizationId, jobId, orderIndex])
+  @@map("pipeline_stage")
+}
+
+model StoredFile {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  objectKey          String              @unique
+  bucket             String              @default("haihire-resumes")
+  originalName       String
+  mimeType           String
+  sizeBytes          Int
+  checksum           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  candidates         Candidate[]
+  applications       Application[]
+  candidateDocuments CandidateDocument[]
+
+  @@index([organizationId, createdAt])
+  @@map("stored_file")
+}
+
+model OutboxEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  eventType      String
+  aggregateType  String
+  aggregateId    String
+  payload        Json
+  status         String       @default("PENDING")
+  attempts       Int          @default(0)
+  nextAttemptAt  DateTime     @default(now())
+  processedAt    DateTime?
+  lastError      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([organizationId, createdAt])
+  @@map("outbox_event")
+}

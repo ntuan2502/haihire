@@ -1,14 +1,11 @@
 "use client";
 
+import { Calendar, Clock, Mail, Phone } from "lucide-react";
 import {
-  Calendar,
-  Clock,
-  Mail,
-  MessageSquare,
-  Phone,
-  Plus,
-} from "lucide-react";
-import { formatDate, type CandidateItem } from "@/lib/utils";
+  formatDate,
+  getCandidateDisplayName,
+  type CandidateItem,
+} from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerDetailsProps {
@@ -19,7 +16,6 @@ export interface CandidateDrawerDetailsProps {
     firstName: string;
     lastName: string;
     displayName: string;
-    customNotes: string;
   };
 }
 
@@ -29,12 +25,16 @@ export function CandidateDrawerDetails({
 }: CandidateDrawerDetailsProps) {
   const { t } = useI18n();
 
+  const candidateDisplayName = getCandidateDisplayName(
+    candidate.candidate ?? candidate,
+  );
+
   return (
     <>
       {/* Candidate Name & Contact Header */}
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          {candidate.name}
+          {candidateDisplayName}
         </h2>
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
           <span className="flex items-center gap-1">
@@ -80,7 +80,7 @@ export function CandidateDrawerDetails({
               {t("candidates.displayName")}
             </span>
             <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-              {details.displayName || candidate.name || "—"}
+              {details.displayName || candidateDisplayName || "—"}
             </span>
           </div>
 
@@ -139,32 +139,7 @@ export function CandidateDrawerDetails({
               {formatDate(candidate.updatedAt || candidate.createdAt, "short")}
             </span>
           </div>
-
-          {/* Notes */}
-          <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
-              <MessageSquare className="h-3 w-3" />
-              {t("candidates.notes")}
-            </span>
-            <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
-              {details.customNotes || candidate.notes || "—"}
-            </p>
-          </div>
         </div>
-      </div>
-
-      {/* Card 2: Properties */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-          {t("common.properties")}
-        </h3>
-        <button
-          type="button"
-          className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>{t("candidates.addProperty")}</span>
-        </button>
       </div>
     </>
   );

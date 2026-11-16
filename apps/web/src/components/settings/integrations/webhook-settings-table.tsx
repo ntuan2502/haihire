@@ -54,18 +54,18 @@ export function WebhookSettingsTable({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 text-slate-500">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        <div className="flex items-center justify-center p-12 text-slate-500 text-xs">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
           <span>{t("common.loading")}</span>
         </div>
       ) : webhookSettings.length === 0 ? (
         <div className="text-center py-12 px-4 space-y-3">
-          <div className="inline-flex p-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
             <Webhook className="h-6 w-6" />
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
             {t("settings.integrations.webhooks.emptyState")}
           </p>
           {isAdmin && (
@@ -73,31 +73,31 @@ export function WebhookSettingsTable({
               variant="outline"
               size="sm"
               onClick={onOpenAdd}
-              className="mt-2"
+              className="mt-2 h-9 px-3.5 rounded-xl text-xs font-semibold cursor-pointer"
             >
-              <Plus className="h-3.5 w-3.5 mr-1" />
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
               {t("settings.integrations.webhooks.addButton")}
             </Button>
           )}
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50/75 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="py-3.5 px-4">
+                <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.eventType")}
                 </th>
-                <th className="py-3.5 px-4">
+                <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.provider")}
                 </th>
-                <th className="py-3.5 px-4">
+                <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.status")}
                 </th>
-                <th className="py-3.5 px-4">
+                <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
-                <th className="py-3.5 px-4 text-right">
+                <th className="py-3 px-4 text-right">
                   {t("settings.integrations.webhooks.table.actions")}
                 </th>
               </tr>
@@ -159,7 +159,7 @@ export function WebhookSettingsTable({
                           "settings.integrations.webhooks.modal.testButton",
                         )}
                         disabled={isTesting}
-                        className="h-8 w-8 text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
+                        className="h-8 w-8 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 cursor-pointer"
                       >
                         <Send className="h-3.5 w-3.5" />
                       </Button>

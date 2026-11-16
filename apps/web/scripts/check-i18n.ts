@@ -105,6 +105,7 @@ const ALLOWED_LITERALS = new Set([
   "ATS",
   "ATS Platform",
   "ATS Careers",
+  "HaiHire",
   "MB",
   "AD",
   "Beta",
@@ -116,24 +117,264 @@ const ALLOWED_LITERALS = new Set([
   "&lt;",
   "&gt;",
   "(TLS/SSL)",
-  "HTML / Template Variables",
-  "Job Description",
-  "Requirements",
 ]);
+
+const UI_TEXT_ATTRS = new Set(["aria-label", "title", "placeholder", "alt"]);
+
+// Server-rendered components intentionally kept non-localized or SEO-only
+const ALLOWED_FALLBACK_FILES = new Map<string, Set<string>>([
+  [
+    path.join("src", "app", "layout.tsx"),
+    new Set(["Skip to main content", "Bỏ qua đến nội dung chính"]),
+  ],
+  [
+    path.join("src", "app", "careers", "[orgSlug]", "[jobSlug]", "page.tsx"),
+    new Set(["Job Description", "Requirements"]),
+  ],
+]);
+
+// Proper brand names, external services, and locale cities exempt from vi.ts leak detection
+const ALLOWED_VI_PHRASES = [
+  "HaiHire Recruitment Team",
+  "Google Meet",
+  "Zoom Meeting",
+  "Microsoft Teams",
+  "Google Jobs",
+  "We Work Remotely",
+  "Stack Overflow",
+  "Google Workspace",
+  "Ho Chi Minh",
+  "Los Angeles",
+  "New York",
+  "Acme Corp",
+  "Tran Minh Quan",
+  "Senior FullStack",
+  "Full-Stack",
+  "Full Stack",
+  "Nguyen Van A",
+  "Nguyen An",
+  "HaiHire",
+];
+
+const ALLOWED_VI_PARENS = new Set([
+  "(SSO)",
+  "(PDF/DOCX)",
+  "(PDF)",
+  "(CSV)",
+  "(SMTP)",
+  "(TLS/SSL)",
+  "(ATS)",
+  "(A - Z)",
+]);
+
+const ALLOWED_VI_ASCII_WORDS = new Set([
+  "xem",
+  "trang",
+  "nam",
+  "xong",
+  "chung",
+  "qua",
+  "trong",
+  "quy",
+  "trinh",
+  "cho",
+  "moi",
+  "sau",
+  "hay",
+  "tu",
+  "cac",
+  "tham",
+  "gia",
+  "an",
+  "vd",
+  "pv",
+  "cv",
+  "email",
+  "resend",
+  "sendgrid",
+  "telegram",
+  "discord",
+  "linkedin",
+  "indeed",
+  "handshake",
+  "reddit",
+  "glassdoor",
+  "facebook",
+  "twitter",
+  "webhooks",
+  "cvr",
+  "eur",
+  "euro",
+  "x",
+  "acme",
+  "corp",
+  "ten",
+  "to",
+  "chuc",
+  "pdf",
+  "dd",
+  "mm",
+  "yyyy",
+]);
+
+const BANNED_VI_UI_WORDS =
+  /(?<![\p{L}\p{N}])(Dashboard|Pipeline|Scorecard|Onboarding|Recruiter|Interviewer|Hiring Manager|Overview|Analytics|Candidate|Candidates|Application|Applications|Template|Templates|Settings|Loading|Failed|Success|Cancel|Submit|Unknown|Permission|Permissions|Admin|Owner|Manage|Workflow|Department|Career|Portal|Invite|Member|Members|Schedule|Organization|Workspace|Profile|Account|Password|Confirm|Welcome|Continue|Previous|Delete|Update|Create|Filter|Search|Preview|Download|Upload|Select|Please|Click|Invalid|Required|Optional|Remove|Close|Open|View|Offer|enter|please|select|click|delete|create|update|cancel|submit|loading|failed|invalid|required|optional|unknown|with|your|from|into|should|would|could)(?![\p{L}\p{N}])/u;
+const PAREN_ENGLISH_RE = /\([A-Z][a-zA-Z\s/&-]{2,}\)/;
+const VI_DIACRITIC_RE = /[\u00C0-\u024F\u1E00-\u1EFFđĐ]/;
 
 interface HardcodedHit {
   file: string;
   line: number;
   text: string;
+  context?: string;
 }
 
-function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
-  const hits: HardcodedHit[] = [];
+interface ViLeakHit {
+  key: string;
+  line: number;
+  text: string;
+  reason: string;
+}
+
+function isTranslationCall(node: ts.Node): boolean {
+  if (!ts.isCallExpression(node)) return false;
+  const expr = node.expression;
+  if (ts.isIdentifier(expr) && expr.text === "t") return true;
+  if (ts.isPropertyAccessExpression(expr) && expr.name.text === "t") {
+    return true;
+  }
+  return false;
+}
+
+function isNonUiToken(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || !/[a-zA-Z]{2,}/.test(trimmed)) return true;
+  if (ALLOWED_LITERALS.has(trimmed)) return true;
+  if (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("http") ||
+    trimmed.startsWith("mailto:") ||
+    trimmed.startsWith("{") ||
+    trimmed.startsWith("•")
+  ) {
+    return true;
+  }
+  // URL host/path segment prefixes such as "workspace/"
+  if (/^[a-z0-9._-]+\/$/.test(trimmed)) return true;
+  // Single lowercase identifier, kebab/dot token, or snake_case token
+  if (/^[a-z][a-z0-9._-]*$/.test(trimmed)) return true;
+  // Uppercase enum/abbreviation token
+  if (/^[A-Z0-9_.-]+$/.test(trimmed)) return true;
+  // Date/time placeholder token such as MM/DD/YYYY or HH:mm
+  if (/^[DMYHms/:.\-\s]+$/.test(trimmed)) return true;
+  // Example email token
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
+  // Masked API key placeholder (e.g. re_•••• or SG.••••)
+  if (/^[a-zA-Z0-9_.-]+[•*]{3,}$/.test(trimmed)) return true;
+  return false;
+}
+
+function collectNonTStringLiterals(
+  root: ts.Node,
+): Array<{ node: ts.Node; text: string }> {
+  const results: Array<{ node: ts.Node; text: string }> = [];
+
+  function walkNode(node: ts.Node): void {
+    if (isTranslationCall(node)) return;
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      results.push({ node, text: node.text });
+      return;
+    }
+    if (ts.isTemplateExpression(node)) {
+      if (node.head.text.trim()) {
+        results.push({ node, text: node.head.text });
+      }
+      for (const span of node.templateSpans) {
+        walkNode(span.expression);
+        if (span.literal.text.trim()) {
+          results.push({ node, text: span.literal.text });
+        }
+      }
+      return;
+    }
+    ts.forEachChild(node, walkNode);
+  }
+
+  walkNode(root);
+  return results;
+}
+
+function collectFallbackStringLiterals(
+  root: ts.Node,
+): Array<{ node: ts.Node; text: string; kind: string }> {
+  const results: Array<{ node: ts.Node; text: string; kind: string }> = [];
+
+  function scan(node: ts.Node): void {
+    if (isTranslationCall(node)) return;
+    // Stop at nested JSX boundaries so child attributes (like className) are checked in their own scope.
+    if (
+      ts.isJsxAttribute(node) ||
+      ts.isJsxElement(node) ||
+      ts.isJsxSelfClosingElement(node) ||
+      ts.isJsxFragment(node)
+    ) {
+      return;
+    }
+    if (
+      ts.isBinaryExpression(node) &&
+      (node.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+        node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+    ) {
+      scan(node.left);
+      if (
+        ts.isStringLiteral(node.right) ||
+        ts.isNoSubstitutionTemplateLiteral(node.right)
+      ) {
+        results.push({
+          node: node.right,
+          text: node.right.text,
+          kind: node.operatorToken.getText(),
+        });
+      } else {
+        scan(node.right);
+      }
+      return;
+    }
+    if (ts.isConditionalExpression(node)) {
+      for (const branch of [node.whenTrue, node.whenFalse]) {
+        if (
+          ts.isStringLiteral(branch) ||
+          ts.isNoSubstitutionTemplateLiteral(branch)
+        ) {
+          results.push({ node: branch, text: branch.text, kind: "ternary" });
+        } else {
+          scan(branch);
+        }
+      }
+      return;
+    }
+    ts.forEachChild(node, scan);
+  }
+
+  scan(root);
+  return results;
+}
+
+function scanHardcodedJsx(srcFiles: string[]): {
+  jsxHits: HardcodedHit[];
+  attrHits: HardcodedHit[];
+  fallbackHits: HardcodedHit[];
+} {
+  const jsxHits: HardcodedHit[] = [];
+  const attrHits: HardcodedHit[] = [];
+  const fallbackHits: HardcodedHit[] = [];
 
   for (const file of srcFiles) {
     if (!file.endsWith(".tsx")) continue;
     if (file.includes(path.join("src", "i18n"))) continue;
 
+    const relFile = path.relative(ROOT_DIR, file);
+    const allowedFallbacks = ALLOWED_FALLBACK_FILES.get(relFile);
     const content = fs.readFileSync(file, "utf8");
     const sf = ts.createSourceFile(
       file,
@@ -143,31 +384,50 @@ function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
       ts.ScriptKind.TSX,
     );
 
+    const recordHit = (
+      target: HardcodedHit[],
+      node: ts.Node,
+      text: string,
+      context?: string,
+    ) => {
+      const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+      target.push({ file: relFile, line: line + 1, text, context });
+    };
+
     function visit(node: ts.Node) {
       if (ts.isJsxText(node)) {
         const text = node.getText(sf).trim();
-        // Ignore empty, symbols, single characters or allowed brand tokens
-        if (text && /[a-zA-Z]{2,}/.test(text) && !ALLOWED_LITERALS.has(text)) {
-          // Check if it's more than just technical characters or paths
+        if (!isNonUiToken(text) && !allowedFallbacks?.has(text)) {
           if (
-            !text.startsWith("/") &&
-            !text.startsWith("http") &&
-            !text.startsWith("{") &&
-            !text.startsWith("•")
+            /[a-zA-Z]{3,}\s+[a-zA-Z]{2,}/.test(text) ||
+            (text.length > 8 && !/^[A-Z0-9_.-]+$/.test(text))
           ) {
-            // Words check: contains real words (e.g. 2 or more letters)
-            if (
-              /[a-zA-Z]{3,}\s+[a-zA-Z]{2,}/.test(text) ||
-              (text.length > 8 && !/^[A-Z0-9_.-]+$/.test(text))
-            ) {
-              const { line } = sf.getLineAndCharacterOfPosition(
-                node.getStart(sf),
-              );
-              hits.push({
-                file: path.relative(ROOT_DIR, file),
-                line: line + 1,
-                text,
-              });
+            recordHit(jsxHits, node, text);
+          }
+        }
+      } else if (ts.isJsxAttribute(node)) {
+        const attrName = node.name.getText(sf);
+        if (UI_TEXT_ATTRS.has(attrName) && node.initializer) {
+          for (const lit of collectNonTStringLiterals(node.initializer)) {
+            const text = lit.text.trim();
+            if (!isNonUiToken(text) && !allowedFallbacks?.has(text)) {
+              recordHit(attrHits, lit.node, text, attrName);
+            }
+          }
+        }
+      } else if (ts.isJsxExpression(node) && node.expression) {
+        const parent = node.parent;
+        const isVisibleChild =
+          ts.isJsxElement(parent) || ts.isJsxFragment(parent);
+        const isVisibleAttr =
+          ts.isJsxAttribute(parent) &&
+          UI_TEXT_ATTRS.has(parent.name.getText(sf));
+
+        if (isVisibleChild || isVisibleAttr) {
+          for (const hit of collectFallbackStringLiterals(node.expression)) {
+            const text = hit.text.trim();
+            if (!isNonUiToken(text) && !allowedFallbacks?.has(text)) {
+              recordHit(fallbackHits, hit.node, text, hit.kind);
             }
           }
         }
@@ -179,6 +439,89 @@ function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
     visit(sf);
   }
 
+  return { jsxHits, attrHits, fallbackHits };
+}
+
+/**
+ * Detect leftover English UI words, parenthetical glosses, or untranslated ASCII strings in vi.ts.
+ */
+function scanVietnameseLocaleLeaks(filePath: string): ViLeakHit[] {
+  const content = fs.readFileSync(filePath, "utf8");
+  const sf = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const hits: ViLeakHit[] = [];
+
+  function inspectEntry(key: string, node: ts.Node, text: string): void {
+    let cleaned = text
+      .replace(/\{[^}]+\}/g, " ")
+      .replace(/https?:\/\/\S+/g, " ")
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, " ")
+      .replace(/\b[a-zA-Z0-9_-]+\.(?:pdf|docx?|csv)\b/gi, " ")
+      .replace(
+        /\b(DD|MM|YYYY|HH|mm|ss)(?:[/: -](DD|MM|YYYY|HH|mm|ss))*\b/g,
+        " ",
+      );
+
+    for (const phrase of ALLOWED_VI_PHRASES) {
+      cleaned = cleaned.replaceAll(phrase, " ");
+    }
+
+    const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+    const parenMatch = cleaned.match(PAREN_ENGLISH_RE);
+    if (parenMatch && !ALLOWED_VI_PARENS.has(parenMatch[0])) {
+      hits.push({ key, line: line + 1, text, reason: parenMatch[0] });
+      return;
+    }
+
+    const bannedMatch = cleaned.match(BANNED_VI_UI_WORDS);
+    if (bannedMatch) {
+      hits.push({ key, line: line + 1, text, reason: bannedMatch[0] });
+      return;
+    }
+
+    if (!VI_DIACRITIC_RE.test(text) && /[a-zA-Z]{2,}/.test(cleaned)) {
+      const words = cleaned.match(/[a-zA-Z]+/g) || [];
+      const unexpected = words.filter(
+        (w) => !ALLOWED_VI_ASCII_WORDS.has(w.toLowerCase()),
+      );
+      if (unexpected.length > 0) {
+        hits.push({
+          key,
+          line: line + 1,
+          text,
+          reason: `untranslated ASCII: ${unexpected.join(", ")}`,
+        });
+      }
+    }
+  }
+
+  function walkAst(node: ts.Node, keyPath: string[]): void {
+    if (ts.isPropertyAssignment(node)) {
+      const propName = node.name.getText(sf).replace(/['"]/g, "");
+      const nextPath = [...keyPath, propName];
+      if (
+        ts.isStringLiteral(node.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(node.initializer)
+      ) {
+        inspectEntry(
+          nextPath.join("."),
+          node.initializer,
+          node.initializer.text,
+        );
+      } else {
+        ts.forEachChild(node.initializer, (child) => walkAst(child, nextPath));
+      }
+      return;
+    }
+    ts.forEachChild(node, (child) => walkAst(child, keyPath));
+  }
+
+  walkAst(sf, []);
   return hits;
 }
 
@@ -282,16 +625,50 @@ function main(): void {
     errors += missingInCode.size;
   }
 
-  // 3. Direction 2: Scan for untranslated raw JSX text
-  const hardcodedHits = scanHardcodedJsx(srcFiles);
-  if (hardcodedHits.length > 0) {
+  // 3. Direction 2: Scan for untranslated raw JSX text, attributes, and fallbacks
+  const { jsxHits, attrHits, fallbackHits } = scanHardcodedJsx(srcFiles);
+  if (jsxHits.length > 0) {
     console.error(
-      `❌ Found ${hardcodedHits.length} hardcoded text string(s) bypassing i18n in JSX:`,
+      `❌ Found ${jsxHits.length} hardcoded text string(s) bypassing i18n in JSX:`,
     );
-    for (const h of hardcodedHits) {
+    for (const h of jsxHits) {
       console.error(`   - "${h.text}" at ${h.file}:${h.line}`);
     }
-    errors += hardcodedHits.length;
+    errors += jsxHits.length;
+  }
+
+  if (attrHits.length > 0) {
+    console.error(
+      `❌ Found ${attrHits.length} hardcoded string(s) in UI JSX attributes (aria-label/title/placeholder/alt):`,
+    );
+    for (const h of attrHits) {
+      console.error(`   - [${h.context}] "${h.text}" at ${h.file}:${h.line}`);
+    }
+    errors += attrHits.length;
+  }
+
+  if (fallbackHits.length > 0) {
+    console.error(
+      `❌ Found ${fallbackHits.length} hardcoded UI fallback expression(s) in JSX:`,
+    );
+    for (const h of fallbackHits) {
+      console.error(`   - (${h.context}) "${h.text}" at ${h.file}:${h.line}`);
+    }
+    errors += fallbackHits.length;
+  }
+
+  // 4. Direction 3: Scan vi.ts for leaked English UI terminology
+  const viLeaks = scanVietnameseLocaleLeaks(VI_FILE);
+  if (viLeaks.length > 0) {
+    console.error(
+      `❌ Found ${viLeaks.length} potential English leak(s) inside vi.ts:`,
+    );
+    for (const leak of viLeaks) {
+      console.error(
+        `   - ${leak.key} (${leak.reason}) at vi.ts:${leak.line}: "${leak.text}"`,
+      );
+    }
+    errors += viLeaks.length;
   }
 
   if (errors > 0) {
@@ -304,7 +681,12 @@ function main(): void {
   console.log(
     "✅ Direction 1: All dictionary keys and t() calls are 100% consistent!",
   );
-  console.log("✅ Direction 2: Zero hardcoded text found in JSX components!");
+  console.log(
+    "✅ Direction 2: Zero hardcoded JSX text, attributes, or fallbacks found!",
+  );
+  console.log(
+    "✅ Direction 3: Zero English UI leaks detected in Vietnamese dictionary!",
+  );
   console.log("🎉 Two-Way i18n Verification PASSED 100%!\n");
   process.exit(0);
 }

@@ -1,5 +1,10 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  type CandidateDocument,
+} from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -25,19 +30,23 @@ export class CandidatesProfileService {
     tenantOrgId?: string | null,
     currentUser?: { id?: string; name?: string } | null,
   ) {
+    const where: { id: string; organizationId?: string } = { id };
+    if (tenantOrgId) {
+      where.organizationId = tenantOrgId;
+    }
+
     const candidate = await this.prisma.candidate.findFirst({
-      where: { id },
+      where,
       select: {
         id: true,
         organizationId: true,
-        name: true,
         firstName: true,
         lastName: true,
+        displayName: true,
         gender: true,
         dateOfBirth: true,
         email: true,
         phone: true,
-        notes: true,
         resumeUrl: true,
         resumeFileName: true,
         resumeFileSize: true,
@@ -49,6 +58,23 @@ export class CandidatesProfileService {
     });
 
     if (!candidate || candidate.deletedAt) {
+      if (tenantOrgId) {
+        const otherOrg = await this.prisma.candidate.findFirst({
+          where: { id },
+          select: { id: true, organizationId: true, deletedAt: true },
+        });
+        if (
+          otherOrg &&
+          !otherOrg.deletedAt &&
+          otherOrg.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+            "Access denied: candidate belongs to another organization.",
+            { id, organizationId: otherOrg.organizationId },
+          );
+        }
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
         `Candidate with ID ${id} not found`,
@@ -56,21 +82,12 @@ export class CandidatesProfileService {
       );
     }
 
-    if (
-      tenantOrgId &&
-      candidate.organizationId &&
-      tenantOrgId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-
     // Fetch all applications for this candidate
     const applications = await this.prisma.application.findMany({
-      where: { candidateId: id },
+      where: {
+        candidateId: id,
+        ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+      },
       select: {
         id: true,
         candidateId: true,
@@ -80,7 +97,6 @@ export class CandidatesProfileService {
         resumeFileName: true,
         resumeFileSize: true,
         resumeMimeType: true,
-        notes: true,
         orderIndex: true,
         createdAt: true,
         updatedAt: true,
@@ -120,10 +136,28 @@ export class CandidatesProfileService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      candidate.organizationId,
+    );
+    const resolvedCandidateName = formatCandidateDisplayName(
+      candidate,
+      nameOrder,
+    );
+
     const populatedApps = applications.map((app) => ({
       ...app,
       job: jobMap.get(app.jobId) || null,
-      candidateName: candidate.name,
+      candidate: {
+        id: candidate.id,
+        name: resolvedCandidateName,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        displayName: candidate.displayName ?? null,
+        email: candidate.email,
+        phone: candidate.phone,
+      },
+      candidateName: resolvedCandidateName,
       candidateEmail: candidate.email,
       candidatePhone: candidate.phone,
       interviews: interviewsByApp.get(app.id) || [],
@@ -222,6 +256,7 @@ export class CandidatesProfileService {
 
     return {
       ...candidate,
+      name: resolvedCandidateName,
       applications: populatedApps,
       applicationsCount: populatedApps.length,
       allDocuments,

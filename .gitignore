@@ -33,6 +33,7 @@ backups/
 *.sql
 !apps/api/migrations/**/*.sql
 !apps/api/migrations/app/*.sql
+!apps/api/src/prisma/migrations/**/*.sql
 
 # Testing & Coverage
 coverage/

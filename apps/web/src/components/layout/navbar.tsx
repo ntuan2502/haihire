@@ -9,34 +9,23 @@ import {
   Briefcase,
   Users,
   FileText,
-  Inbox,
   Calendar,
-  MessageSquare,
   Settings,
-  ChevronDown,
   Plus,
   ShieldCheck,
   Menu,
   X,
-  Clock,
   Radio,
-  Bot,
-  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 export type NavTab =
   | "dashboard"
@@ -66,9 +55,16 @@ export function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, canEdit } = useAuth();
+  const { user, isAuthenticated, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const canViewJobs = useHasPermission("job:view");
+  const canViewCandidates = useHasPermission("candidate:view");
+  const canViewApplications = useHasPermission("application:view");
+  const canViewInterviews = useHasPermission("interview:view");
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canCreateJob = useHasPermission("job:create");
 
   const handleCreateJobClick = () => {
     if (onOpenCreateJob) {
@@ -98,22 +94,40 @@ export function Navbar({
     icon: ElementType;
   }[] = [
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
-    { id: "jobs", label: t("nav.jobs"), icon: Briefcase },
-    { id: "candidates", label: t("nav.candidates"), icon: Users },
-    { id: "applications", label: t("nav.applications"), icon: FileText },
-    { id: "interviews", label: t("nav.interviews"), icon: Calendar },
-    { id: "sourcing", label: t("nav.features.sourceTracking"), icon: Radio },
+    ...(canViewJobs
+      ? [{ id: "jobs" as const, label: t("nav.jobs"), icon: Briefcase }]
+      : []),
+    ...(canViewCandidates
+      ? [{ id: "candidates" as const, label: t("nav.candidates"), icon: Users }]
+      : []),
+    ...(canViewApplications
+      ? [
+          {
+            id: "applications" as const,
+            label: t("nav.applications"),
+            icon: FileText,
+          },
+        ]
+      : []),
+    ...(canViewInterviews
+      ? [
+          {
+            id: "interviews" as const,
+            label: t("nav.interviews"),
+            icon: Calendar,
+          },
+        ]
+      : []),
+    ...(canViewSourcing
+      ? [
+          {
+            id: "sourcing" as const,
+            label: t("nav.features.sourceTracking"),
+            icon: Radio,
+          },
+        ]
+      : []),
     { id: "settings", label: t("nav.settings"), icon: Settings },
-  ];
-
-  // Features inside "More" (Coming Soon)
-  const moreItems = [
-    { label: t("nav.inbox"), icon: Inbox },
-    { label: t("nav.assistant"), icon: MessageSquare },
-    { label: t("nav.features.analyticsReports"), icon: BarChart3 },
-    { label: t("nav.features.talentPools"), icon: Users },
-    { label: t("nav.features.aiAnalysis"), icon: Bot },
-    { label: t("nav.features.timeline"), icon: Clock },
   ];
 
   const handleNavClick = (tab: NavTab) => {
@@ -193,47 +207,13 @@ export function Navbar({
                   </button>
                 );
               })}
-
-              {/* More dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer transition-colors">
-                  <span>{t("nav.more")}</span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5"
-                >
-                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    {t("common.comingSoon")}
-                  </div>
-                  {moreItems.map((item, idx) => {
-                    const Icon = item.icon;
-                    return (
-                      <DropdownMenuItem
-                        key={idx}
-                        disabled
-                        className="flex items-center justify-between px-2.5 py-2 text-xs opacity-60 cursor-not-allowed rounded-lg"
-                      >
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <Icon className="h-3.5 w-3.5 text-slate-400" />
-                          <span>{item.label}</span>
-                        </div>
-                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                          {t("common.soon")}
-                        </span>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
             </nav>
           </div>
 
           {/* Right: + New Job, UserMenu / Sign In, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* + New Job Button (Desktop Only, Admins only) */}
-            {canEdit && (
+            {/* + New Job Button (Desktop Only, users with job:create only) */}
+            {canCreateJob && (
               <Button
                 size="sm"
                 onClick={handleCreateJobClick}
@@ -254,7 +234,7 @@ export function Navbar({
             {isAuthenticated && user ? (
               <UserMenu />
             ) : (
-              <Link href="/auth/login">
+              <Link href="/auth/login" prefetch={false}>
                 <Button
                   size="sm"
                   className="h-8 text-xs font-semibold gap-1 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white cursor-pointer shadow-xs"
@@ -270,7 +250,7 @@ export function Navbar({
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              aria-label="Toggle Mobile Menu"
+              aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5 stroke-[2]" />
@@ -288,7 +268,7 @@ export function Navbar({
         onClose={() => setMobileMenuOpen(false)}
         breakpoint="lg"
         footer={
-          canEdit ? (
+          canCreateJob ? (
             <Button
               onClick={() => {
                 handleCreateJobClick();
@@ -331,28 +311,6 @@ export function Navbar({
               </button>
             );
           })}
-
-        {/* More (Coming Soon) */}
-        <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-          {t("nav.moreComingSoon")}
-        </div>
-        {moreItems.map((item, idx) => {
-          const Icon = item.icon;
-          return (
-            <div
-              key={idx}
-              className="flex h-9 w-full items-center justify-between rounded-lg px-3 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
-            >
-              <div className="flex items-center gap-3">
-                <Icon className="h-4 w-4 shrink-0 text-slate-400" />
-                <span>{item.label}</span>
-              </div>
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                {t("common.soon")}
-              </span>
-            </div>
-          );
-        })}
 
         {/* Divider */}
         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />

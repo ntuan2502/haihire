@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatTime } from "@/lib/utils";
 import type { Job } from "@/types";
 import type { StepId } from "../types";
 import type { JobWizardFormState } from "./use-job-wizard-form-state";
@@ -75,12 +76,7 @@ export function useJobWizardDraft({
             }
             setHasRestoredDraft(true);
             if (draft.savedAt) {
-              setDraftSavedAt(
-                new Date(draft.savedAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              );
+              setDraftSavedAt(formatTime(new Date(draft.savedAt)));
             }
           }
         }
@@ -124,12 +120,7 @@ export function useJobWizardDraft({
           savedAt: Date.now(),
         };
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
-        setDraftSavedAt(
-          new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        );
+        setDraftSavedAt(formatTime(new Date()));
       } catch (e) {
         console.error("Failed to auto-save draft:", e);
       }

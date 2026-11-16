@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
 import { Inter } from "next/font/google";
-import { ThemeProvider, QueryProvider } from "@/components/providers";
+import {
+  ThemeProvider,
+  QueryProvider,
+  LocalizationProvider,
+  ToastProvider,
+} from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import {
   I18nProvider,
@@ -11,7 +16,6 @@ import {
   DEFAULT_LOCALE,
   type SupportedLocale,
 } from "@/i18n";
-import { Toaster } from "sonner";
 import { BRAND_CONFIG } from "@haihire/shared";
 import "./globals.css";
 
@@ -35,6 +39,11 @@ export default async function RootLayout({
   const rawLocale = cookieStore.get(LOCALE_COOKIE_KEY)?.value;
   const locale: SupportedLocale = rawLocale === "vi" ? "vi" : DEFAULT_LOCALE;
 
+  const initialDictionary =
+    locale === "vi"
+      ? (await import("@/i18n/locales/vi")).vi
+      : (await import("@/i18n/locales/en")).en;
+
   return (
     <html
       lang={locale}
@@ -43,7 +52,7 @@ export default async function RootLayout({
     >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
-          {`try{var d=document.documentElement,t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){d.classList.add('dark');}else{d.classList.remove('dark');}}catch(_){}`}
+          {`try{var d=document.documentElement,t=localStorage.getItem('theme'),isDark=t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(isDark){d.classList.add('dark');d.classList.remove('light');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.classList.add('light');d.style.colorScheme='light';}}catch(_){}`}
         </Script>
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -57,20 +66,19 @@ export default async function RootLayout({
         </a>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <QueryProvider>
-            <I18nProvider initialLocale={locale}>
-              <AuthProvider>{children}</AuthProvider>
-              <Toaster
-                richColors
-                position="top-right"
-                containerAriaLabel={
-                  locale === "vi" ? "Thông báo hệ thống" : "Notifications"
-                }
-              />
+            <I18nProvider
+              initialLocale={locale}
+              initialDictionary={initialDictionary}
+            >
+              <AuthProvider>
+                <LocalizationProvider>{children}</LocalizationProvider>
+              </AuthProvider>
+              <ToastProvider />
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

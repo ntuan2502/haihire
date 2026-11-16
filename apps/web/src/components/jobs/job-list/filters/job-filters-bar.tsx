@@ -62,9 +62,9 @@ export function JobFiltersBar({
   const { t } = useI18n();
 
   return (
-    <>
+    <div className="space-y-3">
       {/* Modern Unified Responsive Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Left: Quick Status Tabs */}
         <SegmentedTabs
           multiSelect
@@ -75,7 +75,7 @@ export function JobFiltersBar({
         />
 
         {/* Right: Search Box + Columns Dropdown + Filters Button */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full lg:w-auto">
           <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("jobs.searchJobs")}
@@ -152,7 +152,7 @@ export function JobFiltersBar({
           <button
             type="button"
             onClick={onOpenFiltersDrawer}
-            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <SlidersHorizontal
               className="h-3.5 w-3.5 text-slate-500"
@@ -242,6 +242,6 @@ export function JobFiltersBar({
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

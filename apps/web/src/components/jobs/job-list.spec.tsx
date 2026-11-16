@@ -368,6 +368,17 @@ describe("JobList Component - Characterization Tests", () => {
       expect(screen.getByText("Senior Full-Stack Engineer")).toBeDefined();
     });
 
+    it("closes the filter drawer with the cancel button", () => {
+      render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
+
+      fireEvent.click(screen.getByText(en.common.filter));
+      const drawer = screen.getByRole("dialog");
+      expect(within(drawer).queryByText(en.jobs.saveAsView)).toBeNull();
+
+      fireEvent.click(within(drawer).getByText(en.common.cancel));
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
     it("calls onFilterChange when filters update in controlled mode", () => {
       const handleFilterChange = vi.fn();
       render(

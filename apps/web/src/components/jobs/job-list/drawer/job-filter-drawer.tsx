@@ -1,6 +1,6 @@
 "use client";
 
-import { X, RotateCcw, Plus } from "lucide-react";
+import { X, RotateCcw } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Button } from "@/components/ui/button";
@@ -236,16 +236,15 @@ export function JobFilterDrawer({
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="h-8 text-xs font-semibold gap-1"
+            className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
           >
-            <Plus className="h-3 w-3" />
-            {t("jobs.saveAsView")}
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
             size="sm"
             onClick={onClose}
-            className="h-8 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900"
+            className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
           >
             {t("jobs.done")}
           </Button>

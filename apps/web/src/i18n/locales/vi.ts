@@ -823,7 +823,7 @@ export const vi: TranslationSchema = {
       requiredOption: "Bắt buộc",
       documentsTitle: "Tài liệu đính kèm",
       resumeCvTitle: "CV / Sơ yếu lý lịch",
-      resumeCvDesc: "Định dạng PDF, DOC hoặc DOCX tối đa 10 MB",
+      resumeCvDesc: "Chỉ định dạng PDF tối đa 10 MB",
       coverLetterTitle: "Thư xin việc",
       coverLetterDesc: "Trường văn bản tự do, tối đa 10.000 ký tự",
       offOption: "Tắt",
@@ -997,8 +997,7 @@ export const vi: TranslationSchema = {
     noCandidatesYetDesc:
       "Thêm ứng viên đầu tiên để bắt đầu xây dựng nguồn nhân tài của bạn.",
     dropCv: "Kéo thả CV vào đây để tự động điền",
-    dropCvHint:
-      "Định dạng PDF, DOC hoặc DOCX — Bao gồm cả hồ sơ LinkedIn xuất dạng PDF.",
+    dropCvHint: "Chỉ định dạng PDF — Bao gồm cả hồ sơ LinkedIn xuất dạng PDF.",
     chooseFile: "Chọn tệp từ máy",
     cvAttached: "Đã đính kèm CV ({size} KB)",
     removeFile: "Gỡ tệp",
@@ -1040,7 +1039,7 @@ export const vi: TranslationSchema = {
       "Định dạng tệp này không hỗ trợ xem trực tiếp. Vui lòng tải xuống để xem.",
     retryPreview: "Thử lại",
     uploadDocHint:
-      "Tải lên CV, thư xin việc hoặc tài liệu khác (PDF, DOC, DOCX — tối đa 10 MB).",
+      "Tải lên CV, thư xin việc hoặc tài liệu khác (Chỉ định dạng PDF — tối đa 10 MB).",
     noApplicationsYet: "Chưa có hồ sơ ứng tuyển nào.",
     noApplicationsMatchingStage: "Không có hồ sơ nào ở giai đoạn này.",
     applyCandidateHint:
@@ -2090,9 +2089,9 @@ export const vi: TranslationSchema = {
     resume: "CV / Sơ yếu lý lịch",
     cvResume: "CV / Sơ yếu lý lịch",
     dropCvHere: "Kéo và thả CV vào đây hoặc nhấn để duyệt",
-    cvFormats: "Định dạng PDF, DOC, DOCX (Tối đa 10MB)",
+    cvFormats: "Chỉ định dạng PDF (Tối đa 10MB)",
     dragDropResume: "Nhấp để tải lên hoặc kéo thả CV vào đây",
-    resumeFormats: "Hỗ trợ tệp PDF, DOC, DOCX (Tối đa 10MB)",
+    resumeFormats: "Chỉ hỗ trợ tệp PDF (Tối đa 10MB)",
     submitting: "Đang nộp hồ sơ...",
     submitApplication: "Nộp hồ sơ ứng tuyển ngay",
     submitSuccessTitle: "Ứng tuyển thành công!",
@@ -2104,11 +2103,11 @@ export const vi: TranslationSchema = {
     errorLastName: "Vui lòng nhập họ và tên đệm.",
     errorFirstName: "Vui lòng nhập tên.",
     errorEmail: "Vui lòng nhập địa chỉ email hợp lệ.",
-    errorResume: "Vui lòng đính kèm tệp CV của bạn (PDF/DOCX).",
+    errorResume: "Vui lòng đính kèm tệp CV của bạn (PDF).",
     errorGeneric: "Đã có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.",
     fileTooLarge: "Kích thước tệp vượt quá giới hạn 10MB.",
     fileInvalidType:
-      "Định dạng tệp không được hỗ trợ. Vui lòng tải lên file PDF, DOC hoặc DOCX.",
+      "Định dạng tệp không được hỗ trợ. Vui lòng tải lên tệp PDF.",
     placeholders: {
       lastName: "Ví dụ: Nguyễn Văn",
       firstName: "Ví dụ: An",

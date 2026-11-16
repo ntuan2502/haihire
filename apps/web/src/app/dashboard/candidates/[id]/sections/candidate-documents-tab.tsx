@@ -75,7 +75,7 @@ export function CandidateDocumentsTab({
             <input
               ref={docInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              accept=".pdf"
               className="hidden"
               onChange={onDocumentUpload}
             />

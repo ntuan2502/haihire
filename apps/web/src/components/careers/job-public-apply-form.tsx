@@ -82,6 +82,11 @@ export function JobPublicApplyForm({
     setFileError(null);
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setFileError(t("careers.fileInvalidType"));
+      return;
+    }
+
     if (file.size > 10 * 1024 * 1024) {
       setFileError(t("careers.fileTooLarge"));
       return;
@@ -318,7 +323,7 @@ export function JobPublicApplyForm({
                 id={fileInputId}
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf"
                 onChange={handleFileChange}
                 className="sr-only peer"
                 aria-label={t("careers.resume")}

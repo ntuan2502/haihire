@@ -216,7 +216,7 @@ function AddCandidatePageContent() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.doc,.docx"
+            accept=".pdf"
             onChange={handleFileChange}
             className="hidden"
           />

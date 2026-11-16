@@ -77,7 +77,7 @@ export class MinioService implements OnModuleInit {
       );
     }
     const ext = extname(file.originalname).toLowerCase();
-    const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
+    const allowed = new Set([".pdf"]);
     if (!ext || !allowed.has(ext)) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,

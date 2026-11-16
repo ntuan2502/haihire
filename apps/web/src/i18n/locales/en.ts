@@ -818,7 +818,7 @@ export const en: TranslationSchema = {
       requiredOption: "Required",
       documentsTitle: "Documents",
       resumeCvTitle: "Resume / CV",
-      resumeCvDesc: "PDF, DOC, or DOCX up to 10 MB",
+      resumeCvDesc: "PDF only up to 10 MB",
       coverLetterTitle: "Cover letter",
       coverLetterDesc: "Free text field, max 10,000 characters",
       offOption: "Off",
@@ -991,8 +991,7 @@ export const en: TranslationSchema = {
     noCandidatesYetDesc:
       "Add your first candidate to start building your talent pool.",
     dropCv: "Drop a CV to fill this in",
-    dropCvHint:
-      "PDF, DOC, or DOCX — Including a LinkedIn profile saved as PDF.",
+    dropCvHint: "PDF only — Including a LinkedIn profile saved as PDF.",
     chooseFile: "Choose a file",
     cvAttached: "CV attached ({size} KB)",
     removeFile: "Remove file",
@@ -1034,7 +1033,7 @@ export const en: TranslationSchema = {
       "Inline preview is not supported for this file format. Please download the file to view it.",
     retryPreview: "Retry",
     uploadDocHint:
-      "Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).",
+      "Upload a resume, cover letter, or other document (PDF only — max 10 MB).",
     noApplicationsYet: "No applications yet.",
     noApplicationsMatchingStage: "No applications matching this stage.",
     applyCandidateHint:
@@ -2085,9 +2084,9 @@ export const en: TranslationSchema = {
     resume: "Resume attachment (CV)",
     cvResume: "Resume / CV",
     dropCvHere: "Drag and drop CV here or click to browse",
-    cvFormats: "PDF, DOCX formats (Up to 10MB)",
+    cvFormats: "PDF format only (Up to 10MB)",
     dragDropResume: "Click to upload or drag and drop your CV here",
-    resumeFormats: "Supports PDF, DOC, DOCX (Up to 10MB)",
+    resumeFormats: "Supports PDF only (Up to 10MB)",
     submitting: "Submitting application...",
     submitApplication: "Submit Application Now",
     submitSuccessTitle: "Application Submitted Successfully!",
@@ -2099,11 +2098,10 @@ export const en: TranslationSchema = {
     errorLastName: "Please enter your last name.",
     errorFirstName: "Please enter your first name.",
     errorEmail: "Please enter a valid email address.",
-    errorResume: "Please attach your resume file (PDF/DOCX).",
+    errorResume: "Please attach your resume file (PDF).",
     errorGeneric: "An error occurred while submitting. Please try again.",
     fileTooLarge: "File size exceeds the 10MB limit.",
-    fileInvalidType:
-      "Unsupported file format. Please upload PDF, DOC, or DOCX.",
+    fileInvalidType: "Unsupported file format. Please upload a PDF file.",
     placeholders: {
       lastName: "e.g. Doe",
       firstName: "e.g. Jane",

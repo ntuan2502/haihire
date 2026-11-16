@@ -154,7 +154,7 @@ export function CandidateDrawerDocumentsTab({
               aria-label={t("candidates.uploadDoc")}
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              accept=".pdf"
               className="hidden"
               onChange={handleFileChange}
             />

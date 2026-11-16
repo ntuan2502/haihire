@@ -372,4 +372,84 @@ describe("Vitest Integration: Tier 2 Boundary & Corner Cases", () => {
     });
     expect(res.status).toBe(404);
   });
+
+  it("T2-INT-21 [RLS]: withTenantRls isolates unscoped candidate.findMany() to active tenant only", async () => {
+    const userA = await createTestUser(ctx.prisma);
+    const orgA = await createTestOrg(ctx.prisma, userA.id, {
+      name: "Org A RLS",
+    });
+    const userB = await createTestUser(ctx.prisma);
+    const orgB = await createTestOrg(ctx.prisma, userB.id, {
+      name: "Org B RLS",
+    });
+
+    const candA = await createTestCandidate(ctx.prisma, orgA.id, {
+      email: "cand-a-rls@example.com",
+    });
+    await createTestCandidate(ctx.prisma, orgB.id, {
+      email: "cand-b-rls@example.com",
+    });
+
+    const visibleInOrgA = await ctx.prisma.withTenantRls(orgA.id, (tx) =>
+      tx.candidate.findMany({ select: { id: true, organizationId: true } }),
+    );
+    expect(visibleInOrgA).toHaveLength(1);
+    expect(visibleInOrgA[0].id).toBe(candA.id);
+    expect(visibleInOrgA[0].organizationId).toBe(orgA.id);
+  });
+
+  it("T2-INT-22 [RLS]: withTenantRls blocks cross-tenant INSERT under PostgreSQL RLS policy", async () => {
+    const userA = await createTestUser(ctx.prisma);
+    const orgA = await createTestOrg(ctx.prisma, userA.id, {
+      name: "Org A Write RLS",
+    });
+    const userB = await createTestUser(ctx.prisma);
+    const orgB = await createTestOrg(ctx.prisma, userB.id, {
+      name: "Org B Write RLS",
+    });
+
+    await expect(
+      ctx.prisma.withTenantRls(orgA.id, (tx) =>
+        tx.candidate.create({
+          data: {
+            organizationId: orgB.id,
+            firstName: "Cross",
+            lastName: "Tenant",
+            email: "cross-rls@example.com",
+          },
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("T2-INT-23 [RLS]: withSystemRlsBypass permits cross-tenant queries for system background tasks", async () => {
+    const userA = await createTestUser(ctx.prisma);
+    const orgA = await createTestOrg(ctx.prisma, userA.id, {
+      name: "Org A Bypass",
+    });
+    const userB = await createTestUser(ctx.prisma);
+    const orgB = await createTestOrg(ctx.prisma, userB.id, {
+      name: "Org B Bypass",
+    });
+
+    await createTestCandidate(ctx.prisma, orgA.id, {
+      email: "sys-a@example.com",
+    });
+    await createTestCandidate(ctx.prisma, orgB.id, {
+      email: "sys-b@example.com",
+    });
+
+    const allCands = await ctx.prisma.withSystemRlsBypass((tx) =>
+      tx.candidate.findMany({
+        where: {
+          email: { in: ["sys-a@example.com", "sys-b@example.com"] },
+        },
+        select: { organizationId: true },
+      }),
+    );
+    expect(allCands).toHaveLength(2);
+    expect(new Set(allCands.map((c) => c.organizationId))).toEqual(
+      new Set([orgA.id, orgB.id]),
+    );
+  });
 });

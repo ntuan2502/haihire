@@ -24,8 +24,9 @@ import { EmailModule } from "./email/email.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD, APP_PIPE, Reflector } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
+import { TenantRlsInterceptor } from "./common/interceptors/tenant-rls.interceptor";
 import { RedisModule, REDIS_CLIENT } from "./redis/redis.module";
 import { ThrottlerStorageRedisService } from "./redis/throttler-storage-redis.service";
 import type Redis from "ioredis";
@@ -94,6 +95,10 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantRlsInterceptor,
     },
     {
       provide: APP_PIPE,

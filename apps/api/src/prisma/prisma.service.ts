@@ -10,6 +10,11 @@ import { ensureDefaultDemoAccounts } from "./demo-seed.util";
 
 const connectionString = backendEnv.DATABASE_URL;
 
+export interface TenantRlsContext {
+  tenantOrgId?: string | null;
+  bypassRls?: boolean;
+}
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -17,6 +22,7 @@ export class PrismaService
 {
   private readonly pool: Pool;
   private readonly als = new AsyncLocalStorage<PrismaService>();
+  private readonly tenantContextAls = new AsyncLocalStorage<TenantRlsContext>();
   private readonly self: PrismaService;
 
   constructor() {
@@ -40,6 +46,72 @@ export class PrismaService
   }
 
   /**
+   * Binds tenant RLS metadata into AsyncLocalStorage for the duration of `fn`.
+   */
+  runWithTenantContext<T>(
+    tenantOrgId: string | null | undefined,
+    fn: () => T,
+    options?: { bypassRls?: boolean },
+  ): T {
+    return this.tenantContextAls.run(
+      {
+        tenantOrgId: tenantOrgId ?? null,
+        bypassRls: options?.bypassRls ?? false,
+      },
+      fn,
+    );
+  }
+
+  /**
+   * Returns the active AsyncLocalStorage tenant RLS context if present.
+   */
+  getCurrentTenantContext(): TenantRlsContext | undefined {
+    return this.tenantContextAls.getStore();
+  }
+
+  /**
+   * Runs a callback inside a PostgreSQL transaction with Row-Level Security enforced
+   * under the non-superuser `haihire_rls_user` role for the given tenant.
+   */
+  async withTenantRls<T>(
+    tenantOrgId: string,
+    fn: (tx: PrismaService) => Promise<T>,
+  ): Promise<T> {
+    if (!tenantOrgId) {
+      throw new Error("withTenantRls requires a non-empty tenantOrgId.");
+    }
+    return this.$transaction(async (txClient) => {
+      await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantOrgId}, true), set_config('app.bypass_rls', 'off', true)`;
+      await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+      return this.tenantContextAls.run({ tenantOrgId, bypassRls: false }, () =>
+        this.als.run(txClient as PrismaService, () =>
+          fn(txClient as PrismaService),
+        ),
+      );
+    }) as Promise<T>;
+  }
+
+  /**
+   * Runs a system/background callback inside a PostgreSQL transaction under
+   * `haihire_rls_user` with explicit transaction-local `app.bypass_rls = 'on'`.
+   */
+  async withSystemRlsBypass<T>(
+    fn: (tx: PrismaService) => Promise<T>,
+  ): Promise<T> {
+    return this.$transaction(async (txClient) => {
+      await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', '', true), set_config('app.bypass_rls', 'on', true)`;
+      await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
+      return this.tenantContextAls.run(
+        { tenantOrgId: null, bypassRls: true },
+        () =>
+          this.als.run(txClient as PrismaService, () =>
+            fn(txClient as PrismaService),
+          ),
+      );
+    }) as Promise<T>;
+  }
+
+  /**
    * Executes a callback within a database transaction, automatically propagating
    * AsyncLocalStorage context so nested transactional calls reuse the same transaction.
    */
@@ -48,7 +120,13 @@ export class PrismaService
     if (existing) {
       return fn(existing);
     }
+    const tenantCtx = this.tenantContextAls.getStore();
     return this.$transaction(async (txClient) => {
+      if (tenantCtx?.tenantOrgId || tenantCtx?.bypassRls) {
+        const orgVal = tenantCtx.tenantOrgId ?? "";
+        const bypassVal = tenantCtx.bypassRls ? "on" : "off";
+        await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${orgVal}, true), set_config('app.bypass_rls', ${bypassVal}, true)`;
+      }
       return this.als.run(txClient as PrismaService, () =>
         fn(txClient as PrismaService),
       );

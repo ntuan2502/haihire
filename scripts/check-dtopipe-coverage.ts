@@ -11,6 +11,7 @@ export function checkDtoPipeCoverage(baseDir?: string): {
   compliant: boolean;
   totalControllers: number;
   totalPiped: number;
+  totalQueryPiped: number;
   violations: Violation[];
 } {
   const targetDir = baseDir || path.resolve(process.cwd(), "apps/api/src");
@@ -34,6 +35,7 @@ export function checkDtoPipeCoverage(baseDir?: string): {
   const controllers = findControllers(targetDir);
   const violations: Violation[] = [];
   let totalPiped = 0;
+  let totalQueryPiped = 0;
 
   for (const file of controllers) {
     const content = fs.readFileSync(file, "utf-8");
@@ -58,6 +60,10 @@ export function checkDtoPipeCoverage(baseDir?: string): {
       } else if (line.includes("@Body(DtoPipe")) {
         totalPiped++;
       }
+
+      if (line.includes("@Query(DtoPipe")) {
+        totalQueryPiped++;
+      }
     }
   }
 
@@ -65,6 +71,7 @@ export function checkDtoPipeCoverage(baseDir?: string): {
     compliant: violations.length === 0,
     totalControllers: controllers.length,
     totalPiped,
+    totalQueryPiped,
     violations,
   };
 }
@@ -86,6 +93,9 @@ if (process.argv[1]?.endsWith("check-dtopipe-coverage.ts")) {
   console.log(`Controllers Scanned: ${result.totalControllers}`);
   console.log(
     `Properly Piped Endpoints (@Body(DtoPipe)): ${result.totalPiped}`,
+  );
+  console.log(
+    `Properly Piped Query Endpoints (@Query(DtoPipe)): ${result.totalQueryPiped}`,
   );
 
   if (!result.compliant) {

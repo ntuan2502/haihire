@@ -24,21 +24,15 @@ import { EmailModule } from "./email/email.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE, Reflector } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { TenantRlsInterceptor } from "./common/interceptors/tenant-rls.interceptor";
+import { createThrottlerReflectorProviders } from "./common/providers/throttler-reflector.provider";
 import { RedisModule, REDIS_CLIENT } from "./redis/redis.module";
 import { ThrottlerStorageRedisService } from "./redis/throttler-storage-redis.service";
 import type Redis from "ioredis";
 
 import { MetricsModule } from "./metrics/metrics.module";
-
-// Resolve ThrottlerGuard parameter token to bridge CJS/ESM dual package hazard under tsx in dev
-const throttlerParamTypes =
-  (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (
-    ...args: unknown[]
-  ) => unknown)[]) || [];
-const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
 
 @Module({
   imports: [
@@ -89,9 +83,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   controllers: [AppController],
   providers: [
     AppService,
-    ...(throttlerReflectorToken !== Reflector
-      ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]
-      : []),
+    ...createThrottlerReflectorProviders(),
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

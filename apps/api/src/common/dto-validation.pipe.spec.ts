@@ -2,6 +2,12 @@ import { describe, it, expect } from "vitest";
 import { BadRequestException, ValidationPipe } from "@nestjs/common";
 import { z } from "zod";
 import { IsString, IsNotEmpty } from "class-validator";
+import {
+  createInterviewSchema,
+  createOrganizationSchema,
+  createTrackingLinkSchema,
+  SourcingChannel,
+} from "@haihire/shared";
 import { DtoPipe, ZodValidationPipe } from "./dto-validation.pipe";
 
 class SampleDto {
@@ -74,6 +80,46 @@ describe("DtoPipe", () => {
         expect(response.code).toBe("VALIDATION_ERROR");
         expect(response.message.length).toBeGreaterThan(0);
       }
+    });
+  });
+
+  describe("Shared @haihire/shared Zod schemas via DtoPipe", () => {
+    it("validates createInterviewSchema with trimmed fields and ISO datetime", () => {
+      const pipe = DtoPipe(createInterviewSchema);
+      const parsed = pipe.transform(
+        {
+          applicationId: "  app-123 ",
+          scheduledAt: "2026-11-20T09:00:00Z",
+          type: "TECHNICAL",
+          interviewer: " Alice Nguyen ",
+          round: 2,
+        },
+        { type: "body" },
+      );
+      expect(parsed).toMatchObject({
+        applicationId: "app-123",
+        interviewer: "Alice Nguyen",
+        type: "TECHNICAL",
+        round: 2,
+      });
+    });
+
+    it("rejects invalid createTrackingLinkSchema and createOrganizationSchema payloads", () => {
+      const linkPipe = DtoPipe(createTrackingLinkSchema);
+      expect(() =>
+        linkPipe.transform(
+          { name: "   ", source: SourcingChannel.LINKEDIN },
+          { type: "body" },
+        ),
+      ).toThrow(BadRequestException);
+
+      const orgPipe = DtoPipe(createOrganizationSchema);
+      expect(() =>
+        orgPipe.transform(
+          { name: "Acme Corp", slug: "Invalid_Slug!" },
+          { type: "body" },
+        ),
+      ).toThrow(BadRequestException);
     });
   });
 });

@@ -9,6 +9,7 @@ export const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 import { toInstant } from "../common/date.util.ts";
 import { SourcingChannel } from "@haihire/shared";
+import { SeedCvStorage } from "./seed-cv-pdf.util.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
@@ -643,6 +644,7 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await prisma.outboxEvent.deleteMany();
   await prisma.emailLog.deleteMany();
   await prisma.emailFlowConfig.deleteMany();
   await prisma.emailSetting.deleteMany();
@@ -654,11 +656,16 @@ export async function runSeed(): Promise<void> {
   await prisma.trackingClick.deleteMany();
   await prisma.trackingLink.deleteMany();
   await prisma.candidate.deleteMany();
+  await prisma.storedFile.deleteMany();
+  await prisma.pipelineStage.deleteMany();
   await prisma.inviteLink.deleteMany();
   await prisma.organizationMember.deleteMany();
   await prisma.job.deleteMany();
   await prisma.organization.deleteMany();
   await prisma.user.deleteMany();
+
+  const cvStorage = new SeedCvStorage();
+  await cvStorage.init();
 
   console.log("==================================================");
   console.log("🏢 2. Seeding Organization & Demo Users...");
@@ -843,6 +850,31 @@ export async function runSeed(): Promise<void> {
     where: { id: betaJobId },
   });
 
+  const betaCv = await cvStorage.uploadCandidateCv(
+    betaOrgId,
+    "TranBeta_CV.pdf",
+    {
+      fullName: "Beta Tran",
+      email: "candidate@beta.test",
+      phone: "+84988776655",
+      gender: "FEMALE",
+      targetRole: "Beta Lead Quant Trader",
+      skills: ["Quantitative Trading", "Python", "C++", "Risk Modeling", "SQL"],
+    },
+  );
+  const betaStoredFileId = "00000000-0000-4000-8000-0000000000b7";
+  await prisma.storedFile.create({
+    data: {
+      id: betaStoredFileId,
+      organizationId: betaOrgId,
+      objectKey: betaCv.objectKey,
+      originalName: betaCv.fileName,
+      mimeType: "application/pdf",
+      sizeBytes: betaCv.sizeBytes,
+      checksum: betaCv.checksum,
+    },
+  });
+
   await prisma.candidate.upsert({
     create: {
       id: betaCandidateId,
@@ -852,8 +884,11 @@ export async function runSeed(): Promise<void> {
       email: "candidate@beta.test",
       phone: "+84988776655",
       gender: "FEMALE",
-      resumeUrl: "https://minio.test/haihire-resumes/beta-cv.pdf",
-      resumeFileName: "TranBeta_CV.pdf",
+      resumeUrl: betaCv.resumeUrl,
+      resumeFileName: betaCv.fileName,
+      resumeFileSize: betaCv.sizeBytes,
+      resumeMimeType: "application/pdf",
+      resumeFileId: betaStoredFileId,
       updatedAt: toInstant(),
     },
     update: {
@@ -871,8 +906,11 @@ export async function runSeed(): Promise<void> {
       candidateId: betaCandidateId,
       stage: "SCREENING",
       orderIndex: 0,
-      resumeUrl: "https://minio.test/haihire-resumes/beta-cv.pdf",
-      resumeFileName: "TranBeta_CV.pdf",
+      resumeUrl: betaCv.resumeUrl,
+      resumeFileName: betaCv.fileName,
+      resumeFileSize: betaCv.sizeBytes,
+      resumeMimeType: "application/pdf",
+      resumeFileId: betaStoredFileId,
       updatedAt: toInstant(),
     },
     update: {
@@ -1686,9 +1724,34 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
+    resumeFileId: string;
     createdAt: Date;
     updatedAt: Date;
   }> = [];
+
+  const storedFilesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    objectKey: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    checksum: string;
+  }> = [];
+
+  const candidateCvTemplates = new Map<
+    string,
+    {
+      organizationId: string;
+      fileName: string;
+      storedFileId: string;
+      fullName: string;
+      email: string;
+      phone: string;
+      gender: string;
+      targetRole: string;
+    }
+  >();
 
   const applicationsToInsert: Array<{
     id: string;
@@ -1701,6 +1764,7 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
+    resumeFileId: string;
     orderIndex: number;
     trackingLinkId: string | null;
     sourceChannel: SourcingChannel;
@@ -1839,10 +1903,17 @@ export async function runSeed(): Promise<void> {
     const jobCount = jobCountsPool[i];
     jobDistributionStats[jobCount]++;
 
-    const fileName = `CV_${candidate.name.replace(/\s+/g, "_")}.pdf`;
-    const resumeUrl = `/haihire-resumes/${fileName}`;
-    const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
     const candidateId = crypto.randomUUID();
+    const storedFileId = crypto.randomUUID();
+    const asciiBaseName = candidate.name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[đĐ]/g, "d")
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    const fileName = `CV_${candidateId.slice(0, 8)}_${asciiBaseName || "Candidate"}.pdf`;
+    const resumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/${fileName}`;
+    const resumeFileSize = 2400;
 
     const firstName = candidate.firstName;
     const lastName = candidate.lastName;
@@ -1853,6 +1924,27 @@ export async function runSeed(): Promise<void> {
     const candidateCreatedAt = new Date(
       Date.now() - Math.floor(daysAgo * 86400000),
     );
+
+    const shuffledJobIds =
+      jobCount > 0 ? [...createdJobIds].sort(() => 0.5 - Math.random()) : [];
+    const selectedJobIds = shuffledJobIds.slice(0, jobCount);
+    const primaryJobIdx =
+      selectedJobIds.length > 0 ? createdJobIds.indexOf(selectedJobIds[0]) : -1;
+    const targetRole =
+      primaryJobIdx >= 0
+        ? BASE_JOB_CONFIGS[primaryJobIdx % BASE_JOB_CONFIGS.length].title
+        : "Software & Product Specialist";
+
+    candidateCvTemplates.set(candidateId, {
+      organizationId: adminOrgId,
+      fileName,
+      storedFileId,
+      fullName: candidate.name,
+      email: candidate.email,
+      phone: candidate.phone,
+      gender,
+      targetRole,
+    });
 
     candidatesToInsert.push({
       id: candidateId,
@@ -1867,6 +1959,7 @@ export async function runSeed(): Promise<void> {
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
+      resumeFileId: storedFileId,
       createdAt: toInstant(candidateCreatedAt),
       updatedAt: toInstant(candidateCreatedAt),
     });
@@ -1887,9 +1980,6 @@ export async function runSeed(): Promise<void> {
     if (jobCount === 0) {
       stageStats.APPLIED++;
     } else {
-      const shuffledJobIds = [...createdJobIds].sort(() => 0.5 - Math.random());
-      const selectedJobIds = shuffledJobIds.slice(0, jobCount);
-
       for (let j = 0; j < selectedJobIds.length; j++) {
         const jobId = selectedJobIds[j];
         const stage = STAGES[(candidate.candidateIndex + j) % STAGES.length];
@@ -2079,6 +2169,7 @@ export async function runSeed(): Promise<void> {
           resumeFileName: fileName,
           resumeFileSize,
           resumeMimeType: "application/pdf",
+          resumeFileId: storedFileId,
           orderIndex,
           trackingLinkId,
           sourceChannel,
@@ -2116,6 +2207,31 @@ export async function runSeed(): Promise<void> {
   // ============================================================================
   const testCandidateId = "00000000-0000-4000-8000-000000000201";
   const kanbanCandidateId = "00000000-0000-4000-8000-000000000202";
+  const testStoredFileId = "00000000-0000-4000-8000-000000000211";
+  const kanbanStoredFileId = "00000000-0000-4000-8000-000000000212";
+  const testResumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/sample-resume-test-applicant.pdf`;
+  const kanbanResumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/sample-resume-kanban.pdf`;
+
+  candidateCvTemplates.set(testCandidateId, {
+    organizationId: adminOrgId,
+    fileName: "sample-resume-test-applicant.pdf",
+    storedFileId: testStoredFileId,
+    fullName: "Test Applicant Nguyen",
+    email: "test-applicant@tun.io.vn",
+    phone: "0901234567",
+    gender: "MALE",
+    targetRole: "Senior Backend Engineer (NestJS / PostgreSQL)",
+  });
+  candidateCvTemplates.set(kanbanCandidateId, {
+    organizationId: adminOrgId,
+    fileName: "sample-resume-kanban.pdf",
+    storedFileId: kanbanStoredFileId,
+    fullName: "Minh Kanban Tran",
+    email: "kanban-candidate@tun.io.vn",
+    phone: "0908765432",
+    gender: "MALE",
+    targetRole: "Senior Backend Engineer (NestJS / PostgreSQL)",
+  });
 
   candidatesToInsert.push({
     id: testCandidateId,
@@ -2126,10 +2242,11 @@ export async function runSeed(): Promise<void> {
     dateOfBirth: toInstant(new Date("1995-05-15T00:00:00Z")),
     email: "test-applicant@tun.io.vn",
     phone: "0901234567",
-    resumeUrl: "/haihire-resumes/sample-resume.pdf",
-    resumeFileName: "sample-resume.pdf",
-    resumeFileSize: 102400,
+    resumeUrl: testResumeUrl,
+    resumeFileName: "sample-resume-test-applicant.pdf",
+    resumeFileSize: 2400,
     resumeMimeType: "application/pdf",
+    resumeFileId: testStoredFileId,
     createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
   });
@@ -2155,10 +2272,11 @@ export async function runSeed(): Promise<void> {
     dateOfBirth: toInstant(new Date("1996-08-20T00:00:00Z")),
     email: "kanban-candidate@tun.io.vn",
     phone: "0908765432",
-    resumeUrl: "/haihire-resumes/sample-resume.pdf",
-    resumeFileName: "sample-resume.pdf",
-    resumeFileSize: 102400,
+    resumeUrl: kanbanResumeUrl,
+    resumeFileName: "sample-resume-kanban.pdf",
+    resumeFileSize: 2400,
     resumeMimeType: "application/pdf",
+    resumeFileId: kanbanStoredFileId,
     createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
   });
@@ -2184,10 +2302,11 @@ export async function runSeed(): Promise<void> {
     jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
     stage: "APPLIED",
     matchScore: 88,
-    resumeUrl: "/haihire-resumes/sample-resume.pdf",
-    resumeFileName: "sample-resume.pdf",
-    resumeFileSize: 102400,
+    resumeUrl: kanbanResumeUrl,
+    resumeFileName: "sample-resume-kanban.pdf",
+    resumeFileSize: 2400,
     resumeMimeType: "application/pdf",
+    resumeFileId: kanbanStoredFileId,
     orderIndex: 0,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2224,10 +2343,11 @@ export async function runSeed(): Promise<void> {
     jobId: createdJobIds[1],
     stage: "SCREENING",
     matchScore: 82,
-    resumeUrl: "/haihire-resumes/sample-resume.pdf",
-    resumeFileName: "sample-resume.pdf",
-    resumeFileSize: 102400,
+    resumeUrl: testResumeUrl,
+    resumeFileName: "sample-resume-test-applicant.pdf",
+    resumeFileSize: 2400,
     resumeMimeType: "application/pdf",
+    resumeFileId: testStoredFileId,
     orderIndex: 1,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2254,6 +2374,75 @@ export async function runSeed(): Promise<void> {
     updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
   });
   stageStats.SCREENING++;
+
+  console.log(
+    `\n📄 Generating & uploading ${candidateCvTemplates.size} tailored CV PDFs to MinIO...`,
+  );
+  const templateEntries = Array.from(candidateCvTemplates.entries());
+  const uploadedByCandidateId = new Map<
+    string,
+    {
+      resumeUrl: string;
+      sizeBytes: number;
+      fileName: string;
+      storedFileId: string;
+    }
+  >();
+  const UPLOAD_BATCH = 25;
+  for (let b = 0; b < templateEntries.length; b += UPLOAD_BATCH) {
+    const chunk = templateEntries.slice(b, b + UPLOAD_BATCH);
+    const results = await Promise.all(
+      chunk.map(async ([candId, tpl]) => {
+        const uploaded = await cvStorage.uploadCandidateCv(
+          tpl.organizationId,
+          tpl.fileName,
+          tpl,
+        );
+        storedFilesToInsert.push({
+          id: tpl.storedFileId,
+          organizationId: tpl.organizationId,
+          objectKey: uploaded.objectKey,
+          originalName: uploaded.fileName,
+          mimeType: "application/pdf",
+          sizeBytes: uploaded.sizeBytes,
+          checksum: uploaded.checksum,
+        });
+        return [
+          candId,
+          {
+            resumeUrl: uploaded.resumeUrl,
+            sizeBytes: uploaded.sizeBytes,
+            fileName: uploaded.fileName,
+            storedFileId: tpl.storedFileId,
+          },
+        ] as const;
+      }),
+    );
+    for (const [candId, meta] of results) {
+      uploadedByCandidateId.set(candId, meta);
+    }
+  }
+
+  for (const cand of candidatesToInsert) {
+    const meta = uploadedByCandidateId.get(cand.id);
+    if (meta) {
+      cand.resumeUrl = meta.resumeUrl;
+      cand.resumeFileName = meta.fileName;
+      cand.resumeFileSize = meta.sizeBytes;
+      cand.resumeFileId = meta.storedFileId;
+    }
+  }
+  for (const app of applicationsToInsert) {
+    const meta = uploadedByCandidateId.get(app.candidateId);
+    if (meta) {
+      app.resumeUrl = meta.resumeUrl;
+      app.resumeFileName = meta.fileName;
+      app.resumeFileSize = meta.sizeBytes;
+      app.resumeFileId = meta.storedFileId;
+    }
+  }
+
+  await prisma.storedFile.createMany({ data: storedFilesToInsert });
 
   console.log(
     `\n⏳ Saving ${candidatesToInsert.length} candidates to database...`,

@@ -12,7 +12,7 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/font/google", () => ({
-  Inter: () => ({ variable: "--font-sans" }),
+  Geist: () => ({ variable: "--font-geist-sans" }),
 }));
 
 vi.mock("next/script", () => ({

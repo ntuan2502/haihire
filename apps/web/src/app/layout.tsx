@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import {
   ThemeProvider,
   QueryProvider,
@@ -19,9 +19,9 @@ import {
 import { BRAND_CONFIG } from "@haihire/shared";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
+const geist = Geist({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-geist-sans",
   display: "swap",
 });
 
@@ -48,7 +48,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${inter.variable} h-full antialiased font-sans`}
+      className={`${geist.variable} h-full antialiased font-sans`}
     >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">

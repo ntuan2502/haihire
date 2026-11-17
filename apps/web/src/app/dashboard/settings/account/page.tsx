@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSubmitButton } from "@/components/settings/settings-submit-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { useContext, useMemo, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
@@ -286,10 +287,8 @@ export default function AccountSettingsPage() {
               </div>
 
               <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
-                <Button
-                  type="submit"
+                <SettingsSubmitButton
                   disabled={!hasProfileChanges || isSavingProfile}
-                  className="w-full sm:w-auto h-9 px-5 text-xs font-semibold shadow-sm cursor-pointer rounded-xl"
                 >
                   {isSavingProfile ? (
                     <>
@@ -299,7 +298,7 @@ export default function AccountSettingsPage() {
                   ) : (
                     t("settings.accountProfile.saveBtn")
                   )}
-                </Button>
+                </SettingsSubmitButton>
 
                 <Button
                   type="button"
@@ -401,10 +400,8 @@ export default function AccountSettingsPage() {
             </div>
 
             <div className="pt-2">
-              <Button
-                type="submit"
+              <SettingsSubmitButton
                 disabled={isSavingPrefs || !hasPreferenceChanges}
-                className="h-9 px-4 rounded-xl text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
               >
                 {isSavingPrefs ? (
                   <>
@@ -417,7 +414,7 @@ export default function AccountSettingsPage() {
                     <span>{t("settings.accountPreferences.saveBtn")}</span>
                   </>
                 )}
-              </Button>
+              </SettingsSubmitButton>
             </div>
           </form>
         </SettingsCard>

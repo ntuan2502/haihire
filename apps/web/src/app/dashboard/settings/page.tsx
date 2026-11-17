@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSubmitButton } from "@/components/settings/settings-submit-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
@@ -197,15 +198,11 @@ export default function GeneralSettingsPage() {
             {/* Save Button (Admins only) */}
             <div className="pt-2">
               {canEdit ? (
-                <Button
-                  type="submit"
-                  disabled={!canSaveProfile}
-                  className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
-                >
+                <SettingsSubmitButton disabled={!canSaveProfile}>
                   {updateOrgMutation.isPending
                     ? t("common.loading")
                     : t("settings.saveChanges")}
-                </Button>
+                </SettingsSubmitButton>
               ) : (
                 <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
                   <Shield className="h-4 w-4 shrink-0" />

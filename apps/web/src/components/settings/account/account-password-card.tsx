@@ -129,7 +129,7 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
           <Button
             type="submit"
             disabled={!hasPasswordInput || isSubmitting}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+            className="h-9 px-4 rounded-xl text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

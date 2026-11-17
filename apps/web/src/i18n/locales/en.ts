@@ -1708,6 +1708,8 @@ export const en: TranslationSchema = {
       localizationSub: "Names & date formats",
       notifications: "Notifications",
       notificationsSub: "Website and email alerts",
+      organizationGroup: "Organization",
+      personalGroup: "Personal",
       careerPage: "Career Page",
       careerPageSub: "Branded public page",
       members: "Members",

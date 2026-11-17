@@ -1715,6 +1715,8 @@ export const vi: TranslationSchema = {
       localizationSub: "Tên & định dạng ngày",
       notifications: "Thông báo",
       notificationsSub: "Thông báo trên website và qua email",
+      organizationGroup: "Tổ chức",
+      personalGroup: "Cá nhân",
       careerPage: "Trang tuyển dụng",
       careerPageSub: "Trang tuyển dụng công khai",
       members: "Thành viên",

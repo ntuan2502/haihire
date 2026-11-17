@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -113,7 +114,7 @@ export default function GeneralSettingsPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* CARD 1: Organization profile */}
-        <div className="xl:col-span-7 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
+        <SettingsCard className="xl:col-span-7 space-y-5">
           {/* Card Header */}
           <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
@@ -202,11 +203,11 @@ export default function GeneralSettingsPage() {
               )}
             </div>
           </form>
-        </div>
+        </SettingsCard>
 
         {/* Right Column: Workspace Careers Portal + Danger zone (Owner only) */}
         <div className="xl:col-span-5 space-y-6">
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <SettingsCard className="space-y-4">
             <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
                 <Globe className="h-5 w-5" aria-hidden="true" />
@@ -239,7 +240,7 @@ export default function GeneralSettingsPage() {
               <span>{t("settings.openPublicCareers")}</span>
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
-          </div>
+          </SettingsCard>
 
           {isOwner && (
             <div className="rounded-2xl border border-rose-200/80 bg-white dark:bg-slate-900 dark:border-rose-950/60 p-5 sm:p-6 shadow-xs space-y-4">

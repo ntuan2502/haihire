@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useContext, useMemo, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
 import {
@@ -169,7 +170,7 @@ export default function AccountSettingsPage() {
         {/* Left Column: Account Profile + Security Cards */}
         <div className="xl:col-span-7 space-y-6 min-w-0">
           {/* Personal Information Card */}
-          <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
+          <SettingsCard className="space-y-5">
             <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
                 <UserIcon className="h-5 w-5" aria-hidden="true" />
@@ -289,14 +290,14 @@ export default function AccountSettingsPage() {
                 </Button>
               </div>
             </form>
-          </div>
+          </SettingsCard>
 
           {/* Change Password Card */}
           <AccountPasswordCard setSession={setSession} />
         </div>
 
         {/* Right Column: Personal Language & Timezone Preferences Card */}
-        <div className="xl:col-span-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-5 min-w-0">
+        <SettingsCard className="xl:col-span-5 space-y-5">
           <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
               <Globe className="h-5 w-5" aria-hidden="true" />
@@ -381,7 +382,7 @@ export default function AccountSettingsPage() {
               </Button>
             </div>
           </form>
-        </div>
+        </SettingsCard>
       </div>
     </div>
   );

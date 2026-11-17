@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, useEffect } from "react";
 import { Send, Save, Sliders } from "lucide-react";
 import {
@@ -97,7 +98,7 @@ export default function EmailSettingsPage() {
     <div className="space-y-6 w-full min-w-0">
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Provider Selection */}
-        <div className="xl:col-span-7 w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
+        <SettingsCard className="xl:col-span-7 space-y-5">
           <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
               <Sliders className="h-5 w-5" aria-hidden="true" />
@@ -346,10 +347,10 @@ export default function EmailSettingsPage() {
               </span>
             </Button>
           </div>
-        </div>
+        </SettingsCard>
 
         {/* Test Email Box */}
-        <div className="xl:col-span-5 xl:sticky xl:top-6 w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 min-w-0">
+        <SettingsCard className="xl:col-span-5 space-y-4 xl:sticky xl:top-6">
           <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
               <Send className="h-5 w-5" aria-hidden="true" />
@@ -384,7 +385,7 @@ export default function EmailSettingsPage() {
               </span>
             </Button>
           </div>
-        </div>
+        </SettingsCard>
       </div>
     </div>
   );

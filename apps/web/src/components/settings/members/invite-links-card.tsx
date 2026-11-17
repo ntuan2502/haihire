@@ -1,8 +1,8 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState } from "react";
 import { Role } from "@haihire/shared";
-import { Button } from "@/components/ui/button";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -119,14 +119,14 @@ export function InviteLinksCard({
         </div>
 
         {!isCreateLinkOpen && (
-          <Button
+          <SettingsButton
             type="button"
             onClick={() => setIsCreateLinkOpen(true)}
             className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{t("members.createLinkButton")}</span>
-          </Button>
+          </SettingsButton>
         )}
       </div>
 
@@ -137,13 +137,13 @@ export function InviteLinksCard({
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
               {t("members.createLinkTitle")}
             </span>
-            <button
+            <SettingsButton
+              variant="ghost"
               type="button"
               onClick={() => setIsCreateLinkOpen(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
-            </button>
+            </SettingsButton>
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
@@ -197,16 +197,15 @@ export function InviteLinksCard({
             </div>
 
             <div>
-              <Button
+              <SettingsButton
                 type="button"
                 disabled={createInviteMutation.isPending}
                 onClick={handleCreateLink}
-                className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
               >
                 {createInviteMutation.isPending
                   ? t("common.saving")
                   : t("members.createLinkButton")}
-              </Button>
+              </SettingsButton>
             </div>
           </div>
         </div>
@@ -283,7 +282,7 @@ export function InviteLinksCard({
 
                 <div className="flex items-center gap-2 shrink-0">
                   {!isFull && (
-                    <Button
+                    <SettingsButton
                       type="button"
                       variant="outline"
                       size="sm"
@@ -301,10 +300,10 @@ export function InviteLinksCard({
                           <span>{t("members.copyLink")}</span>
                         </>
                       )}
-                    </Button>
+                    </SettingsButton>
                   )}
 
-                  <Button
+                  <SettingsButton
                     type="button"
                     variant="outline"
                     size="sm"
@@ -318,7 +317,7 @@ export function InviteLinksCard({
                       <Trash2 className="h-3.5 w-3.5" />
                     )}
                     <span>{t("members.revokeLink")}</span>
-                  </Button>
+                  </SettingsButton>
                 </div>
               </div>
             );

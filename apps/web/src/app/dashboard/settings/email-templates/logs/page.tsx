@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsLogTable } from "@/components/settings/settings-log-table";
 import { useState, useEffect } from "react";
 import { CheckCircle2, AlertCircle, Search } from "lucide-react";
@@ -9,7 +10,6 @@ import {
 } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
 import { formatDateTime } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
@@ -180,14 +180,14 @@ export default function EmailLogsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
+                      <SettingsButton
                         variant="ghost"
                         size="sm"
                         onClick={() => setViewingLog(log)}
                         className="h-7 px-2 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
                       >
                         {t("email.viewDetails")}
-                      </Button>
+                      </SettingsButton>
                     </td>
                   </tr>
                 );

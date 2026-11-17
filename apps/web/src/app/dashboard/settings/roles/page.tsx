@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useRef } from "react";
 import {
   Dialog,
@@ -19,7 +20,6 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { Role, type Permission } from "@haihire/shared";
 import { ShieldCheck, RotateCcw, RefreshCw, Save, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PageHeader, StatusState } from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -150,60 +150,44 @@ export default function RolesPermissionsPage() {
 
   const headerActions = (
     <>
-      <Button
+      <SettingsButton
         variant="outline"
         size="sm"
         ref={resetTrigger}
         onClick={() => setIsResetConfirmOpen(true)}
         disabled={isSaving || resetDefaultMutation.isPending}
-        className="text-xs h-9 cursor-pointer rounded-xl"
+        icon={RefreshCw}
+        pending={resetDefaultMutation.isPending}
       >
-        {resetDefaultMutation.isPending ? (
-          <Loader2
-            className="w-3.5 h-3.5 mr-1.5 animate-spin"
-            aria-hidden="true"
-          />
-        ) : (
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-        )}
         {t("settings.rolesMatrix.resetDefaultButton")}
-      </Button>
+      </SettingsButton>
 
       {dirtyCount > 0 && (
-        <Button
+        <SettingsButton
           variant="outline"
           size="sm"
           onClick={handleReset}
+          icon={RotateCcw}
           disabled={isSaving || resetDefaultMutation.isPending}
-          className="text-xs h-9 cursor-pointer rounded-xl"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
           {t("settings.rolesMatrix.resetButton")}
-        </Button>
+        </SettingsButton>
       )}
-      <Button
+      <SettingsButton
         size="sm"
         onClick={handleSave}
+        icon={Save}
+        pending={isSaving}
         disabled={
           dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
         }
-        className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
       >
-        {isSaving ? (
-          <>
-            <Loader2
-              className="w-3.5 h-3.5 mr-1.5 animate-spin"
-              aria-hidden="true"
-            />
-            {t("settings.rolesMatrix.savingButton")}
-          </>
-        ) : (
-          <>
-            <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            {t("settings.rolesMatrix.saveButton")}
-          </>
+        {t(
+          isSaving
+            ? "settings.rolesMatrix.savingButton"
+            : "settings.rolesMatrix.saveButton",
         )}
-      </Button>
+      </SettingsButton>
     </>
   );
 
@@ -312,7 +296,7 @@ export default function RolesPermissionsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
+            <SettingsButton
               ref={cancelReset}
               variant="outline"
               size="sm"
@@ -320,8 +304,8 @@ export default function RolesPermissionsPage() {
               disabled={resetDefaultMutation.isPending}
             >
               {t("settings.rolesMatrix.resetDefaultCancelButton")}
-            </Button>
-            <Button
+            </SettingsButton>
+            <SettingsButton
               variant="destructive"
               size="sm"
               onClick={handleConfirmResetToDefault}
@@ -331,7 +315,7 @@ export default function RolesPermissionsPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
               {t("settings.rolesMatrix.resetDefaultConfirmButton")}
-            </Button>
+            </SettingsButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

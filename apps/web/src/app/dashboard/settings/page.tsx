@@ -1,6 +1,7 @@
 "use client";
 
-import { SettingsSubmitButton } from "@/components/settings/settings-submit-button";
+import { Save } from "lucide-react";
+import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
@@ -12,7 +13,6 @@ import {
   useDeleteMyOrgMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ConfirmDestructiveModal, PageHeader } from "@/components/shared";
 import {
   Building2,
@@ -198,11 +198,16 @@ export default function GeneralSettingsPage() {
             {/* Save Button (Admins only) */}
             <div className="pt-2">
               {canEdit ? (
-                <SettingsSubmitButton disabled={!canSaveProfile}>
+                <SettingsButton
+                  type="submit"
+                  icon={Save}
+                  pending={updateOrgMutation.isPending}
+                  disabled={!canSaveProfile}
+                >
                   {updateOrgMutation.isPending
-                    ? t("common.loading")
+                    ? t("common.saving")
                     : t("settings.saveChanges")}
-                </SettingsSubmitButton>
+                </SettingsButton>
               ) : (
                 <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
                   <Shield className="h-4 w-4 shrink-0" />
@@ -277,15 +282,14 @@ export default function GeneralSettingsPage() {
                   </p>
                 </div>
 
-                <Button
+                <SettingsButton
                   type="button"
-                  variant="outline"
+                  variant="destructive"
                   onClick={() => setDeleteModalOpen(true)}
-                  className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-semibold px-3.5 h-9 rounded-xl shrink-0 cursor-pointer flex items-center gap-1.5"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>{t("common.delete")}</span>
-                </Button>
+                </SettingsButton>
               </div>
             </div>
           )}

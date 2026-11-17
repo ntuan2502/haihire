@@ -1,5 +1,7 @@
 "use client";
 
+import { Save } from "lucide-react";
+import { SettingsButton } from "@/components/settings/settings-button";
 import type { FormEvent } from "react";
 import { Globe, RotateCcw, Shield } from "lucide-react";
 import {
@@ -14,7 +16,6 @@ import {
   type OrgLanguage,
   type TimeFormat,
 } from "@haihire/shared";
-import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import { cn, formatDate } from "@/lib/utils";
@@ -327,23 +328,23 @@ export function OrgRegionalSettingsForm({
             {isDirty ? t("settings.localization.unsavedChanges") : ""}
           </div>
           <div className="flex items-center gap-2.5">
-            <Button
+            <SettingsButton
               type="button"
               variant="outline"
               onClick={onReset}
               disabled={!isDirty || isSaving}
-              className="h-9 px-3.5 text-xs font-semibold rounded-xl cursor-pointer"
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
               {t("settings.localization.resetButton")}
-            </Button>
-            <Button
+            </SettingsButton>
+            <SettingsButton
               type="submit"
-              disabled={!isDirty || isSaving}
-              className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+              icon={Save}
+              pending={isSaving}
+              disabled={!isDirty}
             >
-              {isSaving ? t("common.loading") : t("settings.saveChanges")}
-            </Button>
+              {isSaving ? t("common.saving") : t("settings.saveChanges")}
+            </SettingsButton>
           </div>
         </div>
       )}

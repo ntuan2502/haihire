@@ -1,6 +1,6 @@
 "use client";
 
-import { SettingsSubmitButton } from "@/components/settings/settings-submit-button";
+import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { useContext, useMemo, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
@@ -19,12 +19,11 @@ import { CustomSelect, PageHeader } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "@/hooks/query-keys";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
-import { Loader2, Globe, User as UserIcon } from "lucide-react";
+import { Save, Globe, User as UserIcon } from "lucide-react";
 import { AccountPasswordCard } from "@/components/settings/account/account-password-card";
 
 export default function AccountSettingsPage() {
@@ -287,27 +286,27 @@ export default function AccountSettingsPage() {
               </div>
 
               <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
-                <SettingsSubmitButton
-                  disabled={!hasProfileChanges || isSavingProfile}
+                <SettingsButton
+                  type="submit"
+                  disabled={!hasProfileChanges}
+                  icon={Save}
+                  pending={isSavingProfile}
                 >
-                  {isSavingProfile ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-                      {t("settings.accountProfile.savingBtn")}
-                    </>
-                  ) : (
-                    t("settings.accountProfile.saveBtn")
+                  {t(
+                    isSavingProfile
+                      ? "settings.accountProfile.savingBtn"
+                      : "settings.accountProfile.saveBtn",
                   )}
-                </SettingsSubmitButton>
+                </SettingsButton>
 
-                <Button
+                <SettingsButton
                   type="button"
-                  variant="outline"
+                  variant="destructive"
                   onClick={logout}
-                  className="w-full sm:w-auto h-9 px-4 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 cursor-pointer rounded-xl"
+                  className="w-full sm:w-auto"
                 >
                   {t("nav.signOut")}
-                </Button>
+                </SettingsButton>
               </div>
             </form>
           </SettingsCard>
@@ -400,21 +399,18 @@ export default function AccountSettingsPage() {
             </div>
 
             <div className="pt-2">
-              <SettingsSubmitButton
-                disabled={isSavingPrefs || !hasPreferenceChanges}
+              <SettingsButton
+                type="submit"
+                disabled={!hasPreferenceChanges}
+                icon={Save}
+                pending={isSavingPrefs}
               >
-                {isSavingPrefs ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>{t("settings.accountPreferences.savingBtn")}</span>
-                  </>
-                ) : (
-                  <>
-                    <Globe className="h-3.5 w-3.5" />
-                    <span>{t("settings.accountPreferences.saveBtn")}</span>
-                  </>
+                {t(
+                  isSavingPrefs
+                    ? "settings.accountPreferences.savingBtn"
+                    : "settings.accountPreferences.saveBtn",
                 )}
-              </SettingsSubmitButton>
+              </SettingsButton>
             </div>
           </form>
         </SettingsCard>

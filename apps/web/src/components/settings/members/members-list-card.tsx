@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useRef, useEffect } from "react";
 import {
   CustomSelect,
@@ -184,7 +185,8 @@ export function MembersListCard({
 
                 {canEdit && !isMemberOwner && !m.isCurrent && (
                   <div className="relative">
-                    <button
+                    <SettingsButton
+                      variant="ghost"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -193,7 +195,6 @@ export function MembersListCard({
                         );
                       }}
                       disabled={actionLoadingId === m.id}
-                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors cursor-pointer disabled:opacity-50"
                       title={t("members.memberActionsTitle")}
                     >
                       {actionLoadingId === m.id ? (
@@ -201,7 +202,7 @@ export function MembersListCard({
                       ) : (
                         <MoreHorizontal className="h-4 w-4" />
                       )}
-                    </button>
+                    </SettingsButton>
 
                     {openMenuMemberId === m.id && (
                       <div
@@ -210,7 +211,8 @@ export function MembersListCard({
                       >
                         {isOwner && (
                           <>
-                            <button
+                            <SettingsButton
+                              variant="outline"
                               type="button"
                               onClick={() => {
                                 onOpenMenuChange(null);
@@ -219,26 +221,25 @@ export function MembersListCard({
                                   name: m.name,
                                 });
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors text-left cursor-pointer font-medium"
                             >
                               <Crown className="h-3.5 w-3.5 shrink-0" />
                               <span>{t("members.transferOwnership")}</span>
-                            </button>
+                            </SettingsButton>
                             <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                           </>
                         )}
 
-                        <button
+                        <SettingsButton
+                          variant="destructive"
                           type="button"
                           onClick={() => {
                             onOpenMenuChange(null);
                             onRemoveMemberClick({ id: m.id, name: m.name });
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer font-medium"
                         >
                           <Trash2 className="h-3.5 w-3.5 shrink-0" />
                           <span>{t("members.removeMember")}</span>
-                        </button>
+                        </SettingsButton>
                       </div>
                     )}
                   </div>

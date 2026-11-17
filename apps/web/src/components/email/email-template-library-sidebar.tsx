@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import type { ElementType } from "react";
 import {
   Award,
@@ -10,7 +11,6 @@ import {
   Plus,
   UserCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import {
   getEmailFlowTitle,
@@ -62,15 +62,15 @@ export function EmailTemplateLibrarySidebar({
           </p>
         </div>
         {canManageTemplates && (
-          <Button
+          <SettingsButton
             type="button"
             size="sm"
             onClick={onOpenCreateModal}
-            className="h-8 px-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shrink-0 cursor-pointer inline-flex items-center gap-1"
+            className="shrink-0"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{t("email.newTemplateBtn")}</span>
-          </Button>
+          </SettingsButton>
         )}
       </div>
 
@@ -154,7 +154,9 @@ export function EmailTemplateLibrarySidebar({
                 </div>
 
                 {canManageTemplates && !tpl.id.startsWith("tpl-") && (
-                  <button
+                  <SettingsButton
+                    variant="ghost"
+                    size="icon-sm"
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -162,10 +164,9 @@ export function EmailTemplateLibrarySidebar({
                     }}
                     title={t("email.duplicateBtn")}
                     aria-label={t("email.duplicateBtn")}
-                    className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors cursor-pointer shrink-0"
                   >
                     <Copy className="h-3.5 w-3.5" />
-                  </button>
+                  </SettingsButton>
                 )}
               </div>
 

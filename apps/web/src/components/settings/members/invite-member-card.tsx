@@ -1,9 +1,9 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState, type FormEvent } from "react";
 import { Role } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -82,14 +82,14 @@ export function InviteMemberCard({
     }
     return (
       <div>
-        <Button
+        <SettingsButton
           type="button"
           onClick={() => setInviteOpen(true)}
           className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
         >
           <UserPlus className="h-4 w-4" />
           <span>{t("members.inviteMemberTitle")}</span>
-        </Button>
+        </SettingsButton>
       </div>
     );
   }
@@ -103,14 +103,15 @@ export function InviteMemberCard({
             {t("members.inviteMemberTitle")}
           </h3>
         </div>
-        <button
+        <SettingsButton
+          variant="ghost"
+          size="icon-sm"
           type="button"
           onClick={() => setInviteOpen(false)}
           aria-label={t("common.close")}
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
-        </button>
+        </SettingsButton>
       </div>
 
       <form
@@ -138,16 +139,16 @@ export function InviteMemberCard({
           />
         </div>
 
-        <Button
+        <SettingsButton
           type="submit"
           disabled={isInviting}
-          className="h-10 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          className="shrink-0"
         >
           <Send className="h-3.5 w-3.5" />
           <span>
             {isInviting ? t("members.sendingInvite") : t("members.sendInvite")}
           </span>
-        </Button>
+        </SettingsButton>
       </form>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState, useEffect } from "react";
 import { useI18n } from "@/i18n";
 import type {
@@ -8,7 +9,6 @@ import type {
   WebhookProviderType,
 } from "@haihire/shared";
 import { Send, HelpCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   CustomModal,
@@ -270,13 +270,13 @@ export function WebhookModal({
 
         {/* Modal Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
-          <Button
+          <SettingsButton
             type="button"
             variant="outline"
             size="sm"
             onClick={handleTest}
             disabled={isTesting}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto"
           >
             {isTesting ? (
               <>
@@ -293,13 +293,18 @@ export function WebhookModal({
                 </span>
               </>
             )}
-          </Button>
+          </SettingsButton>
 
           <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            <SettingsButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+            >
               {t("settings.integrations.webhooks.modal.cancel")}
-            </Button>
-            <Button
+            </SettingsButton>
+            <SettingsButton
               type="button"
               size="sm"
               onClick={handleSave}
@@ -315,7 +320,7 @@ export function WebhookModal({
               ) : (
                 <span>{t("settings.integrations.webhooks.modal.save")}</span>
               )}
-            </Button>
+            </SettingsButton>
           </div>
         </div>
       </div>

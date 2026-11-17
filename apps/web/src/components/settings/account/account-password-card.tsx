@@ -1,6 +1,6 @@
 "use client";
 
-import { SettingsSubmitButton } from "@/components/settings/settings-submit-button";
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState } from "react";
 import { Lock, KeyRound, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -126,7 +126,10 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
         </div>
 
         <div className="pt-2">
-          <SettingsSubmitButton disabled={!hasPasswordInput || isSubmitting}>
+          <SettingsButton
+            type="submit"
+            disabled={!hasPasswordInput || isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -138,7 +141,7 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
                 <span>{t("settings.updatePasswordBtn")}</span>
               </>
             )}
-          </SettingsSubmitButton>
+          </SettingsButton>
         </div>
       </form>
     </div>

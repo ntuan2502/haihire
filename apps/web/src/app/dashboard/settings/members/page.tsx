@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -27,7 +28,6 @@ import {
   RevokeLinkModal,
   type MemberModalTarget,
 } from "@/components/settings/members";
-import { Button } from "@/components/ui/button";
 import { PageHeader, StatusState } from "@/components/shared";
 
 export default function MembersSettingsPage() {
@@ -213,14 +213,14 @@ export default function MembersSettingsPage() {
       bordered
       actions={
         canManageMembers && !isInviteOpen ? (
-          <Button
+          <SettingsButton
             type="button"
             onClick={() => setIsInviteOpen(true)}
             className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-2 shadow-sm shadow-blue-600/20"
           >
             <UserPlus className="h-4 w-4 shrink-0" />
             <span>{t("members.inviteMemberTitle")}</span>
-          </Button>
+          </SettingsButton>
         ) : undefined
       }
     />

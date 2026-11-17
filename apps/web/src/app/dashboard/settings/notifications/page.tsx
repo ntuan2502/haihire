@@ -1,11 +1,12 @@
 "use client";
 
+import { Save } from "lucide-react";
+import { SettingsButton } from "@/components/settings/settings-button";
 import { Bell, Mail } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { NotificationPreferences } from "@haihire/shared";
 import { PageHeader } from "@/components/shared";
-import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
@@ -151,11 +152,16 @@ function NotificationSettings() {
             ))}
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={!hasChanges || save.isPending}>
+            <SettingsButton
+              type="submit"
+              icon={Save}
+              pending={save.isPending}
+              disabled={!hasChanges || save.isPending}
+            >
               {t(
                 save.isPending ? "common.saving" : "notificationSettings.save",
               )}
-            </Button>
+            </SettingsButton>
           </div>
         </form>
       )}

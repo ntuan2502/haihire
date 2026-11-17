@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { useState } from "react";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -12,7 +13,6 @@ import {
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   useEmailSettings,
@@ -361,11 +361,11 @@ export default function EmailSettingsPage() {
             )}
 
             <div className="pt-3">
-              <Button
+              <SettingsButton
                 type="button"
                 onClick={handleSaveSettings}
                 disabled={!canEdit || !hasChanges}
-                className="w-full sm:w-auto h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto"
               >
                 <Save className="h-3.5 w-3.5" />
                 <span>
@@ -373,7 +373,7 @@ export default function EmailSettingsPage() {
                     ? t("common.saving")
                     : t("email.saveSettingsBtn")}
                 </span>
-              </Button>
+              </SettingsButton>
             </div>
           </fieldset>
         </SettingsCard>
@@ -404,19 +404,19 @@ export default function EmailSettingsPage() {
               placeholder={t("email.testEmailPlaceholder")}
               className="h-10 text-xs flex-1"
             />
-            <Button
+            <SettingsButton
               type="button"
               onClick={handleSendTest}
               disabled={
                 !canSendTest || isSendingTest || !testEmailAddress.trim()
               }
-              className="w-full sm:w-auto xl:w-full h-9 px-4 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0"
+              className="w-full sm:w-auto xl:w-full shrink-0"
             >
               <Send className="h-3.5 w-3.5" />
               <span>
                 {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
               </span>
-            </Button>
+            </SettingsButton>
           </div>
         </SettingsCard>
       </div>

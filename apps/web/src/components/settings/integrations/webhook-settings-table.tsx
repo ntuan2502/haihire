@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useI18n } from "@/i18n";
 import type { WebhookSettingResponse } from "@haihire/shared";
 import {
@@ -12,7 +13,6 @@ import {
   PauseCircle,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export interface WebhookSettingsTableProps {
@@ -69,15 +69,15 @@ export function WebhookSettingsTable({
             {t("settings.integrations.webhooks.emptyState")}
           </p>
           {isAdmin && (
-            <Button
+            <SettingsButton
               variant="outline"
               size="sm"
               onClick={onOpenAdd}
-              className="mt-2 h-9 px-3.5 rounded-xl text-xs font-semibold cursor-pointer"
+              className="mt-2"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               {t("settings.integrations.webhooks.addButton")}
-            </Button>
+            </SettingsButton>
           )}
         </div>
       ) : (
@@ -151,7 +151,7 @@ export function WebhookSettingsTable({
                   </td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center gap-1">
-                      <Button
+                      <SettingsButton
                         variant="ghost"
                         size="icon"
                         onClick={() => onTest(item)}
@@ -162,10 +162,10 @@ export function WebhookSettingsTable({
                         className="h-8 w-8 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 cursor-pointer"
                       >
                         <Send className="h-3.5 w-3.5" />
-                      </Button>
+                      </SettingsButton>
                       {isAdmin && (
                         <>
-                          <Button
+                          <SettingsButton
                             variant="ghost"
                             size="icon"
                             onClick={() => onOpenEdit(item)}
@@ -173,8 +173,8 @@ export function WebhookSettingsTable({
                             className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                           >
                             <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
+                          </SettingsButton>
+                          <SettingsButton
                             variant="ghost"
                             size="icon"
                             onClick={() => onDelete(item.id)}
@@ -182,7 +182,7 @@ export function WebhookSettingsTable({
                             className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </SettingsButton>
                         </>
                       )}
                     </div>

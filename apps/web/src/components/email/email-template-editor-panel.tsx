@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import type { RefObject } from "react";
 import {
   Copy,
@@ -10,7 +11,6 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared";
 import { useI18n, type TranslationKey } from "@/i18n";
@@ -92,14 +92,10 @@ export function EmailTemplateEditorPanel({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenPreview}
-          className="flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200/60 dark:border-blue-800/60 px-3 py-1.5 rounded-xl transition-colors cursor-pointer shadow-2xs shrink-0 self-start sm:self-auto"
-        >
+        <SettingsButton variant="outline" type="button" onClick={onOpenPreview}>
           <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span>{t("email.livePreview")}</span>
-        </button>
+        </SettingsButton>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,73 +217,68 @@ export function EmailTemplateEditorPanel({
       <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-2">
           {activeTemplate.isSystem && (
-            <Button
+            <SettingsButton
               type="button"
               variant="outline"
               size="sm"
               onClick={onResetDefault}
               disabled={!canManageTemplates || isSaving}
-              className="h-9 text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>{t("email.resetDefault")}</span>
-            </Button>
+            </SettingsButton>
           )}
 
           {canManageTemplates && !activeTemplate.isSystem && (
-            <Button
+            <SettingsButton
               type="button"
-              variant="outline"
+              variant="destructive"
               size="sm"
               onClick={onDelete}
               disabled={isDeleting}
-              className="h-9 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer inline-flex items-center gap-1.5"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>{t("email.deleteBtn")}</span>
-            </Button>
+            </SettingsButton>
           )}
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           {canManageTemplates && !activeTemplate.id.startsWith("tpl-") && (
-            <Button
+            <SettingsButton
               type="button"
               variant="outline"
               size="sm"
               onClick={onDuplicate}
               disabled={isDuplicating}
-              className="h-9 px-3.5 text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 rounded-xl"
             >
               <Copy className="h-3.5 w-3.5" />
               <span>{t("email.duplicateBtn")}</span>
-            </Button>
+            </SettingsButton>
           )}
 
-          <Button
+          <SettingsButton
             type="button"
             variant="outline"
             size="sm"
             onClick={onOpenPreview}
-            className="h-9 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center gap-1.5 rounded-xl shadow-2xs"
           >
             <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             <span>{t("email.livePreview")}</span>
-          </Button>
+          </SettingsButton>
 
           {canManageTemplates && (
-            <Button
+            <SettingsButton
               type="button"
               size="sm"
               onClick={onSave}
               disabled={isSaving}
-              className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Save className="h-3.5 w-3.5" />
               <span>
                 {isSaving ? t("common.saving") : t("email.saveTemplate")}
               </span>
-            </Button>
+            </SettingsButton>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -16,7 +17,6 @@ import type {
   WebhookProviderType,
 } from "@haihire/shared";
 import { Plus, Plug } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PageHeader, StatusState } from "@/components/shared";
 import {
   WebhookSettingsTable,
@@ -187,14 +187,10 @@ export default function IntegrationsSettingsPage() {
         bordered
         actions={
           activeTab === "webhooks" ? (
-            <Button
-              id="add-webhook-btn"
-              onClick={handleOpenAdd}
-              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
+            <SettingsButton id="add-webhook-btn" onClick={handleOpenAdd}>
               <Plus className="h-4 w-4" />
               <span>{t("settings.integrations.webhooks.addButton")}</span>
-            </Button>
+            </SettingsButton>
           ) : undefined
         }
       />

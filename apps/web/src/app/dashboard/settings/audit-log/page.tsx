@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsLogTable } from "@/components/settings/settings-log-table";
 import { Fragment, useState } from "react";
 import { useI18n } from "@/i18n";
@@ -401,12 +402,12 @@ export default function AuditLogPage() {
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
                             {hasMetadata ? (
-                              <button
+                              <SettingsButton
+                                variant="ghost"
                                 type="button"
                                 onClick={() => toggleRow(log.id)}
                                 aria-label={t("settings.auditLog.colMetadata")}
                                 aria-expanded={isExpanded}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                               >
                                 <span>
                                   {t("settings.auditLog.colMetadata")}
@@ -416,7 +417,7 @@ export default function AuditLogPage() {
                                 ) : (
                                   <ChevronDown className="w-3.5 h-3.5" />
                                 )}
-                              </button>
+                              </SettingsButton>
                             ) : (
                               <span className="text-xs text-slate-400">
                                 {t("settings.auditLog.noMetadata")}

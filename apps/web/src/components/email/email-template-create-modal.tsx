@@ -1,9 +1,9 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2, MailPlus, Sparkles } from "lucide-react";
 import { CustomModal, CustomSelect } from "@/components/shared";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n, type TranslationKey } from "@/i18n";
 import {
@@ -209,25 +209,23 @@ export function EmailTemplateCreateModal({
         </div>
 
         <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] shrink-0">
-          <Button
+          <SettingsButton
             type="button"
             variant="outline"
             size="sm"
             onClick={onClose}
             disabled={isSubmitting}
-            className="h-9 px-4 text-xs cursor-pointer"
           >
             {t("common.cancel")}
-          </Button>
-          <Button
+          </SettingsButton>
+          <SettingsButton
             type="submit"
             size="sm"
             disabled={!name.trim() || !subject.trim() || isSubmitting}
-            className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer inline-flex items-center gap-1.5"
           >
             {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             <span>{t("email.newTemplateBtn")}</span>
-          </Button>
+          </SettingsButton>
         </div>
       </form>
     </CustomModal>

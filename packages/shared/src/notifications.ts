@@ -17,3 +17,25 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   applicationEmail: false,
   interviewEmail: false,
 };
+
+export const notificationKinds = [
+  "applicationReceived",
+  "interviewScheduled",
+  "interviewChanged",
+  "interviewCancelled",
+] as const;
+
+export type NotificationKind = (typeof notificationKinds)[number];
+
+export interface WebsiteNotification {
+  id: string;
+  kind: NotificationKind;
+  resourceId: string;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface WebsiteNotificationInbox {
+  items: WebsiteNotification[];
+  unreadCount: number;
+}

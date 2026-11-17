@@ -8,12 +8,12 @@ Verified inventory across source code, database schema, shared contracts, test s
 
 | Metric                               | Verified Count | Authoritative Source                                                        |
 | :----------------------------------- | :------------: | :-------------------------------------------------------------------------- |
-| **Database Models (`Prisma`)**       |      `25`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
+| **Database Models (`Prisma`)**       |      `27`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
 | **Database Enums (`Prisma`)**        |      `18`      | [apps/api/src/prisma/schema.prisma](../apps/api/src/prisma/schema.prisma)   |
 | **Soft-Delete Models (`deletedAt`)** |      `3`       | `Job`, `Candidate`, `TrackingLink`                                          |
 | **Backend AppModule Sub-Modules**    |      `15`      | [apps/api/src/app.module.ts](../apps/api/src/app.module.ts)                 |
 | **Backend Controllers**              |      `12`      | [docs/api/overview.md](api/overview.md)                                     |
-| **Backend Endpoints (REST + SSE)**   |     `109`      | `108` REST routes + `1` `@Sse("sse")` stream                                |
+| **Backend Endpoints (REST + SSE)**   |     `114`      | `113` REST routes + `1` `@Sse("sse")` stream                                |
 | **RBAC Roles / Permissions**         |   `5` / `41`   | [packages/shared/src/permissions.ts](../packages/shared/src/permissions.ts) |
 | **Domain Error Codes**               |      `64`      | [packages/shared/src/errors.ts](../packages/shared/src/errors.ts)           |
 | **SSE Event Types**                  |      `17`      | [packages/shared/src/events.ts](../packages/shared/src/events.ts)           |

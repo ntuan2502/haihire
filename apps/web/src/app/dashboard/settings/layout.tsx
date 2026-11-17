@@ -54,7 +54,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     id: "notifications",
     href: "/dashboard/settings/notifications",
     label: "Notifications",
-    sublabel: "Email alerts & digest",
+    sublabel: "Website and email alerts",
     icon: Bell,
   },
   {

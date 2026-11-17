@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
@@ -13,6 +14,7 @@ import {
   useInterviews,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
+import { useInterview } from "@/hooks/use-interview-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import { type ScheduledInterviewInfo } from "@/lib/interviews";
@@ -85,13 +87,19 @@ function InterviewsPageContent() {
     getParam,
   } = useTableParams();
 
+  const focusedInterviewId = getParam("interviewId", "");
+  const focusedInterview = useInterview(
+    focusedInterviewId,
+    user?.organizationId,
+  );
   const selectedJobFilter = getParam("jobId", "ALL");
   const rawTab = getParam("tab", "ALL");
   const activeTab: "ALL" | "UPCOMING" | "AWAITING" =
     rawTab === "UPCOMING" || rawTab === "AWAITING" ? rawTab : "ALL";
 
   const rawViewMode = getParam("viewMode", "table");
-  const viewMode: ViewMode = rawViewMode === "calendar" ? "calendar" : "table";
+  const viewMode: ViewMode =
+    !focusedInterviewId && rawViewMode === "calendar" ? "calendar" : "table";
 
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
@@ -154,6 +162,7 @@ function InterviewsPageContent() {
     jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
     tab: activeTab,
     sortBy,
+    enabled: !focusedInterviewId,
   });
 
   // Range-scoped interviews query for Calendar view (only visible month/week window)
@@ -189,10 +198,17 @@ function InterviewsPageContent() {
   const totalPages = interviewsData?.totalPages ?? 1;
 
   const paginatedList = useMemo(() => {
+    if (focusedInterviewId) {
+      const interview = focusedInterview.data;
+      if (!interview?.application) return [];
+      return [
+        { ...interview.application, interviews: [interview] } as Application,
+      ];
+    }
     return (interviewsData?.data || [])
       .map((intv) => intv.application as Application)
       .filter(Boolean);
-  }, [interviewsData]);
+  }, [focusedInterview.data, focusedInterviewId, interviewsData]);
 
   const calendarApplications = useMemo(() => {
     return (calendarInterviewsData?.data || [])
@@ -301,7 +317,8 @@ function InterviewsPageContent() {
             canEdit={canCreateInterview}
           />
         )
-      ) : (jobsLoading || appsLoading) && !interviewsData ? (
+      ) : (jobsLoading || appsLoading || focusedInterview.isLoading) &&
+        !interviewsData ? (
         <div className="py-20 flex justify-center">
           <LoadingSpinner />
         </div>
@@ -340,21 +357,32 @@ function InterviewsPageContent() {
         />
       )}
 
-      {/* Pagination Bar (Only for Table mode) */}
-      {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
-        <div className="pt-2">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            pageSizeOptions={[10, 20, 50, 100]}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-            itemLabel={t("nav.interviews").toLowerCase()}
-          />
-        </div>
+      {focusedInterviewId && (
+        <Link
+          href="/dashboard/interviews"
+          className="text-sm font-medium text-primary underline"
+        >
+          {t("common.viewAll")}
+        </Link>
       )}
+
+      {/* Pagination Bar (Only for Table mode) */}
+      {!focusedInterviewId &&
+        filteredAndSortedList.length > 0 &&
+        viewMode !== "calendar" && (
+          <div className="pt-2">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              itemLabel={t("nav.interviews").toLowerCase()}
+            />
+          </div>
+        )}
 
       {/* Schedule Interview Reusable Modal */}
       <ScheduleInterviewModal

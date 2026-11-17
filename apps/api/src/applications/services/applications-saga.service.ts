@@ -1,3 +1,4 @@
+import { NotificationsService } from "../../notifications/notifications.service";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
@@ -55,6 +56,9 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(NotificationsService)
+    private readonly notifications?: NotificationsService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -87,6 +91,7 @@ export class ApplicationsSagaService {
     const job = await this.prisma.job.findFirst({
       where: { id: dto.jobId, deletedAt: null },
       select: {
+        createdById: true,
         id: true,
         title: true,
         status: true,
@@ -606,6 +611,12 @@ export class ApplicationsSagaService {
     }
 
     if (orgId) {
+      await this.notifications?.publish(
+        orgId,
+        job.createdById,
+        "applicationReceived",
+        result.id,
+      );
       this.eventsService?.emit({
         type: "APPLICATIONS_CHANGED",
         organizationId: orgId,

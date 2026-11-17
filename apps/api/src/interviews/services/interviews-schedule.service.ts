@@ -1,3 +1,4 @@
+import { NotificationsService } from "../../notifications/notifications.service";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
@@ -58,6 +59,9 @@ export class InterviewsScheduleService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(NotificationsService)
+    private readonly notifications?: NotificationsService,
   ) {}
 
   private async resolveInterviewer(
@@ -337,6 +341,12 @@ export class InterviewsScheduleService {
     }
 
     if (orgId) {
+      await this.notifications?.publish(
+        orgId,
+        dto.interviewerId,
+        "interviewScheduled",
+        id,
+      );
       this.eventsService?.emit({
         type: "INTERVIEWS_CHANGED",
         organizationId: orgId,
@@ -446,6 +456,31 @@ export class InterviewsScheduleService {
 
     const updateOrgId = candidate?.organizationId || tenantOrgId;
     if (updateOrgId) {
+      const scheduleChanged =
+        updated.interviewerId !== existing.interviewerId ||
+        Date.parse(updated.scheduledAt) !== Date.parse(existing.scheduledAt) ||
+        updated.format !== existing.format ||
+        updated.linkOrLocation !== existing.linkOrLocation ||
+        updated.type !== existing.type;
+      if (scheduleChanged) {
+        if (updated.interviewerId !== existing.interviewerId) {
+          await this.notifications?.publish(
+            updateOrgId,
+            existing.interviewerId,
+            "interviewCancelled",
+            id,
+            updated.updatedAt.toISOString(),
+          );
+        }
+        await this.notifications?.publish(
+          updateOrgId,
+          updated.interviewerId,
+          "interviewChanged",
+          id,
+          updated.updatedAt.toISOString(),
+        );
+      }
+
       this.eventsService?.emit({
         type: "INTERVIEWS_CHANGED",
         organizationId: updateOrgId,
@@ -479,6 +514,13 @@ export class InterviewsScheduleService {
     const orgId =
       existing.application?.candidate?.organizationId || tenantOrgId;
     if (orgId) {
+      await this.notifications?.publish(
+        orgId,
+        existing.interviewerId,
+        "interviewCancelled",
+        id,
+      );
+
       this.eventsService?.emit({
         type: "INTERVIEWS_CHANGED",
         organizationId: orgId,

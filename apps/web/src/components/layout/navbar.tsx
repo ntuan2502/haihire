@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { NotificationBell } from "./notification-bell";
 import { UserMenu } from "@/components/layout/user-menu";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { BRAND_CONFIG } from "@haihire/shared";
@@ -212,6 +213,12 @@ export function Navbar({
 
           {/* Right: + New Job, UserMenu / Sign In, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {isAuthenticated && user?.organizationId && (
+              <NotificationBell
+                organizationId={user.organizationId}
+                userId={user.id}
+              />
+            )}
             {/* + New Job Button (Desktop Only, users with job:create only) */}
             {canCreateJob && (
               <Button

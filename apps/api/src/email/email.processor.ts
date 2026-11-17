@@ -1,3 +1,9 @@
+import { PrismaService } from "../prisma/prisma.service";
+import { PermissionResolverService } from "../auth/permission-resolver.service";
+import {
+  resolveNotificationRecipient,
+  type NotificationEvent,
+} from "../notifications/notification-recipient";
 import {
   Processor,
   WorkerHost,
@@ -10,6 +16,25 @@ import { EmailService } from "./email.service";
 import { WebhookNotifierService } from "../common/webhook/webhook-notifier.service";
 import type { SendEmailDto } from "./dto/send-email.dto";
 import type { SendSystemEmailDto } from "./dto/send-system-email.dto";
+
+const notificationSubjects = {
+  applicationReceived: {
+    en: "New application received",
+    vi: "Có hồ sơ ứng tuyển mới",
+  },
+  interviewScheduled: {
+    en: "Interview scheduled",
+    vi: "Đã lên lịch phỏng vấn",
+  },
+  interviewChanged: {
+    en: "Interview updated",
+    vi: "Lịch phỏng vấn đã thay đổi",
+  },
+  interviewCancelled: {
+    en: "Interview cancelled",
+    vi: "Lịch phỏng vấn đã hủy",
+  },
+} as const;
 
 export const EMAIL_QUEUE_NAME = "email-queue";
 export const EMAIL_DLQ_NAME = "email-dlq-queue";
@@ -39,15 +64,24 @@ export class EmailProcessor extends WorkerHost {
     @Optional()
     @Inject(WebhookNotifierService)
     private readonly webhookNotifier?: WebhookNotifierService,
+    @Optional()
+    @Inject(PrismaService)
+    private readonly prisma?: PrismaService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissions?: PermissionResolverService,
   ) {
     super();
   }
 
   async process(
-    job: Job<SendEmailJobData | SendSystemEmailJobData>,
+    job: Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>,
   ): Promise<unknown> {
     this.logger.log(`Processing email job '${job.name}' (ID: ${job.id})`);
     try {
+      if (job.name === "send-notification-email") {
+        return await this.sendNotification(job.data as NotificationEvent);
+      }
       if (job.name === "send-system-email") {
         const data = job.data as SendSystemEmailJobData;
         const result = await this.emailService.executeSendSystemEmail(data.dto);
@@ -72,9 +106,42 @@ export class EmailProcessor extends WorkerHost {
     }
   }
 
+  private async sendNotification(event: NotificationEvent) {
+    if (!this.prisma || !this.permissions) {
+      throw new Error("Notification delivery services are unavailable");
+    }
+    const permissions = this.permissions;
+    const recipient = await this.prisma.withTenantRls(
+      event.organizationId,
+      (tx) => resolveNotificationRecipient(tx, permissions, event),
+    );
+    if (!recipient?.email) return { status: "SKIPPED" };
+    const language = recipient.user.preferredLanguage === "vi" ? "vi" : "en";
+    const subject = notificationSubjects[event.kind][language];
+    const body =
+      language === "vi"
+        ? "Mở HaiHire để xem thông tin mới trong workspace của bạn."
+        : "Open HaiHire to view the latest information in your workspace.";
+    const result = await this.emailService.executeSendEmail(
+      {
+        to: recipient.user.email,
+        recipientName: recipient.user.email,
+        subject,
+        body,
+      },
+      event.organizationId,
+    );
+    if (result.status === "FAILED") {
+      throw new Error(
+        result.errorMessage || "Notification email delivery failed",
+      );
+    }
+    return result;
+  }
+
   @OnWorkerEvent("failed")
   async onFailed(
-    job: Job<SendEmailJobData | SendSystemEmailJobData>,
+    job: Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>,
     err: Error,
   ): Promise<void> {
     const maxAttempts = job.opts?.attempts || 3;

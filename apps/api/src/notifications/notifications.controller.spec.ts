@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "@haihire/shared";
+import { DEFAULT_NOTIFICATION_PREFERENCES, Role } from "@haihire/shared";
 import { NotificationsController } from "./notifications.controller";
+import type { PermissionResolverService } from "../auth/permission-resolver.service";
 import type { PrismaService } from "../prisma/prisma.service";
 
 describe("NotificationsController preferences", () => {
@@ -11,10 +12,19 @@ describe("NotificationsController preferences", () => {
       interviewEmail: true,
     };
     const upsert = vi.fn().mockResolvedValue(preferences);
-    const controller = new NotificationsController({
-      notificationPreference: { findUnique, upsert },
-    } as unknown as PrismaService);
-    const request = { user: { id: "user-1", organizationId: "org-1" } };
+    const transaction = { notificationPreference: { findUnique, upsert } };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {} as PermissionResolverService,
+    );
+    const request = {
+      user: { id: "user-1", organizationId: "org-1", role: Role.RECRUITER },
+    };
     const identity = { userId: "user-1", organizationId: "org-1" };
 
     await expect(controller.getPreferences(request)).resolves.toEqual(
@@ -35,5 +45,40 @@ describe("NotificationsController preferences", () => {
         update: preferences,
       }),
     );
+  });
+
+  it("limits the inbox to the caller and event categories they can still view", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi.fn().mockResolvedValue(0);
+    const transaction = { notification: { findMany, count } };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {
+        resolvePermission: vi.fn(
+          async (_organizationId, _role, permission) =>
+            permission === "interview:view",
+        ),
+      } as unknown as PermissionResolverService,
+    );
+
+    await expect(
+      controller.list({
+        user: { id: "user-1", organizationId: "org-1", role: Role.INTERVIEWER },
+      }),
+    ).resolves.toEqual({ items: [], unreadCount: 0 });
+    const where = {
+      organizationId: "org-1",
+      userId: "user-1",
+      kind: {
+        in: ["interviewScheduled", "interviewChanged", "interviewCancelled"],
+      },
+    };
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    expect(count).toHaveBeenCalledWith({ where: { ...where, readAt: null } });
   });
 });

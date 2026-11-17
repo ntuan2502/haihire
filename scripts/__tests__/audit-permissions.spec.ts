@@ -98,8 +98,8 @@ export class MissingJwtController {
     const result = runPermissionAudit();
 
     expect(result.violations).toHaveLength(0);
-    expect(result.controllersScanned).toBe(12);
-    expect(result.endpoints.length).toBe(108);
+    expect(result.controllersScanned).toBe(13);
+    expect(result.endpoints.length).toBe(113);
     expect(result.permissionProtectedCount).toBe(81);
     expect(result.methodExplicitCount).toBe(81);
     expect(result.classInheritedCount).toBe(0);

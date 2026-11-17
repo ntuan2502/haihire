@@ -110,7 +110,10 @@ describe("realtime-sync", () => {
 
     vi.advanceTimersByTime(100);
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(3);
+    expect(invalidateSpy).toHaveBeenCalledTimes(4);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["notifications"],
+    });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["applications"],
     });

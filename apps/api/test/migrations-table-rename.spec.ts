@@ -11,7 +11,7 @@ describe("Database Schema: Prisma snake_case Table Mapping & Tenant Constraints 
     expect(fs.existsSync(legacyMigrationsDir)).toBe(false);
   });
 
-  it("should map all 25 Prisma models to snake_case table names in schema.prisma", () => {
+  it("should map all 27 Prisma models to snake_case table names in schema.prisma", () => {
     const schemaContent = fs.readFileSync(schemaPath, "utf8");
 
     const modelRegex = /^model\s+([A-Za-z0-9_]+)\s+\{/gm;
@@ -28,8 +28,8 @@ describe("Database Schema: Prisma snake_case Table Mapping & Tenant Constraints 
       mappedTables.push(mapMatch[1]);
     }
 
-    expect(models.length).toBe(25);
-    expect(mappedTables.length).toBe(25);
+    expect(models.length).toBe(27);
+    expect(mappedTables.length).toBe(27);
 
     for (const table of mappedTables) {
       expect(table).toMatch(/^[a-z][a-z0-9_]*$/);

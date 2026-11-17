@@ -48,8 +48,14 @@ export default function AccountSettingsPage() {
   const activeFirstName = firstNameDraft ?? resolvedFirstName;
   const activeLastName = lastNameDraft ?? resolvedLastName;
 
+  const hasProfileChanges =
+    activeFirstName.trim() !== resolvedFirstName.trim() ||
+    activeLastName.trim() !== resolvedLastName.trim();
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!hasProfileChanges || isSavingProfile) return;
 
     const trimmedFirst = activeFirstName.trim();
     const trimmedLast = activeLastName.trim();
@@ -282,8 +288,8 @@ export default function AccountSettingsPage() {
               <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
                 <Button
                   type="submit"
-                  disabled={isSavingProfile}
-                  className="w-full sm:w-auto h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm cursor-pointer rounded-xl"
+                  disabled={!hasProfileChanges || isSavingProfile}
+                  className="w-full sm:w-auto h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none text-xs font-semibold shadow-sm cursor-pointer rounded-xl"
                 >
                   {isSavingProfile ? (
                     <>
@@ -398,7 +404,7 @@ export default function AccountSettingsPage() {
               <Button
                 type="submit"
                 disabled={isSavingPrefs || !hasPreferenceChanges}
-                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
               >
                 {isSavingPrefs ? (
                   <>

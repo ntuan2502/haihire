@@ -25,8 +25,13 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const hasPasswordInput = Boolean(
+    currentPassword && newPassword && confirmPassword,
+  );
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (!currentPassword) {
       toast.error(t("settings.currentPasswordRequiredError"));
@@ -123,8 +128,8 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
         <div className="pt-2">
           <Button
             type="submit"
-            disabled={isSubmitting}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+            disabled={!hasPasswordInput || isSubmitting}
+            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

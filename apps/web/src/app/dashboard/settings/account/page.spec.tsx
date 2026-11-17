@@ -215,18 +215,18 @@ describe("AccountSettingsPage Component", () => {
     );
   });
 
-  it("shows error when current password is empty", async () => {
+  it("disables account save buttons when nothing has changed", () => {
     render(<AccountSettingsPage />);
 
-    const submitBtn = screen.getByText("Cập nhật mật khẩu").closest("button");
-    if (submitBtn) fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "Vui lòng nhập mật khẩu hiện tại.",
-      );
-    });
-    expect(authApi.changePassword).not.toHaveBeenCalled();
+    for (const name of ["Lưu thay đổi", "Lưu tùy chọn", "Cập nhật mật khẩu"]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+    }
+    const firstName = screen.getByLabelText("Tên");
+    const originalName = (firstName as HTMLInputElement).value;
+    fireEvent.change(firstName, { target: { value: "Tên mới" } });
+    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeEnabled();
+    fireEvent.change(firstName, { target: { value: originalName } });
+    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDisabled();
   });
 
   it("shows error when new password is less than 6 characters", async () => {

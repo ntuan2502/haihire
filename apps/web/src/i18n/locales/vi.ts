@@ -1703,6 +1703,9 @@ export const vi: TranslationSchema = {
       timezoneHint:
         "Dùng để hiển thị giờ phỏng vấn và mốc thời gian hoạt động cho tài khoản của bạn.",
       followOrgDefault: "Theo mặc định tổ chức",
+      currentLanguage: "Đang áp dụng: {value}",
+      currentTimezone: "Đang áp dụng: {value} · {source}",
+      personalSource: "Tùy chọn cá nhân",
       saveBtn: "Lưu tùy chọn",
       savingBtn: "Đang lưu...",
       saveSuccess: "Đã lưu tùy chọn ngôn ngữ & múi giờ cá nhân.",

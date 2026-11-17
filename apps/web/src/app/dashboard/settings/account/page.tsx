@@ -7,6 +7,7 @@ import {
   canonicalizeTimezone,
   getTimezoneSelectOptions,
   normalizeOrgLocalization,
+  isValidIanaTimezone,
   splitFullName,
   SUPPORTED_ORG_LANGUAGES,
   type OrgLanguage,
@@ -27,7 +28,7 @@ import { AccountPasswordCard } from "@/components/settings/account/account-passw
 
 export default function AccountSettingsPage() {
   const { user, logout, setSession, updateUser } = useAuth();
-  const { t, setLocale } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const queryClient = useContext(QueryClientContext) ?? null;
 
   const orgLocalization = useMemo(
@@ -91,11 +92,24 @@ export default function AccountSettingsPage() {
   );
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
 
-  const activePrefLang = prefLangDraft ?? user?.preferredLanguage ?? "";
-  const rawPrefTimezone = prefTimezoneDraft ?? user?.preferredTimezone ?? "";
+  const savedLanguage = user?.preferredLanguage ?? "";
+  const savedTimezone = user?.preferredTimezone
+    ? canonicalizeTimezone(user.preferredTimezone)
+    : "";
+  const activePrefLang = prefLangDraft ?? savedLanguage;
+  const rawPrefTimezone = prefTimezoneDraft ?? savedTimezone;
   const activePrefTimezone = rawPrefTimezone
     ? canonicalizeTimezone(rawPrefTimezone)
     : "";
+
+  const hasPreferenceChanges =
+    activePrefLang !== savedLanguage || activePrefTimezone !== savedTimezone;
+  const usesPersonalTimezone = Boolean(
+    savedTimezone && isValidIanaTimezone(savedTimezone),
+  );
+  const effectiveTimezone = usesPersonalTimezone
+    ? savedTimezone
+    : orgLocalization.timezone;
 
   const languageOptions = useMemo(() => {
     const orgLangLabel = t(
@@ -130,6 +144,7 @@ export default function AccountSettingsPage() {
 
   const handleSavePreferences = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPreferenceChanges || isSavingPrefs) return;
     setIsSavingPrefs(true);
     try {
       const payload: UpdateUserPreferencesPayload = {
@@ -333,6 +348,13 @@ export default function AccountSettingsPage() {
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.accountPreferences.languageHint")}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.accountPreferences.currentLanguage", {
+                  value: t(
+                    `settings.localization.languages.${locale ?? orgLocalization.defaultLanguage}`,
+                  ),
+                })}
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -360,12 +382,22 @@ export default function AccountSettingsPage() {
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {t("settings.accountPreferences.timezoneHint")}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.accountPreferences.currentTimezone", {
+                  value: effectiveTimezone,
+                  source: t(
+                    usesPersonalTimezone
+                      ? "settings.accountPreferences.personalSource"
+                      : "settings.accountPreferences.followOrgDefault",
+                  ),
+                })}
+              </p>
             </div>
 
             <div className="pt-2">
               <Button
                 type="submit"
-                disabled={isSavingPrefs}
+                disabled={isSavingPrefs || !hasPreferenceChanges}
                 className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
               >
                 {isSavingPrefs ? (

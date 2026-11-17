@@ -1696,6 +1696,9 @@ export const en: TranslationSchema = {
       timezoneHint:
         "Used when rendering interview schedules and activity timestamps for your account.",
       followOrgDefault: "Follow organization default",
+      currentLanguage: "Currently in use: {value}",
+      currentTimezone: "Currently in use: {value} · {source}",
+      personalSource: "Personal preference",
       saveBtn: "Save Preferences",
       savingBtn: "Saving...",
       saveSuccess: "Personal language & timezone preferences saved.",

@@ -1522,6 +1522,9 @@ export interface TranslationSchema {
       timezoneLabel: string;
       timezoneHint: string;
       followOrgDefault: string;
+      currentLanguage: string;
+      currentTimezone: string;
+      personalSource: string;
       saveBtn: string;
       savingBtn: string;
       saveSuccess: string;

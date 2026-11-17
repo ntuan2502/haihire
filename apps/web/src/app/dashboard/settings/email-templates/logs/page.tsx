@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsLogTable } from "@/components/settings/settings-log-table";
 import { useState, useEffect } from "react";
 import { CheckCircle2, AlertCircle, Search } from "lucide-react";
 import {
@@ -85,114 +86,116 @@ export default function EmailLogsPage() {
       </div>
 
       {/* Outbox Table */}
-      <div className="w-full rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs min-w-0">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left text-xs min-w-[640px]">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+      <SettingsLogTable
+        footer={
+          <>
+            {/* Outbox Pagination Bar */}
+            {totalLogs > 0 && (
+              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <Pagination
+                  currentPage={logPage}
+                  totalPages={totalPages}
+                  totalItems={totalLogs}
+                  pageSize={logLimit}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                  onPageChange={(p) => setLogPage(p)}
+                  onPageSizeChange={(size) => {
+                    setLogLimit(size);
+                    setLogPage(1);
+                  }}
+                  itemLabel={t("email.tabLogs").toLowerCase()}
+                />
+              </div>
+            )}
+          </>
+        }
+      >
+        <table className="w-full text-left text-xs min-w-[640px]">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+            <tr>
+              <th className="px-4 py-3">{t("email.thSentAt")}</th>
+              <th className="px-4 py-3">{t("email.thRecipient")}</th>
+              <th className="px-4 py-3">{t("email.thTemplate")}</th>
+              <th className="px-4 py-3">{t("email.thSubject")}</th>
+              <th className="px-4 py-3">{t("email.thStatus")}</th>
+              <th className="px-4 py-3 text-right">{t("email.thActions")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {logs.length === 0 ? (
               <tr>
-                <th className="px-4 py-3">{t("email.thSentAt")}</th>
-                <th className="px-4 py-3">{t("email.thRecipient")}</th>
-                <th className="px-4 py-3">{t("email.thTemplate")}</th>
-                <th className="px-4 py-3">{t("email.thSubject")}</th>
-                <th className="px-4 py-3">{t("email.thStatus")}</th>
-                <th className="px-4 py-3 text-right">{t("email.thActions")}</th>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-slate-400"
+                >
+                  {t("email.noLogsFound")}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {logs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-slate-400"
+            ) : (
+              logs.map((log) => {
+                const dateStr = formatDateTime(log.sentAt);
+
+                return (
+                  <tr
+                    key={log.id}
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    {t("email.noLogsFound")}
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log) => {
-                  const dateStr = formatDateTime(log.sentAt);
-
-                  return (
-                    <tr
-                      key={log.id}
-                      className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
-                        {dateStr}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900 dark:text-white">
-                          {log.candidateName || log.recipientName || "—"}
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {log.candidateEmail || log.recipientEmail || "—"}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {log.templateName ||
-                            getEmailTemplateTypeLabel(log.templateType, t)}
+                    <td className="px-4 py-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                      {dateStr}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900 dark:text-white">
+                        {log.candidateName || log.recipientName || "—"}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {log.candidateEmail || log.recipientEmail || "—"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {log.templateName ||
+                          getEmailTemplateTypeLabel(log.templateType, t)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300 font-medium">
+                      {log.subject}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {log.status === "SENT" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>{t("email.statusSent")}</span>
                         </span>
-                      </td>
-                      <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300 font-medium">
-                        {log.subject}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {log.status === "SENT" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>{t("email.statusSent")}</span>
-                          </span>
-                        )}
-                        {log.status === "SIMULATED" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300">
-                            <span>{t("email.statusSimulated")}</span>
-                          </span>
-                        )}
-                        {log.status === "FAILED" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300">
-                            <AlertCircle className="h-3 w-3" />
-                            <span>{t("email.statusFailed")}</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setViewingLog(log)}
-                          className="h-7 px-2 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
-                        >
-                          {t("email.viewDetails")}
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Outbox Pagination Bar */}
-        {totalLogs > 0 && (
-          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-            <Pagination
-              currentPage={logPage}
-              totalPages={totalPages}
-              totalItems={totalLogs}
-              pageSize={logLimit}
-              pageSizeOptions={[10, 20, 50, 100]}
-              onPageChange={(p) => setLogPage(p)}
-              onPageSizeChange={(size) => {
-                setLogLimit(size);
-                setLogPage(1);
-              }}
-              itemLabel={t("email.tabLogs").toLowerCase()}
-            />
-          </div>
-        )}
-      </div>
+                      )}
+                      {log.status === "SIMULATED" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300">
+                          <span>{t("email.statusSimulated")}</span>
+                        </span>
+                      )}
+                      {log.status === "FAILED" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:border-rose-800 dark:text-rose-300">
+                          <AlertCircle className="h-3 w-3" />
+                          <span>{t("email.statusFailed")}</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewingLog(log)}
+                        className="h-7 px-2 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
+                      >
+                        {t("email.viewDetails")}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </SettingsLogTable>
 
       {/* Log Detail Modal using shared EmailPreviewModal */}
       {viewingLog && (

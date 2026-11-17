@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsLogTable } from "@/components/settings/settings-log-table";
 import { Fragment, useState } from "react";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -304,159 +305,159 @@ export default function AuditLogPage() {
               </p>
             </div>
           ) : (
-            <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    <tr>
-                      <th className="py-3 px-4">
-                        {t("settings.auditLog.colTimestamp")}
-                      </th>
-                      <th className="py-3 px-4">
-                        {t("settings.auditLog.colActor")}
-                      </th>
-                      <th className="py-3 px-4">
-                        {t("settings.auditLog.colAction")}
-                      </th>
-                      <th className="py-3 px-4">
-                        {t("settings.auditLog.colResource")}
-                      </th>
-                      <th className="py-3 px-4 text-right">
-                        {t("settings.auditLog.colMetadata")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {logs.map((log: OrganizationAuditLogRecord) => {
-                      const badge = getActionBadge(log.action);
-                      const isExpanded = expandedRowId === log.id;
-                      const hasMetadata =
-                        log.metadata !== null &&
-                        typeof log.metadata === "object" &&
-                        Object.keys(log.metadata).length > 0;
-                      const summaryLines = isExpanded
-                        ? formatAuditMetadataLines(log)
-                        : [];
+            <SettingsLogTable
+              footer={
+                <>
+                  {/* Shared Pagination Footer */}
+                  {total > 0 && (
+                    <Pagination
+                      currentPage={page}
+                      totalPages={Math.max(1, Math.ceil(total / pageSize))}
+                      totalItems={total}
+                      pageSize={pageSize}
+                      onPageChange={(nextPage) => {
+                        setPage(nextPage);
+                        setExpandedRowId(null);
+                      }}
+                      onPageSizeChange={(nextSize) => {
+                        setPageSize(nextSize);
+                        setPage(1);
+                        setExpandedRowId(null);
+                      }}
+                      className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
+                    />
+                  )}
+                </>
+              }
+            >
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th className="py-3 px-4">
+                      {t("settings.auditLog.colTimestamp")}
+                    </th>
+                    <th className="py-3 px-4">
+                      {t("settings.auditLog.colActor")}
+                    </th>
+                    <th className="py-3 px-4">
+                      {t("settings.auditLog.colAction")}
+                    </th>
+                    <th className="py-3 px-4">
+                      {t("settings.auditLog.colResource")}
+                    </th>
+                    <th className="py-3 px-4 text-right">
+                      {t("settings.auditLog.colMetadata")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {logs.map((log: OrganizationAuditLogRecord) => {
+                    const badge = getActionBadge(log.action);
+                    const isExpanded = expandedRowId === log.id;
+                    const hasMetadata =
+                      log.metadata !== null &&
+                      typeof log.metadata === "object" &&
+                      Object.keys(log.metadata).length > 0;
+                    const summaryLines = isExpanded
+                      ? formatAuditMetadataLines(log)
+                      : [];
 
-                      return (
-                        <Fragment key={log.id}>
-                          <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                              {formatDateTime(log.createdAt)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              {log.actor ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
-                                    {getInitials(getUserDisplayName(log.actor))}
+                    return (
+                      <Fragment key={log.id}>
+                        <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            {formatDateTime(log.createdAt)}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {log.actor ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
+                                  {getInitials(getUserDisplayName(log.actor))}
+                                </div>
+                                <div className="leading-tight">
+                                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                                    {getUserDisplayName(log.actor)}
                                   </div>
-                                  <div className="leading-tight">
-                                    <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
-                                      {getUserDisplayName(log.actor)}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                      {log.actor.email}
-                                    </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {log.actor.email}
                                   </div>
                                 </div>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic">
-                                  {t("settings.auditLog.systemActor")}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}
-                              >
-                                {badge.label}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">
+                                {t("settings.auditLog.systemActor")}
                               </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                              {getResourceLabel(log.resource)}
-                            </td>
-                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                              {hasMetadata ? (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleRow(log.id)}
-                                  aria-label={t(
-                                    "settings.auditLog.colMetadata",
-                                  )}
-                                  aria-expanded={isExpanded}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                                >
-                                  <span>
-                                    {t("settings.auditLog.colMetadata")}
-                                  </span>
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-3.5 h-3.5" />
-                                  ) : (
-                                    <ChevronDown className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                              ) : (
-                                <span className="text-xs text-slate-400">
-                                  {t("settings.auditLog.noMetadata")}
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}
+                            >
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                            {getResourceLabel(log.resource)}
+                          </td>
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            {hasMetadata ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleRow(log.id)}
+                                aria-label={t("settings.auditLog.colMetadata")}
+                                aria-expanded={isExpanded}
+                                className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                              >
+                                <span>
+                                  {t("settings.auditLog.colMetadata")}
                                 </span>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-400">
+                                {t("settings.auditLog.noMetadata")}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-slate-50/70 dark:bg-slate-950/40">
+                            <td
+                              colSpan={5}
+                              className="p-4 border-t border-slate-100 dark:border-slate-800"
+                            >
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                                <Info className="w-3.5 h-3.5" />
+                                <span>
+                                  {t("settings.auditLog.colMetadata")}
+                                </span>
+                              </div>
+                              {summaryLines.length > 0 ? (
+                                <ul className="space-y-1 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
+                                  {summaryLines.map((line, index) => (
+                                    <li key={`${log.id}-line-${index}`}>
+                                      {line}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                                  {t("settings.auditLog.noMetadata")}
+                                </p>
                               )}
                             </td>
                           </tr>
-                          {isExpanded && (
-                            <tr className="bg-slate-50/70 dark:bg-slate-950/40">
-                              <td
-                                colSpan={5}
-                                className="p-4 border-t border-slate-100 dark:border-slate-800"
-                              >
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                                  <Info className="w-3.5 h-3.5" />
-                                  <span>
-                                    {t("settings.auditLog.colMetadata")}
-                                  </span>
-                                </div>
-                                {summaryLines.length > 0 ? (
-                                  <ul className="space-y-1 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
-                                    {summaryLines.map((line, index) => (
-                                      <li key={`${log.id}-line-${index}`}>
-                                        {line}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-                                    {t("settings.auditLog.noMetadata")}
-                                  </p>
-                                )}
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Shared Pagination Footer */}
-              {total > 0 && (
-                <Pagination
-                  currentPage={page}
-                  totalPages={Math.max(1, Math.ceil(total / pageSize))}
-                  totalItems={total}
-                  pageSize={pageSize}
-                  onPageChange={(nextPage) => {
-                    setPage(nextPage);
-                    setExpandedRowId(null);
-                  }}
-                  onPageSizeChange={(nextSize) => {
-                    setPageSize(nextSize);
-                    setPage(1);
-                    setExpandedRowId(null);
-                  }}
-                  className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
-                />
-              )}
-            </div>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </SettingsLogTable>
           )}
         </>
       )}

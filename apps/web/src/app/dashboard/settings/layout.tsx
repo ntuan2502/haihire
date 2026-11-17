@@ -255,7 +255,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           {/* ================= LEFT SIDEBAR ================= */}
           <aside
             data-testid="settings-sidebar"
-            className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col md:h-full md:min-h-0 md:border-r md:border-slate-200/70 dark:md:border-slate-800/70 px-3 sm:px-6 md:pl-6 lg:pl-8 xl:pl-10 md:pr-0 pt-4 sm:pt-6"
+            className="w-full md:w-72 lg:w-80 shrink-0 flex flex-col md:h-full md:min-h-0 md:border-r md:border-slate-200/70 dark:md:border-slate-800/70 px-3 sm:px-6 md:pl-6 lg:pl-8 md:pr-0 pt-4 sm:pt-6"
           >
             <div className="shrink-0 space-y-3 sm:space-y-4 md:pr-4 md:pb-3">
               {/* Back to jobs link */}
@@ -296,7 +296,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                       >
                         {group.label}
                       </h3>
-                      <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto scrollbar-none">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
                         {group.items.map((item) => {
                           const Icon = item.icon;
                           const isActive =
@@ -315,7 +315,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                               <div
                                 key={`mobile-${item.id}`}
                                 aria-disabled="true"
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 bg-slate-100/60 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border border-slate-200/50 dark:border-slate-800/50 opacity-50 cursor-not-allowed select-none"
+                                className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 bg-slate-100/60 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border border-slate-200/50 dark:border-slate-800/50 opacity-50 cursor-not-allowed select-none"
                               >
                                 <Icon
                                   className="h-3.5 w-3.5 shrink-0 text-slate-400"
@@ -334,8 +334,9 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                             <Link
                               key={`mobile-${item.id}`}
                               href={item.href}
+                              aria-current={isActive ? "page" : undefined}
                               className={cn(
-                                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all",
+                                "flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all",
                                 isActive
                                   ? "bg-blue-600 text-white shadow-xs"
                                   : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800",
@@ -359,7 +360,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
             <nav
               data-testid="settings-sidebar-nav"
               aria-label={t("nav.settings")}
-              className="hidden md:block flex-1 min-h-0 overflow-y-auto space-y-1 pr-3 md:pr-4 pb-6"
+              className="hidden md:block flex-1 min-h-0 overflow-y-auto space-y-4 pr-3 md:pr-4 pb-6"
             >
               {navGroups
                 .filter((group) => group.items.length > 0)
@@ -424,6 +425,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                           <Link
                             key={item.id}
                             href={item.href}
+                            aria-current={isActive ? "page" : undefined}
                             className={cn(
                               "w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all group",
                               isActive
@@ -446,7 +448,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                                 <span className="text-xs font-semibold block truncate">
                                   {localized.label}
                                 </span>
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                                <p className="text-xs text-muted-foreground">
                                   {localized.sub}
                                 </p>
                               </div>
@@ -463,7 +465,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           {/* ================= RIGHT CONTENT AREA (Independent Scroll Container) ================= */}
           <section
             data-testid="settings-content"
-            className="w-full flex-1 min-w-0 md:h-full md:min-h-0 md:overflow-y-auto px-3 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 space-y-6"
+            className="w-full flex-1 min-w-0 md:h-full md:min-h-0 md:overflow-y-auto px-3 sm:px-6 md:px-8 lg:px-8 py-4 sm:py-6 space-y-6"
           >
             {children}
           </section>

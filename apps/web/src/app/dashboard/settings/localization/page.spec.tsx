@@ -173,7 +173,7 @@ describe("LocalizationSettingsPage", () => {
     );
   });
 
-  it("switches personal UI language via dropdown list for any user and syncs preference", async () => {
+  it("keeps personal language out of organization settings", () => {
     vi.mocked(useHasPermission).mockReturnValue(false);
     vi.mocked(authApi.updatePreferences).mockResolvedValueOnce({
       id: "user-1",
@@ -196,23 +196,12 @@ describe("LocalizationSettingsPage", () => {
       screen.queryByRole("button", { name: "settings.saveChanges" }),
     ).not.toBeInTheDocument();
 
-    // Personal language switch renders as searchable/scrollable list dropdown
-    const trigger = screen.getByRole("button", {
-      name: "settings.localization.personalLanguageLabel",
-    });
-    fireEvent.click(trigger);
-
-    const englishOption = screen.getByRole("option", {
-      name: "settings.localization.languages.en",
-    });
-    fireEvent.click(englishOption);
-
-    expect(mockSetLocale).toHaveBeenCalledWith("en");
-    await waitFor(() => {
-      expect(authApi.updatePreferences).toHaveBeenCalledWith({
-        preferredLanguage: "en",
-      });
-    });
+    expect(
+      screen.queryByRole("button", {
+        name: "settings.localization.personalLanguageLabel",
+      }),
+    ).not.toBeInTheDocument();
+    expect(authApi.updatePreferences).not.toHaveBeenCalled();
   });
 
   it("searches across full sorted timezone catalog in org settings", () => {

@@ -12,12 +12,16 @@ vi.mock("@/hooks/use-has-permission", () => ({
   useHasPermission: () => mockCanViewEmail,
 }));
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({ user: { organization: { name: "Acme" } } }),
+}));
+
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
     t: (key: string) => {
       const dict: Record<string, string> = {
         "email.templatesTitle": "Email Templates",
-        "email.templatesSubtitle": "Configure recruitment emails",
+        "settings.tabs.emailTemplatesScope": "Shared email delivery for Acme",
         "email.tabTemplates": "Templates",
         "email.tabSettings": "SMTP Settings",
         "email.tabLogs": "Logs",
@@ -60,6 +64,12 @@ describe("EmailTemplatesLayout RBAC Guard", () => {
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByTestId("email-child-content")).toBeInTheDocument();
-    expect(screen.getByText("Templates")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Templates" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      screen.getByText("Shared email delivery for Acme"),
+    ).toBeInTheDocument();
   });
 });

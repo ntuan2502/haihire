@@ -71,7 +71,13 @@ function NotificationSettings() {
     <div className="w-full space-y-6 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.tabs.notifications")}
-        subtitle={t("settings.tabs.notificationsSub")}
+        subtitle={
+          user?.organization?.name
+            ? t("settings.tabs.notificationsScope", {
+                workspace: user.organization.name,
+              })
+            : t("settings.tabs.notificationsSub")
+        }
         icon={Bell}
         bordered
       />

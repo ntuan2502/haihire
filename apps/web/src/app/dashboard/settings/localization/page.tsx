@@ -9,7 +9,6 @@ import {
   SUPPORTED_ORG_LANGUAGES,
   type CurrencyCode,
   type OrganizationLocalizationSettings,
-  type OrgLanguage,
 } from "@haihire/shared";
 import { PageHeader } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
@@ -19,10 +18,8 @@ import {
   useUpdateMyOrgMutation,
 } from "@/hooks/use-organization-queries";
 import { useI18n } from "@/i18n";
-import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
-import { PersonalLanguageCard } from "@/components/settings/localization/personal-language-card";
 import { OrgRegionalSettingsForm } from "@/components/settings/localization/org-regional-settings-form";
 import { LocalizationPreviewCard } from "@/components/settings/localization/localization-preview-card";
 
@@ -43,8 +40,8 @@ function settingsEqual(
 }
 
 export default function LocalizationSettingsPage() {
-  const { user, updateUser } = useAuth();
-  const { locale, setLocale, t } = useI18n();
+  const { user } = useAuth();
+  const { t } = useI18n();
   const canEdit = useHasPermission("org:update");
 
   const { data: myOrg, isLoading: isOrgLoading } = useMyOrg();
@@ -84,19 +81,6 @@ export default function LocalizationSettingsPage() {
     () => getTimezoneSelectOptions(draft.timezone),
     [draft.timezone],
   );
-
-  const handlePersonalLanguageChange = async (lang: OrgLanguage) => {
-    setLocale(lang);
-    if (!user) return;
-    try {
-      const updated = await authApi.updatePreferences({
-        preferredLanguage: lang,
-      });
-      updateUser(updated);
-    } catch {
-      // Preserve immediate local language switch even if DB preference sync fails
-    }
-  };
 
   const currencyOptions = useMemo(() => {
     const getCurrencyLabel = (code: CurrencyCode) => {
@@ -157,12 +141,6 @@ export default function LocalizationSettingsPage() {
       {/* Main Responsive 2-Column Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         <div className="xl:col-span-7 space-y-6">
-          <PersonalLanguageCard
-            locale={locale}
-            onLanguageChange={(val) => void handlePersonalLanguageChange(val)}
-            languageOptions={languageOptions}
-          />
-
           <OrgRegionalSettingsForm
             draft={draft}
             updateDraft={updateDraft}

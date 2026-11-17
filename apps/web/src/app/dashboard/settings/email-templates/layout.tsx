@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, Sliders, History } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { PageHeader, StatusState } from "@/components/shared";
@@ -15,6 +16,7 @@ export default function EmailTemplatesLayout({
 }) {
   const pathname = usePathname();
   const { t } = useI18n();
+  const { user } = useAuth();
   const canViewEmail = useHasPermission("email:view");
 
   const isTemplates = pathname === "/dashboard/settings/email-templates";
@@ -50,7 +52,13 @@ export default function EmailTemplatesLayout({
     <div className="w-full space-y-6 animate-in fade-in duration-200 min-w-0">
       <PageHeader
         title={t("email.templatesTitle")}
-        subtitle={t("email.templatesSubtitle")}
+        subtitle={
+          user?.organization?.name
+            ? t("settings.tabs.emailTemplatesScope", {
+                workspace: user.organization.name,
+              })
+            : t("email.templatesSubtitle")
+        }
         icon={Mail}
         bordered
       />
@@ -65,13 +73,14 @@ export default function EmailTemplatesLayout({
       ) : (
         <>
           {/* Navigation Sub-Tabs */}
-          <div className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-x-auto scrollbar-none max-w-full">
+          <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 max-w-full">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  aria-current={tab.isActive ? "page" : undefined}
                   className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
                     tab.isActive
                       ? "bg-blue-600 text-white shadow-xs"

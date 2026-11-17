@@ -1534,6 +1534,7 @@ export interface TranslationSchema {
       localizationSub: string;
       notifications: string;
       notificationsSub: string;
+      notificationsScope: string;
       organizationGroup: string;
       personalGroup: string;
       careerPage: string;
@@ -1554,6 +1555,7 @@ export interface TranslationSchema {
       accountSub: string;
       emailTemplates: string;
       emailTemplatesSub: string;
+      emailTemplatesScope: string;
       roles: string;
       rolesSub: string;
       auditLog: string;

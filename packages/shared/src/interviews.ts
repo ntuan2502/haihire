@@ -40,6 +40,7 @@ export interface Interview {
   format: InterviewFormat;
   linkOrLocation: string;
   interviewer: string;
+  interviewerId?: string | null;
   round: number;
   scorecard?: InterviewScorecard | null;
   notes?: string | null;
@@ -59,7 +60,8 @@ export interface CreateInterviewInput {
   type: InterviewType;
   format?: InterviewFormat;
   linkOrLocation?: string;
-  interviewer: string;
+  interviewer?: string;
+  interviewerId?: string;
   round?: number;
   scorecard?: InterviewScorecard;
   notes?: string;
@@ -73,6 +75,7 @@ export interface UpdateInterviewInput {
   format?: InterviewFormat;
   linkOrLocation?: string;
   interviewer?: string;
+  interviewerId?: string;
   round?: number;
   scorecard?: InterviewScorecard;
   notes?: string;

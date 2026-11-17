@@ -173,6 +173,21 @@ describe("InterviewsService", () => {
       candidate: candidateTable,
       job: jobTable,
       organization: orgTable,
+      user: {
+        findFirst: vi.fn(async ({ where }) => {
+          expect(where.OR).toEqual([
+            { memberships: { some: { organizationId: "org-1" } } },
+            { ownedOrganizations: { some: { id: "org-1" } } },
+          ]);
+          return where.id === "user-1"
+            ? {
+                firstName: "Alice",
+                lastName: "Nguyen",
+                email: "alice@example.com",
+              }
+            : null;
+        }),
+      },
     });
     const mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({}),
@@ -198,6 +213,49 @@ describe("InterviewsService", () => {
     expect(list.data[0].id).toBe("intv-1");
     expect(list.data[0].candidateName).toBe("Johnson Alice");
     expect(list.data[0].jobTitle).toBe("Frontend Developer");
+  });
+
+  it("stores the selected interviewer ID and a server-resolved display name", async () => {
+    const interview = await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-09-25T14:00:00.000Z",
+        type: "TECHNICAL",
+        interviewerId: "user-1",
+      },
+      "org-1",
+    );
+
+    expect(interview).toMatchObject({
+      interviewerId: "user-1",
+      interviewer: "Nguyen Alice",
+    });
+    const updated = await service.update(
+      "intv-1",
+      { interviewerId: "user-1" },
+      "org-1",
+    );
+    expect(updated).toMatchObject({
+      interviewerId: "user-1",
+      interviewer: "Nguyen Alice",
+    });
+  });
+
+  it("rejects an interviewer from another organization on create and update", async () => {
+    await expect(
+      service.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-09-25T14:00:00.000Z",
+          type: "TECHNICAL",
+          interviewerId: "user-2",
+        },
+        "org-1",
+      ),
+    ).rejects.toThrow(AppBadRequestException);
+    await expect(
+      service.update("intv-1", { interviewerId: "user-2" }, "org-1"),
+    ).rejects.toThrow(AppBadRequestException);
   });
 
   it("should find an interview by id", async () => {

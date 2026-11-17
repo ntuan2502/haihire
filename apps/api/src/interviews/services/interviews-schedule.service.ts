@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   formatCandidateDisplayName,
+  formatUserDisplayName,
   formatInterviewDateTimeInTimezone,
   type NameDisplayOrder,
 } from "@haihire/shared";
@@ -34,6 +35,7 @@ export interface InterviewUpdatePayload {
   format?: InterviewFormat;
   linkOrLocation?: string;
   interviewer?: string;
+  interviewerId?: string;
   round?: number;
   notes?: string | null;
   scorecard?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
@@ -57,6 +59,29 @@ export class InterviewsScheduleService {
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
   ) {}
+
+  private async resolveInterviewer(
+    interviewerId: string,
+    organizationId: string,
+  ) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: interviewerId,
+        OR: [
+          { memberships: { some: { organizationId } } },
+          { ownedOrganizations: { some: { id: organizationId } } },
+        ],
+      },
+      select: { firstName: true, lastName: true, email: true },
+    });
+    if (!user) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Select an interviewer from this organization.",
+      );
+    }
+    return formatUserDisplayName(user) || user.email;
+  }
 
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
     const app = await this.prisma.application.findFirst({
@@ -135,6 +160,16 @@ export class InterviewsScheduleService {
 
     const targetOrgId = orgId || app.organizationId || organizationId || "";
 
+    const interviewer = dto.interviewerId
+      ? await this.resolveInterviewer(dto.interviewerId, targetOrgId)
+      : dto.interviewer;
+    if (!interviewer?.trim()) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Interviewer is required.",
+      );
+    }
+
     await runInTransaction(this.prisma, async (tx) => {
       await tx.interview.create({
         data: {
@@ -145,7 +180,8 @@ export class InterviewsScheduleService {
           type: dto.type as InterviewType,
           format: (dto.format as InterviewFormat) || "MEET",
           linkOrLocation: dto.linkOrLocation || "",
-          interviewer: dto.interviewer,
+          interviewer,
+          ...(dto.interviewerId ? { interviewerId: dto.interviewerId } : {}),
           round: dto.round || 1,
           scorecard: scorecardStr ? scorecardStr : Prisma.DbNull,
           notes: dto.notes || null,
@@ -176,7 +212,7 @@ export class InterviewsScheduleService {
         type: "STAGE_CHANGED",
         title: "Stage Changed",
         description: `Stage updated from ${previousStage} to INTERVIEW automatically upon scheduling interview round ${dto.round || 1}.`,
-        actorName: dto.interviewer || "System",
+        actorName: interviewer || "System",
         actorRole: "SYSTEM",
         metadata: {
           fromStage: previousStage,
@@ -224,15 +260,15 @@ export class InterviewsScheduleService {
         applicationId: app.id,
         type: "INTERVIEW_SCHEDULED",
         title: `Interview Scheduled (${dto.type})`,
-        description: `Round ${dto.round || 1} interview on ${formattedEmailDt.date} at ${formattedEmailDt.time} with ${dto.interviewer}`,
-        actorName: dto.interviewer,
+        description: `Round ${dto.round || 1} interview on ${formattedEmailDt.date} at ${formattedEmailDt.time} with ${interviewer}`,
+        actorName: interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
           scheduledAt: scheduledInstant.toISOString(),
           format: dto.format || "MEET",
           type: dto.type,
-          interviewer: dto.interviewer,
+          interviewer,
           round: dto.round || 1,
         },
       });
@@ -282,13 +318,13 @@ export class InterviewsScheduleService {
                     format: dto.format || "Google Meet",
                     linkOrLocation:
                       dto.linkOrLocation || "https://meet.google.com",
-                    interviewer: dto.interviewer,
+                    interviewer,
                   },
-                  sender: { name: dto.interviewer },
+                  sender: { name: interviewer },
                 }),
               },
               orgId,
-              { name: dto.interviewer },
+              { name: interviewer },
             );
           }
         } catch (emailErr) {
@@ -326,7 +362,7 @@ export class InterviewsScheduleService {
     dto: UpdateInterviewDto,
     tenantOrgId?: string | null,
   ) {
-    await this.queryService.findOne(id, tenantOrgId);
+    const existing = await this.queryService.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.scheduledAt !== undefined) {
@@ -345,7 +381,15 @@ export class InterviewsScheduleService {
       updateData.format = dto.format as InterviewFormat;
     if (dto.linkOrLocation !== undefined)
       updateData.linkOrLocation = dto.linkOrLocation;
-    if (dto.interviewer !== undefined) updateData.interviewer = dto.interviewer;
+    if (dto.interviewerId) {
+      updateData.interviewer = await this.resolveInterviewer(
+        dto.interviewerId,
+        existing.organizationId || tenantOrgId || "",
+      );
+      updateData.interviewerId = dto.interviewerId;
+    } else if (!existing.interviewerId && dto.interviewer !== undefined) {
+      updateData.interviewer = dto.interviewer;
+    }
     if (dto.round !== undefined) updateData.round = dto.round;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
     if (dto.scorecard !== undefined) {

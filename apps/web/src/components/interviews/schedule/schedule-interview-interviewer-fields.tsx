@@ -1,18 +1,18 @@
 "use client";
 
 import { FileText, Mail, User } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared";
+import { Input } from "@/components/ui/input";
 import { FlowTemplateSelect } from "@/components/email/flow-template-selector";
 import { useI18n } from "@/i18n";
 import type { EmailTemplate } from "@/lib/email-templates";
 
 interface ScheduleInterviewInterviewerFieldsProps {
-  interviewerName: string;
-  onInterviewerNameChange: (val: string) => void;
+  interviewerId: string;
+  onInterviewerIdChange: (val: string) => void;
   interviewNotes: string;
   onNotesChange: (val: string) => void;
-  members: Array<{ name: string; role: string; email: string }>;
+  members: Array<{ id: string; name: string; email: string }>;
   isEditing: boolean;
   sendEmailInvite: boolean;
   onSendEmailInviteChange: (val: boolean) => void;
@@ -24,8 +24,8 @@ interface ScheduleInterviewInterviewerFieldsProps {
 }
 
 export function ScheduleInterviewInterviewerFields({
-  interviewerName,
-  onInterviewerNameChange,
+  interviewerId,
+  onInterviewerIdChange,
   interviewNotes,
   onNotesChange,
   members,
@@ -43,7 +43,10 @@ export function ScheduleInterviewInterviewerFields({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+        <label
+          htmlFor="primary-interviewer"
+          className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between"
+        >
           <span className="flex items-center gap-1">
             <User className="h-3.5 w-3.5 text-slate-400" />
             <span>
@@ -51,39 +54,20 @@ export function ScheduleInterviewInterviewerFields({
               <span className="text-rose-500">*</span>
             </span>
           </span>
-          {members.length > 0 && (
-            <CustomSelect
-              size="sm"
-              align="right"
-              value=""
-              placeholder={t("interviews.selectFromMembers")}
-              onChange={(val) => {
-                if (val) onInterviewerNameChange(val);
-              }}
-              options={[
-                {
-                  value: "",
-                  label: t("interviews.selectFromMembers"),
-                  disabled: true,
-                },
-                ...members.map((m) => ({
-                  value: `${m.name} (${m.role})`,
-                  label: `${m.name} (${m.email})`,
-                })),
-              ]}
-              className="w-auto"
-              triggerClassName="h-6 py-0.5 px-2 text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 rounded-lg"
-              popupClassName="min-w-[220px]"
-            />
-          )}
         </label>
-        <Input
-          type="text"
-          placeholder={t("interviews.placeholders.interviewer")}
-          value={interviewerName}
-          onChange={(e) => onInterviewerNameChange(e.target.value)}
-          className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-          required
+        <CustomSelect
+          id="primary-interviewer"
+          aria-label={t("interviews.primaryInterviewer")}
+          value={interviewerId}
+          onChange={onInterviewerIdChange}
+          placeholder={t("interviews.selectFromMembers")}
+          options={members.map((member) => ({
+            value: member.id,
+            label: `${member.name} (${member.email})`,
+          }))}
+          disabled={isSaving}
+          className="w-full"
+          triggerClassName="h-10 text-xs font-medium"
         />
       </div>
 

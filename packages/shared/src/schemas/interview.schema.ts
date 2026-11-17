@@ -13,13 +13,14 @@ export const interviewScorecardSchema = z.object({
   evaluatedAt: z.string().optional(),
 });
 
-export const createInterviewSchema = z.object({
+const interviewScheduleSchema = z.object({
   applicationId: z.string().trim().min(1, "Application ID is required"),
   scheduledAt: z.string().datetime({ offset: true }),
   type: z.enum(INTERVIEW_TYPES),
   format: z.enum(INTERVIEW_FORMATS).optional(),
   linkOrLocation: z.string().trim().max(500).optional(),
-  interviewer: z.string().trim().min(1, "Interviewer is required"),
+  interviewer: z.string().trim().min(1, "Interviewer is required").optional(),
+  interviewerId: z.string().trim().min(1).optional(),
   round: z.number().int().min(1).max(20).optional(),
   scorecard: z.union([interviewScorecardSchema, z.string()]).optional(),
   notes: z.string().max(4000).optional(),
@@ -27,7 +28,12 @@ export const createInterviewSchema = z.object({
   templateId: z.string().optional(),
 });
 
-export const updateInterviewSchema = createInterviewSchema
+export const createInterviewSchema = interviewScheduleSchema.refine(
+  (value) => Boolean(value.interviewerId || value.interviewer),
+  { message: "Interviewer is required", path: ["interviewerId"] },
+);
+
+export const updateInterviewSchema = interviewScheduleSchema
   .omit({ applicationId: true, sendInvitationEmail: true, templateId: true })
   .partial();
 

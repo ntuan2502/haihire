@@ -83,7 +83,7 @@ export function ScheduleInterviewModal({
     "",
   );
   const [linkOrLocation, setLinkOrLocation] = useState<string>("");
-  const [interviewerName, setInterviewerName] = useState<string>("");
+  const [interviewerId, setInterviewerId] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -172,7 +172,7 @@ export function ScheduleInterviewModal({
         (editingInterview.format as InterviewFormat) || "MEET",
       );
       setLinkOrLocation(editingInterview.linkOrLocation || "");
-      setInterviewerName(editingInterview.interviewer || "");
+      setInterviewerId(editingInterview.interviewerId || "");
       setInterviewNotes(editingInterview.notes || "");
     } else {
       // New schedule: initialize form fields empty / unpopulated
@@ -184,7 +184,7 @@ export function ScheduleInterviewModal({
       setInterviewType("");
       setInterviewFormat("");
       setLinkOrLocation("");
-      setInterviewerName("");
+      setInterviewerId("");
       setInterviewNotes("");
     }
   }, [
@@ -226,7 +226,8 @@ export function ScheduleInterviewModal({
       setFormError(t("interviews.errors.selectFormat"));
       return;
     }
-    if (!interviewerName.trim()) {
+    const interviewer = members.find((member) => member.id === interviewerId);
+    if (!interviewer) {
       setFormError(t("interviews.errors.enterInterviewer"));
       return;
     }
@@ -251,7 +252,8 @@ export function ScheduleInterviewModal({
         type: interviewType as InterviewType,
         format: interviewFormat as InterviewFormat,
         linkOrLocation: linkOrLocation.trim(),
-        interviewer: interviewerName.trim(),
+        interviewer: interviewer.name,
+        interviewerId,
         notes: interviewNotes.trim(),
       };
 
@@ -264,7 +266,7 @@ export function ScheduleInterviewModal({
             type: interviewType as InterviewType,
             format: (interviewFormat as InterviewFormat) || "MEET",
             linkOrLocation: linkOrLocation.trim(),
-            interviewer: interviewerName.trim(),
+            interviewerId,
             notes: interviewNotes.trim() || undefined,
           },
         });
@@ -276,7 +278,7 @@ export function ScheduleInterviewModal({
           type: interviewType as InterviewType,
           format: (interviewFormat as InterviewFormat) || "MEET",
           linkOrLocation: linkOrLocation.trim(),
-          interviewer: interviewerName.trim(),
+          interviewerId,
           notes: interviewNotes.trim() || undefined,
           round: (candidate.interviews?.length || 0) + 1,
           sendInvitationEmail: sendEmailInvite,
@@ -445,8 +447,8 @@ export function ScheduleInterviewModal({
 
           {/* Section 5: Interviewer, Notes, Email */}
           <ScheduleInterviewInterviewerFields
-            interviewerName={interviewerName}
-            onInterviewerNameChange={setInterviewerName}
+            interviewerId={interviewerId}
+            onInterviewerIdChange={setInterviewerId}
             interviewNotes={interviewNotes}
             onNotesChange={setInterviewNotes}
             members={members}

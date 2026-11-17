@@ -191,6 +191,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -216,7 +217,7 @@ describe("ScheduleInterviewModal Component", () => {
         id: "int-existing",
         data: expect.objectContaining({
           scheduledAt: "2026-10-20T08:00:00.000Z",
-          interviewer: "Tran Tech Lead",
+          interviewerId: "mem-2",
         }),
       });
       expect(handleClose).toHaveBeenCalledTimes(1);
@@ -236,6 +237,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -260,7 +262,7 @@ describe("ScheduleInterviewModal Component", () => {
         id: "int-ny",
         data: expect.objectContaining({
           scheduledAt: "2026-10-20T19:00:00.000Z",
-          interviewer: "Tran Tech Lead",
+          interviewerId: "mem-2",
         }),
       });
       expect(handleClose).toHaveBeenCalledTimes(1);
@@ -278,6 +280,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -368,10 +371,10 @@ describe("ScheduleInterviewModal Component", () => {
     fireEvent.click(screen.getByText("interviews.placeholders.selectFormat"));
     fireEvent.click((await screen.findAllByRole("option"))[0]);
 
-    const interviewerInput = screen.getByPlaceholderText(
-      "interviews.placeholders.interviewer",
+    fireEvent.click(screen.getByLabelText("interviews.primaryInterviewer"));
+    fireEvent.click(
+      await screen.findByRole("option", { name: /Tran Tech Lead/ }),
     );
-    fireEvent.change(interviewerInput, { target: { value: "Tran Tech Lead" } });
 
     const inviteCheckbox = document.getElementById(
       "sendEmailInviteCheckbox",
@@ -396,6 +399,7 @@ describe("ScheduleInterviewModal Component", () => {
           applicationId: "app-1",
           sendInvitationEmail: true,
           templateId: "tpl-intv-r2",
+          interviewerId: "mem-2",
         }),
       );
       expect(handleClose).toHaveBeenCalledTimes(1);

@@ -73,7 +73,9 @@ export function RolesMatrixTable({
                     colSpan={ROLES.length + 1}
                     className="py-2 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300"
                   >
-                    {t(`settings.rolesMatrix.${category.categoryKey}`)}
+                    <span className="sticky left-4 inline-block">
+                      {t(`settings.rolesMatrix.${category.categoryKey}`)}
+                    </span>
                   </td>
                 </tr>
 
@@ -119,12 +121,6 @@ export function RolesMatrixTable({
                                 aria-label={`${roleLabel}: ${permissionLabel}`}
                                 className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:checked:bg-blue-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                               />
-                              {isAdminRole && (
-                                <Lock
-                                  className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-400 dark:text-slate-500 pointer-events-none"
-                                  aria-hidden="true"
-                                />
-                              )}
                             </label>
                           </td>
                         );

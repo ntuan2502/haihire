@@ -1421,6 +1421,16 @@ export interface TranslationSchema {
     joinOrgButton: string;
     joiningButton: string;
   };
+  notificationSettings: {
+    website: string;
+    email: string;
+    application: string;
+    interview: string;
+    saved: string;
+    saveError: string;
+    loadError: string;
+    save: string;
+  };
   settings: {
     title: string;
     backToJobs: string;

@@ -1584,6 +1584,16 @@ export const vi: TranslationSchema = {
     joinOrgButton: "Tham gia {org}",
     joiningButton: "Đang tham gia tổ chức...",
   },
+  notificationSettings: {
+    website: "Thông báo trên website",
+    email: "Thông báo qua email",
+    application: "Hồ sơ mới cho việc làm bạn phụ trách",
+    interview: "Lịch phỏng vấn được tạo, thay đổi hoặc hủy",
+    saved: "Đã lưu tùy chọn thông báo",
+    saveError: "Không thể lưu tùy chọn thông báo",
+    loadError: "Không thể tải tùy chọn thông báo",
+    save: "Lưu thay đổi",
+  },
   settings: {
     title: "Cài đặt Không gian làm việc",
     backToJobs: "Quay lại tuyển dụng",

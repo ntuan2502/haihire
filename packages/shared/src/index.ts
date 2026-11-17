@@ -13,3 +13,5 @@ export * from "./errors";
 export * from "./sourcing";
 export * from "./webhooks";
 export * from "./schemas";
+
+export * from "./notifications";

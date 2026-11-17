@@ -56,7 +56,6 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Notifications",
     sublabel: "Email alerts & digest",
     icon: Bell,
-    locked: true,
   },
   {
     id: "career-page",

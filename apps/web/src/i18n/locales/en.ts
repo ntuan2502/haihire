@@ -1578,6 +1578,16 @@ export const en: TranslationSchema = {
     joinOrgButton: "Join {org}",
     joiningButton: "Joining organization...",
   },
+  notificationSettings: {
+    website: "Website notifications",
+    email: "Email notifications",
+    application: "New application for a job you manage",
+    interview: "Interview scheduled, changed or cancelled",
+    saved: "Notification preferences saved",
+    saveError: "Could not save notification preferences",
+    loadError: "Could not load notification preferences",
+    save: "Save changes",
+  },
   settings: {
     title: "Workspace Settings",
     backToJobs: "Back to jobs",

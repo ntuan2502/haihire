@@ -165,7 +165,7 @@ function DashboardContent() {
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <div className="max-w-7xl mx-auto w-full">
+        <div className="w-full">
           {jobs.length === 0 ? (
             /* If no jobs yet, show Start Recruiting view */
             <StartRecruiting

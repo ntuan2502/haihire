@@ -1,6 +1,6 @@
 ---
 name: haihire-prisma-postgres
-description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage transactions, 22-model PostgreSQL schema rules, soft-delete filters, and multi-tenant organizationId query isolation. Use when editing schema.prisma, PrismaService, repositories, or service database queries in apps/api.
+description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage transactions, PostgreSQL schema and row-level security rules, soft-delete filters, and multi-tenant organizationId query isolation. Use when editing schema.prisma, PrismaService, repositories, or service database queries in apps/api.
 ---
 
 # HaiHire Prisma 7, PostgreSQL & Tenant Isolation Skill
@@ -8,7 +8,7 @@ description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage t
 Stack baselines verified in `apps/api/package.json`, `apps/api/prisma.config.ts`, and `apps/api/src/prisma/`:
 - **Prisma**: `7.10.1` (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) with `pg@^8.23.1` (`pg.Pool`)
 - **Config (`apps/api/prisma.config.ts`)**: `defineConfig({ schema: "src/prisma/schema.prisma", datasource: { url: env("DATABASE_URL") } })`
-- **Schema (`apps/api/src/prisma/schema.prisma`)**: `22` models, `18` enums, `provider = "prisma-client-js"` (`datasource db { provider = "postgresql" }` without inline `url`)
+- **Schema (`apps/api/src/prisma/schema.prisma`)**: `provider = "prisma-client-js"` (`datasource db { provider = "postgresql" }` without inline `url`)
 
 ---
 
@@ -26,11 +26,13 @@ Per Prisma 7 official architecture:
 
 - Use `runInTransaction(this.prisma, async (tx) => ...)` (or `this.prisma.transaction(...)` / `executeTx`) whenever multiple writes must be atomic (e.g., application creation saga, org creation + membership creation, demo auto-seed ordering, ownership transfer).
 - `PrismaService` stores the active interactive transaction client inside `AsyncLocalStorage` and exposes `this.tx` cleanly across `PrismaPg.$transaction`.
-- **Ordering invariant for Org/User creation:** Always create/upsert `User` (`organizationId: null`) before creating `Organization` (`ownerId: user.id`), then update `User.organizationId`, because `Organization.ownerId` and `User.organizationId` cross-reference each other.
+- **Organization ownership and membership:** Create the owner user before referencing its ID from the organization. Represent workspace membership through `OrganizationMember` and use the existing organization services to create related rows atomically.
 
 ---
 
 ## 3. Mandatory Multi-Tenant Query Isolation (`pnpm lint:tenant-scope`)
+
+For authenticated HTTP requests, `TenantRlsInterceptor` propagates the tenant context into Prisma. The transaction configures PostgreSQL RLS. Keep explicit tenant filters in service queries and use the existing Prisma context helpers.
 
 CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma query across the **8 tenant-scoped modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`):
 - Every query against a tenant-owned model MUST satisfy one of four verified rules:

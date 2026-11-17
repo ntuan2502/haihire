@@ -6,11 +6,11 @@ HaiHire verifies application correctness across **unit**, **integration**, **sta
 
 ## 1. Unit & Integration Suites (`Vitest 5.1.0`)
 
-| Workspace Command | Included Test Roots                                                           |        Verified Scope         | Coverage Thresholds (`L / F / B / S`) |
-| :---------------- | :---------------------------------------------------------------------------- | :---------------------------: | :------------------------------------ |
-| `pnpm test:api`   | `apps/api/src`, `apps/api/test`, `scripts/__tests__`, `monitoring/prometheus` |   `85` files / `936` tests    | `83%` / `82%` / `66%` / `83%`         |
-| `pnpm test:web`   | `apps/web/src` (RTL + `jsdom` on `vmThreads`)                                 |   `86` files / `591` tests    | `65%` / `56%` / `59%` / `65%`         |
-| `pnpm test`       | Both workspaces via Turborepo                                                 | `1527` unit/integration tests | Enforced via `pnpm test:coverage`     |
+| Workspace Command | Included Test Roots                                                           |       Verified Scope       | Coverage Thresholds (`L / F / B / S`) |
+| :---------------- | :---------------------------------------------------------------------------- | :------------------------: | :------------------------------------ |
+| `pnpm test:api`   | `apps/api/src`, `apps/api/test`, `scripts/__tests__`, `monitoring/prometheus` |  `85` files / `936` tests  | `83%` / `82%` / `66%` / `83%`         |
+| `pnpm test:web`   | `apps/web/src` (RTL + `jsdom` on `vmThreads`)                                 |  `86` files / `591` tests  | `65%` / `56%` / `59%` / `65%`         |
+| `pnpm test`       | Both workspaces via Turborepo                                                 | Unit and integration tests | Enforced via `pnpm test:coverage`     |
 
 ### Key Backend Test Harnesses
 

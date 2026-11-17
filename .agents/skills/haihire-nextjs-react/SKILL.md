@@ -21,8 +21,7 @@ Per Next.js 16 official documentation and `scripts/check-nextjs-conventions.ts` 
 - Keep `middleware.ts` absent so CI Gate 14 and standalone tracing (`ƒ Proxy`) succeed without conflict errors.
 - `apps/web/next.config.ts` sets `output: "standalone"`, `outputFileTracingRoot: repoRoot`, dynamic LAN `allowedDevOrigins`, and rewrites `/api/*` -> backend (`BACKEND_HOST`:`BACKEND_PORT` or `INTERNAL_API_URL`) and `/haihire-resumes/*` -> MinIO.
 - Server vs. Client boundary in `apps/web/src/app/`:
-  - Only **4 server files** exist (`layout.tsx`, `icon.tsx`, `careers/[orgSlug]/page.tsx`, `careers/[orgSlug]/[jobSlug]/page.tsx`).
-  - Interactive workspace views (`35` files under `src/app/`) use `"use client"` with React Query hydration from `useAuth` and workspace hooks.
+  - Keep landing and careers shells, root layouts, and the shared dashboard layout on the server where possible. Use Client Components for browser state, interactive controls, and client-side data hooks.
   - Keep root `layout.tsx` and server careers pages free of browser-only globals.
 
 ---

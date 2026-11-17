@@ -7,7 +7,7 @@ description: Develops NestJS 12 ESM backend modules, controllers, validation pip
 
 Stack baselines verified in `apps/api/package.json` and `apps/api/src/`:
 - **Framework**: NestJS `^12.4.0` on `@nestjs/platform-express`, ESM (`"type": "module"`), bundled to `dist/server.mjs` via `esbuild --platform=node --format=esm --packages=external`
-- **Architecture**: `AppModule` imports 15 feature/infrastructure modules (`Prisma`, `Redis`, `Minio`, `Auth`, `Events`, `Organizations`, `Jobs`, `Applications`, `Candidates`, `Interviews`, `Activities`, `Email`, `Sourcing`, `WebhookSettings`, `Metrics`) exposing **12 controllers / 107 endpoints**
+- **Architecture**: Follow `apps/api/src/app.module.ts` for module composition, including Notifications. See `docs/api/overview.md` for routes and `docs/PROJECT_METRICS.md` for generated counts.
 - **Validation**: `DtoPipe()` supporting both `class-validator` DTO classes and `@haihire/shared` Zod schemas (`apps/api/src/common/dto-validation.pipe.ts`)
 - **Queues**: `@nestjs/bullmq@^12.0.1` + `bullmq@^6.7.2` on Valkey/Redis (`ioredis@^6.0.0`)
 

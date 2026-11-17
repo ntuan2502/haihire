@@ -4,20 +4,7 @@ HaiHire is a multi-tenant Applicant Tracking System built as a TypeScript monore
 
 ---
 
-<!-- STATS:START -->
-
-| Metric                           | Value                   | Reference / Notes                 |
-| :------------------------------- | :---------------------- | :-------------------------------- |
-| **Release Target**               | `Unreleased`            | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `4170b208` (2026-11-16) | Author: ntuan2502                 |
-| **Workspace Unit Tests**         | `1615 passed`           | Backend: 1024, Frontend: 591      |
-| **E2E Playwright Specs**         | `67 specs`              | End-to-end recruitment lifecycle  |
-| **CI Architecture Gates**        | `18/18 gates`           | `pnpm check:all` mandatory gates  |
-| **Environment Configuration**    | `56 keys`               | 100% key parity & codebase sync   |
-| **Pre-Release Dependencies**     | `0 (GA only)`           | Prisma 7.10.1 Stable GA           |
-| **Documentation Link Integrity** | `100% valid`            | Audited via `pnpm lint:doc-links` |
-
-<!-- STATS:END -->
+See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 
 ---
 

@@ -29,8 +29,8 @@ Per TanStack Query v5 official guidelines:
 - **Base URL Routing:** Browser requests route through relative `/api` (proxied by Next.js `next.config.ts` rewrites to backend) unless an external non-localhost `NEXT_PUBLIC_API_URL` is configured; SSR/server actions talk directly to `env.INTERNAL_API_URL`.
 - **URL Gatekeeper:** Request interceptor rejects any URL containing `[object` or `%5Bobject` (`[HaiHire API Gatekeeper]`) so accidentally stringified objects never reach the backend.
 - **401 Silent Refresh Queue:**
-  - Response interceptor catches HTTP `401` (excluding `/auth/login`, etc. and already-retried requests), queues concurrent failing requests in `failedQueue`, exchanges `haihire_recruiter_refresh_token` at `POST /auth/refresh`, updates cookies (`haihire_token`, `haihire_has_org`) + `localStorage` + `Authorization` header, and replays queued requests.
-  - On missing or expired refresh token, `clearServerAndClientSession()` clears client tokens/cookies and calls `POST /auth/logout` best-effort.
+  - For eligible HTTP `401` responses, the interceptor queues concurrent retries behind a single `POST /auth/refresh` with an empty body and `withCredentials: true`. The server manages the HttpOnly JWT cookies. The client updates the workspace hint when returned and releases the queued requests.
+  - If refresh fails, the interceptor rejects the pending queue and follows the existing session cleanup flow. Keep authentication tokens in the server-managed cookies.
 - **Private MinIO Document Proxy:**
   - Never render raw `/haihire-resumes/` URLs directly (the MinIO bucket is private).
   - Always use `buildDocumentDownloadPath()` / `getDocumentUrl()` which route through tenant-guarded `/applications/:id/documents/download` or `/candidates/:id/documents/download` endpoints.

@@ -55,4 +55,4 @@ This document defines mandatory code, validation, security, localization, UI, an
 ## 6. Documentation & Verification Discipline
 
 - Never store temporary reports under root or `docs/`, never use `file://` or backslashes (`\`) in `.md` files, and never reference nonexistent repo file paths outside fenced code blocks (`pnpm lint:doc-links` & `pnpm lint:doc-sync`).
-- Keep README/AGENTS metric tables synchronized via `pnpm docs:stats:write` and ensure `pnpm check:all` passes before merge or release.
+- Keep the Project Metrics inventory synchronized via `pnpm docs:stats:write` and ensure `pnpm check:all` passes before merge or release.

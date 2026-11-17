@@ -1,5 +1,14 @@
 "use client";
 
+import { useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState, useMemo } from "react";
 import {
   useRolePermissionsMatrix,
@@ -11,7 +20,7 @@ import { useI18n } from "@/i18n";
 import { Role, type Permission } from "@haihire/shared";
 import { ShieldCheck, RotateCcw, RefreshCw, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CustomModal, PageHeader, StatusState } from "@/components/shared";
+import { PageHeader, StatusState } from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { RolesMatrixTable } from "@/components/settings/roles/roles-matrix-table";
@@ -136,11 +145,15 @@ export default function RolesPermissionsPage() {
     }
   };
 
+  const resetTrigger = useRef<HTMLButtonElement>(null);
+  const cancelReset = useRef<HTMLButtonElement>(null);
+
   const headerActions = (
     <>
       <Button
         variant="outline"
         size="sm"
+        ref={resetTrigger}
         onClick={() => setIsResetConfirmOpen(true)}
         disabled={isSaving || resetDefaultMutation.isPending}
         className="text-xs h-9 cursor-pointer rounded-xl"
@@ -279,39 +292,49 @@ export default function RolesPermissionsPage() {
       )}
 
       {/* Reset to Default Confirmation Modal */}
-      <CustomModal
-        isOpen={isResetConfirmOpen}
-        onClose={() => setIsResetConfirmOpen(false)}
-        title={t("settings.rolesMatrix.resetDefaultConfirmTitle")}
-        size="sm"
+      <Dialog
+        open={isResetConfirmOpen}
+        onOpenChange={(open) => {
+          if (!resetDefaultMutation.isPending) setIsResetConfirmOpen(open);
+        }}
       >
-        <div className="p-6 space-y-4">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {t("settings.rolesMatrix.resetDefaultConfirmMessage")}
-          </p>
-        </div>
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsResetConfirmOpen(false)}
-            disabled={resetDefaultMutation.isPending}
-          >
-            {t("settings.rolesMatrix.resetDefaultCancelButton")}
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleConfirmResetToDefault}
-            disabled={resetDefaultMutation.isPending}
-          >
-            {resetDefaultMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-            ) : null}
-            {t("settings.rolesMatrix.resetDefaultConfirmButton")}
-          </Button>
-        </div>
-      </CustomModal>
+        <DialogContent
+          initialFocus={cancelReset}
+          finalFocus={resetTrigger}
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("settings.rolesMatrix.resetDefaultConfirmTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("settings.rolesMatrix.resetDefaultConfirmMessage")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              ref={cancelReset}
+              variant="outline"
+              size="sm"
+              onClick={() => setIsResetConfirmOpen(false)}
+              disabled={resetDefaultMutation.isPending}
+            >
+              {t("settings.rolesMatrix.resetDefaultCancelButton")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleConfirmResetToDefault}
+              disabled={resetDefaultMutation.isPending}
+            >
+              {resetDefaultMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              {t("settings.rolesMatrix.resetDefaultConfirmButton")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

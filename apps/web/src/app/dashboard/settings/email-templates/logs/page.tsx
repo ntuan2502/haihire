@@ -157,7 +157,7 @@ export default function EmailLogsPage() {
                           getEmailTemplateTypeLabel(log.templateType, t)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 max-w-xs truncate text-slate-700 dark:text-slate-300 font-medium">
+                    <td className="px-4 py-3 max-w-xs min-w-40 wrap-anywhere text-slate-700 dark:text-slate-300 font-medium">
                       {log.subject}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">

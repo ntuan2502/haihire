@@ -58,9 +58,20 @@ export default function GeneralSettingsPage() {
     }
   }, [org, user]);
 
+  const savedOrg = org ?? user?.organization;
+  const hasProfileChanges =
+    orgName.trim() !== (savedOrg?.name ?? "") ||
+    orgSlug.trim().toLowerCase() !== (savedOrg?.slug ?? "");
+  const canSaveProfile =
+    canEdit &&
+    !isOrgLoading &&
+    !updateOrgMutation.isPending &&
+    hasProfileChanges;
+
   // Handle saving organization profile
   const handleSaveProfile = async (e: FormEvent) => {
     e.preventDefault();
+    if (!canSaveProfile) return;
 
     const trimmedName = orgName.trim();
     const trimmedSlug = orgSlug.toLowerCase().trim();
@@ -188,7 +199,7 @@ export default function GeneralSettingsPage() {
               {canEdit ? (
                 <Button
                   type="submit"
-                  disabled={isOrgLoading || updateOrgMutation.isPending}
+                  disabled={!canSaveProfile}
                   className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   {updateOrgMutation.isPending

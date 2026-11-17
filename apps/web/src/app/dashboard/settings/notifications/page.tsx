@@ -66,6 +66,15 @@ function NotificationSettings() {
   });
 
   const values = draft ?? preferences.data;
+  const savedPreferences = preferences.data;
+  const hasChanges =
+    draft &&
+    savedPreferences &&
+    channels.some(
+      ({ application, interview }) =>
+        draft[application] !== savedPreferences[application] ||
+        draft[interview] !== savedPreferences[interview],
+    );
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
@@ -92,7 +101,7 @@ function NotificationSettings() {
           className="space-y-6"
           onSubmit={(event) => {
             event.preventDefault();
-            if (draft) save.mutate(draft);
+            if (draft && hasChanges && !save.isPending) save.mutate(draft);
           }}
         >
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -142,8 +151,10 @@ function NotificationSettings() {
             ))}
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={!draft || save.isPending}>
-              {t("notificationSettings.save")}
+            <Button type="submit" disabled={!hasChanges || save.isPending}>
+              {t(
+                save.isPending ? "common.saving" : "notificationSettings.save",
+              )}
             </Button>
           </div>
         </form>

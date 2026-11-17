@@ -142,10 +142,6 @@ export function usePipelineKanban(jobId: string) {
   const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
   const overviewBtnRef = useRef<HTMLButtonElement>(null);
 
-  const [isListCollapsed, setIsListCollapsedState] = useState(
-    () => searchParams.get("collapsed") === "1",
-  );
-
   useEffect(() => {
     const stageParam = searchParams.get("stage") as ApplicationStage | null;
     if (stageParam && PIPELINE_STAGES.some((s) => s.id === stageParam)) {
@@ -157,7 +153,6 @@ export function usePipelineKanban(jobId: string) {
     );
     setSortByState(parseSortByParam(searchParams.get("sortBy")));
     setCandidateTabState(parseCandidateTabParam(searchParams.get("tab")));
-    setIsListCollapsedState(searchParams.get("collapsed") === "1");
   }, [searchParams]);
 
   const setSearchQuery = useCallback(
@@ -187,18 +182,7 @@ export function usePipelineKanban(jobId: string) {
     [updatePipelineUrl],
   );
 
-  const setIsListCollapsed = useCallback(
-    (value: boolean | ((prev: boolean) => boolean)) => {
-      setIsListCollapsedState((prev) => {
-        const next = typeof value === "function" ? value(prev) : value;
-        updatePipelineUrl({ collapsed: next ? "1" : null });
-        return next;
-      });
-    },
-    [updatePipelineUrl],
-  );
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
   const [deleteAppModalOpen, setDeleteAppModalOpen] = useState(false);
@@ -564,10 +548,6 @@ export function usePipelineKanban(jobId: string) {
     setScheduleModalOpen,
     editingInterview,
     setEditingInterview,
-    isFullscreen,
-    setIsFullscreen,
-    isListCollapsed,
-    setIsListCollapsed,
     mobileDetailOpen,
     setMobileDetailOpen,
     candidateTab,

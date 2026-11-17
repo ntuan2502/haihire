@@ -32,23 +32,13 @@ function JobPipelinePageContent() {
   if (!pipeline.job) return null;
 
   return (
-    <div
-      className={`flex-1 min-h-0 flex flex-col overflow-hidden ${
-        pipeline.isFullscreen
-          ? "fixed inset-0 z-50 bg-white dark:bg-slate-950"
-          : ""
-      }`}
-    >
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* 1. Pipeline Stages Sub-header */}
       <PipelineStageSelector
         stages={pipeline.pipelineStages}
         stageCounts={pipeline.stageCounts}
         selectedStage={pipeline.selectedStage}
         onSelectStage={pipeline.handleSelectStage}
-        isFullscreen={pipeline.isFullscreen}
-        onToggleFullscreen={() => pipeline.setIsFullscreen((prev) => !prev)}
-        isListCollapsed={pipeline.isListCollapsed}
-        onToggleCollapse={() => pipeline.setIsListCollapsed((prev) => !prev)}
         onDropCandidate={pipeline.handleDropCandidate}
       />
 
@@ -56,7 +46,6 @@ function JobPipelinePageContent() {
       <main className="flex-1 min-h-0 flex overflow-hidden">
         {/* LEFT COLUMN: Candidates List */}
         <PipelineCandidatesSidebar
-          isListCollapsed={pipeline.isListCollapsed}
           mobileDetailOpen={pipeline.mobileDetailOpen}
           searchQuery={pipeline.searchQuery}
           onSearchChange={pipeline.setSearchQuery}

@@ -231,16 +231,18 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               </DropdownMenu>
             )}
 
-            <button
-              type="button"
-              onClick={() =>
-                router.push(`/dashboard/candidates?jobId=${job.id}`)
-              }
-              className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-              title={t("jobs.moreOptions")}
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
+            {activeNavTab !== "pipeline" && (
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/dashboard/candidates?jobId=${job.id}`)
+                }
+                className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                title={t("jobs.moreOptions")}
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
 

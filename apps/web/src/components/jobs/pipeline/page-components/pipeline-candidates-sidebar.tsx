@@ -8,7 +8,6 @@ import { PipelineCandidateCard } from "@/components/jobs/pipeline/pipeline-candi
 import type { Application } from "@/types";
 
 export interface PipelineCandidatesSidebarProps {
-  isListCollapsed: boolean;
   mobileDetailOpen: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -22,7 +21,6 @@ export interface PipelineCandidatesSidebarProps {
 }
 
 export function PipelineCandidatesSidebar({
-  isListCollapsed,
   mobileDetailOpen,
   searchQuery,
   onSearchChange,
@@ -38,7 +36,7 @@ export function PipelineCandidatesSidebar({
 
   return (
     <aside
-      className={`w-full ${isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-84"} shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200 ${
+      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200 ${
         mobileDetailOpen ? "hidden md:flex" : "flex"
       }`}
     >

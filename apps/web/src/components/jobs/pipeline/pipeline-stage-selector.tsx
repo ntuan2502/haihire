@@ -10,10 +10,10 @@ interface PipelineStageSelectorProps {
   stageCounts: Record<string, number>;
   selectedStage: ApplicationStage;
   onSelectStage: (stage: ApplicationStage) => void;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
-  isListCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  isListCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   onDropCandidate?: (
     candidateId: string,
     fromStage: ApplicationStage,
@@ -86,35 +86,36 @@ export function PipelineStageSelector({
         })}
       </div>
 
-      {/* Right side tools */}
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="hidden md:flex h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title={isListCollapsed ? t("common.expand") : t("common.collapse")}
-        >
-          <Menu className="h-3.5 w-3.5" />
-          <span className="hidden lg:inline">
-            {isListCollapsed ? t("common.expand") : t("common.collapse")}
-          </span>
-        </button>
+      {onToggleCollapse && onToggleFullscreen && (
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden md:flex h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={isListCollapsed ? t("common.expand") : t("common.collapse")}
+          >
+            <Menu className="h-3.5 w-3.5" />
+            <span className="hidden lg:inline">
+              {isListCollapsed ? t("common.expand") : t("common.collapse")}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={onToggleFullscreen}
-          className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title={
-            isFullscreen ? t("common.exitFullscreen") : t("common.fullscreen")
-          }
-        >
-          {isFullscreen ? (
-            <Minimize2 className="h-3.5 w-3.5" />
-          ) : (
-            <Maximize2 className="h-3.5 w-3.5" />
-          )}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={
+              isFullscreen ? t("common.exitFullscreen") : t("common.fullscreen")
+            }
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-3.5 w-3.5" />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

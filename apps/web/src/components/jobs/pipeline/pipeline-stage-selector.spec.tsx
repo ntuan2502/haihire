@@ -3,12 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { PipelineStageSelector } from "./pipeline-stage-selector";
 import type { StageConfig } from "@/lib/stages";
 
-vi.mock("@/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 const mockStages: StageConfig[] = [
   {
     id: "APPLIED",
@@ -53,10 +47,6 @@ describe("PipelineStageSelector Component", () => {
         stageCounts={defaultCounts}
         selectedStage="SCREENING"
         onSelectStage={vi.fn()}
-        isFullscreen={false}
-        onToggleFullscreen={vi.fn()}
-        isListCollapsed={false}
-        onToggleCollapse={vi.fn()}
       />,
     );
 
@@ -76,10 +66,6 @@ describe("PipelineStageSelector Component", () => {
         stageCounts={defaultCounts}
         selectedStage="APPLIED"
         onSelectStage={handleSelectStage}
-        isFullscreen={false}
-        onToggleFullscreen={vi.fn()}
-        isListCollapsed={false}
-        onToggleCollapse={vi.fn()}
       />,
     );
 
@@ -91,29 +77,16 @@ describe("PipelineStageSelector Component", () => {
     expect(handleSelectStage).toHaveBeenCalledWith("INTERVIEW");
   });
 
-  it("calls onToggleCollapse and onToggleFullscreen when toolbar buttons are clicked", () => {
-    const handleToggleCollapse = vi.fn();
-    const handleToggleFullscreen = vi.fn();
-
+  it("renders only stage buttons in the toolbar", () => {
     render(
       <PipelineStageSelector
         stages={mockStages}
         stageCounts={defaultCounts}
         selectedStage="SCREENING"
         onSelectStage={vi.fn()}
-        isFullscreen={false}
-        onToggleFullscreen={handleToggleFullscreen}
-        isListCollapsed={false}
-        onToggleCollapse={handleToggleCollapse}
       />,
     );
 
-    const collapseBtn = screen.getByTitle("common.collapse");
-    fireEvent.click(collapseBtn);
-    expect(handleToggleCollapse).toHaveBeenCalledTimes(1);
-
-    const fullscreenBtn = screen.getByTitle("common.fullscreen");
-    fireEvent.click(fullscreenBtn);
-    expect(handleToggleFullscreen).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("button")).toHaveLength(mockStages.length);
   });
 });

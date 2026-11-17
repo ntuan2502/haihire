@@ -81,10 +81,6 @@ describe("Kanban Drag-and-Drop State Machine Alignment (C3 Acceptance Criteria)"
         }}
         selectedStage="SCREENING"
         onSelectStage={vi.fn()}
-        isFullscreen={false}
-        onToggleFullscreen={vi.fn()}
-        isListCollapsed={false}
-        onToggleCollapse={vi.fn()}
         onDropCandidate={handleDropCandidate}
       />,
     );

@@ -93,8 +93,6 @@ describe("usePipelineKanban", () => {
     const { result } = renderHook(() => usePipelineKanban("job-1"));
 
     expect(result.current.selectedStage).toBe("APPLIED");
-    expect(result.current.isListCollapsed).toBe(false);
-    expect(result.current.isFullscreen).toBe(false);
     expect(result.current.stageCounts.APPLIED).toBe(1);
     expect(result.current.stageCounts.SCREENING).toBe(1);
     expect(result.current.stageCounts.INTERVIEW).toBe(0);
@@ -129,9 +127,9 @@ describe("usePipelineKanban", () => {
     expect(result.current.overviewSections.notes).toBe(!initialShowNotes);
   });
 
-  it("initializes and syncs search, sortBy, tab, and collapsed state with URL query params", () => {
+  it("initializes and syncs search, sortBy, and tab with URL query params", () => {
     mockSearchParamString =
-      "stage=INTERVIEW&search=Nguyen&sortBy=score&tab=interviews&collapsed=1";
+      "stage=INTERVIEW&search=Nguyen&sortBy=score&tab=interviews";
     const replaceStateSpy = vi.spyOn(window.history, "replaceState");
 
     const { result } = renderHook(() => usePipelineKanban("job-1"));
@@ -140,7 +138,6 @@ describe("usePipelineKanban", () => {
     expect(result.current.searchQuery).toBe("Nguyen");
     expect(result.current.sortBy).toBe("score");
     expect(result.current.candidateTab).toBe("interviews");
-    expect(result.current.isListCollapsed).toBe(true);
 
     act(() => {
       result.current.setSearchQuery("Tran");
@@ -168,12 +165,6 @@ describe("usePipelineKanban", () => {
       "",
       expect.stringContaining("tab=documents"),
     );
-
-    act(() => {
-      result.current.setIsListCollapsed(false);
-    });
-    const lastUrl = replaceStateSpy.mock.calls.at(-1)?.[2] as string;
-    expect(lastUrl).not.toContain("collapsed=");
 
     mockSearchParamString = "";
     replaceStateSpy.mockRestore();

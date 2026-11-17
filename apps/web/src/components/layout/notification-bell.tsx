@@ -10,6 +10,7 @@ import type {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -78,46 +79,50 @@ export function NotificationBell({
         align="end"
         className="w-72 max-w-[calc(100vw-2rem)]"
       >
-        <DropdownMenuLabel>
-          {t("settings.tabs.notifications")}
-        </DropdownMenuLabel>
-        {unread > 0 && (
-          <DropdownMenuItem
-            disabled={markRead.isPending}
-            onClick={() => markRead.mutate(undefined)}
-          >
-            {t("notificationInbox.readAll")}
-          </DropdownMenuItem>
-        )}
-        {inbox.isError && (
+        <DropdownMenuGroup>
           <DropdownMenuLabel>
-            {t("notificationInbox.loadError")}
+            {t("settings.tabs.notifications")}
           </DropdownMenuLabel>
-        )}
-        {inbox.data?.items.length === 0 && (
-          <DropdownMenuLabel>{t("notificationInbox.empty")}</DropdownMenuLabel>
-        )}
-        {inbox.data?.items.map((item) => (
-          <DropdownMenuItem
-            key={item.id}
-            className="flex-col items-start"
-            onClick={() => openNotification(item)}
-          >
-            <span
-              className={
-                item.readAt ? "text-muted-foreground" : "font-semibold"
-              }
+          {unread > 0 && (
+            <DropdownMenuItem
+              disabled={markRead.isPending}
+              onClick={() => markRead.mutate(undefined)}
             >
-              {t(`notificationInbox.${item.kind}`)}
-            </span>
-            <time
-              dateTime={item.createdAt}
-              className="text-xs text-muted-foreground"
+              {t("notificationInbox.readAll")}
+            </DropdownMenuItem>
+          )}
+          {inbox.isError && (
+            <p className="px-1.5 py-1 text-xs text-muted-foreground">
+              {t("notificationInbox.loadError")}
+            </p>
+          )}
+          {inbox.data?.items.length === 0 && (
+            <p className="px-1.5 py-1 text-xs text-muted-foreground">
+              {t("notificationInbox.empty")}
+            </p>
+          )}
+          {inbox.data?.items.map((item) => (
+            <DropdownMenuItem
+              key={item.id}
+              className="flex-col items-start"
+              onClick={() => openNotification(item)}
             >
-              {formatDate(item.createdAt)} {formatTime(item.createdAt)}
-            </time>
-          </DropdownMenuItem>
-        ))}
+              <span
+                className={
+                  item.readAt ? "text-muted-foreground" : "font-semibold"
+                }
+              >
+                {t(`notificationInbox.${item.kind}`)}
+              </span>
+              <time
+                dateTime={item.createdAt}
+                className="text-xs text-muted-foreground"
+              >
+                {formatDate(item.createdAt)} {formatTime(item.createdAt)}
+              </time>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

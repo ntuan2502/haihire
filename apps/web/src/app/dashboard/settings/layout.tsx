@@ -248,9 +248,9 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
     <div
       data-testid="settings-shell"
-      className="min-h-screen md:h-screen md:overflow-hidden bg-slate-50/60 dark:bg-slate-950 flex flex-col"
+      className="md:h-[calc(100dvh-4rem)] md:overflow-hidden bg-slate-50/60 dark:bg-slate-950 flex flex-col"
     >
-      <main className="flex-1 min-h-0 w-full flex flex-col overflow-x-hidden">
+      <div className="flex-1 min-h-0 w-full flex flex-col overflow-x-hidden">
         <div className="flex-1 min-h-0 flex flex-col md:flex-row w-full md:overflow-hidden">
           {/* ================= LEFT SIDEBAR ================= */}
           <aside
@@ -297,59 +297,41 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                         {group.label}
                       </h3>
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        {group.items.map((item) => {
-                          const Icon = item.icon;
-                          const isActive =
-                            item.href === "/dashboard/settings"
-                              ? pathname === "/dashboard/settings"
-                              : pathname === item.href ||
-                                pathname.startsWith(`${item.href}/`);
+                        {group.items
+                          .filter((item) => !item.locked)
+                          .map((item) => {
+                            const Icon = item.icon;
+                            const isActive =
+                              item.href === "/dashboard/settings"
+                                ? pathname === "/dashboard/settings"
+                                : pathname === item.href ||
+                                  pathname.startsWith(`${item.href}/`);
 
-                          const localized = tabTranslations[item.id] || {
-                            label: item.label,
-                            sub: item.sublabel,
-                          };
+                            const localized = tabTranslations[item.id] || {
+                              label: item.label,
+                              sub: item.sublabel,
+                            };
 
-                          if (item.locked) {
                             return (
-                              <div
+                              <Link
                                 key={`mobile-${item.id}`}
-                                aria-disabled="true"
-                                className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 bg-slate-100/60 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border border-slate-200/50 dark:border-slate-800/50 opacity-50 cursor-not-allowed select-none"
+                                href={item.href}
+                                aria-current={isActive ? "page" : undefined}
+                                className={cn(
+                                  "flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all",
+                                  isActive
+                                    ? "bg-blue-600 text-white shadow-xs"
+                                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800",
+                                )}
                               >
                                 <Icon
-                                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                                  className="h-3.5 w-3.5 shrink-0"
                                   aria-hidden="true"
                                 />
                                 <span>{localized.label}</span>
-                                <Lock
-                                  className="h-3 w-3 shrink-0 opacity-60 ml-0.5"
-                                  aria-hidden="true"
-                                />
-                              </div>
+                              </Link>
                             );
-                          }
-
-                          return (
-                            <Link
-                              key={`mobile-${item.id}`}
-                              href={item.href}
-                              aria-current={isActive ? "page" : undefined}
-                              className={cn(
-                                "flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all",
-                                isActive
-                                  ? "bg-blue-600 text-white shadow-xs"
-                                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800",
-                              )}
-                            >
-                              <Icon
-                                className="h-3.5 w-3.5 shrink-0"
-                                aria-hidden="true"
-                              />
-                              <span>{localized.label}</span>
-                            </Link>
-                          );
-                        })}
+                          })}
                       </div>
                     </section>
                   ))}
@@ -470,7 +452,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
             {children}
           </section>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

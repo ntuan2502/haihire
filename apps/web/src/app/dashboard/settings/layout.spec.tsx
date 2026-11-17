@@ -36,8 +36,9 @@ describe("SettingsLayout", () => {
     const sidebarNav = screen.getByTestId("settings-sidebar-nav");
     const content = screen.getByTestId("settings-content");
 
-    expect(shell.className).toContain("md:h-screen");
+    expect(shell.className).toContain("md:h-[calc(100dvh-4rem)]");
     expect(shell.className).toContain("md:overflow-hidden");
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
 
     expect(sidebarNav.className).toContain("overflow-y-auto");
     expect(sidebarNav.className).toContain("min-h-0");

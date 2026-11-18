@@ -1200,7 +1200,7 @@ export const vi: TranslationSchema = {
     deleteCandidateHeading: "Xóa ứng viên",
     deleteCandidateDescription: "Bạn đang yêu cầu xóa ứng viên {name}.",
     deleteCandidateWarning:
-      "Dữ liệu ứng viên vẫn được lưu giữ và có thể khôi phục trong phần Cài đặt — Quyền riêng tư & Lưu trữ. Không có dữ liệu nào bị xóa vĩnh viễn tại đây.",
+      "Hồ sơ ứng viên và các đơn ứng tuyển đang hoạt động sẽ được lưu trữ ẩn khỏi quy trình tuyển dụng và kết quả tìm kiếm, trong khi nhật ký kiểm toán lịch sử vẫn được giữ nguyên.",
     deleteDocumentHeading: "Xóa tài liệu",
     deleteDocumentWarning:
       "Bạn có chắc chắn muốn xóa tài liệu này không? Thao tác này không thể hoàn tác.",

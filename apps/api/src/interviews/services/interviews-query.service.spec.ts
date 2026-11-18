@@ -132,6 +132,10 @@ describe("InterviewsQueryService", () => {
       expect.objectContaining({
         where: {
           organizationId: "org-1",
+          application: {
+            candidate: { deletedAt: null },
+            job: { deletedAt: null },
+          },
           scheduledAt: { lt: fixedNow },
           scorecard: { equals: Prisma.DbNull },
         },
@@ -140,6 +144,10 @@ describe("InterviewsQueryService", () => {
     expect(interviewTable.count).toHaveBeenCalledWith({
       where: {
         organizationId: "org-1",
+        application: {
+          candidate: { deletedAt: null },
+          job: { deletedAt: null },
+        },
         scheduledAt: { lt: fixedNow },
         scorecard: { equals: Prisma.DbNull },
       },

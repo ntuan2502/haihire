@@ -61,9 +61,11 @@ export class InterviewsQueryService {
     if (options?.applicationId) {
       interviewWhere.applicationId = options.applicationId;
     }
-    if (options?.jobId) {
-      interviewWhere.application = { jobId: options.jobId };
-    }
+    interviewWhere.application = {
+      candidate: { deletedAt: null },
+      job: { deletedAt: null },
+      ...(options?.jobId ? { jobId: options.jobId } : {}),
+    };
 
     if (options?.startDate && options?.endDate) {
       interviewWhere.scheduledAt = {
@@ -137,7 +139,13 @@ export class InterviewsQueryService {
       ? await resolveOrgNameDisplayOrder(this.prisma, targetOrgId)
       : "FIRST_LAST";
 
-    const data = interviews.map((intv) => {
+    const activeInterviews = interviews.filter(
+      (intv) =>
+        !intv.application?.candidate?.deletedAt &&
+        !intv.application?.job?.deletedAt,
+    );
+
+    const data = activeInterviews.map((intv) => {
       const formatted = formatInterviewRecord(intv);
       const app = intv.application;
       const candidate = app?.candidate;
@@ -229,6 +237,13 @@ export class InterviewsQueryService {
     const app = intv.application;
     const candidate = app?.candidate || null;
     const job = app?.job || null;
+    if (candidate?.deletedAt || job?.deletedAt) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
+    }
     const interviewOrgId =
       intv.organizationId || candidate?.organizationId || job?.organizationId;
     if (tenantOrgId && interviewOrgId && interviewOrgId !== tenantOrgId) {

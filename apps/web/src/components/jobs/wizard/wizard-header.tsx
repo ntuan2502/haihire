@@ -11,6 +11,7 @@ import type { StepId } from "./types";
 
 interface WizardHeaderProps {
   mode: "create" | "edit";
+  publishMode?: "publish" | "draft" | "closed";
   initialJob?: Job | null;
   currentStep: StepId;
   steps: Array<{ id: StepId; label: string; implemented: boolean }>;
@@ -24,6 +25,7 @@ interface WizardHeaderProps {
 
 export function WizardHeader({
   mode,
+  publishMode = "publish",
   initialJob,
   currentStep,
   steps,
@@ -164,7 +166,9 @@ export function WizardHeader({
               <span>
                 {isSaving
                   ? t("jobs.wizard.saving")
-                  : t("jobs.wizard.saveAndPublish")}
+                  : publishMode === "draft"
+                    ? t("jobs.wizard.saveDraft")
+                    : t("jobs.wizard.saveAndPublish")}
               </span>
             ) : (
               <>

@@ -12,6 +12,8 @@ import {
 import { UserPlus, X, Send } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
+import { useCreateInviteLinkMutation } from "@/hooks/use-queries";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 interface InviteMemberCardProps {
   canEdit: boolean;
@@ -35,6 +37,7 @@ export function InviteMemberCard({
   hideTrigger = false,
 }: InviteMemberCardProps) {
   const { t } = useI18n();
+  const createInviteMutation = useCreateInviteLinkMutation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role>(Role.MEMBER);
@@ -55,7 +58,7 @@ export function InviteMemberCard({
   const resolveRoleLabel = (role: string) =>
     getRoleLabel ? getRoleLabel(role) : getOrgRoleLabel(role, t);
 
-  const handleSendInvite = (e: FormEvent) => {
+  const handleSendInvite = async (e: FormEvent) => {
     e.preventDefault();
 
     const trimmedEmail = inviteEmail.trim();
@@ -65,8 +68,13 @@ export function InviteMemberCard({
     }
 
     setIsInviting(true);
-    setTimeout(() => {
-      setIsInviting(false);
+    try {
+      await createInviteMutation.mutateAsync({
+        email: trimmedEmail,
+        role: inviteRole,
+        expiresIn: "7 days",
+        maxUses: "1",
+      });
       onInviteSuccess(
         t("members.inviteSentSuccess", {
           email: trimmedEmail,
@@ -74,7 +82,11 @@ export function InviteMemberCard({
         }),
       );
       setInviteEmail("");
-    }, 500);
+    } catch (err) {
+      onInviteError(getApiErrorMessage(err, t));
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   if (!resolvedOpen) {

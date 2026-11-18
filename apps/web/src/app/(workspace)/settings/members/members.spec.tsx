@@ -457,7 +457,7 @@ describe("MembersSettingsPage Component", () => {
     });
 
     it("shows all 5 roles for owner/admin in InviteMemberCard and InviteLinksCard and submits selected role", async () => {
-      mockCreateInviteMutateAsync.mockResolvedValueOnce({ id: "link-hm" });
+      mockCreateInviteMutateAsync.mockResolvedValue({ id: "link-hm" });
 
       render(<MembersSettingsPage />);
 
@@ -493,6 +493,12 @@ describe("MembersSettingsPage Component", () => {
 
       await waitFor(
         () => {
+          expect(mockCreateInviteMutateAsync).toHaveBeenCalledWith(
+            expect.objectContaining({
+              email: "rec@haihire.vn",
+              role: "RECRUITER",
+            }),
+          );
           expect(toast.success).toHaveBeenCalledWith(
             'Invitation sent to rec@haihire.vn with role "Recruiter".',
           );

@@ -1194,7 +1194,7 @@ export const en: TranslationSchema = {
     deleteCandidateDescription:
       "You are requesting to delete candidate {name}.",
     deleteCandidateWarning:
-      "Their data is kept and can be restored from Settings — Privacy & Retention. Nothing is permanently erased here.",
+      "This candidate profile and active applications will be archived and removed from pipelines and search results, while historical audit logs remain intact.",
     deleteDocumentHeading: "Delete Document",
     deleteDocumentWarning:
       "Are you sure you want to delete this document? This action cannot be undone.",

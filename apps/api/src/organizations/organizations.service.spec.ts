@@ -1,6 +1,7 @@
 import { createTestOrganizationsService } from "../test/helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
+import { OrganizationsInvitesService } from "./services";
 import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import {
   BadRequestException,
@@ -847,6 +848,35 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         "org-2",
       );
       expect(removed.success).toBe(true);
+    });
+
+    it("BUG-10: createInviteLink with email dispatches invitation email and defaults maxUses to 1", async () => {
+      const mockEmailSystem = {
+        sendSystemEmail: vi.fn().mockResolvedValue({ status: "QUEUED" }),
+      };
+      const invitesSvc = new OrganizationsInvitesService(
+        mockPrismaService as never,
+        undefined,
+        undefined,
+        mockEmailSystem as never,
+      );
+
+      const created = await invitesSvc.createInviteLink(
+        "usr-2",
+        { email: "Colleague@HaiHire.vn", role: "RECRUITER" },
+        "org-1",
+      );
+
+      expect(created.maxUses).toBe(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledTimes(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "colleague@haihire.vn",
+          organizationId: "org-1",
+          subject: expect.stringContaining("Acme Corp"),
+          body: expect.stringContaining(`/auth/join/${created.token}`),
+        }),
+      );
     });
   });
 });

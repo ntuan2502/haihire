@@ -105,6 +105,8 @@ export function parseSalaryRange(salaryRange?: string | null) {
   else if (upper.includes("NOK")) parsedCurrency = "NOK";
   else if (upper.includes("GBP") || upper.includes("£")) parsedCurrency = "GBP";
   else if (upper.includes("SGD")) parsedCurrency = "SGD";
+  else if (upper.includes("JPY") || upper.includes("¥") || upper.includes("￥"))
+    parsedCurrency = "JPY";
   else if (upper.includes("USD") || upper.includes("$")) parsedCurrency = "USD";
 
   let parsedPer: string | null = null;

@@ -663,5 +663,23 @@ describe("CandidatesService (Characterization Tests)", () => {
       const list = await diService.findAll("org-1");
       expect(list.data).toBeDefined();
     });
+
+    it("BUG-09: allows re-creating candidate with soft-deleted email and rejects update to active duplicate email", async () => {
+      const recreated = await service.create(
+        {
+          firstName: "C",
+          lastName: "Reborn",
+          email: "levanc@example.com",
+          organizationId: "org-1",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(recreated.email).toBe("levanc@example.com");
+
+      await expect(
+        service.update("cand-1", { email: "tranthib@example.com" }, "org-1"),
+      ).rejects.toThrow(AppConflictException);
+    });
   });
 });

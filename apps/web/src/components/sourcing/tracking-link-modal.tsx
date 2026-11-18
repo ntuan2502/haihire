@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Lock } from "lucide-react";
 import { cn } from "cn";
 
@@ -169,11 +170,11 @@ export function TrackingLinkModal({
                 ? customSource.trim() || null
                 : null,
             jobId: effectiveJobId === "ALL" ? null : effectiveJobId,
-            utmSource: utmSource.trim() || undefined,
-            utmMedium: utmMedium.trim() || undefined,
-            utmCampaign: utmCampaign.trim() || undefined,
-            utmTerm: utmTerm.trim() || undefined,
-            utmContent: utmContent.trim() || undefined,
+            utmSource: utmSource.trim() || null,
+            utmMedium: utmMedium.trim() || null,
+            utmCampaign: utmCampaign.trim() || null,
+            utmTerm: utmTerm.trim() || null,
+            utmContent: utmContent.trim() || null,
           },
         });
         toast.success(t("sourcing.details.editSuccess"));
@@ -195,8 +196,10 @@ export function TrackingLinkModal({
         toast.success(t("sourcing.modal.successToast"));
       }
       onClose();
-    } catch {
-      // Mutation errors handled by global query client
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, t);
+      setError(msg);
+      toast.error(msg);
     }
   };
 

@@ -130,6 +130,7 @@ export function useCreateInviteLinkMutation() {
 
   return useMutation({
     mutationFn: (data: {
+      email?: string;
       role?: string;
       expiresIn?: string;
       maxUses?: string;

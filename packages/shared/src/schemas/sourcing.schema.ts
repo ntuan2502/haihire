@@ -18,7 +18,15 @@ export const createTrackingLinkSchema = z.object({
 export const updateTrackingLinkSchema = createTrackingLinkSchema
   .partial()
   .extend({
+    customSource: z.string().trim().max(200).nullable().optional(),
     jobId: z.string().uuid().nullable().optional(),
+    campaign: z.string().trim().max(200).nullable().optional(),
+    medium: z.string().trim().max(200).nullable().optional(),
+    utmSource: z.string().trim().max(200).nullable().optional(),
+    utmMedium: z.string().trim().max(200).nullable().optional(),
+    utmCampaign: z.string().trim().max(200).nullable().optional(),
+    utmTerm: z.string().trim().max(200).nullable().optional(),
+    utmContent: z.string().trim().max(200).nullable().optional(),
     isActive: z.boolean().optional(),
   });
 

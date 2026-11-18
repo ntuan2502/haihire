@@ -19,6 +19,8 @@ import {
   type NameDisplayOrder,
 } from "@haihire/shared";
 import { EventsService } from "../../events/events.service";
+import { EmailSystemService } from "../../email/services/email-system.service";
+import { env } from "../../config/env";
 
 type MockUserTableCompat = {
   store?: Array<Record<string, unknown>>;
@@ -77,6 +79,9 @@ export class OrganizationsInvitesService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(EmailSystemService)
+    private readonly emailSystemService?: EmailSystemService,
   ) {}
 
   private resolveValidInviteRole(rawRole?: string | null): Role {
@@ -255,7 +260,12 @@ export class OrganizationsInvitesService {
 
   async createInviteLink(
     userId: string,
-    dto: { role?: string; expiresIn?: string; maxUses?: string },
+    dto: {
+      role?: string;
+      expiresIn?: string;
+      maxUses?: string;
+      email?: string;
+    },
     activeOrgId?: string | null,
   ): Promise<InviteLinkRecord> {
     const ctx = await this.resolveMemberInviteContext(userId, activeOrgId);
@@ -312,7 +322,7 @@ export class OrganizationsInvitesService {
 
     // Calculate max uses
     let maxUses: number | null = null;
-    const rawUses = dto.maxUses || "Unlimited";
+    const rawUses = dto.maxUses || (dto.email ? "1" : "Unlimited");
     if (rawUses !== "Unlimited") {
       const parsed = parseInt(rawUses, 10);
       if (!isNaN(parsed) && parsed > 0) {
@@ -342,6 +352,25 @@ export class OrganizationsInvitesService {
       organizationId: org.id,
       data: { linkId: id },
     });
+
+    if (dto.email && this.emailSystemService) {
+      const escapeHtml = (val: string) =>
+        val
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      const recipientEmail = dto.email.trim().toLowerCase();
+      const joinUrl = `${env.FRONTEND_URL.replace(/\/$/, "")}/auth/join/${token}`;
+      await this.emailSystemService.sendSystemEmail({
+        to: recipientEmail,
+        recipientName: recipientEmail,
+        organizationId: org.id,
+        templateType: "CUSTOM",
+        subject: `Invitation to join ${org.name} on HaiHire`,
+        body: `<p>Hello,</p><p><strong>${escapeHtml(user.name || "A team member")}</strong> has invited you to join <strong>${escapeHtml(org.name)}</strong> on HaiHire as <strong>${escapeHtml(linkRole)}</strong>.</p><p><a href="${escapeHtml(joinUrl)}">Accept Invitation</a></p><p>This invitation link expires in 7 days and can be used once.</p>`,
+      });
+    }
 
     return {
       id,

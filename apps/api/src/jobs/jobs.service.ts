@@ -199,14 +199,35 @@ export class JobsService {
     const allApps =
       !isPublic && jobIds.length > 0
         ? await this.prisma.application.findMany({
-            where: { jobId: { in: jobIds } },
+            where: {
+              jobId: { in: jobIds },
+              candidate: { deletedAt: null },
+            },
             select: {
               id: true,
               jobId: true,
               stage: true,
+              candidateId: true,
             },
           })
         : [];
+
+    const appCandidateIds = [
+      ...new Set(allApps.map((a) => a.candidateId).filter(Boolean)),
+    ];
+    const cands =
+      appCandidateIds.length > 0
+        ? await this.prisma.candidate.findMany({
+            where: {
+              id: { in: appCandidateIds },
+              ...(targetOrg ? { organizationId: targetOrg.id } : {}),
+            },
+            select: { id: true, deletedAt: true },
+          })
+        : [];
+    const deletedCandidateIds = new Set(
+      cands.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
 
     const appCountMap = new Map<
       string,
@@ -214,6 +235,7 @@ export class JobsService {
     >();
     for (const app of allApps) {
       if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
+      if (app.candidateId && deletedCandidateIds.has(app.candidateId)) continue;
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
       }
@@ -362,7 +384,10 @@ export class JobsService {
     }
 
     const applications = await this.prisma.application.findMany({
-      where: { jobId: id },
+      where: {
+        jobId: id,
+        candidate: { deletedAt: null },
+      },
       select: {
         id: true,
         candidateId: true,
@@ -395,13 +420,20 @@ export class JobsService {
               phone: true,
               resumeUrl: true,
               resumeFileName: true,
+              deletedAt: true,
             },
           })
         : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const deletedCandIds = new Set(
+      candidates.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
+    const activeApplications = applications.filter(
+      (a) => !deletedCandIds.has(a.candidateId),
+    );
 
     // Fetch interviews for each application
-    const appIds = [...new Set(applications.map((a) => a.id))];
+    const appIds = [...new Set(activeApplications.map((a) => a.id))];
     const jobInterviews =
       appIds.length > 0
         ? await this.prisma.interview.findMany({
@@ -421,7 +453,7 @@ export class JobsService {
         ? "LAST_FIRST"
         : "FIRST_LAST";
 
-    const populatedApps = applications.map((a) => {
+    const populatedApps = activeApplications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
       const resolvedCandidateName = candidate
         ? formatCandidateDisplayName(candidate, orgOrder) || "Unknown"

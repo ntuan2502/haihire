@@ -203,10 +203,10 @@ export class SourcingLinksService {
 
     if (dto.jobId) {
       const job = await this.prisma.job.findFirst({
-        where: { id: dto.jobId as string },
-        select: { id: true, organizationId: true },
+        where: { id: dto.jobId as string, deletedAt: null },
+        select: { id: true, organizationId: true, deletedAt: true },
       });
-      if (!job || job.organizationId !== organizationId) {
+      if (!job || job.deletedAt || job.organizationId !== organizationId) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.JOB_NOT_FOUND,
           "Target job not found in this organization",

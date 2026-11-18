@@ -873,6 +873,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("returns more than 100 applications from findByJob without silent 100-item truncation", async () => {
       const manyApps = Array.from({ length: 120 }, (_, i) => ({
         id: `bulk-app-${i}`,
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-org1-a",
         stage: "APPLIED",
@@ -890,6 +891,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       const collidingApps = [
         {
           id: "app-tie-b",
+          organizationId: "org-1",
           candidateId: "cand-1",
           jobId: "job-org1-a",
           stage: "APPLIED",
@@ -899,6 +901,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         },
         {
           id: "app-tie-a",
+          organizationId: "org-1",
           candidateId: "cand-1",
           jobId: "job-org1-a",
           stage: "APPLIED",
@@ -946,6 +949,12 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(stats.byJob["job-org1-a"]?.byStage.APPLIED).toBe(2);
       expect(stats.byJob["job-org1-a"]?.byStage.SCREENING).toBe(1);
       expect(stats.byJob["job-org1-b"]?.total).toBe(1);
+    });
+
+    it("BUG-07: findByJob returns [] when the job's only candidate is soft-deleted (no resurrection)", async () => {
+      mockCandidates[1].deletedAt = new Date();
+      const results = await service.findByJob("job-org1-b", "org-1");
+      expect(results).toEqual([]);
     });
   });
 });

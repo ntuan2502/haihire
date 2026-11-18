@@ -77,6 +77,7 @@ export const organizationsApi = {
   },
 
   createInviteLink: async (data: {
+    email?: string;
     role?: string;
     expiresIn?: string;
     maxUses?: string;

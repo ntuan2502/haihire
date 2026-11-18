@@ -113,7 +113,12 @@ export class OrganizationsService implements OnModuleInit {
   // ==========================================
   createInviteLink(
     userId: string,
-    dto: { role?: string; expiresIn?: string; maxUses?: string },
+    dto: {
+      role?: string;
+      expiresIn?: string;
+      maxUses?: string;
+      email?: string;
+    },
     activeOrgId?: string | null,
   ) {
     return this.invites.createInviteLink(userId, dto, activeOrgId);

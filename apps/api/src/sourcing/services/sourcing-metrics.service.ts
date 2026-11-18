@@ -83,31 +83,40 @@ export class SourcingMetricsService {
 
     const rawApplications =
       await this.queryService.getApplicationsForJobs(targetJobIds);
-    const filteredApplications = rawApplications.filter((app) => {
+    const timeFilteredApps = rawApplications.filter((app) => {
       if (minTimestamp !== null && toTimestamp(app.createdAt) < minTimestamp)
         return false;
       return true;
     });
 
-    const totalApplications = filteredApplications.length;
     const candidateIds = Array.from(
-      new Set(filteredApplications.map((a) => a.candidateId)),
+      new Set(timeFilteredApps.map((a) => a.candidateId)),
     );
     const [candidates, nameOrder] = await Promise.all([
       this.queryService.getCandidatesByIds(organizationId, candidateIds),
       resolveOrgNameDisplayOrder(this.prisma, organizationId),
     ]);
+    const deletedCandidateIds = new Set(
+      candidates.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
+    const filteredApplications = timeFilteredApps.filter(
+      (app) => !deletedCandidateIds.has(app.candidateId),
+    );
+    const totalApplications = filteredApplications.length;
     const candidateMap = new Map(
-      candidates.map((c) => [
-        c.id,
-        {
-          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
-          firstName: c.firstName ?? null,
-          lastName: c.lastName ?? null,
-          displayName: c.displayName ?? null,
-          email: c.email,
-        },
-      ]),
+      candidates
+        .filter((c) => !c.deletedAt)
+        .map((c) => [
+          c.id,
+          {
+            name:
+              formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
+            firstName: c.firstName ?? null,
+            lastName: c.lastName ?? null,
+            displayName: c.displayName ?? null,
+            email: c.email,
+          },
+        ]),
     );
 
     const trackingLinks =
@@ -349,8 +358,32 @@ export class SourcingMetricsService {
         ? Math.max(link.clicksCount || 0, allClicks.length)
         : filteredClicks.length;
 
-    const allAttributedApps =
+    const rawAttributedApps =
       await this.queryService.getAttributedApplicationsForLink(link.id);
+    const rawCandidateIds = Array.from(
+      new Set(rawAttributedApps.map((a) => a.candidateId)),
+    );
+    const rawJobIds = Array.from(
+      new Set(rawAttributedApps.map((a) => a.jobId)),
+    );
+    const [candidates, jobs, nameOrder] = await Promise.all([
+      this.queryService.getCandidatesByIds(organizationId, rawCandidateIds),
+      this.queryService.getJobsByIds(organizationId, rawJobIds),
+      resolveOrgNameDisplayOrder(this.prisma, organizationId),
+    ]);
+    const deletedCandidateIds = new Set(
+      candidates.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
+    const deletedJobIds = new Set(
+      jobs
+        .filter((j) => Boolean((j as { deletedAt?: unknown }).deletedAt))
+        .map((j) => j.id),
+    );
+    const allAttributedApps = rawAttributedApps.filter(
+      (a) =>
+        !deletedCandidateIds.has(a.candidateId) && !deletedJobIds.has(a.jobId),
+    );
+
     const allTimeAttributed = allAttributedApps.length;
     const filteredApps = allAttributedApps.filter((a) => {
       if (minTimestamp !== null)
@@ -386,37 +419,26 @@ export class SourcingMetricsService {
       filteredApps,
     );
 
-    const candidateIds = Array.from(
-      new Set(filteredApps.map((a) => a.candidateId)),
-    );
-    const candidates = await this.queryService.getCandidatesByIds(
-      organizationId,
-      candidateIds,
-    );
-    const nameOrder = await resolveOrgNameDisplayOrder(
-      this.prisma,
-      organizationId,
-    );
     const candMap = new Map(
-      candidates.map((c) => [
-        c.id,
-        {
-          name: formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
-          firstName: c.firstName ?? null,
-          lastName: c.lastName ?? null,
-          displayName: c.displayName ?? null,
-          email: c.email,
-        },
-      ]),
+      candidates
+        .filter((c) => !c.deletedAt)
+        .map((c) => [
+          c.id,
+          {
+            name:
+              formatCandidateDisplayName(c, nameOrder) || "Unknown Candidate",
+            firstName: c.firstName ?? null,
+            lastName: c.lastName ?? null,
+            displayName: c.displayName ?? null,
+            email: c.email,
+          },
+        ]),
     );
 
-    const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
-    const jobs = await this.queryService.getJobsByIds(
-      organizationId,
-      appJobIds,
-    );
     const jobMap = new Map(
-      jobs.map((j) => [j.id, { title: j.title, type: j.type }]),
+      jobs
+        .filter((j) => !(j as { deletedAt?: unknown }).deletedAt)
+        .map((j) => [j.id, { title: j.title, type: j.type }]),
     );
 
     const attributedApplications: AttributedApplicationDetailItem[] =
@@ -536,6 +558,8 @@ export class SourcingMetricsService {
 
     const where: Prisma.ApplicationWhereInput = {
       organizationId,
+      candidate: { deletedAt: null },
+      job: { deletedAt: null },
     };
 
     if (pagination.jobId) {
@@ -576,7 +600,7 @@ export class SourcingMetricsService {
         where,
         include: {
           candidate: true,
-          job: { select: { title: true } },
+          job: { select: { title: true, deletedAt: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
@@ -598,6 +622,8 @@ export class SourcingMetricsService {
       }
     > | null = null;
     let jobMap: Map<string, string> | null = null;
+    const deletedFallbackCandIds = new Set<string>();
+    const deletedFallbackJobIds = new Set<string>();
 
     if (missingRelations && apps.length > 0) {
       const candidateIds = Array.from(
@@ -610,35 +636,62 @@ export class SourcingMetricsService {
       const [candidates, jobs] = await Promise.all([
         candidateIds.length > 0
           ? this.prisma.candidate.findMany({
-              where: { id: { in: candidateIds } },
+              where: { id: { in: candidateIds }, organizationId },
             })
           : [],
         jobIds.length > 0
           ? this.prisma.job.findMany({
-              where: { id: { in: jobIds } },
-              select: { id: true, title: true },
+              where: { id: { in: jobIds }, organizationId },
+              select: { id: true, title: true, deletedAt: true },
             })
           : [],
       ]);
 
+      for (const cand of candidates) {
+        if (cand.deletedAt) deletedFallbackCandIds.add(cand.id);
+      }
+      for (const j of jobs) {
+        if ((j as { deletedAt?: unknown }).deletedAt) {
+          deletedFallbackJobIds.add(j.id);
+        }
+      }
+
       candidateMap = new Map(
-        candidates.map((cand) => [
-          cand.id,
-          {
-            name:
-              formatCandidateDisplayName(cand, nameOrder) ||
-              "Unknown Candidate",
-            firstName: cand.firstName ?? null,
-            lastName: cand.lastName ?? null,
-            displayName: cand.displayName ?? null,
-            email: cand.email,
-          },
-        ]),
+        candidates
+          .filter((cand) => !cand.deletedAt)
+          .map((cand) => [
+            cand.id,
+            {
+              name:
+                formatCandidateDisplayName(cand, nameOrder) ||
+                "Unknown Candidate",
+              firstName: cand.firstName ?? null,
+              lastName: cand.lastName ?? null,
+              displayName: cand.displayName ?? null,
+              email: cand.email,
+            },
+          ]),
       );
-      jobMap = new Map(jobs.map((j) => [j.id, j.title]));
+      jobMap = new Map(
+        jobs
+          .filter((j) => !(j as { deletedAt?: unknown }).deletedAt)
+          .map((j) => [j.id, j.title]),
+      );
     }
 
-    const data: AttributionLogItem[] = apps.map((a) => {
+    const activeApps = apps.filter(
+      (a) =>
+        !a.candidate?.deletedAt &&
+        !(a.job as { deletedAt?: unknown } | null)?.deletedAt &&
+        !deletedFallbackCandIds.has(a.candidateId) &&
+        !deletedFallbackJobIds.has(a.jobId),
+    );
+    const activeTotal =
+      activeApps.length < apps.length
+        ? Math.max(0, total - (apps.length - activeApps.length))
+        : total;
+
+    const data: AttributionLogItem[] = activeApps.map((a) => {
       const c = a.candidate;
       const fallbackCand = candidateMap?.get(a.candidateId);
       const candName = c
@@ -663,11 +716,11 @@ export class SourcingMetricsService {
       };
     });
 
-    const totalPages = Math.ceil(total / limit) || 1;
+    const totalPages = Math.ceil(activeTotal / limit) || 1;
 
     return {
       data,
-      total,
+      total: activeTotal,
       page,
       limit,
       totalPages,

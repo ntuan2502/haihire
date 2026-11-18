@@ -239,16 +239,17 @@ export class CandidatesCrudService {
 
     const email = dto.email.trim().toLowerCase();
 
-    // Check unique email per organization
+    // Check unique email per organization (ignoring soft-deleted records)
     const existing = await this.prisma.candidate.findFirst({
       where: {
         organizationId: orgId,
         email,
+        deletedAt: null,
       },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
 
-    if (existing) {
+    if (existing && !existing.deletedAt) {
       throw new AppConflictException(
         APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
         "A candidate with this email already exists in your organization",
@@ -376,8 +377,30 @@ export class CandidatesCrudService {
         updatePayload.dateOfBirth = null;
       }
     }
-    if (dto.email !== undefined)
-      updatePayload.email = dto.email.trim().toLowerCase();
+    if (dto.email !== undefined) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      if (normalizedEmail !== (existing.email || "").toLowerCase()) {
+        const orgIdForEmail = (existing.organizationId || tenantOrgId) as
+          string | undefined;
+        const dup = orgIdForEmail
+          ? await this.prisma.candidate.findFirst({
+              where: {
+                organizationId: orgIdForEmail,
+                email: normalizedEmail,
+                deletedAt: null,
+              },
+              select: { id: true, deletedAt: true },
+            })
+          : null;
+        if (dup && dup.id !== id && !dup.deletedAt) {
+          throw new AppConflictException(
+            APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+            "A candidate with this email already exists in your organization",
+          );
+        }
+      }
+      updatePayload.email = normalizedEmail;
+    }
     if (dto.phone !== undefined)
       updatePayload.phone = dto.phone?.trim() || null;
     if (dto.resumeUrl !== undefined) {

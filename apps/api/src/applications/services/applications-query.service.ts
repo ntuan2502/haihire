@@ -102,18 +102,7 @@ export class ApplicationsQueryService {
       take,
     });
 
-    if (applications.length === 0) {
-      applications = await this.prisma.application.findMany({
-        where: { jobId },
-        include: {
-          candidate: true,
-          interviews: true,
-        },
-        orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
-        skip,
-        take,
-      });
-    }
+    applications = applications.filter((app) => !app.candidate?.deletedAt);
 
     if (applications.length === 0) {
       return [];

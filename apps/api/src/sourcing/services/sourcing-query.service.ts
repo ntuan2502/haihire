@@ -10,7 +10,7 @@ export class SourcingQueryService {
 
   async getOrganizationJobs(organizationId: string) {
     return this.prisma.job.findMany({
-      where: { organizationId },
+      where: { organizationId, deletedAt: null },
       select: {
         id: true,
         title: true,
@@ -22,7 +22,11 @@ export class SourcingQueryService {
   async getApplicationsForJobs(jobIds: string[]) {
     if (jobIds.length === 0) return [];
     return this.prisma.application.findMany({
-      where: { jobId: { in: jobIds } },
+      where: {
+        jobId: { in: jobIds },
+        candidate: { deletedAt: null },
+        job: { deletedAt: null },
+      },
       select: {
         organizationId: true,
         id: true,
@@ -52,13 +56,14 @@ export class SourcingQueryService {
         lastName: true,
         displayName: true,
         email: true,
+        deletedAt: true,
       },
     });
   }
 
   async getTrackingLinks(organizationId: string) {
     return this.prisma.trackingLink.findMany({
-      where: { organizationId },
+      where: { organizationId, deletedAt: null },
       select: {
         id: true,
         organizationId: true,
@@ -102,7 +107,7 @@ export class SourcingQueryService {
 
   async getJobById(organizationId: string, id: string) {
     return this.prisma.job.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId, deletedAt: null },
       select: { title: true, type: true },
     });
   }
@@ -113,8 +118,9 @@ export class SourcingQueryService {
       where: {
         organizationId,
         id: { in: jobIds },
+        deletedAt: null,
       },
-      select: { id: true, title: true, type: true },
+      select: { id: true, title: true, type: true, deletedAt: true },
     });
   }
 
@@ -144,7 +150,11 @@ export class SourcingQueryService {
 
   async getAttributedApplicationsForLink(linkId: string) {
     return this.prisma.application.findMany({
-      where: { trackingLinkId: linkId },
+      where: {
+        trackingLinkId: linkId,
+        candidate: { deletedAt: null },
+        job: { deletedAt: null },
+      },
       select: {
         organizationId: true,
         id: true,

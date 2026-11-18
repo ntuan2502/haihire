@@ -485,6 +485,31 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
         });
       });
     });
+
+    it("BUG-11: preserves unsaved user edits when initialJob refetches with the same id", () => {
+      const { rerender } = render(
+        <JobWizardEditor mode="edit" initialJob={mockInitialJob} />,
+      );
+
+      const titleInput = screen.getByDisplayValue("Senior Frontend Engineer");
+      fireEvent.change(titleInput, {
+        target: { value: "Unsaved Title Edit" },
+      });
+
+      rerender(
+        <JobWizardEditor
+          mode="edit"
+          initialJob={{
+            ...mockInitialJob,
+            updatedAt: "2026-03-01T00:00:00.000Z",
+          }}
+        />,
+      );
+
+      expect(
+        screen.getByDisplayValue("Unsaved Title Edit"),
+      ).toBeInTheDocument();
+    });
   });
 
   // A.1.8: Error Handling & Deletion

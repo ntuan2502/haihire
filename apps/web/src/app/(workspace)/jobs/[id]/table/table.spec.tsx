@@ -44,16 +44,17 @@ vi.mock("@/components/applications/applications-data-table", () => ({
 }));
 
 describe("JobTablePage", () => {
-  it("renders full-width main container without max-w-7xl constraint", () => {
+  it("renders full-width container without nested main or max-w-7xl constraint", () => {
     mockSearchParamString = "";
     const { container } = render(<JobTablePage />);
 
-    const main = container.querySelector("main");
-    expect(main).not.toBeNull();
-    expect(main?.className).toContain("w-full");
-    expect(main?.className).toContain("xl:px-10");
-    expect(main?.className).not.toContain("max-w-7xl");
-    expect(main?.className).not.toContain("mx-auto");
+    const wrapper = container.firstElementChild;
+    expect(container.querySelector("main")).toBeNull();
+    expect(wrapper).not.toBeNull();
+    expect(wrapper?.className).toContain("w-full");
+    expect(wrapper?.className).toContain("sm:p-6");
+    expect(wrapper?.className).not.toContain("max-w-7xl");
+    expect(wrapper?.className).not.toContain("mx-auto");
   });
 
   it("hydrates all filter, sort, pagination, and drawer fields from URL query params", () => {

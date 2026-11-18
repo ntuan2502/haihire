@@ -83,7 +83,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
   if (jobLoading) {
     return (
-      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center bg-background text-foreground">
         <LoadingSpinner />
       </div>
     );
@@ -91,7 +91,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
   if (!job) {
     return (
-      <div className="flex-1 min-h-0 w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
+      <div className="flex-1 min-h-0 w-full flex flex-col bg-background text-foreground font-sans">
         <StatusState
           status="404"
           variant="page"
@@ -107,30 +107,30 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const jobTypeLabel = getJobTypeLabel(job.type, t);
 
   return (
-    <div className="h-[calc(100dvh-4rem)] group-has-data-[collapsible=icon]/sidebar-wrapper:h-[calc(100dvh-3rem)] min-h-0 w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden transition-colors duration-200">
+    <div className="h-[calc(100dvh-4rem)] group-has-data-[collapsible=icon]/sidebar-wrapper:h-[calc(100dvh-3rem)] min-h-0 w-full flex flex-col bg-background text-foreground font-sans overflow-hidden transition-colors duration-200">
       {/* 1. Job Workspace Header: Two-tier Navigation */}
-      <header className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-2xs">
+      <header className="shrink-0 border-b border-border bg-card text-card-foreground z-20">
         {/* Tier 1: Context & Primary Actions */}
-        <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 border-b border-slate-100 dark:border-slate-800/60">
+        <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 border-b border-border/60">
           {/* Left: Back button & Job Title */}
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/jobs"
-              className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors shrink-0"
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t("jobs.allJobs")}</span>
             </Link>
 
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 shrink-0" />
+            <div className="h-4 w-px bg-border shrink-0" />
 
             <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-foreground border border-border/60 shrink-0">
                 <Briefcase className="h-3.5 w-3.5" />
               </div>
-              <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
+              <h1 className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
                 {job.title}{" "}
-                <span className="font-normal text-slate-500 dark:text-slate-400">
+                <span className="font-normal text-muted-foreground">
                   ({jobTypeLabel})
                 </span>
               </h1>
@@ -146,7 +146,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               href={getJobPublicUrl(job)}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
+              className="h-7 px-2.5 text-xs font-medium bg-background text-foreground hover:bg-accent hover:text-accent-foreground border border-input rounded-md flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
               title={t("jobs.openPublicCareerPage")}
             >
               <ExternalLink className="h-3 w-3" />
@@ -157,11 +157,11 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
             {canUpdateJob && (
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
+                  className={`h-7 px-2.5 text-xs font-semibold rounded-md shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
                     job.status === "PUBLISHED"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
                       : job.status === "CLOSED"
-                        ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                        ? "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
                         : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
                   }`}
                   title={t("jobs.changeJobStatus")}
@@ -171,7 +171,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                       job.status === "PUBLISHED"
                         ? "bg-emerald-500"
                         : job.status === "CLOSED"
-                          ? "bg-slate-400"
+                          ? "bg-muted-foreground"
                           : "bg-amber-500"
                     }`}
                   />
@@ -218,13 +218,13 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                     className="text-xs flex items-center justify-between cursor-pointer py-2"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-slate-400" />
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                      <span className="font-semibold text-foreground">
                         {t("jobs.closed")}
                       </span>
                     </div>
                     {job.status === "CLOSED" && (
-                      <Check className="h-3.5 w-3.5 text-slate-600" />
+                      <Check className="h-3.5 w-3.5 text-foreground" />
                     )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -235,7 +235,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                className="h-7 w-7 flex items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
                 title={t("jobs.moreOptions")}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
@@ -245,7 +245,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         </div>
 
         {/* Tier 2: Feature Navigation Tabs (Dedicated horizontal scrollable bar) */}
-        <div className="flex items-center gap-1 px-4 py-1.5 sm:px-6 overflow-x-auto no-scrollbar bg-slate-50/60 dark:bg-slate-950/40 text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-1 px-4 py-1.5 sm:px-6 overflow-x-auto no-scrollbar bg-muted/30 text-xs font-medium text-muted-foreground">
           {[
             {
               id: "pipeline",
@@ -283,10 +283,10 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                 key={tab.id}
                 type="button"
                 onClick={() => handleNavTabClick(tab.id)}
-                className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
-                    ? "bg-white text-blue-600 font-bold dark:bg-slate-800 dark:text-blue-400 shadow-2xs border border-slate-200/80 dark:border-slate-700/80"
-                    : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200"
+                    ? "bg-background text-foreground font-semibold shadow-2xs border border-border"
+                    : "hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 <Icon className="h-3 w-3" />

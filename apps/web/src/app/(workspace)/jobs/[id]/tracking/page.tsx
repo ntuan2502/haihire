@@ -109,7 +109,7 @@ function JobTrackingPageContent() {
   if (!job) return null;
 
   return (
-    <main className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 w-full space-y-4">
       {/* Search and Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="w-full sm:w-80">
@@ -128,7 +128,7 @@ function JobTrackingPageContent() {
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto shrink-0"
+            className="gap-1.5 cursor-pointer self-start sm:self-auto shrink-0"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
             <span>{t("sourcing.newLink")}</span>
@@ -172,7 +172,7 @@ function JobTrackingPageContent() {
           lockJob={true}
         />
       )}
-    </main>
+    </div>
   );
 }
 

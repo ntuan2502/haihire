@@ -56,20 +56,20 @@ export function WizardStepScoring({
   const { t } = useI18n();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-semibold text-foreground">
             {t("jobs.wizard.scoringTitle")}
           </h1>
-          <span className="rounded-md bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+          <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
             {mode === "create"
               ? t("jobs.wizard.compensationOptional")
               : t("jobs.wizard.scoringConfiguredBadge")}
           </span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-3xl">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           {t("jobs.wizard.scoringDesc")}
         </p>
       </div>
@@ -79,18 +79,18 @@ export function WizardStepScoring({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>{t("jobs.wizard.backToFormOptions")}</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-secondary-foreground">
             <Sparkles className="h-3 w-3" />
             {t("jobs.wizard.writtenByAiBadge")}
           </span>
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <span className="text-xs font-semibold text-foreground">
             {criteria.length} {t("jobs.wizard.criteriaConfiguredCount")}
           </span>
         </div>
@@ -101,22 +101,22 @@ export function WizardStepScoring({
         {criteria.map((crit) => (
           <div
             key={crit.id}
-            className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+            className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4 hover:border-ring/40 transition-colors"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold text-foreground">
                   {crit.title}
                 </h3>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
                     crit.category === "Experience"
                       ? "bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400"
                       : crit.category === "Technical"
-                        ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
+                        ? "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300"
                         : crit.category === "Soft Skills"
                           ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          : "bg-secondary text-secondary-foreground"
                   }`}
                 >
                   {crit.category}
@@ -126,21 +126,21 @@ export function WizardStepScoring({
               <button
                 type="button"
                 onClick={() => onRemoveCriterion(crit.id)}
-                className="text-slate-400 hover:text-rose-500 p-1 transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-destructive p-1 transition-colors cursor-pointer"
                 title={t("jobs.wizard.deleteCriterion")}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {crit.description}
             </p>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex items-center justify-between text-xs font-medium text-foreground">
                 <span>{t("jobs.wizard.weightLabel")}</span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">
+                <span className="font-semibold text-foreground">
                   {crit.weight}
                 </span>
               </div>
@@ -158,16 +158,16 @@ export function WizardStepScoring({
                   onChange={(e) =>
                     onUpdateWeight(crit.id, Number(e.target.value))
                   }
-                  className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-4 text-[11px] text-muted-foreground pt-1 border-t border-border">
               <span>
                 {t("jobs.wizard.maxScoreLabel")}: {crit.maxScore}
               </span>
-              <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
+              <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px] text-foreground">
                 {t("jobs.wizard.keyLabel")}: {crit.key}
               </span>
             </div>
@@ -177,14 +177,14 @@ export function WizardStepScoring({
 
       {/* Add Criterion Inline Form */}
       {isAddingCriterion ? (
-        <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20 space-y-4">
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <div className="p-5 rounded-xl border border-border bg-muted/30 space-y-4">
+          <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
             {t("jobs.wizard.addCustomCriterionTitle")}
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-foreground mb-1">
                 {t("jobs.wizard.criterionTitleLabel")}
               </label>
               <Input
@@ -192,12 +192,12 @@ export function WizardStepScoring({
                 placeholder={t("jobs.wizard.placeholders.criterionTitle")}
                 value={newCriterionTitle}
                 onChange={(e) => setNewCriterionTitle(e.target.value)}
-                className="h-9 text-xs bg-white dark:bg-slate-900"
+                className="h-9 text-xs bg-background"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-foreground mb-1">
                 {t("jobs.wizard.categoryLabel")}
               </label>
               <CustomSelect
@@ -227,13 +227,13 @@ export function WizardStepScoring({
                   },
                 ]}
                 className="w-full"
-                triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                triggerClassName="w-full h-9 text-xs font-normal bg-background"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-foreground mb-1">
               {t("jobs.wizard.evaluationDescLabel")}
             </label>
             <Textarea
@@ -241,7 +241,7 @@ export function WizardStepScoring({
               value={newCriterionDesc}
               onChange={(e) => setNewCriterionDesc(e.target.value)}
               rows={2}
-              className="text-xs bg-white dark:bg-slate-900"
+              className="text-xs bg-background"
             />
           </div>
 
@@ -255,7 +255,7 @@ export function WizardStepScoring({
                 setNewCriterionTitle("");
                 setNewCriterionDesc("");
               }}
-              className="h-8 text-xs"
+              className="h-8 text-xs cursor-pointer"
             >
               {t("common.cancel")}
             </Button>
@@ -264,7 +264,7 @@ export function WizardStepScoring({
               size="sm"
               onClick={onAddCriterion}
               disabled={!newCriterionTitle.trim()}
-              className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+              className="h-8 text-xs cursor-pointer"
             >
               {t("jobs.wizard.addCriterionAction")}
             </Button>
@@ -275,7 +275,7 @@ export function WizardStepScoring({
           type="button"
           variant="outline"
           onClick={() => setIsAddingCriterion(true)}
-          className="h-10 text-xs font-bold text-slate-800 dark:text-slate-200 gap-1.5 w-full sm:w-auto"
+          className="h-10 text-xs font-medium gap-1.5 w-full sm:w-auto cursor-pointer"
         >
           <Plus className="h-4 w-4 stroke-[2.5]" />
           {t("jobs.wizard.addCriterionAction")}
@@ -283,7 +283,7 @@ export function WizardStepScoring({
       )}
 
       {/* Automatically Score Card */}
-      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
         <label
           htmlFor="auto-score-applicants-checkbox"
           className="flex items-start gap-3 cursor-pointer"
@@ -295,13 +295,13 @@ export function WizardStepScoring({
             type="checkbox"
             checked={autoScoreApplicants}
             onChange={(e) => setAutoScoreApplicants(e.target.checked)}
-            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 mt-0.5"
+            className="rounded border-input accent-primary h-4 w-4 mt-0.5"
           />
           <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">
+            <span className="text-xs font-semibold text-foreground">
               {t("jobs.wizard.autoScoreTitle")}
             </span>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
               {t("jobs.wizard.autoScoreDesc")}
             </p>
           </div>
@@ -314,7 +314,7 @@ export function WizardStepScoring({
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          className="text-xs cursor-pointer"
         >
           {t("common.cancel")}
         </Button>
@@ -324,7 +324,7 @@ export function WizardStepScoring({
             type="button"
             variant="outline"
             onClick={onBack}
-            className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="text-xs cursor-pointer"
           >
             {t("jobs.wizard.backAction")}
           </Button>
@@ -333,7 +333,7 @@ export function WizardStepScoring({
               type="button"
               variant="ghost"
               onClick={onSkip}
-              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
+              className="text-xs cursor-pointer"
             >
               {t("jobs.wizard.skipForNow")}
             </Button>
@@ -341,7 +341,7 @@ export function WizardStepScoring({
           <Button
             type="button"
             onClick={onContinue}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 py-2 rounded-xl shadow-xs cursor-pointer"
+            className="text-xs font-semibold px-6 cursor-pointer"
           >
             {t("jobs.wizard.continueToPublish")}
           </Button>

@@ -114,15 +114,15 @@ export function WizardPreviewModal({
           >
             {/* Top Branding / Department Tag */}
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
+                <Sparkles className="h-3.5 w-3.5 text-foreground" />
                 <span>{department || t("jobs.wizard.generalDepartment")}</span>
               </div>
 
               {/* Job Title */}
               <h1
                 className={cn(
-                  "font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight",
+                  "font-bold text-foreground tracking-tight leading-tight",
                   previewDevice === "mobile"
                     ? "text-lg sm:text-xl"
                     : "text-2xl sm:text-3xl",
@@ -132,9 +132,9 @@ export function WizardPreviewModal({
               </h1>
 
               {/* Meta Badges Grid */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                  <MapPin className="h-3.5 w-3.5 text-blue-500" />
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-foreground/90">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>
                     {location || t("jobs.wizard.nationwide")}
                     {postalCode ? ` (${postalCode})` : ""}
@@ -142,28 +142,28 @@ export function WizardPreviewModal({
                 </div>
 
                 {employmentType && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                    <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{getJobTypeLabel(employmentType, t)}</span>
                   </div>
                 )}
 
                 {workplace && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                    <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{getWorkplaceLabel(workplace, t)}</span>
                   </div>
                 )}
 
                 {experienceLevel && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                    <Briefcase className="h-3.5 w-3.5 text-purple-500" />
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>{getExperienceLevelLabel(experienceLevel, t)}</span>
                   </div>
                 )}
 
                 {salaryRange && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shadow-2xs font-bold">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shadow-2xs font-semibold">
                     <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                     <span>{salaryRange}</span>
                   </div>
@@ -187,31 +187,31 @@ export function WizardPreviewModal({
               >
                 {/* Job Description */}
                 <div className="space-y-3">
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-blue-600" />
+                  <h2 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
                     {t("careers.jobDescription")}
                   </h2>
-                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                  <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-2 font-normal">
                     {description.trim() || t("jobs.wizard.noDescEntered")}
                   </div>
                 </div>
 
                 {/* Requirements */}
                 <div className="space-y-3 pt-2">
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-indigo-600" />
+                  <h2 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                     {t("careers.requirements")}
                   </h2>
-                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                  <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-2 font-normal">
                     {requirements.trim() || t("jobs.wizard.noReqEntered")}
                   </div>
                 </div>
 
                 {/* Assurance Card */}
-                <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
-                  <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
-                    <p className="font-bold text-slate-800 dark:text-white">
+                <div className="p-4 rounded-xl bg-muted/50 border border-border flex items-start gap-3">
+                  <ShieldCheck className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    <p className="font-semibold text-foreground">
                       {t("careers.transparentProcessTitle")}
                     </p>
                     <p className="leading-relaxed text-[11px]">
@@ -232,12 +232,12 @@ export function WizardPreviewModal({
                     : "col-span-1",
                 )}
               >
-                <div className="p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shadow-xs space-y-4">
+                <div className="p-5 sm:p-6 rounded-2xl border border-border bg-card text-card-foreground shadow-xs space-y-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    <h3 className="text-base font-semibold text-foreground">
                       {t("careers.applicationFormTitle")}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {t("careers.applicationFormSubtitle")}
                     </p>
                   </div>
@@ -279,9 +279,9 @@ export function WizardPreviewModal({
                           ]
                       ).map((field) => (
                         <div key={field.key} className="space-y-1">
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          <label className="text-xs font-medium text-foreground">
                             {field.label}{" "}
-                            <span className="text-rose-500">*</span>
+                            <span className="text-destructive">*</span>
                           </label>
                           <Input
                             type="text"
@@ -295,9 +295,9 @@ export function WizardPreviewModal({
 
                     {/* Email */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <label className="text-xs font-medium text-foreground">
                         {t("careers.email")}{" "}
-                        <span className="text-rose-500">*</span>
+                        <span className="text-destructive">*</span>
                       </label>
                       <Input
                         type="email"
@@ -310,12 +310,12 @@ export function WizardPreviewModal({
                     {/* Phone */}
                     {phoneSetting !== "hidden" && (
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <label className="text-xs font-medium text-foreground">
                           {t("candidates.phone")}{" "}
                           {phoneSetting === "required" ? (
-                            <span className="text-rose-500">*</span>
+                            <span className="text-destructive">*</span>
                           ) : (
-                            <span className="text-slate-400 font-normal">
+                            <span className="text-muted-foreground font-normal">
                               ({t("jobs.wizard.optionalOption")})
                             </span>
                           )}
@@ -332,9 +332,9 @@ export function WizardPreviewModal({
                     {/* Cover Letter / Notes */}
                     {coverLetterSetting === "required" && (
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <label className="text-xs font-medium text-foreground">
                           {t("careers.notes")}{" "}
-                          <span className="text-rose-500">*</span>
+                          <span className="text-destructive">*</span>
                         </label>
                         <Textarea
                           placeholder={t("careers.placeholders.notes")}
@@ -347,20 +347,20 @@ export function WizardPreviewModal({
 
                     {/* Screening Questions Preview */}
                     {screeningQuestions.length > 0 && (
-                      <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                      <div className="space-y-3 pt-2 border-t border-border">
+                        <h4 className="text-[11px] font-semibold text-foreground uppercase">
                           {t("jobs.wizard.screeningQuestionsPreviewTitle")}
                         </h4>
                         {screeningQuestions.map((q) => (
                           <div key={q.id} className="space-y-1">
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <label className="block text-xs font-medium text-foreground">
                               {q.text}{" "}
                               {q.required && (
-                                <span className="text-rose-500">*</span>
+                                <span className="text-destructive">*</span>
                               )}
                             </label>
                             {q.type === "yes_no" ? (
-                              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-0.5">
                                 <label className="flex items-center gap-1.5">
                                   <input
                                     type="radio"
@@ -396,16 +396,16 @@ export function WizardPreviewModal({
                     {/* Resume / CV Upload Box */}
                     {resumeSetting === "required" && (
                       <div className="space-y-1.5 pt-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <label className="text-xs font-medium text-foreground">
                           {t("careers.cvResume")}{" "}
-                          <span className="text-rose-500">*</span>
+                          <span className="text-destructive">*</span>
                         </label>
-                        <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-center space-y-1.5 bg-white/70 dark:bg-slate-800/40">
-                          <FileUp className="h-5 w-5 text-blue-500 mx-auto" />
-                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="border-2 border-dashed border-border rounded-xl p-4 text-center space-y-1.5 bg-muted/30">
+                          <FileUp className="h-5 w-5 text-muted-foreground mx-auto" />
+                          <p className="text-xs font-medium text-foreground">
                             {t("careers.dropCvHere")}
                           </p>
-                          <p className="text-[10px] text-slate-400">
+                          <p className="text-[10px] text-muted-foreground">
                             {t("careers.cvFormats")}
                           </p>
                         </div>
@@ -415,13 +415,13 @@ export function WizardPreviewModal({
                     <Button
                       type="button"
                       disabled
-                      className="w-full h-10 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-not-allowed opacity-90 mt-2"
+                      className="w-full h-10 rounded-md text-xs font-semibold cursor-not-allowed opacity-90 mt-2"
                     >
                       {t("careers.submitApplication")}
                     </Button>
 
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
-                      <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pt-1">
+                      <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>{t("jobs.wizard.securityGuaranteed")}</span>
                     </div>
                   </div>

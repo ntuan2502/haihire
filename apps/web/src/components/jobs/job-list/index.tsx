@@ -109,14 +109,14 @@ export function JobList(props: JobListProps) {
 
       {/* If No Matching Jobs from Search / Filters */}
       {filteredJobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs w-full my-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground p-12 sm:p-16 text-center shadow-xs w-full my-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
             <Search className="h-8 w-8 stroke-[1.5]" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-semibold text-foreground">
             {t("jobs.noJobsFound")}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
+          <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
             {t("jobs.noJobsDesc")}
           </p>
           <Button
@@ -125,17 +125,18 @@ export function JobList(props: JobListProps) {
               handleResetFilters();
             }}
             variant="outline"
-            className="h-9 text-xs font-semibold px-4 rounded-xl cursor-pointer"
+            size="sm"
+            className="cursor-pointer"
           >
             {t("common.cancel")}
           </Button>
         </div>
       ) : (
         /* Unified Rich Table View matching Dashboard visual language */
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <tr>
                   <th scope="col" className="py-3.5 px-5 min-w-[280px]">
                     {t("jobs.jobTitle")}
@@ -158,7 +159,7 @@ export function JobList(props: JobListProps) {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-border">
                 {filteredJobs.map((job) => (
                   <JobTableRow
                     key={job.id}
@@ -176,7 +177,7 @@ export function JobList(props: JobListProps) {
 
       {/* Pagination Footer */}
       {filteredJobs.length > 0 && (
-        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800">
+        <div className="pt-4 border-t border-border">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

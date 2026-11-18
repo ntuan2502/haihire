@@ -84,7 +84,7 @@ function JobTablePageContent() {
   if (!job) return null;
 
   return (
-    <main className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 w-full space-y-4">
       <ApplicationsDataTable
         applications={jobApplications}
         jobs={jobs}
@@ -132,7 +132,7 @@ function JobTablePageContent() {
           router.push(`/jobs/${jobId}/pipeline?${query.toString()}`);
         }}
       />
-    </main>
+    </div>
   );
 }
 

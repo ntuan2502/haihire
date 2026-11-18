@@ -182,20 +182,17 @@ export function getStageInfo(
     label: stage || "New",
     actionLabel: stage || "New",
     stepNumber: 1,
-    dotColor: "bg-slate-400",
-    barColor: "bg-slate-400",
-    badgeBg:
-      "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    textColor: "text-slate-600 dark:text-slate-300",
-    cardBg: "bg-slate-50/70 dark:bg-slate-800/60",
-    cardHover: "hover:bg-slate-100/70",
-    cardBorder: "border-slate-200/60 dark:border-slate-700/60",
-    activePill:
-      "bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    pillBadge:
-      "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    btnBg: "bg-slate-600",
-    btnHover: "hover:bg-slate-700",
+    dotColor: "bg-muted-foreground",
+    barColor: "bg-muted-foreground",
+    badgeBg: "bg-secondary text-secondary-foreground border-border",
+    textColor: "text-muted-foreground",
+    cardBg: "bg-muted/60",
+    cardHover: "hover:bg-muted",
+    cardBorder: "border-border",
+    activePill: "bg-secondary text-secondary-foreground border-border",
+    pillBadge: "bg-muted text-foreground",
+    btnBg: "bg-primary",
+    btnHover: "hover:bg-primary/90",
   };
 }
 

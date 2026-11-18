@@ -35,9 +35,9 @@ export function PipelineCandidateDetailOverview({
   return (
     <div className="space-y-5">
       {overviewSections.ai && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Sparkles className="h-4 w-4 text-emerald-500" />
               <span>{t("applications.matchScore")}</span>
             </div>
@@ -47,14 +47,14 @@ export function PipelineCandidateDetailOverview({
                 {selectedCandidate.matchScore}%
               </span>
             ) : (
-              <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+              <span className="text-xs font-medium text-muted-foreground">
                 {t("applications.matchScoreUnrated")}
               </span>
             )}
           </div>
           {selectedCandidate.matchScore !== null &&
             selectedCandidate.matchScore !== undefined && (
-              <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{
@@ -76,9 +76,9 @@ export function PipelineCandidateDetailOverview({
       )}
 
       {overviewSections.interviews && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("applications.tabs.interviews")}
             </h3>
             {canCreateInterview && (
@@ -86,7 +86,7 @@ export function PipelineCandidateDetailOverview({
                 type="button"
                 size="sm"
                 onClick={() => onScheduleInterview()}
-                className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                className="h-7 text-xs cursor-pointer"
               >
                 {t("interviews.scheduleInterview")}
               </Button>

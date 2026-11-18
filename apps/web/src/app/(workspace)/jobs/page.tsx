@@ -158,14 +158,14 @@ function JobsPageContent() {
           onImportFromFile={() => router.push("/jobs/new")}
         />
       ) : (
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6 space-y-4">
+        <div className="w-full p-4 sm:p-6 space-y-4">
           {/* Clean, Non-redundant Header Row with Primary CTA */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
                 {t("jobs.title")}
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
                 {stats.total}
               </span>
             </div>
@@ -173,8 +173,9 @@ function JobsPageContent() {
             <div className="flex items-center gap-2 self-start sm:self-auto">
               {canCreateJob && (
                 <Button
+                  size="sm"
                   onClick={() => router.push("/jobs/new")}
-                  className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="gap-1.5 cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>{t("jobs.createJob")}</span>

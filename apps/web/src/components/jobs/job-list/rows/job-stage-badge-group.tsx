@@ -17,7 +17,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
   return (
     <div className="space-y-1.5 max-w-md">
       {/* Multi-segment Progress Bar */}
-      <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-slate-800 flex overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-muted flex overflow-hidden">
         {pipelineStages.map((stage) => {
           const count = counts.byStage[stage.id] || 0;
           const pct = totalPipeline > 0 ? (count / totalPipeline) * 100 : 0;

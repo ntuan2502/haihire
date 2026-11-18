@@ -43,7 +43,7 @@ export function DevicePreviewSelector({
   return (
     <div
       className={cn(
-        "flex items-center bg-black/5 dark:bg-white/10 p-0.5 rounded-lg border border-black/5 dark:border-white/5 select-none",
+        "flex items-center bg-muted p-0.5 rounded-lg border border-border select-none",
         className,
       )}
       role="group"
@@ -61,8 +61,8 @@ export function DevicePreviewSelector({
             className={cn(
               "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
               isActive
-                ? "bg-white dark:bg-[#3a3a3c] text-slate-900 dark:text-white shadow-2xs font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
+                ? "bg-background text-foreground shadow-2xs font-semibold"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />

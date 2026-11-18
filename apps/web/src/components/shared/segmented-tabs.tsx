@@ -52,7 +52,7 @@ export function SegmentedTabs<T extends string = string>({
         role="group"
         aria-label={t("common.filterStatusTabs")}
         className={cn(
-          "inline-flex items-center p-1 bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-900/90 rounded-xl border border-slate-200/80 dark:border-slate-800 max-w-full overflow-x-auto scrollbar-none shrink-0 gap-1",
+          "inline-flex items-center p-1 bg-muted rounded-lg border border-border max-w-full overflow-x-auto scrollbar-none shrink-0 gap-1",
           className,
         )}
       >
@@ -75,26 +75,26 @@ export function SegmentedTabs<T extends string = string>({
               aria-pressed={isActive}
               onClick={handleClick}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
+                "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
                 size === "sm"
                   ? "px-3 py-1.5 text-xs"
                   : "px-3.5 py-2 text-xs sm:text-sm",
                 isActive
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs ring-1 ring-slate-900/5 dark:ring-white/10"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40",
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground font-medium hover:text-foreground hover:bg-background/50",
               )}
             >
               {!isAllTab && isActive && (
-                <Check className="h-3 w-3 text-blue-600 dark:text-blue-400 stroke-[2.5]" />
+                <Check className="h-3 w-3 text-foreground stroke-[2.5]" />
               )}
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span
                   className={cn(
-                    "px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-colors leading-none",
+                    "px-1.5 py-0.5 rounded-sm text-[10px] font-semibold transition-colors leading-none",
                     isActive
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300"
-                      : "bg-slate-200/70 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+                      ? "bg-secondary text-secondary-foreground"
+                      : "bg-background/70 text-muted-foreground",
                   )}
                 >
                   {tab.count}
@@ -112,7 +112,7 @@ export function SegmentedTabs<T extends string = string>({
     <div
       role="tablist"
       className={cn(
-        "inline-flex items-center p-1 bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-900/90 rounded-xl border border-slate-200/80 dark:border-slate-800 max-w-full overflow-x-auto scrollbar-none shrink-0 gap-1",
+        "inline-flex items-center p-1 bg-muted rounded-lg border border-border max-w-full overflow-x-auto scrollbar-none shrink-0 gap-1",
         className,
       )}
     >
@@ -126,23 +126,23 @@ export function SegmentedTabs<T extends string = string>({
             aria-selected={isActive}
             onClick={() => onChange?.(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
+              "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
               size === "sm"
                 ? "px-3 py-1.5 text-xs"
                 : "px-3.5 py-2 text-xs sm:text-sm",
               isActive
-                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40",
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground font-medium hover:text-foreground hover:bg-background/50",
             )}
           >
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-colors leading-none",
+                  "px-1.5 py-0.5 rounded-sm text-[10px] font-semibold transition-colors leading-none",
                   isActive
-                    ? "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200"
-                    : "bg-slate-200/70 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-background/70 text-muted-foreground",
                 )}
               >
                 {tab.count}

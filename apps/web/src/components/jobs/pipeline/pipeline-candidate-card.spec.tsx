@@ -102,8 +102,9 @@ describe("PipelineCandidateCard Component", () => {
     );
 
     const card = container.querySelector("#candidate-card-app-101");
-    expect(card).toHaveClass("bg-blue-50/80");
+    expect(card).toHaveClass("bg-accent/70");
     expect(card).toHaveClass("border-l-4");
+    expect(card).toHaveClass("border-primary");
   });
 
   it("triggers onSelect callback when card is clicked", () => {

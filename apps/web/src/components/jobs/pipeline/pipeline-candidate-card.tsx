@@ -59,18 +59,18 @@ export function PipelineCandidateCard({
         name: displayName,
         stage: getStageLabel(candidate.stage, t),
       })}
-      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
+      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
         isSelected
-          ? "bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400"
-          : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+          ? "bg-accent/70 border-l-4 border-primary"
+          : "hover:bg-muted/50"
       }`}
     >
       {/* Initials circle */}
       <div
-        className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+        className={`h-9 w-9 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${
           isSelected
-            ? "bg-blue-600 text-white shadow-xs"
-            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            ? "bg-primary text-primary-foreground shadow-xs"
+            : "bg-muted text-muted-foreground"
         }`}
       >
         {initials}
@@ -79,13 +79,7 @@ export function PipelineCandidateCard({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-1">
-          <h4
-            className={`text-xs font-bold truncate ${
-              isSelected
-                ? "text-blue-900 dark:text-blue-300"
-                : "text-slate-900 dark:text-white"
-            }`}
-          >
+          <h4 className="text-xs font-semibold truncate text-foreground">
             {displayName}
           </h4>
           {matchScore !== undefined && matchScore !== null && (
@@ -95,11 +89,11 @@ export function PipelineCandidateCard({
           )}
         </div>
 
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+        <p className="text-[11px] text-muted-foreground truncate">
           {candidate.candidateEmail || t("pipeline.noEmail")}
         </p>
 
-        <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-400">
+        <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
           <span>{formatRelativeTime(candidate.createdAt)}</span>
           {candidate.applicationNotes &&
             candidate.applicationNotes.length > 0 && (

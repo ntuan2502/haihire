@@ -29,18 +29,18 @@ export function JobTableRow({
   const { t } = useI18n();
 
   return (
-    <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group">
+    <tr className="hover:bg-muted/40 transition-colors group">
       {/* 1. Job Title & Meta (Always Visible) */}
       <td className="py-4 px-5">
         <div className="space-y-1">
           <Link
             href={`/jobs/${job.id}/pipeline`}
-            className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors block"
+            className="text-sm font-semibold text-foreground group-hover:underline underline-offset-4 transition-colors block"
           >
             {job.title}
           </Link>
-          <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 flex-wrap">
-            <span className="font-medium text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
+            <span className="font-medium text-foreground/80">
               {job.department || t("jobs.wizard.generalDepartment")}
             </span>
             <span>•</span>
@@ -48,7 +48,7 @@ export function JobTableRow({
             <span>•</span>
             <span className="inline-flex items-center gap-0.5">
               <MapPin
-                className="h-3 w-3 text-slate-400 shrink-0"
+                className="h-3 w-3 text-muted-foreground shrink-0"
                 aria-hidden="true"
               />
               {job.location || t("jobs.defaultLocation")}
@@ -79,7 +79,7 @@ export function JobTableRow({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
             title={t("jobs.viewPublicPage")}
             aria-label={`${t("jobs.viewPublicPage")}: ${job.title}`}
           >
@@ -90,7 +90,7 @@ export function JobTableRow({
           <Link
             href={`/jobs/${job.id}/pipeline`}
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
             aria-label={`${t("common.view")}: ${job.title}`}
           >
@@ -102,7 +102,7 @@ export function JobTableRow({
             <Link
               href={`/jobs/${job.id}/settings`}
               onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
               title={t("common.edit")}
               aria-label={`${t("common.edit")}: ${job.title}`}
             >
@@ -118,7 +118,7 @@ export function JobTableRow({
                 e.stopPropagation();
                 onDeleteJob(job.id);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
               title={t("common.delete")}
               aria-label={`${t("common.delete")}: ${job.title}`}
             >

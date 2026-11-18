@@ -48,19 +48,19 @@ export function JobFilterDrawer({
       panelClassName="justify-between"
     >
       {/* Header */}
-      <div className="p-6 border-b border-slate-200/80 dark:border-slate-800 flex items-start justify-between">
+      <div className="p-6 border-b border-border flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-foreground">
             {t("jobs.filterJobs")}
           </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("jobs.filterJobsDesc")}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 transition-colors cursor-pointer"
+          className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1 transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
@@ -70,7 +70,7 @@ export function JobFilterDrawer({
       <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
         {/* 1. STATUS */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
             {t("jobs.statusUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -83,10 +83,10 @@ export function JobFilterDrawer({
                 key={st.id}
                 type="button"
                 onClick={() => onToggleFilter("status", statusFilters, st.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
                   statusFilters.includes(st.id)
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                    : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 {st.label}
@@ -97,7 +97,7 @@ export function JobFilterDrawer({
 
         {/* 2. EMPLOYMENT TYPE */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
             {t("jobs.employmentTypeUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -111,10 +111,10 @@ export function JobFilterDrawer({
                 key={item.id}
                 type="button"
                 onClick={() => onToggleFilter("type", typeFilters, item.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
                   typeFilters.includes(item.id)
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                    : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 {item.label}
@@ -125,7 +125,7 @@ export function JobFilterDrawer({
 
         {/* 3. EXPERIENCE LEVEL */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
             {t("jobs.experienceLevelUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -140,10 +140,10 @@ export function JobFilterDrawer({
                 key={exp.id}
                 type="button"
                 onClick={() => onToggleFilter("exp", expFilters, exp.id)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
                   expFilters.includes(exp.id)
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                    : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 {exp.label}
@@ -154,7 +154,7 @@ export function JobFilterDrawer({
 
         {/* 4. WORK ARRANGEMENT */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
             {t("jobs.workArrangementUpper")}
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -169,10 +169,10 @@ export function JobFilterDrawer({
                 onClick={() =>
                   onToggleFilter("workplace", workplaceFilters, w.id)
                 }
-                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
                   workplaceFilters.includes(w.id)
-                    ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                    : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 {w.label}
@@ -183,7 +183,7 @@ export function JobFilterDrawer({
 
         {/* 5. SORT BY */}
         <div className="space-y-2.5">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
             {t("jobs.sortByUpper")}
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -200,7 +200,7 @@ export function JobFilterDrawer({
                 { value: "applicants", label: t("jobs.applicants") },
               ]}
               className="w-full"
-              triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              triggerClassName="h-9 text-xs font-normal"
             />
 
             <CustomSelect
@@ -213,18 +213,18 @@ export function JobFilterDrawer({
                 { value: "asc", label: t("jobs.ascending") },
               ]}
               className="w-full"
-              triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              triggerClassName="h-9 text-xs font-normal"
             />
           </div>
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+      <div className="p-4 border-t border-border flex items-center justify-between bg-muted/40">
         <button
           type="button"
           onClick={onResetFilters}
-          className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           <span>{t("jobs.resetAll")}</span>
@@ -236,7 +236,7 @@ export function JobFilterDrawer({
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+            className="cursor-pointer"
           >
             {t("common.cancel")}
           </Button>
@@ -244,7 +244,7 @@ export function JobFilterDrawer({
             type="button"
             size="sm"
             onClick={onClose}
-            className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+            className="cursor-pointer"
           >
             {t("jobs.done")}
           </Button>

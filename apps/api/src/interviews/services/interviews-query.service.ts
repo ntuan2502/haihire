@@ -72,11 +72,8 @@ export class InterviewsQueryService {
       };
     } else if (options?.tab === "UPCOMING") {
       const now = new Date();
-      const startOfToday = new Date(
-        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0),
-      );
       interviewWhere.scheduledAt = {
-        gte: startOfToday,
+        gte: now,
       };
     } else if (options?.tab === "AWAITING") {
       const now = new Date();

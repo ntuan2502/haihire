@@ -62,18 +62,21 @@ export function InterviewsGridView({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
-        {applications.map((app) => {
+        {applications.map((app, index) => {
           const job = jobs.find((j) => String(j.id) === String(app.jobId));
           const allInterviews = getInterviewsFromApplication(app);
           const currentInterview = allInterviews[0];
           const previousInterviews = allInterviews.slice(1);
           const displayName = getCandidateDisplayName(app);
           const initials = getInitials(displayName);
-          const isExpanded = expandedCards[app.id] ?? false;
+          const cardKey = currentInterview?.id
+            ? `${app.id}-${currentInterview.id}`
+            : `${app.id}-${index}`;
+          const isExpanded = expandedCards[cardKey] ?? false;
 
           return (
             <div
-              key={app.id}
+              key={cardKey}
               className="group rounded-xl bg-card text-card-foreground border border-border p-5 shadow-2xs hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between space-y-4"
             >
               {/* Top: Header, Job, Schedule */}
@@ -281,7 +284,7 @@ export function InterviewsGridView({
                   <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => onToggleCardHistory(app.id)}
+                      onClick={() => onToggleCardHistory(cardKey)}
                       className="w-full flex items-center justify-between p-2 rounded-lg bg-muted/40 hover:bg-muted text-[11px] font-semibold text-foreground transition-colors cursor-pointer border border-border"
                     >
                       <div className="flex items-center gap-1.5">

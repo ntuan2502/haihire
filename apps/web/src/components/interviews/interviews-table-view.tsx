@@ -148,22 +148,25 @@ export function InterviewsTableView({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {applications.map((app) => {
+            {applications.map((app, index) => {
               const job = jobs.find((j) => String(j.id) === String(app.jobId));
               const allInterviews = getInterviewsFromApplication(app);
               const currentInterview = allInterviews[0];
               const previousInterviews = allInterviews.slice(1);
-              const isExpanded = expandedRows[app.id] ?? false;
+              const rowKey = currentInterview?.id
+                ? `${app.id}-${currentInterview.id}`
+                : `${app.id}-${index}`;
+              const isExpanded = expandedRows[rowKey] ?? false;
 
               return (
-                <Fragment key={app.id}>
+                <Fragment key={rowKey}>
                   <InterviewsTableRow
                     app={app}
                     job={job}
                     currentInterview={currentInterview}
                     allInterviews={allInterviews}
                     isExpanded={isExpanded}
-                    onToggleExpand={() => toggleRowHistory(app.id)}
+                    onToggleExpand={() => toggleRowHistory(rowKey)}
                     visibleColumns={visibleColumns}
                     onOpenScheduleModal={onOpenScheduleModal}
                     onOpenScorecard={onOpenScorecard}

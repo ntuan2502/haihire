@@ -266,7 +266,11 @@ export function InterviewsTableRow({
               </button>
             ) : allInterviews.length === 1 ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold whitespace-nowrap">
-                {t("interviews.roundsCount", { count: 1 })}
+                {currentInterview?.round
+                  ? t("interviews.roundBadge", {
+                      round: currentInterview.round,
+                    })
+                  : t("interviews.roundsCount", { count: 1 })}
               </span>
             ) : (
               <span className="text-muted-foreground text-[10px]">—</span>

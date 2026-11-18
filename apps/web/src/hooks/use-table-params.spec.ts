@@ -114,4 +114,28 @@ describe("useTableParams hook", () => {
 
     vi.useRealTimers();
   });
+
+  it("strips table-only params and re-renders getParam when switching to calendar", () => {
+    mockSearchParams = new URLSearchParams(
+      "viewMode=table&tab=UPCOMING&sortBy=upcoming&page=3&limit=50&jobId=job-1&search=an",
+    );
+    const { result } = renderHook(() => useTableParams());
+
+    act(() => {
+      result.current.setParams(
+        { viewMode: "calendar", tab: null, sortBy: null, limit: null },
+        true,
+      );
+    });
+
+    expect(result.current.getParam("viewMode")).toBe("calendar");
+    expect(result.current.getParam("tab")).toBe("");
+    expect(result.current.getParam("sortBy")).toBe("");
+    expect(result.current.getParam("jobId")).toBe("job-1");
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      "/candidates?viewMode=calendar&jobId=job-1&search=an",
+    );
+  });
 });

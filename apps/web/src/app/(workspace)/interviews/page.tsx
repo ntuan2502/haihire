@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -84,7 +84,9 @@ function InterviewsPageContent() {
     setPage: setCurrentPage,
     setLimit: setPageSize,
     setParam,
+    setParams,
     getParam,
+    searchParams,
   } = useTableParams();
 
   const focusedInterviewId = getParam("interviewId", "");
@@ -104,6 +106,18 @@ function InterviewsPageContent() {
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
     rawSortBy === "newest" || rawSortBy === "name" ? rawSortBy : "upcoming";
+
+  useEffect(() => {
+    if (
+      viewMode === "calendar" &&
+      (getParam("tab") ||
+        getParam("sortBy") ||
+        getParam("page") ||
+        getParam("limit"))
+    ) {
+      setParams({ tab: null, sortBy: null, limit: null }, true);
+    }
+  }, [viewMode, searchParams, getParam, setParams]);
 
   // Filter Drawer State
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -127,8 +141,22 @@ function InterviewsPageContent() {
   );
 
   const handleResetFilters = () => {
-    setParam("jobId", "ALL");
-    setParam("sortBy", "upcoming");
+    if (viewMode === "calendar") {
+      setParam("jobId", null, false);
+    } else {
+      setParams({ jobId: null, sortBy: null }, true);
+    }
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    if (mode === "calendar") {
+      setParams(
+        { viewMode: "calendar", tab: null, sortBy: null, limit: null },
+        true,
+      );
+    } else {
+      setParam("viewMode", null, false);
+    }
   };
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
@@ -162,7 +190,7 @@ function InterviewsPageContent() {
     jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
     tab: activeTab,
     sortBy,
-    enabled: !focusedInterviewId,
+    enabled: !focusedInterviewId && viewMode === "table",
   });
 
   // Range-scoped interviews query for Calendar view (only visible month/week window)
@@ -173,7 +201,6 @@ function InterviewsPageContent() {
       endDate: calendarRange.endDate,
       search: searchQuery.trim() || undefined,
       jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
-      tab: activeTab,
       enabled: viewMode === "calendar",
     });
 
@@ -277,7 +304,7 @@ function InterviewsPageContent() {
         activeTab={activeTab}
         onTabChange={(tabId) => setParam("tab", tabId)}
         viewMode={viewMode}
-        onViewModeChange={(mode) => setParam("viewMode", mode, false)}
+        onViewModeChange={handleViewModeChange}
         searchQuery={searchQuery}
         onSearchChange={setSearch}
         visibleColumns={visibleColumns}
@@ -287,8 +314,10 @@ function InterviewsPageContent() {
         sortBy={sortBy}
         jobs={jobs}
         onResetFilters={handleResetFilters}
-        onClearJobFilter={() => setParam("jobId", "ALL")}
-        onClearSortFilter={() => setParam("sortBy", "upcoming")}
+        onClearJobFilter={() =>
+          setParam("jobId", null, viewMode !== "calendar")
+        }
+        onClearSortFilter={() => setParam("sortBy", null)}
       />
 
       {/* Content Section */}
@@ -447,6 +476,7 @@ function InterviewsPageContent() {
         sortBy={sortBy}
         onSortByChange={(val) => setParam("sortBy", val)}
         onResetFilters={handleResetFilters}
+        viewMode={viewMode}
       />
     </div>
   );

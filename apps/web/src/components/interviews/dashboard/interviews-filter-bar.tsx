@@ -94,22 +94,26 @@ export function InterviewsFilterBar({
     }
   }, [isColumnsOpen]);
 
+  const isCalendar = viewMode === "calendar";
   const secondaryFiltersCount =
-    (selectedJobFilter !== "ALL" ? 1 : 0) + (sortBy !== "upcoming" ? 1 : 0);
+    (selectedJobFilter !== "ALL" ? 1 : 0) +
+    (!isCalendar && sortBy !== "upcoming" ? 1 : 0);
   const hasSecondaryFilters = secondaryFiltersCount > 0;
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Left: Quick Status Tabs using SegmentedTabs */}
-        <SegmentedTabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onChange={onTabChange}
-        />
+        {!isCalendar && (
+          <SegmentedTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onChange={onTabChange}
+          />
+        )}
 
         {/* Right: View Mode Switcher + Search Box + Columns Dropdown + Filters Button */}
-        <div className="flex items-center gap-2.5 w-full lg:w-auto">
+        <div className="flex items-center gap-2.5 w-full lg:w-auto lg:ml-auto">
           {/* View Mode Switcher (Table / Calendar) */}
           <div className="flex items-center p-0.5 rounded-lg bg-muted border border-border shrink-0">
             <button
@@ -267,7 +271,7 @@ export function InterviewsFilterBar({
               </button>
             </span>
           )}
-          {sortBy !== "upcoming" && (
+          {!isCalendar && sortBy !== "upcoming" && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium">
               <span>
                 {sortBy === "newest"

@@ -14,12 +14,12 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
   const { t } = useI18n();
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+    <div className="p-5 sm:p-6 rounded-xl bg-card text-card-foreground border border-border shadow-2xs space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          <Link2 className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-bold text-foreground">
             {t("sourcing.overview.topLinks")}
           </h2>
         </div>
@@ -27,7 +27,7 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
           <button
             type="button"
             onClick={onViewAll}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors cursor-pointer"
           >
             <span>{t("common.viewAll")}</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -37,11 +37,11 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
 
       {/* Links List */}
       {links.length === 0 ? (
-        <div className="py-6 text-center text-xs text-slate-400">
+        <div className="py-6 text-center text-xs text-muted-foreground">
           {t("sourcing.overview.noLinksYet")}
         </div>
       ) : (
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="divide-y divide-border">
           {links.map((link) => (
             <div
               key={link.id}
@@ -49,11 +49,11 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  <p className="text-xs font-bold text-foreground truncate">
                     {link.name}
                   </p>
                   {link.jobTitle && (
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                       {link.jobTitle}
                     </p>
                   )}
@@ -61,16 +61,16 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
                 <ChannelBadge channel={link.source} size="sm" />
               </div>
 
-              <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
-                  <MousePointerClick className="h-3 w-3 text-slate-400" />
+                  <MousePointerClick className="h-3 w-3 text-muted-foreground" />
                   <span>
                     {link.clicks} {t("sourcing.overview.clicks")}
                   </span>
                 </span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1">
-                  <FileText className="h-3 w-3 text-slate-400" />
+                  <FileText className="h-3 w-3 text-muted-foreground" />
                   <span>
                     {link.apps} {t("sourcing.overview.apps")}
                   </span>

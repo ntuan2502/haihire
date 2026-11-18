@@ -70,21 +70,21 @@ export function TrackingLinksTab({
   return (
     <div className="space-y-4">
       {/* Table Container */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-slate-400">
+          <div className="p-12 text-center text-xs text-muted-foreground">
             {t("common.loading")}
           </div>
         ) : links.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
               <Link2 className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              <h3 className="text-sm font-bold text-foreground">
                 {t("sourcing.links.emptyTitle")}
               </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                 {t("sourcing.links.emptyDesc")}
               </p>
             </div>
@@ -93,7 +93,7 @@ export function TrackingLinksTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr className="border-b border-border bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
@@ -114,25 +114,25 @@ export function TrackingLinksTab({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-border font-medium">
                 {links.map((link) => {
                   const isCopied = copiedId === link.id;
 
                   return (
                     <tr
                       key={link.id}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       {/* Name & Token */}
                       <td className="py-3.5 px-5">
                         <div className="space-y-0.5">
                           <Link
                             href={`/source-tracking/${link.id}`}
-                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
+                            className="font-bold text-foreground hover:text-primary transition-colors inline-block"
                           >
                             {link.name}
                           </Link>
-                          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                          <p className="text-[11px] font-mono text-muted-foreground">
                             ?ref={link.token}
                           </p>
                         </div>
@@ -148,22 +148,22 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Job */}
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 text-muted-foreground">
                         {link.jobTitle || t("sourcing.modal.allJobsOption")}
                       </td>
 
                       {/* Clicks */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 text-center font-bold text-foreground">
                         {link.clicksCount}
                       </td>
 
                       {/* Applications */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 text-center font-bold text-foreground">
                         {link.applicationsCount}
                       </td>
 
                       {/* CVR */}
-                      <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
+                      <td className="py-3.5 px-4 text-center font-bold text-primary">
                         {link.conversionRate}%
                       </td>
 
@@ -178,14 +178,14 @@ export function TrackingLinksTab({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+                                : "bg-secondary text-muted-foreground border-border"
                             }`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${
                                 link.isActive
                                   ? "bg-emerald-500"
-                                  : "bg-slate-400"
+                                  : "bg-muted-foreground"
                               }`}
                             />
                             <span>
@@ -199,14 +199,14 @@ export function TrackingLinksTab({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+                                : "bg-secondary text-muted-foreground border-border"
                             }`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${
                                 link.isActive
                                   ? "bg-emerald-500"
-                                  : "bg-slate-400"
+                                  : "bg-muted-foreground"
                               }`}
                             />
                             <span>
@@ -233,7 +233,7 @@ export function TrackingLinksTab({
                                 link.jobTitle,
                               )
                             }
-                            className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
+                            className="h-8 px-2.5 rounded-md text-muted-foreground hover:text-primary gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
                               <>
@@ -255,7 +255,7 @@ export function TrackingLinksTab({
                             href={`/careers/${orgSlug}${link.jobTitle ? `/${slugify(link.jobTitle)}` : link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                             title={t("sourcing.modal.previewLabel")}
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
@@ -267,7 +267,7 @@ export function TrackingLinksTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => onEditLink(link)}
-                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
                               title={t("common.edit")}
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -282,7 +282,7 @@ export function TrackingLinksTab({
                               onClick={() =>
                                 onToggleStatus(link.id, link.isActive)
                               }
-                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
                               title={t("sourcing.links.toggleStatus")}
                             >
                               <Power className="h-3.5 w-3.5" />
@@ -301,7 +301,7 @@ export function TrackingLinksTab({
                                   onDeleteLink(link.id);
                                 }
                               }}
-                              className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -318,7 +318,7 @@ export function TrackingLinksTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+          <div className="border-t border-border p-4">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

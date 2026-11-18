@@ -88,15 +88,15 @@ export function CandidateInterviewsList({
       <div className={`space-y-4 ${className}`}>
         {showSectionHeader && (
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Calendar className="h-4 w-4 text-slate-500" />
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>{title || t("applications.sections.interviews")}</span>
             </h3>
             {canEdit && onSchedule && (
               <Button
                 size="sm"
                 onClick={() => onSchedule?.()}
-                className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 <Calendar className="h-3.5 w-3.5" />
                 <span>+ {t("applications.scheduleInterview")}</span>
@@ -104,19 +104,19 @@ export function CandidateInterviewsList({
             )}
           </div>
         )}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
-          <Calendar className="h-8 w-8 text-slate-400 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-8 shadow-xs text-center space-y-3">
+          <Calendar className="h-8 w-8 text-muted-foreground mx-auto" />
+          <h4 className="text-xs font-bold text-foreground">
             {t("applications.noInterviews")}
           </h4>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("applications.noInterviewsDesc")}
           </p>
           {canEdit && onSchedule && (
             <Button
               size="sm"
               onClick={() => onSchedule?.()}
-              className="mt-2 h-8 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="mt-2 h-8 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
               <span>{t("applications.scheduleInterview")}</span>
@@ -132,11 +132,11 @@ export function CandidateInterviewsList({
       {showSectionHeader && (
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Calendar className="h-4 w-4 text-slate-500" />
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>{title || t("applications.sections.interviews")}</span>
             </h3>
-            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200/60 dark:border-blue-900/40">
+            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
               {allInterviews.length}
             </span>
           </div>
@@ -144,7 +144,7 @@ export function CandidateInterviewsList({
             <Button
               size="sm"
               onClick={() => onSchedule?.()}
-              className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
               <span>+ {t("applications.scheduleInterview")}</span>
@@ -157,27 +157,27 @@ export function CandidateInterviewsList({
         {allInterviews.map((scheduled, idx) => (
           <div
             key={scheduled.id || `${scheduled.scheduledAt}-${idx}`}
-            className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4"
+            className="rounded-xl border border-border bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-4"
           >
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shrink-0">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
                   <Calendar className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    <h4 className="text-sm font-bold text-foreground">
                       {formatInterviewType(scheduled.type)}
                     </h4>
                     {allInterviews.length > 1 && (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-[10px] font-bold">
                         {scheduled.round
                           ? `${t("interviews.round")} ${scheduled.round}`
                           : `#${allInterviews.length - idx}`}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {idx === 0
                       ? t("interviews.latestUpcomingSchedule")
                       : t("interviews.previousRoundSchedule")}
@@ -192,13 +192,13 @@ export function CandidateInterviewsList({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-4 rounded-xl bg-muted/40 border border-border text-xs">
               <div className="space-y-1">
-                <span className="text-slate-400 block">
+                <span className="text-muted-foreground block">
                   {t("interviews.timeLabel")}
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                   {t("interviews.atTime", {
                     date: formatDate(scheduled.scheduledAt),
                     time: formatTime(scheduled.scheduledAt),
@@ -207,7 +207,7 @@ export function CandidateInterviewsList({
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">
+                <span className="text-muted-foreground block">
                   {t("interviews.formatLabelShort")}
                 </span>
                 {scheduled.format === "OFFICE" ? (
@@ -224,17 +224,17 @@ export function CandidateInterviewsList({
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">
+                <span className="text-muted-foreground block">
                   {t("interviews.tableHeaders.interviewer")}
                 </span>
-                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   {scheduled.interviewer}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">
+                <span className="text-muted-foreground block">
                   {scheduled.format === "OFFICE"
                     ? t("interviews.officeAddressLabel")
                     : t("interviews.meetingUrlLabel")}
@@ -245,13 +245,13 @@ export function CandidateInterviewsList({
                     href={scheduled.linkOrLocation}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    className="font-bold text-primary hover:underline flex items-center gap-1"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                     <span>{t("interviews.openMeetingShort")}</span>
                   </a>
                 ) : (
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  <span className="font-semibold text-foreground">
                     {scheduled.linkOrLocation || "—"}
                   </span>
                 )}
@@ -259,13 +259,11 @@ export function CandidateInterviewsList({
             </div>
 
             {scheduled.notes && (
-              <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-xs space-y-1">
-                <span className="font-bold text-blue-950 dark:text-blue-200">
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 text-xs space-y-1">
+                <span className="font-bold text-foreground">
                   {t("interviews.notesAttached")}
                 </span>
-                <p className="text-blue-800 dark:text-blue-300">
-                  {scheduled.notes}
-                </p>
+                <p className="text-foreground/90">{scheduled.notes}</p>
               </div>
             )}
 
@@ -281,7 +279,7 @@ export function CandidateInterviewsList({
                       })}
                     </span>
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-card text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
                     {t("interviews.recommendationLabel", {
                       recommendation: getRecommendationLabel(
                         scheduled.scorecard.recommendation,
@@ -298,44 +296,44 @@ export function CandidateInterviewsList({
                   scheduled.scorecard.problemSolvingScore) && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
                     {scheduled.scorecard.technicalScore && (
-                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                      <div className="p-2 rounded-lg bg-card/80 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-muted-foreground block">
                           {t("interviews.technicalCriteria")}
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                        <span className="font-bold text-foreground flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.technicalScore}/5
                         </span>
                       </div>
                     )}
                     {scheduled.scorecard.communicationScore && (
-                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                      <div className="p-2 rounded-lg bg-card/80 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-muted-foreground block">
                           {t("interviews.communicationCriteria")}
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                        <span className="font-bold text-foreground flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.communicationScore}/5
                         </span>
                       </div>
                     )}
                     {scheduled.scorecard.cultureScore && (
-                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                      <div className="p-2 rounded-lg bg-card/80 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-muted-foreground block">
                           {t("interviews.cultureFitCriteria")}
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                        <span className="font-bold text-foreground flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.cultureScore}/5
                         </span>
                       </div>
                     )}
                     {scheduled.scorecard.problemSolvingScore && (
-                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                      <div className="p-2 rounded-lg bg-card/80 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-muted-foreground block">
                           {t("interviews.problemSolvingCriteria")}
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                        <span className="font-bold text-foreground flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.problemSolvingScore}/5
                         </span>
@@ -346,10 +344,10 @@ export function CandidateInterviewsList({
 
                 {scheduled.scorecard.feedback && (
                   <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 block mb-0.5">
+                    <span className="text-[10px] font-semibold text-muted-foreground block mb-0.5">
                       {t("interviews.detailedFeedback")}:
                     </span>
-                    <p className="text-slate-700 dark:text-slate-300 italic bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                    <p className="text-foreground/90 italic bg-card/60 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
                       &ldquo;{scheduled.scorecard.feedback}&rdquo;
                     </p>
                   </div>
@@ -358,7 +356,7 @@ export function CandidateInterviewsList({
             )}
 
             {canEdit && (
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
                 {idx === 0 && onCancelInterview && (
                   <Button
                     size="sm"

@@ -119,7 +119,7 @@ function TrackingLinkDetailContent() {
   }
 
   return (
-    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-24 space-y-4">
           <LoadingSpinner />

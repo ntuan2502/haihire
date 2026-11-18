@@ -19,7 +19,7 @@ export function SourcingStatsCards({ stats, isLoading }: SourcingStatsProps) {
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse border border-slate-200/60 dark:border-slate-800/60"
+            className="h-28 rounded-xl bg-muted animate-pulse border border-border"
           />
         ))}
       </div>

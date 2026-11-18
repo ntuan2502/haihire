@@ -47,7 +47,7 @@ export function LinkHeader({
       <div>
         <Link
           href="/source-tracking"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>{t("sourcing.details.backToTracking")}</span>
@@ -59,7 +59,7 @@ export function LinkHeader({
         {/* Title + Badges + Metadata */}
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
               {link.name}
             </h1>
             <ChannelBadge
@@ -71,12 +71,12 @@ export function LinkHeader({
               className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                 link.isActive
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80"
-                  : "bg-slate-100 text-slate-600 border-slate-200/80 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/80"
+                  : "bg-secondary text-muted-foreground border-border"
               }`}
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
-                  link.isActive ? "bg-emerald-500" : "bg-slate-400"
+                  link.isActive ? "bg-emerald-500" : "bg-muted-foreground"
                 }`}
               />
               {link.isActive
@@ -85,13 +85,13 @@ export function LinkHeader({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+              <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{link.jobTitle || t("sourcing.details.allJobs")}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
               <span>
                 {t("sourcing.details.createdOn", {
                   date: formatDate(link.createdAt),
@@ -104,7 +104,7 @@ export function LinkHeader({
         {/* Right controls: TimeRange Pills + Edit + Copy URL */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Time Filter Segmented Pill Group */}
-          <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          <div className="inline-flex items-center p-1 rounded-lg bg-muted border border-border">
             {timeOptions.map((opt) => {
               const active = timeRange === opt.key;
               return (
@@ -112,10 +112,10 @@ export function LinkHeader({
                   key={opt.key}
                   type="button"
                   onClick={() => onTimeRangeChange(opt.key)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                     active
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {opt.label}
@@ -131,9 +131,9 @@ export function LinkHeader({
               variant="outline"
               size="sm"
               onClick={onOpenEdit}
-              className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="h-8 px-3 rounded-md border-input text-foreground text-xs font-semibold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <Pencil className="h-3.5 w-3.5 text-slate-500" />
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{t("sourcing.details.edit")}</span>
             </Button>
           )}
@@ -144,7 +144,7 @@ export function LinkHeader({
             variant="outline"
             size="sm"
             onClick={onCopyUrl}
-            className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="h-8 px-3 rounded-md border-input text-foreground text-xs font-semibold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             {isCopied ? (
               <>
@@ -155,7 +155,7 @@ export function LinkHeader({
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 text-slate-500" />
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{t("sourcing.details.copyUrl")}</span>
               </>
             )}

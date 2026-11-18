@@ -111,14 +111,14 @@ export function InterviewsFilterBar({
         {/* Right: View Mode Switcher + Search Box + Columns Dropdown + Filters Button */}
         <div className="flex items-center gap-2.5 w-full lg:w-auto">
           {/* View Mode Switcher (Table / Calendar) */}
-          <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shrink-0">
+          <div className="flex items-center p-0.5 rounded-lg bg-muted border border-border shrink-0">
             <button
               type="button"
               onClick={() => onViewModeChange("table")}
-              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`h-8 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "table"
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-card text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               title={t("interviews.tableTitle")}
             >
@@ -128,10 +128,10 @@ export function InterviewsFilterBar({
             <button
               type="button"
               onClick={() => onViewModeChange("calendar")}
-              className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`h-8 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "calendar"
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-card text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               title={t("interviews.calendarTitle")}
             >
@@ -158,17 +158,17 @@ export function InterviewsFilterBar({
               <button
                 type="button"
                 onClick={() => setIsColumnsOpen((prev) => !prev)}
-                className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
-                  isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+                className={`h-9 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                  isColumnsOpen ? "ring-2 ring-ring/20 border-ring" : ""
                 }`}
               >
-                <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+                <Columns3 className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{t("common.columns")}</span>
               </button>
 
               {isColumnsOpen && (
-                <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
-                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                <div className="absolute right-0 mt-1.5 w-44 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-2 z-50">
+                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase select-none">
                     {t("interviews.toggleColumns")}
                   </div>
                   <div className="space-y-0.5 mt-1">
@@ -204,10 +204,10 @@ export function InterviewsFilterBar({
                       return (
                         <label
                           key={col.id}
-                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
+                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-xs font-semibold select-none transition-colors ${
                             isLocked
-                              ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
+                              ? "opacity-60 cursor-not-allowed text-muted-foreground"
+                              : "text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           }`}
                         >
                           <input
@@ -217,7 +217,7 @@ export function InterviewsFilterBar({
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={() => onToggleColumn(col.id)}
-                            className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                            className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring accent-primary cursor-pointer disabled:cursor-not-allowed"
                           />
                           <span>{col.label}</span>
                         </label>
@@ -233,12 +233,12 @@ export function InterviewsFilterBar({
           <button
             type="button"
             onClick={onOpenFilterDrawer}
-            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-semibold text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}
@@ -249,11 +249,11 @@ export function InterviewsFilterBar({
       {/* Active Filter Chips Bar */}
       {hasSecondaryFilters && (
         <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
+          <span className="text-muted-foreground font-medium text-[11px]">
             {t("common.filter")}:
           </span>
           {selectedJobFilter !== "ALL" && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium">
               <span>
                 {jobs.find((j) => j.id === selectedJobFilter)?.title ||
                   selectedJobFilter}
@@ -261,14 +261,14 @@ export function InterviewsFilterBar({
               <button
                 type="button"
                 onClick={onClearJobFilter}
-                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                className="hover:text-foreground cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {sortBy !== "upcoming" && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium">
               <span>
                 {sortBy === "newest"
                   ? t("interviews.sortNewest")
@@ -277,7 +277,7 @@ export function InterviewsFilterBar({
               <button
                 type="button"
                 onClick={onClearSortFilter}
-                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                className="hover:text-foreground cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -286,7 +286,7 @@ export function InterviewsFilterBar({
           <button
             type="button"
             onClick={onResetFilters}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-xs font-medium cursor-pointer transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             <span>{t("jobs.resetAll")}</span>

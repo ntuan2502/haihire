@@ -338,16 +338,16 @@ export function ScheduleInterviewModal({
 
         <form onSubmit={handleSaveInterview} className="space-y-5 pt-4">
           {/* Section 1: Job & Candidate Selection */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              <Briefcase className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground uppercase tracking-wider">
+              <Briefcase className="h-3.5 w-3.5 text-primary" />
               <span>{t("interviews.targetJobAndCandidate")}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* Job Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-semibold text-foreground">
                   {t("interviews.targetJob")}
                 </label>
                 <CustomSelect
@@ -383,15 +383,15 @@ export function ScheduleInterviewModal({
 
               {/* Candidate Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                   <span>
                     {t("interviews.targetCandidate")}{" "}
                     <span className="text-rose-500">*</span>
                   </span>
                   {currentCandidate && (
-                    <span className="text-[10px] font-normal text-slate-400">
+                    <span className="text-[10px] font-normal text-muted-foreground">
                       {t("interviews.stageLabel")}{" "}
-                      <strong className="font-semibold text-blue-600 dark:text-blue-400">
+                      <strong className="font-semibold text-primary">
                         {currentCandidate.stage}
                       </strong>
                     </span>
@@ -468,19 +468,19 @@ export function ScheduleInterviewModal({
             isSaving={isSaving}
           />
 
-          <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer"
+              className="h-9 px-4 rounded-md text-xs font-semibold cursor-pointer"
             >
               {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs"
+              className="h-9 px-5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer shadow-xs"
             >
               {isSaving
                 ? t("interviews.savingSchedule")

@@ -53,7 +53,7 @@ export function InterviewsFilterDrawer({
         <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
           {/* 1. FILTER BY JOB */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
               {t("applications.filterByJob")}
             </span>
             <CustomSelect
@@ -67,13 +67,13 @@ export function InterviewsFilterDrawer({
                 })),
               ]}
               className="w-full"
-              triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              triggerClassName="h-9 text-xs font-normal bg-background rounded-md"
             />
           </div>
 
           {/* 2. STATUS TAB PILLS */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
               {t("interviews.tableHeaders.status")}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -103,8 +103,8 @@ export function InterviewsFilterDrawer({
                   onClick={() => onTabChange(item.id)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                     activeTab === item.id
-                      ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                      : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   {item.label}
@@ -115,7 +115,7 @@ export function InterviewsFilterDrawer({
 
           {/* 3. SORT BY */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
               {t("jobs.sortByUpper")}
             </span>
             <CustomSelect
@@ -128,17 +128,17 @@ export function InterviewsFilterDrawer({
                 { value: "name", label: t("interviews.sortName") },
               ]}
               className="w-full"
-              triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              triggerClassName="h-9 text-xs font-normal bg-background rounded-md"
             />
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="p-4 border-t border-border flex items-center justify-between bg-muted/40">
           <button
             type="button"
             onClick={onResetFilters}
-            className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>{t("jobs.resetAll")}</span>
@@ -150,7 +150,7 @@ export function InterviewsFilterDrawer({
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
             >
               {t("common.cancel")}
             </Button>
@@ -158,7 +158,7 @@ export function InterviewsFilterDrawer({
               type="button"
               size="sm"
               onClick={onClose}
-              className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+              className="h-8 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer"
             >
               {t("jobs.done")}
             </Button>

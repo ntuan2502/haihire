@@ -40,21 +40,21 @@ export function AttributionLogTab({
   return (
     <div className="space-y-4">
       {/* Table Container */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-slate-400">
+          <div className="p-12 text-center text-xs text-muted-foreground">
             {t("common.loading")}
           </div>
         ) : logs.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
               <Users className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              <h3 className="text-sm font-bold text-foreground">
                 {t("sourcing.attribution.emptyTitle")}
               </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                 {t("sourcing.attribution.emptyDesc")}
               </p>
             </div>
@@ -63,7 +63,7 @@ export function AttributionLogTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr className="border-b border-border bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   <th className="py-3.5 px-5">
                     {t("sourcing.attribution.candidate")}
                   </th>
@@ -84,7 +84,7 @@ export function AttributionLogTab({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-border font-medium">
                 {logs.map((log) => {
                   const displayName = getCandidateDisplayName(log);
                   const initials = getInitials(displayName);
@@ -92,22 +92,22 @@ export function AttributionLogTab({
                   return (
                     <tr
                       key={log.applicationId}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       {/* Candidate Avatar & Info */}
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
                             {initials}
                           </div>
                           <div className="min-w-0">
                             <Link
                               href={`/candidates?id=${log.candidateId}`}
-                              className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
+                              className="font-bold text-foreground hover:text-primary transition-colors truncate block"
                             >
                               {displayName}
                             </Link>
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                            <p className="text-[11px] text-muted-foreground truncate">
                               {log.candidateEmail}
                             </p>
                           </div>
@@ -115,7 +115,7 @@ export function AttributionLogTab({
                       </td>
 
                       {/* Job */}
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
+                      <td className="py-3.5 px-4 text-foreground font-medium">
                         {log.jobTitle}
                       </td>
 
@@ -124,7 +124,7 @@ export function AttributionLogTab({
                         <div className="space-y-0.5">
                           <ChannelBadge channel={log.source} size="sm" />
                           {log.sourceDetails && (
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                            <p className="text-[10px] text-muted-foreground truncate">
                               {t("sourcing.attribution.via")}{" "}
                               {log.sourceDetails}
                             </p>
@@ -133,7 +133,7 @@ export function AttributionLogTab({
                       </td>
 
                       {/* Campaign */}
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
+                      <td className="py-3.5 px-4 text-muted-foreground">
                         {log.campaign || "—"}
                       </td>
 
@@ -143,7 +143,7 @@ export function AttributionLogTab({
                       </td>
 
                       {/* Applied */}
-                      <td className="py-3.5 px-5 text-right text-slate-400 dark:text-slate-500 font-mono text-[11px]">
+                      <td className="py-3.5 px-5 text-right text-muted-foreground font-mono text-[11px]">
                         {formatRelativeTime(log.appliedAt)}
                       </td>
                     </tr>
@@ -156,7 +156,7 @@ export function AttributionLogTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+          <div className="border-t border-border p-4">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

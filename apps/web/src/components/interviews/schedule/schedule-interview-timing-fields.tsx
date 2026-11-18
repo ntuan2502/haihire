@@ -46,8 +46,8 @@ export function ScheduleInterviewTimingFields({
       {/* Date & Time */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5 text-slate-400" />
+          <label className="text-xs font-bold text-foreground flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
             <span>
               {t("interviews.interviewDate")}{" "}
               <span className="text-rose-500">*</span>
@@ -57,14 +57,14 @@ export function ScheduleInterviewTimingFields({
             type="date"
             value={interviewDate}
             onChange={(e) => onDateChange(e.target.value)}
-            className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+            className="h-10 rounded-md text-xs bg-background border-input"
             required
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-slate-400" />
+          <label className="text-xs font-bold text-foreground flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             <span>
               {t("interviews.interviewTime")}{" "}
               <span className="text-rose-500">*</span>
@@ -74,7 +74,7 @@ export function ScheduleInterviewTimingFields({
             type="time"
             value={interviewTime}
             onChange={(e) => onTimeChange(e.target.value)}
-            className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+            className="h-10 rounded-md text-xs bg-background border-input"
             required
           />
         </div>
@@ -83,8 +83,8 @@ export function ScheduleInterviewTimingFields({
       {/* Round & Format Selection */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-            <Layers className="h-3.5 w-3.5 text-slate-400" />
+          <label className="text-xs font-bold text-foreground flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
             <span>
               {t("interviews.roundType")}{" "}
               <span className="text-rose-500">*</span>
@@ -104,7 +104,7 @@ export function ScheduleInterviewTimingFields({
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1">
             {interviewFormat === "OFFICE" ? (
               <MapPin className="h-3.5 w-3.5 text-rose-500" />
             ) : (
@@ -133,8 +133,8 @@ export function ScheduleInterviewTimingFields({
 
       {/* Meeting Link or Office Location */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-          <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
+        <label className="text-xs font-bold text-foreground flex items-center gap-1">
+          <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
           <span>
             {interviewFormat === "OFFICE"
               ? t("interviews.officeAddressLabel")
@@ -150,7 +150,7 @@ export function ScheduleInterviewTimingFields({
           }
           value={linkOrLocation}
           onChange={(e) => onLinkOrLocationChange(e.target.value)}
-          className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+          className="h-10 rounded-md text-xs bg-background border-input"
         />
       </div>
     </div>

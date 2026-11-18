@@ -45,7 +45,7 @@ export function DayDetailsModal({
       title={dayDetailsTitle}
       badge={
         events.length > 0 ? (
-          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-secondary text-secondary-foreground">
             {events.length}
           </span>
         ) : undefined
@@ -59,7 +59,7 @@ export function DayDetailsModal({
               onClose();
               onScheduleDate(d);
             }}
-            className="h-7 px-2.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+            className="h-7 px-2.5 rounded-md text-xs font-semibold text-primary hover:bg-primary/10 border border-primary/20 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
           >
             <Plus className="h-3 w-3" />
             <span>{t("interviews.scheduleNew")}</span>
@@ -67,17 +67,17 @@ export function DayDetailsModal({
         ) : undefined
       }
       size="md"
-      contentClassName="p-4 sm:p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="p-4 sm:p-5 flex flex-col min-h-0 bg-background"
     >
       <div className="flex flex-col min-h-0">
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-white/10">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-border">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t("interviews.candidateInterviewsMultiple", {
               count: events.length,
             })}
           </span>
           {openDayDetails && (
-            <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
+            <span className="text-xs font-mono font-medium text-muted-foreground">
               {openDayDetails.dateStr}
             </span>
           )}
@@ -87,8 +87,8 @@ export function DayDetailsModal({
         <div className="max-h-[440px] overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
           {events.length === 0 ? (
             <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
-              <Clock className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-              <p className="text-xs text-slate-400 italic">
+              <Clock className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-xs text-muted-foreground italic">
                 {t("interviews.noScheduleForDay")}
               </p>
             </div>
@@ -110,21 +110,21 @@ export function DayDetailsModal({
                     candidate: candidateName,
                     time: formattedTime,
                   })}
-                  className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     hasScorecard
                       ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"
-                      : "bg-white hover:bg-slate-50/90 dark:bg-[#252525] dark:hover:bg-[#2c2c2c] border-slate-200/80 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-600 text-slate-900 dark:text-white"
+                      : "bg-card hover:bg-muted/50 border-border hover:border-primary/40 text-card-foreground"
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0 font-mono text-xs px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60">
+                    <span className="font-bold text-primary shrink-0 font-mono text-xs px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">
                       {formattedTime}
                     </span>
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate text-slate-900 dark:text-white">
+                      <div className="font-semibold text-sm truncate text-foreground">
                         {candidateName}
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
                         {evt.job?.title || t("interviews.defaultJob")}
                       </div>
                     </div>

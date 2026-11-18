@@ -45,10 +45,10 @@ export function ScheduleInterviewInterviewerFields({
       <div className="space-y-1.5">
         <label
           htmlFor="primary-interviewer"
-          className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between"
+          className="text-xs font-bold text-foreground flex items-center justify-between"
         >
           <span className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5 text-slate-400" />
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
             <span>
               {t("interviews.primaryInterviewer")}{" "}
               <span className="text-rose-500">*</span>
@@ -72,8 +72,8 @@ export function ScheduleInterviewInterviewerFields({
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-          <FileText className="h-3.5 w-3.5 text-slate-400" />
+        <label className="text-xs font-bold text-foreground flex items-center gap-1">
+          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           <span>{t("interviews.notesOrRequirements")}</span>
         </label>
         <Input
@@ -81,26 +81,26 @@ export function ScheduleInterviewInterviewerFields({
           placeholder={t("interviews.placeholders.notes")}
           value={interviewNotes}
           onChange={(e) => onNotesChange(e.target.value)}
-          className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+          className="h-10 rounded-md text-xs bg-background border-input"
         />
       </div>
 
       {/* Send Email Invitation Checkbox + Template Override (Create Only) */}
       {!isEditing && (
-        <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="sm:col-span-2 pt-2 border-t border-border space-y-2">
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="sendEmailInviteCheckbox"
               checked={sendEmailInvite}
               onChange={(e) => onSendEmailInviteChange(e.target.checked)}
-              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+              className="rounded border-input text-primary focus:ring-ring accent-primary h-4 w-4 cursor-pointer"
             />
             <label
               htmlFor="sendEmailInviteCheckbox"
-              className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1.5"
+              className="text-xs font-semibold text-foreground cursor-pointer flex items-center gap-1.5"
             >
-              <Mail className="h-3.5 w-3.5 text-blue-500" />
+              <Mail className="h-3.5 w-3.5 text-primary" />
               <span>{t("email.sendEmailInviteCheckbox")}</span>
             </label>
           </div>

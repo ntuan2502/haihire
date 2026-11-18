@@ -49,20 +49,20 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
       : "";
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-5 space-y-4">
+    <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
+        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
           <TrendingUp className="h-4 w-4" />
         </div>
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+        <h3 className="text-sm font-bold text-foreground">
           {t("sourcing.details.trendTitle")}
         </h3>
       </div>
 
       {/* Visualization */}
       {!hasData && data.length <= 1 ? (
-        <div className="py-8 text-center text-xs text-slate-400">
+        <div className="py-8 text-center text-xs text-muted-foreground">
           {t("sourcing.details.trendNoData")}
         </div>
       ) : (
@@ -81,8 +81,16 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
                   x2="0"
                   y2="1"
                 >
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                  <stop
+                    offset="0%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.25"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--primary)"
+                    stopOpacity="0.0"
+                  />
                 </linearGradient>
               </defs>
 
@@ -93,7 +101,7 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
                 x2={width - paddingX}
                 y2={height - paddingBottom}
                 stroke="currentColor"
-                className="text-slate-100 dark:text-slate-800 stroke-[1]"
+                className="text-border stroke-[1]"
               />
 
               {/* Area */}
@@ -104,7 +112,7 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
                 <path
                   d={pathD}
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="var(--primary)"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -120,8 +128,8 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
                     r={p.count > 0 ? "3.5" : "2"}
                     className={`${
                       p.count > 0
-                        ? "fill-blue-600 stroke-white dark:stroke-slate-900 stroke-2"
-                        : "fill-blue-400"
+                        ? "fill-primary stroke-card stroke-2"
+                        : "fill-primary/60"
                     }`}
                   />
                 </g>
@@ -131,7 +139,7 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
 
           {/* Date Axis Labels */}
           {points.length > 1 && (
-            <div className="flex justify-between px-2 pt-1 text-[10px] font-medium text-slate-400">
+            <div className="flex justify-between px-2 pt-1 text-[10px] font-medium text-muted-foreground">
               <span>{points[0].date}</span>
               {points.length > 2 && (
                 <span>{points[Math.floor(points.length / 2)].date}</span>

@@ -100,7 +100,7 @@ export function InterviewsTableView({
     }
     if (dateYmd === tomorrowYmd) {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
           {t("dashboard.tomorrow")}
         </span>
       );
@@ -109,11 +109,11 @@ export function InterviewsTableView({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs overflow-hidden transition-all">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-2xs overflow-hidden transition-all">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
+            <tr className="border-b border-border bg-muted/50 text-muted-foreground uppercase tracking-wider text-[11px] font-bold">
               <th scope="col" className="py-3.5 px-4 text-left">
                 {t("interviews.tableHeaders.candidate")}
               </th>
@@ -147,7 +147,7 @@ export function InterviewsTableView({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+          <tbody className="divide-y divide-border">
             {applications.map((app) => {
               const job = jobs.find((j) => String(j.id) === String(app.jobId));
               const allInterviews = getInterviewsFromApplication(app);

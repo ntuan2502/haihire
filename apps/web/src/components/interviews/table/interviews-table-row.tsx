@@ -101,7 +101,7 @@ export function InterviewsTableRow({
   };
 
   return (
-    <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+    <tr className="hover:bg-muted/50 transition-colors">
       {/* 1. Candidate Info */}
       <td className="py-3.5 px-4 align-middle">
         <button
@@ -115,14 +115,14 @@ export function InterviewsTableRow({
           title={t("interviews.viewCandidateInPipeline")}
           aria-label={`${t("interviews.viewCandidateInPipeline")}: ${displayName}`}
         >
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs group-hover/cand:scale-105 transition-transform">
+          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs group-hover/cand:scale-105 transition-transform">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 dark:text-white truncate group-hover/cand:text-blue-600 dark:group-hover/cand:text-blue-400 group-hover/cand:underline transition-colors">
+            <p className="font-bold text-foreground truncate group-hover/cand:text-primary group-hover/cand:underline transition-colors">
               {displayName}
             </p>
-            <p className="text-[11px] text-slate-400 truncate">
+            <p className="text-[11px] text-muted-foreground truncate">
               {app.candidateEmail}
             </p>
           </div>
@@ -133,13 +133,13 @@ export function InterviewsTableRow({
       {visibleColumns?.job !== false && (
         <td className="py-3.5 px-4 align-middle">
           <div className="pr-2 min-w-0">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
-              <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+            <div className="flex items-center gap-1.5 font-semibold text-foreground truncate">
+              <Briefcase className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="truncate">
                 {job?.title || t("interviews.defaultJob")}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 truncate pl-5">
+            <p className="text-[11px] text-muted-foreground truncate pl-5">
               {job?.department || t("interviews.defaultDepartment")}
             </p>
           </div>
@@ -152,8 +152,8 @@ export function InterviewsTableRow({
           <div className="pr-2 min-w-0">
             {currentInterview ? (
               <div className="space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
-                  <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div className="flex items-center gap-1.5 font-bold text-foreground text-xs whitespace-nowrap">
+                  <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span>
                     {formatDate(currentInterview.scheduledAt)} •{" "}
                     {formatTime(currentInterview.scheduledAt)}
@@ -161,7 +161,7 @@ export function InterviewsTableRow({
                   {getRelativeDateBadge(currentInterview.scheduledAt)}
                 </div>
                 <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
-                  <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
+                  <span className="inline-block px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
                     {getInterviewTypeLabel(currentInterview.type, t)}
                   </span>
 
@@ -182,7 +182,7 @@ export function InterviewsTableRow({
                       href={currentInterview.linkOrLocation}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary hover:underline bg-primary/10"
                       title={t("interviews.joinOnlineMeeting")}
                     >
                       <span>{t("interviews.joinMeetingShort")}</span>
@@ -207,14 +207,14 @@ export function InterviewsTableRow({
           <div className="pr-2 min-w-0">
             {currentInterview ? (
               <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium truncate">
-                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-1.5 text-foreground font-medium truncate">
+                  <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span className="truncate">
                     {currentInterview.interviewer}
                   </span>
                 </div>
                 {currentInterview.round && (
-                  <p className="text-[10px] text-slate-400 pl-5">
+                  <p className="text-[10px] text-muted-foreground pl-5">
                     {t("interviews.roundInterview", {
                       round: currentInterview.round,
                     })}
@@ -222,7 +222,7 @@ export function InterviewsTableRow({
                 )}
               </div>
             ) : (
-              <span className="text-slate-400">—</span>
+              <span className="text-muted-foreground">—</span>
             )}
           </div>
         </td>
@@ -248,7 +248,7 @@ export function InterviewsTableRow({
               <button
                 type="button"
                 onClick={onToggleExpand}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-bold border border-primary/20 transition-colors cursor-pointer whitespace-nowrap"
                 title={t("interviews.candidateInterviewsMultiple", {
                   count: allInterviews.length,
                 })}
@@ -265,11 +265,11 @@ export function InterviewsTableRow({
                 />
               </button>
             ) : allInterviews.length === 1 ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold whitespace-nowrap">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold whitespace-nowrap">
                 {t("interviews.roundsCount", { count: 1 })}
               </span>
             ) : (
-              <span className="text-slate-400 text-[10px]">—</span>
+              <span className="text-muted-foreground text-[10px]">—</span>
             )}
           </div>
         </td>
@@ -308,7 +308,7 @@ export function InterviewsTableRow({
               <span>{t("interviews.rateNow")}</span>
             </button>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-muted-foreground">—</span>
           )}
         </td>
       )}
@@ -323,7 +323,7 @@ export function InterviewsTableRow({
                 e.stopPropagation();
                 onOpenScheduleModal(app, undefined, currentInterview);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center"
               title={
                 allInterviews.length > 0
                   ? t("interviews.editSchedule")
@@ -349,7 +349,7 @@ export function InterviewsTableRow({
                 e.stopPropagation();
                 onCancelInterview(app, currentInterview);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
               title={t("interviews.cancelThisSchedule")}
               aria-label={`${t("interviews.cancelThisSchedule")} - ${displayName}`}
             >

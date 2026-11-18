@@ -224,18 +224,18 @@ export function TrackingLinkModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-[92vh] flex flex-col">
+      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden bg-card text-card-foreground border border-border rounded-xl shadow-xl max-h-[92vh] flex flex-col">
         <form
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 overflow-hidden min-w-0"
         >
-          <DialogHeader className="p-6 pb-4 space-y-1.5 text-left border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
+          <DialogHeader className="p-6 pb-4 space-y-1.5 text-left border-b border-border">
+            <DialogTitle className="text-base font-bold text-foreground">
               {isEdit
                 ? t("sourcing.details.editTitle")
                 : t("sourcing.modal.createTitle")}
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+            <DialogDescription className="text-xs text-muted-foreground">
               {isEdit && link
                 ? `${link.name} (${link.token})`
                 : t("sourcing.modal.createDesc")}
@@ -247,7 +247,7 @@ export function TrackingLinkModal({
             <div className="space-y-1.5">
               <label
                 htmlFor="tracking-link-name-input"
-                className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                className="text-xs font-bold text-foreground"
               >
                 {t("sourcing.modal.linkNameLabel")}
                 <span className="text-rose-500 ml-1">*</span>
@@ -263,10 +263,8 @@ export function TrackingLinkModal({
                   setName(e.target.value);
                   if (error) setError(null);
                 }}
-                className={`w-full px-3 py-2 text-xs rounded-xl border bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                  error
-                    ? "border-rose-300 dark:border-rose-700"
-                    : "border-slate-200 dark:border-slate-800"
+                className={`w-full px-3 py-2 text-xs rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all ${
+                  error ? "border-destructive" : "border-input"
                 }`}
               />
               {error && <p className="text-[11px] text-rose-500">{error}</p>}
@@ -274,7 +272,7 @@ export function TrackingLinkModal({
 
             {/* Source Channel */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-bold text-foreground">
                 {t("sourcing.modal.sourceLabel")}
               </label>
               <CustomSelect
@@ -282,7 +280,7 @@ export function TrackingLinkModal({
                 options={channelSelectOptions}
                 onChange={handleChannelChange}
                 className="w-full"
-                triggerClassName="w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+                triggerClassName="w-full text-xs h-9 bg-background border-input rounded-md"
               />
             </div>
 
@@ -291,7 +289,7 @@ export function TrackingLinkModal({
               <div className="space-y-1.5">
                 <label
                   htmlFor="tracking-link-custom-source-input"
-                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                  className="text-xs font-bold text-foreground"
                 >
                   {t("sourcing.modal.customSourceLabel")}
                 </label>
@@ -303,7 +301,7 @@ export function TrackingLinkModal({
                   value={customSource}
                   placeholder={t("sourcing.modal.customSourcePlaceholder")}
                   onChange={(e) => setCustomSource(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                 />
               </div>
             )}
@@ -311,11 +309,11 @@ export function TrackingLinkModal({
             {/* Job Scope */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-bold text-foreground">
                   {t("sourcing.modal.jobLabel")}
                 </label>
                 {lockJob && (
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
                     <Lock className="h-3 w-3" />
                     {t("sourcing.modal.jobLocked")}
                   </span>
@@ -329,16 +327,15 @@ export function TrackingLinkModal({
                 icon={lockJob ? Lock : undefined}
                 className="w-full"
                 triggerClassName={cn(
-                  "w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl",
-                  lockJob &&
-                    "bg-slate-50/80 dark:bg-slate-800/50 opacity-80 cursor-not-allowed",
+                  "w-full text-xs h-9 bg-background border-input rounded-md",
+                  lockJob && "bg-muted/50 opacity-80 cursor-not-allowed",
                 )}
               />
             </div>
 
             {/* UTM Parameters Section (Always visible, matching standard input style) */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <div className="pt-2 border-t border-border space-y-3">
+              <h3 className="text-xs font-bold text-foreground">
                 {t("sourcing.details.editUtmAccordion")}
               </h3>
 
@@ -348,7 +345,7 @@ export function TrackingLinkModal({
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tracking-link-utm-source-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="text-xs font-bold text-foreground"
                     >
                       {t("sourcing.details.utmSourceLabel")}
                     </label>
@@ -360,13 +357,13 @@ export function TrackingLinkModal({
                       value={utmSource}
                       onChange={(e) => setUtmSource(e.target.value)}
                       placeholder="linkedin"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tracking-link-utm-medium-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="text-xs font-bold text-foreground"
                     >
                       {t("sourcing.details.utmMediumLabel")}
                     </label>
@@ -378,7 +375,7 @@ export function TrackingLinkModal({
                       value={utmMedium}
                       onChange={(e) => setUtmMedium(e.target.value)}
                       placeholder="social"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                     />
                   </div>
                 </div>
@@ -388,7 +385,7 @@ export function TrackingLinkModal({
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tracking-link-utm-campaign-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="text-xs font-bold text-foreground"
                     >
                       {t("sourcing.details.utmCampaignLabel")}
                     </label>
@@ -400,13 +397,13 @@ export function TrackingLinkModal({
                       value={utmCampaign}
                       placeholder={t("sourcing.modal.campaignPlaceholder")}
                       onChange={(e) => setUtmCampaign(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tracking-link-utm-term-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                      className="text-xs font-bold text-foreground"
                     >
                       {t("sourcing.details.utmTermLabel")}
                     </label>
@@ -418,7 +415,7 @@ export function TrackingLinkModal({
                       value={utmTerm}
                       placeholder={t("sourcing.details.utmTermPlaceholder")}
                       onChange={(e) => setUtmTerm(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                     />
                   </div>
                 </div>
@@ -427,7 +424,7 @@ export function TrackingLinkModal({
                 <div className="space-y-1.5">
                   <label
                     htmlFor="tracking-link-utm-content-input"
-                    className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                    className="text-xs font-bold text-foreground"
                   >
                     {t("sourcing.details.utmContentLabel")}
                   </label>
@@ -439,7 +436,7 @@ export function TrackingLinkModal({
                     value={utmContent}
                     placeholder={t("sourcing.details.utmContentPlaceholder")}
                     onChange={(e) => setUtmContent(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full px-3 py-2 text-xs rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
                   />
                 </div>
               </div>
@@ -447,14 +444,14 @@ export function TrackingLinkModal({
           </div>
 
           {/* Action Footer - Perfectly aligned buttons */}
-          <div className="p-4 px-6 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="p-4 px-6 flex items-center justify-end gap-3 border-t border-border bg-muted/40">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
               disabled={isPending}
-              className="h-9 px-4 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+              className="h-9 px-4 rounded-md text-xs font-semibold cursor-pointer"
             >
               {t("sourcing.modal.cancelBtn")}
             </Button>
@@ -462,7 +459,7 @@ export function TrackingLinkModal({
               type="submit"
               size="sm"
               disabled={isPending}
-              className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
+              className="h-9 px-5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer shadow-xs"
             >
               {isPending
                 ? isEdit

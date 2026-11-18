@@ -146,7 +146,7 @@ export function InterviewScorecardModal({
               className={`${starSize} ${
                 star <= value
                   ? "fill-amber-400 text-amber-400"
-                  : "text-slate-200 dark:text-slate-700"
+                  : "text-muted-foreground/30"
               }`}
             />
           </button>
@@ -178,32 +178,30 @@ export function InterviewScorecardModal({
       onClose={onClose}
       title={t("interviews.scorecardTitle")}
       badge={
-        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+        <span className="text-[11px] font-semibold text-foreground">
           {candidateName}
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="flex flex-col min-h-0 bg-background"
     >
       {/* Candidate & Interview Summary Strip */}
-      <div className="p-4 sm:px-6 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+      <div className="p-4 sm:px-6 border-b border-border bg-card text-card-foreground flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center">
+          <div className="h-7 w-7 rounded-lg bg-primary text-primary-foreground font-bold text-[11px] flex items-center justify-center">
             {candidateName.charAt(0)}
           </div>
           <div>
-            <span className="font-bold text-slate-900 dark:text-white">
-              {candidateName}
-            </span>
-            <span className="text-[11px] text-slate-400 block truncate max-w-[180px]">
+            <span className="font-bold text-foreground">{candidateName}</span>
+            <span className="text-[11px] text-muted-foreground block truncate max-w-[180px]">
               {application.candidateEmail}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+        <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
           <div className="flex items-center gap-1 font-medium">
-            <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+            <Briefcase className="h-3.5 w-3.5 text-primary" />
             <span className="truncate max-w-[140px]">
               {job?.title || t("interviews.defaultJob")}
             </span>
@@ -218,7 +216,7 @@ export function InterviewScorecardModal({
           </div>
 
           {interview.round && (
-            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
+            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold text-[10px]">
               {t("interviews.round")} {interview.round}
             </span>
           )}
@@ -242,12 +240,12 @@ export function InterviewScorecardModal({
         )}
 
         {/* 1. Overall Rating Hero Card */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-5 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+            <h4 className="text-sm font-bold text-foreground">
               {t("interviews.overallRatingTitle")}
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               {getScoreLabel(overallRating)}
             </p>
           </div>
@@ -261,7 +259,7 @@ export function InterviewScorecardModal({
 
         {/* 2. Recommendation Decision Buttons */}
         <div className="space-y-2.5">
-          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <span>{t("interviews.hiringRecommendation")}</span>
             <span className="text-rose-500">*</span>
           </label>
@@ -276,7 +274,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "STRONG_YES"
                   ? "bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500 ring-2 ring-emerald-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-card border-border hover:border-ring/50"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -288,7 +286,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[10px] text-muted-foreground leading-tight">
                 {t("interviews.recommendations.strongYesDesc")}
               </p>
             </button>
@@ -302,20 +300,20 @@ export function InterviewScorecardModal({
                 canSubmitScorecard ? "cursor-pointer" : "cursor-default"
               } ${
                 recommendation === "YES"
-                  ? "bg-blue-50/80 border-blue-500 dark:bg-blue-950/40 dark:border-blue-500 ring-2 ring-blue-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  ? "bg-primary/10 border-primary ring-2 ring-primary/20"
+                  : "bg-card border-border hover:border-ring/50"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                   <ThumbsUp className="h-3.5 w-3.5" />
                   {t("interviews.recommendations.yes")}
                 </span>
                 {recommendation === "YES" && (
-                  <Check className="h-3.5 w-3.5 text-blue-600" />
+                  <Check className="h-3.5 w-3.5 text-primary" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[10px] text-muted-foreground leading-tight">
                 {t("interviews.recommendations.yesDesc")}
               </p>
             </button>
@@ -330,7 +328,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "NEUTRAL"
                   ? "bg-amber-50/80 border-amber-500 dark:bg-amber-950/40 dark:border-amber-500 ring-2 ring-amber-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-card border-border hover:border-ring/50"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -342,7 +340,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-amber-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[10px] text-muted-foreground leading-tight">
                 {t("interviews.recommendations.neutralDesc")}
               </p>
             </button>
@@ -357,7 +355,7 @@ export function InterviewScorecardModal({
               } ${
                 recommendation === "NO" || recommendation === "STRONG_NO"
                   ? "bg-rose-50/80 border-rose-500 dark:bg-rose-950/40 dark:border-rose-500 ring-2 ring-rose-500/20"
-                  : "bg-white dark:bg-[#202020] border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
+                  : "bg-card border-border hover:border-ring/50"
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -370,7 +368,7 @@ export function InterviewScorecardModal({
                   <Check className="h-3.5 w-3.5 text-rose-600" />
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <p className="text-[10px] text-muted-foreground leading-tight">
                 {t("interviews.recommendations.noDesc")}
               </p>
             </button>
@@ -379,17 +377,17 @@ export function InterviewScorecardModal({
 
         {/* 3. Detailed Criteria Assessment */}
         <div className="space-y-3">
-          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+          <label className="text-xs font-bold text-foreground block">
             {t("interviews.criteriaTitle")}
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Technical Skills */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-xs font-bold text-foreground">
                   {t("interviews.technicalCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-muted-foreground">
                   {t("interviews.technicalDesc")}
                 </p>
               </div>
@@ -397,12 +395,12 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Communication Skills */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-xs font-bold text-foreground">
                   {t("interviews.communicationCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-muted-foreground">
                   {t("interviews.communicationDesc")}
                 </p>
               </div>
@@ -410,12 +408,12 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Culture Fit */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-xs font-bold text-foreground">
                   {t("interviews.cultureFitCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-muted-foreground">
                   {t("interviews.cultureFitDesc")}
                 </p>
               </div>
@@ -423,12 +421,12 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Problem Solving */}
-            <div className="p-4 rounded-xl bg-white dark:bg-[#202020] border border-slate-200/80 dark:border-white/10 shadow-xs flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-xs font-bold text-foreground">
                   {t("interviews.problemSolvingCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[10px] text-muted-foreground">
                   {t("interviews.problemSolvingDesc")}
                 </p>
               </div>
@@ -439,7 +437,7 @@ export function InterviewScorecardModal({
 
         {/* 4. Detailed Feedback & Comments */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          <label className="text-xs font-bold text-foreground">
             {t("interviews.detailedFeedback")}
           </label>
           <Textarea
@@ -448,18 +446,18 @@ export function InterviewScorecardModal({
             placeholder={t("interviews.feedbackPlaceholder")}
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            className="rounded-2xl text-xs resize-none disabled:opacity-70 disabled:cursor-not-allowed"
+            className="rounded-lg text-xs resize-none disabled:opacity-70 disabled:cursor-not-allowed"
           />
         </div>
       </div>
 
       {/* Modal Footer */}
-      <div className="p-4 sm:px-6 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between gap-2 shrink-0">
+      <div className="p-4 sm:px-6 border-t border-border bg-card text-card-foreground flex items-center justify-between gap-2 shrink-0">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
-          className="h-8 px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-2xs"
+          className="h-8 px-3.5 rounded-md text-xs font-semibold cursor-pointer shadow-2xs"
         >
           {t("common.close")}
         </Button>
@@ -468,7 +466,7 @@ export function InterviewScorecardModal({
           type="button"
           onClick={handleSave}
           disabled={!canSubmitScorecard || submitScorecardMutation.isPending}
-          className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-8 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-2xs cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitScorecardMutation.isPending ? (
             <>

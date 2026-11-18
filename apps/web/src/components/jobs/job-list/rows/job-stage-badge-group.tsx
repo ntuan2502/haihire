@@ -45,9 +45,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
               key={stage.id}
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(
-                  `/dashboard/jobs/${jobId}/pipeline?stage=${stage.id}`,
-                );
+                router.push(`/jobs/${jobId}/pipeline?stage=${stage.id}`);
               }}
               className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
               title={`${stage.label}: ${count}`}

@@ -102,7 +102,7 @@ test.describe("Webhook Settings E2E Flow", () => {
     });
 
     // 3. Navigate to integrations page
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
     // 4. Verify Add Webhook button is visible for admin
@@ -191,7 +191,7 @@ test.describe("Webhook Settings E2E Flow", () => {
       });
     });
 
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
     // Click test connection button in row
@@ -236,7 +236,7 @@ test.describe("Webhook Settings E2E Flow", () => {
       });
     });
 
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
     // Add button should NOT be visible

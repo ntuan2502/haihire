@@ -50,14 +50,12 @@ export function NotificationBell({
   function openNotification(item: WebsiteNotification) {
     if (!item.readAt) markRead.mutate(item.id);
     if (item.kind === "applicationReceived" && canViewApplications) {
-      router.push(
-        `/dashboard/applications/${encodeURIComponent(item.resourceId)}`,
-      );
+      router.push(`/applications/${encodeURIComponent(item.resourceId)}`);
     } else if (item.kind !== "applicationReceived" && canViewInterviews) {
       router.push(
         item.kind === "interviewCancelled"
-          ? "/dashboard/interviews"
-          : `/dashboard/interviews?interviewId=${encodeURIComponent(item.resourceId)}`,
+          ? "/interviews"
+          : `/interviews?interviewId=${encodeURIComponent(item.resourceId)}`,
       );
     }
   }

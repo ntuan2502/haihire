@@ -1,4 +1,4 @@
-export * from "./navbar";
+export * from "./dashboard-header";
 export * from "./user-menu";
 export * from "./gateway-navbar";
 export * from "./mobile-drawer";

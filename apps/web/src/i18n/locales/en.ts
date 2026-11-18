@@ -82,6 +82,8 @@ export const en: TranslationSchema = {
     organizationFallback: "Organization",
     closeModal: "Close modal",
     systemNotifications: "Notifications",
+    workspace: "Workspace",
+    current: "Current",
     docTypes: {
       resume: "Resume",
       coverLetter: "Cover Letter",
@@ -234,6 +236,8 @@ export const en: TranslationSchema = {
     reportIssue: "Report issue",
     organizationSetup: "Organization Setup",
     createOrganization: "Create organization",
+    organizationFallback: "Organization",
+    navigationGroup: "Navigation",
     features: {
       analyticsReports: "Analytics & Reports",
       talentPools: "Talent Pools",

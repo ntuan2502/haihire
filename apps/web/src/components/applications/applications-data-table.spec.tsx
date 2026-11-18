@@ -333,7 +333,7 @@ describe("ApplicationsDataTable Component", () => {
       });
       expect(viewJobsBtn).toBeInTheDocument();
       fireEvent.click(viewJobsBtn);
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+      expect(mockPush).toHaveBeenCalledWith("/jobs");
     });
   });
 
@@ -801,7 +801,7 @@ describe("ApplicationsDataTable Component", () => {
       const viewButtons = screen.getAllByTitle("View");
       fireEvent.click(viewButtons[0]);
 
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/applications/app-3");
+      expect(mockPush).toHaveBeenCalledWith("/applications/app-3");
     });
   });
 });

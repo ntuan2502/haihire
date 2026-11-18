@@ -80,6 +80,8 @@ export interface TranslationSchema {
     organizationFallback: string;
     systemNotifications: string;
     closeModal: string;
+    workspace: string;
+    current: string;
     docTypes: {
       resume: string;
       coverLetter: string;
@@ -198,6 +200,8 @@ export interface TranslationSchema {
     reportIssue: string;
     organizationSetup: string;
     createOrganization: string;
+    organizationFallback: string;
+    navigationGroup: string;
     features: {
       analyticsReports: string;
       talentPools: string;

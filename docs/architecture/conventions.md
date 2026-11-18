@@ -33,7 +33,7 @@ This document defines mandatory code, validation, security, localization, UI, an
 ## 4. Next.js 16, Tailwind v4, Shadcn `base-nova` & Data Fetching
 
 - **Next.js 16 Proxy Convention (`pnpm lint:nextjs-conventions`):** Use [apps/web/src/proxy.ts](../../apps/web/src/proxy.ts) exporting `proxy(request: NextRequest)`. Never reintroduce `middleware.ts`.
-- **Shared Dashboard Layout (`apps/web/src/app/dashboard/layout.tsx`):** Consolidate common navigation shell (`Navbar`) and authentication guard (`AuthGuard`) into the layout root; child dashboard views must not duplicate navigation headers or auth guards.
+- **Shared Dashboard Layout (`apps/web/src/app/(workspace)/layout.tsx`):** Consolidate common navigation shell (`AppSidebar` and `DashboardHeader` via `DashboardFrame`) and authentication guard (`AuthGuard`) into the layout root; child dashboard views must not duplicate navigation headers or auth guards.
 - **React Server Components (RSC):** Maintain landing shells, auth layouts, and careers directories as Server Components, delegating interactive UI to dedicated Client Component islands.
 - **Modular Component Boundary:** Keep UI component files under `500` lines of code by decomposing complex views into single-responsibility subcomponents, fieldsets, and sidebars.
 - **Tailwind CSS v4 CSS-First Tokens:** Define design variables using `oklch(...)` and `@theme inline` inside [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css) — never add `tailwind.config.js` / `.ts` or scatter hardcoded color literals where semantic tokens apply.

@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { env } from "../env";
+import { isWorkspaceRoute } from "../workspace-routes";
 
 export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
@@ -225,10 +226,7 @@ function clearClientAuthCookies() {
 function hasClientSessionState(): boolean {
   if (typeof window === "undefined") return false;
   const pathname = window.location.pathname || "";
-  if (
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/auth/onboarding")
-  ) {
+  if (isWorkspaceRoute(pathname) || pathname.startsWith("/auth/onboarding")) {
     return true;
   }
   return Boolean(

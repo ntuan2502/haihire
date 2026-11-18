@@ -27,9 +27,7 @@ export function CandidateDrawerHeader({
         {canUpdateCandidate && (
           <button
             type="button"
-            onClick={() =>
-              router.push(`/dashboard/candidates/${candidateId}/edit`)
-            }
+            onClick={() => router.push(`/candidates/${candidateId}/edit`)}
             className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             title={t("common.edit")}
           >
@@ -39,7 +37,7 @@ export function CandidateDrawerHeader({
         )}
         <button
           type="button"
-          onClick={() => router.push(`/dashboard/candidates/${candidateId}`)}
+          onClick={() => router.push(`/candidates/${candidateId}`)}
           className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           title={t("candidates.openFullPage")}
         >

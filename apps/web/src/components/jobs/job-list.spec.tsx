@@ -277,7 +277,7 @@ describe("JobList Component - Characterization Tests", () => {
       fireEvent.click(appliedCount.parentElement!);
 
       expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/jobs/job-1/pipeline?stage=APPLIED",
+        "/jobs/job-1/pipeline?stage=APPLIED",
       );
     });
 

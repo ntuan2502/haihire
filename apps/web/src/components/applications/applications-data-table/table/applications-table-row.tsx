@@ -115,7 +115,7 @@ export function ApplicationsTableRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/dashboard/applications/${application.id}`);
+              router.push(`/applications/${application.id}`);
             }}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}

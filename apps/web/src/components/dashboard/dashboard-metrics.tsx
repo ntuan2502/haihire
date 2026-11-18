@@ -23,16 +23,16 @@ export function DashboardMetrics({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Card 1: OPEN JOBS */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs transition-all hover:shadow-sm">
         <div className="relative z-10 flex items-start justify-between">
           <div>
-            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
               {t("dashboard.openJobsUpper")}
             </div>
-            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
-              {openJobsCount}.
+            <div className="mt-1 text-3xl font-black tracking-tight text-foreground tabular-nums">
+              {openJobsCount}
             </div>
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-muted-foreground">
               {t("dashboard.draftsCount", { count: draftJobsCount })}
             </div>
           </div>
@@ -43,16 +43,16 @@ export function DashboardMetrics({
       </div>
 
       {/* Card 2: CANDIDATES */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs transition-all hover:shadow-sm">
         <div className="relative z-10 flex items-start justify-between">
           <div>
-            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
               {t("dashboard.candidatesUpper")}
             </div>
-            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
-              {totalCandidatesCount}.
+            <div className="mt-1 text-3xl font-black tracking-tight text-foreground tabular-nums">
+              {totalCandidatesCount}
             </div>
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-muted-foreground">
               {t("dashboard.talentPoolSubtitle")}
             </div>
           </div>
@@ -63,16 +63,16 @@ export function DashboardMetrics({
       </div>
 
       {/* Card 3: APPLICATIONS */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs transition-all hover:shadow-sm">
         <div className="relative z-10 flex items-start justify-between">
           <div>
-            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+            <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
               {t("dashboard.applicationsUpper")}
             </div>
-            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
-              {totalApplicationsCount}.
+            <div className="mt-1 text-3xl font-black tracking-tight text-foreground tabular-nums">
+              {totalApplicationsCount}
             </div>
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-muted-foreground">
               {t("dashboard.totalReceived")}
             </div>
           </div>
@@ -84,10 +84,10 @@ export function DashboardMetrics({
 
       {/* Card 4: TO REVIEW */}
       <div
-        className={`relative overflow-hidden rounded-2xl p-5 shadow-xs transition-all hover:shadow-sm ${
+        className={`relative overflow-hidden rounded-xl p-5 shadow-xs transition-all hover:shadow-sm ${
           toReviewCount > 0
-            ? "border border-amber-200/90 bg-white dark:border-amber-900/50 dark:bg-slate-900"
-            : "border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900"
+            ? "border border-amber-200/90 bg-card text-card-foreground dark:border-amber-900/50"
+            : "border border-border bg-card text-card-foreground"
         }`}
       >
         <div className="relative z-10 flex items-start justify-between">
@@ -96,25 +96,25 @@ export function DashboardMetrics({
               className={`text-[11px] font-bold tracking-wider uppercase ${
                 toReviewCount > 0
                   ? "text-amber-600 dark:text-amber-400"
-                  : "text-slate-500"
+                  : "text-muted-foreground"
               }`}
             >
               {t("dashboard.toReviewUpper")}
             </div>
             <div
-              className={`text-3xl font-black tracking-tight mt-1 ${
+              className={`mt-1 text-3xl font-black tracking-tight tabular-nums ${
                 toReviewCount > 0
                   ? "text-amber-600 dark:text-amber-400"
-                  : "text-slate-900 dark:text-white"
+                  : "text-foreground"
               }`}
             >
-              {toReviewCount}.
+              {toReviewCount}
             </div>
             <div
               className={`mt-1 text-xs ${
                 toReviewCount > 0
                   ? "text-amber-600/80 dark:text-amber-400/80"
-                  : "text-slate-400"
+                  : "text-muted-foreground"
               }`}
             >
               {toReviewCount > 0
@@ -126,7 +126,7 @@ export function DashboardMetrics({
             className={`h-10 w-10 rounded-2xl flex items-center justify-center border shrink-0 ${
               toReviewCount > 0
                 ? "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-100/80 dark:border-amber-900/60"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200/60 dark:border-slate-700/50"
+                : "bg-muted text-muted-foreground border-border"
             }`}
           >
             <AlertCircle className="h-5 w-5" />

@@ -82,6 +82,8 @@ export const vi: TranslationSchema = {
     organizationFallback: "Tổ chức",
     closeModal: "Đóng hộp thoại",
     systemNotifications: "Thông báo hệ thống",
+    workspace: "Không gian làm việc",
+    current: "Hiện tại",
     docTypes: {
       resume: "CV / Sơ yếu lý lịch",
       coverLetter: "Thư xin việc",
@@ -232,6 +234,8 @@ export const vi: TranslationSchema = {
     reportIssue: "Báo lỗi hệ thống",
     organizationSetup: "Thiết lập tổ chức",
     createOrganization: "Tạo tổ chức",
+    organizationFallback: "Tổ chức",
+    navigationGroup: "Điều hướng",
     features: {
       analyticsReports: "Báo cáo & Phân tích",
       talentPools: "Nhóm nhân tài",

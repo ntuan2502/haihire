@@ -124,7 +124,7 @@ export function CandidateDrawerApplicationsTab({
                   <div className="flex items-center gap-2 shrink-0">
                     <StageBadge stage={app.stage} />
                     <Link
-                      href={`/dashboard/applications/${app.id}`}
+                      href={`/applications/${app.id}`}
                       className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
                       title={t("applications.viewApplication")}
                     >

@@ -122,7 +122,7 @@ export function PipelineCandidateDetailHeader({
           </button>
 
           <Link
-            href={`/dashboard/applications/${selectedCandidate.id}`}
+            href={`/applications/${selectedCandidate.id}`}
             className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
             title={t("applications.openFullPage")}
           >

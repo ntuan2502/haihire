@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
+import { isWorkspaceRoute } from "@/lib/workspace-routes";
 
 const AUTH_COOKIE_NAMES = [
   "haihire_token",
@@ -143,7 +144,7 @@ export async function proxy(request: NextRequest) {
 
   const isAuthPage =
     pathname === "/auth/login" || pathname === "/auth/register";
-  const isDashboardPage = pathname.startsWith("/dashboard");
+  const isWorkspacePage = isWorkspaceRoute(pathname);
   const isOnboardingPage = pathname.startsWith("/auth/onboarding");
 
   if (token && isExpiredOrMalformedJwt(token)) {
@@ -152,7 +153,7 @@ export async function proxy(request: NextRequest) {
     shouldClearAccessTokenOnly = true;
   }
 
-  if (token && (isAuthPage || isDashboardPage || isOnboardingPage)) {
+  if (token && (isAuthPage || isWorkspacePage || isOnboardingPage)) {
     const sessionStatus = await verifySessionWithBackend(request, token);
     if (sessionStatus) {
       if (!sessionStatus.valid) {
@@ -195,8 +196,8 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  // 2. If user is NOT authenticated and tries to visit /dashboard or /auth/onboarding
-  if ((isDashboardPage || isOnboardingPage) && !token) {
+  // 2. If user is NOT authenticated and tries to visit a workspace route or /auth/onboarding
+  if ((isWorkspacePage || isOnboardingPage) && !token) {
     const loginUrl = new URL("/auth/login", request.url);
     const targetRedirect = `${pathname}${search}`;
     // Only set safe redirect path
@@ -213,8 +214,8 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 3. If user is authenticated but DOES NOT have an organization and tries to visit /dashboard
-  if (isDashboardPage && token && !hasOrg) {
+  // 3. If user is authenticated but DOES NOT have an organization and tries to visit a workspace route
+  if (isWorkspacePage && token && !hasOrg) {
     return finalizeResponse(
       NextResponse.redirect(new URL("/auth/onboarding", request.url)),
       { clearAccessTokenOnly: shouldClearAccessTokenOnly, syncHasOrg },
@@ -228,5 +229,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/auth/:path*",
+    "/dashboard/:path*",
+    "/jobs/:path*",
+    "/candidates/:path*",
+    "/applications/:path*",
+    "/interviews/:path*",
+    "/source-tracking/:path*",
+    "/settings/:path*",
+  ],
 };

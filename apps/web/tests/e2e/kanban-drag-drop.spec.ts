@@ -68,7 +68,7 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
       },
     });
     expect(applyResponse.ok()).toBe(true);
-    await page.goto(`/dashboard/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
+    await page.goto(`/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
 
     // Ensure stage pill for APPLIED and SCREENING are visible
     const appliedPill = page.locator('[data-testid="stage-pill-APPLIED"]');

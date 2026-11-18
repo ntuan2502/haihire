@@ -86,9 +86,7 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
     adminPage,
   }) => {
     const foreignOrgId = "00000000-0000-4000-8000-0000000000b2"; // Org Beta
-    await adminPage.goto(
-      `/dashboard/candidates?organizationId=${foreignOrgId}`,
-    );
+    await adminPage.goto(`/candidates?organizationId=${foreignOrgId}`);
 
     // Wait for candidates view content or table to render
     const contentArea = adminPage
@@ -151,7 +149,7 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
   test("T2-E2E-08 [F06]: Member account visiting admin webhook settings displays access barrier", async ({
     memberPage,
   }) => {
-    await memberPage.goto("/dashboard/settings/integrations");
+    await memberPage.goto("/settings/integrations");
     await expect(memberPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
@@ -170,11 +168,11 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
   test("T2-E2E-09 [F10]: Candidate page with invalid page query parameter falls back cleanly", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates?page=-99");
+    await adminPage.goto("/candidates?page=-99");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list'], h1").first(),
     ).toBeVisible({ timeout: 10000 });
-    expect(adminPage.url()).toContain("/dashboard/candidates");
+    expect(adminPage.url()).toContain("/candidates");
   });
 
   test("T2-E2E-10 [F16]: Public careers route with invalid slug renders not found or empty state", async ({

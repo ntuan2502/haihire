@@ -1,7 +1,16 @@
 "use client";
 
-import * as React from "react";
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, GalleryVerticalEnd, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import {
+  useMyOrgs,
+  useSwitchOrgMutation,
+} from "@/hooks/use-organization-queries";
+import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel } from "@/lib/roles";
+import { toast } from "@/lib/toast";
 
 import {
   DropdownMenu,
@@ -19,21 +28,30 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string;
-    logo: React.ElementType;
-    plan: string;
-  }[];
-}) {
-  const { isMobile } = useSidebar();
-  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+export function TeamSwitcher() {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const { user, isOwner } = useAuth();
+  const { t } = useI18n();
+  const router = useRouter();
+  const { data: organizations } = useMyOrgs({ enabled: Boolean(user) });
+  const switchOrganization = useSwitchOrgMutation();
+  const activeOrganization = user?.organization;
+  const availableOrganizations = organizations?.length
+    ? organizations
+    : activeOrganization
+      ? [activeOrganization]
+      : [];
 
-  if (!activeTeam) {
-    return null;
-  }
+  const selectOrganization = async (id: string) => {
+    if (id === user?.organizationId || switchOrganization.isPending) return;
+    try {
+      await switchOrganization.mutateAsync(id);
+      setOpenMobile(false);
+      router.push("/dashboard");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t));
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -45,11 +63,15 @@ export function TeamSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeTeam.logo className="size-4" />
+                <GalleryVerticalEnd className="size-4" aria-hidden="true" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate font-medium">
+                  {activeOrganization?.name ?? t("nav.organizationFallback")}
+                </span>
+                <span className="truncate text-xs">
+                  {getOrgRoleLabel(isOwner ? "OWNER" : user?.role, t)}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -61,27 +83,46 @@ export function TeamSwitcher({
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Teams
+              {t("common.workspace")}
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
+            {availableOrganizations.map((organization) => (
               <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
+                key={organization.id}
+                onSelect={() => void selectOrganization(organization.id)}
+                disabled={switchOrganization.isPending}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">
-                  <team.logo className="size-3.5 shrink-0" />
+                  <GalleryVerticalEnd
+                    className="size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
                 </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                {organization.name}
+                {organization.id === user?.organizationId && (
+                  <DropdownMenuShortcut>
+                    <Check
+                      className="size-4"
+                      aria-label={t("common.current")}
+                    />
+                  </DropdownMenuShortcut>
+                )}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem
+              className="gap-2 p-2"
+              onSelect={() => {
+                setOpenMobile(false);
+                router.push("/auth/onboarding?mode=create");
+              }}
+            >
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <Plus className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <div className="font-medium text-muted-foreground">
+                {t("nav.createOrganization")}
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

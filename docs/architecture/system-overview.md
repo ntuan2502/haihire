@@ -12,7 +12,7 @@ Browser / Candidate Portal
    ├── HTTP/SSE ──► Next.js 16 Frontend (apps/web, port 3000 dev/prod, 13000 E2E)
    │                   ├── src/proxy.ts (JWT cookie check & /dashboard -> /auth/login redirect)
    │                   ├── next.config.ts rewrites (/api/* -> API)
-   │                   ├── Shared Dashboard Layout (src/app/dashboard/layout.tsx) & RSC pages
+   │                   ├── Shared Dashboard Layout (src/app/(workspace)/layout.tsx) & RSC pages
    │                   ├── Lazy-Loaded i18n Dictionaries (zero-FOUC initial dictionary injection)
    │                   └── TanStack Query v5 (orgId cache isolation) + Axios (URL Gatekeeper + 401 refresh queue)
    │
@@ -53,7 +53,7 @@ Compiled into a single ESM artifact (`dist/server.mjs`) via `esbuild`.
 
 ### `apps/web` (Next.js `16.4.5` Portal)
 
-- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites. Features shared dashboard shell (`src/app/dashboard/layout.tsx`), React Server Components (RSC) for landing, auth layouts, and careers directories, and modular UI components under 500 LOC.
+- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites. Features shared dashboard shell (`src/app/(workspace)/layout.tsx`), React Server Components (RSC) for landing, auth layouts, and careers directories, and modular UI components under 500 LOC.
 - **Request Boundary (`src/proxy.ts`):** Uses Next.js 16 `proxy()` convention (with zero legacy `middleware.ts` files).
 - **UI Stack:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` + `oklch(...)` variables in [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css), and Shadcn `base-nova` built on `@base-ui/react` + standalone `cn` package.
 - **Data & Real-Time Layer:** Axios interceptor chain in [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) prevents `[object Object]` URL leaks, queues concurrent `401` retries behind a cookie-authenticated refresh request with an empty body and credentials enabled, and routes resume previews through tenant-guarded API download routes. TanStack Query v5 keys are scoped by `orgId` for strict multi-tenant cache isolation. SSE events trigger debounced (`100ms`) query prefix invalidation via `createRealtimeInvalidator` ([apps/web/src/lib/realtime-sync.ts](../../apps/web/src/lib/realtime-sync.ts)).

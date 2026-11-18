@@ -69,7 +69,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     }
 
     // 2. UI Verification: member visits job pipeline; candidate real emails are not leaked in DOM
-    await memberPage.goto(`/dashboard/jobs/${seededJobId}/pipeline`);
+    await memberPage.goto(`/jobs/${seededJobId}/pipeline`);
     const pipelineContainer = memberPage
       .locator("main, [data-testid^='stage-pill-']")
       .first();
@@ -89,8 +89,8 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     await expect(header).toBeVisible({ timeout: 10000 });
 
     // Navigate to jobs section
-    await adminPage.goto("/dashboard/jobs");
-    await expect(adminPage).toHaveURL(/\/dashboard\/jobs/);
+    await adminPage.goto("/jobs");
+    await expect(adminPage).toHaveURL(/\/jobs/);
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
@@ -143,7 +143,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-06 [F01]: Multi-tenant candidate list renders and does not leak foreign candidates", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list']").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -155,7 +155,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-07 [F14]: Candidate table renders search filter input and pagination controls", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list']").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -191,20 +191,20 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-09 [F05]: Sourcing links dashboard view renders active channels and links", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/sourcing");
+    await adminPage.goto("/source-tracking");
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
-    expect(adminPage.url()).toContain("/dashboard/sourcing");
+    expect(adminPage.url()).toContain("/source-tracking");
   });
 
   test("T1-E2E-10 [F16]: Job creation navigation displays job editor form", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/jobs/new");
+    await adminPage.goto("/jobs/new");
     await expect(adminPage.locator("form, main, h1").first()).toBeVisible({
       timeout: 10000,
     });
-    expect(adminPage.url()).toContain("/dashboard/jobs/new");
+    expect(adminPage.url()).toContain("/jobs/new");
   });
 });

@@ -185,7 +185,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
           <button
             type="button"
             role="menuitem"
-            onClick={() => router.push("/dashboard/settings")}
+            onClick={() => router.push("/settings")}
             className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <Settings className="h-4 w-4 text-slate-400" aria-hidden="true" />

@@ -17,6 +17,7 @@ import { api, getApiBaseUrl } from "@/lib/api/client";
 import { queryKeys } from "@/hooks/query-keys";
 import { createRealtimeInvalidator } from "@/lib/realtime-sync";
 import { getOrgRoleLabel } from "@/lib/roles";
+import { isWorkspaceRoute } from "@/lib/workspace-routes";
 import { useOptionalI18n } from "@/i18n/optional";
 import type { User, Organization } from "@/types";
 
@@ -73,9 +74,7 @@ function clearAuthCookies() {
 }
 
 function isSessionRequiredRoute(pathname: string): boolean {
-  return (
-    pathname.startsWith("/dashboard") || pathname.startsWith("/auth/onboarding")
-  );
+  return isWorkspaceRoute(pathname) || pathname.startsWith("/auth/onboarding");
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -136,11 +135,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(USER_KEY, JSON.stringify(latestUser));
       setAuthCookies(null, Boolean(latestUser.organizationId));
 
-      // If member was removed from org and is currently in dashboard, kick out immediately!
+      // If member was removed from org and is currently in workspace, kick out immediately!
       if (!latestUser.organizationId) {
         if (
           typeof window !== "undefined" &&
-          window.location.pathname.startsWith("/dashboard")
+          isWorkspaceRoute(window.location.pathname)
         ) {
           routerRef.current.replace("/auth/onboarding");
         }

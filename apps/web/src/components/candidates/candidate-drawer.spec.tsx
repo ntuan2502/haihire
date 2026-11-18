@@ -273,7 +273,7 @@ describe("CandidateDrawer Component", () => {
 
     const editBtn = screen.getByTitle("Chỉnh sửa");
     fireEvent.click(editBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/candidates/cand-1/edit");
+    expect(mockPush).toHaveBeenCalledWith("/candidates/cand-1/edit");
   });
 
   it("navigates to candidate full page when open full page button is clicked", () => {
@@ -290,7 +290,7 @@ describe("CandidateDrawer Component", () => {
 
     const fullPageBtn = screen.getByTitle("Xem toàn màn hình");
     fireEvent.click(fullPageBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/candidates/cand-1");
+    expect(mockPush).toHaveBeenCalledWith("/candidates/cand-1");
   });
 
   it("calls onClose when close button is clicked", () => {

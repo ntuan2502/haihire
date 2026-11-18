@@ -80,7 +80,7 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
   });
 
   it("redirects to /auth/login when 401 occurs on protected /dashboard route", async () => {
-    setWindowPath("/dashboard/jobs");
+    setWindowPath("/jobs");
     vi.mocked(api.get).mockRejectedValueOnce({
       response: { status: 401 },
     });
@@ -225,7 +225,7 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
   });
 
   it("refreshes user, invalidates permission/org queries, and shows warning toast on self MEMBER_ROLE_UPDATED", async () => {
-    window.history.pushState({}, "", "/dashboard/settings/members");
+    window.history.pushState({}, "", "/settings/members");
     const warnSpy = vi.spyOn(toast, "warning");
     const sseListener = vi.fn();
     window.addEventListener("ats:sse_event", sseListener);
@@ -301,7 +301,7 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
   });
 
   it("warns and refreshes user on self MEMBER_REMOVED", async () => {
-    window.history.pushState({}, "", "/dashboard/jobs");
+    window.history.pushState({}, "", "/jobs");
     const warnSpy = vi.spyOn(toast, "warning");
     const queryClient = new QueryClient();
 

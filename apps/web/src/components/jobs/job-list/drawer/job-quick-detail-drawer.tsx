@@ -113,7 +113,7 @@ export function JobQuickDetailDrawer({
       {/* Footer Actions */}
       <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
         <Link
-          href={`/dashboard/jobs/${job.id}/settings`}
+          href={`/jobs/${job.id}/settings`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export function JobQuickDetailDrawer({
         </Link>
 
         <Link
-          href={`/dashboard/jobs/${job.id}/pipeline`}
+          href={`/jobs/${job.id}/pipeline`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-xs"
         >
           <span>{t("dashboard.hiringPipeline")}</span>

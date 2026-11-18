@@ -102,7 +102,7 @@ export function AttributionLogTab({
                           </div>
                           <div className="min-w-0">
                             <Link
-                              href={`/dashboard/candidates?id=${log.candidateId}`}
+                              href={`/candidates?id=${log.candidateId}`}
                               className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
                             >
                               {displayName}

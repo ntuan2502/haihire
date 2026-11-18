@@ -101,13 +101,36 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
         haihire_token: "jwt-token-xyz-12345",
         haihire_has_org: "true",
       },
-      "redirect=/dashboard/jobs",
+      "redirect=/jobs",
     );
 
     const res = await proxy(req);
     expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost:3000/jobs");
+  });
+
+  it("redirects unauthenticated request to /jobs with HTTP 307 to /auth/login?redirect=%2Fjobs", async () => {
+    const req = createMockRequest("/jobs");
+
+    const res = await proxy(req);
+
+    expect(res.status).toBe(307);
     expect(res.headers.get("location")).toBe(
-      "http://localhost:3000/dashboard/jobs",
+      "http://localhost:3000/auth/login?redirect=%2Fjobs",
+    );
+  });
+
+  it("redirects authenticated user without organization away from /candidates to /auth/onboarding", async () => {
+    const req = createMockRequest("/candidates", {
+      haihire_token: "jwt-token-xyz-12345",
+      haihire_has_org: "false",
+    });
+
+    const res = await proxy(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/auth/onboarding",
     );
   });
 

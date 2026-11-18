@@ -4,7 +4,7 @@ export class KanbanPipelinePage {
   constructor(private readonly page: Page) {}
 
   async goto(jobId: string, stage = "APPLIED") {
-    await this.page.goto(`/dashboard/jobs/${jobId}/pipeline?stage=${stage}`);
+    await this.page.goto(`/jobs/${jobId}/pipeline?stage=${stage}`);
     await expect(
       this.page.locator("main, [data-testid^='stage-pill-']").first(),
     ).toBeVisible({ timeout: 10000 });

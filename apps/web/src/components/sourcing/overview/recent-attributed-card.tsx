@@ -61,7 +61,7 @@ export function RecentAttributedCard({
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/dashboard/candidates?id=${cand.candidateId}`}
+                      href={`/candidates?id=${cand.candidateId}`}
                       className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
                     >
                       {displayName}

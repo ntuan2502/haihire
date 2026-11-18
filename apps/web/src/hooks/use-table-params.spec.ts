@@ -7,7 +7,7 @@ let mockSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace }),
-  usePathname: () => "/dashboard/candidates",
+  usePathname: () => "/candidates",
   useSearchParams: () => mockSearchParams,
 }));
 
@@ -41,7 +41,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?limit=50",
+      "/candidates?limit=50",
     );
   });
 
@@ -58,7 +58,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenLastCalledWith(
       null,
       "",
-      "/dashboard/candidates?limit=10",
+      "/candidates?limit=10",
     );
   });
 
@@ -79,7 +79,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?search=senior+engineer",
+      "/candidates?search=senior+engineer",
     );
     expect(result.current.search).toBe("senior engineer");
     vi.useRealTimers();
@@ -106,7 +106,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?search=%C4%90%E1%BB%A9c",
+      "/candidates?search=%C4%90%E1%BB%A9c",
     );
 
     // CRITICAL: The search input draft MUST still retain the trailing space for smooth typing!

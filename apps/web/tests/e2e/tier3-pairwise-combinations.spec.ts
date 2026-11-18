@@ -112,7 +112,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     ).toBe(true);
 
     // 8. Navigate to candidates view under new organization: primary candidates must not leak
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     const candidatesContainer = adminPage
       .locator("main, [data-testid='candidate-list']")
       .first();
@@ -125,8 +125,8 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   test("T3-E2E-03 [F05 x F11]: Protected route enforces authentication cookie and redirects guest", async ({
     page,
   }) => {
-    // Unauthenticated guest attempts to access /dashboard/settings
-    await page.goto("/dashboard/settings");
+    // Unauthenticated guest attempts to access /settings
+    await page.goto("/settings");
     await page.waitForURL(/\/auth\/login/, { timeout: 10000 });
 
     expect(page.url()).toContain("/auth/login");
@@ -137,7 +137,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   test("T3-E2E-04 [F14 x F16]: Candidate table pagination queries database with clean slice", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
 
     // 1. Unconditionally wait for candidate table and rows on Page 1
     const candidateRows = adminPage.locator("table tbody tr");
@@ -184,12 +184,12 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   test("T3-E2E-05 [F01 x F16]: Navigating between modules maintains active organization context", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/jobs");
+    await adminPage.goto("/jobs");
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
 
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list'], h1").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -197,7 +197,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     // Header remains visible with consistent context
     const header = adminPage.locator("header, nav").first();
     await expect(header).toBeVisible();
-    expect(adminPage.url()).toContain("/dashboard/candidates");
+    expect(adminPage.url()).toContain("/candidates");
   });
 
   test("T3-E2E-06 [F11 x F16]: Authenticated browser context shares session across multiple pages", async ({
@@ -211,8 +211,8 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
 
     // Open a second tab in same browser context
     const newPage = await context.newPage();
-    await newPage.goto("/dashboard/jobs");
-    await expect(newPage).toHaveURL(/\/dashboard\/jobs/, { timeout: 10000 });
+    await newPage.goto("/jobs");
+    await expect(newPage).toHaveURL(/\/jobs/, { timeout: 10000 });
     expect(newPage.url()).not.toContain("/auth/login");
     await newPage.close();
   });
@@ -221,7 +221,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     memberPage,
   }) => {
     const seededJobId = "00000000-0000-4000-8000-000000000101";
-    await memberPage.goto(`/dashboard/jobs/${seededJobId}/pipeline`);
+    await memberPage.goto(`/jobs/${seededJobId}/pipeline`);
     await expect(
       memberPage.locator("main, [data-testid^='stage-pill-']").first(),
     ).toBeVisible({ timeout: 10000 });

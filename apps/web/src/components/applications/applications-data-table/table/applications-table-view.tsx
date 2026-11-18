@@ -69,7 +69,7 @@ export function ApplicationsTableView({
           {t("applications.noApplicationsYetDesc")}
         </p>
         <Button
-          onClick={() => router.push("/dashboard/jobs")}
+          onClick={() => router.push("/jobs")}
           className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
         >
           {t("applications.viewActiveJobs")}

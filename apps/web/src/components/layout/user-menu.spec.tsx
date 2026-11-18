@@ -147,7 +147,7 @@ describe("UserMenu Accessibility", () => {
     expect(settingsBtn.tagName).toBe("BUTTON");
 
     fireEvent.click(settingsBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/settings");
+    expect(mockPush).toHaveBeenCalledWith("/settings");
     expect(screen.queryByText("Updates & changelog")).not.toBeInTheDocument();
     expect(screen.queryByText("Report issue")).not.toBeInTheDocument();
   });

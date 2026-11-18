@@ -127,7 +127,7 @@ export function TrackingLinksTab({
                       <td className="py-3.5 px-5">
                         <div className="space-y-0.5">
                           <Link
-                            href={`/dashboard/source-tracking/${link.id}`}
+                            href={`/source-tracking/${link.id}`}
                             className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
                           >
                             {link.name}

@@ -34,7 +34,7 @@ export function JobTableRow({
       <td className="py-4 px-5">
         <div className="space-y-1">
           <Link
-            href={`/dashboard/jobs/${job.id}/pipeline`}
+            href={`/jobs/${job.id}/pipeline`}
             className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors block"
           >
             {job.title}
@@ -88,7 +88,7 @@ export function JobTableRow({
 
           {/* Quick View (Pipeline/Overview) */}
           <Link
-            href={`/dashboard/jobs/${job.id}/pipeline`}
+            href={`/jobs/${job.id}/pipeline`}
             onClick={(e) => e.stopPropagation()}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
@@ -100,7 +100,7 @@ export function JobTableRow({
           {/* Quick Edit (Settings) */}
           {canUpdateJob && (
             <Link
-              href={`/dashboard/jobs/${job.id}/settings`}
+              href={`/jobs/${job.id}/settings`}
               onClick={(e) => e.stopPropagation()}
               className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
               title={t("common.edit")}

@@ -427,7 +427,7 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
             organizationId: "org-test-1",
           }),
         );
-        expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+        expect(mockPush).toHaveBeenCalledWith("/jobs");
       });
     });
 
@@ -558,7 +558,7 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       await waitFor(() => {
         expect(mockDeleteMutateAsync).toHaveBeenCalledWith("job-101");
-        expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+        expect(mockPush).toHaveBeenCalledWith("/jobs");
       });
     });
   });

@@ -86,16 +86,16 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     betaAdminPage,
   }) => {
     // 1. Alpha Admin accesses candidates dashboard
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list'], h1").first(),
     ).toBeVisible({ timeout: 10000 });
 
     // Verify Alpha Admin view loads successfully
-    expect(adminPage.url()).toContain("/dashboard/candidates");
+    expect(adminPage.url()).toContain("/candidates");
 
     // 2. Beta Admin accesses Beta candidates dashboard
-    await betaAdminPage.goto("/dashboard/candidates");
+    await betaAdminPage.goto("/candidates");
     await expect(
       betaAdminPage
         .locator("table, [data-testid='candidate-list'], h1")
@@ -103,7 +103,7 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     ).toBeVisible({ timeout: 10000 });
 
     // Verify Beta Admin view loads independently
-    expect(betaAdminPage.url()).toContain("/dashboard/candidates");
+    expect(betaAdminPage.url()).toContain("/candidates");
 
     // 3. Verify Beta Admin cannot access Alpha's private settings via API
     const crossRes = await betaAdminPage.request.get(
@@ -180,7 +180,7 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     // 5. Verify in UI that active candidate list reflects new active profile without resurrecting old candidate ID
     expect(newCandidateId).not.toBe(initialCandidateId);
 
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list']").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -252,7 +252,7 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     memberPage,
   }) => {
     // Member account lacks administrative permissions (e.g. webhook settings creation)
-    await memberPage.goto("/dashboard/settings/integrations");
+    await memberPage.goto("/settings/integrations");
     await expect(memberPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });

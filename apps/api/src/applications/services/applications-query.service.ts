@@ -96,6 +96,7 @@ export class ApplicationsQueryService {
       include: {
         candidate: true,
         interviews: true,
+        applicationNotes: true,
       },
       orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
       skip,
@@ -751,6 +752,11 @@ export class ApplicationsQueryService {
     if (orgId) {
       this.eventsService?.emit({
         type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
         organizationId: orgId,
         data: { applicationId: id },
       });

@@ -1296,6 +1296,7 @@ export const en: TranslationSchema = {
       no: "No",
       noDesc: "Not suitable for this position",
       strongNo: "Strong No",
+      strongNoDesc: "Strong disqualifier, do not hire",
     },
     ratings: {
       poor: "Poor",

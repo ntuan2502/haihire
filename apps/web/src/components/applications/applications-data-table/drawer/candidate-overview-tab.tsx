@@ -55,7 +55,11 @@ export function CandidateOverviewTab({
           </div>
           <button
             type="button"
-            className="text-xs text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
+            disabled
+            title={t("applications.comingSoonTooltip", {
+              action: t("applications.runAnalysis"),
+            })}
+            className="text-xs text-primary/60 opacity-60 cursor-not-allowed flex items-center gap-1 font-medium"
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("applications.runAnalysis")}</span>

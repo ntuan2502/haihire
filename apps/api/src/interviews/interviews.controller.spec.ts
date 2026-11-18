@@ -104,4 +104,28 @@ describe("Scorecard endpoint field isolation", () => {
       ),
     ).rejects.toThrow();
   });
+
+  it("BUG-21: rejects out-of-range scorecard scores (< 1 or > 5) and invalid recommendation enums", async () => {
+    await expect(
+      DtoPipe(SubmitScorecardDto).transform(
+        { scorecard: { overallRating: 6, recommendation: "YES" } },
+        { type: "body", metatype: SubmitScorecardDto },
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      DtoPipe(SubmitScorecardDto).transform(
+        { scorecard: { overallRating: 3, recommendation: "STRONG_NO_FAKE" } },
+        { type: "body", metatype: SubmitScorecardDto },
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    const valid = await DtoPipe(SubmitScorecardDto).transform(
+      { scorecard: { overallRating: 2, recommendation: "STRONG_NO" } },
+      { type: "body", metatype: SubmitScorecardDto },
+    );
+    expect(valid).toEqual({
+      scorecard: { overallRating: 2, recommendation: "STRONG_NO" },
+    });
+  });
 });

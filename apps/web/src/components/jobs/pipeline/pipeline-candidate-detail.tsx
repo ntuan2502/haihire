@@ -1,11 +1,12 @@
 "use client";
 
 import { type RefObject } from "react";
-import { ArrowLeft, ChevronDown, History, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -22,7 +23,6 @@ import { StageSelector } from "./stage-selector";
 import { PipelineCandidateDetailHeader } from "./pipeline-candidate-detail-header";
 import { PipelineCandidateDetailOverview } from "./pipeline-candidate-detail-overview";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { formatDate } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
@@ -347,18 +347,27 @@ export function PipelineCandidateDetail({
 
             {/* Timeline Tab */}
             {candidateTab === "timeline" && (
-              <div className="rounded-xl border border-border bg-card text-card-foreground p-8 shadow-xs text-center space-y-3">
-                <History className="h-8 w-8 text-muted-foreground mx-auto" />
-                <h4 className="text-xs font-semibold text-foreground">
-                  {t("applications.timelineTitle")}
-                </h4>
-                <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-                  {t("pipeline.timelineApplied", {
-                    job: job?.title || "",
-                    date: formatDate(selectedCandidate.createdAt),
-                  })}
-                </p>
-              </div>
+              <CandidateTimeline
+                candidateId={selectedCandidate.candidateId}
+                applicationId={selectedCandidate.id}
+                candidateName={selectedCandidate.candidateName}
+                candidateEmail={selectedCandidate.candidateEmail}
+                initialEvents={[
+                  {
+                    id: `applied-${selectedCandidate.id}`,
+                    candidateId: selectedCandidate.candidateId,
+                    applicationId: selectedCandidate.id,
+                    type: "APPLIED",
+                    title: t("applications.timelineTitle"),
+                    description: t("pipeline.timelineApplied", {
+                      job: job?.title || "",
+                      date: String(selectedCandidate.createdAt || ""),
+                    }),
+                    actorName: selectedCandidate.candidateName || "",
+                    timestamp: String(selectedCandidate.createdAt || ""),
+                  },
+                ]}
+              />
             )}
           </div>
         </div>

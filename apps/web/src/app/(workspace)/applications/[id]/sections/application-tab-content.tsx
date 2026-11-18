@@ -70,7 +70,11 @@ export function ApplicationTabContent({
           </div>
           <button
             type="button"
-            className="h-8 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            disabled
+            title={t("applications.comingSoonTooltip", {
+              action: t("applications.runAnalysis"),
+            })}
+            className="h-8 px-3.5 rounded-md bg-primary/60 text-primary-foreground/80 text-xs font-semibold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("applications.runAnalysis")}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "@/lib/toast";
 import {
   useCandidate,
@@ -54,6 +54,11 @@ export function useCandidateDrawerState({
   const [drawerDocToDelete, setDrawerDocToDelete] =
     useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+
+  useEffect(() => {
+    setDrawerPreviewDoc(null);
+    setDrawerDocToDelete(null);
+  }, [candidate?.id]);
 
   // Mutations
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();

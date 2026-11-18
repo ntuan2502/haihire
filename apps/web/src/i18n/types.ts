@@ -1155,6 +1155,7 @@ export interface TranslationSchema {
       no: string;
       noDesc: string;
       strongNo: string;
+      strongNoDesc: string;
     };
     ratings: {
       poor: string;

@@ -221,7 +221,7 @@ export class ApplicationsStageService {
       this.eventsService?.emit({
         type: "APPLICATIONS_CHANGED",
         organizationId: orgId,
-        data: { applicationId: updated.id, stage: dto.stage },
+        data: { applicationId: updated.id, stage: updated.stage },
       });
       this.eventsService?.emit({
         type: "JOBS_CHANGED",
@@ -233,7 +233,7 @@ export class ApplicationsStageService {
         organizationId: orgId,
         data: { applicationId: updated.id },
       });
-      if (oldStage !== dto.stage) {
+      if (oldStage !== updated.stage) {
         this.eventsService?.emit({
           type: "ACTIVITIES_CHANGED",
           organizationId: orgId,

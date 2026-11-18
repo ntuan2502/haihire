@@ -280,7 +280,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("job-100")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
   });
 
@@ -460,7 +463,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
 
     it("useUpdateInterviewMutation invalidates interviews, detail, and applications on success and error", async () => {
@@ -497,7 +503,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
         queryKey: queryKeys.interview("int-1"),
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useDeleteInterviewMutation invalidates interviews, applications, and candidates on success and error", async () => {
@@ -521,8 +530,11 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("int-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
   });
 
@@ -656,7 +668,12 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync(new FormData()),
       ).rejects.toThrow();
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
 
     it("useUpdateStageMutation invalidates applications on success and error", async () => {
@@ -679,7 +696,14 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync({ id: "app-1", stage: "INTERVIEW" }),
       ).rejects.toThrow();
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useUpdateCandidateMutation invalidates applications on success and error", async () => {
@@ -757,8 +781,13 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       );
       await expect(result.current.mutateAsync("app-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(10);
     });
 
     it("useDeleteDocumentMutation invalidates applications and candidates on success and error", async () => {
@@ -868,8 +897,11 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("cand-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useUploadCandidateDocumentMutation invalidates candidate detail and candidates on success and error", async () => {

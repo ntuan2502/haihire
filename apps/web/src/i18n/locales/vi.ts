@@ -1302,6 +1302,7 @@ export const vi: TranslationSchema = {
       no: "Không đạt",
       noDesc: "Chưa phù hợp với vị trí này",
       strongNo: "Loại ngay",
+      strongNoDesc: "Không đạt rõ ràng, dừng quy trình tuyển dụng",
     },
     ratings: {
       poor: "Kém",

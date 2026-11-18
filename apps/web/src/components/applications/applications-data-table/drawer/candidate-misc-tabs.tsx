@@ -1,7 +1,8 @@
 "use client";
 
-import { Sparkles, FileCheck, Mail, Clock } from "lucide-react";
-import { formatDate, getCandidateDisplayName } from "@/lib/utils";
+import { Sparkles, FileCheck, Mail } from "lucide-react";
+import { getCandidateDisplayName } from "@/lib/utils";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import type { Application } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -15,7 +16,11 @@ export function CandidateAiTab() {
       </div>
       <button
         type="button"
-        className="h-8 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+        disabled
+        title={t("applications.comingSoonTooltip", {
+          action: t("applications.runAnalysis"),
+        })}
+        className="h-8 px-3.5 rounded-md bg-primary/60 text-primary-foreground/80 text-xs font-semibold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
       >
         <Sparkles className="h-3 w-3" />
         <span>{t("applications.runAnalysis")}</span>
@@ -88,24 +93,12 @@ export function CandidateTimelineTab({
 }: {
   currentApp: Application;
 }) {
-  const { t } = useI18n();
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
-      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-        <span>{t("applications.tabs.timeline")}</span>
-      </h3>
-      <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
-        <div className="relative text-xs">
-          <div className="absolute -left-6 top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-card" />
-          <p className="font-semibold text-foreground">
-            {t("applications.applied")}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            {formatDate(currentApp.createdAt)}
-          </p>
-        </div>
-      </div>
-    </div>
+    <CandidateTimeline
+      candidateId={currentApp.candidateId}
+      applicationId={currentApp.id}
+      candidateName={currentApp.candidateName}
+      candidateEmail={currentApp.candidateEmail}
+    />
   );
 }

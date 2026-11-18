@@ -87,6 +87,7 @@ export function ScheduleInterviewModal({
   const [formError, setFormError] = useState<string | null>(null);
   const hasTouchedEmailRef = useRef(false);
   const hasTouchedTemplateRef = useRef(false);
+  const initializedSessionRef = useRef<string | null>(null);
 
   const {
     canViewEmail,
@@ -138,11 +139,14 @@ export function ScheduleInterviewModal({
     defaultTemplateId,
   ]);
 
-  // Sync state when modal opens or selections change
+  // Sync state once per modal open session (ignore background SSE application refetches)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      initializedSessionRef.current = null;
+      return;
+    }
 
-    setFormError(null);
+    const sessionKey = `${selectedJobId ?? ""}:${selectedApplicationId ?? ""}:${editingInterview?.id ?? ""}:${initialDate ?? ""}`;
 
     // 1. Determine target candidate & job
     let candidateToUse: Application | undefined;
@@ -153,6 +157,16 @@ export function ScheduleInterviewModal({
         (a) => a.id === editingInterview.applicationId,
       );
     }
+
+    if (initializedSessionRef.current === sessionKey) {
+      if (candidateToUse?.jobId) {
+        setModalJobId((prev) => prev || candidateToUse.jobId);
+      }
+      return;
+    }
+    initializedSessionRef.current = sessionKey;
+
+    setFormError(null);
 
     if (editingInterview) {
       // Update schedule: populate form fields with existing interview data

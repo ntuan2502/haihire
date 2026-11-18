@@ -16,6 +16,8 @@ import {
 } from "@/hooks/use-queries";
 import { useInterview } from "@/hooks/use-interview-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { StatusState } from "@/components/shared/status-state";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import { type ScheduledInterviewInfo } from "@/lib/interviews";
 import { getCandidateDisplayName, resolveEffectiveTimezone } from "@/lib/utils";
@@ -100,8 +102,7 @@ function InterviewsPageContent() {
     rawTab === "UPCOMING" || rawTab === "AWAITING" ? rawTab : "ALL";
 
   const rawViewMode = getParam("viewMode", "table");
-  const viewMode: ViewMode =
-    !focusedInterviewId && rawViewMode === "calendar" ? "calendar" : "table";
+  const viewMode: ViewMode = rawViewMode === "calendar" ? "calendar" : "table";
 
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
@@ -151,7 +152,13 @@ function InterviewsPageContent() {
   const handleViewModeChange = (mode: ViewMode) => {
     if (mode === "calendar") {
       setParams(
-        { viewMode: "calendar", tab: null, sortBy: null, limit: null },
+        {
+          viewMode: "calendar",
+          interviewId: null,
+          tab: null,
+          sortBy: null,
+          limit: null,
+        },
         true,
       );
     } else {
@@ -351,6 +358,14 @@ function InterviewsPageContent() {
         <div className="py-20 flex justify-center">
           <LoadingSpinner />
         </div>
+      ) : focusedInterviewId && focusedInterview.isError ? (
+        <StatusState
+          status="404"
+          variant="card"
+          title={getApiErrorMessage(focusedInterview.error, t)}
+          actionLabel={t("common.viewAll")}
+          onAction={() => router.push("/interviews")}
+        />
       ) : filteredAndSortedList.length === 0 ? (
         <InterviewsEmptyState
           canEdit={canCreateInterview}

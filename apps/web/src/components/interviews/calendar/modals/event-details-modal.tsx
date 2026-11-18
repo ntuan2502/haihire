@@ -114,7 +114,7 @@ export function EventDetailsModal({
                   <Star className="h-3 w-3" />
                   <span>
                     {selectedEvent.interview.scorecard
-                      ? t("interviews.updateSchedule")
+                      ? t("interviews.viewEvaluation")
                       : t("interviews.scorecardAction")}
                   </span>
                 </Button>

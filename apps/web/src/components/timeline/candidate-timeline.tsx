@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { type ActivityEvent } from "@/lib/email-templates";
 import { getOrgRoleLabel } from "@/lib/roles";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 
@@ -44,9 +44,12 @@ export function CandidateTimeline({
 }: CandidateTimelineProps) {
   const { t } = useI18n();
 
-  const { data: appActivities } = useApplicationActivities(applicationId);
+  const { data: appActivities } = useApplicationActivities(applicationId, {
+    limit: 100,
+  });
   const { data: candidateActivities } = useCandidateActivities(
     applicationId ? null : candidateId,
+    { limit: 100 },
   );
   const remoteActivities = applicationId ? appActivities : candidateActivities;
 
@@ -156,6 +159,12 @@ export function CandidateTimeline({
       if (trans && trans !== stageKey) toStageLabel = trans;
     }
 
+    const scheduledIso = meta.scheduledAt ? String(meta.scheduledAt) : "";
+    const resolvedDate =
+      (meta.date as string) || (scheduledIso ? formatDate(scheduledIso) : "");
+    const resolvedTime =
+      (meta.time as string) || (scheduledIso ? formatTime(scheduledIso) : "");
+
     const interpolationParams: Record<string, string | number> = {
       userName:
         (meta.userName as string) ||
@@ -170,8 +179,8 @@ export function CandidateTimeline({
       recipientName: (meta.recipientName as string) || event.actorName || "",
       recipientEmail: (meta.recipientEmail as string) || "",
       round: Number(meta.round) || 1,
-      time: (meta.time as string) || "",
-      date: (meta.date as string) || "",
+      time: resolvedTime,
+      date: resolvedDate,
       jobTitle: (meta.jobTitle as string) || "",
       fileName: (meta.fileName as string) || "",
       subject: (meta.subject as string) || "",

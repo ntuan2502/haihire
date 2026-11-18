@@ -263,7 +263,7 @@ export function InterviewScorecardModal({
             <span>{t("interviews.hiringRecommendation")}</span>
             <span className="text-rose-500">*</span>
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
             {/* STRONG_YES */}
             <button
               type="button"
@@ -353,7 +353,7 @@ export function InterviewScorecardModal({
               className={`p-3 rounded-xl border text-left transition-all ${
                 canSubmitScorecard ? "cursor-pointer" : "cursor-default"
               } ${
-                recommendation === "NO" || recommendation === "STRONG_NO"
+                recommendation === "NO"
                   ? "bg-rose-50/80 border-rose-500 dark:bg-rose-950/40 dark:border-rose-500 ring-2 ring-rose-500/20"
                   : "bg-card border-border hover:border-ring/50"
               }`}
@@ -363,13 +363,39 @@ export function InterviewScorecardModal({
                   <ThumbsDown className="h-3.5 w-3.5" />
                   {t("interviews.recommendations.no")}
                 </span>
-                {(recommendation === "NO" ||
-                  recommendation === "STRONG_NO") && (
+                {recommendation === "NO" && (
                   <Check className="h-3.5 w-3.5 text-rose-600" />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
                 {t("interviews.recommendations.noDesc")}
+              </p>
+            </button>
+
+            {/* STRONG_NO */}
+            <button
+              type="button"
+              disabled={!canSubmitScorecard}
+              onClick={() => setRecommendation("STRONG_NO")}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              } ${
+                recommendation === "STRONG_NO"
+                  ? "bg-rose-100/90 border-rose-600 dark:bg-rose-950/70 dark:border-rose-500 ring-2 ring-rose-600/25"
+                  : "bg-card border-border hover:border-ring/50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                  <ThumbsDown className="h-3.5 w-3.5" />
+                  {t("interviews.recommendations.strongNo")}
+                </span>
+                {recommendation === "STRONG_NO" && (
+                  <Check className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300" />
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {t("interviews.recommendations.strongNoDesc")}
               </p>
             </button>
           </div>

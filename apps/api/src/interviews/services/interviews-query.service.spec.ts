@@ -153,4 +153,10 @@ describe("InterviewsQueryService", () => {
       },
     });
   });
+
+  it("BUG-21: findOne populates candidateEmail and candidateName on application for deep-link rendering", async () => {
+    const result = await service.findOne("intv-past-today", "org-1");
+    expect(result.application?.candidateEmail).toBe("alice@example.com");
+    expect(result.application?.candidateName).toBe("Nguyen Alice");
+  });
 });

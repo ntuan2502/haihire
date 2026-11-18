@@ -461,6 +461,11 @@ export class CandidatesCrudService {
         data: { candidateId: id },
       });
       this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
         type: "SOURCING_CHANGED",
         organizationId: orgId,
         data: { candidateId: id },

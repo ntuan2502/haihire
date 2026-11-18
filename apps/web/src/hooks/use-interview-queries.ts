@@ -103,6 +103,9 @@ export function useCreateInterviewMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -123,6 +126,9 @@ export function useUpdateInterviewMutation() {
         queryKey: queryKeys.interview(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -151,6 +157,9 @@ export function useSubmitScorecardMutation() {
         queryKey: queryKeys.interview(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -170,7 +179,10 @@ export function useDeleteInterviewMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });

@@ -116,13 +116,16 @@ function JobTablePageContent() {
           })
         }
         onSelectedAppIdChange={(appId) =>
-          setParams({
-            applicationId: appId || null,
-            tab: appId ? undefined : null,
-          })
+          setParams(
+            {
+              applicationId: appId || null,
+              tab: appId ? undefined : null,
+            },
+            false,
+          )
         }
         onDrawerTabChange={(tab) =>
-          setParams({ tab: tab === "overview" ? null : tab })
+          setParams({ tab: tab === "overview" ? null : tab }, false)
         }
         onViewInPipeline={(appId, appStage) => {
           const query = new URLSearchParams({

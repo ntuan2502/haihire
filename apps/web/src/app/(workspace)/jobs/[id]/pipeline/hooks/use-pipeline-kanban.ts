@@ -276,7 +276,7 @@ export function usePipelineKanban(jobId: string) {
   );
 
   useEffect(() => {
-    if (appsLoading) return;
+    if (appsLoading || updateStageMutation.isPending) return;
 
     const targetId =
       searchParams.get("applicationId") || searchParams.get("candidateId");
@@ -307,6 +307,7 @@ export function usePipelineKanban(jobId: string) {
     }
   }, [
     appsLoading,
+    updateStageMutation.isPending,
     searchParams,
     filteredCandidates,
     selectedAppId,
@@ -384,6 +385,18 @@ export function usePipelineKanban(jobId: string) {
           ? { emailTemplateId: options.emailTemplateId }
           : {}),
       });
+      queryClient.setQueriesData<Application[]>(
+        { queryKey: ["job-applications", jobId] },
+        (prev) =>
+          Array.isArray(prev)
+            ? prev.map((item) =>
+                String(item.id) === String(candidate.id)
+                  ? { ...item, stage: newStage }
+                  : item,
+              )
+            : prev,
+      );
+      setSelectedAppId(candidate.id);
       setSelectedStage(newStage);
       updatePipelineUrl(
         {
@@ -393,6 +406,12 @@ export function usePipelineKanban(jobId: string) {
         },
         true,
       );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["applications"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["job-applications", jobId],
+        }),
+      ]);
     } catch (err) {
       console.error("Failed to move candidate stage", err);
       const errorMsg = getApiErrorMessage(err, t);

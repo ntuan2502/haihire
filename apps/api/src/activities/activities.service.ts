@@ -83,7 +83,7 @@ export class ActivitiesService {
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit =
-      pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
+      pagination?.limit && pagination.limit > 0 ? pagination.limit : 100;
 
     const where = {
       candidateId,
@@ -126,7 +126,7 @@ export class ActivitiesService {
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit =
-      pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
+      pagination?.limit && pagination.limit > 0 ? pagination.limit : 100;
 
     const where = {
       applicationId,

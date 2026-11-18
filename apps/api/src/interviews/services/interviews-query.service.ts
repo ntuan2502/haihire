@@ -272,6 +272,9 @@ export class InterviewsQueryService {
       application: app
         ? {
             ...app,
+            candidateName: resolvedCandidateName,
+            candidateEmail: candidate?.email || "",
+            candidatePhone: candidate?.phone || null,
             candidate: candidate
               ? { ...candidate, name: resolvedCandidateName }
               : undefined,

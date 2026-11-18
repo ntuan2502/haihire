@@ -764,6 +764,21 @@ export class JobsService {
         organizationId: orgId,
         data: { jobId: id },
       });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
     }
 
     return { success: true, message: `Job ${id} deleted successfully` };

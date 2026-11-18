@@ -148,7 +148,7 @@ export class AuthController {
   @Post("change-password")
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(ChangePasswordDto)) dto: ChangePasswordDto,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -156,6 +156,7 @@ export class AuthController {
       req.user.id,
       dto.currentPassword,
       dto.newPassword,
+      req.user.organizationId,
     );
     setAuthCookies(
       res,
@@ -170,10 +171,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get("me")
   async getProfile(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Res({ passthrough: true }) res?: Response,
   ) {
-    const user = await this.authService.getProfile(req.user.id);
+    const user = await this.authService.getProfile(
+      req.user.id,
+      req.user.organizationId,
+    );
     setHasOrgCookie(res, Boolean(user?.organizationId));
     return user;
   }
@@ -181,19 +185,27 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch("me/profile")
   async updateProfile(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(updateUserProfileSchema)) dto: UpdateUserProfileSchema,
   ) {
-    return this.authService.updateProfile(req.user.id, dto);
+    return this.authService.updateProfile(
+      req.user.id,
+      dto,
+      req.user.organizationId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch("me/preferences")
   async updatePreferences(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(UpdateUserPreferencesDto)) dto: UpdateUserPreferencesDto,
   ) {
-    return this.authService.updatePreferences(req.user.id, dto);
+    return this.authService.updatePreferences(
+      req.user.id,
+      dto,
+      req.user.organizationId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

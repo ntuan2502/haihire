@@ -151,7 +151,7 @@ function OnboardingContent() {
       );
 
       const newOrg = res.data.organization;
-      updateUserOrg(newOrg);
+      updateUserOrg(newOrg, "ADMIN");
       toast.success(`Organization ${newOrg.name} created!`);
 
       setTimeout(() => {
@@ -175,13 +175,14 @@ function OnboardingContent() {
     try {
       const res = await api.post<{
         organization: Organization;
+        role?: string;
         message: string;
       }>("/organizations/join", {
         inviteCodeOrSlug: target.trim(),
       });
 
       const joinedOrg = res.data.organization;
-      updateUserOrg(joinedOrg);
+      updateUserOrg(joinedOrg, res.data.role);
       toast.success(`Successfully joined ${joinedOrg.name}!`);
 
       setTimeout(() => {

@@ -266,12 +266,55 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
+    } else {
+      prom.resolve(token ?? "");
     }
   });
   failedQueue = [];
 };
+
+export async function refreshAuthSession(): Promise<string> {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const refreshRes = await axios.post<{
+      accessToken: string;
+      refreshToken?: string;
+      hasOrg?: boolean;
+    }>(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
+
+    const maxAge = 60 * 60 * 24 * 7;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    if (typeof refreshRes.data?.hasOrg === "boolean") {
+      document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+    }
+
+    const nextToken = refreshRes.data?.accessToken ?? "";
+    processQueue(null, nextToken);
+    window.dispatchEvent(new CustomEvent("haihire:auth-refreshed"));
+    return nextToken;
+  } catch (refreshErr) {
+    processQueue(refreshErr, null);
+    if (hasClientSessionState()) {
+      await clearServerAndClientSession();
+    } else {
+      clearClientAuthCookies();
+    }
+    throw refreshErr;
+  } finally {
+    isRefreshing = false;
+  }
+}
 
 // Response Interceptor for 401 Silent Refresh
 api.interceptors.response.use(
@@ -300,46 +343,9 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: () => {
-              resolve(api.request(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshRes = await axios.post<{
-          accessToken: string;
-          refreshToken?: string;
-          hasOrg?: boolean;
-        }>(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
-
-        const maxAge = 60 * 60 * 24 * 7;
-        const secure = window.location.protocol === "https:" ? "; Secure" : "";
-        if (typeof refreshRes.data?.hasOrg === "boolean") {
-          document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
-        }
-
-        processQueue(null, refreshRes.data?.accessToken);
-        return api.request(originalRequest);
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        if (hasClientSessionState()) {
-          await clearServerAndClientSession();
-        } else {
-          clearClientAuthCookies();
-        }
-        return Promise.reject(refreshErr);
-      } finally {
-        isRefreshing = false;
-      }
+      await refreshAuthSession();
+      return api.request(originalRequest);
     }
 
     return Promise.reject(error);

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import type { ReactNode } from "react";
 import { AuthProvider, useAuth } from "./auth-context";
-import { api } from "@/lib/api/client";
+import { api, refreshAuthSession } from "@/lib/api/client";
 
 // Mock next/navigation
 const mockReplace = vi.fn();
@@ -30,6 +30,7 @@ vi.mock("@/lib/api/client", () => ({
     },
   },
   getApiBaseUrl: () => "/api",
+  refreshAuthSession: vi.fn().mockResolvedValue("refreshed-token"),
 }));
 
 describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
@@ -475,5 +476,64 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
       );
     });
     expect(infoSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("reconnects EventSource on haihire:auth-refreshed and triggers debounced refreshAuthSession on error", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        id: "user-sse-reconnect",
+        email: "sse@example.com",
+        role: "ADMIN",
+        organizationId: "org-1",
+      },
+    } as never);
+    vi.mocked(refreshAuthSession).mockClear();
+
+    const prevSource = latestSource;
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.id).toBe("user-sse-reconnect");
+      expect(latestSource).not.toBeNull();
+      expect(latestSource).not.toBe(prevSource);
+    });
+
+    const firstSource = latestSource!;
+    const closeSpy = vi.spyOn(firstSource, "close");
+
+    act(() => {
+      window.dispatchEvent(new Event("haihire:auth-refreshed"));
+    });
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(latestSource).not.toBeNull();
+      expect(latestSource).not.toBe(firstSource);
+    });
+
+    const reconnectedSource = latestSource!;
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        reconnectedSource.onerror?.(new Event("error"));
+      });
+      expect(refreshAuthSession).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(refreshAuthSession).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

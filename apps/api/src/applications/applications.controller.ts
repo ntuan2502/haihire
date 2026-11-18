@@ -35,6 +35,9 @@ import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
+import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
+import { AppBadRequestException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -116,6 +119,7 @@ export class ApplicationsController {
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("apply")
+  @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -134,9 +138,23 @@ export class ApplicationsController {
     files: { resume?: Express.Multer.File[]; file?: Express.Multer.File[] },
     @Request()
     req?: {
-      user?: { id?: string; role?: string; organizationId?: string | null };
+      user?: {
+        id?: string;
+        role?: string;
+        organizationId?: string | null;
+        isOwner?: boolean;
+      } | null;
     },
   ) {
+    if (
+      !req?.user &&
+      (dto.candidateId || dto.resumeUrl || dto.resumeFileName)
+    ) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Administrative fields (candidateId, resumeUrl, resumeFileName) are not permitted for public applications.",
+      );
+    }
     const uploaded = files?.resume?.[0] || files?.file?.[0];
     return this.applicationsService.create(dto, uploaded, req?.user);
   }

@@ -5,6 +5,7 @@ import {
   downloadAuthenticatedFile,
   fetchAuthenticatedDocumentPreview,
   getDocumentUrl,
+  refreshAuthSession,
   api,
 } from "./client";
 
@@ -276,5 +277,25 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
         { withCredentials: true },
       );
     }
+  });
+
+  it("deduplicates concurrent refreshAuthSession calls, resolves empty accessToken without hanging, and notifies SSE listeners", async () => {
+    const postSpy = vi.spyOn(axios, "post").mockResolvedValueOnce({
+      data: { hasOrg: true },
+    });
+    const refreshedListener = vi.fn();
+    window.addEventListener("haihire:auth-refreshed", refreshedListener);
+
+    const [first, second] = await Promise.all([
+      refreshAuthSession(),
+      refreshAuthSession(),
+    ]);
+
+    expect(postSpy).toHaveBeenCalledTimes(1);
+    expect(first).toBe("");
+    expect(second).toBe("");
+    expect(refreshedListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener("haihire:auth-refreshed", refreshedListener);
   });
 });

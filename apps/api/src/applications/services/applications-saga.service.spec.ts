@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import { ApplicationsSagaService } from "./applications-saga.service";
+import { PublicApplyDto } from "../dto/public-apply.dto";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -626,6 +627,35 @@ describe("ApplicationsSagaService", () => {
         expect.any(Error),
       );
       consoleWarnSpy.mockRestore();
+    });
+
+    it("preserves organic referrer attribution for PublicApplyDto and allows authenticated Recruiter candidateId apply while stripping anonymous candidateId", async () => {
+      const publicDto = Object.assign(new PublicApplyDto(), {
+        jobId: "job-1",
+        firstName: "Organic",
+        lastName: "Candidate",
+        candidateEmail: "organic@example.com",
+        referrer: "https://www.linkedin.com/jobs/view/999",
+        candidateId: "cand-existing",
+      });
+
+      await service.create(publicDto);
+      const anonApp = applicationTable.store.find(
+        (a) => a.sourceChannel === SourcingChannel.LINKEDIN,
+      );
+      expect(anonApp).toBeDefined();
+      expect(anonApp?.candidateId).not.toBe("cand-existing");
+
+      const internalDto = Object.assign(new PublicApplyDto(), {
+        jobId: "job-1",
+        candidateId: "cand-existing",
+        candidateEmail: "existing@example.com",
+      });
+      const internalResult = await service.create(internalDto, undefined, {
+        role: "RECRUITER",
+        organizationId: "org-1",
+      });
+      expect(internalResult).toHaveProperty("candidate");
     });
   });
 });

@@ -94,7 +94,7 @@ export default function JoinOrganizationPage() {
       setError(null);
       const res = await organizationsApi.joinByToken(token);
       if (res.organization) {
-        updateUserOrg(res.organization);
+        updateUserOrg(res.organization, res.role);
       }
       toast.success(t("join.welcome", { org: res.organization?.name || "" }));
       setTimeout(() => {

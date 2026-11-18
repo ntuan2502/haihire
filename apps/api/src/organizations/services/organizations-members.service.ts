@@ -127,8 +127,8 @@ export class OrganizationsMembersService {
     }
   }
 
-  async getInterviewers(userId: string) {
-    const members = await this.getMembers(userId);
+  async getInterviewers(userId: string, activeOrgId?: string | null) {
+    const members = await this.getMembers(userId, activeOrgId);
     return members.map((member) => ({
       id: member.id,
       firstName: member.firstName,
@@ -139,18 +139,61 @@ export class OrganizationsMembersService {
     }));
   }
 
-  async getMembers(userId: string) {
-    const userMember = await this.prisma.organizationMember.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { organizationId: true },
+  private async resolveTargetOrgId(
+    client: Pick<PrismaService, "organizationMember" | "organization" | "user">,
+    userId: string,
+    activeOrgId?: string | null,
+  ): Promise<{ orgId: string | null; legacyRole?: string }> {
+    if (activeOrgId) {
+      return { orgId: activeOrgId };
+    }
+    if (typeof client.organizationMember?.findFirst === "function") {
+      const userMember = await client.organizationMember.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true, role: true },
+      });
+      if (userMember?.organizationId) {
+        return {
+          orgId: userMember.organizationId,
+          legacyRole: userMember.role,
+        };
+      }
+    }
+    if (typeof client.organization?.findFirst === "function") {
+      const ownedOrg = await client.organization.findFirst({
+        where: { ownerId: userId },
+        select: { id: true },
+      });
+      if (ownedOrg?.id) {
+        return { orgId: ownedOrg.id, legacyRole: "ADMIN" };
+      }
+    }
+    const callerRecord = await client.user.findFirst({
+      where: { id: userId },
     });
-    const ownedOrg = await this.prisma.organization.findFirst({
-      where: { ownerId: userId },
-      select: { id: true },
-    });
+    const compatOrgId = (
+      callerRecord as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const compatRole = (callerRecord as unknown as { role?: string })?.role;
+    return { orgId: compatOrgId ?? null, legacyRole: compatRole };
+  }
 
-    const currentOrgId = userMember?.organizationId || ownedOrg?.id;
+  async getMembers(userId: string, activeOrgId?: string | null) {
+    let currentOrgId = activeOrgId || null;
+    if (!currentOrgId) {
+      const userMember = await this.prisma.organizationMember.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: { organizationId: true },
+      });
+      const ownedOrg = await this.prisma.organization.findFirst({
+        where: { ownerId: userId },
+        select: { id: true },
+      });
+      currentOrgId = userMember?.organizationId || ownedOrg?.id || null;
+    }
+
     if (!currentOrgId) {
       return [];
     }
@@ -163,6 +206,9 @@ export class OrganizationsMembersService {
         nameDisplayOrder: true,
       },
     });
+    if (!org) {
+      return [];
+    }
     const nameOrder: NameDisplayOrder =
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
@@ -238,24 +284,25 @@ export class OrganizationsMembersService {
     callerId: string,
     targetMemberId: string,
     newRole: Role,
+    activeOrgId?: string | null,
   ) {
     const caller = await this.prisma.user.findFirst({
       where: { id: callerId },
-      select: {
-        id: true,
-        role: true,
-        organizationId: true,
-      },
+      select: { id: true },
     });
 
-    if (!caller || !caller.organizationId) {
+    const resolved = caller
+      ? await this.resolveTargetOrgId(this.prisma, callerId, activeOrgId)
+      : { orgId: null };
+
+    if (!caller || !resolved.orgId) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
         "User is not associated with an organization",
       );
     }
 
-    const targetOrgId = caller.organizationId as string;
+    const targetOrgId = resolved.orgId;
     const org = await this.prisma.organization.findFirst({
       where: { id: targetOrgId },
       select: {
@@ -264,8 +311,19 @@ export class OrganizationsMembersService {
       },
     });
 
+    const callerMembership =
+      typeof this.prisma.organizationMember?.findFirst === "function"
+        ? await this.prisma.organizationMember.findFirst({
+            where: { organizationId: targetOrgId, userId: caller.id },
+            select: { role: true },
+          })
+        : null;
+
     const isCallerOwner = Boolean(org && org.ownerId === caller.id);
-    const isCallerAdmin = caller.role === "ADMIN";
+    const effectiveCallerRole = isCallerOwner
+      ? "ADMIN"
+      : callerMembership?.role || resolved.legacyRole || "MEMBER";
+    const isCallerAdmin = effectiveCallerRole === "ADMIN";
 
     if (!isCallerAdmin && !isCallerOwner) {
       throw new AppForbiddenException(
@@ -380,25 +438,29 @@ export class OrganizationsMembersService {
     };
   }
 
-  async removeMember(callerId: string, targetMemberId: string) {
+  async removeMember(
+    callerId: string,
+    targetMemberId: string,
+    activeOrgId?: string | null,
+  ) {
     return runInTransaction(this.prisma, async (tx) => {
       const caller = await tx.user.findFirst({
         where: { id: callerId },
-        select: {
-          id: true,
-          role: true,
-          organizationId: true,
-        },
+        select: { id: true },
       });
 
-      if (!caller || !caller.organizationId) {
+      const resolved = caller
+        ? await this.resolveTargetOrgId(tx, callerId, activeOrgId)
+        : { orgId: null };
+
+      if (!caller || !resolved.orgId) {
         throw new AppNotFoundException(
           APP_ERROR_CODES.ORG_USER_NO_ORG,
           "User is not associated with an organization",
         );
       }
 
-      const targetOrgId = caller.organizationId as string;
+      const targetOrgId = resolved.orgId;
       const org = await tx.organization.findFirst({
         where: { id: targetOrgId },
         select: {
@@ -425,8 +487,19 @@ export class OrganizationsMembersService {
         );
       }
 
+      const callerMembership =
+        typeof tx.organizationMember?.findFirst === "function"
+          ? await tx.organizationMember.findFirst({
+              where: { organizationId: targetOrgId, userId: caller.id },
+              select: { role: true },
+            })
+          : null;
+
       const isCallerOwner = Boolean(org && org.ownerId === caller.id);
-      const isCallerAdmin = caller.role === "ADMIN";
+      const effectiveCallerRole = isCallerOwner
+        ? "ADMIN"
+        : callerMembership?.role || resolved.legacyRole || "MEMBER";
+      const isCallerAdmin = effectiveCallerRole === "ADMIN";
 
       if (!isCallerAdmin && !isCallerOwner) {
         throw new AppForbiddenException(

@@ -19,6 +19,8 @@ describe("OrganizationsController", () => {
 
   const mockService = {
     create: vi.fn(),
+    switchOrg: vi.fn(),
+    joinByToken: vi.fn(),
     getMyOrg: vi.fn(),
     updateMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
@@ -30,6 +32,15 @@ describe("OrganizationsController", () => {
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
     getAuditLogs: vi.fn(),
+  };
+
+  const mockAuthService = {
+    issueOrgSessionTokens: vi.fn().mockResolvedValue({
+      accessToken: "switched-access",
+      refreshToken: "switched-refresh",
+      hasOrg: true,
+      role: Role.ADMIN,
+    }),
   };
 
   const ownerReq = {
@@ -63,7 +74,10 @@ describe("OrganizationsController", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     service = mockService as unknown as OrganizationsService;
-    controller = new OrganizationsController(service);
+    controller = new OrganizationsController(
+      service,
+      mockAuthService as unknown as never,
+    );
     reflector = new Reflector();
     rolesGuard = new RolesGuard(reflector);
   });
@@ -86,6 +100,7 @@ describe("OrganizationsController", () => {
       // Arrange
       const context = createMockContext(ownerReq);
       mockService.deleteMyOrg.mockResolvedValue({ success: true });
+      mockService.getMyOrg.mockResolvedValue(null);
 
       // Act
       const canActivate = rolesGuard.canActivate(context);
@@ -94,7 +109,10 @@ describe("OrganizationsController", () => {
       const result = await controller.deleteMyOrg(ownerReq);
 
       // Assert
-      expect(mockService.deleteMyOrg).toHaveBeenCalledWith("user-owner");
+      expect(mockService.deleteMyOrg).toHaveBeenCalledWith(
+        "user-owner",
+        "org-1",
+      );
       expect(result).toEqual({ success: true });
     });
 
@@ -116,7 +134,10 @@ describe("OrganizationsController", () => {
       await expect(controller.deleteMyOrg(nonOwnerAdminReq)).rejects.toThrow(
         AppForbiddenException,
       );
-      expect(mockService.deleteMyOrg).toHaveBeenCalledWith("user-admin-other");
+      expect(mockService.deleteMyOrg).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-1",
+      );
     });
 
     it("Case 3: blocks non-admin member from deleting org -> 403 Forbidden", () => {
@@ -174,13 +195,17 @@ describe("OrganizationsController", () => {
         success: true,
         message: "Organization deleted successfully",
       });
+      mockService.getMyOrg.mockResolvedValueOnce(null);
       expect(rolesGuard.canActivate(newOwnerDeleteContext)).toBe(true);
       const deleteResult = await controller.deleteMyOrg(newOwnerReq);
       expect(deleteResult).toEqual({
         success: true,
         message: "Organization deleted successfully",
       });
-      expect(mockService.deleteMyOrg).toHaveBeenCalledWith("user-admin-other");
+      expect(mockService.deleteMyOrg).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-1",
+      );
     });
   });
 
@@ -199,6 +224,7 @@ describe("OrganizationsController", () => {
         "user-owner",
         "member-1",
         Role.RECRUITER,
+        "org-1",
       );
       expect(result).toEqual({ success: true, role: Role.RECRUITER });
     });
@@ -224,7 +250,10 @@ describe("OrganizationsController", () => {
         mockService.getMembers.mockResolvedValueOnce(members);
 
         const result = await controller.getMembers(nonOwnerAdminReq);
-        expect(mockService.getMembers).toHaveBeenCalledWith("user-admin-other");
+        expect(mockService.getMembers).toHaveBeenCalledWith(
+          "user-admin-other",
+          "org-1",
+        );
         expect(result).toEqual(members);
       });
 
@@ -272,6 +301,7 @@ describe("OrganizationsController", () => {
         const result = await controller.getInterviewers(recruiterReq);
         expect(mockService.getInterviewers).toHaveBeenCalledWith(
           "user-recruiter",
+          "org-1",
         );
         expect(result).toEqual(interviewers);
       });
@@ -307,6 +337,7 @@ describe("OrganizationsController", () => {
           await controller.getRolePermissionsMatrix(nonOwnerAdminReq);
         expect(mockService.getRolePermissionsMatrix).toHaveBeenCalledWith(
           "user-admin-other",
+          "org-1",
         );
         expect(result).toEqual(mockMatrix);
       });
@@ -348,6 +379,7 @@ describe("OrganizationsController", () => {
           "user-admin-other",
           Role.RECRUITER,
           [{ permission: "org:delete", granted: true }],
+          "org-1",
         );
         expect(result).toEqual({
           role: Role.RECRUITER,
@@ -402,6 +434,8 @@ describe("OrganizationsController", () => {
         expect(result).toEqual({ deleted: 4 });
         expect(mockService.resetRolePermissions).toHaveBeenCalledWith(
           ownerReq.user.id,
+          undefined,
+          "org-1",
         );
       });
 
@@ -422,6 +456,7 @@ describe("OrganizationsController", () => {
         expect(mockService.resetRolePermissions).toHaveBeenCalledWith(
           nonOwnerAdminReq.user.id,
           Role.RECRUITER,
+          "org-1",
         );
       });
 
@@ -523,12 +558,16 @@ describe("OrganizationsController", () => {
         offset: 0,
       });
 
-      expect(service.getAuditLogs).toHaveBeenCalledWith("user-owner", {
-        action: "ROLE_PERMISSIONS_UPDATED",
-        resource: "ROLE_PERMISSIONS",
-        limit: 20,
-        offset: 0,
-      });
+      expect(service.getAuditLogs).toHaveBeenCalledWith(
+        "user-owner",
+        {
+          action: "ROLE_PERMISSIONS_UPDATED",
+          resource: "ROLE_PERMISSIONS",
+          limit: 20,
+          offset: 0,
+        },
+        "org-1",
+      );
       expect(result).toBe(mockResult);
     });
 
@@ -578,7 +617,11 @@ describe("OrganizationsController", () => {
       mockService.updateMyOrg.mockResolvedValueOnce(expected);
 
       const result = await controller.updateMyOrg(ownerReq, dto);
-      expect(mockService.updateMyOrg).toHaveBeenCalledWith("user-owner", dto);
+      expect(mockService.updateMyOrg).toHaveBeenCalledWith(
+        "user-owner",
+        dto,
+        "org-1",
+      );
       expect(result).toEqual(expected);
     });
 
@@ -586,6 +629,49 @@ describe("OrganizationsController", () => {
       const context = createMockContext(memberReq, controller.updateMyOrg);
       expect(() => rolesGuard.canActivate(context)).toThrow(
         AppForbiddenException,
+      );
+    });
+  });
+
+  describe("POST /organizations/switch & invite-links/join/:token session cookies (BUG-03)", () => {
+    it("re-issues HttpOnly access & refresh cookies scoped to the switched/joined organization", async () => {
+      const mockRes = { cookie: vi.fn() };
+      mockService.switchOrg.mockResolvedValueOnce({
+        success: true,
+        organization: { id: "org-2", name: "Org Two" },
+      });
+
+      await controller.switchOrg(
+        ownerReq,
+        { organizationId: "org-2" },
+        mockRes as never,
+      );
+
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-owner",
+        "org-2",
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        "haihire_token",
+        "switched-access",
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        "haihire_refresh_token",
+        "switched-refresh",
+        expect.objectContaining({ httpOnly: true }),
+      );
+
+      mockRes.cookie.mockClear();
+      mockService.joinByToken.mockResolvedValueOnce({
+        success: true,
+        organization: { id: "org-3", name: "Org Three" },
+        role: Role.RECRUITER,
+      });
+      await controller.joinByToken(ownerReq, "tok-123", mockRes as never);
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-owner",
+        "org-3",
       );
     });
   });

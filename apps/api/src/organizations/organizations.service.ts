@@ -43,8 +43,8 @@ export class OrganizationsService implements OnModuleInit {
     return this.core.create(userId, dto);
   }
 
-  getMyOrg(userId: string) {
-    return this.core.getMyOrg(userId);
+  getMyOrg(userId: string, activeOrgId?: string | null) {
+    return this.core.getMyOrg(userId, activeOrgId);
   }
 
   getMyOrgs(userId: string) {
@@ -55,16 +55,20 @@ export class OrganizationsService implements OnModuleInit {
     return this.core.switchOrg(userId, targetOrgId);
   }
 
-  updateMyOrg(userId: string, dto: UpdateOrgDto) {
-    return this.core.updateMyOrg(userId, dto);
+  updateMyOrg(userId: string, dto: UpdateOrgDto, activeOrgId?: string | null) {
+    return this.core.updateMyOrg(userId, dto, activeOrgId);
   }
 
-  deleteMyOrg(userId: string) {
-    return this.core.deleteMyOrg(userId);
+  deleteMyOrg(userId: string, activeOrgId?: string | null) {
+    return this.core.deleteMyOrg(userId, activeOrgId);
   }
 
-  transferOwnership(userId: string, newOwnerUserId: string) {
-    return this.core.transferOwnership(userId, newOwnerUserId);
+  transferOwnership(
+    userId: string,
+    newOwnerUserId: string,
+    activeOrgId?: string | null,
+  ) {
+    return this.core.transferOwnership(userId, newOwnerUserId, activeOrgId);
   }
 
   getPublicOrg(slug: string) {
@@ -74,28 +78,34 @@ export class OrganizationsService implements OnModuleInit {
   // ==========================================
   // 2. MEMBERSHIP & RBAC MANAGEMENT
   // ==========================================
-  getMembers(userId: string) {
-    return this.members.getMembers(userId);
+  getMembers(userId: string, activeOrgId?: string | null) {
+    return this.members.getMembers(userId, activeOrgId);
   }
 
-  getInterviewers(userId: string) {
-    return this.members.getInterviewers(userId);
+  getInterviewers(userId: string, activeOrgId?: string | null) {
+    return this.members.getInterviewers(userId, activeOrgId);
   }
 
   updateMemberRole(
     userId: string,
     targetMemberId: string,
     newRole: Role | "ADMIN" | "MEMBER",
+    activeOrgId?: string | null,
   ) {
     return this.members.updateMemberRole(
       userId,
       targetMemberId,
       newRole as Role,
+      activeOrgId,
     );
   }
 
-  removeMember(userId: string, targetMemberId: string) {
-    return this.members.removeMember(userId, targetMemberId);
+  removeMember(
+    userId: string,
+    targetMemberId: string,
+    activeOrgId?: string | null,
+  ) {
+    return this.members.removeMember(userId, targetMemberId, activeOrgId);
   }
 
   // ==========================================
@@ -104,16 +114,24 @@ export class OrganizationsService implements OnModuleInit {
   createInviteLink(
     userId: string,
     dto: { role?: string; expiresIn?: string; maxUses?: string },
+    activeOrgId?: string | null,
   ) {
-    return this.invites.createInviteLink(userId, dto);
+    return this.invites.createInviteLink(userId, dto, activeOrgId);
   }
 
-  getInviteLinks(userId: string): Promise<InviteLinkRecord[]> {
-    return this.invites.getInviteLinks(userId);
+  getInviteLinks(
+    userId: string,
+    activeOrgId?: string | null,
+  ): Promise<InviteLinkRecord[]> {
+    return this.invites.getInviteLinks(userId, activeOrgId);
   }
 
-  revokeInviteLink(userId: string, linkId: string) {
-    return this.invites.revokeInviteLink(userId, linkId);
+  revokeInviteLink(
+    userId: string,
+    linkId: string,
+    activeOrgId?: string | null,
+  ) {
+    return this.invites.revokeInviteLink(userId, linkId, activeOrgId);
   }
 
   getPublicInvite(token: string) {
@@ -131,8 +149,8 @@ export class OrganizationsService implements OnModuleInit {
   // ==========================================
   // 4. ROLES & PERMISSIONS MATRIX MANAGEMENT
   // ==========================================
-  async getRolePermissionsMatrix(userId: string) {
-    const org = await this.getMyOrg(userId);
+  async getRolePermissionsMatrix(userId: string, activeOrgId?: string | null) {
+    const org = await this.getMyOrg(userId, activeOrgId);
     if (!org) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
@@ -146,8 +164,9 @@ export class OrganizationsService implements OnModuleInit {
     userId: string,
     role: string,
     updates: RolePermissionItemDto[],
+    activeOrgId?: string | null,
   ) {
-    const org = await this.getMyOrg(userId);
+    const org = await this.getMyOrg(userId, activeOrgId);
     if (!org) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
@@ -157,8 +176,12 @@ export class OrganizationsService implements OnModuleInit {
     return this.roles.updateRolePermissions(org.id, role, updates, userId);
   }
 
-  async resetRolePermissions(userId: string, role?: string) {
-    const org = await this.getMyOrg(userId);
+  async resetRolePermissions(
+    userId: string,
+    role?: string,
+    activeOrgId?: string | null,
+  ) {
+    const org = await this.getMyOrg(userId, activeOrgId);
     if (!org) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
@@ -171,8 +194,12 @@ export class OrganizationsService implements OnModuleInit {
   // ==========================================
   // 5. AUDIT LOGGING
   // ==========================================
-  async getAuditLogs(userId: string, filter: OrgAuditLogFilter = {}) {
-    const org = await this.getMyOrg(userId);
+  async getAuditLogs(
+    userId: string,
+    filter: OrgAuditLogFilter = {},
+    activeOrgId?: string | null,
+  ) {
+    const org = await this.getMyOrg(userId, activeOrgId);
     if (!org) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,

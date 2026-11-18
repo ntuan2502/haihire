@@ -497,5 +497,88 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         }),
       ).rejects.toThrow();
     });
+
+    it("18. Should never select dropped role/organizationId columns on User in refreshToken and should preserve decoded org in multi-org setups", async () => {
+      const multiOrgPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(
+              async (args: { select?: Record<string, unknown> }) => {
+                if (
+                  args.select &&
+                  ("role" in args.select || "organizationId" in args.select)
+                ) {
+                  throw new Error(
+                    "PrismaClientValidationError: Unknown field on model User",
+                  );
+                }
+                return {
+                  id: "usr-multi",
+                  email: "multi@example.com",
+                  firstName: "Multi",
+                  lastName: "Org",
+                  preferredLanguage: null,
+                  preferredTimezone: null,
+                  tokenVersion: 0,
+                };
+              },
+            ),
+        },
+        organization: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(
+              async ({ where }: { where: { id: string } }) => ({
+                id: where.id,
+                name: where.id === "org-2" ? "Org Two" : "Org One",
+                slug: where.id,
+                ownerId: where.id === "org-1" ? "usr-multi" : "other-owner",
+              }),
+            ),
+        },
+        organizationMember: {
+          findFirst: vi
+            .fn()
+            .mockImplementation(
+              async ({ where }: { where: { organizationId?: string } }) => {
+                if (where.organizationId === "org-2")
+                  return { role: "RECRUITER" };
+                return { organizationId: "org-1", role: "ADMIN" };
+              },
+            ),
+        },
+      };
+      const jwtMock = {
+        verify: vi.fn().mockReturnValue({
+          sub: "usr-multi",
+          type: "refresh",
+          organizationId: "org-2",
+          tokenVersion: 0,
+        }),
+        sign: vi.fn().mockReturnValue("signed-token"),
+      };
+      const multiAuth = new AuthService(
+        multiOrgPrisma as never,
+        jwtMock as never,
+      );
+
+      const refreshed = await multiAuth.refreshToken({
+        refreshToken: "multi-org-rt",
+      });
+      expect(refreshed.hasOrg).toBe(true);
+      expect(jwtMock.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: "usr-multi",
+          role: "RECRUITER",
+          organizationId: "org-2",
+        }),
+      );
+
+      const profile = await multiAuth.getProfile("usr-multi", "org-2");
+      expect(profile.organizationId).toBe("org-2");
+      expect(profile.role).toBe("RECRUITER");
+      expect(profile.isOwner).toBe(false);
+    });
   });
 });

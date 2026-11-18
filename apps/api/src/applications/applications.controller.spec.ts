@@ -10,6 +10,8 @@ import {
 import { Role } from "@haihire/shared";
 import type { ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
+import { DtoPipe } from "../common/dto-validation.pipe";
+import { PublicApplyDto } from "./dto/public-apply.dto";
 
 describe("ApplicationsController", () => {
   let controller: ApplicationsController;
@@ -295,6 +297,43 @@ describe("ApplicationsController", () => {
       const stats = await controller.getStats(recruiterReq as never, "org-1");
       expect(mockService.getStats).toHaveBeenCalledWith("org-1", "org-1");
       expect(stats.totalApplications).toBe(150);
+    });
+  });
+
+  describe("POST /applications/apply DtoPipe(PublicApplyDto)", () => {
+    it("accepts public apply payloads containing document.referrer and authenticated apply-to-job payloads using candidateId", async () => {
+      const pipe = DtoPipe(PublicApplyDto);
+      const argMeta = { type: "body" as const, metatype: PublicApplyDto };
+
+      const publicResult = await pipe.transform(
+        {
+          jobId: "00000000-0000-4000-8000-000000000001",
+          firstName: "Public",
+          lastName: "Applicant",
+          candidateEmail: "public@example.com",
+          referrer: "https://www.linkedin.com/jobs/view/123",
+        },
+        argMeta,
+      );
+      expect(publicResult).toBeInstanceOf(PublicApplyDto);
+      expect(publicResult.referrer).toBe(
+        "https://www.linkedin.com/jobs/view/123",
+      );
+
+      const internalResult = await pipe.transform(
+        {
+          jobId: "00000000-0000-4000-8000-000000000001",
+          candidateId: "00000000-0000-4000-8000-000000000002",
+          candidateEmail: "cand@example.com",
+          resumeUrl: "/haihire-resumes/tenants/org-1/resumes/cv.pdf",
+          resumeFileName: "cv.pdf",
+        },
+        argMeta,
+      );
+      expect(internalResult).toBeInstanceOf(PublicApplyDto);
+      expect(internalResult.candidateId).toBe(
+        "00000000-0000-4000-8000-000000000002",
+      );
     });
   });
 });

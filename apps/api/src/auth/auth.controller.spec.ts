@@ -78,6 +78,7 @@ describe("AuthController", () => {
         userId,
         dto.currentPassword,
         dto.newPassword,
+        undefined,
       );
       expect(result).toBe(changePassResult);
       expect(mockResponse.cookie).toHaveBeenCalledWith(
@@ -277,8 +278,24 @@ describe("AuthController", () => {
       expect(mockAuthService.updatePreferences).toHaveBeenCalledWith(
         "u-1",
         dto,
+        undefined,
       );
       expect(result).toBe(expectedUser);
+    });
+
+    it("getProfile passes active organizationId from JWT payload to authService.getProfile", async () => {
+      mockAuthService.getProfile.mockResolvedValue({
+        id: "u-1",
+        organizationId: "org-2",
+      });
+
+      const result = await controller.getProfile(
+        { user: { id: "u-1", organizationId: "org-2" } },
+        mockResponse as unknown as Response,
+      );
+
+      expect(mockAuthService.getProfile).toHaveBeenCalledWith("u-1", "org-2");
+      expect(result).toEqual({ id: "u-1", organizationId: "org-2" });
     });
   });
 });

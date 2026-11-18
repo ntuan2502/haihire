@@ -145,11 +145,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             select: { role: true },
           });
           if (member) {
-            activeRole = member.role;
+            activeRole = isOwner ? "ADMIN" : member.role;
           } else if (isOwner) {
             activeRole = "ADMIN";
+          } else {
+            organization = null;
+            activeOrgId = null;
+            activeRole = "MEMBER";
           }
         }
+      } else {
+        activeRole = "MEMBER";
       }
     } else {
       if (this.prisma.organizationMember?.findFirst) {

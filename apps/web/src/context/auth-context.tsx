@@ -11,14 +11,10 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { QueryClientContext } from "@tanstack/react-query";
-import { isAppEventType, type AppEvent } from "@haihire/shared";
-import { toast } from "@/lib/toast";
-import { api, getApiBaseUrl } from "@/lib/api/client";
-import { queryKeys } from "@/hooks/query-keys";
-import { createRealtimeInvalidator } from "@/lib/realtime-sync";
-import { getOrgRoleLabel } from "@/lib/roles";
+import { api } from "@/lib/api/client";
 import { isWorkspaceRoute } from "@/lib/workspace-routes";
 import { useOptionalI18n } from "@/i18n/optional";
+import { useAuthSse } from "./use-auth-sse";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
@@ -207,141 +203,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [refreshUser]);
 
-  // SSE Real-Time Sync & Background Visibility Wake-Up
+  // SSE Real-Time Sync, 15m JWT Reconnect & Background Visibility Wake-Up
   const currentUserId = user?.id;
-  useEffect(() => {
-    if (!currentUserId || typeof EventSource === "undefined") return;
-
-    const invalidator = queryClient
-      ? createRealtimeInvalidator(queryClient)
-      : null;
-    const sseBaseUrl = getApiBaseUrl();
-    const eventSource = new EventSource(`${sseBaseUrl}/events/sse`, {
-      withCredentials: true,
-    });
-
-    eventSource.onmessage = (e) => {
-      try {
-        const parsed: unknown = JSON.parse(e.data);
-        if (
-          !parsed ||
-          typeof parsed !== "object" ||
-          !("type" in parsed) ||
-          typeof parsed.type !== "string"
-        ) {
-          return;
-        }
-
-        // Notify entire app of SSE events
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("ats:sse_event", { detail: parsed }),
-          );
-        }
-
-        if (!isAppEventType(parsed.type)) {
-          return;
-        }
-
-        const data = parsed as AppEvent;
-        invalidator?.scheduleForEvent(data.type);
-
-        const activeUser = userRef.current;
-
-        if (data.type === "MEMBER_ROLE_UPDATED") {
-          if (data.targetUserId === currentUserId) {
-            const previousRole = activeUser?.role;
-            const nextRole = data.role;
-            if (nextRole && nextRole !== previousRole) {
-              toast.warning(
-                tRef.current("auth.sseRoleChanged", {
-                  role: getOrgRoleLabel(nextRole, tRef.current),
-                }),
-                { toastId: `sse-role-changed-${nextRole}` },
-              );
-            }
-            void refreshUser().finally(() => {
-              if (!queryClient) return;
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myPermissions(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.rolePermissionsMatrix(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrg(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrgs(),
-              });
-            });
-          }
-        } else if (data.type === "MEMBER_REMOVED") {
-          if (data.targetUserId === currentUserId) {
-            toast.warning(tRef.current("auth.sseOrgRemoved"), {
-              toastId: "sse-org-removed",
-            });
-            void refreshUser().finally(() => {
-              if (!queryClient) return;
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrg(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrgs(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myPermissions(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.rolePermissionsMatrix(),
-              });
-            });
-          }
-        } else if (data.type === "PERMISSIONS_CHANGED") {
-          if (
-            activeUser &&
-            !activeUser.isOwner &&
-            activeUser.role !== "ADMIN" &&
-            (!data.role || data.role === activeUser.role || data.role === "ALL")
-          ) {
-            toast.info(tRef.current("auth.ssePermissionsChanged"), {
-              toastId: "sse-permissions-changed",
-            });
-          }
-        } else if (data.type === "ORG_UPDATED") {
-          if (!data.targetUserId || data.targetUserId === currentUserId) {
-            void refreshUser();
-          }
-        }
-      } catch (err) {
-        console.error("[SSE Auth] Failed to parse message:", err);
-      }
-    };
-
-    eventSource.onerror = (err) => {
-      console.warn("[SSE Auth] Connection dropped or reconnecting...", err);
-    };
-
-    const handleFocus = () => {
-      refreshUser();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshUser();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      invalidator?.cancel();
-      eventSource.close();
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [currentUserId, queryClient, refreshUser]);
+  useAuthSse({
+    currentUserId,
+    queryClient,
+    refreshUser,
+    userRef,
+    tRef,
+  });
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{
@@ -402,9 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       organizationId: org.id,
       organization: org,
       isOwner,
-      role: isOwner
-        ? "ADMIN"
-        : (updatedRole as "ADMIN" | "MEMBER") || user.role,
+      role: isOwner ? "ADMIN" : (updatedRole as User["role"]) || user.role,
     };
     setUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(updated));

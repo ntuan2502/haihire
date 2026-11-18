@@ -728,4 +728,125 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(upsertSpy).toHaveBeenCalled();
     });
   });
+
+  describe("R2 Schema Safety & Multi-Org Scoping (BUG-01 & BUG-03)", () => {
+    it("does not select or filter by dropped User.role / User.organizationId columns and scopes getMyOrg/updateMyOrg to requested activeOrgId", async () => {
+      const strictMemberships = [
+        {
+          id: "mem-a",
+          organizationId: "org-1",
+          userId: "usr-strict",
+          role: "MEMBER",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "mem-b",
+          organizationId: "org-2",
+          userId: "usr-strict",
+          role: "ADMIN",
+          createdAt: new Date("2026-01-02T00:00:00Z"),
+        },
+      ];
+      const strictOrgs = [
+        {
+          id: "org-1",
+          name: "Org One",
+          slug: "org-one",
+          ownerId: "other-1",
+        },
+        {
+          id: "org-2",
+          name: "Org Two",
+          slug: "org-two",
+          ownerId: "other-2",
+        },
+      ];
+      const strictPrisma = createMockPrismaService({
+        organization: strictOrgs,
+        user: [
+          {
+            id: "usr-strict",
+            email: "strict@tun.io.vn",
+            firstName: "Strict",
+            lastName: "User",
+          },
+          {
+            id: "usr-target",
+            email: "target@tun.io.vn",
+            firstName: "Target",
+            lastName: "Member",
+          },
+        ],
+        organizationMember: [
+          ...strictMemberships,
+          {
+            id: "mem-t",
+            organizationId: "org-2",
+            userId: "usr-target",
+            role: "MEMBER",
+            createdAt: new Date("2026-01-03T00:00:00Z"),
+          },
+        ],
+      });
+
+      const origFindFirst = strictPrisma.user.findFirst;
+      strictPrisma.user.findFirst = vi.fn(
+        async (args?: {
+          where?: Record<string, unknown>;
+          select?: Record<string, unknown>;
+        }) => {
+          if (
+            (args?.select &&
+              ("role" in args.select || "organizationId" in args.select)) ||
+            (args?.where &&
+              ("role" in args.where || "organizationId" in args.where))
+          ) {
+            throw new Error(
+              "PrismaClientValidationError: Unknown field on model User",
+            );
+          }
+          return origFindFirst(args as never);
+        },
+      ) as never;
+
+      const strictService = createTestOrganizationsService(
+        strictPrisma as never,
+      );
+
+      const org2 = await strictService.getMyOrg("usr-strict", "org-2");
+      expect(org2?.id).toBe("org-2");
+
+      const updated = await strictService.updateMyOrg(
+        "usr-strict",
+        { name: "Org Two Renamed" },
+        "org-2",
+      );
+      expect(updated?.name).toBe("Org Two Renamed");
+
+      const link = await strictService.createInviteLink(
+        "usr-strict",
+        { role: "RECRUITER" },
+        "org-2",
+      );
+      expect(link.organizationId).toBe("org-2");
+
+      const preview = await strictService.getPublicInvite(link.token);
+      expect(preview.valid).toBe(true);
+
+      const roleUpdate = await strictService.updateMemberRole(
+        "usr-strict",
+        "usr-target",
+        "INTERVIEWER",
+        "org-2",
+      );
+      expect(roleUpdate.role).toBe("INTERVIEWER");
+
+      const removed = await strictService.removeMember(
+        "usr-strict",
+        "usr-target",
+        "org-2",
+      );
+      expect(removed.success).toBe(true);
+    });
+  });
 });

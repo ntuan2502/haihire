@@ -22,14 +22,14 @@ export const LandingNavbar = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
+      <header className="sticky top-0 z-50 w-full h-16 bg-background/85 backdrop-blur-md border-b border-border transition-colors select-none">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Left: Brand Logo & Navigation Links */}
           <div className="flex items-center gap-6">
             <Link
               href="/"
               aria-label={BRAND_CONFIG.name}
-              className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              className="rounded-md hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <BrandLogo size="md" />
             </Link>
@@ -38,9 +38,9 @@ export const LandingNavbar = () => {
             <nav className="hidden md:flex items-center gap-1">
               <Link
                 href="/careers"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-all cursor-pointer"
               >
-                <Briefcase className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{t("landing.navCareers")}</span>
               </Link>
             </nav>
@@ -65,15 +65,15 @@ export const LandingNavbar = () => {
                 <Link
                   href="/auth/login"
                   prefetch={false}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors px-3 py-2 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 cursor-pointer"
                 >
-                  <LogIn className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <LogIn className="h-4 w-4 text-muted-foreground" />
                   <span>{t("landing.signIn")}</span>
                 </Link>
                 <Link
                   href="/auth/register"
                   prefetch={false}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary hover:bg-primary/90 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-xs transition-all cursor-pointer"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>{t("landing.signUp")}</span>
@@ -85,7 +85,7 @@ export const LandingNavbar = () => {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
               aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
@@ -114,7 +114,7 @@ export const LandingNavbar = () => {
                 href="/auth/login"
                 prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-10 rounded-xl transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-semibold h-10 rounded-md transition-colors cursor-pointer"
               >
                 <LogIn className="h-4 w-4" />
                 <span>{t("landing.signIn")}</span>
@@ -123,7 +123,7 @@ export const LandingNavbar = () => {
                 href="/auth/register"
                 prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold h-10 rounded-md shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus className="h-4 w-4" />
                 <span>{t("landing.signUp")}</span>
@@ -135,9 +135,9 @@ export const LandingNavbar = () => {
         <Link
           href="/careers"
           onClick={() => setMobileMenuOpen(false)}
-          className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+          className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-xs font-semibold text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors"
         >
-          <Briefcase className="h-4 w-4 text-slate-500 shrink-0" />
+          <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
           <span>{t("landing.navCareers")}</span>
         </Link>
       </MobileDrawer>

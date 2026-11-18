@@ -240,7 +240,7 @@ function OnboardingContent() {
             <button
               type="button"
               onClick={() => handleSwitchMode("select")}
-              className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               {t("onboarding.backToSelect")}
@@ -249,20 +249,20 @@ function OnboardingContent() {
 
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {t("onboarding.joinOrgTitle")}
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {t("onboarding.joinOrgSubtitle")}
             </p>
           </div>
 
           <div className="space-y-4">
             {/* Box: Have an invite link? */}
-            <div className="rounded-xl border border-slate-200/90 bg-white p-5 dark:border-slate-800/90 dark:bg-slate-900 shadow-xs">
+            <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
               <div className="flex items-center gap-2 mb-3.5">
-                <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                <Link2 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">
                   {t("onboarding.inviteLinkBoxTitle")}
                 </span>
               </div>
@@ -282,12 +282,12 @@ function OnboardingContent() {
                     setInviteCodeOrSlug(e.target.value);
                     setErrorSource(null);
                   }}
-                  className="h-10 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-950"
+                  className="h-10 rounded-md border-input bg-background text-sm"
                 />
                 <Button
                   type="submit"
                   disabled={submitting || !inviteCodeOrSlug.trim()}
-                  className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm cursor-pointer shrink-0"
+                  className="h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-md shadow-xs cursor-pointer shrink-0"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -296,7 +296,7 @@ function OnboardingContent() {
                   )}
                 </Button>
               </form>
-              <p className="text-[11px] text-slate-400 mt-2">
+              <p className="text-[11px] text-muted-foreground mt-2">
                 {t("onboarding.inviteLinkHint")}
               </p>
             </div>
@@ -307,7 +307,7 @@ function OnboardingContent() {
             <button
               type="button"
               onClick={() => handleSwitchMode("create")}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
             >
               {t("onboarding.createOrgInstead")}
             </button>
@@ -323,7 +323,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center p-12">
-          <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
       }
     >

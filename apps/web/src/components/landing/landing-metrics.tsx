@@ -13,18 +13,16 @@ export const LandingMetrics: React.FC = () => {
       label: t("landing.metric1Label"),
       desc: t("landing.metric1Desc"),
       icon: Clock,
-      color: "text-blue-600 dark:text-cyan-400",
-      bgBorder:
-        "border-blue-200/80 bg-blue-50/60 dark:border-cyan-500/20 dark:bg-cyan-950/20",
+      color: "text-primary",
+      bgBorder: "border-primary/20 bg-primary/5",
     },
     {
       value: t("landing.metric2Value"),
       label: t("landing.metric2Label"),
       desc: t("landing.metric2Desc"),
       icon: Zap,
-      color: "text-blue-700 dark:text-blue-400",
-      bgBorder:
-        "border-blue-200/80 bg-blue-50/60 dark:border-blue-500/20 dark:bg-blue-950/20",
+      color: "text-sky-600 dark:text-sky-400",
+      bgBorder: "border-sky-500/20 bg-sky-500/5",
     },
     {
       value: t("landing.metric3Value"),
@@ -32,8 +30,7 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric3Desc"),
       icon: ShieldCheck,
       color: "text-emerald-600 dark:text-emerald-400",
-      bgBorder:
-        "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-950/20",
+      bgBorder: "border-emerald-500/20 bg-emerald-500/5",
     },
     {
       value: t("landing.metric4Value"),
@@ -41,18 +38,17 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric4Desc"),
       icon: DollarSign,
       color: "text-amber-600 dark:text-amber-400",
-      bgBorder:
-        "border-amber-200/80 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-950/20",
+      bgBorder: "border-amber-500/20 bg-amber-500/5",
     },
   ];
 
   return (
     <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
       <div className="text-center max-w-3xl mx-auto mb-12">
-        <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-cyan-400 mb-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
           {t("landing.metricsEyebrow")}
         </p>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight">
           {t("landing.metricsTitle")}
         </h2>
       </div>
@@ -71,14 +67,14 @@ export const LandingMetrics: React.FC = () => {
                 >
                   {m.value}
                 </span>
-                <div className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-slate-900/60 shadow-2xs">
+                <div className="p-2.5 rounded-lg border border-border bg-card shadow-2xs">
                   <Icon className={`h-5 w-5 ${m.color}`} />
                 </div>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+              <h3 className="text-base font-bold text-foreground mb-1.5">
                 {m.label}
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+              <p className="text-xs text-muted-foreground leading-relaxed font-normal">
                 {m.desc}
               </p>
             </div>

@@ -12,7 +12,7 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen w-full bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-blue-500 selection:text-white transition-colors duration-300">
+    <div className="relative min-h-screen w-full bg-background font-sans text-foreground selection:bg-primary selection:text-primary-foreground transition-colors duration-300">
       {/* Sticky Glassmorphic Navbar */}
       <LandingNavbar />
 

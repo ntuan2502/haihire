@@ -54,14 +54,14 @@ export function DashboardUpcomingInterviews({
             {t("dashboard.upcomingInterviews")}
           </h3>
           {upcomingInterviews.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
               {upcomingInterviews.length}
             </span>
           )}
         </div>
         <Link
           href="/interviews"
-          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors shrink-0"
         >
           <span>{t("common.viewAll")}</span>
           <ArrowRight className="h-3 w-3" />
@@ -82,7 +82,7 @@ export function DashboardUpcomingInterviews({
           </p>
           <Link
             href="/interviews"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
           >
             <span>+ {t("dashboard.scheduleNew")}</span>
           </Link>
@@ -113,7 +113,7 @@ export function DashboardUpcomingInterviews({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
                       {getInitials(candidateDisplay)}
                     </div>
                     <div className="min-w-0">
@@ -182,7 +182,7 @@ export function DashboardUpcomingInterviews({
                       href={intv.linkOrLocation}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors shrink-0"
                     >
                       <Video className="h-2.5 w-2.5" />
                       <span>{t("dashboard.joinMeeting")}</span>

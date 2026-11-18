@@ -38,7 +38,7 @@ export function DashboardPipeline({
         </div>
         <Link
           href="/jobs"
-          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors shrink-0"
         >
           <span>{t("dashboard.allJobs")}</span>
           <ArrowRight className="h-3 w-3" />
@@ -54,7 +54,7 @@ export function DashboardPipeline({
           </p>
           <Link
             href="/jobs"
-            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-xs font-semibold text-primary hover:underline"
           >
             {t("jobs.createJob")}
           </Link>

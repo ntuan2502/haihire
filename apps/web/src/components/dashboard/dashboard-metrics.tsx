@@ -36,7 +36,7 @@ export function DashboardMetrics({
               {t("dashboard.draftsCount", { count: draftJobsCount })}
             </div>
           </div>
-          <div className="h-10 w-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100/80 dark:border-blue-900/60 shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
             <Briefcase className="h-5 w-5" />
           </div>
         </div>
@@ -56,7 +56,7 @@ export function DashboardMetrics({
               {t("dashboard.talentPoolSubtitle")}
             </div>
           </div>
-          <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100/80 dark:border-indigo-900/60 shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-500/20 shrink-0">
             <Users className="h-5 w-5" />
           </div>
         </div>

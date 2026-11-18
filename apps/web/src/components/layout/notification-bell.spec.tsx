@@ -19,8 +19,9 @@ it("opens the notification menu and shows its empty state", async () => {
     </QueryClientProvider>,
   );
 
-  fireEvent.click(
+  fireEvent.pointerDown(
     screen.getByRole("button", { name: "settings.tabs.notifications" }),
+    { button: 0, ctrlKey: false },
   );
   expect(await screen.findByText("notificationInbox.empty")).toBeVisible();
 });

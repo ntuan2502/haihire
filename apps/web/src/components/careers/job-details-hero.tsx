@@ -32,42 +32,42 @@ export function JobDetailsHero({
   const { t } = useI18n();
 
   return (
-    <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
+    <div className="p-6 sm:p-8 rounded-2xl bg-card text-card-foreground border border-border shadow-xs space-y-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
         <div className="space-y-3 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20">
               {job.department}
             </span>
             {job.workplace && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                <Globe2 className="h-3.5 w-3.5 text-primary" />
                 {getWorkplaceLabel(job.workplace, t)}
               </span>
             )}
             {job.experienceLevel && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                <Briefcase className="h-3.5 w-3.5 text-primary" />
                 {getExperienceLevelLabel(job.experienceLevel, t)}
               </span>
             )}
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight leading-tight">
             {job.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium pt-1">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground font-medium pt-1">
             <div className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-slate-400" />
+              <Building2 className="h-4 w-4 text-muted-foreground" />
               <span>{orgName}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-slate-400" />
+              <MapPin className="h-4 w-4 text-muted-foreground" />
               <span>{job.location}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-slate-400" />
+              <Clock className="h-4 w-4 text-muted-foreground" />
               <span>{getJobTypeLabel(job.type, t)}</span>
             </div>
             {job.salaryRange && (
@@ -83,7 +83,7 @@ export function JobDetailsHero({
         <div className="flex items-center gap-3">
           <Button
             onClick={onApplyClick}
-            className="h-11 px-6 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 cursor-pointer"
+            className="h-11 px-6 rounded-md text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5 mr-2" />
             {t("careers.applyNow")}

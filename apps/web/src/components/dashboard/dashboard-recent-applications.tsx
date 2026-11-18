@@ -32,14 +32,14 @@ export function DashboardRecentApplications({
             {t("dashboard.recentApplications")}
           </h3>
           {applications.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
               {applications.length}
             </span>
           )}
         </div>
         <Link
           href="/applications"
-          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition-colors shrink-0"
         >
           <span>{t("common.viewAll")}</span>
           <ArrowRight className="h-3 w-3" />
@@ -70,7 +70,7 @@ export function DashboardRecentApplications({
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* Avatar with Initials */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
                     {getInitials(candidateDisplay)}
                   </div>
 

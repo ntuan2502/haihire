@@ -30,6 +30,7 @@ vi.mock("@/i18n", () => ({
         "common.delete": "Delete",
         "common.remove": "Remove",
         "common.filter": "Filter",
+        "jobs.viewPublicPage": "View public page",
         "jobs.copyPublicApplyLink": "Copy link",
         "jobs.newApplicants": "new applicants",
         "pipeline.stageCounts": "applicants",
@@ -122,7 +123,11 @@ describe("Task #40 Accessibility Fixes: Medium & Low Issues", () => {
 
     const mockCounts = {
       total: 12,
-      new: 4,
+      screening: 3,
+      interview: 3,
+      offer: 1,
+      hired: 1,
+      rejected: 0,
       byStage: {
         APPLIED: 4,
         SCREENING: 3,
@@ -141,24 +146,22 @@ describe("Task #40 Accessibility Fixes: Medium & Low Issues", () => {
               job={mockJob}
               counts={mockCounts}
               visibleColumns={{
+                title: true,
                 status: true,
                 pipeline: true,
-                applicants: true,
               }}
-              copiedJobId={null}
-              onCopyLink={vi.fn()}
               onDeleteJob={vi.fn()}
             />
           </tbody>
         </table>,
       );
 
-      // Copy link button
-      const copyBtn = screen.getByRole("button", {
-        name: "Copy link: Senior Product Designer",
+      // View public page link
+      const publicLink = screen.getByRole("link", {
+        name: "View public page: Senior Product Designer",
       });
-      expect(copyBtn).toBeDefined();
-      expect(copyBtn.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+      expect(publicLink).toBeDefined();
+      expect(publicLink.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
         "true",
       );
 
@@ -190,7 +193,7 @@ describe("Task #40 Accessibility Fixes: Medium & Low Issues", () => {
       );
     });
 
-    it("renders applicant badge as an accessible button with aria-hidden pulsing dot", () => {
+    it("renders pipeline stage badges as accessible buttons with explicit aria-labels", () => {
       render(
         <table>
           <tbody>
@@ -198,25 +201,33 @@ describe("Task #40 Accessibility Fixes: Medium & Low Issues", () => {
               job={mockJob}
               counts={mockCounts}
               visibleColumns={{
+                title: true,
                 status: true,
                 pipeline: true,
-                applicants: true,
               }}
-              copiedJobId={null}
-              onCopyLink={vi.fn()}
               onDeleteJob={vi.fn()}
             />
           </tbody>
         </table>,
       );
 
-      const applicantBtn = screen.getByRole("button", {
-        name: "4 new applicants - Senior Product Designer",
+      const appliedBtn = screen.getByRole("button", {
+        name: "pipeline.stages.applied: 4",
       });
-      expect(applicantBtn).toBeDefined();
+      expect(appliedBtn).toBeDefined();
+      expect(appliedBtn.getAttribute("type")).toBe("button");
+      expect(appliedBtn.getAttribute("title")).toBe(
+        appliedBtn.getAttribute("aria-label"),
+      );
 
-      const pulseDot = applicantBtn.querySelector(".animate-pulse");
-      expect(pulseDot?.getAttribute("aria-hidden")).toBe("true");
+      const screeningBtn = screen.getByRole("button", {
+        name: "pipeline.stages.screening: 3",
+      });
+      expect(screeningBtn).toBeDefined();
+      expect(screeningBtn.getAttribute("type")).toBe("button");
+      expect(screeningBtn.getAttribute("title")).toBe(
+        screeningBtn.getAttribute("aria-label"),
+      );
     });
   });
 

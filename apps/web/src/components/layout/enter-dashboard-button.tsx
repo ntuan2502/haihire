@@ -34,7 +34,7 @@ export function EnterDashboardButton({
       href={href}
       onClick={onClick}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer font-bold",
+        "inline-flex items-center justify-center gap-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer font-semibold",
         fullWidth
           ? "w-full h-10 text-xs gap-2"
           : "px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm",

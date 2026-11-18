@@ -55,10 +55,10 @@ export default async function RootLayout({
           {`try{var d=document.documentElement,t=localStorage.getItem('theme'),isDark=t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(isDark){d.classList.add('dark');d.classList.remove('light');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.classList.add('light');d.style.colorScheme='light';}}catch(_){}`}
         </Script>
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans transition-colors duration-200">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-xs shadow-lg transition-all"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring font-semibold text-xs shadow-lg transition-all"
         >
           {locale === "vi"
             ? "Bỏ qua đến nội dung chính"

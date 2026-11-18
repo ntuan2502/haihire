@@ -33,13 +33,13 @@ export const LandingComparison: React.FC = () => {
     >
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">
-        <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-cyan-400 mb-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">
           {t("landing.compareEyebrow")}
         </p>
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight">
           {t("landing.compareTitle")}
         </h2>
-        <p className="mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-300/80 leading-relaxed font-normal">
+        <p className="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed font-normal">
           {t("landing.compareDesc")}
         </p>
       </div>
@@ -47,13 +47,13 @@ export const LandingComparison: React.FC = () => {
       {/* Side-by-Side Comparison Container */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
         {/* Legacy / Old Way */}
-        <div className="rounded-3xl border border-rose-200 dark:border-rose-500/20 bg-rose-50/40 dark:bg-slate-950/60 p-6 sm:p-8 backdrop-blur-xl relative flex flex-col justify-between shadow-sm">
+        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/5 p-6 sm:p-8 relative flex flex-col justify-between shadow-xs">
           <div>
-            <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-rose-200/80 dark:border-rose-500/10">
-              <div className="p-2 rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:border dark:border-rose-500/20 dark:text-rose-400">
+            <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-rose-500/15">
+              <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
                 <AlertTriangle className="h-5 w-5" />
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-rose-900 dark:text-rose-200">
+              <h3 className="text-lg sm:text-xl font-bold text-rose-700 dark:text-rose-300">
                 {t("landing.compareOldTitle")}
               </h3>
             </div>
@@ -62,7 +62,7 @@ export const LandingComparison: React.FC = () => {
               {comparisonRows.map((row, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 text-slate-700 dark:text-slate-300 text-sm leading-relaxed"
+                  className="flex items-start gap-3 text-muted-foreground text-sm leading-relaxed"
                 >
                   <XCircle className="h-5 w-5 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
                   <span>{row.oldText}</span>
@@ -73,13 +73,13 @@ export const LandingComparison: React.FC = () => {
         </div>
 
         {/* Modern HaiHire ATS */}
-        <div className="rounded-3xl border border-blue-200/90 dark:border-blue-500/40 bg-gradient-to-b from-blue-50/80 via-white to-slate-50 dark:from-blue-950/40 dark:via-slate-900/90 dark:to-slate-950/90 p-6 sm:p-8 backdrop-blur-xl relative flex flex-col justify-between shadow-xl ring-1 ring-blue-500/20 dark:ring-blue-500/30">
+        <div className="rounded-2xl border border-primary/30 bg-card text-card-foreground p-6 sm:p-8 relative flex flex-col justify-between shadow-md ring-1 ring-primary/20">
           <div>
-            <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-blue-200 dark:border-blue-500/20">
-              <div className="p-2 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-600/20 dark:border dark:border-blue-500/40 dark:text-cyan-300">
+            <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-primary/20">
+              <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold text-foreground">
                 {t("landing.compareHaihireTitle", { brand: "HaiHire" })}
               </h3>
             </div>
@@ -88,7 +88,7 @@ export const LandingComparison: React.FC = () => {
               {comparisonRows.map((row, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 text-slate-800 dark:text-slate-200 text-sm leading-relaxed font-medium"
+                  className="flex items-start gap-3 text-foreground text-sm leading-relaxed font-medium"
                 >
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span>{row.newText}</span>

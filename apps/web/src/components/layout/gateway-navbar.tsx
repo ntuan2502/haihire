@@ -30,7 +30,7 @@ export function GatewayNavbar({
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 w-full h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors select-none",
+          "sticky top-0 z-40 w-full h-16 bg-background/80 backdrop-blur-md border-b border-border transition-colors select-none",
           className,
         )}
       >
@@ -44,7 +44,7 @@ export function GatewayNavbar({
           <Link
             href="/"
             aria-label={BRAND_CONFIG.name}
-            className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            className="rounded-md hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <BrandLogo size="md" />
           </Link>
@@ -64,7 +64,7 @@ export function GatewayNavbar({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-accent transition-colors cursor-pointer"
               aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (

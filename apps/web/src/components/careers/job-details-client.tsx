@@ -72,19 +72,19 @@ export function JobDetailsClient({
 
   if (job.status !== "PUBLISHED") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
-        <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
+        <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-xl font-bold text-foreground">
           {t("careers.jobClosed.title")}
         </h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
+        <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
           {t("careers.jobClosed.description")}
         </p>
         <Button
           onClick={() => router.push(`/careers/${orgSlug}`)}
-          className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
+          className="mt-6 h-9 rounded-md text-xs font-semibold cursor-pointer"
         >
           {t("careers.jobClosed.viewOtherJobs")}
         </Button>
@@ -95,7 +95,7 @@ export function JobDetailsClient({
   const orgName = org?.name || "Company";
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200">
       {/* Top Navbar */}
       <CareersHeader
         orgName={orgName}
@@ -112,7 +112,7 @@ export function JobDetailsClient({
         <div>
           <Link
             href={`/careers/${orgSlug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
             <span>{t("careers.allJobsAt", { org: orgName })}</span>

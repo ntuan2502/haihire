@@ -66,7 +66,7 @@ export function MobileDrawer({
       {/* Top-Down Dropdown Menu Container */}
       <div
         className={cn(
-          "relative w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in duration-150 z-10 flex flex-col justify-between",
+          "relative w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-background border-b border-border shadow-2xl animate-in fade-in duration-150 z-10 flex flex-col justify-between",
           className,
         )}
       >
@@ -76,14 +76,14 @@ export function MobileDrawer({
         {/* Unified Mobile Theme & Language Section - Symmetrically centered between two full-width border lines */}
         <div
           className={cn(
-            children && "border-t border-slate-200/80 dark:border-slate-800/80",
+            children && "border-t border-border",
             "px-3 py-2",
-            !footer && "border-b border-slate-200/80 dark:border-slate-800/80",
+            !footer && "border-b border-border",
           )}
         >
-          <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-foreground">
             <div className="flex items-center gap-3">
-              <Globe className="h-4 w-4 text-slate-500 shrink-0" />
+              <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
               <span>
                 {t("nav.theme")} / {t("nav.language")}
               </span>
@@ -97,7 +97,7 @@ export function MobileDrawer({
 
         {/* Unified Bottom Actions Footer Bar */}
         {footer && (
-          <div className="px-3 py-2 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-3 py-2 border-t border-border bg-muted/40">
             {footer}
           </div>
         )}

@@ -36,7 +36,6 @@ export interface CustomSelectProps<T extends string = string> {
   direction?: "auto" | "up" | "down";
   disabled?: boolean;
   icon?: ComponentType<{ className?: string }>;
-  variant?: "default" | "landing";
   size?: "sm" | "default";
   id?: string;
   name?: string;
@@ -58,7 +57,6 @@ export function CustomSelect<T extends string = string>({
   direction = "auto",
   disabled = false,
   icon: LeadingIcon,
-  variant = "default",
   size = "default",
   id,
   name,
@@ -299,7 +297,6 @@ export function CustomSelect<T extends string = string>({
   };
 
   const selectedOption = options.find((opt) => opt.value === value);
-  const isLanding = variant === "landing";
   const SelectedIcon = selectedOption?.icon || LeadingIcon;
 
   const dropdownPopup = (
@@ -311,7 +308,6 @@ export function CustomSelect<T extends string = string>({
       popupRef={popupRef}
       ariaLabel={ariaLabel}
       placeholder={typeof placeholder === "string" ? placeholder : undefined}
-      isLanding={isLanding}
       popupClassName={popupClassName}
       searchable={searchable}
       searchInputRef={searchInputRef}
@@ -361,26 +357,16 @@ export function CustomSelect<T extends string = string>({
         }}
         onKeyDown={handleKeyDown}
         className={cn(
-          "w-full flex items-center justify-between gap-2 rounded-md font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          "w-full flex items-center justify-between gap-2 rounded-md font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
           size === "sm" ? "h-8 px-2.5 text-xs" : "h-9 px-3 text-xs sm:text-sm",
-          disabled
-            ? "opacity-50 cursor-not-allowed pointer-events-none"
-            : isLanding
-              ? "active:scale-[0.98]"
-              : "",
-          isLanding
-            ? "rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-cyan-200 shadow-sm"
-            : "border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
+          disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           triggerClassName,
         )}
       >
         <div className="flex items-center gap-2 truncate min-w-0 flex-1">
           {SelectedIcon && (
             <SelectedIcon
-              className={cn(
-                "h-3.5 w-3.5 shrink-0",
-                isLanding ? "text-slate-400" : "text-muted-foreground",
-              )}
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
               aria-hidden="true"
             />
           )}
@@ -390,8 +376,7 @@ export function CustomSelect<T extends string = string>({
         </div>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 shrink-0 transition-transform duration-200 ml-1.5",
-            isLanding ? "text-cyan-300/80" : "text-muted-foreground",
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200 ml-1.5 text-muted-foreground",
             isOpen && "rotate-180",
           )}
           aria-hidden="true"

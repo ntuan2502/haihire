@@ -135,7 +135,7 @@ export function CareersDirectoryClient({
   }, [jobs]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-200">
       {/* Top Header */}
       <CareersHeader />
 
@@ -151,16 +151,16 @@ export function CareersDirectoryClient({
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Filter and View Switcher Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
           {/* View Mode Toggle: Companies vs All Jobs */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 w-fit">
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg border border-border w-fit">
             <button
               type="button"
               onClick={() => setViewMode("companies")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "companies"
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "bg-background text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Building2 className="h-3.5 w-3.5" />
@@ -174,10 +174,10 @@ export function CareersDirectoryClient({
             <button
               type="button"
               onClick={() => setViewMode("jobs")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "jobs"
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  ? "bg-background text-primary shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Briefcase className="h-3.5 w-3.5" />
@@ -191,7 +191,7 @@ export function CareersDirectoryClient({
 
           {/* Department Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 shrink-0">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0">
               {t("careers.allDeptsLabel")}
             </span>
             <CustomSelect
@@ -214,7 +214,7 @@ export function CareersDirectoryClient({
         {isLoading ? (
           <div className="py-24 flex flex-col items-center justify-center space-y-3">
             <LoadingSpinner />
-            <p className="text-xs font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-muted-foreground">
               {t("careers.loadingCompanies")}
             </p>
           </div>

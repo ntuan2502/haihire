@@ -111,32 +111,30 @@ export default function JoinOrganizationPage() {
     <div className="space-y-6">
       {/* Header Title */}
       <div className="text-center space-y-1">
-        <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-lg sm:text-xl font-bold text-foreground">
           {t("join.title")}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {t("join.subtitle")}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("join.subtitle")}</p>
       </div>
 
       {/* Loading State */}
       {loading && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-          <p className="text-xs text-slate-400">{t("join.verifying")}</p>
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-8 shadow-xs flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">{t("join.verifying")}</p>
         </div>
       )}
 
       {/* Error Message if invalid */}
       {!loading && error && (
-        <div className="rounded-2xl border border-rose-200/90 bg-white p-6 shadow-xs dark:border-rose-950 dark:bg-slate-900 text-center space-y-3">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600">
+        <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-6 shadow-xs text-center space-y-3">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
             <AlertCircle className="h-5 w-5" />
           </div>
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+          <h3 className="text-xs font-bold text-foreground">
             {t("join.unableToJoin")}
           </h3>
-          <p className="text-xs text-rose-500 leading-relaxed">{error}</p>
+          <p className="text-xs text-destructive leading-relaxed">{error}</p>
           <div className="pt-2">
             <Button
               type="button"
@@ -156,33 +154,33 @@ export default function JoinOrganizationPage() {
       {!loading && inviteData?.valid && (
         <div className="space-y-4">
           {/* Organization Preview Card */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0">
                 <Building2 className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                <h3 className="text-sm font-bold text-foreground truncate">
                   {inviteData.organization?.name ||
                     t("common.organizationFallback")}
                 </h3>
-                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {inviteData.organization?.slug || "org"}
                 </p>
               </div>
             </div>
 
             {/* Meta details */}
-            <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
               <div className="flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-slate-400" />
+                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>
                   {t("join.joinAs")}{" "}
                   <strong>{getOrgRoleLabel(inviteData.role, t)}</strong>
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <UserIcon className="h-3.5 w-3.5 text-slate-400" />
+                <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>
                   {t("join.invitedBy")}{" "}
                   <strong>
@@ -197,7 +195,7 @@ export default function JoinOrganizationPage() {
           {/* Action Area: When NOT Logged In */}
           {!isAuthenticated ? (
             <div className="space-y-3 text-center">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 {t("join.signInPrompt")}
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -208,7 +206,7 @@ export default function JoinOrganizationPage() {
                       `/auth/login?redirect=${encodeURIComponent(`/auth/join/${token}`)}`,
                     )
                   }
-                  className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-md shadow-xs transition-colors cursor-pointer"
                 >
                   {t("join.signInButton")}
                 </Button>
@@ -220,7 +218,7 @@ export default function JoinOrganizationPage() {
                       `/auth/register?redirect=${encodeURIComponent(`/auth/join/${token}`)}`,
                     )
                   }
-                  className="h-10 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="h-10 border-input bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-md shadow-xs transition-colors cursor-pointer"
                 >
                   {t("join.createAccountButton")}
                 </Button>
@@ -229,8 +227,8 @@ export default function JoinOrganizationPage() {
           ) : isAlreadyMember ? (
             /* Action Area: When Already a Member */
             <div className="space-y-3 text-center">
-              <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-medium flex items-center justify-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   {t("join.alreadyMember", {
                     org: inviteData.organization?.name || "",
@@ -240,7 +238,7 @@ export default function JoinOrganizationPage() {
               <Button
                 type="button"
                 onClick={() => router.push("/dashboard")}
-                className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-md shadow-xs transition-colors cursor-pointer"
               >
                 {t("join.goToDashboard")}
               </Button>
@@ -252,7 +250,7 @@ export default function JoinOrganizationPage() {
                 type="button"
                 disabled={joining}
                 onClick={handleJoin}
-                className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-md shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
                 {joining ? (
                   <>

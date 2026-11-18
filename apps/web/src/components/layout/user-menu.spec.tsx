@@ -85,7 +85,7 @@ describe("UserMenu Accessibility", () => {
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
     expect(trigger).toBeInTheDocument();
 
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
       expect(screen.getByText("nav.signOut")).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("UserMenu Accessibility", () => {
     render(<UserMenu />);
 
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
       expect(screen.getByText("HaiHire Corp")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("UserMenu Accessibility", () => {
     render(<UserMenu />);
 
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
       expect(screen.getByText("nav.settings")).toBeInTheDocument();

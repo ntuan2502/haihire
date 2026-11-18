@@ -111,31 +111,31 @@ function NotificationSettings() {
                 key={channel.label}
                 disabled={save.isPending}
                 aria-labelledby={`notification-channel-${channel.label}`}
-                className="min-w-0 space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs sm:p-6 dark:border-slate-800 dark:bg-slate-900"
+                className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs sm:p-6"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/50 dark:bg-blue-950/60 dark:text-blue-400">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground">
                     <Icon className="size-5" aria-hidden />
                   </div>
                   <h2
                     id={`notification-channel-${channel.label}`}
-                    className="text-sm font-bold text-slate-900 dark:text-white"
+                    className="text-sm font-semibold text-foreground"
                   >
                     {t(`notificationSettings.${channel.label}`)}
                   </h2>
                 </div>
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                <div className="divide-y divide-border">
                   {(["application", "interview"] as const).map((event) => {
                     const key = channel[event];
                     return (
                       <label
                         key={key}
-                        className="flex cursor-pointer items-center justify-between gap-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                        className="flex cursor-pointer items-center justify-between gap-4 py-3 text-xs font-medium text-foreground"
                       >
                         {t(`notificationSettings.${event}`)}
                         <input
                           type="checkbox"
-                          className="size-4 shrink-0 accent-blue-600"
+                          className="size-4 shrink-0 accent-primary cursor-pointer"
                           checked={values[key]}
                           onChange={(change) => {
                             setDraft({

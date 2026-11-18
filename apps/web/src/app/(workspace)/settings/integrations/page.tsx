@@ -187,27 +187,30 @@ export default function IntegrationsSettingsPage() {
         bordered
         actions={
           activeTab === "webhooks" ? (
-            <SettingsButton id="add-webhook-btn" onClick={handleOpenAdd}>
-              <Plus className="h-4 w-4" />
-              <span>{t("settings.integrations.webhooks.addButton")}</span>
+            <SettingsButton
+              id="add-webhook-btn"
+              icon={Plus}
+              onClick={handleOpenAdd}
+            >
+              {t("settings.integrations.webhooks.addButton")}
             </SettingsButton>
           ) : undefined
         }
       />
 
       {/* Navigation Tabs */}
-      <div className="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+      <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted border border-border">
         <button
           type="button"
           onClick={() => setActiveTab("webhooks")}
           className={cn(
-            "px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap",
+            "px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap",
             activeTab === "webhooks"
-              ? "bg-blue-600 text-white shadow-xs"
-              : "text-slate-600 hover:text-slate-900 hover:bg-white/70 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/70",
+              ? "bg-background text-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50",
           )}
         >
-          <Plug className="h-4 w-4 shrink-0" />
+          <Plug className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{t("settings.integrations.tabs.webhooks")}</span>
         </button>
       </div>

@@ -20,7 +20,8 @@ describe("SettingsLayout", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("main")).not.toBeInTheDocument();
 
-    expect(content.className).toContain("max-w-6xl");
+    expect(content.className).toContain("w-full");
+    expect(content.className).not.toContain("max-w-");
     expect(content).toContainElement(screen.getByTestId("child-panel"));
   });
 });

@@ -192,15 +192,15 @@ export default function AccountSettingsPage() {
         <div className="xl:col-span-7 space-y-6 min-w-0">
           {/* Personal Information Card */}
           <SettingsCard className="space-y-5">
-            <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+            <div className="flex items-start gap-3 pb-4 border-b border-border">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
                 <UserIcon className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h2 className="text-sm font-semibold text-foreground">
                   {t("settings.tabs.accountSub")}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {t("settings.accountInfoSub")}
                 </p>
               </div>
@@ -253,7 +253,7 @@ export default function AccountSettingsPage() {
                   <div key={field.id}>
                     <label
                       htmlFor={field.id}
-                      className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5"
+                      className="block text-xs font-medium text-foreground mb-1.5"
                     >
                       {field.label}
                     </label>
@@ -263,7 +263,7 @@ export default function AccountSettingsPage() {
                       placeholder={field.placeholder}
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
-                      className="h-10 text-xs w-full"
+                      className="text-xs w-full"
                     />
                   </div>
                 ))}
@@ -272,7 +272,7 @@ export default function AccountSettingsPage() {
               <div>
                 <label
                   htmlFor="account-email"
-                  className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5"
+                  className="block text-xs font-medium text-foreground mb-1.5"
                 >
                   {t("settings.emailAddress")}
                 </label>
@@ -281,7 +281,7 @@ export default function AccountSettingsPage() {
                   type="email"
                   disabled
                   value={user?.email || ""}
-                  className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80 w-full"
+                  className="text-xs bg-muted/40 w-full"
                 />
               </div>
 
@@ -317,15 +317,15 @@ export default function AccountSettingsPage() {
 
         {/* Right Column: Personal Language & Timezone Preferences Card */}
         <SettingsCard className="xl:col-span-5 space-y-5">
-          <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
               <Globe className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-foreground">
                 {t("settings.accountPreferences.title")}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {t("settings.accountPreferences.subtitle")}
               </p>
             </div>
@@ -335,7 +335,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="account-preferred-language"
-                className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+                className="block text-xs font-medium text-foreground"
               >
                 {t("settings.accountPreferences.languageLabel")}
               </label>
@@ -347,9 +347,9 @@ export default function AccountSettingsPage() {
                 disabled={isSavingPrefs}
                 options={languageOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full text-xs"
               />
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 {t("settings.accountPreferences.languageHint")}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -364,7 +364,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="account-preferred-timezone"
-                className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+                className="block text-xs font-medium text-foreground"
               >
                 {t("settings.accountPreferences.timezoneLabel")}
               </label>
@@ -381,9 +381,9 @@ export default function AccountSettingsPage() {
                 emptyText={t("settings.localization.timezoneNoMatch")}
                 options={timezoneOptions}
                 className="w-full"
-                triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+                triggerClassName="w-full text-xs"
               />
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="text-[11px] text-muted-foreground">
                 {t("settings.accountPreferences.timezoneHint")}
               </p>
               <p className="text-xs text-muted-foreground">

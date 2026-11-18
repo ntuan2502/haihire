@@ -95,7 +95,7 @@ describe("ThemeToggle with system ThemeProvider", () => {
     const trigger = await screen.findByRole("button", {
       name: /chuyển đổi giao diện|toggle theme/i,
     });
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     const systemOption = await screen.findByRole("menuitem", {
       name: /hệ thống|system/i,

@@ -65,16 +65,16 @@ export function EmailFlowsCard({
   ];
 
   return (
-    <section className="w-full rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-      <div className="flex items-start gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-          <GitBranch className="h-4.5 w-4.5" />
+    <section className="w-full rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-xs space-y-4">
+      <div className="flex items-start gap-3 pb-3 border-b border-border">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground">
+          <GitBranch className="h-4.5 w-4.5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h2 className="text-sm font-semibold text-foreground">
             {t("email.flowsSectionTitle")}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("email.flowsSectionDesc")}
           </p>
         </div>
@@ -97,18 +97,18 @@ export function EmailFlowsCard({
           return (
             <div
               key={flowKey}
-              className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4 flex flex-col justify-between gap-3"
+              className="rounded-lg border border-border bg-muted/40 p-4 flex flex-col justify-between gap-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 text-blue-600 dark:text-blue-400">
-                    <IconComp className="h-4 w-4" />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-card border border-border text-foreground">
+                    <IconComp className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-xs font-semibold text-foreground">
                       {getEmailFlowTitle(flowKey, t)}
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                       {getEmailFlowDescription(flowKey, t)}
                     </p>
                   </div>
@@ -123,14 +123,14 @@ export function EmailFlowsCard({
                     onChange={(e) =>
                       onUpdateFlow(flowKey, { enabled: e.target.checked })
                     }
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                    className="h-4 w-4 rounded border-input accent-primary focus-visible:ring-ring disabled:opacity-50 cursor-pointer"
                   />
                   <span
                     className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
                       isFlowEnabled && !isTemplateDisabled
                         ? "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300"
-                        : "bg-slate-100 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400",
+                        : "bg-secondary border-border text-muted-foreground",
                     )}
                   >
                     {isFlowEnabled && !isTemplateDisabled
@@ -156,7 +156,7 @@ export function EmailFlowsCard({
                     });
                   }}
                   className="w-full"
-                  triggerClassName="h-9 text-xs bg-white dark:bg-slate-900"
+                  triggerClassName="h-9 text-xs bg-background"
                 />
 
                 {isTemplateMissing && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, type FormEvent } from "react";
 import { Role } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
@@ -85,21 +86,20 @@ export function InviteMemberCard({
         <SettingsButton
           type="button"
           onClick={() => setInviteOpen(true)}
-          className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          icon={UserPlus}
         >
-          <UserPlus className="h-4 w-4" />
-          <span>{t("members.inviteMemberTitle")}</span>
+          {t("members.inviteMemberTitle")}
         </SettingsButton>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <SettingsCard className="space-y-4 animate-in fade-in zoom-in-95 duration-150">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+          <UserPlus className="h-4 w-4 text-foreground" aria-hidden="true" />
+          <h3 className="text-xs font-semibold text-foreground">
             {t("members.inviteMemberTitle")}
           </h3>
         </div>
@@ -124,7 +124,7 @@ export function InviteMemberCard({
             placeholder={t("members.inviteEmailPlaceholder")}
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+            className="text-xs"
             required
           />
         </div>
@@ -135,21 +135,20 @@ export function InviteMemberCard({
             onChange={(val) => setInviteRole(val)}
             options={resolvedRoleOptions}
             className="w-full sm:w-48"
-            triggerClassName="h-10 text-xs font-semibold"
+            triggerClassName="text-xs font-medium"
           />
         </div>
 
         <SettingsButton
           type="submit"
+          icon={Send}
+          pending={isInviting}
           disabled={isInviting}
-          className="shrink-0"
+          className="h-9 shrink-0"
         >
-          <Send className="h-3.5 w-3.5" />
-          <span>
-            {isInviting ? t("members.sendingInvite") : t("members.sendInvite")}
-          </span>
+          {isInviting ? t("members.sendingInvite") : t("members.sendInvite")}
         </SettingsButton>
       </form>
-    </div>
+    </SettingsCard>
   );
 }

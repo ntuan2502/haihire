@@ -1491,6 +1491,8 @@ export const en: TranslationSchema = {
     maxUsesLabel: "Max uses",
     createLinkButton: "Create Link",
     activeMembers: "Active Members",
+    memberCountOne: "{count} member",
+    memberCountOther: "{count} members",
     pendingInvites: "Pending Invite Links",
     copyLink: "Copy link",
     copied: "Copied!",
@@ -1671,6 +1673,8 @@ export const en: TranslationSchema = {
     backToSettings: "Back to Settings",
     generalProfileDesc:
       "Manage your organization's display name, public careers URL, and basic workspace details.",
+    orgNameRequiredError: "Organization name is required.",
+    orgSlugRequiredError: "URL slug is required.",
     accountProfileDesc:
       "Manage your account identity, password security, and personal workspace preferences.",
     accountInfoSub:

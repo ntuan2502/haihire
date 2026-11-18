@@ -76,7 +76,7 @@ export default function AuditLogPage() {
         return {
           label: t("settings.auditLog.actionRolePermissionsUpdated"),
           className:
-            "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+            "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
         };
       case "ROLE_PERMISSIONS_RESET":
         return {
@@ -88,7 +88,7 @@ export default function AuditLogPage() {
         return {
           label: t("settings.auditLog.actionMemberRoleChanged"),
           className:
-            "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+            "bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800",
         };
       case "OWNERSHIP_TRANSFERRED":
         return {
@@ -111,8 +111,7 @@ export default function AuditLogPage() {
       default:
         return {
           label: action,
-          className:
-            "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+          className: "bg-secondary text-secondary-foreground border-border",
         };
     }
   };
@@ -267,13 +266,13 @@ export default function AuditLogPage() {
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs space-y-4">
-          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
+        <div className="w-full bg-card rounded-xl border border-border p-6 shadow-xs space-y-4">
+          <div className="h-5 bg-muted rounded-md w-1/4 animate-pulse" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-xl w-full animate-pulse"
+                className="h-12 bg-muted/60 rounded-lg w-full animate-pulse"
               />
             ))}
           </div>
@@ -284,7 +283,7 @@ export default function AuditLogPage() {
       {isError && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-medium text-center"
+          className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs font-medium text-center"
         >
           <span>{String(error)}</span>
         </div>
@@ -294,14 +293,14 @@ export default function AuditLogPage() {
       {!isLoading && !isError && (
         <>
           {logs.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center shadow-xs space-y-2.5">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+            <div className="rounded-xl border border-border bg-card text-card-foreground p-12 text-center shadow-xs space-y-2.5">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <History className="w-6 h-6" aria-hidden="true" />
               </div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-sm font-semibold text-foreground">
                 {t("settings.auditLog.emptyTitle")}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                 {t("settings.auditLog.emptyDescription")}
               </p>
             </div>
@@ -325,14 +324,14 @@ export default function AuditLogPage() {
                         setPage(1);
                         setExpandedRowId(null);
                       }}
-                      className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
+                      className="px-4 py-3 border-t border-border bg-muted/30"
                     />
                   )}
                 </>
               }
             >
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="py-3 px-4">
                       {t("settings.auditLog.colTimestamp")}
@@ -351,7 +350,7 @@ export default function AuditLogPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {logs.map((log: OrganizationAuditLogRecord) => {
                     const badge = getActionBadge(log.action);
                     const isExpanded = expandedRowId === log.id;
@@ -365,27 +364,27 @@ export default function AuditLogPage() {
 
                     return (
                       <Fragment key={log.id}>
-                        <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="py-3.5 px-4 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        <tr className="hover:bg-muted/40 transition-colors">
+                          <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                             {formatDateTime(log.createdAt)}
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             {log.actor ? (
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center shrink-0">
+                                <div className="w-7 h-7 rounded-full bg-secondary text-secondary-foreground font-semibold text-xs flex items-center justify-center shrink-0">
                                   {getInitials(getUserDisplayName(log.actor))}
                                 </div>
                                 <div className="leading-tight">
-                                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                                  <div className="font-semibold text-foreground text-xs">
                                     {getUserDisplayName(log.actor)}
                                   </div>
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  <div className="text-[11px] text-muted-foreground">
                                     {log.actor.email}
                                   </div>
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-400 italic">
+                              <span className="text-xs text-muted-foreground italic">
                                 {t("settings.auditLog.systemActor")}
                               </span>
                             )}
@@ -397,7 +396,7 @@ export default function AuditLogPage() {
                               {badge.label}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-xs font-medium text-foreground whitespace-nowrap">
                             {getResourceLabel(log.resource)}
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
@@ -419,26 +418,29 @@ export default function AuditLogPage() {
                                 )}
                               </SettingsButton>
                             ) : (
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-muted-foreground">
                                 {t("settings.auditLog.noMetadata")}
                               </span>
                             )}
                           </td>
                         </tr>
                         {isExpanded && (
-                          <tr className="bg-slate-50/70 dark:bg-slate-950/40">
+                          <tr className="bg-muted/30">
                             <td
                               colSpan={5}
-                              className="p-4 border-t border-slate-100 dark:border-slate-800"
+                              className="p-4 border-t border-border"
                             >
-                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                                <Info className="w-3.5 h-3.5" />
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
+                                <Info
+                                  className="w-3.5 h-3.5"
+                                  aria-hidden="true"
+                                />
                                 <span>
                                   {t("settings.auditLog.colMetadata")}
                                 </span>
                               </div>
                               {summaryLines.length > 0 ? (
-                                <ul className="space-y-1 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
+                                <ul className="space-y-1 p-3 rounded-lg bg-card border border-border text-xs text-foreground list-disc list-inside">
                                   {summaryLines.map((line, index) => (
                                     <li key={`${log.id}-line-${index}`}>
                                       {line}
@@ -446,7 +448,7 @@ export default function AuditLogPage() {
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                                <p className="text-xs text-muted-foreground p-3 rounded-lg bg-card border border-border">
                                   {t("settings.auditLog.noMetadata")}
                                 </p>
                               )}

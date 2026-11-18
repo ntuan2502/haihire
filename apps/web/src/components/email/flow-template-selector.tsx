@@ -122,7 +122,7 @@ export function FlowTemplateSelect({
     <div className="mt-2.5 space-y-1.5">
       <label
         htmlFor={selectId}
-        className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+        className="block text-[11px] font-medium text-foreground"
       >
         {label}
       </label>

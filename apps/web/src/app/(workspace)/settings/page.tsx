@@ -3,6 +3,8 @@
 import { Save } from "lucide-react";
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -78,11 +80,11 @@ export default function GeneralSettingsPage() {
     const trimmedSlug = orgSlug.toLowerCase().trim();
 
     if (!trimmedName) {
-      toast.error("Organization name is required.");
+      toast.error(t("settings.orgNameRequiredError"));
       return;
     }
     if (!trimmedSlug) {
-      toast.error("URL slug is required.");
+      toast.error(t("settings.orgSlugRequiredError"));
       return;
     }
 
@@ -128,15 +130,15 @@ export default function GeneralSettingsPage() {
         {/* CARD 1: Organization profile */}
         <SettingsCard className="xl:col-span-7 space-y-5">
           {/* Card Header */}
-          <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
               <Building2 className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-foreground">
                 {t("settings.tabs.generalSub")}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {t("settings.generalProfileDesc")}
               </p>
             </div>
@@ -146,7 +148,7 @@ export default function GeneralSettingsPage() {
           <form onSubmit={handleSaveProfile} className="space-y-4">
             {/* Organization name */}
             <div>
-              <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+              <label className="block text-xs font-medium text-foreground mb-1.5">
                 {t("settings.workspaceName")}
               </label>
               <Input
@@ -154,7 +156,7 @@ export default function GeneralSettingsPage() {
                 placeholder={t("settings.placeholders.orgName")}
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+                className="text-xs"
                 required
                 disabled={
                   !canEdit || isOrgLoading || updateOrgMutation.isPending
@@ -164,11 +166,11 @@ export default function GeneralSettingsPage() {
 
             {/* URL slug */}
             <div>
-              <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+              <label className="block text-xs font-medium text-foreground mb-1.5">
                 {t("settings.urlSlug")}
               </label>
-              <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                <span className="px-3 py-2 bg-slate-100/80 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs font-medium select-none border-r border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex items-center rounded-md border border-input bg-transparent dark:bg-input/30 overflow-hidden shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+                <span className="px-3 h-9 inline-flex items-center bg-muted text-muted-foreground text-xs font-medium select-none border-r border-input shrink-0">
                   {displayHost}/
                 </span>
                 <input
@@ -183,14 +185,14 @@ export default function GeneralSettingsPage() {
                       e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
                     )
                   }
-                  className="flex-1 h-10 px-3 text-xs bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
+                  className="flex-1 h-9 px-3 text-xs bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
                   required
                   disabled={
                     !canEdit || isOrgLoading || updateOrgMutation.isPending
                   }
                 />
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+              <p className="text-[11px] text-muted-foreground mt-1.5">
                 {t("settings.slugHint")}
               </p>
             </div>
@@ -209,8 +211,8 @@ export default function GeneralSettingsPage() {
                     : t("settings.saveChanges")}
                 </SettingsButton>
               ) : (
-                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
-                  <Shield className="h-4 w-4 shrink-0" />
+                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs font-medium text-muted-foreground">
+                  <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{t("settings.readOnlyAdmin")}</span>
                 </div>
               )}
@@ -221,25 +223,25 @@ export default function GeneralSettingsPage() {
         {/* Right Column: Workspace Careers Portal + Danger zone (Owner only) */}
         <div className="xl:col-span-5 space-y-6">
           <SettingsCard className="space-y-4">
-            <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+            <div className="flex items-start gap-3 pb-4 border-b border-border">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
                 <Globe className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h2 className="text-sm font-semibold text-foreground">
                   {t("settings.publicJobBoardLink")}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {t("settings.workspaceSummaryDesc")}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="rounded-lg border border-border bg-muted/40 p-3.5 space-y-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("settings.urlSlug")}
               </p>
-              <p className="text-xs font-mono text-slate-700 dark:text-slate-300 break-all">
+              <p className="text-xs font-mono text-foreground break-all">
                 {displayHost}/careers/{orgSlug || "..."}
               </p>
             </div>
@@ -248,7 +250,10 @@ export default function GeneralSettingsPage() {
               href={orgSlug ? `/careers/${orgSlug}` : "/careers"}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-2xs"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-2 text-xs font-semibold",
+              )}
             >
               <span>{t("settings.openPublicCareers")}</span>
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
@@ -256,28 +261,28 @@ export default function GeneralSettingsPage() {
           </SettingsCard>
 
           {isOwner && (
-            <div className="rounded-2xl border border-rose-200/80 bg-white dark:bg-slate-900 dark:border-rose-950/60 p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-4">
               {/* Danger Header */}
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 border border-destructive/20 text-destructive shrink-0">
                   <AlertTriangle className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                  <h2 className="text-sm font-semibold text-destructive">
                     {t("settings.dangerZone")}
                   </h2>
-                  <p className="text-xs text-rose-500/80 dark:text-rose-400/80 mt-0.5">
+                  <p className="text-xs text-destructive/80 mt-0.5">
                     {t("settings.dangerZoneDesc")}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-rose-100 dark:border-rose-950/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="border-t border-destructive/20 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-xs font-semibold text-foreground">
                     {t("settings.deleteOrg")}
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     {t("settings.deleteOrgDesc")}
                   </p>
                 </div>
@@ -285,10 +290,10 @@ export default function GeneralSettingsPage() {
                 <SettingsButton
                   type="button"
                   variant="destructive"
+                  icon={Trash2}
                   onClick={() => setDeleteModalOpen(true)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>{t("common.delete")}</span>
+                  {t("common.delete")}
                 </SettingsButton>
               </div>
             </div>

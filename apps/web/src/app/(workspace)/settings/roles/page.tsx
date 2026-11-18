@@ -224,15 +224,18 @@ export default function RolesPermissionsPage() {
       {dirtyCount > 0 && (
         <div
           role="status"
-          className="p-3.5 rounded-xl border border-blue-200/80 bg-blue-50/80 dark:border-blue-900/60 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 text-sm flex items-center justify-between shadow-xs animate-in fade-in"
+          className="p-3.5 rounded-lg border border-border bg-muted/60 text-foreground text-sm flex items-center justify-between shadow-xs animate-in fade-in"
         >
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <ShieldCheck
+              className="w-4 h-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span className="font-medium">
               {t("settings.rolesMatrix.unsavedChanges")}
             </span>
           </div>
-          <span className="text-xs bg-blue-200/70 dark:bg-blue-800/60 px-2 py-0.5 rounded-md font-semibold">
+          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-semibold">
             {dirtyCount}
           </span>
         </div>
@@ -240,13 +243,13 @@ export default function RolesPermissionsPage() {
 
       {/* Loading Skeleton */}
       {isLoading && (
-        <div className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
+        <div className="w-full bg-card rounded-xl border border-border p-6 space-y-4">
+          <div className="h-6 bg-muted rounded-md w-1/4 animate-pulse" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded-md w-full animate-pulse"
+                className="h-10 bg-muted/60 rounded-md w-full animate-pulse"
               />
             ))}
           </div>
@@ -257,10 +260,10 @@ export default function RolesPermissionsPage() {
       {isError && (
         <div
           role="alert"
-          className="p-6 rounded-xl border border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/40 text-red-800 dark:text-red-200 text-center"
+          className="p-6 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-center"
         >
           <p className="font-semibold">{t("settings.rolesMatrix.saveError")}</p>
-          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+          <p className="text-xs text-destructive/80 mt-1">
             {getApiErrorMessage(error, t)}
           </p>
         </div>

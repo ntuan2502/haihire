@@ -21,17 +21,17 @@ export function RolesMatrixTable({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <table
           className="w-full text-left text-sm border-collapse"
           aria-label={t("settings.rolesMatrix.tableSummary")}
         >
-          <thead className="sticky top-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 z-10">
+          <thead className="sticky top-0 bg-muted/90 backdrop-blur-xs border-b border-border z-10">
             <tr>
               <th
                 scope="col"
-                className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-200 sticky left-0 z-10 w-1/3 min-w-36 bg-slate-50 dark:bg-slate-900 sm:min-w-[240px]"
+                className="py-3.5 px-4 font-semibold text-foreground sticky left-0 z-10 w-1/3 min-w-36 bg-muted sm:min-w-[240px]"
               >
                 {t("settings.rolesMatrix.permissionColumn")}
               </th>
@@ -39,7 +39,7 @@ export function RolesMatrixTable({
                 <th
                   key={role}
                   scope="col"
-                  className="py-3.5 px-3 font-semibold text-center text-slate-700 dark:text-slate-200 min-w-[110px]"
+                  className="py-3.5 px-3 font-semibold text-center text-foreground min-w-[110px]"
                 >
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1">
@@ -53,7 +53,7 @@ export function RolesMatrixTable({
                           className="inline-flex items-center cursor-help"
                         >
                           <Lock
-                            className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500"
+                            className="w-3.5 h-3.5 text-muted-foreground"
                             aria-hidden="true"
                           />
                         </span>
@@ -64,14 +64,14 @@ export function RolesMatrixTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <tbody className="divide-y divide-border">
             {CATEGORIES.map((category) => (
               <Fragment key={category.categoryKey}>
                 {/* Category Header Row */}
-                <tr className="bg-slate-100/75 dark:bg-slate-800/40 border-t border-b border-slate-200/80 dark:border-slate-800">
+                <tr className="bg-muted/50 border-y border-border">
                   <td
                     colSpan={ROLES.length + 1}
-                    className="py-2 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300"
+                    className="py-2 px-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground"
                   >
                     <span className="sticky left-4 inline-block">
                       {t(`settings.rolesMatrix.${category.categoryKey}`)}
@@ -85,11 +85,11 @@ export function RolesMatrixTable({
                   return (
                     <tr
                       key={permission}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-muted/40 transition-colors"
                     >
                       <th
                         scope="row"
-                        className="sticky left-0 z-1 bg-white px-4 py-2.5 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="sticky left-0 z-1 bg-card px-4 py-2.5 text-xs font-medium text-foreground"
                       >
                         {permissionLabel}
                       </th>
@@ -119,7 +119,7 @@ export function RolesMatrixTable({
                                     : `${roleLabel} - ${permissionLabel}`
                                 }
                                 aria-label={`${roleLabel}: ${permissionLabel}`}
-                                className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:checked:bg-blue-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                                className="h-4 w-4 rounded border-input accent-primary focus-visible:ring-ring disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                               />
                             </label>
                           </td>

@@ -1343,6 +1343,8 @@ export interface TranslationSchema {
     maxUsesLabel: string;
     createLinkButton: string;
     activeMembers: string;
+    memberCountOne: string;
+    memberCountOther: string;
     pendingInvites: string;
     copyLink: string;
     copied: string;
@@ -1503,6 +1505,8 @@ export interface TranslationSchema {
     currentPasswordRequiredError: string;
     backToSettings: string;
     generalProfileDesc: string;
+    orgNameRequiredError: string;
+    orgSlugRequiredError: string;
     accountProfileDesc: string;
     accountInfoSub: string;
     accountProfile: {

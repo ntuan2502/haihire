@@ -57,25 +57,25 @@ export function OrgRegionalSettingsForm({
   return (
     <form
       onSubmit={onSave}
-      className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6"
+      className="rounded-xl border border-border bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-6"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
-          <Globe className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+          <Globe className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-foreground">
             {t("settings.localization.orgCardTitle")}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("settings.localization.orgCardSub")}
           </p>
         </div>
       </div>
 
       {!canEdit && (
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
-          <Shield className="h-4 w-4 shrink-0 text-slate-500" />
+        <div className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/60 border border-border text-xs font-medium text-muted-foreground">
+          <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>{t("settings.localization.adminOnlyHint")}</span>
         </div>
       )}
@@ -84,7 +84,7 @@ export function OrgRegionalSettingsForm({
       <div className="space-y-1.5">
         <label
           htmlFor="org-default-language"
-          className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+          className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.defaultLanguageLabel")}
         </label>
@@ -96,9 +96,9 @@ export function OrgRegionalSettingsForm({
           disabled={isDisabled}
           options={languageOptions}
           className="w-full"
-          triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+          triggerClassName="w-full text-xs"
         />
-        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] text-muted-foreground">
           {t("settings.localization.defaultLanguageHint")}
         </p>
       </div>
@@ -107,7 +107,7 @@ export function OrgRegionalSettingsForm({
       <div className="space-y-1.5">
         <label
           htmlFor="org-timezone"
-          className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+          className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.timezoneLabel")}
         </label>
@@ -124,16 +124,16 @@ export function OrgRegionalSettingsForm({
           emptyText={t("settings.localization.timezoneNoMatch")}
           options={timezoneOptions}
           className="w-full"
-          triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+          triggerClassName="w-full text-xs"
         />
-        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] text-muted-foreground">
           {t("settings.localization.timezoneHint")}
         </p>
       </div>
 
       {/* 3. Date Format */}
       <div className="space-y-2">
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+        <label className="block text-xs font-medium text-foreground">
           {t("settings.localization.dateFormatLabel")}
         </label>
         <div
@@ -156,33 +156,31 @@ export function OrgRegionalSettingsForm({
                 disabled={isDisabled}
                 onClick={() => updateDraft("dateFormat", fmt as DateFormat)}
                 className={cn(
-                  "px-3.5 py-2.5 rounded-xl border text-left transition-all",
+                  "px-3.5 py-2.5 rounded-lg border text-left transition-colors",
                   isDisabled
                     ? "opacity-60 cursor-not-allowed"
                     : "cursor-pointer",
                   selected
-                    ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-500"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-slate-300 dark:hover:border-slate-700",
+                    ? "border-primary bg-accent/60 text-foreground ring-1 ring-ring/30"
+                    : "border-border bg-background hover:bg-accent/40 text-foreground",
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                  <span className="text-xs font-mono font-semibold text-foreground">
                     {fmt}
                   </span>
                   <span
                     className={cn(
                       "h-3 w-3 rounded-full border flex items-center justify-center",
-                      selected
-                        ? "border-blue-600 dark:border-blue-500"
-                        : "border-slate-300 dark:border-slate-700",
+                      selected ? "border-primary" : "border-border",
                     )}
                   >
                     {selected && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-500" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     )}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                <div className="text-[11px] text-muted-foreground mt-1">
                   {sample}
                 </div>
               </button>
@@ -193,7 +191,7 @@ export function OrgRegionalSettingsForm({
 
       {/* 4. Time Format */}
       <div className="space-y-2">
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+        <label className="block text-xs font-medium text-foreground">
           {t("settings.localization.timeFormatLabel")}
         </label>
         <div
@@ -212,23 +210,16 @@ export function OrgRegionalSettingsForm({
                 disabled={isDisabled}
                 onClick={() => updateDraft("timeFormat", tf as TimeFormat)}
                 className={cn(
-                  "px-3.5 py-2.5 rounded-xl border text-left transition-all",
+                  "px-3.5 py-2.5 rounded-lg border text-left transition-colors",
                   isDisabled
                     ? "opacity-60 cursor-not-allowed"
                     : "cursor-pointer",
                   selected
-                    ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-500"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-slate-300 dark:hover:border-slate-700",
+                    ? "border-primary bg-accent/60 text-foreground ring-1 ring-ring/30"
+                    : "border-border bg-background hover:bg-accent/40 text-foreground",
                 )}
               >
-                <div
-                  className={cn(
-                    "text-xs font-bold",
-                    selected
-                      ? "text-blue-700 dark:text-blue-300"
-                      : "text-slate-900 dark:text-white",
-                  )}
-                >
+                <div className="text-xs font-semibold text-foreground">
                   {tf === "24H"
                     ? t("settings.localization.timeFormat24H")
                     : t("settings.localization.timeFormat12H")}
@@ -241,7 +232,7 @@ export function OrgRegionalSettingsForm({
 
       {/* 5. Name Display Order */}
       <div className="space-y-2">
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+        <label className="block text-xs font-medium text-foreground">
           {t("settings.localization.nameOrderLabel")}
         </label>
         <div
@@ -262,28 +253,21 @@ export function OrgRegionalSettingsForm({
                   updateDraft("nameDisplayOrder", order as NameDisplayOrder)
                 }
                 className={cn(
-                  "px-3.5 py-2.5 rounded-xl border text-left transition-all",
+                  "px-3.5 py-2.5 rounded-lg border text-left transition-colors",
                   isDisabled
                     ? "opacity-60 cursor-not-allowed"
                     : "cursor-pointer",
                   selected
-                    ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 dark:border-blue-500"
-                    : "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-slate-300 dark:hover:border-slate-700",
+                    ? "border-primary bg-accent/60 text-foreground ring-1 ring-ring/30"
+                    : "border-border bg-background hover:bg-accent/40 text-foreground",
                 )}
               >
-                <div
-                  className={cn(
-                    "text-xs font-bold",
-                    selected
-                      ? "text-blue-700 dark:text-blue-300"
-                      : "text-slate-900 dark:text-white",
-                  )}
-                >
+                <div className="text-xs font-semibold text-foreground">
                   {order === "FIRST_LAST"
                     ? t("settings.localization.nameOrderFirstLast")
                     : t("settings.localization.nameOrderLastFirst")}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <div className="text-[11px] text-muted-foreground mt-0.5">
                   {order === "FIRST_LAST"
                     ? t("settings.localization.nameOrderFirstLastExample")
                     : t("settings.localization.nameOrderLastFirstExample")}
@@ -298,7 +282,7 @@ export function OrgRegionalSettingsForm({
       <div className="space-y-1.5">
         <label
           htmlFor="org-default-currency"
-          className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+          className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.currencyLabel")}
         </label>
@@ -314,16 +298,16 @@ export function OrgRegionalSettingsForm({
           disabled={isDisabled}
           options={currencyOptions}
           className="w-full"
-          triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+          triggerClassName="w-full text-xs"
         />
-        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] text-muted-foreground">
           {t("settings.localization.currencyHint")}
         </p>
       </div>
 
       {/* Action Row */}
       {canEdit && (
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-3">
           <div className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
             {isDirty ? t("settings.localization.unsavedChanges") : ""}
           </div>
@@ -334,7 +318,7 @@ export function OrgRegionalSettingsForm({
               onClick={onReset}
               disabled={!isDirty || isSaving}
             >
-              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
               {t("settings.localization.resetButton")}
             </SettingsButton>
             <SettingsButton

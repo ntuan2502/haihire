@@ -33,7 +33,7 @@ export function RemoveMemberModal({
         member ? (
           <span>
             {t("members.removeMemberConfirmWarning")}{" "}
-            <strong className="font-semibold text-slate-900 dark:text-white">
+            <strong className="font-semibold text-foreground">
               ({member.name})
             </strong>
           </span>
@@ -75,7 +75,7 @@ export function TransferOwnershipModal({
         member ? (
           <span>
             {t("members.transferOwnershipConfirmDesc")}{" "}
-            <strong className="font-semibold text-slate-900 dark:text-white">
+            <strong className="font-semibold text-foreground">
               ({member.name})
             </strong>
             ? {t("members.transferOwnershipConfirmNote")}

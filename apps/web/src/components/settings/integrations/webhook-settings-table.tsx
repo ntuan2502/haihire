@@ -54,18 +54,18 @@ export function WebhookSettingsTable({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+    <div className="rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-xs">
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 text-slate-500 text-xs">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        <div className="flex items-center justify-center p-12 text-muted-foreground text-xs">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" aria-hidden="true" />
           <span>{t("common.loading")}</span>
         </div>
       ) : webhookSettings.length === 0 ? (
         <div className="text-center py-12 px-4 space-y-3">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
-            <Webhook className="h-6 w-6" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+            <Webhook className="h-6 w-6" aria-hidden="true" />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("settings.integrations.webhooks.emptyState")}
           </p>
           {isAdmin && (
@@ -73,9 +73,9 @@ export function WebhookSettingsTable({
               variant="outline"
               size="sm"
               onClick={onOpenAdd}
+              icon={Plus}
               className="mt-2"
             >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
               {t("settings.integrations.webhooks.addButton")}
             </SettingsButton>
           )}
@@ -83,7 +83,7 @@ export function WebhookSettingsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/60 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.eventType")}
@@ -102,26 +102,26 @@ export function WebhookSettingsTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border">
               {webhookSettings.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                  className="hover:bg-muted/40 transition-colors"
                 >
-                  <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
+                  <td className="py-3.5 px-4 font-medium text-foreground">
                     <div className="flex flex-col">
                       <span>
                         {t(
                           `settings.integrations.webhooks.eventTypes.${item.eventType}`,
                         )}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-xs mt-0.5">
+                      <span className="text-xs text-muted-foreground font-mono truncate max-w-xs mt-0.5">
                         {item.webhookUrl}
                       </span>
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
                       {t(
                         `settings.integrations.webhooks.providers.${item.provider}`,
                       )}
@@ -139,27 +139,30 @@ export function WebhookSettingsTable({
                     ) : (
                       <Badge
                         variant="outline"
-                        className="border-slate-300 text-slate-500 bg-slate-50 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700 flex items-center gap-1 w-fit"
+                        className="border-border text-muted-foreground bg-muted/50 flex items-center gap-1 w-fit"
                       >
                         <PauseCircle className="h-3 w-3" />
                         {t("settings.integrations.webhooks.disabled")}
                       </Badge>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <td className="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(item.updatedAt)}
                   </td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="inline-flex items-center gap-1">
                       <SettingsButton
                         variant="ghost"
-                        size="icon"
+                        size="icon-sm"
                         onClick={() => onTest(item)}
                         title={t(
                           "settings.integrations.webhooks.modal.testButton",
                         )}
+                        aria-label={t(
+                          "settings.integrations.webhooks.modal.testButton",
+                        )}
                         disabled={isTesting}
-                        className="h-8 w-8 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 cursor-pointer"
+                        className="text-muted-foreground hover:text-foreground cursor-pointer"
                       >
                         <Send className="h-3.5 w-3.5" />
                       </SettingsButton>
@@ -167,19 +170,21 @@ export function WebhookSettingsTable({
                         <>
                           <SettingsButton
                             variant="ghost"
-                            size="icon"
+                            size="icon-sm"
                             onClick={() => onOpenEdit(item)}
                             title={t("common.edit")}
-                            className="h-8 w-8 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                            aria-label={t("common.edit")}
+                            className="text-muted-foreground hover:text-foreground"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </SettingsButton>
                           <SettingsButton
                             variant="ghost"
-                            size="icon"
+                            size="icon-sm"
                             onClick={() => onDelete(item.id)}
                             title={t("common.delete")}
-                            className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                            aria-label={t("common.delete")}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </SettingsButton>

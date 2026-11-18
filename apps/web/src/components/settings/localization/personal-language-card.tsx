@@ -1,6 +1,7 @@
 "use client";
 
 import { Languages } from "lucide-react";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import type { OrgLanguage } from "@haihire/shared";
@@ -19,16 +20,16 @@ export function PersonalLanguageCard({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
-          <Languages className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+          <Languages className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h2 className="text-sm font-semibold text-foreground">
             {t("settings.localization.personalCardTitle")}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("settings.localization.personalCardSub")}
           </p>
         </div>
@@ -37,7 +38,7 @@ export function PersonalLanguageCard({
       <div className="space-y-1.5">
         <label
           htmlFor="personal-ui-language"
-          className="block text-xs font-semibold text-slate-800 dark:text-slate-200"
+          className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.personalLanguageLabel")}
         </label>
@@ -48,12 +49,12 @@ export function PersonalLanguageCard({
           onChange={(val) => onLanguageChange(val as OrgLanguage)}
           options={languageOptions}
           className="w-full"
-          triggerClassName="w-full h-10 text-xs bg-slate-50/60 dark:bg-slate-950 rounded-xl"
+          triggerClassName="w-full text-xs"
         />
-        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] text-muted-foreground">
           {t("settings.localization.personalLanguageHint")}
         </p>
       </div>
-    </div>
+    </SettingsCard>
   );
 }

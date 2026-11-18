@@ -1498,6 +1498,8 @@ export const vi: TranslationSchema = {
     maxUsesLabel: "Số lượt dùng tối đa",
     createLinkButton: "Tạo liên kết",
     activeMembers: "Thành viên đang hoạt động",
+    memberCountOne: "{count} thành viên",
+    memberCountOther: "{count} thành viên",
     pendingInvites: "Liên kết mời đang chờ",
     copyLink: "Sao chép liên kết",
     copied: "Đã sao chép!",
@@ -1678,6 +1680,8 @@ export const vi: TranslationSchema = {
     backToSettings: "Quay lại Cài đặt",
     generalProfileDesc:
       "Quản lý tên hiển thị, đường dẫn trang tuyển dụng và thông tin cơ bản của tổ chức.",
+    orgNameRequiredError: "Vui lòng nhập tên tổ chức.",
+    orgSlugRequiredError: "Vui lòng nhập đường dẫn định danh.",
     accountProfileDesc:
       "Quản lý thông tin tài khoản, bảo mật mật khẩu và tùy chọn cá nhân.",
     accountInfoSub:

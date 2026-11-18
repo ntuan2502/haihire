@@ -8,7 +8,7 @@ import type {
   WebhookEventType,
   WebhookProviderType,
 } from "@haihire/shared";
-import { Send, HelpCircle, Loader2 } from "lucide-react";
+import { Send, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   CustomModal,
@@ -162,7 +162,7 @@ export function WebhookModal({
         <div className="p-6 space-y-4">
           {/* Event Type Select */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("settings.integrations.webhooks.modal.eventType")}
             </label>
             <CustomSelect<WebhookEventType>
@@ -175,7 +175,7 @@ export function WebhookModal({
 
           {/* Provider Select */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("settings.integrations.webhooks.modal.provider")}
             </label>
             <CustomSelect<WebhookProviderType>
@@ -188,7 +188,7 @@ export function WebhookModal({
 
           {/* Webhook URL Input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("settings.integrations.webhooks.modal.webhookUrl")}
             </label>
             <Input
@@ -197,8 +197,8 @@ export function WebhookModal({
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder={getDynamicPlaceholder(provider)}
             />
-            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-              <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {provider === "TELEGRAM" &&
                 t(
                   "settings.integrations.webhooks.modal.webhookUrlHint.telegram",
@@ -217,7 +217,7 @@ export function WebhookModal({
           {/* Telegram Chat ID (Conditional) */}
           {provider === "TELEGRAM" && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-medium text-foreground">
                 {t("settings.integrations.webhooks.modal.chatId")}
               </label>
               <Input
@@ -226,7 +226,7 @@ export function WebhookModal({
                 onChange={(e) => setChatId(e.target.value)}
                 placeholder="-100123456789"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t("settings.integrations.webhooks.modal.chatIdHint")}
               </p>
             </div>
@@ -235,7 +235,7 @@ export function WebhookModal({
           {/* Generic Secret Token (Conditional) */}
           {provider === "GENERIC" && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-medium text-foreground">
                 {t("settings.integrations.webhooks.modal.secretToken")}
               </label>
               <Input
@@ -244,7 +244,7 @@ export function WebhookModal({
                 onChange={(e) => setSecretToken(e.target.value)}
                 placeholder="••••••••••••••••"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t("settings.integrations.webhooks.modal.secretTokenHint")}
               </p>
             </div>
@@ -257,11 +257,11 @@ export function WebhookModal({
               type="checkbox"
               checked={isEnabled}
               onChange={(e) => setIsEnabled(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="h-4 w-4 rounded border-input accent-primary focus-visible:ring-ring cursor-pointer"
             />
             <label
               htmlFor="webhook-is-enabled"
-              className="text-xs font-medium text-slate-700 dark:text-slate-300 select-none cursor-pointer"
+              className="text-xs font-medium text-foreground select-none cursor-pointer"
             >
               {t("settings.integrations.webhooks.modal.isEnabled")}
             </label>
@@ -269,30 +269,20 @@ export function WebhookModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-6 py-4 border-t border-border bg-muted/30 shrink-0">
           <SettingsButton
             type="button"
             variant="outline"
             size="sm"
+            icon={Send}
+            pending={isTesting}
             onClick={handleTest}
             disabled={isTesting}
             className="w-full sm:w-auto"
           >
-            {isTesting ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>
-                  {t("settings.integrations.webhooks.modal.testingButton")}
-                </span>
-              </>
-            ) : (
-              <>
-                <Send className="h-3.5 w-3.5" />
-                <span>
-                  {t("settings.integrations.webhooks.modal.testButton")}
-                </span>
-              </>
-            )}
+            {isTesting
+              ? t("settings.integrations.webhooks.modal.testingButton")
+              : t("settings.integrations.webhooks.modal.testButton")}
           </SettingsButton>
 
           <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
@@ -307,19 +297,13 @@ export function WebhookModal({
             <SettingsButton
               type="button"
               size="sm"
+              pending={isSaving}
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                  <span>
-                    {t("settings.integrations.webhooks.modal.saving")}
-                  </span>
-                </>
-              ) : (
-                <span>{t("settings.integrations.webhooks.modal.save")}</span>
-              )}
+              {isSaving
+                ? t("settings.integrations.webhooks.modal.saving")
+                : t("settings.integrations.webhooks.modal.save")}
             </SettingsButton>
           </div>
         </div>

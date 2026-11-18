@@ -121,14 +121,13 @@ export function CustomModal({
       {/* Modal Dialog Surface */}
       <div
         className={cn(
-          "relative z-10 w-full flex flex-col rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-[#fbfbfd] dark:bg-[#1a1a1a] shadow-2xl overflow-hidden duration-150 animate-in zoom-in-95",
+          "relative z-10 w-full flex flex-col rounded-xl border border-border bg-card text-card-foreground shadow-xl overflow-hidden duration-150 animate-in zoom-in-95",
           isMaximized
             ? "w-full h-full max-w-none max-h-none rounded-none fixed inset-0 z-50"
             : cn(resolvedMaxWidth, resolvedHeight),
           panelClassName,
         )}
       >
-        {/* Header (shadcn design aesthetics with zero macos decoration) */}
         {(title ||
           description ||
           badge ||
@@ -137,7 +136,7 @@ export function CustomModal({
           allowMaximize) && (
           <div
             className={cn(
-              "px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] flex items-center justify-between gap-3 shrink-0",
+              "px-6 py-4 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0",
               headerClassName,
             )}
           >
@@ -145,7 +144,7 @@ export function CustomModal({
               <div className="space-y-0.5 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   {title && (
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
+                    <h2 className="text-base font-semibold text-foreground leading-tight truncate">
                       {title}
                     </h2>
                   )}
@@ -156,9 +155,7 @@ export function CustomModal({
                   )}
                 </div>
                 {description && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {description}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
                 )}
               </div>
             </div>
@@ -172,7 +169,7 @@ export function CustomModal({
                 <button
                   type="button"
                   onClick={() => setIsMaximized((prev) => !prev)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
                   aria-label={
                     isMaximized ? t("common.restore") : t("common.maximize")
                   }
@@ -192,7 +189,7 @@ export function CustomModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
                   aria-label={t("common.close")}
                 >
                   <X className="h-4 w-4" />

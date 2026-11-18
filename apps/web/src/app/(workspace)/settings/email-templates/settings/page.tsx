@@ -108,18 +108,18 @@ export default function EmailSettingsPage() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Provider Selection */}
         <SettingsCard className="xl:col-span-7 space-y-5">
-          <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
               <Sliders className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
               <h2
                 id="email-provider-title"
-                className="text-sm font-bold text-slate-900 dark:text-white"
+                className="text-sm font-semibold text-foreground"
               >
                 {t("email.providerTitle")}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {t("email.providerDesc")}
               </p>
             </div>
@@ -175,23 +175,23 @@ export default function EmailSettingsPage() {
                       provider: prov.id as EmailProviderType,
                     }))
                   }
-                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  className={`p-4 rounded-lg border text-left transition-colors cursor-pointer flex flex-col justify-between gap-2 ${
                     emailSettings.provider === prov.id
-                      ? "border-blue-600 bg-blue-50/40 dark:bg-blue-950/40 dark:border-blue-500 ring-2 ring-blue-600/20"
-                      : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                      ? "border-primary bg-accent/60 ring-1 ring-ring/30"
+                      : "border-border bg-background hover:bg-accent/40"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                    <span className="text-xs font-semibold text-foreground">
                       {prov.title}
                     </span>
                     {prov.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground">
                         {prov.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-muted-foreground">
                     {prov.desc}
                   </p>
                 </button>
@@ -199,13 +199,13 @@ export default function EmailSettingsPage() {
             </div>
 
             {/* Sender Server Info */}
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-semibold text-foreground pt-2 border-t border-border">
               {t("email.senderServerInfo")}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   {t("email.senderName")}
                 </label>
                 <Input
@@ -222,7 +222,7 @@ export default function EmailSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   {t("email.senderEmail")}
                 </label>
                 <Input
@@ -241,10 +241,10 @@ export default function EmailSettingsPage() {
 
             {/* Specific fields for SMTP */}
             {emailSettings.provider === "SMTP" && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-4">
+              <div className="pt-2 border-t border-border space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       {t("email.smtpHost")}
                     </label>
                     <Input
@@ -261,7 +261,7 @@ export default function EmailSettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       {t("email.smtpPort")}
                     </label>
                     <Input
@@ -281,7 +281,7 @@ export default function EmailSettingsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       {t("email.smtpUsername")}
                     </label>
                     <Input
@@ -298,7 +298,7 @@ export default function EmailSettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
                       {t("email.smtpPassword")}
                     </label>
                     <Input
@@ -320,8 +320,8 @@ export default function EmailSettingsPage() {
 
             {/* Specific fields for Resend */}
             {emailSettings.provider === "RESEND" && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+              <div className="pt-2 border-t border-border">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   {t("email.resendApiKeyLabel")}
                 </label>
                 <Input
@@ -341,8 +341,8 @@ export default function EmailSettingsPage() {
 
             {/* Specific fields for SendGrid */}
             {emailSettings.provider === "SENDGRID" && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+              <div className="pt-2 border-t border-border">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
                   {t("email.sendgridApiKeyLabel")}
                 </label>
                 <Input
@@ -363,16 +363,15 @@ export default function EmailSettingsPage() {
             <div className="pt-3">
               <SettingsButton
                 type="button"
+                icon={Save}
+                pending={updateSettingsMutation.isPending}
                 onClick={handleSaveSettings}
                 disabled={!canEdit || !hasChanges}
                 className="w-full sm:w-auto"
               >
-                <Save className="h-3.5 w-3.5" />
-                <span>
-                  {updateSettingsMutation.isPending
-                    ? t("common.saving")
-                    : t("email.saveSettingsBtn")}
-                </span>
+                {updateSettingsMutation.isPending
+                  ? t("common.saving")
+                  : t("email.saveSettingsBtn")}
               </SettingsButton>
             </div>
           </fieldset>
@@ -380,15 +379,15 @@ export default function EmailSettingsPage() {
 
         {/* Test Email Box */}
         <SettingsCard className="xl:col-span-5 space-y-4 xl:sticky xl:top-6">
-          <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
               <Send className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-foreground">
                 {t("email.testEmailSection")}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {t("email.testEmailDesc")}
               </p>
             </div>
@@ -402,20 +401,19 @@ export default function EmailSettingsPage() {
               value={testEmailAddress}
               onChange={(e) => setTestEmailAddress(e.target.value)}
               placeholder={t("email.testEmailPlaceholder")}
-              className="h-10 text-xs flex-1"
+              className="text-xs flex-1"
             />
             <SettingsButton
               type="button"
+              icon={Send}
+              pending={isSendingTest}
               onClick={handleSendTest}
               disabled={
                 !canSendTest || isSendingTest || !testEmailAddress.trim()
               }
               className="w-full sm:w-auto xl:w-full shrink-0"
             >
-              <Send className="h-3.5 w-3.5" />
-              <span>
-                {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
-              </span>
+              {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
             </SettingsButton>
           </div>
         </SettingsCard>

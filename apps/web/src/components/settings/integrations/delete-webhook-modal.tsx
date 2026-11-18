@@ -2,7 +2,6 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { useI18n } from "@/i18n";
-import { Loader2 } from "lucide-react";
 import { CustomModal } from "@/components/shared";
 
 export interface DeleteWebhookModalProps {
@@ -28,23 +27,21 @@ export function DeleteWebhookModal({
       size="sm"
     >
       <div className="p-6 space-y-4">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted-foreground">
           {t("settings.integrations.webhooks.deleteConfirm.message")}
         </p>
       </div>
-      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
+      <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-muted/30 shrink-0">
         <SettingsButton variant="ghost" size="sm" onClick={onClose}>
           {t("settings.integrations.webhooks.deleteConfirm.cancel")}
         </SettingsButton>
         <SettingsButton
           variant="destructive"
           size="sm"
+          pending={isDeleting}
           onClick={onConfirm}
           disabled={isDeleting}
         >
-          {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
-          ) : null}
           {t("settings.integrations.webhooks.deleteConfirm.confirm")}
         </SettingsButton>
       </div>

@@ -361,23 +361,26 @@ export function CustomSelect<T extends string = string>({
         }}
         onKeyDown={handleKeyDown}
         className={cn(
-          "w-full flex items-center justify-between gap-2 rounded-xl font-normal transition-all cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900",
-          size === "sm"
-            ? "px-2.5 py-1.5 text-xs"
-            : "px-3 py-2 text-xs sm:text-sm",
+          "w-full flex items-center justify-between gap-2 rounded-md font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          size === "sm" ? "h-8 px-2.5 text-xs" : "h-9 px-3 text-xs sm:text-sm",
           disabled
             ? "opacity-50 cursor-not-allowed pointer-events-none"
-            : "active:scale-[0.98]",
+            : isLanding
+              ? "active:scale-[0.98]"
+              : "",
           isLanding
-            ? "bg-white/10 hover:bg-white/15 border border-white/10 text-cyan-200 shadow-sm"
-            : "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200 shadow-xs",
+            ? "rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-cyan-200 shadow-sm"
+            : "border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
           triggerClassName,
         )}
       >
         <div className="flex items-center gap-2 truncate min-w-0 flex-1">
           {SelectedIcon && (
             <SelectedIcon
-              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-400"
+              className={cn(
+                "h-3.5 w-3.5 shrink-0",
+                isLanding ? "text-slate-400" : "text-muted-foreground",
+              )}
               aria-hidden="true"
             />
           )}
@@ -388,9 +391,7 @@ export function CustomSelect<T extends string = string>({
         <ChevronDown
           className={cn(
             "h-3.5 w-3.5 shrink-0 transition-transform duration-200 ml-1.5",
-            isLanding
-              ? "text-cyan-300/80"
-              : "text-slate-400 dark:text-slate-400",
+            isLanding ? "text-cyan-300/80" : "text-muted-foreground",
             isOpen && "rotate-180",
           )}
           aria-hidden="true"

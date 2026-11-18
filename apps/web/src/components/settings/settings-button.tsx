@@ -27,9 +27,8 @@ export function SettingsButton({
       disabled={disabled || pending}
       aria-busy={pending || undefined}
       className={cn(
-        "rounded-xl text-xs [&_svg]:size-3.5",
-        size?.startsWith("icon") ? "size-8" : "h-9 gap-1.5 px-3",
-        variant === "default" && "bg-blue-600 text-white hover:bg-blue-700",
+        "text-xs [&_svg]:size-3.5",
+        size?.startsWith("icon") ? "size-8" : "h-8 gap-1.5 px-3",
         className,
       )}
     >

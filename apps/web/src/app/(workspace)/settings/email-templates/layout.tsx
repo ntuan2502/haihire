@@ -69,7 +69,7 @@ export default function EmailTemplatesLayout({
       ) : (
         <>
           {/* Navigation Sub-Tabs */}
-          <div className="inline-flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 max-w-full">
+          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-muted border border-border max-w-full">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -77,13 +77,13 @@ export default function EmailTemplatesLayout({
                   key={tab.href}
                   href={tab.href}
                   aria-current={tab.isActive ? "page" : undefined}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
                     tab.isActive
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/70 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/70"
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                   }`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{tab.label}</span>
                 </Link>
               );

@@ -215,11 +215,10 @@ export default function MembersSettingsPage() {
         canManageMembers && !isInviteOpen ? (
           <SettingsButton
             type="button"
+            icon={UserPlus}
             onClick={() => setIsInviteOpen(true)}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-2 shadow-sm shadow-blue-600/20"
           >
-            <UserPlus className="h-4 w-4 shrink-0" />
-            <span>{t("members.inviteMemberTitle")}</span>
+            {t("members.inviteMemberTitle")}
           </SettingsButton>
         ) : undefined
       }

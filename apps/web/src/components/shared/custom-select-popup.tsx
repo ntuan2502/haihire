@@ -93,10 +93,10 @@ export function CustomSelectPopup<T extends string = string>({
         maxWidth: "calc(100vw - 16px)",
       }}
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl p-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-150 border shadow-2xl focus:outline-none",
+        "flex flex-col overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-150 border focus:outline-none",
         isLanding
-          ? "bg-[#0b152d]/95 backdrop-blur-xl border-white/15 text-white"
-          : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200",
+          ? "rounded-2xl p-1.5 shadow-2xl bg-[#0b152d]/95 backdrop-blur-xl border-white/15 text-white"
+          : "rounded-lg p-1 shadow-md border-border bg-popover text-popover-foreground",
         popupClassName,
       )}
     >
@@ -104,14 +104,15 @@ export function CustomSelectPopup<T extends string = string>({
         <div
           className={cn(
             "px-1 pb-1.5 mb-1 border-b shrink-0",
-            isLanding
-              ? "border-white/10"
-              : "border-slate-100 dark:border-slate-800",
+            isLanding ? "border-white/10" : "border-border",
           )}
         >
           <div className="relative">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"
+              className={cn(
+                "pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5",
+                isLanding ? "text-slate-400" : "text-muted-foreground",
+              )}
               aria-hidden="true"
             />
             <input
@@ -127,10 +128,10 @@ export function CustomSelectPopup<T extends string = string>({
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder || ariaLabel}
               className={cn(
-                "w-full h-8 pl-8 pr-2.5 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-blue-500",
+                "w-full h-8 pl-8 pr-2.5 border text-xs",
                 isLanding
-                  ? "bg-white/10 border-white/15 text-white placeholder:text-slate-400"
-                  : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400",
+                  ? "rounded-lg bg-white/10 border-white/15 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  : "rounded-md border-input bg-transparent dark:bg-input/30 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
               )}
             />
           </div>
@@ -138,7 +139,12 @@ export function CustomSelectPopup<T extends string = string>({
       )}
       <div className="max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {filteredOptions.length === 0 ? (
-          <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div
+            className={cn(
+              "px-3 py-3 text-center text-xs",
+              isLanding ? "text-slate-400" : "text-muted-foreground",
+            )}
+          >
             {emptyText}
           </div>
         ) : (
@@ -164,21 +170,24 @@ export function CustomSelectPopup<T extends string = string>({
                   if (!option.disabled) setFocusedIndex(index);
                 }}
                 className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer min-w-0 max-w-full focus:outline-none",
+                  "w-full flex items-center justify-between gap-2 text-xs transition-colors text-left cursor-pointer min-w-0 max-w-full focus:outline-none",
+                  isLanding
+                    ? "px-3 py-2 rounded-xl font-medium"
+                    : "px-2.5 py-1.5 rounded-md font-normal",
                   option.disabled
                     ? "opacity-40 cursor-not-allowed pointer-events-none"
                     : "",
                   isSelected
                     ? isLanding
                       ? "bg-blue-600/30 text-cyan-300 font-bold border border-blue-400/20 shadow-xs"
-                      : "bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold"
+                      : "bg-accent text-accent-foreground font-medium"
                     : isLanding
                       ? isFocused
                         ? "bg-white/15 text-white"
                         : "text-slate-300 hover:bg-white/10 hover:text-white"
                       : isFocused
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80",
+                        ? "bg-accent/70 text-accent-foreground"
+                        : "text-popover-foreground hover:bg-accent/60 hover:text-accent-foreground",
                 )}
               >
                 <div className="flex items-center gap-2 truncate min-w-0 flex-1">
@@ -187,8 +196,12 @@ export function CustomSelectPopup<T extends string = string>({
                       className={cn(
                         "h-3.5 w-3.5 shrink-0",
                         isSelected
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-slate-400 dark:text-slate-400",
+                          ? isLanding
+                            ? "text-cyan-300"
+                            : "text-foreground"
+                          : isLanding
+                            ? "text-slate-400"
+                            : "text-muted-foreground",
                       )}
                       aria-hidden="true"
                     />
@@ -199,9 +212,7 @@ export function CustomSelectPopup<T extends string = string>({
                   <Check
                     className={cn(
                       "h-3.5 w-3.5 shrink-0 ml-2",
-                      isLanding
-                        ? "text-cyan-300"
-                        : "text-blue-600 dark:text-blue-400",
+                      isLanding ? "text-cyan-300" : "text-foreground",
                     )}
                     aria-hidden="true"
                   />

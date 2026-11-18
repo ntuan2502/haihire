@@ -62,12 +62,12 @@ export function Pagination({
   return (
     <nav
       aria-label={t("common.pagination")}
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 select-none ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground select-none ${className}`}
     >
       {/* Left section: Item counters and page size selector */}
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
         {totalItems > 0 ? (
-          <span className="font-medium text-slate-600 dark:text-slate-300">
+          <span className="font-medium text-foreground">
             {t("common.showing")} {start}–{end} {t("common.of")} {totalItems}
             {itemLabel ? ` ${itemLabel}` : ""}
           </span>
@@ -92,7 +92,7 @@ export function Pagination({
               }))}
               size="sm"
               direction="up"
-              triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
+              triggerClassName="h-7 px-2 text-xs font-normal rounded-md min-w-[60px]"
             />
           </div>
         )}
@@ -111,7 +111,7 @@ export function Pagination({
             type="button"
             disabled={clampedCurrentPage <= 1}
             onClick={() => onPageChange(Math.max(1, clampedCurrentPage - 1))}
-            className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
+            className="h-7 w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
             title={t("common.previous")}
             aria-label={t("common.previous")}
           >
@@ -126,7 +126,7 @@ export function Pagination({
                 return (
                   <Fragment key={p}>
                     {prev && p - prev > 1 && (
-                      <span className="px-1 text-slate-400">...</span>
+                      <span className="px-1 text-muted-foreground">...</span>
                     )}
                     <button
                       type="button"
@@ -135,10 +135,10 @@ export function Pagination({
                         clampedCurrentPage === p ? "page" : undefined
                       }
                       aria-label={`${t("common.page")} ${p}`}
-                      className={`h-7 min-w-[28px] px-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      className={`h-7 min-w-[28px] px-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                         clampedCurrentPage === p
-                          ? "bg-blue-600 text-white shadow-xs"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
                       }`}
                     >
                       {p}
@@ -156,7 +156,7 @@ export function Pagination({
             onClick={() =>
               onPageChange(Math.min(clampedTotalPages, clampedCurrentPage + 1))
             }
-            className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
+            className="h-7 w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
             title={t("common.next")}
             aria-label={t("common.next")}
           >

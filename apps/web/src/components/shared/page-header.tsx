@@ -24,25 +24,25 @@ export function PageHeader({
     <div
       className={cn(
         "flex flex-col sm:flex-row sm:items-center justify-between gap-4",
-        bordered && "pb-5 border-b border-slate-200/80 dark:border-slate-800",
+        bordered && "pb-5 border-b border-border",
         className,
       )}
     >
       <div className="flex items-start gap-3.5 min-w-0">
         {Icon && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-blue-600 dark:bg-blue-950/60 dark:border-blue-900/50 dark:text-blue-400">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
               {title}
             </h1>
             {badge !== undefined &&
               badge !== null &&
               (typeof badge === "string" || typeof badge === "number" ? (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+                <span className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground border border-border shrink-0">
                   {badge}
                 </span>
               ) : (
@@ -50,7 +50,7 @@ export function PageHeader({
               ))}
           </div>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {subtitle}
             </p>
           )}

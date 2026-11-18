@@ -45,10 +45,10 @@ export default function EmailLogsPage() {
     <div className="space-y-4 w-full min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-foreground">
             {t("email.outboxTitle")}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("email.outboxDesc")}
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function EmailLogsPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search
-              className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400"
+              className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground"
               aria-hidden="true"
             />
             <Input
@@ -91,7 +91,7 @@ export default function EmailLogsPage() {
           <>
             {/* Outbox Pagination Bar */}
             {totalLogs > 0 && (
-              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="px-4 py-3 border-t border-border bg-muted/30">
                 <Pagination
                   currentPage={logPage}
                   totalPages={totalPages}
@@ -111,7 +111,7 @@ export default function EmailLogsPage() {
         }
       >
         <table className="w-full text-left text-xs min-w-[640px]">
-          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+          <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             <tr>
               <th className="px-4 py-3">{t("email.thSentAt")}</th>
               <th className="px-4 py-3">{t("email.thRecipient")}</th>
@@ -121,12 +121,12 @@ export default function EmailLogsPage() {
               <th className="px-4 py-3 text-right">{t("email.thActions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border">
             {logs.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-8 text-center text-slate-400"
+                  className="px-4 py-8 text-center text-muted-foreground"
                 >
                   {t("email.noLogsFound")}
                 </td>
@@ -138,26 +138,26 @@ export default function EmailLogsPage() {
                 return (
                   <tr
                     key={log.id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-muted/40 transition-colors"
                   >
-                    <td className="px-4 py-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-[11px] whitespace-nowrap">
                       {dateStr}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-bold text-slate-900 dark:text-white">
+                      <div className="font-semibold text-foreground">
                         {log.candidateName || log.recipientName || "—"}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-[11px] text-muted-foreground">
                         {log.candidateEmail || log.recipientEmail || "—"}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary text-secondary-foreground border border-border">
                         {log.templateName ||
                           getEmailTemplateTypeLabel(log.templateType, t)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 max-w-xs min-w-40 wrap-anywhere text-slate-700 dark:text-slate-300 font-medium">
+                    <td className="px-4 py-3 max-w-xs min-w-40 wrap-anywhere text-foreground font-medium">
                       {log.subject}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -168,7 +168,7 @@ export default function EmailLogsPage() {
                         </span>
                       )}
                       {log.status === "SIMULATED" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-secondary-foreground border border-border">
                           <span>{t("email.statusSimulated")}</span>
                         </span>
                       )}
@@ -184,7 +184,7 @@ export default function EmailLogsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setViewingLog(log)}
-                        className="h-7 px-2 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
+                        className="h-7 px-2 text-[11px] font-medium text-foreground cursor-pointer"
                       >
                         {t("email.viewDetails")}
                       </SettingsButton>

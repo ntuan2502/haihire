@@ -26,6 +26,7 @@ import {
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
@@ -58,6 +59,7 @@ export function InterviewsGridView({
   canEdit = true,
 }: InterviewsGridViewProps) {
   const { t } = useI18n();
+  const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
   return (
     <div className="space-y-6">
@@ -254,7 +256,7 @@ export function InterviewsGridView({
                           )}
                         </span>
                       </button>
-                    ) : (
+                    ) : canSubmitScorecard ? (
                       <div className="pt-2 border-t border-border">
                         <button
                           type="button"
@@ -265,7 +267,7 @@ export function InterviewsGridView({
                           <span>{t("interviews.scorecardAction")}</span>
                         </button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                   <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 p-3.5 space-y-1">

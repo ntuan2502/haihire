@@ -292,6 +292,19 @@ export class InterviewsScheduleService {
                 );
           if (template && template.enabled) {
             const orgName = orgSettings?.name || "Company";
+            const formatLabel =
+              dto.format === "OFFICE"
+                ? "In-Person (At Office)"
+                : dto.format === "ZOOM"
+                  ? "Zoom"
+                  : dto.format === "TEAMS"
+                    ? "Microsoft Teams"
+                    : "Google Meet";
+            const resolvedLocation =
+              dto.linkOrLocation?.trim() ||
+              (dto.format === "OFFICE"
+                ? job?.location || ""
+                : "https://meet.google.com");
 
             await this.emailService.sendEmail(
               {
@@ -319,9 +332,8 @@ export class InterviewsScheduleService {
                   interview: {
                     date: formattedEmailDt.date,
                     time: formattedEmailDt.time,
-                    format: dto.format || "Google Meet",
-                    linkOrLocation:
-                      dto.linkOrLocation || "https://meet.google.com",
+                    format: formatLabel,
+                    linkOrLocation: resolvedLocation,
                     interviewer,
                   },
                   sender: { name: interviewer },

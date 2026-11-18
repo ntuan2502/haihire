@@ -31,7 +31,7 @@ import {
 import { PageHeader, StatusState } from "@/components/shared";
 
 export default function MembersSettingsPage() {
-  const { user, canEdit, isOwner, refreshUser } = useAuth();
+  const { user, isOwner, refreshUser } = useAuth();
   const { t } = useI18n();
   const canManageMembers = useHasPermission("org:manage_members");
   const canInviteAdmin = Boolean(isOwner || user?.role === Role.ADMIN);
@@ -273,7 +273,7 @@ export default function MembersSettingsPage() {
       <MembersListCard
         members={combinedMembers}
         canManageMembers={canManageMembers}
-        canEdit={canEdit}
+        canEdit={canManageMembers}
         isOwner={isOwner}
         currentUserId={user?.id}
         actionLoadingId={actionLoadingId}

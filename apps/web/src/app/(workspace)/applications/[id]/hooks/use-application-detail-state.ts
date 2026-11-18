@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useApplication, useJob } from "@/hooks/use-queries";
 import {
   DEFAULT_OVERVIEW_SECTIONS,
@@ -20,7 +21,15 @@ import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
 export function useApplicationDetailState() {
   const params = useParams();
-  const { canEdit } = useAuth();
+  const { canEdit: authCanEdit } = useAuth();
+  const hasCreateInterview = useHasPermission("interview:create");
+  const hasUpdateInterview = useHasPermission("interview:update");
+  const hasDeleteInterview = useHasPermission("interview:delete");
+  const canEdit =
+    authCanEdit ||
+    hasCreateInterview ||
+    hasUpdateInterview ||
+    hasDeleteInterview;
   const { t } = useI18n();
 
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;

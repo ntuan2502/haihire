@@ -8,6 +8,7 @@ const mockPush = vi.fn();
 const mockReplace = vi.fn();
 let currentCandidateId: string = VALID_CANDIDATE_ID;
 let mockCanEdit = true;
+let mockUserRole = "ADMIN";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -39,7 +40,7 @@ vi.mock("@/context/auth-context", () => ({
       id: "user-1",
       name: "Recruiter Admin",
       organizationId: "org-1",
-      role: "ADMIN",
+      role: mockUserRole,
     },
     isAuthenticated: true,
     loading: false,
@@ -210,6 +211,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
     vi.clearAllMocks();
     currentCandidateId = VALID_CANDIDATE_ID;
     mockCanEdit = true;
+    mockUserRole = "ADMIN";
     currentCandidate = JSON.parse(JSON.stringify(defaultCandidateData));
   });
 
@@ -245,6 +247,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
 
     it("hides edit, delete, and send email action buttons when canEdit is false", () => {
       mockCanEdit = false;
+      mockUserRole = "MEMBER";
 
       renderWithClient(<CandidateDetailPage />);
 

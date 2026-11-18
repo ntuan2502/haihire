@@ -24,6 +24,7 @@ import {
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
@@ -80,6 +81,7 @@ export function InterviewsTableRow({
   getRelativeDateBadge,
 }: InterviewsTableRowProps) {
   const { t } = useI18n();
+  const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
   const displayName = getCandidateDisplayName(app);
   const initials = getInitials(displayName);
 
@@ -301,7 +303,7 @@ export function InterviewsTableRow({
                 currentInterview.scorecard.recommendation,
               )}
             </div>
-          ) : currentInterview ? (
+          ) : currentInterview && canSubmitScorecard ? (
             <button
               type="button"
               onClick={() => onOpenScorecard(app, currentInterview)}

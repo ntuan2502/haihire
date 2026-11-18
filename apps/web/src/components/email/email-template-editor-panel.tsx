@@ -213,7 +213,9 @@ export function EmailTemplateEditorPanel({
               disabled={!canManageTemplates}
               onClick={() => onInsertVariable(v.key)}
               className="px-2.5 py-1 rounded-md bg-background border border-border text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-              title={t(v.labelKey as TranslationKey) || v.label}
+              title={
+                (v.labelKey ? t(v.labelKey as TranslationKey) : "") || v.label
+              }
             >
               {v.key}
             </button>

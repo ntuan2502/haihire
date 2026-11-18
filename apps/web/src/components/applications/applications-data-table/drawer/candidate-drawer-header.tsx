@@ -16,6 +16,7 @@ import { StageSelector } from "@/components/jobs/pipeline/stage-selector";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getCandidateDisplayName, getInitials, formatDate } from "@/lib/utils";
 import type { Application, ApplicationStage } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 interface CandidateDrawerHeaderProps {
@@ -43,6 +44,9 @@ export function CandidateDrawerHeader({
 }: CandidateDrawerHeaderProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const canUpdateStage = useHasPermission("application:update_stage");
+  const canCreateInterview = useHasPermission("interview:create");
+  const canDeleteApplication = useHasPermission("application:delete");
 
   return (
     <>
@@ -99,30 +103,34 @@ export function CandidateDrawerHeader({
           <StageSelector
             currentStage={currentApp.stage}
             onSelectStage={onStageChange}
-            disabled={isStageUpdatePending}
+            disabled={!canUpdateStage || isStageUpdatePending}
             variant="buttons"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={onOpenScheduleModal}
-            className="h-8 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
-          >
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{t("applications.scheduleInterview")}</span>
-          </button>
+          {canCreateInterview && (
+            <button
+              type="button"
+              onClick={onOpenScheduleModal}
+              className="h-8 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+            >
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{t("applications.scheduleInterview")}</span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            disabled={isDeleting}
-            onClick={() => onOpenDeleteModal(currentApp)}
-            className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-semibold text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>{t("applications.deleteApplication")}</span>
-          </button>
+          {canDeleteApplication && (
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => onOpenDeleteModal(currentApp)}
+              className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-semibold text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{t("applications.deleteApplication")}</span>
+            </button>
+          )}
         </div>
       </div>
 

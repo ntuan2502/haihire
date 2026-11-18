@@ -70,18 +70,26 @@ export function OfferApplicationModal({
       setSelectedTemplateId("");
       return;
     }
-    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+    if (!canViewEmail && !hasTouchedEmailRef.current) {
+      setSendOfferEmail(false);
+    } else if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
       setSendOfferEmail(defaultSendEnabled);
     }
     if (!hasTouchedTemplateRef.current) {
       setSelectedTemplateId(defaultTemplateId);
     }
-  }, [isOpen, matchedFlow, defaultSendEnabled, defaultTemplateId]);
+  }, [
+    isOpen,
+    canViewEmail,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  ]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    const effectiveSend = hasEmail ? sendOfferEmail : false;
+    const effectiveSend = canViewEmail && hasEmail ? sendOfferEmail : false;
     const effectiveTemplateId =
       effectiveSend && selectedTemplateId ? selectedTemplateId : undefined;
     await onConfirm({

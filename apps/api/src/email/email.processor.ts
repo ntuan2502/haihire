@@ -128,7 +128,8 @@ export class EmailProcessor extends WorkerHost {
         recipientName: recipient.user.email,
         subject,
         body,
-      },
+        scope: "SYSTEM",
+      } as SendEmailDto,
       event.organizationId,
     );
     if (result.status === "FAILED") {

@@ -10,6 +10,7 @@ import {
 import { CustomSelect } from "@/components/shared/custom-select";
 import { formatDate } from "@/lib/utils";
 import { getDocumentTypeLabel } from "@/lib/roles";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { CandidateDocument } from "@/types";
 
@@ -30,7 +31,7 @@ export function CandidateDocumentsTab({
   documentFilter,
   setDocumentFilter,
   filteredDocuments,
-  canEdit,
+  canEdit: _canEdit,
   isUploadingDoc,
   docInputRef,
   onDocumentUpload,
@@ -39,6 +40,8 @@ export function CandidateDocumentsTab({
   onDeleteDoc,
 }: CandidateDocumentsTabProps) {
   const { t } = useI18n();
+  const hasUploadDoc = useHasPermission("candidate:document_upload");
+  const hasDeleteDoc = useHasPermission("candidate:document_delete");
 
   return (
     <div className="space-y-4">
@@ -57,7 +60,7 @@ export function CandidateDocumentsTab({
           triggerClassName="h-8 w-32 text-xs font-normal"
         />
 
-        {canEdit && (
+        {hasUploadDoc && (
           <div>
             <button
               type="button"
@@ -137,7 +140,7 @@ export function CandidateDocumentsTab({
                   <Download className="h-4 w-4" />
                 </button>
 
-                {canEdit && (
+                {hasDeleteDoc && (
                   <button
                     type="button"
                     onClick={() => onDeleteDoc(doc)}
@@ -155,7 +158,7 @@ export function CandidateDocumentsTab({
         /* Empty state */
         <button
           type="button"
-          onClick={() => docInputRef.current?.click()}
+          onClick={() => hasUploadDoc && docInputRef.current?.click()}
           className="w-full rounded-xl border border-dashed border-border p-10 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-accent/40 transition-colors"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useApplicationNotes,
   useAddApplicationNoteMutation,
@@ -56,6 +57,7 @@ export function ApplicationNotesStream({
 }: ApplicationNotesStreamProps) {
   const { t } = useI18n();
   const { user } = useAuth();
+  const canCreateNote = useHasPermission("application:update");
 
   const { data: notes = [], isLoading } = useApplicationNotes(applicationId);
   const addNoteMutation = useAddApplicationNoteMutation();
@@ -170,77 +172,79 @@ export function ApplicationNotesStream({
       )}
 
       {/* Trello-Style Composer */}
-      <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-all duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
-        <div className="flex gap-2.5">
-          <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
-              user?.name || t("common.unknownUserFallback"),
-            )}`}
-          >
-            {getInitials(user?.name || t("common.unknownUserFallback"))}
-          </div>
+      {canCreateNote && (
+        <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-all duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
+          <div className="flex gap-2.5">
+            <div
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
+                user?.name || t("common.unknownUserFallback"),
+              )}`}
+            >
+              {getInitials(user?.name || t("common.unknownUserFallback"))}
+            </div>
 
-          <div className="flex-1 space-y-2">
-            <textarea
-              ref={composerTextareaRef}
-              rows={isFocused || composerContent ? 3 : compact ? 1 : 2}
-              value={composerContent}
-              onChange={(e) => setComposerContent(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onKeyDown={(e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddNote();
-                }
-              }}
-              placeholder={placeholder || t("applications.notePlaceholder")}
-              className="w-full resize-none bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden"
-            />
+            <div className="flex-1 space-y-2">
+              <textarea
+                ref={composerTextareaRef}
+                rows={isFocused || composerContent ? 3 : compact ? 1 : 2}
+                value={composerContent}
+                onChange={(e) => setComposerContent(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddNote();
+                  }
+                }}
+                placeholder={placeholder || t("applications.notePlaceholder")}
+                className="w-full resize-none bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden"
+              />
 
-            {(isFocused || composerContent.trim().length > 0) && (
-              <div className="flex items-center justify-between pt-1 border-t border-border">
-                <span className="text-[10px] text-muted-foreground">
-                  {t("applications.notesStream.keyboardHint")}
-                </span>
+              {(isFocused || composerContent.trim().length > 0) && (
+                <div className="flex items-center justify-between pt-1 border-t border-border">
+                  <span className="text-[10px] text-muted-foreground">
+                    {t("applications.notesStream.keyboardHint")}
+                  </span>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setComposerContent("");
-                      setIsFocused(false);
-                    }}
-                    className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
-                  >
-                    {t("applications.notesStream.cancel")}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComposerContent("");
+                        setIsFocused(false);
+                      }}
+                      className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+                    >
+                      {t("applications.notesStream.cancel")}
+                    </button>
 
-                  <button
-                    type="button"
-                    disabled={
-                      !composerContent.trim() || addNoteMutation.isPending
-                    }
-                    onClick={handleAddNote}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {addNoteMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>{t("applications.notesStream.saving")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-3 w-3" />
-                        <span>{t("applications.notesStream.addNote")}</span>
-                      </>
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      disabled={
+                        !composerContent.trim() || addNoteMutation.isPending
+                      }
+                      onClick={handleAddNote}
+                      className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {addNoteMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>{t("applications.notesStream.saving")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3 w-3" />
+                          <span>{t("applications.notesStream.addNote")}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Notes Stream / Feed */}
       <div

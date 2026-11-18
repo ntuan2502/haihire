@@ -66,7 +66,7 @@ export function PipelineCandidateDetail({
   mobileDetailOpen,
   onCloseMobileDetail,
   job,
-  canEdit,
+  canEdit: _canEdit,
   isMovingStage,
   onMoveStage,
   currentIndex,
@@ -95,6 +95,8 @@ export function PipelineCandidateDetail({
 }: PipelineCandidateDetailProps) {
   const { t } = useI18n();
   const canUpdateStage = useHasPermission("application:update_stage");
+  const canCreateInterview = useHasPermission("interview:create");
+  const canUpdateApplication = useHasPermission("application:update");
 
   return (
     <section
@@ -261,7 +263,7 @@ export function PipelineCandidateDetail({
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("applications.tabs.interviews")}
                   </h3>
-                  {canEdit && (
+                  {canCreateInterview && (
                     <Button
                       type="button"
                       size="sm"
@@ -276,7 +278,7 @@ export function PipelineCandidateDetail({
                   application={selectedCandidate}
                   interviews={candidateInterviews}
                   onSchedule={onScheduleInterview}
-                  canEdit={canEdit}
+                  canEdit={canCreateInterview}
                   showSectionHeader={false}
                 />
               </div>
@@ -293,7 +295,7 @@ export function PipelineCandidateDetail({
                   />
                 ) : (
                   <div className="space-y-4">
-                    {canEdit && onChangeNoteInput && onAddNote && (
+                    {canUpdateApplication && onChangeNoteInput && onAddNote && (
                       <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
                         <textarea
                           rows={3}

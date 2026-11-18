@@ -8,6 +8,7 @@ import {
 } from "@/lib/interviews";
 import { formatDate } from "@/lib/utils";
 import { getStageLabel } from "@/lib/stages";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
@@ -33,12 +34,16 @@ export function CandidateApplicationsTab({
   stageFilter,
   setStageFilter,
   filteredCandidateApps,
-  canEdit,
+  canEdit: _canEdit,
   onOpenApplyModal,
   onScheduleInterview,
   onCancelInterview,
 }: CandidateApplicationsTabProps) {
   const { t } = useI18n();
+  const hasCreateApplication = useHasPermission("application:create");
+  const hasCreateInterview = useHasPermission("interview:create");
+  const hasUpdateInterview = useHasPermission("interview:update");
+  const hasDeleteInterview = useHasPermission("interview:delete");
 
   return (
     <div className="space-y-4">
@@ -60,7 +65,7 @@ export function CandidateApplicationsTab({
           triggerClassName="h-8 w-36 text-xs font-normal"
         />
 
-        {canEdit && (
+        {hasCreateApplication && (
           <button
             type="button"
             onClick={onOpenApplyModal}
@@ -106,7 +111,7 @@ export function CandidateApplicationsTab({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <StageBadge stage={app.stage} />
-                    {canEdit && allInterviews.length === 0 && (
+                    {hasCreateInterview && allInterviews.length === 0 && (
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app, null)}
@@ -123,7 +128,11 @@ export function CandidateApplicationsTab({
                   application={app}
                   onSchedule={(intv) => onScheduleInterview(app, intv || null)}
                   onCancelInterview={(intv) => onCancelInterview(app, intv)}
-                  canEdit={canEdit}
+                  canEdit={
+                    hasCreateInterview ||
+                    hasUpdateInterview ||
+                    hasDeleteInterview
+                  }
                   showSectionHeader={false}
                   hideIfEmpty={allInterviews.length === 0}
                 />

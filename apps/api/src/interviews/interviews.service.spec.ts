@@ -56,6 +56,7 @@ describe("InterviewsService", () => {
     id: string;
     title: string;
     department: string;
+    location?: string;
     organizationId: string;
   }
 
@@ -459,6 +460,57 @@ describe("InterviewsService", () => {
         mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
       ).resolveFlowTemplate;
     }
+  });
+
+  it("BUG-18: uses human-readable format and job location without injecting Google Meet link for OFFICE interviews", async () => {
+    mockJobs[0].location = "Ha Noi HQ";
+    mockEmailService.getTemplateByType.mockResolvedValue({
+      id: "tpl-office",
+      name: "Office Invite",
+      type: "INTERVIEW_INVITATION",
+      enabled: true,
+      subject: "Invite",
+      body: "Location: {{interview_link}}",
+    });
+
+    await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-10-22T03:00:00.000Z",
+        type: "CULTURE_FIT",
+        format: "OFFICE",
+        interviewer: "HR Lead",
+        sendInvitationEmail: true,
+      },
+      "org-1",
+    );
+
+    const [withJobLoc] = mockEmailService.sendEmail.mock.calls[0];
+    expect(withJobLoc.variables).toMatchObject({
+      interview_format: "In-Person (At Office)",
+      interview_link: "Ha Noi HQ",
+    });
+
+    delete mockJobs[0].location;
+    mockEmailService.sendEmail.mockClear();
+
+    await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-10-23T03:00:00.000Z",
+        type: "CULTURE_FIT",
+        format: "OFFICE",
+        interviewer: "HR Lead",
+        sendInvitationEmail: true,
+      },
+      "org-1",
+    );
+
+    const [withoutJobLoc] = mockEmailService.sendEmail.mock.calls[0];
+    expect(withoutJobLoc.variables.interview_format).toBe(
+      "In-Person (At Office)",
+    );
+    expect(withoutJobLoc.variables.interview_link).toBeUndefined();
   });
 
   describe("formatInterviewRecord", () => {

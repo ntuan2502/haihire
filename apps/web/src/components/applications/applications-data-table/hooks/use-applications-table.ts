@@ -6,6 +6,7 @@ import { toast } from "@/lib/toast";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useDeleteApplicationMutation } from "@/hooks/use-queries";
 import type { Job, Application } from "@/types";
@@ -40,7 +41,15 @@ export function useApplicationsTable({
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
-  const { canEdit } = useAuth();
+  const { canEdit: authCanEdit } = useAuth();
+  const canDeleteApplication = useHasPermission("application:delete");
+  const canCreateInterview = useHasPermission("interview:create");
+  const canUpdateInterview = useHasPermission("interview:update");
+  const canEdit =
+    authCanEdit ||
+    canDeleteApplication ||
+    canCreateInterview ||
+    canUpdateInterview;
   const deleteAppMutation = useDeleteApplicationMutation();
 
   const isServerPaginated = Boolean(

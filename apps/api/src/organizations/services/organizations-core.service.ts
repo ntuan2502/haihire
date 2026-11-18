@@ -14,8 +14,10 @@ import {
   APP_ERROR_CODES,
   canonicalizeTimezone,
   formatUserDisplayName,
+  hasPermission,
   normalizeOrgLocalization,
   type OrganizationLocalizationSettings,
+  type Role,
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { EventsService } from "../../events/events.service";
@@ -455,7 +457,27 @@ export class OrganizationsCoreService {
       }
     }
 
-    if (userRole === "MEMBER") {
+    const rolePermOverride =
+      !isOwnerOfCurrentOrg &&
+      userRole !== "ADMIN" &&
+      typeof this.prisma.organizationRolePermission?.findFirst === "function"
+        ? await this.prisma.organizationRolePermission.findFirst({
+            where: {
+              organizationId: orgId,
+              role: userRole as Role,
+              permission: "org:update",
+            },
+            select: { granted: true },
+          })
+        : null;
+    const canUpdateOrg =
+      isOwnerOfCurrentOrg ||
+      userRole === "ADMIN" ||
+      (rolePermOverride
+        ? rolePermOverride.granted
+        : hasPermission(userRole as Role, "org:update"));
+
+    if (!canUpdateOrg) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only Admins can perform this action.",

@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { Application, Job } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 interface ApplicationsTableRowProps {
@@ -37,6 +38,7 @@ export function ApplicationsTableRow({
 }: ApplicationsTableRowProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const canDeleteApplication = useHasPermission("application:delete");
   const stageInfo = getStageInfo(application.stage);
 
   return (
@@ -129,7 +131,7 @@ export function ApplicationsTableRow({
           >
             <Eye className="h-4 w-4" />
           </button>
-          {canEdit && (
+          {canEdit && canDeleteApplication && (
             <button
               type="button"
               onClick={(e) => {

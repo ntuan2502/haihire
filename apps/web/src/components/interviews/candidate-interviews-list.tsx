@@ -20,6 +20,7 @@ import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import type { Interview } from "@/types";
 
 export interface CandidateInterviewsListProps {
@@ -51,6 +52,12 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
+  const hasCreateInterview = useHasPermission("interview:create");
+  const hasUpdateInterview = useHasPermission("interview:update");
+  const hasDeleteInterview = useHasPermission("interview:delete");
+  const canScheduleNew = canEdit && hasCreateInterview;
+  const canUpdateSchedule = canEdit && hasUpdateInterview;
+  const canCancelSchedule = canEdit && hasDeleteInterview;
   const [interviewToCancel, setInterviewToCancel] =
     useState<ScheduledInterviewInfo | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -92,7 +99,7 @@ export function CandidateInterviewsList({
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>{title || t("applications.sections.interviews")}</span>
             </h3>
-            {canEdit && onSchedule && (
+            {canScheduleNew && onSchedule && (
               <Button
                 size="sm"
                 onClick={() => onSchedule?.()}
@@ -112,7 +119,7 @@ export function CandidateInterviewsList({
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("applications.noInterviewsDesc")}
           </p>
-          {canEdit && onSchedule && (
+          {canScheduleNew && onSchedule && (
             <Button
               size="sm"
               onClick={() => onSchedule?.()}
@@ -140,7 +147,7 @@ export function CandidateInterviewsList({
               {allInterviews.length}
             </span>
           </div>
-          {canEdit && onSchedule && (
+          {canScheduleNew && onSchedule && (
             <Button
               size="sm"
               onClick={() => onSchedule?.()}
@@ -355,9 +362,9 @@ export function CandidateInterviewsList({
               </div>
             )}
 
-            {canEdit && (
+            {(canCancelSchedule || canUpdateSchedule) && (
               <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
-                {idx === 0 && onCancelInterview && (
+                {idx === 0 && canCancelSchedule && onCancelInterview && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -367,7 +374,7 @@ export function CandidateInterviewsList({
                     {t("interviews.cancelThisSchedule")}
                   </Button>
                 )}
-                {onSchedule && (
+                {canUpdateSchedule && onSchedule && (
                   <Button
                     size="sm"
                     variant="outline"

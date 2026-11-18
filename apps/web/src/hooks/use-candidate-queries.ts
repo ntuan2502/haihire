@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "./use-has-permission";
 import type { Candidate, CandidateNote, PaginatedResult } from "@/types";
 import { queryKeys } from "./query-keys";
 
@@ -21,6 +22,7 @@ export function useCandidates(
   },
 ) {
   const { user } = useAuth();
+  const canViewCandidates = useHasPermission("candidate:view");
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
@@ -48,7 +50,10 @@ export function useCandidates(
         search: options?.search,
       });
     },
-    enabled: Boolean(effectiveOrgId) && (options?.enabled ?? true),
+    enabled:
+      Boolean(effectiveOrgId) &&
+      canViewCandidates &&
+      (options?.enabled ?? true),
     placeholderData: keepPreviousData,
   });
 }

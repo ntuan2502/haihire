@@ -4,6 +4,8 @@ import {
   type EmailFlowKey,
   type EmailTemplateType,
   formatCandidateDisplayName,
+  hasPermission,
+  type Role,
   VALID_APPLICATION_STAGE_TRANSITIONS,
 } from "@haihire/shared";
 import {
@@ -150,9 +152,14 @@ export class ApplicationsStageService {
       updated.candidate &&
       (oldStage !== nextStage || Boolean(targetPipelineStage))
     ) {
+      const callerCanSendEmail =
+        !currentUser?.role ||
+        currentUser.role === "ADMIN" ||
+        hasPermission(currentUser.role as Role, "email:send");
       const shouldSendRejectionEmail =
-        isRejecting && dto.sendRejectionEmail !== false;
-      const shouldSendOfferEmail = isOffering && dto.sendOfferEmail === true;
+        callerCanSendEmail && isRejecting && dto.sendRejectionEmail !== false;
+      const shouldSendOfferEmail =
+        callerCanSendEmail && isOffering && dto.sendOfferEmail === true;
       const descriptionParts = [
         `Application moved from ${oldStage} to ${targetPipelineStage?.name || nextStage} for position ${updated.job?.title || ""}`,
       ];
@@ -317,6 +324,25 @@ export class ApplicationsStageService {
           ? { id: currentUser.id, name: currentUser.name }
           : undefined;
 
+      const jobMeta = updated.job as
+        | {
+            salaryRange?: string | null;
+            salaryMin?: number | null;
+            salaryMax?: number | null;
+            salaryCurrency?: string | null;
+          }
+        | null
+        | undefined;
+      const jobSalaryRange =
+        jobMeta?.salaryRange?.trim() ||
+        (jobMeta?.salaryMin != null && jobMeta?.salaryMax != null
+          ? `${jobMeta.salaryMin.toLocaleString("en-US")} - ${jobMeta.salaryMax.toLocaleString("en-US")}${jobMeta.salaryCurrency ? ` ${jobMeta.salaryCurrency}` : ""}`
+          : jobMeta?.salaryMin != null
+            ? `${jobMeta.salaryMin.toLocaleString("en-US")}${jobMeta.salaryCurrency ? ` ${jobMeta.salaryCurrency}` : ""}`
+            : jobMeta?.salaryMax != null
+              ? `${jobMeta.salaryMax.toLocaleString("en-US")}${jobMeta.salaryCurrency ? ` ${jobMeta.salaryCurrency}` : ""}`
+              : "");
+
       const payload = {
         to: candidate.email,
         recipientName: resolvedCandidateName,
@@ -337,9 +363,11 @@ export class ApplicationsStageService {
             title: updated.job?.title || "Vị trí tuyển dụng",
             department: updated.job?.department || "",
             location: updated.job?.location || "",
+            salaryRange: jobSalaryRange || undefined,
           },
           organization: { name: orgName },
           sender: senderContext,
+          custom: jobSalaryRange ? { salary: jobSalaryRange } : undefined,
         }),
       };
 

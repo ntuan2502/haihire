@@ -62,22 +62,14 @@ export default function EmailSettingsPage() {
         provider: emailSettings.provider,
         fromName: (emailSettings.fromName || "").trim(),
         fromEmail: (emailSettings.fromEmail || "").trim(),
-        smtpHost: emailSettings.smtpHost
-          ? emailSettings.smtpHost.trim()
-          : undefined,
+        smtpHost: (emailSettings.smtpHost ?? "").trim(),
         smtpPort: emailSettings.smtpPort
           ? Number(emailSettings.smtpPort)
           : undefined,
-        smtpUser: emailSettings.smtpUser
-          ? emailSettings.smtpUser.trim()
-          : undefined,
-        smtpPass: emailSettings.smtpPass ? emailSettings.smtpPass : undefined,
-        resendApiKey: emailSettings.resendApiKey
-          ? emailSettings.resendApiKey.trim()
-          : undefined,
-        sendgridApiKey: emailSettings.sendgridApiKey
-          ? emailSettings.sendgridApiKey.trim()
-          : undefined,
+        smtpUser: (emailSettings.smtpUser ?? "").trim(),
+        smtpPass: emailSettings.smtpPass ?? "",
+        resendApiKey: (emailSettings.resendApiKey ?? "").trim(),
+        sendgridApiKey: (emailSettings.sendgridApiKey ?? "").trim(),
       };
 
       await updateSettingsMutation.mutateAsync(payload);

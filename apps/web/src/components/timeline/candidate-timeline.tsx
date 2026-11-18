@@ -20,7 +20,10 @@ import { formatDate } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 
-import { useCandidateActivities } from "@/hooks/use-queries";
+import {
+  useApplicationActivities,
+  useCandidateActivities,
+} from "@/hooks/use-queries";
 
 interface CandidateTimelineProps {
   candidateId?: string;
@@ -33,7 +36,7 @@ interface CandidateTimelineProps {
 
 export function CandidateTimeline({
   candidateId,
-  applicationId: _applicationId,
+  applicationId,
   candidateName: _candidateName,
   candidateEmail: _candidateEmail,
   initialEvents,
@@ -41,7 +44,11 @@ export function CandidateTimeline({
 }: CandidateTimelineProps) {
   const { t } = useI18n();
 
-  const { data: remoteActivities } = useCandidateActivities(candidateId);
+  const { data: appActivities } = useApplicationActivities(applicationId);
+  const { data: candidateActivities } = useCandidateActivities(
+    applicationId ? null : candidateId,
+  );
+  const remoteActivities = applicationId ? appActivities : candidateActivities;
 
   const [filter, setFilter] = useState<"ALL" | "EMAIL" | "INTERVIEW" | "STAGE">(
     "ALL",

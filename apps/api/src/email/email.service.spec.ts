@@ -677,6 +677,104 @@ describe("EmailService", () => {
       expect(log.recipientEmail).toBe("fallback@example.com");
       expect(log.subject).toBe("Sync Fallback Subject");
     });
+
+    it("BUG-17: enqueues distinct jobIds for different subjects/variables with removeOnFail and deduplicates retry logs", async () => {
+      const mockQueue = {
+        add: vi.fn().mockResolvedValue({ id: "job-det-next" }),
+      };
+
+      const queuedService = createTestEmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        mockQueue as never,
+      );
+
+      await queuedService.sendEmail(
+        {
+          to: "applicant@example.com",
+          recipientName: "Test Applicant",
+          candidateId: "cand-999",
+          applicationId: "app-888",
+          templateType: "INTERVIEW_INVITATION",
+          subject: "Interview Round 1",
+          body: "Round 1 invite",
+          variables: { interview_date: "2026-10-20" },
+        },
+        "org-test",
+      );
+      await queuedService.sendEmail(
+        {
+          to: "applicant@example.com",
+          recipientName: "Test Applicant",
+          candidateId: "cand-999",
+          applicationId: "app-888",
+          templateType: "INTERVIEW_INVITATION",
+          subject: "Interview Round 2",
+          body: "Round 2 invite",
+          variables: { interview_date: "2026-10-25" },
+        },
+        "org-test",
+      );
+
+      const firstOpts = mockQueue.add.mock.calls[0]?.[2] as {
+        jobId: string;
+        removeOnFail?: boolean;
+      };
+      const secondOpts = mockQueue.add.mock.calls[1]?.[2] as {
+        jobId: string;
+        removeOnFail?: boolean;
+      };
+      expect(firstOpts.removeOnFail).toBe(true);
+      expect(secondOpts.removeOnFail).toBe(true);
+      expect(firstOpts.jobId).not.toBe(secondOpts.jobId);
+
+      // Simulate retry after initial FAILED attempt: should update existing FAILED EmailLog in place
+      const sendSpy = vi
+        .spyOn(EmailTransporterFactory, "create")
+        .mockReturnValueOnce({
+          send: vi
+            .fn()
+            .mockResolvedValue({ status: "FAILED", error: "Temporary 421" }),
+        })
+        .mockReturnValueOnce({
+          send: vi.fn().mockResolvedValue({ status: "SENT" }),
+        });
+
+      try {
+        await service.executeSendEmail(
+          {
+            to: "retry@example.com",
+            recipientName: "Retry Candidate",
+            candidateId: "cand-retry",
+            applicationId: "app-retry",
+            subject: "Retry Subject",
+            body: "<p>Retry body</p>",
+          },
+          "org-test",
+        );
+        await service.executeSendEmail(
+          {
+            to: "retry@example.com",
+            recipientName: "Retry Candidate",
+            candidateId: "cand-retry",
+            applicationId: "app-retry",
+            subject: "Retry Subject",
+            body: "<p>Retry body</p>",
+          },
+          "org-test",
+        );
+
+        const logs = await service.getLogs("org-test", {
+          candidateId: "cand-retry",
+        });
+        expect(logs.data).toHaveLength(1);
+        expect(logs.data[0]?.status).toBe("SENT");
+        expect(mockActivitiesService.createActivity).toHaveBeenCalledTimes(1);
+      } finally {
+        sendSpy.mockRestore();
+      }
+    });
   });
 
   describe("Sub-services and Facade Coverage Augmentation", () => {

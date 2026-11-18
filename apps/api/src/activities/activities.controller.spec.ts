@@ -87,4 +87,23 @@ describe("ActivitiesController RBAC & Guard Authorization", () => {
     );
     expect(rolesGuard.canActivate(context)).toBe(true);
   });
+
+  it("BUG-13: GET /activities/application/:applicationId requires application:view and allows INTERVIEWER and MEMBER", () => {
+    const requiredPermission = Reflect.getMetadata(
+      PERMISSION_KEY,
+      ActivitiesController.prototype.findByApplication,
+    );
+    expect(requiredPermission).toBe("application:view");
+
+    const interviewerCtx = createMockContext(
+      { id: "intv-1", role: Role.INTERVIEWER, organizationId: "org-1" },
+      ActivitiesController.prototype.findByApplication,
+    );
+    const memberCtx = createMockContext(
+      { id: "member-1", role: Role.MEMBER, organizationId: "org-1" },
+      ActivitiesController.prototype.findByApplication,
+    );
+    expect(rolesGuard.canActivate(interviewerCtx)).toBe(true);
+    expect(rolesGuard.canActivate(memberCtx)).toBe(true);
+  });
 });

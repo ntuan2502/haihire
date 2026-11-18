@@ -107,7 +107,11 @@ export default function EmailTemplatesSettingsPage() {
     () => ({
       candidate_name: t("email.sampleCandidateName"),
       candidate_email: "an.nguyen@example.com",
+      candidate_phone: "0912 345 678",
       job_title: "Senior Frontend Engineer",
+      job_department: "Engineering",
+      job_location: "Hà Nội / Remote",
+      job_salary: "35,000,000 - 45,000,000 VND",
       company_name: "Nexus Corporation",
       interview_date: "22/09/2026",
       interview_time: "14:30",
@@ -115,6 +119,8 @@ export default function EmailTemplatesSettingsPage() {
       interview_link: "https://meet.google.com/xyz-abcd-efg",
       interviewer_name: t("email.sampleInterviewerName"),
       sender_name: senderName,
+      start_date: "01/10/2026",
+      salary: "40,000,000 VND",
     }),
     [senderName, t],
   );

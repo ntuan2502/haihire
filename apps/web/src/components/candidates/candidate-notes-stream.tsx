@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useCandidateNotes,
   useAddCandidateNoteMutation,
@@ -56,6 +57,7 @@ export function CandidateNotesStream({
 }: CandidateNotesStreamProps) {
   const { t } = useI18n();
   const { user } = useAuth();
+  const canCreateNote = useHasPermission("candidate:update");
 
   const { data: notes = [], isLoading } = useCandidateNotes(candidateId);
   const addNoteMutation = useAddCandidateNoteMutation();
@@ -206,69 +208,71 @@ export function CandidateNotesStream({
       )}
 
       {/* Composer (Trello / Stream style rich input) */}
-      <div
-        className={`rounded-xl border transition-all duration-200 bg-card text-card-foreground ${
-          isFocused || composerContent
-            ? "border-ring shadow-sm ring-2 ring-ring/20"
-            : "border-border shadow-2xs hover:border-input"
-        }`}
-      >
-        <div className="p-3">
-          <textarea
-            ref={composerTextareaRef}
-            rows={isFocused || composerContent ? 3 : 2}
-            value={composerContent}
-            onChange={(e) => setComposerContent(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onKeyDown={handleKeyDownComposer}
-            placeholder={
-              placeholder || t("applications.notesStream.placeholder")
-            }
-            className="w-full text-xs text-foreground placeholder:text-muted-foreground bg-transparent resize-none border-0 focus:outline-none focus:ring-0 leading-relaxed"
-          />
+      {canCreateNote && (
+        <div
+          className={`rounded-xl border transition-all duration-200 bg-card text-card-foreground ${
+            isFocused || composerContent
+              ? "border-ring shadow-sm ring-2 ring-ring/20"
+              : "border-border shadow-2xs hover:border-input"
+          }`}
+        >
+          <div className="p-3">
+            <textarea
+              ref={composerTextareaRef}
+              rows={isFocused || composerContent ? 3 : 2}
+              value={composerContent}
+              onChange={(e) => setComposerContent(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={handleKeyDownComposer}
+              placeholder={
+                placeholder || t("applications.notesStream.placeholder")
+              }
+              className="w-full text-xs text-foreground placeholder:text-muted-foreground bg-transparent resize-none border-0 focus:outline-none focus:ring-0 leading-relaxed"
+            />
 
-          {(isFocused || composerContent) && (
-            <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-border">
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                {t("applications.notesStream.keyboardHint")}
-              </span>
-              <div className="flex items-center gap-1.5 ml-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setComposerContent("");
-                    setIsFocused(false);
-                  }}
-                  disabled={addNoteMutation.isPending}
-                  className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {t("applications.notesStream.cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateNote}
-                  disabled={
-                    !composerContent.trim() || addNoteMutation.isPending
-                  }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {addNoteMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span>{t("applications.notesStream.saving")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-3 w-3" />
-                      <span>{t("applications.notesStream.addNote")}</span>
-                    </>
-                  )}
-                </button>
+            {(isFocused || composerContent) && (
+              <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-border">
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  {t("applications.notesStream.keyboardHint")}
+                </span>
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComposerContent("");
+                      setIsFocused(false);
+                    }}
+                    disabled={addNoteMutation.isPending}
+                    className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {t("applications.notesStream.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateNote}
+                    disabled={
+                      !composerContent.trim() || addNoteMutation.isPending
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {addNoteMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>{t("applications.notesStream.saving")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3 w-3" />
+                        <span>{t("applications.notesStream.addNote")}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Stream List */}
       <div

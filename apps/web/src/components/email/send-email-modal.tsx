@@ -148,30 +148,29 @@ export function SendEmailModal({
   const wasOpenRef = useRef(false);
   const hasManualSelectionRef = useRef(false);
 
-  // Variables map for interpolation
+  // Variables map for interpolation (only include schedule values when real interviewDetails are provided)
   const variablesMap = useMemo(() => {
     return {
       candidate_name: candidateDisplayName || t("email.defaultCandidateName"),
-      candidate_email: candidate?.email || "candidate@example.com",
+      candidate_email: candidate?.email || undefined,
+      candidate_phone: candidate?.phone || undefined,
       job_title: effectiveJobTitle,
       company_name: effectiveOrgName,
       interview_date: interviewDetails?.scheduledAt
         ? formatDate(interviewDetails.scheduledAt)
-        : "22/09/2026",
+        : undefined,
       interview_time: interviewDetails?.scheduledAt
         ? formatTime(interviewDetails.scheduledAt)
-        : "14:30",
-      interview_format: interviewDetails?.format || "Google Meet",
-      interview_link:
-        interviewDetails?.linkOrLocation ||
-        "https://meet.google.com/xyz-abcd-efg",
-      interviewer_name:
-        interviewDetails?.interviewer || t("email.defaultInterviewerName"),
+        : undefined,
+      interview_format: interviewDetails?.format || undefined,
+      interview_link: interviewDetails?.linkOrLocation || undefined,
+      interviewer_name: interviewDetails?.interviewer || undefined,
       sender_name: t("email.defaultSenderName"),
     };
   }, [
     candidateDisplayName,
     candidate?.email,
+    candidate?.phone,
     effectiveJobTitle,
     effectiveOrgName,
     interviewDetails,
@@ -265,11 +264,21 @@ export function SendEmailModal({
           ? t("email.customAdHocOption")
           : undefined;
 
+      const definedVariables: Record<string, string> = {};
+      for (const [key, val] of Object.entries(variablesMap)) {
+        if (val !== undefined) {
+          definedVariables[key] = val;
+        }
+      }
+
       const log = await sendEmailMutation.mutateAsync({
         to: candidate.email,
         recipientName: candidateDisplayName,
-        subject,
-        body,
+        subject: interpolateTemplate(subject, variablesMap),
+        body: interpolateTemplate(body, variablesMap),
+        ...(Object.keys(definedVariables).length > 0
+          ? { variables: definedVariables }
+          : {}),
         ...(templateId ? { templateId } : {}),
         ...(templateName ? { templateName } : {}),
         templateType,
@@ -418,7 +427,10 @@ export function SendEmailModal({
                     type="button"
                     onClick={() => handleInsertVariable(v.key)}
                     className="px-2 py-0.5 rounded-md bg-background border border-input text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-2xs"
-                    title={t(v.labelKey as TranslationKey) || v.label}
+                    title={
+                      (v.labelKey ? t(v.labelKey as TranslationKey) : "") ||
+                      v.label
+                    }
                   >
                     {v.key}
                   </button>
@@ -434,7 +446,7 @@ export function SendEmailModal({
                 <strong className="text-foreground">
                   {t("email.thSubject")}:
                 </strong>{" "}
-                {subject}
+                {interpolateTemplate(subject, variablesMap)}
               </div>
               <div>
                 <strong className="text-foreground">
@@ -444,8 +456,8 @@ export function SendEmailModal({
               </div>
             </div>
             <EmailHtmlPreview
-              title={subject}
-              body={body}
+              title={interpolateTemplate(subject, variablesMap)}
+              body={interpolateTemplate(body, variablesMap)}
               className="prose prose-xs dark:prose-invert max-w-none text-xs text-foreground leading-relaxed"
             />
           </div>

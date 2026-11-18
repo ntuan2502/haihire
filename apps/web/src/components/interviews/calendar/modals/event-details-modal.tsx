@@ -2,6 +2,7 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomModal } from "@/components/shared";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { EventDetailsCard } from "../components/event-details-card";
 import type { Application } from "@/types";
@@ -29,6 +30,7 @@ export function EventDetailsModal({
   canEdit = true,
 }: EventDetailsModalProps) {
   const { t } = useI18n();
+  const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
   const title = selectedEvent
     ? getCandidateDisplayName(selectedEvent.application)
@@ -98,22 +100,25 @@ export function EventDetailsModal({
                 </Button>
               )}
 
-              <Button
-                size="sm"
-                onClick={() => {
-                  const evt = selectedEvent;
-                  onClose();
-                  onOpenScorecard(evt.application, evt.interview);
-                }}
-                className="h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-              >
-                <Star className="h-3 w-3" />
-                <span>
-                  {selectedEvent.interview.scorecard
-                    ? t("interviews.updateSchedule")
-                    : t("interviews.scorecardAction")}
-                </span>
-              </Button>
+              {(Boolean(selectedEvent.interview.scorecard) ||
+                canSubmitScorecard) && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const evt = selectedEvent;
+                    onClose();
+                    onOpenScorecard(evt.application, evt.interview);
+                  }}
+                  className="h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Star className="h-3 w-3" />
+                  <span>
+                    {selectedEvent.interview.scorecard
+                      ? t("interviews.updateSchedule")
+                      : t("interviews.scorecardAction")}
+                  </span>
+                </Button>
+              )}
             </div>
           </div>
         </>

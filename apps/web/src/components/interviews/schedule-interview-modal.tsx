@@ -11,7 +11,6 @@ import { ScheduleInterviewInterviewerFields } from "./schedule/schedule-intervie
 import {
   useCreateInterviewMutation,
   useUpdateInterviewMutation,
-  useUpdateStageMutation,
   useOrgInterviewers,
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -24,7 +23,6 @@ import {
   type ScheduledInterviewInfo,
   normalizeInterviewType,
 } from "@/lib/interviews";
-import { canTransition } from "@/lib/stages";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
@@ -72,7 +70,6 @@ export function ScheduleInterviewModal({
   });
   const createInterviewMutation = useCreateInterviewMutation();
   const updateInterviewMutation = useUpdateInterviewMutation();
-  const updateStageMutation = useUpdateStageMutation();
 
   const [modalJobId, setModalJobId] = useState<string>("");
   const [modalCandidateId, setModalCandidateId] = useState<string>("");
@@ -124,7 +121,9 @@ export function ScheduleInterviewModal({
       setSelectedTemplateId("");
       return;
     }
-    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+    if (!canViewEmail && !hasTouchedEmailRef.current) {
+      setSendEmailInvite(false);
+    } else if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
       setSendEmailInvite(defaultSendEnabled);
     }
     if (!hasTouchedTemplateRef.current) {
@@ -133,6 +132,7 @@ export function ScheduleInterviewModal({
   }, [
     isOpen,
     editingInterview,
+    canViewEmail,
     matchedFlow,
     defaultSendEnabled,
     defaultTemplateId,
@@ -271,7 +271,7 @@ export function ScheduleInterviewModal({
           },
         });
       } else {
-        // Create new interview schedule
+        // Create new interview schedule (backend advances stage atomically in transaction)
         await createInterviewMutation.mutateAsync({
           applicationId: candidate.id,
           scheduledAt,
@@ -281,20 +281,11 @@ export function ScheduleInterviewModal({
           interviewerId,
           notes: interviewNotes.trim() || undefined,
           round: (candidate.interviews?.length || 0) + 1,
-          sendInvitationEmail: sendEmailInvite,
-          ...(sendEmailInvite && selectedTemplateId
+          sendInvitationEmail: canViewEmail ? sendEmailInvite : false,
+          ...(canViewEmail && sendEmailInvite && selectedTemplateId
             ? { templateId: selectedTemplateId }
             : {}),
         });
-
-        // If candidate stage can transition to INTERVIEW stage according to state machine, advance
-        if (canTransition(candidate.stage, "INTERVIEW")) {
-          await updateStageMutation.mutateAsync({
-            id: candidate.id,
-            stage: "INTERVIEW",
-            orderIndex: 0,
-          });
-        }
       }
 
       onInterviewScheduled?.(interviewInfo);
@@ -303,18 +294,15 @@ export function ScheduleInterviewModal({
       console.error("Schedule interview failed:", err);
       setFormError(getApiErrorMessage(err, t));
       // Defense-in-depth: hooks (useCreateInterviewMutation,
-      // useUpdateInterviewMutation, useUpdateStageMutation) already
-      // invalidate on error. This explicit call is belt-and-suspenders
-      // for legacy safety.
+      // useUpdateInterviewMutation) already invalidate on error.
+      // This explicit call is belt-and-suspenders for legacy safety.
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     }
   };
 
   const isSaving =
-    createInterviewMutation.isPending ||
-    updateInterviewMutation.isPending ||
-    updateStageMutation.isPending;
+    createInterviewMutation.isPending || updateInterviewMutation.isPending;
 
   return (
     <CustomModal

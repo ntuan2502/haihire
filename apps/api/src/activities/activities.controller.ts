@@ -48,7 +48,7 @@ export class ActivitiesController {
   }
 
   @Get("application/:applicationId")
-  @RequirePermission("candidate:view")
+  @RequirePermission("application:view")
   findByApplication(
     @Param("applicationId", new ParseUUIDPipe()) applicationId: string,
     @Request() req: { user?: { organizationId?: string | null } },

@@ -9,6 +9,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useMyOrg,
   useUpdateMyOrgMutation,
@@ -30,7 +31,8 @@ import { toast } from "@/lib/toast";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
-  const { user, updateUserOrg, refreshUser, canEdit, isOwner } = useAuth();
+  const { user, updateUserOrg, refreshUser, isOwner } = useAuth();
+  const canEdit = useHasPermission("org:update");
   const { t } = useI18n();
   const { data: org, isLoading: isOrgLoading } = useMyOrg();
   const updateOrgMutation = useUpdateMyOrgMutation();

@@ -12,6 +12,7 @@ import {
 } from "@/components/dashboard";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useAllJobs,
   useApplications,
@@ -26,6 +27,7 @@ import type { Application } from "@/types";
 function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
+  const canViewCandidates = useHasPermission("candidate:view");
   const { t } = useI18n();
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
@@ -42,7 +44,7 @@ function DashboardContent() {
     });
   const { data: candidatesData, isLoading: candidatesLoading } = useCandidates(
     user?.organizationId,
-    { limit: 1 },
+    { limit: 1, enabled: canViewCandidates },
   );
   const { data: upcomingInterviewsData, isLoading: interviewsLoading } =
     useInterviews({

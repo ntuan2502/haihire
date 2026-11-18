@@ -26,7 +26,7 @@ import {
 } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
-import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   collectPipelineCandidateDocuments,
   computePipelineStageCounts,
@@ -63,7 +63,7 @@ function parseCandidateTabParam(value: string | null): string {
 export function usePipelineKanban(jobId: string) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { canEdit } = useAuth();
+  const canEdit = useHasPermission("application:update_stage");
   const { t } = useI18n();
   const queryClient = useQueryClient();
 

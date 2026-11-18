@@ -12,6 +12,7 @@ import {
   APP_ERROR_CODES,
   Role,
   formatUserDisplayName,
+  hasPermission,
   type NameDisplayOrder,
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
@@ -323,9 +324,14 @@ export class OrganizationsMembersService {
     const effectiveCallerRole = isCallerOwner
       ? "ADMIN"
       : callerMembership?.role || resolved.legacyRole || "MEMBER";
-    const isCallerAdmin = effectiveCallerRole === "ADMIN";
+    const canManageMembers = await this.resolveCanManageMembers(
+      this.prisma,
+      targetOrgId,
+      effectiveCallerRole,
+      isCallerOwner,
+    );
 
-    if (!isCallerAdmin && !isCallerOwner) {
+    if (!canManageMembers) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can change member roles.",
@@ -499,9 +505,14 @@ export class OrganizationsMembersService {
       const effectiveCallerRole = isCallerOwner
         ? "ADMIN"
         : callerMembership?.role || resolved.legacyRole || "MEMBER";
-      const isCallerAdmin = effectiveCallerRole === "ADMIN";
+      const canManageMembers = await this.resolveCanManageMembers(
+        tx,
+        targetOrgId,
+        effectiveCallerRole,
+        isCallerOwner,
+      );
 
-      if (!isCallerAdmin && !isCallerOwner) {
+      if (!canManageMembers) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
           "Only organization owners and administrators can remove members.",
@@ -560,5 +571,41 @@ export class OrganizationsMembersService {
         message: "Member successfully removed from organization",
       };
     });
+  }
+
+  private async resolveCanManageMembers(
+    client: {
+      organizationRolePermission?: {
+        findFirst?: (args: {
+          where: {
+            organizationId: string;
+            role: Role;
+            permission: string;
+          };
+          select: { granted: true };
+        }) => Promise<{ granted: boolean } | null>;
+      };
+    },
+    organizationId: string,
+    effectiveRole: string,
+    isOwner: boolean,
+  ): Promise<boolean> {
+    if (isOwner || effectiveRole === "ADMIN") {
+      return true;
+    }
+    const rolePermOverride =
+      typeof client.organizationRolePermission?.findFirst === "function"
+        ? await client.organizationRolePermission.findFirst({
+            where: {
+              organizationId,
+              role: effectiveRole as Role,
+              permission: "org:manage_members",
+            },
+            select: { granted: true },
+          })
+        : null;
+    return rolePermOverride
+      ? rolePermOverride.granted
+      : hasPermission(effectiveRole as Role, "org:manage_members");
   }
 }

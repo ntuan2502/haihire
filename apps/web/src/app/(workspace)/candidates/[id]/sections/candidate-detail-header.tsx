@@ -21,7 +21,7 @@ export function CandidateDetailHeader({
   candidateName,
   candidateEmail,
   candidatePhone,
-  canEdit,
+  canEdit: _canEdit,
   isDeleting,
   onOpenSendEmail,
   onOpenDeleteModal,
@@ -29,13 +29,9 @@ export function CandidateDetailHeader({
   const router = useRouter();
   const { t } = useI18n();
 
-  const hasSendEmailPermission = useHasPermission("email:send");
-  const hasUpdatePermission = useHasPermission("candidate:update");
-  const hasDeletePermission = useHasPermission("candidate:delete");
-
-  const canSendEmail = canEdit && hasSendEmailPermission;
-  const canUpdateCandidate = canEdit && hasUpdatePermission;
-  const canDeleteCandidate = canEdit && hasDeletePermission;
+  const canSendEmail = useHasPermission("email:send");
+  const canUpdateCandidate = useHasPermission("candidate:update");
+  const canDeleteCandidate = useHasPermission("candidate:delete");
 
   return (
     <div className="space-y-4">

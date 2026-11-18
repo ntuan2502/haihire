@@ -42,18 +42,18 @@ export function ApplicationsTableRow({
   return (
     <tr
       onClick={() => onSelectApp(application)}
-      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+      className="hover:bg-muted/50 transition-colors cursor-pointer"
     >
       {/* Candidate Name */}
       {visibleColumns.candidate && (
-        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+        <td className="py-4 px-5 font-semibold text-foreground">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onSelectApp(application);
             }}
-            className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+            className="text-left font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
           >
             {getCandidateDisplayName(application)}
           </button>
@@ -63,8 +63,8 @@ export function ApplicationsTableRow({
       {/* Email */}
       {visibleColumns.email && (
         <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>{application.candidateEmail}</span>
           </span>
         </td>
@@ -73,11 +73,11 @@ export function ApplicationsTableRow({
       {/* Job */}
       {visibleColumns.job && (
         <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-            <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
+            <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>
               {job?.title || t("candidates.role")}{" "}
-              <span className="text-slate-400">
+              <span className="text-muted-foreground">
                 ({getJobTypeLabel(job?.type, t)})
               </span>
             </span>
@@ -88,7 +88,7 @@ export function ApplicationsTableRow({
       {/* Status */}
       {visibleColumns.status && (
         <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+          <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
             <span
               className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
             />
@@ -98,11 +98,13 @@ export function ApplicationsTableRow({
       )}
 
       {/* Score */}
-      {visibleColumns.score && <td className="py-4 px-5 text-slate-400">—</td>}
+      {visibleColumns.score && (
+        <td className="py-4 px-5 text-muted-foreground">—</td>
+      )}
 
       {/* Applied */}
       {visibleColumns.applied && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-5 text-muted-foreground">
           {formatRelativeTime(application.createdAt)}
         </td>
       )}
@@ -117,7 +119,7 @@ export function ApplicationsTableRow({
               e.stopPropagation();
               router.push(`/applications/${application.id}`);
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
             aria-label={t("common.view")}
           >
@@ -130,7 +132,7 @@ export function ApplicationsTableRow({
                 e.stopPropagation();
                 onDeleteApp(application);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >

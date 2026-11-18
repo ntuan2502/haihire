@@ -153,9 +153,9 @@ export function AuthenticatedDocumentViewer({
   if (state.status === "loading") {
     return (
       <div
-        className={`${className} flex flex-col items-center justify-center gap-2.5 p-6 text-center text-slate-500 dark:text-slate-400`}
+        className={`${className} flex flex-col items-center justify-center gap-2.5 p-6 text-center text-muted-foreground`}
       >
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
         <p className="text-xs font-medium">{t("candidates.loadingPreview")}</p>
       </div>
     );
@@ -175,18 +175,16 @@ export function AuthenticatedDocumentViewer({
           <AlertCircle className="h-5 w-5" />
         </div>
         <div className="space-y-1 max-w-sm">
-          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <p className="text-xs font-semibold text-foreground">
             {t("candidates.previewUnavailable")}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {detailMessage}
-          </p>
+          <p className="text-xs text-muted-foreground">{detailMessage}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setReloadToken((n) => n + 1)}
-            className="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>{t("candidates.retryPreview")}</span>
@@ -197,7 +195,7 @@ export function AuthenticatedDocumentViewer({
               onClick={() =>
                 onDownload(document.url, document.name, effectiveAppId)
               }
-              className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-xs font-medium text-primary-foreground flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               <span>{t("common.download")}</span>
@@ -213,14 +211,14 @@ export function AuthenticatedDocumentViewer({
       <div
         className={`${className} flex flex-col items-center justify-center gap-3 p-6 text-center`}
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-200/70 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
           <FileText className="h-5 w-5" />
         </div>
         <div className="space-y-1 max-w-sm">
-          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+          <p className="text-xs font-semibold text-foreground truncate">
             {document.name}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted-foreground">
             {t("candidates.previewUnsupportedFormat")}
           </p>
         </div>
@@ -230,7 +228,7 @@ export function AuthenticatedDocumentViewer({
             onClick={() =>
               onDownload(document.url, document.name, effectiveAppId)
             }
-            className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-xs font-medium text-primary-foreground flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
             <span>{t("common.download")}</span>

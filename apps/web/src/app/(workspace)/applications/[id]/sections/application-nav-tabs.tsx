@@ -31,13 +31,13 @@ export function ApplicationNavTabs({
   const { t } = useI18n();
 
   return (
-    <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
+    <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
       {/* Overview tab with conditional arrow & dropdown toggle */}
       <div
         className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
           activeTab === "overview"
-            ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-            : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
+            ? "border-primary text-primary font-bold"
+            : "border-transparent text-muted-foreground hover:text-foreground font-semibold"
         }`}
       >
         <button
@@ -61,7 +61,7 @@ export function ApplicationNavTabs({
               e.stopPropagation();
               setIsOverviewPopoverOpen((prev) => !prev);
             }}
-            className="py-2.5 pr-2.5 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            className="py-2.5 pr-2.5 pl-0.5 cursor-pointer flex items-center justify-center text-primary hover:text-primary/80"
             aria-label={t("applications.toggleSections")}
             title={t("applications.toggleSections")}
           >
@@ -105,8 +105,8 @@ export function ApplicationNavTabs({
           }}
           className={`px-3.5 py-2.5 flex items-center gap-1.5 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
             activeTab === tab.id
-              ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              ? "border-primary text-primary font-bold"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
           <span>{tab.label}</span>

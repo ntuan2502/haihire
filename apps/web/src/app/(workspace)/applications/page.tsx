@@ -57,14 +57,14 @@ function ApplicationsPageContent() {
   }, [appStats]);
 
   return (
-    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Clean, Non-redundant Header Row (min-h-9 sm:h-9 aligns height with views having CTA button) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9 sm:h-9">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
             {t("applications.title")}
           </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary text-secondary-foreground border border-border">
             {applicationsData?.total ?? 0}
           </span>
         </div>

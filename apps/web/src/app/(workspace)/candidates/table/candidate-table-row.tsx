@@ -35,18 +35,18 @@ export function CandidateTableRow({
     <tr
       key={candidate.id}
       onClick={() => onSelect(candidate)}
-      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+      className="hover:bg-muted/40 transition-colors cursor-pointer"
     >
       {/* Name */}
       {visibleColumns.name && (
-        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+        <td className="py-4 px-5 font-semibold text-foreground">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onSelect(candidate);
             }}
-            className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+            className="text-left font-semibold text-foreground hover:underline underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
           >
             {getCandidateDisplayName(candidate.candidate ?? candidate)}
           </button>
@@ -56,8 +56,8 @@ export function CandidateTableRow({
       {/* Email */}
       {visibleColumns.email && (
         <td className="py-4 px-5">
-          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 text-foreground/90">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>{candidate.email}</span>
           </span>
         </td>
@@ -67,26 +67,26 @@ export function CandidateTableRow({
       {visibleColumns.phone && (
         <td className="py-4 px-5">
           {candidate.phone ? (
-            <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-              <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span className="inline-flex items-center gap-1.5 text-foreground/90">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span>{candidate.phone}</span>
             </span>
           ) : (
-            <span className="text-slate-300 dark:text-slate-600">—</span>
+            <span className="text-muted-foreground/60">—</span>
           )}
         </td>
       )}
 
       {/* Applications Count */}
       {visibleColumns.applications && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-5 text-muted-foreground">
           {candidate.applicationsCount}
         </td>
       )}
 
       {/* Added Date */}
       {visibleColumns.added && (
-        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+        <td className="py-4 px-5 text-muted-foreground">
           {formatDate(candidate.createdAt)}
         </td>
       )}
@@ -97,19 +97,19 @@ export function CandidateTableRow({
           {candidate.latestNote?.content ? (
             <div className="flex items-center gap-1.5">
               <span
-                className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[190px]"
+                className="inline-block text-xs text-foreground/80 truncate max-w-[190px]"
                 title={candidate.latestNote.content}
               >
                 {candidate.latestNote.content}
               </span>
               {(candidate.notesCount ?? 0) > 1 && (
-                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                <span className="inline-flex items-center rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground shrink-0">
                   +{candidate.notesCount! - 1}
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-slate-300 dark:text-slate-600">—</span>
+            <span className="text-muted-foreground/60">—</span>
           )}
         </td>
       )}
@@ -124,7 +124,7 @@ export function CandidateTableRow({
               e.stopPropagation();
               router.push(`/candidates/${candidate.id}`);
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
             aria-label={t("common.view")}
           >
@@ -139,7 +139,7 @@ export function CandidateTableRow({
                 e.stopPropagation();
                 router.push(`/candidates/${candidate.id}/edit`);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
@@ -155,7 +155,7 @@ export function CandidateTableRow({
                 e.stopPropagation();
                 onDelete(candidate);
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >

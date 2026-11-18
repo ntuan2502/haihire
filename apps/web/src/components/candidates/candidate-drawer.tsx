@@ -81,17 +81,17 @@ export function CandidateDrawer({
           />
 
           {/* Card 3: Tabs */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
             {/* Tabs Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-6 text-xs font-bold -mb-px">
+            <div className="flex items-center justify-between border-b border-border">
+              <div className="flex items-center gap-6 text-xs font-semibold -mb-px">
                 <button
                   type="button"
                   onClick={() => setDrawerTab("applications")}
                   className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     drawerTab === "applications"
-                      ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                      : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                      ? "text-foreground border-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground border-transparent font-medium"
                   }`}
                 >
                   {t("candidates.applicationsTab")} (
@@ -102,8 +102,8 @@ export function CandidateDrawer({
                   onClick={() => setDrawerTab("documents")}
                   className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     drawerTab === "documents"
-                      ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                      : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                      ? "text-foreground border-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground border-transparent font-medium"
                   }`}
                 >
                   {t("candidates.documentsTab")} (
@@ -114,8 +114,8 @@ export function CandidateDrawer({
                   onClick={() => setDrawerTab("notes")}
                   className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                     drawerTab === "notes"
-                      ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                      : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                      ? "text-foreground border-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground border-transparent font-medium"
                   }`}
                 >
                   {t("candidates.notes")} ({drawerNotesCount})

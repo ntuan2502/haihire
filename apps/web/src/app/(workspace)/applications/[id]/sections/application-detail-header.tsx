@@ -32,46 +32,46 @@ export function ApplicationDetailHeader({
   const canSendEmail = useHasPermission("email:send");
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
+        <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-base shadow-sm shrink-0">
           {initials}
         </div>
 
         {/* Info */}
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl font-black text-foreground">
               {candidateName}
             </h1>
             <StageBadge stage={stage} />
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <a
               href={`mailto:${candidateEmail}`}
-              className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+              className="flex items-center gap-1 hover:text-primary transition-colors"
             >
-              <Mail className="h-3.5 w-3.5 text-slate-400" />
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{candidateEmail}</span>
             </a>
             {candidatePhone && (
               <a
                 href={`tel:${candidatePhone}`}
-                className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
               >
-                <Phone className="h-3.5 w-3.5 text-slate-400" />
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{candidatePhone}</span>
               </a>
             )}
-            <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold">
-              <ArrowRight className="h-3 w-3 text-slate-400" />
+            <span className="flex items-center gap-1 text-foreground font-semibold">
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
               {jobTitle}
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-0.5">
             <Clock className="h-3 w-3" />
             <span>
               {t("applications.applied")} {appliedDate}
@@ -94,7 +94,7 @@ export function ApplicationDetailHeader({
             type="button"
             size="sm"
             onClick={onOpenSendEmail}
-            className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+            className="h-8 px-3 rounded-md text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
           >
             <Mail className="h-3.5 w-3.5" />
             <span>{t("email.sendEmailAction")}</span>

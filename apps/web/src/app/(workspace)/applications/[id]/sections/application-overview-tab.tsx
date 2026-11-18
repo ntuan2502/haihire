@@ -34,15 +34,15 @@ export function ApplicationOverviewTab({
     <>
       {/* 1. AI Analysis */}
       {overviewSections.ai && (
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
-            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <span>{t("applications.noAiAnalysis")}</span>
           </div>
           <button
             type="button"
             disabled
-            className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
+            className="h-8 px-3.5 rounded-md bg-primary/60 text-primary-foreground/80 text-xs font-semibold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
             title={t("applications.comingSoonTooltip", {
               action: t("applications.runAnalysis"),
             })}
@@ -77,12 +77,12 @@ export function ApplicationOverviewTab({
 
       {/* 4. Responses */}
       {overviewSections.responses && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-2">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("applications.sections.responses")}</span>
           </h3>
-          <p className="text-xs text-slate-400 py-1">
+          <p className="text-xs text-muted-foreground py-1">
             {t("applications.noResponses")}
           </p>
         </div>

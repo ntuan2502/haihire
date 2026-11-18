@@ -63,14 +63,14 @@ export function ApplicationTabContent({
       )}
 
       {activeTab === "ai" && (
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
-            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <span>{t("applications.noAiAnalysis")}</span>
           </div>
           <button
             type="button"
-            className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("applications.runAnalysis")}</span>
@@ -89,12 +89,12 @@ export function ApplicationTabContent({
       )}
 
       {activeTab === "responses" && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-2">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("applications.sections.responses")}</span>
           </h3>
-          <p className="text-xs text-slate-400 py-1">
+          <p className="text-xs text-muted-foreground py-1">
             {t("applications.noResponses")}
           </p>
         </div>
@@ -103,12 +103,12 @@ export function ApplicationTabContent({
       {activeTab === "notes" && <ApplicationNotesCard app={app} />}
 
       {activeTab === "inbox" && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-2">
-          <Mail className="h-8 w-8 text-slate-400 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-8 shadow-xs text-center space-y-2">
+          <Mail className="h-8 w-8 text-muted-foreground mx-auto" />
+          <h4 className="text-xs font-bold text-foreground">
             {t("applications.noMessagesYet")}
           </h4>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-muted-foreground">
             {t("applications.noMessagesYetDesc")}
           </p>
         </div>

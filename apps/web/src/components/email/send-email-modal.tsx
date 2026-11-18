@@ -293,23 +293,21 @@ export function SendEmailModal({
       onClose={isSending ? () => {} : onClose}
       title={t("email.modalTitle")}
       badge={
-        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+        <span className="text-[11px] font-semibold text-foreground">
           {candidateDisplayName}
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      contentClassName="flex flex-col min-h-0 bg-background text-foreground"
     >
       {/* Subheader Candidate info strip */}
-      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
+      <div className="px-6 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-900 dark:text-white">
+          <span className="font-semibold text-foreground">
             {candidateDisplayName}
           </span>
-          <span className="text-slate-400">•</span>
-          <span className="text-slate-500 dark:text-slate-400">
-            {candidate.email}
-          </span>
+          <span className="text-muted-foreground">•</span>
+          <span className="text-muted-foreground">{candidate.email}</span>
         </div>
       </div>
 
@@ -317,7 +315,7 @@ export function SendEmailModal({
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {/* Template Selector */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("email.selectTemplate")}
           </label>
           <CustomSelect
@@ -330,24 +328,24 @@ export function SendEmailModal({
         </div>
 
         {/* Recipient Information Pill */}
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-            <User className="h-3.5 w-3.5 text-slate-400" />
+        <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("email.recipient")}:</span>
-            <strong className="font-semibold text-slate-900 dark:text-white">
+            <strong className="font-semibold text-foreground">
               {candidateDisplayName}
             </strong>
-            <span className="text-slate-400">({candidate.email})</span>
+            <span className="text-muted-foreground">({candidate.email})</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <Briefcase className="h-3 w-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Briefcase className="h-3 w-3 text-muted-foreground" />
             <span>{jobTitle}</span>
           </div>
         </div>
 
         {/* Subject Field */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("email.subject")}
           </label>
           <Input
@@ -360,14 +358,14 @@ export function SendEmailModal({
 
         {/* Edit / Preview Tabs */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <div className="flex items-center gap-1 p-0.5 bg-muted border border-border rounded-lg">
             <button
               type="button"
               onClick={() => setIsPreviewMode(false)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
                 !isPreviewMode
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground font-medium"
               }`}
             >
               <Edit3 className="h-3 w-3" />
@@ -376,10 +374,10 @@ export function SendEmailModal({
             <button
               type="button"
               onClick={() => setIsPreviewMode(true)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
                 isPreviewMode
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground font-medium"
               }`}
             >
               <Eye className="h-3 w-3" />
@@ -388,7 +386,7 @@ export function SendEmailModal({
           </div>
 
           {!isPreviewMode && (
-            <span className="text-[11px] text-slate-400 flex items-center gap-1">
+            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-amber-500" />
               <span>{t("email.htmlAndVariables")}</span>
             </span>
@@ -403,14 +401,14 @@ export function SendEmailModal({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={10}
-              className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white font-mono leading-relaxed focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-2xs"
+              className="w-full p-3.5 rounded-lg border border-input bg-background text-xs text-foreground font-mono leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-2xs"
               placeholder={t("email.bodyPlaceholder")}
             />
 
             {/* Variable Insertion Pills */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                <Sparkles className="h-3 w-3 text-blue-500" />
+            <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-muted-foreground" />
                 <span>{t("email.insertVariableHint")}</span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -419,7 +417,7 @@ export function SendEmailModal({
                     key={v.key}
                     type="button"
                     onClick={() => handleInsertVariable(v.key)}
-                    className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-2xs"
+                    className="px-2 py-0.5 rounded-md bg-background border border-input text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-2xs"
                     title={t(v.labelKey as TranslationKey) || v.label}
                   >
                     {v.key}
@@ -430,16 +428,16 @@ export function SendEmailModal({
           </div>
         ) : (
           /* Live HTML Preview */
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-xs space-y-4">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 text-xs space-y-1 text-slate-500">
+          <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+            <div className="border-b border-border pb-3 text-xs space-y-1 text-muted-foreground">
               <div>
-                <strong className="text-slate-700 dark:text-slate-300">
+                <strong className="text-foreground">
                   {t("email.thSubject")}:
                 </strong>{" "}
                 {subject}
               </div>
               <div>
-                <strong className="text-slate-700 dark:text-slate-300">
+                <strong className="text-foreground">
                   {t("email.thRecipient")}:
                 </strong>{" "}
                 {candidateDisplayName} &lt;{candidate.email}&gt;
@@ -448,29 +446,31 @@ export function SendEmailModal({
             <EmailHtmlPreview
               title={subject}
               body={body}
-              className="prose prose-xs dark:prose-invert max-w-none text-xs text-slate-800 dark:text-slate-200 leading-relaxed"
+              className="prose prose-xs dark:prose-invert max-w-none text-xs text-foreground leading-relaxed"
             />
           </div>
         )}
       </div>
 
       {/* Modal Footer */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] shrink-0">
+      <div className="flex items-center justify-between px-6 py-3.5 border-t border-border bg-muted/30 shrink-0">
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={onClose}
           disabled={isSending}
-          className="h-8 px-3.5 text-xs font-semibold rounded-lg cursor-pointer shadow-2xs"
+          className="cursor-pointer"
         >
           {t("email.cancel")}
         </Button>
 
         <Button
           type="button"
+          size="sm"
           onClick={handleSend}
           disabled={isSending || !subject.trim() || !body.trim()}
-          className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+          className="cursor-pointer gap-2"
         >
           <Send className="h-3.5 w-3.5" />
           <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>

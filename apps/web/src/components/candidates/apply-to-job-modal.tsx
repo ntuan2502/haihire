@@ -113,10 +113,10 @@ export function ApplyToJobModal({
       }}
       title={t("applications.applyToJobTitle")}
       size="md"
-      contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-3"
+      contentClassName="p-5 flex flex-col min-h-0 bg-background text-foreground space-y-3"
     >
       {errorMessage && (
-        <div className="p-2.5 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900/50">
+        <div className="p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium border border-destructive/30">
           {errorMessage}
         </div>
       )}
@@ -125,10 +125,10 @@ export function ApplyToJobModal({
       <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
         {jobsLoading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : openJobs.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-400 italic">
+          <div className="text-center py-8 text-xs text-muted-foreground italic">
             {t("applications.noActiveJobs")}
           </div>
         ) : (
@@ -143,18 +143,18 @@ export function ApplyToJobModal({
             return (
               <div
                 key={job.id}
-                className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#252525] hover:border-blue-300 dark:hover:border-blue-600 flex items-center justify-between gap-3 transition-all shadow-2xs"
+                className="p-3.5 sm:p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-ring/50 flex items-center justify-between gap-3 transition-all shadow-2xs"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="h-6 w-6 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0">
                       <Building2 className="h-3.5 w-3.5" />
                     </div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                    <h4 className="text-xs sm:text-sm font-semibold text-foreground truncate">
                       {jobTitle}
                     </h4>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate pl-8">
+                  <p className="text-[11px] text-muted-foreground truncate pl-8">
                     {job.location ||
                       job.department ||
                       t("jobs.defaultLocation")}
@@ -168,7 +168,7 @@ export function ApplyToJobModal({
                       {t("applications.appliedBadge")}
                     </span>
                   ) : isApplied ? (
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 px-2.5 py-1">
+                    <span className="text-xs font-medium text-muted-foreground px-2.5 py-1">
                       {t("applications.appliedBadge")}
                     </span>
                   ) : (
@@ -176,7 +176,7 @@ export function ApplyToJobModal({
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => handleApply(job)}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-3 py-1.5 rounded-lg border border-blue-200/60 dark:border-blue-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs"
+                      className="text-xs font-semibold text-foreground px-3 py-1.5 rounded-md border border-input bg-background hover:bg-accent transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs"
                     >
                       {isSubmitting && (
                         <Loader2 className="h-3 w-3 animate-spin" />

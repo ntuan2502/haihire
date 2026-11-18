@@ -145,7 +145,7 @@ function EditCandidatePageContent() {
   if (candidateLoading && !isInitialized && isCandidateIdValid) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -171,12 +171,12 @@ function EditCandidatePageContent() {
   }
 
   return (
-    <div className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-6">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-6">
       {/* Back Link */}
       <div>
         <Link
           href={candidate ? `/candidates/${candidate.id}` : "/candidates"}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>{t("common.back")}</span>
@@ -185,10 +185,10 @@ function EditCandidatePageContent() {
 
       {/* Heading */}
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {t("candidates.editCandidateTitle")}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {t("candidates.editCandidateSubtitle")}
         </p>
       </div>
@@ -196,7 +196,7 @@ function EditCandidatePageContent() {
       {/* Form Container */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400">
+          <div className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium">
             {errorMsg}
           </div>
         )}
@@ -237,15 +237,15 @@ function EditCandidatePageContent() {
               ]
           ).map((field) => (
             <div key={field.key} className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {field.label} <span className="text-rose-500">*</span>
+              <label className="text-xs font-medium text-foreground">
+                {field.label} <span className="text-destructive">*</span>
               </label>
               <Input
                 required
                 placeholder={field.placeholder}
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
-                className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
           ))}
@@ -253,8 +253,8 @@ function EditCandidatePageContent() {
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            {t("candidates.email")} <span className="text-rose-500">*</span>
+          <label className="text-xs font-medium text-foreground">
+            {t("candidates.email")} <span className="text-destructive">*</span>
           </label>
           <Input
             type="email"
@@ -262,13 +262,13 @@ function EditCandidatePageContent() {
             placeholder={t("candidates.placeholders.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-medium text-foreground">
             {t("candidates.phone")}
           </label>
           <Input
@@ -276,15 +276,15 @@ function EditCandidatePageContent() {
             placeholder={t("candidates.placeholders.phone")}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-medium text-foreground">
             {t("candidates.displayName")}{" "}
-            <span className="text-[11px] font-normal text-slate-400">
+            <span className="text-[11px] font-normal text-muted-foreground">
               {t("candidates.displayNameHint")}
             </span>
           </label>
@@ -292,7 +292,7 @@ function EditCandidatePageContent() {
             placeholder={t("candidates.placeholders.displayName")}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
@@ -300,7 +300,7 @@ function EditCandidatePageContent() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Gender */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("candidates.gender")}
             </label>
             <CustomSelect
@@ -316,20 +316,20 @@ function EditCandidatePageContent() {
                 { value: "OTHER", label: t("candidates.otherGender") },
               ]}
               className="w-full"
-              triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              triggerClassName="h-10 text-xs font-normal"
             />
           </div>
 
           {/* Date of Birth (Calendar date picker) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("candidates.dateOfBirth")}
             </label>
             <Input
               type="date"
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              className="h-10 text-xs"
             />
           </div>
         </div>
@@ -339,7 +339,7 @@ function EditCandidatePageContent() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-5 rounded-xl shadow-xs text-xs cursor-pointer gap-2"
+            className="font-semibold h-10 px-5 text-xs cursor-pointer gap-2"
           >
             {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             <span>{isSubmitting ? t("common.saving") : t("common.save")}</span>
@@ -353,7 +353,7 @@ function EditCandidatePageContent() {
                 candidate ? `/candidates/${candidate.id}` : "/candidates",
               )
             }
-            className="h-10 px-5 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+            className="h-10 px-5 text-xs cursor-pointer"
           >
             {t("common.cancel")}
           </Button>

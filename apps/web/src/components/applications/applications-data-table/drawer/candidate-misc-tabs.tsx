@@ -8,14 +8,14 @@ import { useI18n } from "@/i18n";
 export function CandidateAiTab() {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
-        <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
+        <Sparkles className="h-4 w-4 text-primary shrink-0" />
         <span>{t("applications.noAiAnalysis")}</span>
       </div>
       <button
         type="button"
-        className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+        className="h-8 px-3.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
       >
         <Sparkles className="h-3 w-3" />
         <span>{t("applications.runAnalysis")}</span>
@@ -31,32 +31,34 @@ export function CandidateResponsesTab({
 }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-        <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
+      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
         <span>{t("applications.sections.responses")}</span>
       </h3>
-      <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
+      <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2 text-muted-foreground">
         <div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-muted-foreground">
             {t("candidates.displayName")}
           </p>
-          <p className="font-semibold text-slate-900 dark:text-white">
+          <p className="font-semibold text-foreground">
             {getCandidateDisplayName(currentApp)}
           </p>
         </div>
         <div>
-          <p className="text-[11px] text-slate-400">{t("candidates.email")}</p>
-          <p className="font-semibold text-slate-900 dark:text-white">
+          <p className="text-[11px] text-muted-foreground">
+            {t("candidates.email")}
+          </p>
+          <p className="font-semibold text-foreground">
             {currentApp.candidateEmail}
           </p>
         </div>
         {currentApp.candidatePhone && (
           <div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-muted-foreground">
               {t("candidates.phone")}
             </p>
-            <p className="font-semibold text-slate-900 dark:text-white">
+            <p className="font-semibold text-foreground">
               {currentApp.candidatePhone}
             </p>
           </div>
@@ -69,12 +71,12 @@ export function CandidateResponsesTab({
 export function CandidateInboxTab() {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs space-y-2">
-      <Mail className="h-8 w-8 text-slate-400 mx-auto" />
-      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-8 text-center shadow-xs space-y-2">
+      <Mail className="h-8 w-8 text-muted-foreground mx-auto" />
+      <h4 className="text-xs font-bold text-foreground">
         {t("applications.tabs.inbox")}
       </h4>
-      <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+      <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
         {t("applications.noMessagesYetDesc")}
       </p>
     </div>
@@ -88,18 +90,18 @@ export function CandidateTimelineTab({
 }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-        <Clock className="h-3.5 w-3.5 text-slate-400" />
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
+      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
         <span>{t("applications.tabs.timeline")}</span>
       </h3>
-      <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+      <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
         <div className="relative text-xs">
-          <div className="absolute -left-6 top-1 h-2.5 w-2.5 rounded-full bg-blue-600 ring-4 ring-white dark:ring-slate-900" />
-          <p className="font-semibold text-slate-900 dark:text-white">
+          <div className="absolute -left-6 top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-card" />
+          <p className="font-semibold text-foreground">
             {t("applications.applied")}
           </p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-muted-foreground">
             {formatDate(currentApp.createdAt)}
           </p>
         </div>

@@ -107,12 +107,12 @@ export function CandidateQuickDrawer({
       {/* Drawer Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Sub-Navigation Tabs */}
-        <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
+        <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
           <div
             className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
               drawerTab === "overview"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
+                ? "border-primary text-primary font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground font-semibold"
             }`}
           >
             <button
@@ -136,7 +136,7 @@ export function CandidateQuickDrawer({
                   e.stopPropagation();
                   onToggleDrawerOverviewPopover();
                 }}
-                className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-primary hover:text-primary/80"
                 aria-label={t("applications.toggleSections")}
                 title={t("applications.toggleSections")}
               >
@@ -184,8 +184,8 @@ export function CandidateQuickDrawer({
               }}
               className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                 drawerTab === tab.id
-                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{tab.label}</span>

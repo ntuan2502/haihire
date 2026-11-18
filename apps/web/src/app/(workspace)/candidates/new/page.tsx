@@ -174,12 +174,12 @@ function AddCandidatePageContent() {
   };
 
   return (
-    <div className="flex-1 px-4 py-8 max-w-7xl w-full mx-auto space-y-6">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-6">
       {/* Back Link */}
       <div>
         <Link
           href="/candidates"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>
@@ -190,10 +190,10 @@ function AddCandidatePageContent() {
 
       {/* Page Title */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-xl font-semibold text-foreground">
           {t("candidates.addCandidateTitle")}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {t("candidates.addCandidateSubtitle")}
         </p>
       </div>
@@ -205,12 +205,12 @@ function AddCandidatePageContent() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`rounded-2xl border-2 border-dashed p-7 text-center transition-all ${
+          className={`rounded-xl border-2 border-dashed p-7 text-center transition-all ${
             isDragging
-              ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+              ? "border-primary bg-accent/50"
               : selectedFile
                 ? "border-emerald-300 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-                : "border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30"
+                : "border-border bg-muted/30"
           }`}
         >
           <input
@@ -227,13 +227,13 @@ function AddCandidatePageContent() {
                 <FileText className="h-5 w-5" />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <span className="text-xs font-semibold text-foreground">
                   {selectedFile.name}
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedFile(null)}
-                  className="text-slate-400 hover:text-rose-500 cursor-pointer p-0.5"
+                  className="text-muted-foreground hover:text-destructive cursor-pointer p-0.5"
                   title={t("candidates.removeFile")}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -248,19 +248,19 @@ function AddCandidatePageContent() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-1.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-1">
                 <UploadCloud className="h-5 w-5" />
               </div>
-              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+              <h4 className="text-xs font-semibold text-foreground">
                 {t("candidates.dropCv")}
               </h4>
-              <p className="text-[11px] text-slate-400 max-w-sm">
+              <p className="text-[11px] text-muted-foreground max-w-sm">
                 {t("candidates.dropCvHint")}
               </p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-2.5 inline-flex items-center justify-center rounded-lg border border-slate-200/90 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                className="mt-2.5 inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-1.5 text-xs font-medium text-foreground shadow-xs hover:bg-accent transition-colors cursor-pointer"
               >
                 {t("candidates.chooseFile")}
               </button>
@@ -304,15 +304,15 @@ function AddCandidatePageContent() {
               ]
           ).map((field) => (
             <div key={field.key} className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {field.label} <span className="text-rose-500">*</span>
+              <label className="text-xs font-medium text-foreground">
+                {field.label} <span className="text-destructive">*</span>
               </label>
               <Input
                 required
                 placeholder={field.placeholder}
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
-                className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
           ))}
@@ -320,9 +320,9 @@ function AddCandidatePageContent() {
 
         {/* Display Name */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-medium text-foreground">
             {t("candidates.displayName")}{" "}
-            <span className="text-[11px] font-normal text-slate-400">
+            <span className="text-[11px] font-normal text-muted-foreground">
               {t("candidates.displayNameHint")}
             </span>
           </label>
@@ -330,14 +330,14 @@ function AddCandidatePageContent() {
             placeholder={t("candidates.placeholders.displayName")}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            {t("candidates.email")} <span className="text-rose-500">*</span>
+          <label className="text-xs font-medium text-foreground">
+            {t("candidates.email")} <span className="text-destructive">*</span>
           </label>
           <Input
             type="email"
@@ -345,13 +345,13 @@ function AddCandidatePageContent() {
             placeholder={t("candidates.placeholders.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-medium text-foreground">
             {t("candidates.phone")}
           </label>
           <Input
@@ -359,7 +359,7 @@ function AddCandidatePageContent() {
             placeholder={t("candidates.placeholders.phone")}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-10 text-xs"
           />
         </div>
 
@@ -367,7 +367,7 @@ function AddCandidatePageContent() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Gender */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("candidates.gender")}
             </label>
             <CustomSelect
@@ -383,13 +383,13 @@ function AddCandidatePageContent() {
                 { value: "OTHER", label: t("candidates.otherGender") },
               ]}
               className="w-full"
-              triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              triggerClassName="h-10 text-xs font-normal"
             />
           </div>
 
           {/* Date of Birth */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-medium text-foreground">
               {t("candidates.dateOfBirth")}
             </label>
             <Input
@@ -397,14 +397,14 @@ function AddCandidatePageContent() {
               placeholder={t("candidates.placeholders.dob")}
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              className="h-10 text-xs"
             />
           </div>
         </div>
 
         {/* Error Message Display */}
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900/50 dark:text-rose-300">
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium">
             {errorMsg}
           </div>
         )}
@@ -414,7 +414,7 @@ function AddCandidatePageContent() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+            className="px-5 font-semibold text-xs cursor-pointer"
           >
             {isSubmitting ? t("common.saving") : t("candidates.addCandidate")}
           </Button>
@@ -422,7 +422,7 @@ function AddCandidatePageContent() {
             type="button"
             variant="outline"
             onClick={() => router.push("/candidates")}
-            className="h-9 px-4 text-xs font-semibold rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+            className="px-4 text-xs cursor-pointer"
           >
             {t("common.cancel")}
           </Button>

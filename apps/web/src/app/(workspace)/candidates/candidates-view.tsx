@@ -67,14 +67,14 @@ export function CandidatesView() {
   }
 
   return (
-    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
             {t("candidates.title")}
           </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+          <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
             {filterSort.totalCount}
           </span>
         </div>
@@ -84,7 +84,7 @@ export function CandidatesView() {
             <Button
               size="sm"
               onClick={() => router.push("/candidates/new")}
-              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="gap-1.5 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>{t("candidates.addCandidate")}</span>
@@ -116,20 +116,21 @@ export function CandidatesView() {
       {loading && !filterSort.hasPagedResult ? (
         <LoadingSpinner />
       ) : filterSort.candidateRows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs w-full my-6">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground p-12 sm:p-16 text-center shadow-xs w-full my-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
             <Users className="h-8 w-8 stroke-[1.5]" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-semibold text-foreground">
             {t("candidates.noCandidatesYet")}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
+          <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
             {t("candidates.noCandidatesYetDesc")}
           </p>
           {canCreateCandidate && (
             <Button
+              size="sm"
               onClick={() => router.push("/candidates/new")}
-              className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+              className="gap-1.5 cursor-pointer"
             >
               <Plus className="h-4 w-4 stroke-[2.5]" />
               {t("candidates.addCandidate")}

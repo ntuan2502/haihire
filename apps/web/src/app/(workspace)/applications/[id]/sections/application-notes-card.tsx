@@ -11,7 +11,7 @@ export function ApplicationNotesCard({ app }: ApplicationNotesCardProps) {
   if (!app?.id) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
       <ApplicationNotesStream applicationId={app.id} />
     </div>
   );

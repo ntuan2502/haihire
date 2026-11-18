@@ -33,8 +33,8 @@ interface ApplicationNotesStreamProps {
 
 function getAvatarBg(name: string) {
   const colors = [
-    "bg-blue-600 text-white",
-    "bg-indigo-600 text-white",
+    "bg-sky-600 text-white",
+    "bg-violet-600 text-white",
     "bg-emerald-600 text-white",
     "bg-amber-600 text-white",
     "bg-rose-600 text-white",
@@ -149,28 +149,28 @@ export function ApplicationNotesStream({
     <div className="space-y-4">
       {/* Header */}
       {showHeader && (
-        <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center justify-between pb-1 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-6 w-6 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+            <div className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/10 text-primary">
               <MessageSquare className="h-3.5 w-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
               {t("applications.notesStream.title")}
             </h3>
             {notes.length > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-secondary-foreground">
                 {notes.length}
               </span>
             )}
           </div>
-          <p className="text-[11px] text-slate-400 hidden sm:block">
+          <p className="text-[11px] text-muted-foreground hidden sm:block">
             {t("applications.notesStream.subtitle")}
           </p>
         </div>
       )}
 
       {/* Trello-Style Composer */}
-      <div className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-3 shadow-2xs transition-all duration-200 focus-within:border-blue-500/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900/60 dark:focus-within:border-blue-400 dark:focus-within:bg-slate-900">
+      <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-all duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
         <div className="flex gap-2.5">
           <div
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
@@ -194,12 +194,12 @@ export function ApplicationNotesStream({
                 }
               }}
               placeholder={placeholder || t("applications.notePlaceholder")}
-              className="w-full resize-none bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden dark:text-slate-100 dark:placeholder-slate-500"
+              className="w-full resize-none bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden"
             />
 
             {(isFocused || composerContent.trim().length > 0) && (
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                <span className="text-[10px] text-slate-400">
+              <div className="flex items-center justify-between pt-1 border-t border-border">
+                <span className="text-[10px] text-muted-foreground">
                   {t("applications.notesStream.keyboardHint")}
                 </span>
 
@@ -210,7 +210,7 @@ export function ApplicationNotesStream({
                       setComposerContent("");
                       setIsFocused(false);
                     }}
-                    className="h-7 px-2.5 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
+                    className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
                   >
                     {t("applications.notesStream.cancel")}
                   </button>
@@ -221,7 +221,7 @@ export function ApplicationNotesStream({
                       !composerContent.trim() || addNoteMutation.isPending
                     }
                     onClick={handleAddNote}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {addNoteMutation.isPending ? (
                       <>
@@ -253,25 +253,25 @@ export function ApplicationNotesStream({
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-xl border border-slate-200/80 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/60"
+                className="animate-pulse rounded-xl border border-border bg-card p-3"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-800" />
-                  <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-800" />
-                  <div className="h-3 w-16 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-6 w-6 rounded-full bg-muted" />
+                  <div className="h-3 w-24 rounded bg-muted" />
+                  <div className="h-3 w-16 rounded bg-muted" />
                 </div>
-                <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="h-3 w-3/4 rounded bg-muted" />
               </div>
             ))}
           </div>
         )}
 
         {!isLoading && notes.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-6 px-4 text-center dark:border-slate-800">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 px-4 text-center">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <MessageSquare className="h-4 w-4" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               {compact
                 ? t("applications.notesStream.emptyCompact")
                 : t("applications.notesStream.empty")}
@@ -290,7 +290,7 @@ export function ApplicationNotesStream({
             return (
               <div
                 key={note.id}
-                className="group relative rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-2xs transition-all hover:border-slate-300 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-slate-700"
+                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs transition-all hover:border-ring/50"
               >
                 <div className="flex items-start gap-2.5">
                   {/* Author Avatar */}
@@ -306,7 +306,7 @@ export function ApplicationNotesStream({
                     {/* Header Row */}
                     <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                        <span className="text-xs font-semibold text-foreground">
                           {note.authorName}
                         </span>
 
@@ -317,14 +317,14 @@ export function ApplicationNotesStream({
                         </span>
 
                         <span
-                          className="text-[10px] text-slate-400 cursor-default"
+                          className="text-[10px] text-muted-foreground cursor-default"
                           title={formatDate(note.createdAt, "standard")}
                         >
                           • {formatRelativeTime(note.createdAt)}
                         </span>
 
                         {note.isEdited && (
-                          <span className="text-[10px] text-slate-400 italic">
+                          <span className="text-[10px] text-muted-foreground italic">
                             {t("applications.notesStream.edited")}
                           </span>
                         )}
@@ -337,7 +337,7 @@ export function ApplicationNotesStream({
                             type="button"
                             onClick={() => handleStartEdit(note)}
                             title={t("applications.notesStream.editNote")}
-                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                           >
                             <Pencil className="h-3 w-3" />
                           </button>
@@ -346,7 +346,7 @@ export function ApplicationNotesStream({
                             type="button"
                             onClick={() => setDeletingNoteId(note.id)}
                             title={t("applications.notesStream.deleteNote")}
-                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -364,7 +364,7 @@ export function ApplicationNotesStream({
                           <button
                             type="button"
                             onClick={() => setDeletingNoteId(null)}
-                            className="h-6 px-2 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 text-[11px] font-medium dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 transition-colors cursor-pointer"
+                            className="h-6 px-2 rounded-md bg-background border border-input text-foreground hover:bg-accent text-[11px] font-medium transition-colors cursor-pointer"
                           >
                             {t("applications.notesStream.cancel")}
                           </button>
@@ -403,17 +403,17 @@ export function ApplicationNotesStream({
                               handleCancelEdit();
                             }
                           }}
-                          className="w-full text-xs p-2.5 rounded-lg border border-blue-400 bg-white dark:bg-slate-950 dark:border-blue-500 focus:outline-hidden ring-2 ring-blue-500/10 resize-none text-slate-800 dark:text-slate-100"
+                          className="w-full text-xs p-2.5 rounded-md border border-ring bg-background focus:outline-hidden ring-2 ring-ring/20 resize-none text-foreground"
                         />
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-muted-foreground">
                             {t("applications.notesStream.keyboardHint")}
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={handleCancelEdit}
-                              className="h-6 px-2 rounded-md text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                              className="h-6 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                             >
                               {t("applications.notesStream.cancel")}
                             </button>
@@ -424,7 +424,7 @@ export function ApplicationNotesStream({
                                 updateNoteMutation.isPending
                               }
                               onClick={() => handleSaveEdit(note.id)}
-                              className="inline-flex h-6 items-center gap-1 rounded-md bg-blue-600 px-2.5 text-xs font-semibold text-white shadow-2xs transition-colors hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                              className="inline-flex h-6 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
                             >
                               {updateNoteMutation.isPending ? (
                                 <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -439,7 +439,7 @@ export function ApplicationNotesStream({
                     ) : (
                       /* Display Note Body */
                       !isDeleting && (
-                        <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words leading-relaxed">
+                        <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
                           {note.content}
                         </p>
                       )

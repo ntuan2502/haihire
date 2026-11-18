@@ -84,12 +84,12 @@ export function CandidatesToolbar({
           <button
             type="button"
             onClick={onOpenFilterDrawer}
-            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-medium text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}

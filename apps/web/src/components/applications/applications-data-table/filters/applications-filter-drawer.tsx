@@ -54,7 +54,7 @@ export function ApplicationsFilterDrawer({
           {/* 1. FILTER BY JOB */}
           {!fixedJobId && (
             <div className="space-y-2.5">
-              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+              <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
                 {t("applications.filterByJob")}
               </span>
               <CustomSelect
@@ -65,14 +65,14 @@ export function ApplicationsFilterDrawer({
                   ...jobs.map((j) => ({ value: j.id, label: j.title })),
                 ]}
                 className="w-full"
-                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                triggerClassName="h-9 text-xs font-normal bg-background rounded-md"
               />
             </div>
           )}
 
           {/* 2. MATCH SCORE RANGE */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
               {t("applications.score")}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -91,8 +91,8 @@ export function ApplicationsFilterDrawer({
                   onClick={() => onScoreFilterChange(item.id)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                     scoreFilter === item.id
-                      ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
-                      : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                      : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   {item.label}
@@ -103,7 +103,7 @@ export function ApplicationsFilterDrawer({
 
           {/* 3. SORT BY */}
           <div className="space-y-2.5">
-            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+            <span className="font-bold text-muted-foreground text-[10px] uppercase tracking-wider block">
               {t("jobs.sortByUpper")}
             </span>
             <div className="grid grid-cols-2 gap-2">
@@ -123,7 +123,7 @@ export function ApplicationsFilterDrawer({
                   { value: "score", label: t("applications.columns.score") },
                 ]}
                 className="w-full"
-                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                triggerClassName="h-9 text-xs font-normal bg-background rounded-md"
               />
 
               <CustomSelect
@@ -134,18 +134,18 @@ export function ApplicationsFilterDrawer({
                   { value: "asc", label: t("jobs.ascending") },
                 ]}
                 className="w-full"
-                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                triggerClassName="h-9 text-xs font-normal bg-background rounded-md"
               />
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="p-4 border-t border-border flex items-center justify-between bg-muted/40">
           <button
             type="button"
             onClick={onResetFilters}
-            className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>{t("jobs.resetAll")}</span>
@@ -165,7 +165,7 @@ export function ApplicationsFilterDrawer({
               type="button"
               size="sm"
               onClick={onClose}
-              className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+              className="h-8 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer"
             >
               {t("jobs.done")}
             </Button>

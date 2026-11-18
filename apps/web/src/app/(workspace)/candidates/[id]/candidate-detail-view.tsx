@@ -132,7 +132,7 @@ export function CandidateDetailView() {
   }
 
   return (
-    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-5">
       <CandidateDetailHeader
         candidateId={state.candidate?.id || state.candidateIdStr || ""}
         candidateName={state.candidateName}
@@ -156,16 +156,16 @@ export function CandidateDetailView() {
       />
 
       {/* Card 2: Tabs (Applications / Documents / Notes) */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-6 text-xs font-bold -mb-px">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-5">
+        <div className="flex items-center justify-between border-b border-border">
+          <div className="flex items-center gap-6 text-xs font-semibold -mb-px">
             <button
               type="button"
               onClick={() => state.setActiveTab("applications")}
               className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                 state.activeTab === "applications"
-                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                  ? "text-foreground border-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-transparent font-medium"
               }`}
             >
               {t("candidates.applicationsTab")} ({state.candidateApps.length})
@@ -175,8 +175,8 @@ export function CandidateDetailView() {
               onClick={() => state.setActiveTab("documents")}
               className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                 state.activeTab === "documents"
-                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                  ? "text-foreground border-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-transparent font-medium"
               }`}
             >
               {t("candidates.documentsTab")} ({state.candidateDocuments.length})
@@ -186,8 +186,8 @@ export function CandidateDetailView() {
               onClick={() => state.setActiveTab("notes")}
               className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
                 state.activeTab === "notes"
-                  ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                  ? "text-foreground border-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground border-transparent font-medium"
               }`}
             >
               {t("candidates.notes")} ({state.notesCount})
@@ -254,7 +254,7 @@ export function CandidateDetailView() {
       </div>
 
       {/* Card 5: Activity & Email Timeline */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
         <CandidateTimeline
           candidateId={state.candidate?.id || state.candidateIdStr}
           candidateName={state.candidateName}

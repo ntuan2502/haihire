@@ -41,12 +41,12 @@ export function CandidateOverviewTab({
     <div className="space-y-4">
       {/* Match Score Card */}
       {drawerOverviewSections.ai && (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200/90 dark:bg-slate-900 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center justify-between p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {t("applications.matchScore")}:
             </span>
-            <span className="font-bold text-sm text-slate-900 dark:text-white">
+            <span className="font-bold text-sm text-foreground">
               {currentApp.matchScore !== null &&
               currentApp.matchScore !== undefined
                 ? `${currentApp.matchScore}%`
@@ -55,7 +55,7 @@ export function CandidateOverviewTab({
           </div>
           <button
             type="button"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+            className="text-xs text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("applications.runAnalysis")}</span>
@@ -87,33 +87,33 @@ export function CandidateOverviewTab({
 
       {/* Responses Card */}
       {drawerOverviewSections.responses && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
             {t("applications.sections.responses")}
           </h3>
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
+          <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2 text-muted-foreground">
             <div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 {t("candidates.displayName")}
               </p>
-              <p className="font-semibold text-slate-900 dark:text-white">
+              <p className="font-semibold text-foreground">
                 {getCandidateDisplayName(currentApp)}
               </p>
             </div>
             <div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 {t("candidates.email")}
               </p>
-              <p className="font-semibold text-slate-900 dark:text-white">
+              <p className="font-semibold text-foreground">
                 {currentApp.candidateEmail}
               </p>
             </div>
             {currentApp.candidatePhone && (
               <div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-muted-foreground">
                   {t("candidates.phone")}
                 </p>
-                <p className="font-semibold text-slate-900 dark:text-white">
+                <p className="font-semibold text-foreground">
                   {currentApp.candidatePhone}
                 </p>
               </div>
@@ -124,7 +124,7 @@ export function CandidateOverviewTab({
 
       {/* Notes Card */}
       {drawerOverviewSections.notes && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs">
           <ApplicationNotesStream
             applicationId={currentApp.id}
             compact

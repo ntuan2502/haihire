@@ -55,11 +55,11 @@ export function CandidatesTable({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xs overflow-hidden">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
+          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
             <tr>
               {sortableColumns.map((col) => {
                 if (!visibleColumns[col.id]) return null;
@@ -82,17 +82,15 @@ export function CandidatesTable({
                       onClick={() => onSort(col.id)}
                       className={`flex items-center gap-1 ${
                         col.id === "added"
-                          ? "font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                          : "font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer`}
+                          ? "font-semibold text-foreground"
+                          : "font-semibold text-muted-foreground hover:text-foreground"
+                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                     >
                       <span>{col.label}</span>
                       {isSorted ? (
                         <ArrowDown
                           className={`h-3 w-3 ${
-                            col.id === "added"
-                              ? "text-slate-700 dark:text-slate-300"
-                              : ""
+                            col.id === "added" ? "text-foreground" : ""
                           } transition-transform ${
                             sortDirection === "asc" ? "rotate-180" : ""
                           }`}
@@ -100,7 +98,7 @@ export function CandidatesTable({
                         />
                       ) : (
                         <ArrowUpDown
-                          className="h-3 w-3 text-slate-400"
+                          className="h-3 w-3 text-muted-foreground"
                           aria-hidden="true"
                         />
                       )}
@@ -112,7 +110,7 @@ export function CandidatesTable({
               {visibleColumns.quickNotes && (
                 <th
                   scope="col"
-                  className="py-3 px-5 font-semibold text-slate-500"
+                  className="py-3 px-5 font-semibold text-muted-foreground"
                 >
                   {t("candidates.columns.quickNotes")}
                 </th>
@@ -120,7 +118,7 @@ export function CandidatesTable({
 
               <th
                 scope="col"
-                className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500"
+                className="py-3 px-5 text-right min-w-[100px] font-semibold text-muted-foreground"
               >
                 {t("common.actions")}
               </th>
@@ -128,7 +126,7 @@ export function CandidatesTable({
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+          <tbody className="divide-y divide-border">
             {candidates.map((candidate) => (
               <CandidateTableRow
                 key={candidate.id}
@@ -144,7 +142,7 @@ export function CandidatesTable({
       </div>
 
       {/* Pagination & Rows Footer */}
-      <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
+      <div className="py-3 px-5 border-t border-border bg-muted/30">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

@@ -99,18 +99,18 @@ export function OfferApplicationModal({
         }
       }}
     >
-      <DialogContent className="sm:max-w-md p-6 gap-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl">
+      <DialogContent className="sm:max-w-md p-6 gap-5 bg-card text-card-foreground border border-border rounded-xl shadow-xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader className="gap-3 text-left">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40">
                 <Award className="h-5 w-5" />
               </div>
-              <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <DialogTitle className="text-base font-semibold text-foreground">
                 {t("applications.offerModal.title")}
               </DialogTitle>
             </div>
-            <DialogDescription className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
               {t("applications.offerModal.description", {
                 name: candidateName,
                 job: jobTitle,
@@ -118,7 +118,7 @@ export function OfferApplicationModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+          <div className="rounded-lg border border-border bg-muted/40 p-3">
             {hasEmail ? (
               <>
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -130,10 +130,10 @@ export function OfferApplicationModal({
                       setSendOfferEmail(e.target.checked);
                     }}
                     disabled={isSubmitting}
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 h-4 w-4 rounded border-input text-emerald-600 focus:ring-emerald-500"
                   />
-                  <span className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed flex items-center gap-1.5 flex-wrap">
-                    <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="text-xs text-foreground leading-relaxed flex items-center gap-1.5 flex-wrap">
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span>
                       {t("applications.offerModal.sendEmailLabel", {
                         email: normalizedEmail,
@@ -157,8 +157,8 @@ export function OfferApplicationModal({
                 )}
               </>
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{t("applications.offerModal.noEmailHint")}</span>
               </p>
             )}

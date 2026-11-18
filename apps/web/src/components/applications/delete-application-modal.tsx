@@ -30,13 +30,11 @@ export function DeleteApplicationModal({
       title={t("applications.deleteApplicationHeading")}
       description={
         <span>
-          <strong className="font-semibold text-slate-900 dark:text-white">
+          <strong className="font-semibold text-foreground">
             {candidateName}
           </strong>{" "}
           —{" "}
-          <strong className="font-semibold text-slate-900 dark:text-white">
-            {jobTitle}
-          </strong>
+          <strong className="font-semibold text-foreground">{jobTitle}</strong>
         </span>
       }
       notice={t("applications.deleteApplicationWarning")}

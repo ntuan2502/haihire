@@ -54,12 +54,12 @@ export function ApplicationDetailView() {
   }
 
   return (
-    <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
+    <div className="flex-1 w-full p-4 sm:p-6 space-y-5">
       {/* Back Link */}
       <div>
         <Link
           href="/applications"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>{t("applications.backToApplications")}</span>

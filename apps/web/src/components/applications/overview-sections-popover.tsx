@@ -120,9 +120,9 @@ export function OverviewSectionsPopover({
         left: coords.left,
         zIndex: 99999,
       }}
-      className="w-48 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl py-2 animate-in fade-in-0 zoom-in-95 duration-150"
+      className="w-48 rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl py-2 animate-in fade-in-0 zoom-in-95 duration-150"
     >
-      <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {t("applications.sections.sectionsTitle")}
       </div>
 
@@ -134,18 +134,18 @@ export function OverviewSectionsPopover({
               key={key}
               type="button"
               onClick={() => onToggleSection(key)}
-              className="w-full px-3 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left cursor-pointer"
+              className="w-full px-3 py-1.5 flex items-center gap-2.5 hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
             >
               <div
                 className={`h-4 w-4 rounded flex items-center justify-center transition-colors shrink-0 ${
                   isChecked
-                    ? "bg-blue-600 text-white"
-                    : "border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-input bg-background"
                 }`}
               >
                 {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+              <span className="text-xs font-medium text-foreground">
                 {label}
               </span>
             </button>

@@ -182,6 +182,10 @@ export class InterviewsQueryService {
       };
     });
 
+    if (options?.sortBy === "name") {
+      data.sort((a, b) => a.candidateName.localeCompare(b.candidateName));
+    }
+
     const totalPages = Math.ceil(total / limit) || 1;
 
     return {

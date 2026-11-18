@@ -104,6 +104,7 @@ function SourceTrackingContent() {
       search:
         activeTab === "attribution" ? search.trim() || undefined : undefined,
       jobId: selectedJobId,
+      timeRange,
     });
 
   // Mutations

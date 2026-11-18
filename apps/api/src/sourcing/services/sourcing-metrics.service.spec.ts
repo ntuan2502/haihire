@@ -440,5 +440,25 @@ describe("SourcingMetricsService", () => {
       expect(noMatchResult.total).toBe(0);
       expect(noMatchResult.data).toEqual([]);
     });
+
+    it("BUG-15: returns 0% attributionRate when jobs have zero applications in period and filters getAttributionLog by timeRange", async () => {
+      jobTable.store.push({
+        id: "job-no-apps",
+        title: "Open Role No Apps",
+        organizationId: "org-empty-apps",
+        type: "FULL_TIME",
+        deletedAt: null,
+      });
+
+      const emptyStats = await service.getStats("org-empty-apps", "30d");
+      expect(emptyStats.totalApplications).toBe(0);
+      expect(emptyStats.attributionRate).toBe(0);
+
+      const log7d = await service.getAttributionLog("org-1", {
+        timeRange: "7d",
+      });
+      expect(log7d.total).toBe(1);
+      expect(log7d.data[0]?.applicationId).toBe("app-1");
+    });
   });
 });

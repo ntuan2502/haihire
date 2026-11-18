@@ -460,10 +460,19 @@ export function matchPrismaWhere<T extends MockRecord>(
           if (!str.includes(target)) return false;
         }
       }
-      if ("gte" in v && !(Number(itemVal) >= Number(v.gte))) return false;
-      if ("lte" in v && !(Number(itemVal) <= Number(v.lte))) return false;
-      if ("gt" in v && !(Number(itemVal) > Number(v.gt))) return false;
-      if ("lt" in v && !(Number(itemVal) < Number(v.lt))) return false;
+      const toNumeric = (raw: unknown, ref: unknown) => {
+        if (ref instanceof Date && typeof raw === "string") {
+          const parsed = Date.parse(raw);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+        return Number(raw);
+      };
+      if ("gte" in v && !(toNumeric(itemVal, v.gte) >= Number(v.gte)))
+        return false;
+      if ("lte" in v && !(toNumeric(itemVal, v.lte) <= Number(v.lte)))
+        return false;
+      if ("gt" in v && !(toNumeric(itemVal, v.gt) > Number(v.gt))) return false;
+      if ("lt" in v && !(toNumeric(itemVal, v.lt) < Number(v.lt))) return false;
       continue;
     }
     if (itemVal !== val) return false;

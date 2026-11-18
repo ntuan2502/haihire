@@ -289,9 +289,25 @@ export function OrgCareersClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredJobs.map((job) => {
-              const jobSlug = slugify(job.title) || job.id;
-              const jobUrl = refParam
-                ? `/careers/${orgSlug}/${jobSlug}?ref=${encodeURIComponent(refParam)}`
+              const baseSlug = slugify(job.title);
+              const jobSlug = baseSlug
+                ? `${baseSlug}-${job.id.slice(0, 8)}`
+                : job.id;
+              const linkParams = new URLSearchParams();
+              for (const key of [
+                "ref",
+                "utm_source",
+                "utm_medium",
+                "utm_campaign",
+                "utm_term",
+                "utm_content",
+              ]) {
+                const val = searchParams.get(key);
+                if (val) linkParams.set(key, val);
+              }
+              const queryString = linkParams.toString();
+              const jobUrl = queryString
+                ? `/careers/${orgSlug}/${jobSlug}?${queryString}`
                 : `/careers/${orgSlug}/${jobSlug}`;
 
               return (

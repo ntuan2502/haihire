@@ -130,6 +130,7 @@ export class SourcingQueryService {
       where: { trackingLinkId: { in: linkIds } },
       select: {
         organizationId: true,
+        trackingLinkId: true,
         referrerDomain: true,
         createdAt: true,
       },

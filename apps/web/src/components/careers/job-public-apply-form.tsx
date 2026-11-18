@@ -155,6 +155,22 @@ export function JobPublicApplyForm({
       if (typeof document !== "undefined" && document.referrer) {
         formData.append("referrer", document.referrer);
       }
+      if (typeof window !== "undefined" && window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const utmMap: Array<[string, string]> = [
+          ["utm_source", "utmSource"],
+          ["utm_medium", "utmMedium"],
+          ["utm_campaign", "utmCampaign"],
+          ["utm_term", "utmTerm"],
+          ["utm_content", "utmContent"],
+        ];
+        for (const [paramKey, fieldKey] of utmMap) {
+          const val = urlParams.get(paramKey)?.trim();
+          if (val) {
+            formData.append(fieldKey, val);
+          }
+        }
+      }
 
       await applyMutation.mutateAsync(formData);
       setIsSuccess(true);

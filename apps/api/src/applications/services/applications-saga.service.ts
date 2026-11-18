@@ -106,7 +106,11 @@ export class ApplicationsSagaService {
       !isAnonymousPublicApply && "resumeFileName" in dto
         ? dto.resumeFileName
         : undefined;
+    const rawUtmSource = "utmSource" in dto ? dto.utmSource : undefined;
+    const rawUtmMedium = "utmMedium" in dto ? dto.utmMedium : undefined;
     const rawUtmCampaign = "utmCampaign" in dto ? dto.utmCampaign : undefined;
+    const rawUtmTerm = "utmTerm" in dto ? dto.utmTerm : undefined;
+    const rawUtmContent = "utmContent" in dto ? dto.utmContent : undefined;
 
     const job = await this.prisma.job.findFirst({
       where: { id: dto.jobId, deletedAt: null },
@@ -232,7 +236,11 @@ export class ApplicationsSagaService {
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
+    let utmSource: string | null = rawUtmSource?.trim() || null;
+    let utmMedium: string | null = rawUtmMedium?.trim() || null;
     let utmCampaign: string | null = rawUtmCampaign?.trim() || null;
+    let utmTerm: string | null = rawUtmTerm?.trim() || null;
+    let utmContent: string | null = rawUtmContent?.trim() || null;
 
     try {
       created = await runInTransaction(this.prisma, async (tx) => {
@@ -431,6 +439,11 @@ export class ApplicationsSagaService {
               source: true,
               customSource: true,
               campaign: true,
+              utmSource: true,
+              utmMedium: true,
+              utmCampaign: true,
+              utmTerm: true,
+              utmContent: true,
               isActive: true,
               deletedAt: true,
             },
@@ -446,8 +459,20 @@ export class ApplicationsSagaService {
             sourceChannel =
               (link.source as SourcingChannel) || SourcingChannel.DIRECT;
             sourceDetails = link.customSource || null;
-            if (!utmCampaign && link.campaign) {
-              utmCampaign = link.campaign;
+            if (!utmSource && link.utmSource) {
+              utmSource = link.utmSource;
+            }
+            if (!utmMedium && link.utmMedium) {
+              utmMedium = link.utmMedium;
+            }
+            if (!utmCampaign && (link.utmCampaign || link.campaign)) {
+              utmCampaign = link.utmCampaign || link.campaign;
+            }
+            if (!utmTerm && link.utmTerm) {
+              utmTerm = link.utmTerm;
+            }
+            if (!utmContent && link.utmContent) {
+              utmContent = link.utmContent;
             }
           }
         }
@@ -472,9 +497,6 @@ export class ApplicationsSagaService {
         if (isAnonymousPublicApply && !trackingLinkId && !referrerDomain) {
           sourceChannel = SourcingChannel.DIRECT;
         }
-        if (isAnonymousPublicApply && !trackingLinkId) {
-          utmCampaign = null;
-        }
 
         // 6. Save Application record
         const savedApp = await tx.application.create({
@@ -493,7 +515,11 @@ export class ApplicationsSagaService {
             sourceChannel,
             sourceDetails,
             referrerDomain,
+            utmSource,
+            utmMedium,
             utmCampaign,
+            utmTerm,
+            utmContent,
             updatedAt: toInstant(),
           },
         });

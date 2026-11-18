@@ -2412,7 +2412,7 @@ export const en: TranslationSchema = {
       activeLinks: "ACTIVE LINKS",
       activeLinksDesc: "total created",
       untracked: "UNTRACKED",
-      untrackedDesc: "All attributed",
+      untrackedDesc: "Direct or unattributed",
     },
     overview: {
       applicationsBySource: "Applications by Source",

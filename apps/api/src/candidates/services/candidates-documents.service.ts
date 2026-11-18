@@ -79,6 +79,8 @@ export class CandidatesDocumentsService {
 
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
+    const normalizedType =
+      !documentType || documentType === "All" ? "Resume" : documentType;
 
     await runInTransaction(this.prisma, async (tx) => {
       try {
@@ -91,7 +93,7 @@ export class CandidatesDocumentsService {
             url: uploadResult.url,
             size: uploadResult.size ?? null,
             mimeType: uploadResult.mimeType ?? null,
-            type: documentType || "Resume",
+            type: normalizedType,
             updatedAt: toInstant(),
           },
         });
@@ -257,12 +259,23 @@ export class CandidatesDocumentsService {
       );
     }
 
+    const isSyntheticId =
+      opts?.documentId === `doc-${id}` || opts?.documentId === `resume-${id}`;
+
     const deleteWhere = opts?.documentId
-      ? {
-          id: opts.documentId,
-          candidateId: id,
-          organizationId: candidate.organizationId,
-        }
+      ? isSyntheticId
+        ? opts?.url
+          ? {
+              url: opts.url,
+              candidateId: id,
+              organizationId: candidate.organizationId,
+            }
+          : null
+        : {
+            id: opts.documentId,
+            candidateId: id,
+            organizationId: candidate.organizationId,
+          }
       : opts?.url
         ? {
             url: opts.url,
@@ -280,13 +293,24 @@ export class CandidatesDocumentsService {
     }
 
     if (
-      docsToDelete.length > 0 &&
       typeof this.minioService?.extractObjectName === "function" &&
       typeof this.minioService?.deleteFile === "function"
     ) {
       for (const doc of docsToDelete) {
         if (!doc.url) continue;
         const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+      if (
+        docsToDelete.length === 0 &&
+        candidate.resumeUrl &&
+        (isSyntheticId || (opts?.url && opts.url === candidate.resumeUrl))
+      ) {
+        const objectName = this.minioService.extractObjectName(
+          candidate.resumeUrl,
+        );
         if (objectName) {
           await this.minioService.deleteFile(objectName).catch(() => {});
         }
@@ -316,18 +340,27 @@ export class CandidatesDocumentsService {
         },
       });
 
+      const deletedPrimaryResume =
+        !opts?.documentId && !opts?.url
+          ? true
+          : isSyntheticId ||
+            opts?.url === candidate.resumeUrl ||
+            docsToDelete.some((d) => d.url === candidate.resumeUrl);
+
       const primaryDoc = remainingDocs[0];
       if (primaryDoc) {
-        await tx.candidate.update({
-          where: { id },
-          data: {
-            resumeUrl: primaryDoc.url,
-            resumeFileName: primaryDoc.name,
-            resumeFileSize: primaryDoc.size ?? null,
-            resumeMimeType: primaryDoc.mimeType ?? null,
-          },
-        });
-      } else {
+        if (!candidate.resumeUrl || deletedPrimaryResume) {
+          await tx.candidate.update({
+            where: { id },
+            data: {
+              resumeUrl: primaryDoc.url,
+              resumeFileName: primaryDoc.name,
+              resumeFileSize: primaryDoc.size ?? null,
+              resumeMimeType: primaryDoc.mimeType ?? null,
+            },
+          });
+        }
+      } else if (deletedPrimaryResume) {
         await tx.candidate.update({
           where: { id },
           data: {

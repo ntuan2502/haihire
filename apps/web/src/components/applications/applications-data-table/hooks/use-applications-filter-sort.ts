@@ -192,7 +192,7 @@ export function useApplicationsFilterSort({
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedApps =
     isServerPaginated && scoreFilter === "ALL"
-      ? baseApplications
+      ? filteredApps
       : filteredApps.slice(startIndex, startIndex + rowsPerPage);
 
   const handleSort = (field: SortField) => {

@@ -177,7 +177,7 @@ export function useCandidateDrawerState({
       await uploadCandidateDocMutation.mutateAsync({
         id: candidate.id,
         file,
-        type: drawerDocFilter,
+        type: drawerDocFilter === "All" ? "Resume" : drawerDocFilter,
       });
     } catch (err) {
       console.error("Failed to upload document in drawer:", err);

@@ -99,7 +99,11 @@ export function ApplicationsTableRow({
 
       {/* Score */}
       {visibleColumns.score && (
-        <td className="py-4 px-5 text-muted-foreground">—</td>
+        <td className="py-4 px-5 text-muted-foreground">
+          {typeof application.matchScore === "number"
+            ? `${application.matchScore}%`
+            : "—"}
+        </td>
       )}
 
       {/* Applied */}

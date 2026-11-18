@@ -46,19 +46,28 @@ export function TrackingLinksTab({
   const { t } = useI18n();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopyLink = (
-    token: string,
-    id: string,
-    jobId?: string | null,
-    jobTitle?: string | null,
-  ) => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const jobSlug = jobTitle ? slugify(jobTitle) : jobId || "";
+  const buildCareerPath = (link: TrackingLinkItem) => {
+    const titleSlug = link.jobTitle ? slugify(link.jobTitle) : "";
+    const jobSlug =
+      titleSlug && link.jobId
+        ? `${titleSlug}-${link.jobId.slice(0, 8)}`
+        : titleSlug || link.jobId || "";
     const jobSegment = jobSlug ? `/${jobSlug}` : "";
-    const url = `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}`;
+    const params = new URLSearchParams({ ref: link.token });
+    if (link.utmSource) params.set("utm_source", link.utmSource);
+    if (link.utmMedium) params.set("utm_medium", link.utmMedium);
+    if (link.utmCampaign) params.set("utm_campaign", link.utmCampaign);
+    if (link.utmTerm) params.set("utm_term", link.utmTerm);
+    if (link.utmContent) params.set("utm_content", link.utmContent);
+    return `/careers/${orgSlug}${jobSegment}?${params.toString()}`;
+  };
+
+  const handleCopyLink = (link: TrackingLinkItem) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}${buildCareerPath(link)}`;
 
     navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(id);
+      setCopiedId(link.id);
       setTimeout(() => setCopiedId(null), 2000);
     });
   };
@@ -225,14 +234,7 @@ export function TrackingLinksTab({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() =>
-                              handleCopyLink(
-                                link.token,
-                                link.id,
-                                link.jobId,
-                                link.jobTitle,
-                              )
-                            }
+                            onClick={() => handleCopyLink(link)}
                             className="h-8 px-2.5 rounded-md text-muted-foreground hover:text-primary gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
@@ -252,7 +254,7 @@ export function TrackingLinksTab({
 
                           {/* Open Career Link */}
                           <a
-                            href={`/careers/${orgSlug}${link.jobTitle ? `/${slugify(link.jobTitle)}` : link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
+                            href={buildCareerPath(link)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"

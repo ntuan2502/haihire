@@ -591,12 +591,24 @@ export class ApplicationsQueryService {
       candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
-      resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+      resumeUrl:
+        app.resumeUrl !== undefined
+          ? app.resumeUrl || ""
+          : candidate?.resumeUrl || "",
       resumeFileName:
-        app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
-      resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+        app.resumeUrl === null
+          ? ""
+          : app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      resumeFileSize:
+        app.resumeUrl === null
+          ? null
+          : (app.resumeFileSize ?? candidate?.resumeFileSize ?? null),
       resumeMimeType:
-        app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        app.resumeUrl === null
+          ? null
+          : (app.resumeMimeType ??
+            candidate?.resumeMimeType ??
+            "application/pdf"),
       interviews: appInterviews,
     };
   }

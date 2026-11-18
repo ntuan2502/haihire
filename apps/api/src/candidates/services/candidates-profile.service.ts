@@ -193,24 +193,23 @@ export class CandidatesProfileService {
       dbDocs = [];
     }
 
-    const candidateDirectDocs: CandidateDocument[] =
-      dbDocs.length > 0
-        ? dbDocs
-        : candidate.resumeUrl
-          ? [
-              {
-                id: `doc-${candidate.id}`,
-                name: fixUtf8String(candidate.resumeFileName || "Resume.pdf"),
-                url: candidate.resumeUrl,
-                size: candidate.resumeFileSize ?? null,
-                mimeType: candidate.resumeMimeType ?? "application/pdf",
-                type: "Resume",
-                createdAt: candidate.createdAt
-                  ? new Date(toTimestamp(candidate.createdAt)).toISOString()
-                  : new Date().toISOString(),
-              },
-            ]
-          : [];
+    const candidateDirectDocs: CandidateDocument[] = [...dbDocs];
+    if (
+      candidate.resumeUrl &&
+      !candidateDirectDocs.some((d) => d.url === candidate.resumeUrl)
+    ) {
+      candidateDirectDocs.push({
+        id: `doc-${candidate.id}`,
+        name: fixUtf8String(candidate.resumeFileName || "Resume.pdf"),
+        url: candidate.resumeUrl,
+        size: candidate.resumeFileSize ?? null,
+        mimeType: candidate.resumeMimeType ?? "application/pdf",
+        type: "Resume",
+        createdAt: candidate.createdAt
+          ? new Date(toTimestamp(candidate.createdAt)).toISOString()
+          : new Date().toISOString(),
+      });
+    }
 
     const allDocuments: CandidateDocument[] = [...candidateDirectDocs];
     const seenUrls = new Set(allDocuments.map((d) => d.url).filter(Boolean));

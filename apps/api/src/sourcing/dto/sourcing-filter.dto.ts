@@ -25,4 +25,8 @@ export class SourcingFilterDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsString()
+  @IsOptional()
+  isActive?: string;
 }

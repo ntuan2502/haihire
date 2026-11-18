@@ -286,12 +286,24 @@ export class ApplicationsDocumentsService {
       );
     }
 
+    const isSyntheticId =
+      opts?.documentId === `doc-${id}` ||
+      opts?.documentId === `doc-${app.candidateId}`;
+
     const deleteWhere = opts?.documentId
-      ? {
-          id: opts.documentId,
-          candidateId: app.candidateId,
-          organizationId,
-        }
+      ? isSyntheticId
+        ? opts?.url
+          ? {
+              url: opts.url,
+              candidateId: app.candidateId,
+              organizationId,
+            }
+          : null
+        : {
+            id: opts.documentId,
+            candidateId: app.candidateId,
+            organizationId,
+          }
       : opts?.url
         ? {
             url: opts.url,
@@ -309,13 +321,24 @@ export class ApplicationsDocumentsService {
     }
 
     if (
-      docsToDelete.length > 0 &&
       typeof this.minioService?.extractObjectName === "function" &&
       typeof this.minioService?.deleteFile === "function"
     ) {
       for (const doc of docsToDelete) {
         if (!doc.url) continue;
         const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+      if (
+        docsToDelete.length === 0 &&
+        app.resumeUrl &&
+        (isSyntheticId ||
+          (!opts?.documentId && !opts?.url) ||
+          opts?.url === app.resumeUrl)
+      ) {
+        const objectName = this.minioService.extractObjectName(app.resumeUrl);
         if (objectName) {
           await this.minioService.deleteFile(objectName).catch(() => {});
         }
@@ -338,6 +361,27 @@ export class ApplicationsDocumentsService {
           resumeMimeType: null,
         },
       });
+
+      const targetDeletedUrl = opts?.url || app.resumeUrl;
+      if (
+        app.candidate?.resumeUrl &&
+        targetDeletedUrl &&
+        app.candidate.resumeUrl === targetDeletedUrl &&
+        (isSyntheticId ||
+          (!opts?.documentId && !opts?.url) ||
+          opts?.url === app.candidate.resumeUrl) &&
+        typeof tx.candidate?.update === "function"
+      ) {
+        await tx.candidate.update({
+          where: { id: app.candidateId },
+          data: {
+            resumeUrl: null,
+            resumeFileName: null,
+            resumeFileSize: null,
+            resumeMimeType: null,
+          },
+        });
+      }
     });
 
     this.eventsService?.emit({

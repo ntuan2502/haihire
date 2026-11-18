@@ -64,6 +64,7 @@ export function useAttributionLogQuery(params?: {
   search?: string;
   jobId?: string;
   source?: SourcingChannel;
+  timeRange?: TimeRangeFilter;
 }) {
   const { user } = useAuth();
   return useQuery({

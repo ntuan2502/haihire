@@ -681,5 +681,42 @@ describe("CandidatesService (Characterization Tests)", () => {
         service.update("cand-1", { email: "tranthib@example.com" }, "org-1"),
       ).rejects.toThrow(AppConflictException);
     });
+
+    it("BUG-08: normalizes All->Resume on upload, keeps primary resumeUrl in allDocuments, and preserves it when deleting secondary doc", async () => {
+      const pdfFile = {
+        originalname: "certificate.pdf",
+        mimetype: "application/pdf",
+        size: 1024,
+        buffer: Buffer.from("%PDF-1.4\ncertificate content\n%%EOF"),
+      } as Express.Multer.File;
+
+      const afterUpload = await service.uploadDocument(
+        "cand-1",
+        pdfFile,
+        "All",
+        "org-1",
+      );
+
+      const uploaded = afterUpload.allDocuments.find(
+        (d: { url: string }) =>
+          d.url === "https://minio.local/resumes/org-1/uploaded-file.pdf",
+      );
+      expect(uploaded?.type).toBe("Resume");
+      expect(
+        afterUpload.allDocuments.some(
+          (d: { url: string }) =>
+            d.url === "https://minio.local/resumes/org-1/resume-1.pdf",
+        ),
+      ).toBe(true);
+
+      const afterDelete = await service.deleteDocument(
+        "cand-1",
+        { documentId: uploaded!.id },
+        "org-1",
+      );
+      expect(afterDelete.resumeUrl).toBe(
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+      );
+    });
   });
 });

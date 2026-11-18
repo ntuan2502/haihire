@@ -151,6 +151,7 @@ export class JobsService {
         : {}),
     };
     const sortOrder = filter?.sortOrder === "asc" ? "asc" : "desc";
+    const sortByApplicants = filter?.sortBy === "applicants" && !isPublic;
     const orderBy: Prisma.JobOrderByWithRelationInput[] = [
       filter?.sortBy === "title"
         ? { title: sortOrder }
@@ -162,8 +163,8 @@ export class JobsService {
     const pagedJobs = await this.prisma.job.findMany({
       where,
       orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: sortByApplicants ? undefined : (page - 1) * limit,
+      take: sortByApplicants ? undefined : limit,
       select: {
         id: true,
         title: true,
@@ -244,6 +245,20 @@ export class JobsService {
       item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
     }
 
+    const orderedPagedJobs = sortByApplicants
+      ? [...pagedJobs]
+          .sort((a, b) => {
+            const countA = appCountMap.get(a.id)?.total ?? 0;
+            const countB = appCountMap.get(b.id)?.total ?? 0;
+            const diff = countA - countB;
+            if (diff !== 0) {
+              return sortOrder === "asc" ? diff : -diff;
+            }
+            return a.id.localeCompare(b.id);
+          })
+          .slice((page - 1) * limit, page * limit)
+      : pagedJobs;
+
     const orgMap = new Map<
       string,
       { id: string; name: string; slug: string }
@@ -256,7 +271,7 @@ export class JobsService {
           id: {
             in: [
               ...new Set(
-                pagedJobs.flatMap((job) =>
+                orderedPagedJobs.flatMap((job) =>
                   job.organizationId ? [job.organizationId] : [],
                 ),
               ),
@@ -275,7 +290,7 @@ export class JobsService {
     }
 
     return {
-      data: pagedJobs.map((job) => ({
+      data: orderedPagedJobs.map((job) => ({
         ...job,
         organization: job.organizationId
           ? (orgMap.get(job.organizationId) ?? null)
@@ -549,6 +564,8 @@ export class JobsService {
         select: {
           id: true,
           title: true,
+          status: true,
+          createdAt: true,
         },
       });
 
@@ -562,14 +579,28 @@ export class JobsService {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
 
-      const found = activeJobs.find((j) => {
-        if (j.id.startsWith(jobSlug)) return true;
-        const titleSlug = slugify(j.title);
-        if (titleSlug === jobSlug) return true;
-        if (`${titleSlug}-${j.id.slice(0, 8)}` === jobSlug) return true;
-        if (jobSlug.endsWith(j.id)) return true;
-        return false;
+      const statusRank = (status?: string) => (status === "PUBLISHED" ? 0 : 1);
+      const sortedJobs = [...activeJobs].sort((a, b) => {
+        const rankDiff = statusRank(a.status) - statusRank(b.status);
+        if (rankDiff !== 0) return rankDiff;
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
       });
+
+      const found =
+        sortedJobs.find((j) => {
+          const titleSlug = slugify(j.title);
+          const fullSlug = titleSlug
+            ? `${titleSlug}-${j.id.slice(0, 8)}`
+            : j.id;
+          return fullSlug === jobSlug || jobSlug.endsWith(j.id);
+        }) ??
+        sortedJobs.find((j) => {
+          const titleSlug = slugify(j.title);
+          return Boolean(titleSlug && titleSlug === jobSlug);
+        }) ??
+        sortedJobs.find((j) => jobSlug.length >= 8 && j.id.startsWith(jobSlug));
 
       if (found) {
         matchedJob = found;

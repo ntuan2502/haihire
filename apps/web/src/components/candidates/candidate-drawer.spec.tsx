@@ -566,7 +566,7 @@ describe("CandidateDrawer Component", () => {
       expect(mockUploadDocMutateAsync).toHaveBeenCalledWith({
         id: "cand-1",
         file,
-        type: "All",
+        type: "Resume",
       });
     });
   });

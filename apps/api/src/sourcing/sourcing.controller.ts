@@ -76,7 +76,9 @@ export class SourcingController {
 
     const pageNum = filter.page ? parseInt(filter.page, 10) : undefined;
     const limitNum = filter.limit ? parseInt(filter.limit, 10) : undefined;
-    const activeBool = isActive !== undefined ? isActive === "true" : undefined;
+    const rawIsActive = isActive ?? filter.isActive;
+    const activeBool =
+      rawIsActive !== undefined ? rawIsActive === "true" : undefined;
 
     return this.sourcingService.getLinks(orgId, {
       page: pageNum,
@@ -184,6 +186,7 @@ export class SourcingController {
       search: filter.search,
       jobId: filter.jobId,
       source: filter.source,
+      timeRange: filter.timeRange,
     });
   }
 

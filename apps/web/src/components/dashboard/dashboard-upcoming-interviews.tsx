@@ -27,10 +27,12 @@ export interface DashboardInterviewItem {
 
 interface DashboardUpcomingInterviewsProps {
   upcomingInterviews: DashboardInterviewItem[];
+  totalCount?: number;
 }
 
 export function DashboardUpcomingInterviews({
   upcomingInterviews,
+  totalCount,
 }: DashboardUpcomingInterviewsProps) {
   const { t } = useI18n();
   const { localization, isConfigured } = useLocalization();
@@ -38,6 +40,7 @@ export function DashboardUpcomingInterviews({
     localization.timezone,
     isConfigured,
   );
+  const badgeCount = totalCount ?? upcomingInterviews.length;
   const todayYmd = extractDateTimeInTimezone(
     new Date(),
     effectiveTimezone,
@@ -53,9 +56,9 @@ export function DashboardUpcomingInterviews({
           <h3 className="text-sm font-bold text-foreground truncate">
             {t("dashboard.upcomingInterviews")}
           </h3>
-          {upcomingInterviews.length > 0 && (
+          {badgeCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
-              {upcomingInterviews.length}
+              {badgeCount}
             </span>
           )}
         </div>

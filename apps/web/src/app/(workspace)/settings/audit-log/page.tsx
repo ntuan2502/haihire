@@ -8,6 +8,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
 import { History, Filter, Info, ChevronDown, ChevronUp } from "lucide-react";
 import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel } from "@/lib/roles";
 import { formatDateTime, getInitials, getUserDisplayName } from "@/lib/utils";
 import {
@@ -89,6 +90,12 @@ export default function AuditLogPage() {
           label: t("settings.auditLog.actionMemberRoleChanged"),
           className:
             "bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800",
+        };
+      case "MEMBER_REMOVED":
+        return {
+          label: t("settings.auditLog.actionMemberRemoved"),
+          className:
+            "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
         };
       case "OWNERSHIP_TRANSFERRED":
         return {
@@ -209,12 +216,12 @@ export default function AuditLogPage() {
       label: t("settings.auditLog.actionMemberRoleChanged"),
     },
     {
-      value: "OWNERSHIP_TRANSFERRED",
-      label: t("settings.auditLog.actionOwnershipTransferred"),
+      value: "MEMBER_REMOVED",
+      label: t("settings.auditLog.actionMemberRemoved"),
     },
     {
-      value: "ORG_DELETED",
-      label: t("settings.auditLog.actionOrgDeleted"),
+      value: "OWNERSHIP_TRANSFERRED",
+      label: t("settings.auditLog.actionOwnershipTransferred"),
     },
     {
       value: "ORG_LOCALIZATION_UPDATED",
@@ -285,7 +292,7 @@ export default function AuditLogPage() {
           role="alert"
           className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs font-medium text-center"
         >
-          <span>{String(error)}</span>
+          <span>{getApiErrorMessage(error, t)}</span>
         </div>
       )}
 

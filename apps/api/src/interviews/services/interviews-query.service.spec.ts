@@ -159,4 +159,19 @@ describe("InterviewsQueryService", () => {
     expect(result.application?.candidateEmail).toBe("alice@example.com");
     expect(result.application?.candidateName).toBe("Nguyen Alice");
   });
+
+  it("BUG-23: calendar date-window query raises take limit above 250 to 1000", async () => {
+    await service.findAll({
+      organizationId: "org-1",
+      startDate: "2026-10-01T00:00:00.000Z",
+      endDate: "2026-11-01T00:00:00.000Z",
+    });
+
+    expect(interviewTable.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 1000,
+        skip: 0,
+      }),
+    );
+  });
 });

@@ -504,6 +504,9 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(updated.name).toBe("Nguyen Van A Updated");
       expect(updated.phone).toBe("0999888777");
       expect(updated.dateOfBirth).toBeDefined();
+      expect(new Date(updated.dateOfBirth!).toISOString()).toBe(
+        "1992-08-15T12:00:00.000Z",
+      );
     });
 
     it("uploads a document with validated file and updates candidate resume fields", async () => {

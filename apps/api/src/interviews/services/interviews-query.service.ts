@@ -108,7 +108,11 @@ export class InterviewsQueryService {
     }
 
     const isCalendarMode = Boolean(options?.startDate && options?.endDate);
-    const limit = isCalendarMode ? 250 : defaultLimit;
+    const limit = isCalendarMode
+      ? options?.limit && options.limit > 0
+        ? options.limit
+        : 1000
+      : defaultLimit;
     const page = isCalendarMode ? 1 : defaultPage;
     const skip = (page - 1) * limit;
 

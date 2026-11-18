@@ -101,7 +101,7 @@ export function useCandidateDetailState() {
   );
   const gender = candidate?.gender || parsedNotes.gender;
   const dob = candidate?.dateOfBirth
-    ? formatDate(candidate.dateOfBirth)
+    ? formatDate(candidate.dateOfBirth, "numeric", { timezone: "UTC" })
     : parsedNotes.dob;
   const candidateName = candidate
     ? getCandidateDisplayName(candidate, localization)

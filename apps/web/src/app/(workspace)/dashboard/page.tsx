@@ -28,6 +28,7 @@ function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
   const canViewCandidates = useHasPermission("candidate:view");
+  const canCreateJob = useHasPermission("job:create");
   const { t } = useI18n();
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
@@ -158,13 +159,18 @@ function DashboardContent() {
             <DashboardPipeline
               pipelineJobs={pipelineJobs}
               statsByJob={appStats?.byJob}
+              canCreateJob={canCreateJob}
             />
             <DashboardRecentApplications
               applications={recentApplications}
               jobs={jobs}
+              totalCount={recentAppsData?.total ?? recentApplications.length}
             />
             <DashboardUpcomingInterviews
               upcomingInterviews={upcomingInterviews}
+              totalCount={
+                upcomingInterviewsData?.total ?? upcomingInterviews.length
+              }
             />
           </div>
         </div>

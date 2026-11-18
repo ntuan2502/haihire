@@ -907,11 +907,14 @@ export class JobsService {
         });
       }
 
+      const existingMap = new Map(existingStages.map((e) => [e.id, e]));
+      let syncedApplicationStages = false;
+
       for (const stageInput of dto.stages) {
-        if (
-          stageInput.id &&
-          existingStages.some((e) => e.id === stageInput.id)
-        ) {
+        const existingStage = stageInput.id
+          ? existingMap.get(stageInput.id)
+          : undefined;
+        if (stageInput.id && existingStage) {
           await tx.pipelineStage.updateMany({
             where: {
               id: stageInput.id,
@@ -927,7 +930,34 @@ export class JobsService {
               version: { increment: 1 },
             },
           });
+          if (existingStage.category !== stageInput.category) {
+            await tx.application.updateMany({
+              where: {
+                organizationId: orgId,
+                jobId,
+                stageId: stageInput.id,
+              },
+              data: {
+                stage: stageInput.category,
+                updatedAt: toInstant(),
+              },
+            });
+            syncedApplicationStages = true;
+          }
         } else {
+          if (stageInput.id) {
+            const conflicting = await tx.pipelineStage.findFirst({
+              where: { id: stageInput.id },
+              select: { id: true },
+            });
+            if (conflicting) {
+              throw new AppBadRequestException(
+                APP_ERROR_CODES.VALIDATION_ERROR,
+                "Pipeline stage ID belongs to another job or organization.",
+                { jobId, stageId: stageInput.id },
+              );
+            }
+          }
           await tx.pipelineStage.create({
             data: {
               id: stageInput.id || crypto.randomUUID(),
@@ -943,10 +973,12 @@ export class JobsService {
         }
       }
 
-      return tx.pipelineStage.findMany({
+      const nextStages = await tx.pipelineStage.findMany({
         where: { organizationId: orgId, jobId },
         orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
       });
+
+      return { nextStages, syncedApplicationStages };
     });
 
     this.eventsService?.emit({
@@ -954,7 +986,14 @@ export class JobsService {
       organizationId: orgId,
       data: { jobId },
     });
+    if (stages.syncedApplicationStages) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { jobId },
+      });
+    }
 
-    return stages;
+    return stages.nextStages;
   }
 }

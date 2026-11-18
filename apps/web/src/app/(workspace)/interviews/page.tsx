@@ -170,10 +170,14 @@ function InterviewsPageContent() {
     user?.organizationId,
   );
 
-  // Lazy-load applications only when the schedule modal is open (preventing full tenant scan)
+  // Lazy-load applications only when the schedule modal is open (scoped to selected job to avoid tenant scan)
+  const [scheduleModalJobId, setScheduleModalJobId] = useState<string>("");
+  const effectiveScheduleJobId =
+    scheduleModalJobId || selectedAppForSchedule?.jobId || "";
   const { data: modalApplicationsData } = useApplications({
     organizationId: user?.organizationId,
-    limit: 100,
+    jobId: effectiveScheduleJobId || undefined,
+    limit: 1000,
     enabled: scheduleModalOpen,
   });
 
@@ -200,7 +204,7 @@ function InterviewsPageContent() {
     enabled: !focusedInterviewId && viewMode === "table",
   });
 
-  // Range-scoped interviews query for Calendar view (only visible month/week window)
+  // Range-scoped interviews query for Calendar view (wait until date bounds are known)
   const { data: calendarInterviewsData, isLoading: calendarLoading } =
     useInterviews({
       organizationId: user?.organizationId,
@@ -208,7 +212,9 @@ function InterviewsPageContent() {
       endDate: calendarRange.endDate,
       search: searchQuery.trim() || undefined,
       jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
-      enabled: viewMode === "calendar",
+      enabled:
+        viewMode === "calendar" &&
+        Boolean(calendarRange.startDate && calendarRange.endDate),
     });
 
   // Efficient KPI queries
@@ -329,11 +335,12 @@ function InterviewsPageContent() {
 
       {/* Content Section */}
       {viewMode === "calendar" ? (
-        calendarLoading && !calendarInterviewsData ? (
-          <div className="py-20 flex justify-center">
-            <LoadingSpinner />
-          </div>
-        ) : (
+        <div className="space-y-3">
+          {calendarLoading && !calendarInterviewsData && (
+            <div className="py-4 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          )}
           <InterviewsCalendarView
             applications={calendarApplications}
             jobs={jobs}
@@ -352,7 +359,7 @@ function InterviewsPageContent() {
             onVisibleRangeChange={setCalendarRange}
             canEdit={canCreateInterview}
           />
-        )
+        </div>
       ) : (jobsLoading || appsLoading || focusedInterview.isLoading) &&
         !interviewsData ? (
         <div className="py-20 flex justify-center">
@@ -431,6 +438,7 @@ function InterviewsPageContent() {
         isOpen={scheduleModalOpen}
         onClose={() => {
           setScheduleModalOpen(false);
+          setScheduleModalJobId("");
           setSelectedAppForSchedule(undefined);
           setScheduleDate(undefined);
           setSelectedInterviewForEdit(undefined);
@@ -441,6 +449,7 @@ function InterviewsPageContent() {
         selectedApplicationId={selectedAppForSchedule?.id || undefined}
         initialDate={scheduleDate}
         editingInterview={selectedInterviewForEdit}
+        onJobChange={setScheduleModalJobId}
       />
 
       {/* Post-Interview Scorecard Modal */}

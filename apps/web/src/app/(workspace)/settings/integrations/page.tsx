@@ -23,6 +23,7 @@ import {
   WebhookModal,
   DeleteWebhookModal,
 } from "@/components/settings/integrations";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
 import { cn } from "cn";
 
@@ -94,9 +95,7 @@ export default function IntegrationsSettingsPage() {
       setIsModalOpen(false);
       setEditingSetting(null);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : t("errors.GENERIC_ERROR");
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err, t, "errors.GENERIC_ERROR"));
     }
   };
 
@@ -107,9 +106,7 @@ export default function IntegrationsSettingsPage() {
       toast.success(t("common.delete"));
       setDeletingId(null);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : t("errors.GENERIC_ERROR");
-      toast.error(msg);
+      toast.error(getApiErrorMessage(err, t, "errors.GENERIC_ERROR"));
     }
   };
 
@@ -138,11 +135,13 @@ export default function IntegrationsSettingsPage() {
       }
       toast.success(t("settings.integrations.webhooks.modal.testSuccess"));
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t("settings.integrations.webhooks.modal.testFailed");
-      toast.error(msg);
+      toast.error(
+        getApiErrorMessage(
+          err,
+          t,
+          "settings.integrations.webhooks.modal.testFailed",
+        ),
+      );
     }
   };
 
@@ -151,11 +150,13 @@ export default function IntegrationsSettingsPage() {
       await testMutation.mutateAsync({ id: setting.id });
       toast.success(t("settings.integrations.webhooks.modal.testSuccess"));
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : t("settings.integrations.webhooks.modal.testFailed");
-      toast.error(msg);
+      toast.error(
+        getApiErrorMessage(
+          err,
+          t,
+          "settings.integrations.webhooks.modal.testFailed",
+        ),
+      );
     }
   };
 

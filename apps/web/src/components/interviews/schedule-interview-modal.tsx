@@ -43,6 +43,7 @@ export interface ScheduleInterviewModalProps {
   selectedApplicationId?: string;
   initialDate?: string;
   editingInterview?: ScheduledInterviewInfo | Interview | null;
+  onJobChange?: (jobId: string) => void;
   onInterviewScheduled?: (interviewInfo: ScheduledInterviewInfo) => void;
 }
 
@@ -55,6 +56,7 @@ export function ScheduleInterviewModal({
   selectedApplicationId,
   initialDate,
   editingInterview,
+  onJobChange,
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { t } = useI18n();
@@ -357,6 +359,7 @@ export function ScheduleInterviewModal({
                   onChange={(newJobId) => {
                     setModalJobId(newJobId);
                     setModalCandidateId("");
+                    onJobChange?.(newJobId);
                   }}
                   disabled={Boolean(selectedJobId && selectedApplicationId)}
                   placeholder={

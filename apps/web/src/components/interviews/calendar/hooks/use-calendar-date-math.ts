@@ -17,11 +17,20 @@ export function formatLocalDate(
   monthIndex: number,
   day: number,
 ): string {
-  const d = new Date(year, monthIndex, day);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dt = String(d.getDate()).padStart(2, "0");
+  const d = new Date(Date.UTC(year, monthIndex, day));
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dt = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${dt}`;
+}
+
+function parseYmdParts(ymd: string): {
+  year: number;
+  monthIndex: number;
+  day: number;
+} {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return { year: y, monthIndex: m - 1, day: d };
 }
 
 export function useCalendarDateMath(initialDate: Date = new Date()) {
@@ -32,52 +41,64 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     isConfigured,
   );
   const [calendarMode, setCalendarMode] = useState<CalendarViewMode>("month");
-  const [currentDate, setCurrentDate] = useState<Date>(() => initialDate);
+  const [activeYmd, setActiveYmd] = useState<string>(
+    () => extractDateTimeInTimezone(initialDate, effectiveTimezone).date,
+  );
 
   const todayStr = useMemo(
     () => extractDateTimeInTimezone(new Date(), effectiveTimezone).date,
     [effectiveTimezone],
   );
 
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
+  const {
+    year: currentYear,
+    monthIndex: currentMonth,
+    day: currentDay,
+  } = useMemo(() => parseYmdParts(activeYmd), [activeYmd]);
+
+  const currentDate = useMemo(
+    () => new Date(currentYear, currentMonth, currentDay),
+    [currentYear, currentMonth, currentDay],
+  );
+
+  const setCurrentDate = (next: Date) => {
+    setActiveYmd(extractDateTimeInTimezone(next, effectiveTimezone).date);
+  };
 
   const handlePrevMonth = () => {
     if (calendarMode === "month") {
-      setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
+      setActiveYmd(formatLocalDate(currentYear, currentMonth - 1, 1));
     } else {
-      const prevWeek = new Date(currentDate);
-      prevWeek.setDate(prevWeek.getDate() - 7);
-      setCurrentDate(prevWeek);
+      setActiveYmd(formatLocalDate(currentYear, currentMonth, currentDay - 7));
     }
   };
 
   const handleNextMonth = () => {
     if (calendarMode === "month") {
-      setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
+      setActiveYmd(formatLocalDate(currentYear, currentMonth + 1, 1));
     } else {
-      const nextWeek = new Date(currentDate);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      setCurrentDate(nextWeek);
+      setActiveYmd(formatLocalDate(currentYear, currentMonth, currentDay + 7));
     }
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
+    setActiveYmd(extractDateTimeInTimezone(new Date(), effectiveTimezone).date);
   };
 
   const monthDays = useMemo(() => {
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+    const lastDayOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0));
 
     // Monday as 0, Sunday as 6
-    let startDayOfWeek = firstDayOfMonth.getDay() - 1;
+    let startDayOfWeek = firstDayOfMonth.getUTCDay() - 1;
     if (startDayOfWeek === -1) startDayOfWeek = 6;
 
     const days: CalendarDateInfo[] = [];
 
     // Previous month padding
-    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+    const prevMonthLastDay = new Date(
+      Date.UTC(currentYear, currentMonth, 0),
+    ).getUTCDate();
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       const dayNum = prevMonthLastDay - i;
       const dateStr = formatLocalDate(currentYear, currentMonth - 1, dayNum);
@@ -91,12 +112,12 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
         year: currentYear,
         month: currentMonth,
         day: dayNum,
-        date: new Date(currentYear, currentMonth - 1, dayNum),
+        date: new Date(Date.UTC(currentYear, currentMonth - 1, dayNum)),
       });
     }
 
     // Current month days
-    for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+    for (let i = 1; i <= lastDayOfMonth.getUTCDate(); i++) {
       const dateStr = formatLocalDate(currentYear, currentMonth, i);
       const isWeekend = days.length % 7 === 5 || days.length % 7 === 6;
       days.push({
@@ -108,7 +129,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
         year: currentYear,
         month: currentMonth + 1,
         day: i,
-        date: new Date(currentYear, currentMonth, i),
+        date: new Date(Date.UTC(currentYear, currentMonth, i)),
       });
     }
 
@@ -126,7 +147,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
         year: currentYear,
         month: currentMonth + 2,
         day: i,
-        date: new Date(currentYear, currentMonth + 1, i),
+        date: new Date(Date.UTC(currentYear, currentMonth + 1, i)),
       });
     }
 
@@ -134,42 +155,45 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
   }, [currentYear, currentMonth, todayStr]);
 
   const weekDays = useMemo(() => {
-    const curr = new Date(currentDate);
-    let dayOfWeek = curr.getDay() - 1;
+    const curr = new Date(Date.UTC(currentYear, currentMonth, currentDay));
+    let dayOfWeek = curr.getUTCDay() - 1;
     if (dayOfWeek === -1) dayOfWeek = 6;
-
-    const startOfWeek = new Date(curr);
-    startOfWeek.setDate(curr.getDate() - dayOfWeek);
 
     const days: CalendarWeekDayInfo[] = [];
 
     for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
+      const d = new Date(
+        Date.UTC(currentYear, currentMonth, currentDay - dayOfWeek + i),
+      );
       const dateStr = formatLocalDate(
-        d.getFullYear(),
-        d.getMonth(),
-        d.getDate(),
+        d.getUTCFullYear(),
+        d.getUTCMonth(),
+        d.getUTCDate(),
       );
 
       days.push({
         dateStr,
-        dayNumber: d.getDate(),
+        dayNumber: d.getUTCDate(),
         monthName:
-          locale === "vi" ? `Th${d.getMonth() + 1}` : `M${d.getMonth() + 1}`,
+          locale === "vi"
+            ? `Th${d.getUTCMonth() + 1}`
+            : `M${d.getUTCMonth() + 1}`,
         isToday: dateStr === todayStr,
       });
     }
 
     return days;
-  }, [currentDate, todayStr, locale]);
+  }, [currentYear, currentMonth, currentDay, todayStr, locale]);
 
   const monthTitle = useMemo(() => {
-    return currentDate.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", {
+    return new Date(
+      Date.UTC(currentYear, currentMonth, 15, 12, 0, 0),
+    ).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", {
       month: "long",
       year: "numeric",
+      timeZone: effectiveTimezone,
     });
-  }, [currentDate, locale]);
+  }, [currentYear, currentMonth, locale, effectiveTimezone]);
 
   const weekTitle = useMemo(() => {
     if (weekDays.length < 7) return "";
@@ -233,8 +257,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     isToday: (d: Date | string) =>
       typeof d === "string"
         ? d === todayStr
-        : formatLocalDate(d.getFullYear(), d.getMonth(), d.getDate()) ===
-          todayStr,
+        : extractDateTimeInTimezone(d, effectiveTimezone).date === todayStr,
     isWeekend: (d: Date) => d.getDay() === 0 || d.getDay() === 6,
     formatLocalDate,
   };

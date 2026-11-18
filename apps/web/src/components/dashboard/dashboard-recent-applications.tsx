@@ -14,13 +14,16 @@ import type { Job, Application } from "@/types";
 interface DashboardRecentApplicationsProps {
   applications: Application[];
   jobs: Job[];
+  totalCount?: number;
 }
 
 export function DashboardRecentApplications({
   applications,
   jobs,
+  totalCount,
 }: DashboardRecentApplicationsProps) {
   const { t } = useI18n();
+  const badgeCount = totalCount ?? applications.length;
 
   return (
     <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs">
@@ -31,9 +34,9 @@ export function DashboardRecentApplications({
           <h3 className="text-sm font-bold text-foreground truncate">
             {t("dashboard.recentApplications")}
           </h3>
-          {applications.length > 0 && (
+          {badgeCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
-              {applications.length}
+              {badgeCount}
             </span>
           )}
         </div>

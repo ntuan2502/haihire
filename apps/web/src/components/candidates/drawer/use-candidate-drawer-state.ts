@@ -84,7 +84,7 @@ export function useCandidateDrawerState({
     );
     const genderLabel = getGenderLabel(cand?.gender, t);
     const dobFormatted = cand?.dateOfBirth
-      ? formatDate(cand.dateOfBirth, "short")
+      ? formatDate(cand.dateOfBirth, "short", { timezone: "UTC" })
       : "—";
     return {
       gender: genderLabel,

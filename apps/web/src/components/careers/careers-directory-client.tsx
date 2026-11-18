@@ -22,10 +22,11 @@ interface CareersDirectoryClientProps {
 }
 
 export function CareersDirectoryClient({
-  initialJobs = [],
+  initialJobs,
 }: CareersDirectoryClientProps) {
   const { t } = useI18n();
-  const { data: jobs = initialJobs, isLoading } = useAllPublicJobs();
+  const { data: jobs = initialJobs ?? [], isLoading } =
+    useAllPublicJobs(initialJobs);
 
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("all");

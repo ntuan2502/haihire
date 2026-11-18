@@ -20,6 +20,7 @@ import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "@/hooks/query-keys";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n";
+import { LOCALE_COOKIE_KEY, LOCALE_STORAGE_KEY } from "@/i18n/config";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
@@ -164,9 +165,17 @@ export default function AccountSettingsPage() {
       setPrefLangDraft(null);
       setPrefTimezoneDraft(null);
       if (payload.preferredLanguage) {
-        setLocale(payload.preferredLanguage as "vi" | "en");
+        await setLocale(payload.preferredLanguage as "vi" | "en");
       } else {
-        setLocale(orgLocalization.defaultLanguage as "vi" | "en");
+        await setLocale(orgLocalization.defaultLanguage as "vi" | "en");
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+            document.cookie = `${LOCALE_COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+          } catch {
+            // Best-effort cleanup so account follows future org default language updates
+          }
+        }
       }
       toast.success(t("settings.accountPreferences.saveSuccess"));
     } catch (err: unknown) {

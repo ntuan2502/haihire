@@ -550,6 +550,15 @@ export class OrganizationsMembersService {
         });
       }
 
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        caller.id,
+        "MEMBER_REMOVED",
+        "MEMBER",
+        { memberId: targetMemberId },
+        tx as unknown as PrismaService,
+      );
+
       // Broadcast SSE event
       this.eventsService?.emit({
         type: "MEMBER_REMOVED",

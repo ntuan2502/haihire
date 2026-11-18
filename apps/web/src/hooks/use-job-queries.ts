@@ -143,13 +143,19 @@ export function usePublicOrg(slug: string | null) {
   });
 }
 
-export function useAllPublicJobs() {
+export function useAllPublicJobs(initialData?: Job[]) {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-all-published"],
     queryFn: async () => {
       const res = await jobsApi.getPublic({ limit: 1000 });
       return res.data;
     },
+    ...(initialData !== undefined
+      ? {
+          initialData,
+          initialDataUpdatedAt: initialData.length > 0 ? undefined : 0,
+        }
+      : {}),
     staleTime: 120_000,
   });
 }

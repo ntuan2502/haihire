@@ -9,6 +9,7 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
+import { getJobTypeLabel } from "@/lib/jobs";
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
 import { useI18n } from "@/i18n";
@@ -83,7 +84,7 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
                 )}
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                  <span>{job.type}</span>
+                  <span>{getJobTypeLabel(job.type, t)}</span>
                 </span>
               </div>
             </div>

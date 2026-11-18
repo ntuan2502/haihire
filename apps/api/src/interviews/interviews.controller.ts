@@ -86,8 +86,33 @@ export class InterviewsController {
   submitScorecard(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(SubmitScorecardDto)) dto: SubmitScorecardDto,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: {
+        id?: string;
+        name?: string;
+        email?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
   ) {
+    const actor =
+      req?.user?.id || req?.user?.name || req?.user?.role
+        ? {
+            id: req.user.id,
+            name: req.user.name || req.user.email,
+            role: req.user.role,
+          }
+        : undefined;
+    if (actor) {
+      return this.interviewsService.update(
+        id,
+        { scorecard: dto.scorecard },
+        req?.user?.organizationId,
+        actor,
+      );
+    }
     return this.interviewsService.update(
       id,
       { scorecard: dto.scorecard },
@@ -100,8 +125,33 @@ export class InterviewsController {
   update(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: {
+        id?: string;
+        name?: string;
+        email?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
   ) {
+    const actor =
+      req?.user?.id || req?.user?.name || req?.user?.role
+        ? {
+            id: req.user.id,
+            name: req.user.name || req.user.email,
+            role: req.user.role,
+          }
+        : undefined;
+    if (actor) {
+      return this.interviewsService.update(
+        id,
+        dto,
+        req?.user?.organizationId,
+        actor,
+      );
+    }
     return this.interviewsService.update(id, dto, req?.user?.organizationId);
   }
 

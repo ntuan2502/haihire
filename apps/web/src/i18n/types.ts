@@ -571,6 +571,7 @@ export interface TranslationSchema {
     openStatus: string;
     draftStatus: string;
     closedStatus: string;
+    archivedStatus: string;
     moreOptions: string;
     defaultLocation: string;
     competitiveSalary: string;
@@ -1789,6 +1790,7 @@ export interface TranslationSchema {
       actionRolePermissionsUpdated: string;
       actionRolePermissionsReset: string;
       actionMemberRoleChanged: string;
+      actionMemberRemoved: string;
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
       actionOrgLocalizationUpdated: string;

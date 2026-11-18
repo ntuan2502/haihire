@@ -383,8 +383,22 @@ export class InterviewsScheduleService {
     id: string,
     dto: UpdateInterviewDto,
     tenantOrgId?: string | null,
+    actor?: { id?: string; name?: string; role?: string },
   ) {
     const existing = await this.queryService.findOne(id, tenantOrgId);
+
+    if (
+      dto.scorecard !== undefined &&
+      actor?.id &&
+      actor.role === "INTERVIEWER" &&
+      existing.interviewerId &&
+      existing.interviewerId !== actor.id
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Only the assigned interviewer or hiring leads can submit this scorecard.",
+      );
+    }
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.scheduledAt !== undefined) {
@@ -429,6 +443,8 @@ export class InterviewsScheduleService {
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
       const isScorecardUpdate = dto.scorecard !== undefined;
+      const actorDisplayName = actor?.name || updated.interviewer;
+      const actorRole = actor?.role || "INTERVIEWER";
       const orgSettings = this.prisma.organization?.findFirst
         ? await this.prisma.organization.findFirst({
             where: { id: candidate.organizationId },
@@ -452,14 +468,15 @@ export class InterviewsScheduleService {
           ? `Scorecard Submitted (${updated.type})`
           : `Interview Updated (${updated.type})`,
         description: isScorecardUpdate
-          ? `Scorecard submitted by ${updated.interviewer}`
+          ? `Scorecard submitted by ${actorDisplayName}`
           : `Interview schedule updated to ${formattedUpdateDt.time} on ${formattedUpdateDt.date}`,
-        actorName: updated.interviewer,
-        actorRole: "INTERVIEWER",
+        actorName: actorDisplayName,
+        actorRole,
         metadata: {
           interviewId: id,
           type: updated.type,
           interviewer: updated.interviewer,
+          submittedBy: actorDisplayName,
           scheduledAt: updated.scheduledAt,
           changes: Object.keys(updateData),
         },

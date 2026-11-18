@@ -21,6 +21,18 @@ import { validateUploadedFile } from "../../common/upload-utils";
 import { toInstant, toTimestamp } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
 
+function parseCalendarDate(raw?: string | null): Date | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "—") return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const noonUtc = new Date(`${trimmed}T12:00:00.000Z`);
+    return !isNaN(noonUtc.getTime()) ? noonUtc : null;
+  }
+  const parsed = new Date(trimmed);
+  return !isNaN(parsed.getTime()) ? parsed : null;
+}
+
 @Injectable()
 export class CandidatesCrudService {
   constructor(
@@ -281,13 +293,7 @@ export class CandidatesCrudService {
       };
     }
 
-    let dateOfBirth: Date | null = null;
-    if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
-      const parsed = new Date(dto.dateOfBirth.trim());
-      if (!isNaN(parsed.getTime())) {
-        dateOfBirth = parsed;
-      }
-    }
+    const dateOfBirth = parseCalendarDate(dto.dateOfBirth);
 
     const firstName = normalizeNameInput(dto.firstName);
     const lastName = normalizeNameInput(dto.lastName);
@@ -366,16 +372,7 @@ export class CandidatesCrudService {
       updatePayload.gender = dto.gender ? dto.gender : null;
     }
     if (dto.dateOfBirth !== undefined) {
-      if (
-        dto.dateOfBirth &&
-        dto.dateOfBirth.trim() &&
-        dto.dateOfBirth !== "—"
-      ) {
-        const parsed = new Date(dto.dateOfBirth.trim());
-        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
-      } else {
-        updatePayload.dateOfBirth = null;
-      }
+      updatePayload.dateOfBirth = parseCalendarDate(dto.dateOfBirth);
     }
     if (dto.email !== undefined) {
       const normalizedEmail = dto.email.trim().toLowerCase();

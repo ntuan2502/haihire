@@ -84,7 +84,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
                         </div>
                         <div className="min-w-0">
                           <Link
-                            href={`/candidates?id=${item.candidateId}`}
+                            href={`/candidates/${item.candidateId}`}
                             className="font-bold text-foreground hover:text-primary transition-colors truncate block"
                           >
                             {displayName}

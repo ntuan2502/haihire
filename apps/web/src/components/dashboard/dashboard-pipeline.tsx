@@ -12,12 +12,14 @@ interface DashboardPipelineProps {
   pipelineJobs: Job[];
   applications?: Application[];
   statsByJob?: ApplicationStats["byJob"];
+  canCreateJob?: boolean;
 }
 
 export function DashboardPipeline({
   pipelineJobs,
   applications = [],
   statsByJob,
+  canCreateJob = true,
 }: DashboardPipelineProps) {
   const router = useRouter();
   const { t } = useI18n();
@@ -52,12 +54,14 @@ export function DashboardPipeline({
           <p className="text-xs text-muted-foreground font-medium">
             {t("dashboard.noActiveJobs")}
           </p>
-          <Link
-            href="/jobs"
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            {t("jobs.createJob")}
-          </Link>
+          {canCreateJob && (
+            <Link
+              href="/jobs"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              {t("jobs.createJob")}
+            </Link>
+          )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto pt-3 pr-1.5 -mr-1.5 space-y-3">

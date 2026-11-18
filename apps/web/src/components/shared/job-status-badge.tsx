@@ -34,6 +34,16 @@ export function JobStatusBadge({
     );
   }
 
+  if (status === "ARCHIVED") {
+    return (
+      <span
+        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-muted-foreground border border-border ${className}`}
+      >
+        {t("jobs.archivedStatus")}
+      </span>
+    );
+  }
+
   return (
     <span
       className={`px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-900/60 ${className}`}

@@ -162,7 +162,9 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
                       : job.status === "CLOSED"
                         ? "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80"
-                        : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
+                        : job.status === "ARCHIVED"
+                          ? "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                          : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
                   }`}
                   title={t("jobs.changeJobStatus")}
                 >
@@ -170,7 +172,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                     className={`h-2 w-2 rounded-full ${
                       job.status === "PUBLISHED"
                         ? "bg-emerald-500"
-                        : job.status === "CLOSED"
+                        : job.status === "CLOSED" || job.status === "ARCHIVED"
                           ? "bg-muted-foreground"
                           : "bg-amber-500"
                     }`}
@@ -180,7 +182,9 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                       ? t("jobs.openStatus")
                       : job.status === "CLOSED"
                         ? t("jobs.closed")
-                        : t("jobs.draftStatus")}
+                        : job.status === "ARCHIVED"
+                          ? t("jobs.archivedStatus")
+                          : t("jobs.draftStatus")}
                   </span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>

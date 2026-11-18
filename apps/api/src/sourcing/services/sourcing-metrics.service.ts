@@ -2,7 +2,10 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
+  DEFAULT_ORG_LOCALIZATION,
   SourcingChannel,
+  combineDateTimeInTimezone,
+  extractDateTimeInTimezone,
   formatCandidateDisplayName,
   type PaginatedResult,
   type SourcingStats,
@@ -64,7 +67,8 @@ export class SourcingMetricsService {
     }
 
     const now = Date.now();
-    const minTimestamp = this.resolveMinTimestamp(now, timeRange);
+    const orgTimezone = await this.resolveOrgTimezone(organizationId);
+    const minTimestamp = this.resolveMinTimestamp(now, timeRange, orgTimezone);
 
     const jobs = await this.queryService.getOrganizationJobs(organizationId);
     const orgJobIds = new Set(jobs.map((j) => j.id));
@@ -355,7 +359,8 @@ export class SourcingMetricsService {
     }
 
     const now = Date.now();
-    const minTimestamp = this.resolveMinTimestamp(now, timeRange);
+    const orgTimezone = await this.resolveOrgTimezone(organizationId);
+    const minTimestamp = this.resolveMinTimestamp(now, timeRange, orgTimezone);
 
     const allClicks = await this.queryService.getClicksForLink(link.id);
     const filteredClicks = allClicks.filter((c) => {
@@ -428,6 +433,7 @@ export class SourcingMetricsService {
       now,
       timeRange,
       filteredApps,
+      orgTimezone,
     );
 
     const candMap = new Map(
@@ -746,20 +752,50 @@ export class SourcingMetricsService {
     };
   }
 
+  private async resolveOrgTimezone(organizationId: string): Promise<string> {
+    if (!this.prisma.organization?.findFirst) {
+      return DEFAULT_ORG_LOCALIZATION.timezone;
+    }
+    const org = await this.prisma.organization.findFirst({
+      where: { id: organizationId },
+      select: { timezone: true },
+    });
+    return org?.timezone || DEFAULT_ORG_LOCALIZATION.timezone;
+  }
+
+  private shiftYmd(ymd: string, deltaDays: number): string {
+    const [y, m, d] = ymd.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d + deltaDays));
+    const yy = String(dt.getUTCFullYear()).padStart(4, "0");
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getUTCDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+  }
+
   private resolveMinTimestamp(
     now: number,
     timeRange: TimeRangeFilter,
+    timezone: string = DEFAULT_ORG_LOCALIZATION.timezone,
   ): number | null {
-    if (timeRange === "7d") return now - 7 * 24 * 60 * 60 * 1000;
-    if (timeRange === "30d") return now - 30 * 24 * 60 * 60 * 1000;
-    if (timeRange === "90d") return now - 90 * 24 * 60 * 60 * 1000;
-    return null;
+    const days =
+      timeRange === "7d"
+        ? 7
+        : timeRange === "30d"
+          ? 30
+          : timeRange === "90d"
+            ? 90
+            : null;
+    if (days === null) return null;
+    const todayYmd = extractDateTimeInTimezone(new Date(now), timezone).date;
+    const startYmd = this.shiftYmd(todayYmd, -(days - 1));
+    return Date.parse(combineDateTimeInTimezone(startYmd, "00:00", timezone));
   }
 
   private calculateApplicationsOverTime(
     now: number,
     timeRange: TimeRangeFilter,
     filteredApps: Array<{ createdAt: string | Date }>,
+    timezone: string = DEFAULT_ORG_LOCALIZATION.timezone,
   ): TimeSeriesPoint[] {
     const dayMap = new Map<string, number>();
     const daysToGen =
@@ -770,17 +806,18 @@ export class SourcingMetricsService {
           : timeRange === "90d"
             ? 90
             : 14;
+    const todayYmd = extractDateTimeInTimezone(new Date(now), timezone).date;
 
     for (let i = daysToGen - 1; i >= 0; i--) {
-      const d = new Date(now - i * 24 * 60 * 60 * 1000);
-      const dateStr = d.toISOString().split("T")[0];
-      dayMap.set(dateStr, 0);
+      dayMap.set(this.shiftYmd(todayYmd, -i), 0);
     }
 
     for (const app of filteredApps) {
-      const dateStr = new Date(toTimestamp(app.createdAt))
-        .toISOString()
-        .split("T")[0];
+      const dateStr = extractDateTimeInTimezone(
+        new Date(toTimestamp(app.createdAt)),
+        timezone,
+      ).date;
+      if (!dateStr) continue;
       if (dayMap.has(dateStr)) {
         dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
       } else if (timeRange === "all") {

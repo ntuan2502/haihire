@@ -68,7 +68,9 @@ function JobsPageContent() {
   const totalPages = jobsData?.totalPages ?? 1;
 
   // Query all jobs for organization-wide metrics
-  const { data: allJobs = [] } = useAllJobs(user?.organizationId);
+  const { data: allJobs = [], isLoading: allJobsLoading } = useAllJobs(
+    user?.organizationId,
+  );
 
   const stats = useMemo(() => {
     let applicants = 0;
@@ -143,9 +145,11 @@ function JobsPageContent() {
 
   return (
     <div className="flex-1">
-      {jobsLoading && !jobsData ? (
+      {(jobsLoading && !jobsData) || (allJobsLoading && total === 0) ? (
         <LoadingSpinner />
-      ) : stats.total === 0 &&
+      ) : !allJobsLoading &&
+        stats.total === 0 &&
+        total === 0 &&
         currentPage === 1 &&
         !search &&
         !status &&

@@ -2627,7 +2627,7 @@ export async function runSeed(): Promise<void> {
             ? recentApps[(i + bp.orgIndex) % recentApps.length].id
             : orderedIvs[(i * 2 + bp.orgIndex) % orderedIvs.length].id;
         const createdAt = toInstant(
-          new Date(FIXED_SEED_EPOCH_MS - MINUTES_STEPS[i] * minMs),
+          new Date(nowSlotAnchorMs - MINUTES_STEPS[i] * minMs),
         );
         const isUnread = i < unread;
         const readAt = isUnread
@@ -2668,7 +2668,7 @@ export async function runSeed(): Promise<void> {
           ? recentApps[(m + 3) % recentApps.length].id
           : orderedIvs[(m + 5) % orderedIvs.length].id;
       const createdAt = toInstant(
-        new Date(FIXED_SEED_EPOCH_MS - (30 + m * 120) * minMs),
+        new Date(nowSlotAnchorMs - (30 + m * 120) * minMs),
       );
       notificationsToInsert.push({
         id: detUuid(UUID_NS.NOTIFICATION, bp.orgIndex, notifSeq),

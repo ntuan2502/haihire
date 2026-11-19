@@ -56,7 +56,10 @@ it("opens the notification menu and shows its empty state", async () => {
   expect(await screen.findByText("notificationInbox.empty")).toBeVisible();
 });
 
-it("renders enriched context, filters unread items, marks read on click, and navigates", async () => {
+it("renders enriched context, relative timestamps, filters unread items, marks read on click, and navigates", async () => {
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60_000).toISOString();
+  const twoHoursAgo = new Date(Date.now() - 2 * 3_600_000).toISOString();
+
   vi.mocked(api.get).mockResolvedValue({
     data: {
       unreadCount: 1,
@@ -65,7 +68,7 @@ it("renders enriched context, filters unread items, marks read on click, and nav
           id: "notif-1",
           kind: "applicationReceived",
           resourceId: "app-42",
-          createdAt: "2026-11-19T04:00:00.000Z",
+          createdAt: fiveMinutesAgo,
           readAt: null,
           candidateName: "Nguyen Van An",
           jobTitle: "Senior Backend Engineer",
@@ -74,8 +77,8 @@ it("renders enriched context, filters unread items, marks read on click, and nav
           id: "notif-2",
           kind: "interviewScheduled",
           resourceId: "int-7",
-          createdAt: "2026-11-18T10:00:00.000Z",
-          readAt: "2026-11-18T11:00:00.000Z",
+          createdAt: twoHoursAgo,
+          readAt: twoHoursAgo,
           candidateName: "Tran Thi Binh",
           jobTitle: "Product Designer",
           scheduledAt: "2026-11-20T07:30:00.000Z",
@@ -106,6 +109,8 @@ it("renders enriched context, filters unread items, marks read on click, and nav
     ),
   ).toBeVisible();
   expect(screen.getByText("Tran Thi Binh • Product Designer")).toBeVisible();
+  expect(screen.getByText("5m ago")).toBeVisible();
+  expect(screen.getByText("2h ago")).toBeVisible();
 
   // Switch to Unread filter tab
   fireEvent.click(
@@ -132,4 +137,52 @@ it("renders enriched context, filters unread items, marks read on click, and nav
     expect(api.patch).toHaveBeenCalledWith("/notifications/notif-1/read");
   });
   expect(mockPush).toHaveBeenCalledWith("/applications/app-42");
+});
+
+it("blocks navigation on cancelled interview notifications while keeping them readable", async () => {
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60_000).toISOString();
+
+  vi.mocked(api.get).mockResolvedValue({
+    data: {
+      unreadCount: 1,
+      items: [
+        {
+          id: "notif-cancel-1",
+          kind: "interviewCancelled",
+          resourceId: "int-cancelled",
+          createdAt: tenMinutesAgo,
+          readAt: null,
+          candidateName: "Le Minh Cuong",
+          jobTitle: "Platform Engineer",
+        },
+      ],
+    },
+  });
+
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <NotificationBell organizationId="org-1" userId="user-1" />
+    </QueryClientProvider>,
+  );
+
+  const trigger = await screen.findByRole("button", {
+    name: "settings.tabs.notifications (1)",
+  });
+  fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+
+  const itemTitle = await screen.findByText(
+    "notificationInbox.interviewCancelled",
+  );
+  fireEvent.click(itemTitle);
+
+  await waitFor(() => {
+    expect(api.patch).toHaveBeenCalledWith(
+      "/notifications/notif-cancel-1/read",
+    );
+  });
+  expect(mockPush).not.toHaveBeenCalled();
 });

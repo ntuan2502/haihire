@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api/client";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatDate, formatRelativeTime, formatTime } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
@@ -97,18 +97,26 @@ export function NotificationBell({
   const visibleItems =
     filter === "unread" ? items.filter((item) => !item.readAt) : items;
 
-  function openNotification(item: WebsiteNotification) {
-    if (!item.readAt) markRead.mutate(item.id);
-    setOpen(false);
-    if (item.kind === "applicationReceived" && canViewApplications) {
-      router.push(`/applications/${encodeURIComponent(item.resourceId)}`);
-    } else if (item.kind !== "applicationReceived" && canViewInterviews) {
-      router.push(
-        item.kind === "interviewCancelled"
-          ? "/interviews"
-          : `/interviews?interviewId=${encodeURIComponent(item.resourceId)}`,
-      );
+  function getNotificationHref(item: WebsiteNotification): string | null {
+    if (item.kind === "applicationReceived") {
+      return canViewApplications
+        ? `/applications/${encodeURIComponent(item.resourceId)}`
+        : null;
     }
+    if (item.kind === "interviewCancelled") {
+      return null;
+    }
+    return canViewInterviews
+      ? `/interviews?interviewId=${encodeURIComponent(item.resourceId)}`
+      : null;
+  }
+
+  function openNotification(item: WebsiteNotification) {
+    const href = getNotificationHref(item);
+    if (!item.readAt) markRead.mutate(item.id);
+    if (!href) return;
+    setOpen(false);
+    router.push(href);
   }
 
   function formatContextLine(item: WebsiteNotification): string | null {
@@ -292,14 +300,24 @@ export function NotificationBell({
                 } = KIND_STYLES[item.kind];
                 const contextLine = formatContextLine(item);
                 const isUnread = !item.readAt;
+                const isNavigable = getNotificationHref(item) !== null;
 
                 return (
                   <DropdownMenuItem
                     key={item.id}
+                    onSelect={(event) => {
+                      if (!isNavigable) event.preventDefault();
+                    }}
                     onClick={() => openNotification(item)}
                     className={cn(
-                      "flex items-start gap-3 rounded-none px-3.5 py-3 cursor-pointer focus:bg-accent/70 transition-colors",
-                      isUnread && "bg-primary/[0.04]",
+                      "flex items-start gap-3 rounded-none px-3.5 py-3 transition-colors",
+                      isNavigable
+                        ? "cursor-pointer focus:bg-accent/70"
+                        : "cursor-default focus:bg-transparent data-[highlighted]:bg-transparent",
+                      isUnread &&
+                        (isNavigable
+                          ? "bg-primary/[0.04]"
+                          : "bg-primary/[0.04] focus:bg-primary/[0.04] data-[highlighted]:bg-primary/[0.04]"),
                     )}
                   >
                     <div
@@ -363,9 +381,11 @@ export function NotificationBell({
                           className="size-3 shrink-0 text-muted-foreground"
                           aria-hidden="true"
                         />
-                        <time dateTime={item.createdAt}>
-                          {formatDate(item.createdAt)}{" "}
-                          {formatTime(item.createdAt)}
+                        <time
+                          dateTime={item.createdAt}
+                          title={`${formatDate(item.createdAt)} ${formatTime(item.createdAt)}`}
+                        >
+                          {formatRelativeTime(item.createdAt)}
                         </time>
                       </div>
                     </div>

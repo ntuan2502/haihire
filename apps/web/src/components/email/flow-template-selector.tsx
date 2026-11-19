@@ -121,7 +121,7 @@ export function FlowTemplateSelect({
   return (
     <div className="mt-2.5 space-y-1.5">
       <label
-        htmlFor={selectId}
+        htmlFor={selectId ? `${selectId}-trigger` : undefined}
         className="block text-[11px] font-medium text-foreground"
       >
         {label}

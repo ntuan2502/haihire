@@ -1,9 +1,42 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "cn";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { useOptionalI18n } from "@/i18n/optional";
+
+export type DetailDrawerSize = "sm" | "md" | "lg" | "xl" | "2xl";
+
+export const DETAIL_DRAWER_SIZES: Record<DetailDrawerSize, string> = {
+  sm: "sm:max-w-sm",
+  md: "sm:max-w-md",
+  lg: "sm:max-w-lg",
+  xl: "sm:max-w-xl",
+  "2xl": "sm:max-w-2xl",
+};
+
+function resolveDrawerWidthClass(
+  size?: DetailDrawerSize,
+  width?: string,
+  maxWidth?: string,
+): string {
+  const raw = width || maxWidth;
+  if (raw) {
+    if (raw === "max-w-sm") return "sm:max-w-sm";
+    if (raw === "max-w-md") return "sm:max-w-md";
+    if (raw === "max-w-lg") return "sm:max-w-lg";
+    if (raw === "max-w-xl") return "sm:max-w-xl";
+    if (raw === "max-w-2xl") return "sm:max-w-2xl";
+    return raw;
+  }
+  return DETAIL_DRAWER_SIZES[size || "2xl"];
+}
 
 export interface SlideOverProps {
   isOpen: boolean;
@@ -11,11 +44,18 @@ export interface SlideOverProps {
   children: ReactNode;
   title?: string;
   description?: string;
+  size?: DetailDrawerSize;
+  /** @deprecated Use `size` prop instead */
   width?: string;
+  /** @deprecated Use `size` prop instead */
   maxWidth?: string;
+  disableClose?: boolean;
+  ariaLabel?: string;
   className?: string;
   panelClassName?: string;
 }
+
+export type DetailDrawerProps = SlideOverProps;
 
 export function SlideOver({
   isOpen,
@@ -23,89 +63,60 @@ export function SlideOver({
   children,
   title,
   description,
+  size,
   width,
-  maxWidth = "max-w-2xl",
+  maxWidth,
+  disableClose = false,
+  ariaLabel,
   className,
   panelClassName,
 }: SlideOverProps) {
   const { t } = useOptionalI18n();
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  const widthClass = resolveDrawerWidthClass(size, width, maxWidth);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className={cn("fixed inset-0 z-50 overflow-hidden", className)}
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !disableClose) {
+          onClose();
+        }
+      }}
     >
-      {/* Backdrop with fade-in effect */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={t("common.close")}
-        className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
-      />
-
-      {/* Slide-over Container */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
-        <aside
-          className={cn(
-            "w-screen pointer-events-auto bg-card text-card-foreground shadow-2xl border-l border-border flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300 ease-out",
-            width || maxWidth,
-            panelClassName,
-          )}
-        >
-          {title && (
-            <div className="p-6 border-b border-border flex items-start justify-between shrink-0">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  {title}
-                </h3>
-                {description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {description}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                aria-label={t("common.close")}
-                onClick={onClose}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+      <SheetContent
+        side="right"
+        disableClose={disableClose}
+        showCloseButton={Boolean(title)}
+        {...(description ? {} : { "aria-describedby": undefined })}
+        className={cn(
+          "w-full p-0 gap-0 bg-card text-card-foreground border-l border-border shadow-2xl flex flex-col h-full overflow-hidden",
+          widthClass,
+          className,
+          panelClassName,
+        )}
+      >
+        {title ? (
+          <SheetHeader className="px-6 py-4 pr-12 border-b border-border shrink-0 text-left">
+            <SheetTitle className="text-sm font-semibold text-foreground">
+              {title}
+            </SheetTitle>
+            {description && (
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                {description}
+              </SheetDescription>
+            )}
+          </SheetHeader>
+        ) : (
+          <SheetTitle className="sr-only">
+            {ariaLabel || t("common.details")}
+          </SheetTitle>
+        )}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {children}
-        </aside>
-      </div>
-    </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
+
+export { SlideOver as DetailDrawer };

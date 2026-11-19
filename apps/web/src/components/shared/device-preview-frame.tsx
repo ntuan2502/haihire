@@ -7,8 +7,9 @@ export type PreviewDeviceType = "desktop" | "tablet" | "mobile";
 
 export interface DevicePreviewFrameProps {
   device: PreviewDeviceType;
-  isMaximized?: boolean;
+  /** @deprecated Removed in Batch 3C when preview modal callers drop unused url prop. */
   url?: string;
+  isMaximized?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -68,8 +69,8 @@ export function DevicePreviewFrame({
           className={cn(
             "bg-zinc-950 dark:bg-black p-2 rounded-[46px] sm:rounded-[50px] border border-zinc-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)_inset] ring-1 ring-black/40 flex flex-col relative shrink-0",
             isMaximized
-              ? "w-[390px] h-[84vh]"
-              : "w-[360px] sm:w-[375px] h-[660px] max-h-[74vh]",
+              ? "w-[390px] max-w-full h-[84vh]"
+              : "w-[360px] sm:w-[375px] max-w-full h-[660px] max-h-[74vh]",
             className,
           )}
         >

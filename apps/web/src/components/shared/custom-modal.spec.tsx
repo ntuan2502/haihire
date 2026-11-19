@@ -35,7 +35,7 @@ describe("CustomModal Component", () => {
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(document, { key: "Escape" });
     expect(handleClose).toHaveBeenCalledTimes(2);
   });
 

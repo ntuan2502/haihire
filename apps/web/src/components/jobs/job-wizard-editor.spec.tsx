@@ -567,10 +567,8 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
         screen.getByText(/Bạn có chắc chắn muốn xóa/i),
       ).toBeInTheDocument();
 
-      // Find confirmation input by id
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      // Find confirmation input inside open dialog
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       expect(confirmInput).toBeInTheDocument();
       fireEvent.change(confirmInput, {
         target: { value: "Senior Frontend Engineer" },

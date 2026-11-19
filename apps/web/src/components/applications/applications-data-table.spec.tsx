@@ -457,7 +457,7 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(filterBtn);
 
       expect(
-        screen.getByRole("heading", { level: 3, name: "Filters" }),
+        screen.getByRole("heading", { name: "Filters" }),
       ).toBeInTheDocument();
       expect(screen.getByText("Filter by job")).toBeInTheDocument();
     });

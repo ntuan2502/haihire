@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { InterviewsFilterBar, type ViewMode } from "./interviews-filter-bar";
 import { InterviewsFilterDrawer } from "./interviews-filter-drawer";
 import type { Job } from "@/types";
@@ -48,8 +48,14 @@ const defaultColumns = {
   rating: true,
 };
 
-function renderFilterControls(viewMode: ViewMode) {
-  return render(
+function FilterControlsHarness({
+  viewMode,
+  isDrawerOpen,
+}: {
+  viewMode: ViewMode;
+  isDrawerOpen: boolean;
+}) {
+  return (
     <div>
       <InterviewsFilterBar
         tabs={mockTabs}
@@ -70,7 +76,7 @@ function renderFilterControls(viewMode: ViewMode) {
         onClearSortFilter={vi.fn()}
       />
       <InterviewsFilterDrawer
-        isOpen={true}
+        isOpen={isDrawerOpen}
         onClose={vi.fn()}
         jobs={mockJobs}
         selectedJobFilter="job-1"
@@ -85,13 +91,15 @@ function renderFilterControls(viewMode: ViewMode) {
         onResetFilters={vi.fn()}
         viewMode={viewMode}
       />
-    </div>,
+    </div>
   );
 }
 
 describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
   it("shows status tabs, columns dropdown, and sort controls in table mode", () => {
-    renderFilterControls("table");
+    const { rerender } = render(
+      <FilterControlsHarness viewMode="table" isDrawerOpen={false} />,
+    );
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /All/ })).toBeInTheDocument();
@@ -100,20 +108,26 @@ describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
     expect(
       screen.getByRole("button", { name: "common.columns" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("interviews.sortNewest").length).toBeGreaterThan(
-      0,
-    );
+    expect(screen.getByText("interviews.sortNewest")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "common.filter2" }),
+    ).toBeInTheDocument();
+
+    rerender(<FilterControlsHarness viewMode="table" isDrawerOpen={true} />);
+
     expect(
       screen.getByText("interviews.tableHeaders.status"),
     ).toBeInTheDocument();
     expect(screen.getByText("jobs.sortByUpper")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "common.filter2" }),
+      within(screen.getByRole("dialog")).getByText("interviews.sortNewest"),
     ).toBeInTheDocument();
   });
 
   it("hides status tabs, columns dropdown, and sort controls in calendar mode while keeping search and job filter", () => {
-    renderFilterControls("calendar");
+    const { rerender } = render(
+      <FilterControlsHarness viewMode="calendar" isDrawerOpen={false} />,
+    );
 
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
@@ -123,12 +137,8 @@ describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
       screen.queryByRole("button", { name: "common.columns" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("interviews.sortNewest")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("interviews.tableHeaders.status"),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("jobs.sortByUpper")).not.toBeInTheDocument();
 
-    // Essential controls remain visible in calendar mode
+    // Essential bar controls remain visible in calendar mode
     expect(
       screen.getByRole("button", { name: "interviews.table" }),
     ).toBeInTheDocument();
@@ -138,10 +148,18 @@ describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
     expect(
       screen.getByPlaceholderText("interviews.searchPlaceholder"),
     ).toBeInTheDocument();
-    expect(screen.getByText("applications.filterByJob")).toBeInTheDocument();
-    expect(screen.getByText("Frontend Engineer")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "common.filter1" }),
     ).toBeInTheDocument();
+
+    rerender(<FilterControlsHarness viewMode="calendar" isDrawerOpen={true} />);
+
+    expect(
+      screen.queryByText("interviews.tableHeaders.status"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("jobs.sortByUpper")).not.toBeInTheDocument();
+    expect(screen.queryByText("interviews.sortNewest")).not.toBeInTheDocument();
+    expect(screen.getByText("applications.filterByJob")).toBeInTheDocument();
+    expect(screen.getByText("Frontend Engineer")).toBeInTheDocument();
   });
 });

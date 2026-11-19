@@ -538,7 +538,7 @@ describe("CandidateDrawer Component", () => {
   });
 
   it("triggers file upload when file input changes", async () => {
-    const { container } = render(
+    render(
       <CandidateDrawer
         candidate={mockCandidate}
         onClose={vi.fn()}
@@ -551,7 +551,7 @@ describe("CandidateDrawer Component", () => {
 
     fireEvent.click(screen.getByText(/Tài liệu/));
 
-    const fileInput = container.querySelector(
+    const fileInput = document.querySelector(
       "#drawer-doc-upload",
     ) as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();

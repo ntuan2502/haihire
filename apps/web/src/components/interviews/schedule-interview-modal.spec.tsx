@@ -343,7 +343,7 @@ describe("ScheduleInterviewModal Component", () => {
     mockCreateMutateAsync.mockResolvedValueOnce({ id: "int-new" });
     const handleClose = vi.fn();
 
-    const { container } = renderWithClient(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={true}
         onClose={handleClose}
@@ -354,10 +354,10 @@ describe("ScheduleInterviewModal Component", () => {
       />,
     );
 
-    const dateInput = container.querySelector(
+    const dateInput = document.querySelector(
       'input[type="date"]',
     ) as HTMLInputElement;
-    const timeInput = container.querySelector(
+    const timeInput = document.querySelector(
       'input[type="time"]',
     ) as HTMLInputElement;
     fireEvent.change(dateInput, { target: { value: "2026-10-25" } });

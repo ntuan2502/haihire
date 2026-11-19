@@ -520,9 +520,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
         screen.getByRole("heading", { name: "Xóa hồ sơ ứng tuyển" }),
       ).toBeInTheDocument();
 
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       expect(confirmInput).toBeInTheDocument();
       fireEvent.change(confirmInput, { target: { value: "Tran Van B" } });
 
@@ -545,9 +543,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       });
       fireEvent.click(deleteBtn);
 
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       fireEvent.change(confirmInput, { target: { value: "Tran Van B" } });
 
       const form = confirmInput.closest("form");
@@ -592,9 +588,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       });
       fireEvent.click(deleteBtn);
 
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       fireEvent.change(confirmInput, { target: { value: "Tran Van B" } });
 
       const form = confirmInput.closest("form");

@@ -483,9 +483,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
         screen.getByRole("heading", { name: "Xóa ứng viên" }),
       ).toBeInTheDocument();
 
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       expect(confirmInput).toBeInTheDocument();
       fireEvent.change(confirmInput, { target: { value: "Nguyen Van A" } });
 

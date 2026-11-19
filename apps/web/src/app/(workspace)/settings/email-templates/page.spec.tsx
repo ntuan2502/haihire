@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import EmailTemplatesSettingsPage from "./page";
 import type { EmailFlowConfig, EmailTemplate } from "@/lib/email-templates";
 import { toast } from "@/lib/toast";
@@ -233,7 +239,11 @@ describe("EmailTemplatesSettingsPage", () => {
     fireEvent.change(titleInput!, {
       target: { value: "Mẫu Phỏng Vấn Vòng 2" },
     });
-    fireEvent.click(screen.getAllByRole("button", { name: "Tạo mẫu mới" })[1]);
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Tạo mẫu mới",
+      }),
+    );
 
     await waitFor(() => {
       expect(mockCreateTemplate).toHaveBeenCalledWith(

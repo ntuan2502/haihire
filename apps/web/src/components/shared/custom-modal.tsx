@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { X, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useOptionalI18n } from "@/i18n/optional";
 import { cn } from "cn";
 
@@ -63,90 +70,58 @@ export function CustomModal({
   const { t } = useOptionalI18n();
   const [isMaximized, setIsMaximized] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
       setIsMaximized(false);
+      onClose();
     }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+  };
 
   const resolvedMaxWidth =
     maxWidth || CUSTOM_MODAL_SIZES[size] || "sm:max-w-2xl";
-  const resolvedHeight = height || "max-h-[92vh]";
+  const resolvedHeight = height || "max-h-[90dvh]";
+  const hasHeader = Boolean(
+    title ||
+    description ||
+    badge ||
+    headerRight ||
+    showCloseButton ||
+    allowMaximize,
+  );
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in-0 duration-150",
-        className,
-      )}
-    >
-      {/* Backdrop with native blur */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={t("common.closeModal")}
-        className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
-      />
-
-      {/* Modal Dialog Surface */}
-      <div
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "relative z-10 w-full flex flex-col rounded-xl border border-border bg-card text-card-foreground shadow-xl overflow-hidden duration-150 animate-in zoom-in-95",
-          isMaximized
-            ? "w-full h-full max-w-none max-h-none rounded-none fixed inset-0 z-50"
-            : cn(resolvedMaxWidth, resolvedHeight),
+          "p-0 gap-0 overflow-hidden flex flex-col",
+          resolvedMaxWidth,
+          resolvedHeight,
+          className,
           panelClassName,
+          isMaximized &&
+            "fixed inset-0 top-0 left-0 translate-x-0 translate-y-0 w-screen h-dvh max-w-none sm:max-w-none max-h-none rounded-none border-0",
         )}
       >
-        {(title ||
-          description ||
-          badge ||
-          headerRight ||
-          showCloseButton ||
-          allowMaximize) && (
-          <div
+        {hasHeader ? (
+          <DialogHeader
             className={cn(
-              "px-6 py-4 border-b border-border bg-card flex items-center justify-between gap-3 shrink-0",
+              "px-6 py-4 border-b border-border bg-card flex-row items-center justify-between gap-3 shrink-0 text-left",
               headerClassName,
             )}
           >
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="space-y-0.5 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  {title && (
-                    <h2 className="text-base font-semibold text-foreground leading-tight truncate">
+                  {title ? (
+                    <DialogTitle className="text-base font-semibold text-foreground leading-tight truncate">
                       {title}
-                    </h2>
+                    </DialogTitle>
+                  ) : (
+                    <DialogTitle className="sr-only">
+                      {t("common.details")}
+                    </DialogTitle>
                   )}
                   {badge && (
                     <div className="inline-flex items-center shrink-0">
@@ -155,12 +130,14 @@ export function CustomModal({
                   )}
                 </div>
                 {description && (
-                  <p className="text-xs text-muted-foreground">{description}</p>
+                  <DialogDescription className="text-xs text-muted-foreground">
+                    {description}
+                  </DialogDescription>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               {typeof headerRight === "function"
                 ? headerRight({ isMaximized })
                 : headerRight}
@@ -178,9 +155,9 @@ export function CustomModal({
                   }
                 >
                   {isMaximized ? (
-                    <Minimize2 className="h-4 w-4" />
+                    <Minimize2 className="h-4 w-4" aria-hidden="true" />
                   ) : (
-                    <Maximize2 className="h-4 w-4" />
+                    <Maximize2 className="h-4 w-4" aria-hidden="true" />
                   )}
                 </button>
               )}
@@ -188,15 +165,17 @@ export function CustomModal({
               {showCloseButton && (
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={() => handleOpenChange(false)}
                   className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
                   aria-label={t("common.close")}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
             </div>
-          </div>
+          </DialogHeader>
+        ) : (
+          <DialogTitle className="sr-only">{t("common.details")}</DialogTitle>
         )}
 
         {/* Modal Content */}
@@ -210,7 +189,7 @@ export function CustomModal({
             ? children({ isMaximized })
             : children}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

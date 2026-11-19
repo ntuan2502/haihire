@@ -545,9 +545,7 @@ describe("CandidatesPage Component - Characterization Tests", () => {
       ).toBeInTheDocument();
 
       // Enter matching candidate name
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       expect(confirmInput).toBeInTheDocument();
       fireEvent.change(confirmInput, { target: { value: "Le Van C" } });
 

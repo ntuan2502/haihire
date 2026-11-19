@@ -165,7 +165,7 @@ export class PrismaService
         if (!existingUser) {
           await ensureDefaultDemoAccounts(this);
           console.log(
-            `Initialized default demo accounts: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - Org Admin), ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER - No Org)`,
+            `Initialized default demo account: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - demo-1)`,
           );
         }
       }

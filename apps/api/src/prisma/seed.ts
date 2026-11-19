@@ -3,9 +3,6 @@ import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-
-const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
-export const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 import { toInstant } from "../common/date.util.ts";
 import {
@@ -16,7 +13,55 @@ import {
 } from "@haihire/shared";
 import { SeedCvStorage } from "./seed-cv-pdf.util.ts";
 
+const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+export const prisma = new PrismaClient({ adapter });
+
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
+const FIXED_SEED_EPOCH_MS = Date.parse("2026-11-19T06:00:00.000Z");
+
+/**
+ * Generates a deterministic RFC 4122 v4 UUID from structural numeric indices
+ * so every seed run produces identical IDs and relations across all 4 orgs.
+ */
+function detUuid(
+  prefixHex4: string,
+  orgIdx: number,
+  itemIdx: number,
+  subIdx = 0,
+): string {
+  const orgHex = orgIdx.toString(16).padStart(3, "0");
+  const subHex = subIdx.toString(16).padStart(3, "0");
+  const itemHex = itemIdx.toString(16).padStart(12, "0");
+  return `00000000-${prefixHex4}-4${orgHex}-8${subHex}-${itemHex}`;
+}
+
+const UUID_NS = {
+  MEMBER: "1001",
+  EMAIL_SETTING: "1002",
+  AUDIT_LOG: "1003",
+  JOB: "2001",
+  TRACKING_LINK: "3001",
+  TRACKING_CLICK: "3002",
+  CANDIDATE: "4001",
+  STORED_FILE: "4002",
+  CANDIDATE_NOTE: "4003",
+  APPLICATION: "5001",
+  APPLICATION_NOTE: "5002",
+  INTERVIEW: "6001",
+  NOTIFICATION: "7001",
+  ACTIVITY_LOG: "8001",
+} as const;
+
+// Fixed UUIDs preserved for E2E & cross-test consistency in Demo 1
+const GLOBAL_ADMIN_ID = "00000000-0000-4000-8000-000000000001";
+const DEMO1_BACKEND_JOB_ID = "00000000-0000-4000-8000-000000000101";
+const DEMO1_RECRUITER_JOB_ID = "00000000-0000-4000-8000-000000000108";
+const DEMO1_TEST_CANDIDATE_ID = "00000000-0000-4000-8000-000000000201";
+const DEMO1_KANBAN_CANDIDATE_ID = "00000000-0000-4000-8000-000000000202";
+const DEMO1_TEST_STORED_FILE_ID = "00000000-0000-4000-8000-000000000211";
+const DEMO1_KANBAN_STORED_FILE_ID = "00000000-0000-4000-8000-000000000212";
+const DEMO1_KANBAN_APP_ID = "00000000-0000-4000-8000-000000000301";
+const DEMO1_TEST_APP_ID = "00000000-0000-4000-8000-000000000302";
 
 const VIETNAMESE_LAST_NAMES = [
   "Nguyễn",
@@ -39,7 +84,7 @@ const VIETNAMESE_LAST_NAMES = [
   "Trịnh",
   "Lưu",
   "Mai",
-];
+] as const;
 
 const VIETNAMESE_MIDDLE_NAMES = [
   "Văn",
@@ -62,7 +107,7 @@ const VIETNAMESE_MIDDLE_NAMES = [
   "Thu",
   "Khánh",
   "Hữu",
-];
+] as const;
 
 const VIETNAMESE_FIRST_NAMES = [
   "An",
@@ -95,7 +140,7 @@ const VIETNAMESE_FIRST_NAMES = [
   "Tú",
   "Hậu",
   "Loan",
-];
+] as const;
 
 const INTL_FIRST_NAMES = [
   "James",
@@ -122,7 +167,7 @@ const INTL_FIRST_NAMES = [
   "Charlotte",
   "Henry",
   "Amelia",
-];
+] as const;
 
 const INTL_LAST_NAMES = [
   "Smith",
@@ -149,7 +194,7 @@ const INTL_LAST_NAMES = [
   "Ramirez",
   "Lewis",
   "Robinson",
-];
+] as const;
 
 interface BaseJobConfig {
   title: string;
@@ -324,212 +369,442 @@ Bạn sẽ trực tiếp thiết kế cơ sở dữ liệu, quản lý kết n�
   },
 ];
 
-const STAGES = [
-  "APPLIED",
-  "SCREENING",
-  "INTERVIEW",
-  "OFFER",
-  "HIRED",
-  "REJECTED",
-] as const;
+type StageName =
+  "APPLIED" | "SCREENING" | "INTERVIEW" | "OFFER" | "HIRED" | "REJECTED";
+type JobStatusName = "PUBLISHED" | "DRAFT" | "CLOSED";
 
-function generate200UniqueCandidates(): Array<{
+interface SeedUserSpec {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  title: string;
+  rolesByOrg: readonly [Role, Role, Role, Role];
+}
+
+// 15 real users across all 4 organizations (1 Global Admin + 4 Org Owners + 10 Team/Interviewers)
+const ALL_SEED_USERS: readonly SeedUserSpec[] = [
+  {
+    id: GLOBAL_ADMIN_ID,
+    email: DEMO_ACCOUNTS.ADMIN.email,
+    firstName: DEMO_ACCOUNTS.ADMIN.firstName,
+    lastName: DEMO_ACCOUNTS.ADMIN.lastName,
+    title: "Platform Super Admin",
+    rolesByOrg: ["ADMIN", "ADMIN", "ADMIN", "ADMIN"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000101",
+    email: "admin1@tun.io.vn",
+    firstName: "Admin 1",
+    lastName: "Demo",
+    title: "Demo 1 Owner",
+    rolesByOrg: ["ADMIN", "RECRUITER", "HIRING_MANAGER", "INTERVIEWER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000102",
+    email: "admin2@tun.io.vn",
+    firstName: "Admin 2",
+    lastName: "Demo",
+    title: "Demo 2 Owner",
+    rolesByOrg: ["HIRING_MANAGER", "ADMIN", "INTERVIEWER", "MEMBER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000103",
+    email: "admin3@tun.io.vn",
+    firstName: "Admin 3",
+    lastName: "Demo",
+    title: "Demo 3 Owner",
+    rolesByOrg: ["INTERVIEWER", "MEMBER", "ADMIN", "RECRUITER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000104",
+    email: "admin4@tun.io.vn",
+    firstName: "Admin 4",
+    lastName: "Demo",
+    title: "Demo 4 Owner",
+    rolesByOrg: ["MEMBER", "HIRING_MANAGER", "RECRUITER", "ADMIN"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001001",
+    email: "an.nguyen@tun.io.vn",
+    firstName: "An",
+    lastName: "Nguyễn Văn",
+    title: "Engineering Lead",
+    rolesByOrg: ["HIRING_MANAGER", "RECRUITER", "INTERVIEWER", "ADMIN"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001002",
+    email: "bich.tran@tun.io.vn",
+    firstName: "Bích",
+    lastName: "Trần Thị",
+    title: "HR Director",
+    rolesByOrg: ["RECRUITER", "HIRING_MANAGER", "ADMIN", "INTERVIEWER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001003",
+    email: "cuong.le@tun.io.vn",
+    firstName: "Cường",
+    lastName: "Lê Hoàng",
+    title: "CTO",
+    rolesByOrg: [
+      "HIRING_MANAGER",
+      "INTERVIEWER",
+      "RECRUITER",
+      "HIRING_MANAGER",
+    ],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001004",
+    email: "dung.pham@tun.io.vn",
+    firstName: "Dung",
+    lastName: "Phạm Minh",
+    title: "Talent Acquisition Lead",
+    rolesByOrg: ["RECRUITER", "ADMIN", "HIRING_MANAGER", "RECRUITER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001005",
+    email: "bao.hoang@tun.io.vn",
+    firstName: "Bảo",
+    lastName: "Hoàng Quốc",
+    title: "Principal Architect",
+    rolesByOrg: ["INTERVIEWER", "HIRING_MANAGER", "INTERVIEWER", "MEMBER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001006",
+    email: "huong.vu@tun.io.vn",
+    firstName: "Hương",
+    lastName: "Vũ Thu",
+    title: "VP of Product",
+    rolesByOrg: ["HIRING_MANAGER", "RECRUITER", "MEMBER", "HIRING_MANAGER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001007",
+    email: "kiet.dang@tun.io.vn",
+    firstName: "Kiệt",
+    lastName: "Đặng Tuấn",
+    title: "Staff Backend Engineer",
+    rolesByOrg: ["INTERVIEWER", "INTERVIEWER", "HIRING_MANAGER", "RECRUITER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001008",
+    email: "lan.bui@tun.io.vn",
+    firstName: "Lan",
+    lastName: "Bùi Ngọc",
+    title: "Head of People Operations",
+    rolesByOrg: ["ADMIN", "MEMBER", "RECRUITER", "INTERVIEWER"],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001009",
+    email: "minh.do@tun.io.vn",
+    firstName: "Minh",
+    lastName: "Đỗ Đức",
+    title: "Engineering Manager",
+    rolesByOrg: [
+      "INTERVIEWER",
+      "HIRING_MANAGER",
+      "INTERVIEWER",
+      "HIRING_MANAGER",
+    ],
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001010",
+    email: "thao.ngo@tun.io.vn",
+    firstName: "Thảo",
+    lastName: "Ngô Phương",
+    title: "HR Coordinator",
+    rolesByOrg: ["MEMBER", "INTERVIEWER", "HIRING_MANAGER", "MEMBER"],
+  },
+];
+
+interface OrgBlueprint {
+  orgIndex: 1 | 2 | 3 | 4;
+  id: string;
+  name: string;
+  slug: string;
+  ownerId: string;
+  fromName: string;
+  fromEmail: string;
+  jobStatusCounts: Record<JobStatusName, number>;
+  trackingLinkCount: number;
+  totalTrackingClickRows: number;
+  candidateJobCountDist: Record<0 | 1 | 2 | 3 | 4 | 5 | 6, number>;
+  stageCounts: Record<StageName, number>;
+  totalInterviews: number;
+  adminNotifications: { total: number; unread: number };
+  otherMemberNotifications: number;
+  candidateNameOffset: number;
+}
+
+const ORG_BLUEPRINTS: readonly OrgBlueprint[] = [
+  {
+    orgIndex: 1,
+    id: "00000000-0000-4000-8000-000000000010",
+    name: "Demo 1",
+    slug: "demo-1",
+    ownerId: "00000000-0000-4000-8000-000000000101",
+    fromName: "Demo 1 Recruitment Team",
+    fromEmail: "careers-demo1@tun.io.vn",
+    jobStatusCounts: { PUBLISHED: 8, DRAFT: 6, CLOSED: 6 },
+    trackingLinkCount: 24,
+    totalTrackingClickRows: 780,
+    candidateJobCountDist: { 0: 14, 1: 46, 2: 24, 3: 18, 4: 10, 5: 5, 6: 3 },
+    stageCounts: {
+      APPLIED: 45,
+      SCREENING: 39,
+      INTERVIEW: 42,
+      OFFER: 34,
+      HIRED: 35,
+      REJECTED: 36,
+    },
+    totalInterviews: 248,
+    adminNotifications: { total: 12, unread: 7 },
+    otherMemberNotifications: 12,
+    candidateNameOffset: 0,
+  },
+  {
+    orgIndex: 2,
+    id: "00000000-0000-4000-8000-000000000020",
+    name: "Demo 2",
+    slug: "demo-2",
+    ownerId: "00000000-0000-4000-8000-000000000102",
+    fromName: "Demo 2 Recruitment Team",
+    fromEmail: "careers-demo2@tun.io.vn",
+    jobStatusCounts: { PUBLISHED: 7, DRAFT: 5, CLOSED: 4 },
+    trackingLinkCount: 20,
+    totalTrackingClickRows: 610,
+    candidateJobCountDist: { 0: 10, 1: 35, 2: 18, 3: 13, 4: 8, 5: 4, 6: 2 },
+    stageCounts: {
+      APPLIED: 34,
+      SCREENING: 29,
+      INTERVIEW: 31,
+      OFFER: 26,
+      HIRED: 27,
+      REJECTED: 27,
+    },
+    totalInterviews: 186,
+    adminNotifications: { total: 14, unread: 8 },
+    otherMemberNotifications: 12,
+    candidateNameOffset: 120,
+  },
+  {
+    orgIndex: 3,
+    id: "00000000-0000-4000-8000-000000000030",
+    name: "Demo 3",
+    slug: "demo-3",
+    ownerId: "00000000-0000-4000-8000-000000000103",
+    fromName: "Demo 3 Recruitment Team",
+    fromEmail: "careers-demo3@tun.io.vn",
+    jobStatusCounts: { PUBLISHED: 6, DRAFT: 4, CLOSED: 4 },
+    trackingLinkCount: 18,
+    totalTrackingClickRows: 520,
+    candidateJobCountDist: { 0: 9, 1: 28, 2: 15, 3: 11, 4: 7, 5: 3, 6: 2 },
+    stageCounts: {
+      APPLIED: 28,
+      SCREENING: 25,
+      INTERVIEW: 26,
+      OFFER: 22,
+      HIRED: 22,
+      REJECTED: 23,
+    },
+    totalInterviews: 155,
+    adminNotifications: { total: 10, unread: 6 },
+    otherMemberNotifications: 12,
+    candidateNameOffset: 210,
+  },
+  {
+    orgIndex: 4,
+    id: "00000000-0000-4000-8000-000000000040",
+    name: "Demo 4",
+    slug: "demo-4",
+    ownerId: "00000000-0000-4000-8000-000000000104",
+    fromName: "Demo 4 Recruitment Team",
+    fromEmail: "careers-demo4@tun.io.vn",
+    jobStatusCounts: { PUBLISHED: 8, DRAFT: 5, CLOSED: 5 },
+    trackingLinkCount: 22,
+    totalTrackingClickRows: 690,
+    candidateJobCountDist: { 0: 12, 1: 40, 2: 21, 3: 16, 4: 9, 5: 4, 6: 3 },
+    stageCounts: {
+      APPLIED: 40,
+      SCREENING: 34,
+      INTERVIEW: 36,
+      OFFER: 30,
+      HIRED: 31,
+      REJECTED: 33,
+    },
+    totalInterviews: 218,
+    adminNotifications: { total: 16, unread: 9 },
+    otherMemberNotifications: 12,
+    candidateNameOffset: 285,
+  },
+];
+
+interface SeedCandidateTemplate {
   name: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  candidateIndex: number;
-}> {
-  const candidates: Array<{
+  gender: "MALE" | "FEMALE" | "OTHER";
+  dateOfBirth: Date;
+}
+
+function getCandidateDemographics(name: string, index: number) {
+  const femaleHints = [
+    "Thị",
+    "Hồng",
+    "Thảo",
+    "Hương",
+    "Trang",
+    "Uyên",
+    "Yến",
+    "Loan",
+    "Oanh",
+    "Linh",
+    "Sarah",
+    "Emily",
+    "Jessica",
+    "Sophia",
+    "Emma",
+    "Ava",
+    "Chloe",
+    "Grace",
+    "Charlotte",
+    "Amelia",
+  ];
+  const maleHints = [
+    "Văn",
+    "Đức",
+    "Hoàng",
+    "Quốc",
+    "Hải",
+    "Tuấn",
+    "Dũng",
+    "Cường",
+    "Nam",
+    "Thắng",
+    "Kiên",
+    "Tú",
+    "James",
+    "Alexander",
+    "Michael",
+    "David",
+    "Daniel",
+    "Lucas",
+    "Oliver",
+    "Ethan",
+    "Liam",
+    "Noah",
+    "Mason",
+    "Logan",
+    "Benjamin",
+    "Henry",
+  ];
+
+  let gender: "MALE" | "FEMALE" | "OTHER" = "MALE";
+  if (femaleHints.some((h) => name.includes(h))) {
+    gender = "FEMALE";
+  } else if (maleHints.some((h) => name.includes(h))) {
+    gender = "MALE";
+  } else {
+    gender = index % 2 === 0 ? "MALE" : "FEMALE";
+  }
+
+  const birthYear = 1988 + (index % 15);
+  const birthMonth = (index % 12) + 1;
+  const birthDay = ((index * 3) % 27) + 1;
+  const dateOfBirth = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
+
+  return { gender, dateOfBirth };
+}
+
+function buildMasterCandidatePool(
+  totalNeeded: number,
+): SeedCandidateTemplate[] {
+  const vnPool: Array<{
     name: string;
     firstName: string;
     lastName: string;
     email: string;
     phone: string;
-    candidateIndex: number;
+  }> = [];
+  const intlPool: Array<{
+    name: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
   }> = [];
   const usedNames = new Set<string>();
 
-  // ~70% Vietnamese (140), ~30% International (60) = 200 candidates
-  const targetVietnamese = 140;
-  const targetIntl = 60;
+  const targetVn = Math.ceil(totalNeeded * 0.7);
+  const targetIntl = totalNeeded - targetVn;
 
-  let vnCount = 0;
+  let vnIdx = 0;
   for (const ln of VIETNAMESE_LAST_NAMES) {
     for (const mn of VIETNAMESE_MIDDLE_NAMES) {
       for (const fn of VIETNAMESE_FIRST_NAMES) {
-        if (vnCount >= targetVietnamese) break;
+        if (vnIdx >= targetVn) break;
         const name = `${ln} ${mn} ${fn}`;
-        if (!usedNames.has(name)) {
-          usedNames.add(name);
-          vnCount++;
-          const normalized = name
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/đ/g, "d")
-            .replace(/Đ/g, "D")
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, ".");
-          const email = `${normalized}.${vnCount + 10}@example.com`;
-          const phone = `09${String(10000000 + vnCount * 137).slice(-8)}`;
-          candidates.push({
-            name,
-            firstName: fn,
-            lastName: `${ln} ${mn}`,
-            email,
-            phone,
-            candidateIndex: vnCount,
-          });
-        }
-      }
-      if (vnCount >= targetVietnamese) break;
-    }
-    if (vnCount >= targetVietnamese) break;
-  }
-
-  let intlCount = 0;
-  for (const fn of INTL_FIRST_NAMES) {
-    for (const ln of INTL_LAST_NAMES) {
-      if (intlCount >= targetIntl) break;
-      const name = `${fn} ${ln}`;
-      if (!usedNames.has(name)) {
+        if (usedNames.has(name)) continue;
         usedNames.add(name);
-        intlCount++;
-        const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, ".");
-        const email = `${normalized}.${intlCount + 200}@example.com`;
-        const phone = `09${String(50000000 + intlCount * 179).slice(-8)}`;
-        candidates.push({
+        vnIdx++;
+        const normalized = name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, ".");
+        vnPool.push({
           name,
           firstName: fn,
-          lastName: ln,
-          email,
-          phone,
-          candidateIndex: vnCount + intlCount,
+          lastName: `${ln} ${mn}`,
+          email: `${normalized}.${vnIdx + 10}@example.com`,
+          phone: `09${String(10000000 + vnIdx * 137).slice(-8)}`,
         });
       }
+      if (vnIdx >= targetVn) break;
     }
-    if (intlCount >= targetIntl) break;
+    if (vnIdx >= targetVn) break;
   }
 
-  // Shuffle candidate list
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  let intlIdx = 0;
+  for (const fn of INTL_FIRST_NAMES) {
+    for (const ln of INTL_LAST_NAMES) {
+      if (intlIdx >= targetIntl) break;
+      const name = `${fn} ${ln}`;
+      if (usedNames.has(name)) continue;
+      usedNames.add(name);
+      intlIdx++;
+      const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, ".");
+      intlPool.push({
+        name,
+        firstName: fn,
+        lastName: ln,
+        email: `${normalized}.${intlIdx + 500}@example.com`,
+        phone: `09${String(50000000 + intlIdx * 179).slice(-8)}`,
+      });
+    }
+    if (intlIdx >= targetIntl) break;
   }
 
-  // Re-index candidates 1..200
-  return candidates.map((c, idx) => ({
-    ...c,
-    candidateIndex: idx + 1,
-  }));
+  // Deterministically interleave VN (~70%) and Intl (~30%)
+  const merged: SeedCandidateTemplate[] = [];
+  let viPtr = 0;
+  let enPtr = 0;
+  for (let i = 0; i < totalNeeded; i++) {
+    const pickIntl = i % 10 === 2 || i % 10 === 6 || i % 10 === 9;
+    const raw =
+      (pickIntl && enPtr < intlPool.length) || viPtr >= vnPool.length
+        ? intlPool[enPtr++]
+        : vnPool[viPtr++];
+    const { gender, dateOfBirth } = getCandidateDemographics(raw.name, i);
+    merged.push({ ...raw, gender, dateOfBirth });
+  }
+  return merged;
 }
-
-interface SeedTeamUser {
-  id: string;
-  memberId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: Role;
-  title: string;
-}
-
-const DEMO_TEAM_USERS: readonly SeedTeamUser[] = [
-  {
-    id: "00000000-0000-4000-8000-000000001001",
-    memberId: "00000000-0000-4000-8000-000000001101",
-    email: "an.nguyen@tun.io.vn",
-    firstName: "An",
-    lastName: "Nguyễn Văn",
-    role: "HIRING_MANAGER",
-    title: "Engineering Lead",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001002",
-    memberId: "00000000-0000-4000-8000-000000001102",
-    email: "bich.tran@tun.io.vn",
-    firstName: "Bích",
-    lastName: "Trần Thị",
-    role: "RECRUITER",
-    title: "HR Director",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001003",
-    memberId: "00000000-0000-4000-8000-000000001103",
-    email: "cuong.le@tun.io.vn",
-    firstName: "Cường",
-    lastName: "Lê Hoàng",
-    role: "HIRING_MANAGER",
-    title: "CTO",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001004",
-    memberId: "00000000-0000-4000-8000-000000001104",
-    email: "dung.pham@tun.io.vn",
-    firstName: "Dung",
-    lastName: "Phạm Minh",
-    role: "RECRUITER",
-    title: "Talent Acquisition Lead",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001005",
-    memberId: "00000000-0000-4000-8000-000000001105",
-    email: "bao.hoang@tun.io.vn",
-    firstName: "Bảo",
-    lastName: "Hoàng Quốc",
-    role: "INTERVIEWER",
-    title: "Principal Architect",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001006",
-    memberId: "00000000-0000-4000-8000-000000001106",
-    email: "huong.vu@tun.io.vn",
-    firstName: "Hương",
-    lastName: "Vũ Thu",
-    role: "HIRING_MANAGER",
-    title: "VP of Product",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001007",
-    memberId: "00000000-0000-4000-8000-000000001107",
-    email: "kiet.dang@tun.io.vn",
-    firstName: "Kiệt",
-    lastName: "Đặng Tuấn",
-    role: "INTERVIEWER",
-    title: "Staff Backend Engineer",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001008",
-    memberId: "00000000-0000-4000-8000-000000001108",
-    email: "lan.bui@tun.io.vn",
-    firstName: "Lan",
-    lastName: "Bùi Ngọc",
-    role: "ADMIN",
-    title: "Head of People Operations",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001009",
-    memberId: "00000000-0000-4000-8000-000000001109",
-    email: "minh.do@tun.io.vn",
-    firstName: "Minh",
-    lastName: "Đỗ Đức",
-    role: "INTERVIEWER",
-    title: "Engineering Manager",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000001010",
-    memberId: "00000000-0000-4000-8000-000000001110",
-    email: "thao.ngo@tun.io.vn",
-    firstName: "Thảo",
-    lastName: "Ngô Phương",
-    role: "MEMBER",
-    title: "HR Coordinator",
-  },
-];
 
 class InterviewSlotManager {
-  // Business-hour interview slots in Vietnam Time (UTC+7): 08:00 - 17:00 ICT
   private static readonly DAILY_TIMES = [
     "08:00",
     "08:45",
@@ -549,6 +824,7 @@ class InterviewSlotManager {
   private pastTier1Slots: Array<{ date: string; time: string }> = [];
   private pastTier2Slots: Array<{ date: string; time: string }> = [];
   private pastTier3Slots: Array<{ date: string; time: string }> = [];
+  private fallbackCounter = 180;
 
   constructor() {
     this.initQueues();
@@ -557,54 +833,50 @@ class InterviewSlotManager {
   private initQueues() {
     const now = new Date();
 
-    // 1. Upcoming slots: Day +1 to Day +50 (skipping weekends)
+    // Upcoming slots: Day +1 onward (1200+ weekday slots)
     let upDay = 1;
-    while (this.upcomingSlots.length < 400) {
+    while (this.upcomingSlots.length < 1200) {
       const d = new Date(now);
       d.setDate(now.getDate() + upDay);
       upDay++;
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
       for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.upcomingSlots.push({ date: dateStr, time });
       }
     }
 
-    // 2. Past Tier 3 (recent past: 1-25 days ago, skipping weekends)
+    // Past Tier 3 (recent past)
     let pDay = 1;
-    while (this.pastTier3Slots.length < 300) {
+    while (this.pastTier3Slots.length < 600) {
       const d = new Date(now);
       d.setDate(now.getDate() - pDay);
       pDay++;
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
       for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier3Slots.push({ date: dateStr, time });
       }
     }
 
-    // 3. Past Tier 2 (mid past: 26-55 days ago, skipping weekends)
-    while (this.pastTier2Slots.length < 300) {
+    // Past Tier 2 (mid past)
+    while (this.pastTier2Slots.length < 600) {
       const d = new Date(now);
       d.setDate(now.getDate() - pDay);
       pDay++;
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
       for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier2Slots.push({ date: dateStr, time });
       }
     }
 
-    // 4. Past Tier 1 (older past: 56-100 days ago, skipping weekends)
-    while (this.pastTier1Slots.length < 400) {
+    // Past Tier 1 (older past)
+    while (this.pastTier1Slots.length < 900) {
       const d = new Date(now);
       d.setDate(now.getDate() - pDay);
       pDay++;
-      const dayOfWeek = d.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
       for (const time of InterviewSlotManager.DAILY_TIMES) {
         this.pastTier1Slots.push({ date: dateStr, time });
@@ -621,21 +893,16 @@ class InterviewSlotManager {
 
     if (!isCompleted) {
       slot = this.upcomingSlots.shift();
+    } else if (round === totalRounds || round >= 3) {
+      slot = this.pastTier3Slots.shift();
+    } else if (round === 2 || (round === totalRounds - 1 && totalRounds >= 2)) {
+      slot = this.pastTier2Slots.shift();
     } else {
-      if (round === totalRounds || round >= 3) {
-        slot = this.pastTier3Slots.shift();
-      } else if (
-        round === 2 ||
-        (round === totalRounds - 1 && totalRounds >= 2)
-      ) {
-        slot = this.pastTier2Slots.shift();
-      } else {
-        slot = this.pastTier1Slots.shift();
-      }
+      slot = this.pastTier1Slots.shift();
     }
 
     if (!slot) {
-      slot = this.generateFallbackSlot(isCompleted);
+      return this.generateFallbackSlot(isCompleted);
     }
 
     const key = `${slot.date} ${slot.time}`;
@@ -646,7 +913,6 @@ class InterviewSlotManager {
     return slot;
   }
 
-  private fallbackCounter = 90;
   private generateFallbackSlot(isCompleted: boolean): {
     date: string;
     time: string;
@@ -655,10 +921,10 @@ class InterviewSlotManager {
       this.fallbackCounter++;
       const now = new Date();
       const d = new Date(now);
-      const dayOffset = isCompleted
-        ? -this.fallbackCounter
-        : this.fallbackCounter;
-      d.setDate(now.getDate() + dayOffset);
+      d.setDate(
+        now.getDate() +
+          (isCompleted ? -this.fallbackCounter : this.fallbackCounter),
+      );
       if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
       for (const time of InterviewSlotManager.DAILY_TIMES) {
@@ -675,7 +941,7 @@ class InterviewSlotManager {
     round: number,
     totalRounds: number,
     isCompleted: boolean,
-    candidateIdx: number,
+    seedIndex: number,
     interviewers: ReadonlyArray<{ id: string; displayName: string }>,
   ) {
     const slot = this.allocateSlot(round, totalRounds, isCompleted);
@@ -689,15 +955,15 @@ class InterviewSlotManager {
     const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
 
     const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
-    const format = formats[(candidateIdx + round) % formats.length];
+    const format = formats[(seedIndex + round) % formats.length];
 
-    const assignedInterviewer =
-      interviewers[(candidateIdx * 2 + round) % interviewers.length];
+    const assigned =
+      interviewers[(seedIndex * 2 + round) % interviewers.length];
 
     const linkOrLocation =
       format === "OFFICE"
         ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
-        : `https://meet.google.com/haihire-demo-${candidateIdx}-${round}`;
+        : `https://meet.google.com/haihire-demo-${seedIndex}-${round}`;
 
     const scheduledAt = toInstant(
       new Date(`${slot.date}T${slot.time}:00+07:00`),
@@ -708,18 +974,638 @@ class InterviewSlotManager {
       type,
       format,
       linkOrLocation,
-      interviewerId: assignedInterviewer.id,
-      interviewer: assignedInterviewer.displayName,
+      interviewerId: assigned.id,
+      interviewer: assigned.displayName,
       notes: isCompleted
         ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
         : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
       round,
     };
   }
+}
 
-  public getUsedCount(): number {
-    return this.usedSlots.size;
+interface SeedTrackingLinkTemplate {
+  name: string;
+  source: SourcingChannel;
+  customSource?: string | null;
+  jobIndex: number | null;
+  campaign?: string | null;
+  medium?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
+  clicksCount: number;
+  isActive: boolean;
+  ageDays: number;
+  token: string;
+}
+
+const SEED_TRACKING_LINKS: readonly SeedTrackingLinkTemplate[] = [
+  {
+    name: "LinkedIn - Tech Hiring Campaign Q3",
+    source: SourcingChannel.LINKEDIN,
+    jobIndex: 0,
+    campaign: "tech-q3-2026",
+    medium: "social",
+    utmSource: "linkedin",
+    utmMedium: "social",
+    utmCampaign: "tech-q3-2026",
+    utmTerm: "fullstack-lead",
+    utmContent: "sponsored-feed-ad",
+    clicksCount: 840,
+    isActive: true,
+    ageDays: 45,
+    token: "lnk-li-q3-fullstack",
+  },
+  {
+    name: "LinkedIn - Recruiter Direct InMail",
+    source: SourcingChannel.LINKEDIN,
+    jobIndex: 1,
+    campaign: "inmail-backend-direct",
+    medium: "inmail",
+    utmSource: "linkedin",
+    utmMedium: "inmail",
+    utmCampaign: "inmail-backend-direct",
+    utmTerm: "senior-backend",
+    utmContent: "talent-solutions-msg",
+    clicksCount: 260,
+    isActive: true,
+    ageDays: 30,
+    token: "lnk-li-inmail-backend",
+  },
+  {
+    name: "Indeed - Sponsored Backend Developer",
+    source: SourcingChannel.INDEED,
+    jobIndex: 1,
+    campaign: "indeed-sponsored-vn",
+    medium: "job-board",
+    utmSource: "indeed",
+    utmMedium: "job-board",
+    utmCampaign: "indeed-sponsored-vn",
+    utmTerm: "backend-nodejs",
+    utmContent: "premium-placement",
+    clicksCount: 520,
+    isActive: true,
+    ageDays: 40,
+    token: "lnk-indeed-backend",
+  },
+  {
+    name: "Google for Jobs - Organic Indexing",
+    source: SourcingChannel.GOOGLE_JOBS,
+    jobIndex: null,
+    campaign: "google-jobs-schema",
+    medium: "job-board",
+    utmSource: "google-jobs",
+    utmMedium: "job-board",
+    utmCampaign: "google-jobs-schema",
+    utmTerm: "job-search",
+    utmContent: "rich-snippet",
+    clicksCount: 920,
+    isActive: true,
+    ageDays: 55,
+    token: "lnk-google-organic",
+  },
+  {
+    name: "Facebook - Cộng Đồng Lập Trình Viên JS/TS",
+    source: SourcingChannel.FACEBOOK,
+    jobIndex: 0,
+    campaign: "fb-community-post",
+    medium: "social",
+    utmSource: "facebook",
+    utmMedium: "social",
+    utmCampaign: "fb-community-post",
+    utmTerm: "reactjs-vietnam",
+    utmContent: "pinned-post",
+    clicksCount: 460,
+    isActive: true,
+    ageDays: 35,
+    token: "lnk-fb-js-community",
+  },
+  {
+    name: "X / Twitter - Founder Hiring Thread",
+    source: SourcingChannel.TWITTER_X,
+    jobIndex: 0,
+    campaign: "twitter-founder-q3",
+    medium: "social",
+    utmSource: "twitter",
+    utmMedium: "social",
+    utmCampaign: "twitter-founder-q3",
+    utmTerm: "tech-lead",
+    utmContent: "retweet-thread",
+    clicksCount: 380,
+    isActive: true,
+    ageDays: 28,
+    token: "lnk-x-founder-thread",
+  },
+  {
+    name: "Reddit - r/forhire & r/vietnamesetech",
+    source: SourcingChannel.REDDIT,
+    jobIndex: 3,
+    campaign: "reddit-monthly-hiring",
+    medium: "social",
+    utmSource: "reddit",
+    utmMedium: "social",
+    utmCampaign: "reddit-monthly-hiring",
+    utmTerm: "qa-automation",
+    utmContent: "monthly-thread-comment",
+    clicksCount: 195,
+    isActive: true,
+    ageDays: 20,
+    token: "lnk-reddit-qa-job",
+  },
+  {
+    name: "WeWorkRemotely - Remote Global Search",
+    source: SourcingChannel.WE_WORK_REMOTELY,
+    jobIndex: 0,
+    campaign: "wwr-featured-listing",
+    medium: "job-board",
+    utmSource: "weworkremotely",
+    utmMedium: "job-board",
+    utmCampaign: "wwr-featured-listing",
+    utmTerm: "remote-fullstack",
+    utmContent: "highlighted-listing",
+    clicksCount: 620,
+    isActive: true,
+    ageDays: 42,
+    token: "lnk-wwr-remote-dev",
+  },
+  {
+    name: "Stack Overflow - Developer Talent Direct",
+    source: SourcingChannel.STACK_OVERFLOW,
+    jobIndex: 4,
+    campaign: "stackoverflow-talent",
+    medium: "job-board",
+    utmSource: "stackoverflow",
+    utmMedium: "job-board",
+    utmCampaign: "stackoverflow-talent",
+    utmTerm: "growth-marketing",
+    utmContent: "sidebar-banner",
+    clicksCount: 290,
+    isActive: true,
+    ageDays: 32,
+    token: "lnk-so-talent-direct",
+  },
+  {
+    name: "Glassdoor - Verified Employer Profile",
+    source: SourcingChannel.GLASSDOOR,
+    jobIndex: null,
+    campaign: "glassdoor-brand-hub",
+    medium: "job-board",
+    utmSource: "glassdoor",
+    utmMedium: "job-board",
+    utmCampaign: "glassdoor-brand-hub",
+    utmTerm: "company-review",
+    utmContent: "profile-cta",
+    clicksCount: 410,
+    isActive: true,
+    ageDays: 50,
+    token: "lnk-glassdoor-hub",
+  },
+  {
+    name: "Handshake - Campus & New Grad Outreach",
+    source: SourcingChannel.HANDSHAKE,
+    jobIndex: 5,
+    campaign: "handshake-fall-grad",
+    medium: "university",
+    utmSource: "handshake",
+    utmMedium: "university",
+    utmCampaign: "handshake-fall-grad",
+    utmTerm: "junior-recruiter",
+    utmContent: "campus-fair-link",
+    clicksCount: 165,
+    isActive: true,
+    ageDays: 18,
+    token: "lnk-handshake-grad",
+  },
+  {
+    name: "Email - Monthly Tech Talent Newsletter",
+    source: SourcingChannel.EMAIL,
+    jobIndex: null,
+    campaign: "talent-newsletter-aug2026",
+    medium: "email",
+    utmSource: "email",
+    utmMedium: "email",
+    utmCampaign: "talent-newsletter-aug2026",
+    utmTerm: "tech-digest",
+    utmContent: "open-positions-section",
+    clicksCount: 340,
+    isActive: true,
+    ageDays: 35,
+    token: "lnk-email-newsletter",
+  },
+  {
+    name: "Referral - Chương Trình Giới Thiệu Nội Bộ",
+    source: SourcingChannel.REFERRAL,
+    jobIndex: null,
+    campaign: "internal-referral-2026",
+    medium: "referral",
+    utmSource: "referral",
+    utmMedium: "referral",
+    utmCampaign: "internal-referral-2026",
+    utmTerm: "haihire-staff",
+    utmContent: "slack-announcement",
+    clicksCount: 280,
+    isActive: true,
+    ageDays: 60,
+    token: "lnk-internal-referral",
+  },
+  {
+    name: "Agency - Adecco Vietnam Săn Đầu Người",
+    source: SourcingChannel.AGENCY,
+    jobIndex: 6,
+    campaign: "adecco-enterprise-sales",
+    medium: "agency",
+    utmSource: "adecco",
+    utmMedium: "agency",
+    utmCampaign: "adecco-enterprise-sales",
+    utmTerm: "saas-account-executive",
+    utmContent: "executive-search",
+    clicksCount: 110,
+    isActive: true,
+    ageDays: 22,
+    token: "lnk-agency-adecco",
+  },
+  {
+    name: "Career Site - Trang Tuyển Dụng Chính Thức",
+    source: SourcingChannel.CAREER_SITE,
+    jobIndex: null,
+    campaign: "careers-direct-brand",
+    medium: "career-portal",
+    utmSource: "careers-site",
+    utmMedium: "career-portal",
+    utmCampaign: "careers-direct-brand",
+    utmTerm: "haihire-jobs",
+    utmContent: "navbar-apply-now",
+    clicksCount: 1450,
+    isActive: true,
+    ageDays: 70,
+    token: "lnk-career-site-main",
+  },
+  {
+    name: "Startup Fair - TechInAsia Vietnam Conference",
+    source: SourcingChannel.OTHER,
+    customSource: "TechInAsia Vietnam",
+    jobIndex: 8,
+    campaign: "tia-vietnam-2026",
+    medium: "event-partner",
+    utmSource: "techinasia",
+    utmMedium: "event-partner",
+    utmCampaign: "tia-vietnam-2026",
+    utmTerm: "mobile-developer",
+    utmContent: "event-directory",
+    clicksCount: 180,
+    isActive: true,
+    ageDays: 16,
+    token: "lnk-techinasia-fair",
+  },
+  {
+    name: "LinkedIn - Senior Cloud Architect (Đã Tạm Dừng)",
+    source: SourcingChannel.LINKEDIN,
+    jobIndex: 9,
+    campaign: "li-arch-paused",
+    medium: "social",
+    utmSource: "linkedin",
+    utmMedium: "social",
+    utmCampaign: "li-arch-paused",
+    utmTerm: "cloud-architect",
+    utmContent: "sponsored-feed",
+    clicksCount: 95,
+    isActive: false,
+    ageDays: 60,
+    token: "lnk-li-arch-paused",
+  },
+  {
+    name: "X / Twitter - Chiến Dịch Mới Mở (Chưa Có Lượt Nhấp)",
+    source: SourcingChannel.TWITTER_X,
+    jobIndex: 1,
+    campaign: "twitter-fresh-launch",
+    medium: "social",
+    utmSource: "twitter",
+    utmMedium: "social",
+    utmCampaign: "twitter-fresh-launch",
+    utmTerm: "backend-hire",
+    utmContent: "fresh-post",
+    clicksCount: 0,
+    isActive: true,
+    ageDays: 1,
+    token: "lnk-x-fresh-zero",
+  },
+  // Extra campaigns for orgs with 20..24 links
+  {
+    name: "LinkedIn - Official Company Page Life",
+    source: SourcingChannel.LINKEDIN,
+    jobIndex: null,
+    campaign: "company-page-hiring",
+    medium: "social",
+    utmSource: "linkedin",
+    utmMedium: "social",
+    utmCampaign: "company-page-hiring",
+    utmTerm: "tech-careers",
+    utmContent: "header-button",
+    clicksCount: 650,
+    isActive: true,
+    ageDays: 60,
+    token: "lnk-li-org-page",
+  },
+  {
+    name: "Indeed - Free Organic Feed Sync",
+    source: SourcingChannel.INDEED,
+    jobIndex: null,
+    campaign: "indeed-organic-feed",
+    medium: "job-board",
+    utmSource: "indeed",
+    utmMedium: "job-board",
+    utmCampaign: "indeed-organic-feed",
+    utmTerm: null,
+    utmContent: null,
+    clicksCount: 310,
+    isActive: true,
+    ageDays: 50,
+    token: "lnk-indeed-feed",
+  },
+  {
+    name: "Facebook - Ads Retargeting Tech Talent",
+    source: SourcingChannel.FACEBOOK,
+    jobIndex: 2,
+    campaign: "fb-retargeting-devops",
+    medium: "paid-social",
+    utmSource: "facebook",
+    utmMedium: "paid-social",
+    utmCampaign: "fb-retargeting-devops",
+    utmTerm: "cloud-devops",
+    utmContent: "carousel-ad",
+    clicksCount: 230,
+    isActive: true,
+    ageDays: 25,
+    token: "lnk-fb-devops-ads",
+  },
+  {
+    name: "Job Fair - Ngày Hội Việc Làm ĐH Bách Khoa HCM",
+    source: SourcingChannel.OTHER,
+    customSource: "ĐH Bách Khoa TP.HCM - Job Fair",
+    jobIndex: 7,
+    campaign: "jobfair-bachkhoa-2026",
+    medium: "offline-event",
+    utmSource: "jobfair-bachkhoa",
+    utmMedium: "offline-event",
+    utmCampaign: "jobfair-bachkhoa-2026",
+    utmTerm: "ai-llm-engineer",
+    utmContent: "booth-qr-code",
+    clicksCount: 220,
+    isActive: true,
+    ageDays: 14,
+    token: "lnk-bk-jobfair-2026",
+  },
+  {
+    name: "Tech Expo - Triển Lãm Công Nghệ TopDev 2026",
+    source: SourcingChannel.OTHER,
+    customSource: "TopDev Vietnam Tech Expo",
+    jobIndex: null,
+    campaign: "topdev-expo-autumn",
+    medium: "sponsorship",
+    utmSource: "topdev-expo",
+    utmMedium: "sponsorship",
+    utmCampaign: "topdev-expo-autumn",
+    utmTerm: "all-tech-roles",
+    utmContent: "flyer-badge-qr",
+    clicksCount: 430,
+    isActive: true,
+    ageDays: 26,
+    token: "lnk-topdev-expo",
+  },
+  {
+    name: "Indeed - Closed Position Promotion",
+    source: SourcingChannel.INDEED,
+    jobIndex: 2,
+    campaign: "indeed-devops-old",
+    medium: "job-board",
+    utmSource: "indeed",
+    utmMedium: "job-board",
+    utmCampaign: "indeed-devops-old",
+    utmTerm: "devops-k8s",
+    utmContent: "standard-listing",
+    clicksCount: 120,
+    isActive: false,
+    ageDays: 65,
+    token: "lnk-indeed-devops-closed",
+  },
+];
+
+function getDomainForChannel(channel: SourcingChannel): string {
+  switch (channel) {
+    case SourcingChannel.LINKEDIN:
+      return "linkedin.com";
+    case SourcingChannel.INDEED:
+      return "indeed.com";
+    case SourcingChannel.GOOGLE_JOBS:
+      return "google.com";
+    case SourcingChannel.FACEBOOK:
+      return "facebook.com";
+    case SourcingChannel.TWITTER_X:
+      return "t.co";
+    case SourcingChannel.REDDIT:
+      return "reddit.com";
+    case SourcingChannel.WE_WORK_REMOTELY:
+      return "weworkremotely.com";
+    case SourcingChannel.STACK_OVERFLOW:
+      return "stackoverflow.com";
+    case SourcingChannel.GLASSDOOR:
+      return "glassdoor.com";
+    case SourcingChannel.HANDSHAKE:
+      return "joinhandshake.com";
+    case SourcingChannel.EMAIL:
+      return "mail.google.com";
+    case SourcingChannel.REFERRAL:
+      return "internal.haihire.vn";
+    case SourcingChannel.AGENCY:
+      return "adecco.com.vn";
+    case SourcingChannel.CAREER_SITE:
+      return "careers.haihire.vn";
+    case SourcingChannel.OTHER:
+    default:
+      return "topdev.vn";
   }
+}
+
+/**
+ * Deterministically assigns fixed statuses to N jobs matching exact statusCounts,
+ * preserving critical E2E statuses at indices 1, 8, 13, 14.
+ */
+function buildDeterministicJobStatuses(
+  counts: Record<JobStatusName, number>,
+): JobStatusName[] {
+  const total = counts.PUBLISHED + counts.DRAFT + counts.CLOSED;
+  const result = new Array<JobStatusName>(total);
+  const remaining = { ...counts };
+
+  const pinStatus = (idx: number, status: JobStatusName) => {
+    if (idx < total && remaining[status] > 0) {
+      result[idx] = status;
+      remaining[status]--;
+    }
+  };
+
+  pinStatus(1, "PUBLISHED");
+  pinStatus(8, "PUBLISHED");
+  pinStatus(13, "CLOSED");
+  pinStatus(14, "DRAFT");
+
+  const rotation: JobStatusName[] = ["PUBLISHED", "DRAFT", "CLOSED"];
+  let rotIdx = 0;
+  for (let i = 0; i < total; i++) {
+    if (result[i]) continue;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const candidateStatus = rotation[(rotIdx + attempt) % 3];
+      if (remaining[candidateStatus] > 0) {
+        result[i] = candidateStatus;
+        remaining[candidateStatus]--;
+        rotIdx = (rotIdx + attempt + 1) % 3;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Deterministically expands count distributions into an evenly interleaved array
+ * of exact length = sum(counts) without Math.random().
+ */
+function buildInterleavedList<T extends string | number>(
+  entries: ReadonlyArray<readonly [T, number]>,
+  stride = 7,
+): T[] {
+  const total = entries.reduce((sum, [, count]) => sum + count, 0);
+  const result = new Array<T>(total);
+  const occupied = new Array<boolean>(total).fill(false);
+
+  let cursor = 0;
+  for (const [value, count] of entries) {
+    for (let k = 0; k < count; k++) {
+      cursor = (cursor + stride) % total;
+      while (occupied[cursor]) {
+        cursor = (cursor + 1) % total;
+      }
+      occupied[cursor] = true;
+      result[cursor] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Splits an exact integer total across weighted buckets deterministically.
+ */
+function allocateExactIntegers(
+  total: number,
+  weights: readonly number[],
+): number[] {
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+  if (weightSum === 0) return weights.map(() => 0);
+
+  const exacts = weights.map((w) => (w * total) / weightSum);
+  const alloc = exacts.map((v) => Math.floor(v));
+  let remainder = total - alloc.reduce((a, b) => a + b, 0);
+
+  const rankedIndices = exacts
+    .map((v, idx) => ({ idx, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac || a.idx - b.idx);
+
+  let ptr = 0;
+  while (remainder > 0 && rankedIndices.length > 0) {
+    const target = rankedIndices[ptr % rankedIndices.length];
+    if (weights[target.idx] > 0) {
+      alloc[target.idx]++;
+      remainder--;
+    }
+    ptr++;
+  }
+  return alloc;
+}
+
+/**
+ * Deterministically computes the exact number of interviews for every application
+ * so the org hits `targetTotalInterviews` while covering 0..3 rounds per stage.
+ */
+function buildExactInterviewCounts(
+  stages: readonly StageName[],
+  targetTotalInterviews: number,
+  pinnedAppIndices: Set<number>,
+): number[] {
+  const counts = stages.map((stage, idx) => {
+    if (
+      stage === "APPLIED" ||
+      stage === "SCREENING" ||
+      pinnedAppIndices.has(idx)
+    ) {
+      return 0;
+    }
+    if (stage === "INTERVIEW") {
+      // Mix of 0 (awaiting scheduling) and 1..3 rounds
+      const mod = idx % 10;
+      if (mod === 0 || mod === 5) return 0;
+      if (mod <= 6) return 1;
+      if (mod <= 8) return 2;
+      return 3;
+    }
+    if (stage === "OFFER" || stage === "HIRED") {
+      return (idx % 3) + 1;
+    }
+    // REJECTED: mix of 0 (CV screen) and 1..3 rounds
+    const rMod = idx % 4;
+    return rMod;
+  });
+
+  let diff = targetTotalInterviews - counts.reduce((a, b) => a + b, 0);
+  const eligibleIndices = stages
+    .map((stage, idx) => ({ stage, idx }))
+    .filter(
+      ({ stage, idx }) =>
+        stage !== "APPLIED" &&
+        stage !== "SCREENING" &&
+        !pinnedAppIndices.has(idx),
+    );
+
+  // Reserve a couple of 0-round INTERVIEW & REJECTED cases for coverage
+  const reservedZeroInterview = new Set<number>();
+  let reservedIv = 0;
+  let reservedRej = 0;
+  for (const { stage, idx } of eligibleIndices) {
+    if (stage === "INTERVIEW" && counts[idx] === 0 && reservedIv < 3) {
+      reservedZeroInterview.add(idx);
+      reservedIv++;
+    } else if (stage === "REJECTED" && counts[idx] === 0 && reservedRej < 4) {
+      reservedZeroInterview.add(idx);
+      reservedRej++;
+    }
+  }
+
+  let pass = 0;
+  while (diff !== 0 && pass < 2000) {
+    pass++;
+    for (const { stage, idx } of eligibleIndices) {
+      if (diff === 0) break;
+      if (reservedZeroInterview.has(idx)) continue;
+      const min = stage === "OFFER" || stage === "HIRED" ? 1 : 0;
+      const max = 3;
+      if (diff > 0 && counts[idx] < max) {
+        counts[idx]++;
+        diff--;
+      } else if (diff < 0 && counts[idx] > min) {
+        counts[idx]--;
+        diff++;
+      }
+    }
+  }
+
+  if (diff !== 0) {
+    throw new Error(
+      `Could not allocate exact interview total ${targetTotalInterviews} (remaining ${diff})`,
+    );
+  }
+  return counts;
 }
 
 let pendingSeed: Promise<void> | undefined;
@@ -742,7 +1628,7 @@ export async function runSeed(): Promise<void> {
   }
 
   console.log("==================================================");
-  console.log("🧹 1. Cleaning old database records...");
+  console.log("🧹 1. Cleaning old database records & snapshot schema...");
   console.log("==================================================");
 
   await prisma.$executeRawUnsafe(
@@ -780,441 +1666,89 @@ export async function runSeed(): Promise<void> {
   await cvStorage.init();
 
   console.log("==================================================");
-  console.log("🏢 2. Seeding Organization & Demo Users...");
+  console.log(
+    "🏢 2. Seeding 4 Organizations & 15 Users across 60 Memberships...",
+  );
   console.log("==================================================");
 
-  // Architectural Note (Seed ID Format Audit):
-  // Demo IDs use deterministic RFC 4122 UUID v4 (Pattern A: 00000000-0000-4000-8000-xxxxxxxxxxxx).
-  // Version = 4, Variant = 8, maintaining strict compliance with RFC 4122 while keeping predictable test IDs.
-  const adminUserId = "00000000-0000-4000-8000-000000000001";
-  const adminOrgId = "00000000-0000-4000-8000-000000000002";
-  const memberUserId = "00000000-0000-4000-8000-000000000003";
-
-  // 1. Create Admin User (pre-created so Organization.ownerId FK succeeds)
-  await prisma.user.upsert({
-    create: {
-      id: adminUserId,
-      email: DEMO_ACCOUNTS.ADMIN.email,
-      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
-      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-      password: defaultPasswordHash,
-      updatedAt: toInstant(),
-    },
-    update: {
-      password: defaultPasswordHash,
-      firstName: DEMO_ACCOUNTS.ADMIN.firstName,
-      lastName: DEMO_ACCOUNTS.ADMIN.lastName,
-    },
-    where: { email: DEMO_ACCOUNTS.ADMIN.email },
-  });
-
-  // 2. Create Org "Demo"
-  await prisma.organization.upsert({
-    create: {
-      id: adminOrgId,
-      name: "Demo",
-      slug: "demo",
-      ownerId: adminUserId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      name: "Demo",
-      slug: "demo",
-      ownerId: adminUserId,
-    },
-    where: { slug: "demo" },
-  });
-
-  // 3. Create Org Member relationship
-  await prisma.organizationMember.upsert({
-    create: {
-      id: "00000000-0000-4000-8000-000000000011",
-      organizationId: adminOrgId,
-      userId: adminUserId,
-      role: "ADMIN",
-      updatedAt: toInstant(),
-    },
-    update: {},
-    where: { id: "00000000-0000-4000-8000-000000000011" },
-  });
-
-  // 4. Create Member User
-  await prisma.user.upsert({
-    create: {
-      id: memberUserId,
-      email: DEMO_ACCOUNTS.MEMBER.email,
-      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-      password: defaultPasswordHash,
-      updatedAt: toInstant(),
-    },
-    update: {
-      password: defaultPasswordHash,
-      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-    },
-    where: { email: DEMO_ACCOUNTS.MEMBER.email },
-  });
-
-  await prisma.organizationMember.upsert({
-    create: {
-      id: "00000000-0000-4000-8000-000000000012",
-      organizationId: adminOrgId,
-      userId: memberUserId,
-      role: "MEMBER",
-      updatedAt: toInstant(),
-    },
-    update: {},
-    where: { id: "00000000-0000-4000-8000-000000000012" },
-  });
-
-  // 4.5 Create 10 Team / Interviewer Users spanning all 5 RBAC roles
-  for (const teamUser of DEMO_TEAM_USERS) {
+  // 2.1 Seed all 15 users
+  for (const u of ALL_SEED_USERS) {
     await prisma.user.upsert({
+      where: { id: u.id },
       create: {
-        id: teamUser.id,
-        email: teamUser.email,
-        firstName: teamUser.firstName,
-        lastName: teamUser.lastName,
+        id: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
         password: defaultPasswordHash,
-        updatedAt: toInstant(),
+        createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 30 * 86400000)),
+        updatedAt: toInstant(new Date(FIXED_SEED_EPOCH_MS)),
       },
       update: {
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
         password: defaultPasswordHash,
-        firstName: teamUser.firstName,
-        lastName: teamUser.lastName,
       },
-      where: { email: teamUser.email },
-    });
-
-    await prisma.organizationMember.upsert({
-      create: {
-        id: teamUser.memberId,
-        organizationId: adminOrgId,
-        userId: teamUser.id,
-        role: teamUser.role,
-        updatedAt: toInstant(),
-      },
-      update: {
-        role: teamUser.role,
-      },
-      where: { id: teamUser.memberId },
     });
   }
 
-  // Seed default notification preferences for Demo org members
-  const demoUserIdsForPrefs = [
-    adminUserId,
-    memberUserId,
-    ...DEMO_TEAM_USERS.map((u) => u.id),
-  ];
-  await prisma.notificationPreference.createMany({
-    data: demoUserIdsForPrefs.map((userId) => ({
-      organizationId: adminOrgId,
-      userId,
-      applicationWebsite: true,
-      interviewWebsite: true,
-      applicationEmail: false,
-      interviewEmail: false,
-    })),
-    skipDuplicates: true,
-  });
-
-  // Seed sample organization audit logs for Demo org
-  await prisma.organizationAuditLog.createMany({
-    data: [
-      {
-        id: "00000000-0000-4000-8000-000000003001",
-        organizationId: adminOrgId,
-        actorId: adminUserId,
-        action: "ORG_LOCALIZATION_UPDATED",
-        resource: "ORGANIZATION",
-        metadata: {
-          defaultLanguage: "vi",
-          timezone: "Asia/Ho_Chi_Minh",
-          nameDisplayOrder: "LAST_FIRST",
-        },
-        createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+  // 2.2 Seed the 4 organizations (demo-1..demo-4)
+  for (const bp of ORG_BLUEPRINTS) {
+    await prisma.organization.upsert({
+      where: { id: bp.id },
+      create: {
+        id: bp.id,
+        name: bp.name,
+        slug: bp.slug,
+        ownerId: bp.ownerId,
+        createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 25 * 86400000)),
+        updatedAt: toInstant(new Date(FIXED_SEED_EPOCH_MS)),
       },
-      {
-        id: "00000000-0000-4000-8000-000000003002",
-        organizationId: adminOrgId,
-        actorId: adminUserId,
-        action: "MEMBER_ROLE_CHANGED",
-        resource: "MEMBER",
-        metadata: {
-          targetEmail: "an.nguyen@tun.io.vn",
-          previousRole: "INTERVIEWER",
-          newRole: "HIRING_MANAGER",
-        },
-        createdAt: toInstant(new Date(Date.now() - 4 * 86400000)),
+      update: {
+        name: bp.name,
+        slug: bp.slug,
+        ownerId: bp.ownerId,
       },
-      {
-        id: "00000000-0000-4000-8000-000000003003",
-        organizationId: adminOrgId,
-        actorId: "00000000-0000-4000-8000-000000001008",
-        action: "MEMBER_ROLE_CHANGED",
-        resource: "MEMBER",
-        metadata: {
-          targetEmail: "bich.tran@tun.io.vn",
-          previousRole: "MEMBER",
-          newRole: "RECRUITER",
-        },
-        createdAt: toInstant(new Date(Date.now() - 2 * 86400000)),
-      },
-      {
-        id: "00000000-0000-4000-8000-000000003004",
-        organizationId: adminOrgId,
-        actorId: adminUserId,
-        action: "ROLE_PERMISSIONS_UPDATED",
-        resource: "ROLE_PERMISSIONS",
-        metadata: {
-          role: "INTERVIEWER",
-          updatedPermissionsCount: 1,
-        },
-        createdAt: toInstant(new Date(Date.now() - 1 * 86400000)),
-      },
-    ],
-  });
-
-  // 5. Seed Email Settings for Demo Organization
-  await prisma.emailSetting.upsert({
-    create: {
-      id: "00000000-0000-4000-8000-000000000021",
-      organizationId: adminOrgId,
-      provider: "SIMULATED",
-      fromName: "Demo Recruitment Team",
-      fromEmail: "careers@tun.io.vn",
-      updatedAt: toInstant(),
-    },
-    update: {
-      provider: "SIMULATED",
-      fromName: "Demo Recruitment Team",
-      fromEmail: "careers@tun.io.vn",
-    },
-    where: { organizationId: adminOrgId },
-  });
-
-  // 6. Seed Demo Org Beta for Multi-Tenant Isolation Verification
-  const betaOrgId = "00000000-0000-4000-8000-0000000000b2";
-  const betaAdminUserId = "00000000-0000-4000-8000-0000000000b1";
-  const betaJobId = "00000000-0000-4000-8000-0000000000b3";
-  const betaCandidateId = "00000000-0000-4000-8000-0000000000b4";
-  const betaAppId = "00000000-0000-4000-8000-0000000000b5";
-  const betaWebhookId = "00000000-0000-4000-8000-0000000000b6";
-
-  await prisma.user.upsert({
-    create: {
-      id: betaAdminUserId,
-      email: DEMO_ACCOUNTS.BETA_ADMIN.email,
-      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
-      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
-      password: defaultPasswordHash,
-      updatedAt: toInstant(),
-    },
-    update: {
-      password: defaultPasswordHash,
-      firstName: DEMO_ACCOUNTS.BETA_ADMIN.firstName,
-      lastName: DEMO_ACCOUNTS.BETA_ADMIN.lastName,
-    },
-    where: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
-  });
-
-  await prisma.organization.upsert({
-    create: {
-      id: betaOrgId,
-      name: "Beta Financials",
-      slug: "beta-financials",
-      ownerId: betaAdminUserId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      name: "Beta Financials",
-      ownerId: betaAdminUserId,
-    },
-    where: { slug: "beta-financials" },
-  });
-
-  await prisma.organizationMember.upsert({
-    create: {
-      id: "00000000-0000-4000-8000-0000000000bb",
-      organizationId: betaOrgId,
-      userId: betaAdminUserId,
-      role: "ADMIN",
-      updatedAt: toInstant(),
-    },
-    update: {},
-    where: { id: "00000000-0000-4000-8000-0000000000bb" },
-  });
-
-  await prisma.job.upsert({
-    create: {
-      id: betaJobId,
-      organizationId: betaOrgId,
-      createdById: betaAdminUserId,
-      title: "Beta Lead Quant Trader",
-      department: "Finance & Trading",
-      location: "Singapore / Hybrid",
-      workplace: "HYBRID",
-      type: "FULL_TIME",
-      experienceLevel: "LEAD",
-      status: "PUBLISHED",
-      description:
-        "Proprietary trading algorithms and quantitative strategy execution.",
-      requirements: "Quantitative finance background, 5+ years experience.",
-      salaryRange: "$5,000 - $8,000 / month",
-      updatedAt: toInstant(),
-    },
-    update: {
-      title: "Beta Lead Quant Trader",
-      status: "PUBLISHED",
-    },
-    where: { id: betaJobId },
-  });
-
-  const betaCv = await cvStorage.uploadCandidateCv(
-    betaOrgId,
-    "TranBeta_CV.pdf",
-    {
-      fullName: "Beta Tran",
-      email: "candidate@beta.test",
-      phone: "+84988776655",
-      gender: "FEMALE",
-      targetRole: "Beta Lead Quant Trader",
-      skills: ["Quantitative Trading", "Python", "C++", "Risk Modeling", "SQL"],
-    },
-  );
-  const betaStoredFileId = "00000000-0000-4000-8000-0000000000b7";
-  await prisma.storedFile.create({
-    data: {
-      id: betaStoredFileId,
-      organizationId: betaOrgId,
-      objectKey: betaCv.objectKey,
-      originalName: betaCv.fileName,
-      mimeType: "application/pdf",
-      sizeBytes: betaCv.sizeBytes,
-      checksum: betaCv.checksum,
-    },
-  });
-
-  await prisma.candidate.upsert({
-    create: {
-      id: betaCandidateId,
-      organizationId: betaOrgId,
-      firstName: "Beta",
-      lastName: "Tran",
-      email: "candidate@beta.test",
-      phone: "+84988776655",
-      gender: "FEMALE",
-      resumeUrl: betaCv.resumeUrl,
-      resumeFileName: betaCv.fileName,
-      resumeFileSize: betaCv.sizeBytes,
-      resumeMimeType: "application/pdf",
-      resumeFileId: betaStoredFileId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      firstName: "Beta",
-      lastName: "Tran",
-    },
-    where: { id: betaCandidateId },
-  });
-
-  await prisma.application.upsert({
-    create: {
-      id: betaAppId,
-      organizationId: betaOrgId,
-      jobId: betaJobId,
-      candidateId: betaCandidateId,
-      stage: "SCREENING",
-      orderIndex: 0,
-      resumeUrl: betaCv.resumeUrl,
-      resumeFileName: betaCv.fileName,
-      resumeFileSize: betaCv.sizeBytes,
-      resumeMimeType: "application/pdf",
-      resumeFileId: betaStoredFileId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      stage: "SCREENING",
-    },
-    where: { id: betaAppId },
-  });
-
-  await prisma.organizationWebhookSetting.upsert({
-    create: {
-      id: betaWebhookId,
-      organizationId: betaOrgId,
-      eventType: "DLQ_ALERT",
-      provider: "DISCORD",
-      webhookUrl: "https://discord.com/api/webhooks/12345/test-token",
-      isEnabled: true,
-      createdBy: betaAdminUserId,
-      updatedBy: betaAdminUserId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      isEnabled: true,
-    },
-    where: { id: betaWebhookId },
-  });
-
-  console.log(`- Org: Demo (slug: demo, id: ${adminOrgId})`);
-  console.log(
-    `- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`,
-  );
-  console.log(
-    `- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`,
-  );
-  console.log(
-    `- Team / Interviewers (${DEMO_TEAM_USERS.length} users, Password: ${DEMO_PASSWORD}): ${DEMO_TEAM_USERS.map((u) => `${formatUserDisplayName(u, "LAST_FIRST")} [${u.role}]`).join(", ")}`,
-  );
-  console.log(`- Org Beta: Beta Financials (id: ${betaOrgId})`);
-  console.log(
-    `- Beta Admin: ${DEMO_ACCOUNTS.BETA_ADMIN.email} (Password: ${DEMO_PASSWORD})`,
-  );
-  console.log(`- Email Settings: SIMULATED (careers@tun.io.vn)`);
-
-  const jobCreatorPool = [
-    adminUserId,
-    ...DEMO_TEAM_USERS.filter(
-      (u) => u.role === "ADMIN" || u.role === "RECRUITER",
-    ).map((u) => u.id),
-  ];
-
-  console.log("==================================================");
-  console.log("💼 3. Seeding Exactly 20 Jobs (Random Statuses & Details)...");
-  console.log("==================================================");
-
-  // Guarantee all 3 statuses are present while the count of each is randomized
-  const statusPool: Array<"PUBLISHED" | "DRAFT" | "CLOSED"> = [
-    "PUBLISHED",
-    "PUBLISHED",
-    "PUBLISHED",
-    "DRAFT",
-    "DRAFT",
-    "DRAFT",
-    "CLOSED",
-    "CLOSED",
-    "CLOSED",
-  ];
-  const allPossibleStatuses: Array<"PUBLISHED" | "DRAFT" | "CLOSED"> = [
-    "PUBLISHED",
-    "DRAFT",
-    "CLOSED",
-  ];
-  while (statusPool.length < 20) {
-    statusPool.push(
-      allPossibleStatuses[
-        Math.floor(Math.random() * allPossibleStatuses.length)
-      ],
-    );
+    });
   }
-  // Shuffle statuses
-  for (let i = statusPool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [statusPool[i], statusPool[j]] = [statusPool[j], statusPool[i]];
+
+  // 2.3 Seed 60 deterministic memberships (15 users × 4 orgs) & NotificationPreferences
+  const membershipsData: Prisma.OrganizationMemberCreateManyInput[] = [];
+  const notifPrefsData: Prisma.NotificationPreferenceCreateManyInput[] = [];
+
+  for (const bp of ORG_BLUEPRINTS) {
+    ALL_SEED_USERS.forEach((u, userIdx) => {
+      const role = u.rolesByOrg[bp.orgIndex - 1];
+      membershipsData.push({
+        id: detUuid(UUID_NS.MEMBER, bp.orgIndex, userIdx + 1),
+        organizationId: bp.id,
+        userId: u.id,
+        role,
+        createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 20 * 86400000)),
+        updatedAt: toInstant(new Date(FIXED_SEED_EPOCH_MS)),
+      });
+      notifPrefsData.push({
+        organizationId: bp.id,
+        userId: u.id,
+        applicationWebsite: true,
+        interviewWebsite: true,
+        applicationEmail: false,
+        interviewEmail: false,
+      });
+    });
   }
+
+  await prisma.organizationMember.createMany({ data: membershipsData });
+  await prisma.notificationPreference.createMany({ data: notifPrefsData });
+
+  const totalCandidatesNeeded = ORG_BLUEPRINTS.reduce(
+    (sum, bp) =>
+      sum + Object.values(bp.candidateJobCountDist).reduce((a, b) => a + b, 0),
+    0,
+  );
+  const masterCandidatePool = buildMasterCandidatePool(totalCandidatesNeeded);
+  const sharedSlotManager = new InterviewSlotManager();
 
   const LOCATIONS = [
     "Hanoi, Vietnam",
@@ -1223,7 +1757,7 @@ export async function runSeed(): Promise<void> {
     "Singapore / Remote",
     "Tokyo, Japan / Remote",
     "Global Remote",
-  ];
+  ] as const;
   const WORKPLACES = ["HYBRID", "REMOTE", "ON_SITE"] as const;
   const JOB_TYPES = [
     "FULL_TIME",
@@ -1246,1896 +1780,993 @@ export async function runSeed(): Promise<void> {
     "$4,000 - $6,500 / month",
     "35,000,000 - 55,000,000 VND / month",
     "Negotiable",
-  ];
+  ] as const;
 
-  const createdJobIds: string[] = [];
-  const statusCounts: Record<string, number> = {
-    PUBLISHED: 0,
-    DRAFT: 0,
-    CLOSED: 0,
-  };
+  const summaryRows: Array<{
+    slug: string;
+    jobs: string;
+    links: number;
+    clicks: number;
+    candidates: number;
+    applications: number;
+    interviews: number;
+    notifications: number;
+  }> = [];
 
-  for (let i = 0; i < 20; i++) {
-    const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
-    // Guarantee deterministic job statuses for E2E tests:
-    // - Senior Backend Engineer & Senior Technical Recruiter: PUBLISHED
-    // - Information Security & SecOps Specialist: CLOSED
-    // - Customer Success Lead: DRAFT
-    const isCriticalPublishedJob =
-      i === 1 ||
-      i === 8 ||
-      baseConfig.title.includes("Senior Backend Engineer") ||
-      baseConfig.title.includes("Senior Technical Recruiter");
-    const isCriticalClosedJob = baseConfig.title.includes(
-      "Information Security & SecOps Specialist",
+  for (const bp of ORG_BLUEPRINTS) {
+    console.log("\n==================================================");
+    console.log(
+      `🏢 Seeding Organization: ${bp.name} (slug: ${bp.slug}, owner: ${bp.ownerId})`,
     );
-    const isCriticalDraftJob = baseConfig.title.includes(
-      "Customer Success Lead",
+    console.log("==================================================");
+
+    // Build per-org interviewer, creator, and note author pools strictly from RBAC roles in this org
+    const orgUsers = ALL_SEED_USERS.map((u) => ({
+      id: u.id,
+      email: u.email,
+      displayName: formatUserDisplayName(u, "LAST_FIRST"),
+      role: u.rolesByOrg[bp.orgIndex - 1],
+    }));
+    const interviewerPool = orgUsers.filter((u) => u.role !== "MEMBER");
+    const jobCreatorPool = orgUsers.filter(
+      (u) => u.role === "ADMIN" || u.role === "RECRUITER",
+    );
+    const noteAuthorPool = orgUsers.filter(
+      (u) =>
+        u.role === "ADMIN" ||
+        u.role === "RECRUITER" ||
+        u.role === "HIRING_MANAGER",
     );
 
-    const status = isCriticalPublishedJob
-      ? "PUBLISHED"
-      : isCriticalClosedJob
-        ? "CLOSED"
-        : isCriticalDraftJob
-          ? "DRAFT"
-          : statusPool[i];
-    statusCounts[status]++;
+    // Email settings
+    await prisma.emailSetting.create({
+      data: {
+        id: detUuid(UUID_NS.EMAIL_SETTING, bp.orgIndex, 1),
+        organizationId: bp.id,
+        provider: "SIMULATED",
+        fromName: bp.fromName,
+        fromEmail: bp.fromEmail,
+        updatedAt: toInstant(new Date(FIXED_SEED_EPOCH_MS)),
+      },
+    });
 
-    const workplace = WORKPLACES[Math.floor(Math.random() * WORKPLACES.length)];
-    const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-    const type = JOB_TYPES[Math.floor(Math.random() * JOB_TYPES.length)];
-    const experienceLevel =
-      EXP_LEVELS[Math.floor(Math.random() * EXP_LEVELS.length)];
-    const salaryRange =
-      SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
+    // Audit Logs (4 deterministic entries per org)
+    const ownerUser = orgUsers.find((u) => u.id === bp.ownerId) ?? orgUsers[0];
+    const secondaryAdmin =
+      orgUsers.find(
+        (u) =>
+          u.role === "ADMIN" && u.id !== bp.ownerId && u.id !== GLOBAL_ADMIN_ID,
+      ) ?? orgUsers[0];
+    await prisma.organizationAuditLog.createMany({
+      data: [
+        {
+          id: detUuid(UUID_NS.AUDIT_LOG, bp.orgIndex, 1),
+          organizationId: bp.id,
+          actorId: GLOBAL_ADMIN_ID,
+          action: "ORG_LOCALIZATION_UPDATED",
+          resource: "ORGANIZATION",
+          metadata: {
+            defaultLanguage: "vi",
+            timezone: "Asia/Ho_Chi_Minh",
+            nameDisplayOrder: "LAST_FIRST",
+          },
+          createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 6 * 86400000)),
+        },
+        {
+          id: detUuid(UUID_NS.AUDIT_LOG, bp.orgIndex, 2),
+          organizationId: bp.id,
+          actorId: ownerUser.id,
+          action: "MEMBER_ROLE_CHANGED",
+          resource: "MEMBER",
+          metadata: {
+            targetEmail: orgUsers[5].email,
+            previousRole: "INTERVIEWER",
+            newRole: orgUsers[5].role,
+          },
+          createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 4 * 86400000)),
+        },
+        {
+          id: detUuid(UUID_NS.AUDIT_LOG, bp.orgIndex, 3),
+          organizationId: bp.id,
+          actorId: secondaryAdmin.id,
+          action: "MEMBER_ROLE_CHANGED",
+          resource: "MEMBER",
+          metadata: {
+            targetEmail: orgUsers[6].email,
+            previousRole: "MEMBER",
+            newRole: orgUsers[6].role,
+          },
+          createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 2 * 86400000)),
+        },
+        {
+          id: detUuid(UUID_NS.AUDIT_LOG, bp.orgIndex, 4),
+          organizationId: bp.id,
+          actorId: ownerUser.id,
+          action: "ROLE_PERMISSIONS_UPDATED",
+          resource: "ROLE_PERMISSIONS",
+          metadata: {
+            role: "INTERVIEWER",
+            updatedPermissionsCount: 1,
+          },
+          createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 1 * 86400000)),
+        },
+      ],
+    });
 
-    const jobId =
-      i === 1
-        ? "00000000-0000-4000-8000-000000000101"
-        : i === 8
-          ? "00000000-0000-4000-8000-000000000108"
-          : crypto.randomUUID();
-    const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
-    const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
+    // 1. Seed Deterministic Jobs
+    const jobStatuses = buildDeterministicJobStatuses(bp.jobStatusCounts);
+    const createdJobIds: string[] = [];
+    const jobsToInsert: Prisma.JobCreateManyInput[] = [];
 
-    await prisma.job.upsert({
-      create: {
+    for (let i = 0; i < jobStatuses.length; i++) {
+      const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
+      const status = jobStatuses[i];
+      const seedIdx = bp.orgIndex * 100 + i;
+      const workplace = WORKPLACES[seedIdx % WORKPLACES.length];
+      const location = LOCATIONS[seedIdx % LOCATIONS.length];
+      const type = JOB_TYPES[(seedIdx + 1) % JOB_TYPES.length];
+      const experienceLevel = EXP_LEVELS[(seedIdx + 2) % EXP_LEVELS.length];
+      const salaryRange = SALARY_RANGES[(seedIdx + 3) % SALARY_RANGES.length];
+
+      const jobId =
+        bp.orgIndex === 1 && i === 1
+          ? DEMO1_BACKEND_JOB_ID
+          : bp.orgIndex === 1 && i === 8
+            ? DEMO1_RECRUITER_JOB_ID
+            : detUuid(UUID_NS.JOB, bp.orgIndex, i + 1);
+
+      const jobAgeDays = 5 + ((i * 3 + bp.orgIndex * 2) % 45);
+      const jobCreatedAt = toInstant(
+        new Date(FIXED_SEED_EPOCH_MS - jobAgeDays * 86400000),
+      );
+      const creatorId =
+        bp.orgIndex === 1 && (i === 1 || i === 8)
+          ? GLOBAL_ADMIN_ID
+          : jobCreatorPool[i % jobCreatorPool.length].id;
+
+      jobsToInsert.push({
         id: jobId,
         title: baseConfig.title,
         department: baseConfig.department,
         location,
-        workplace: workplace as "ON_SITE" | "HYBRID" | "REMOTE",
+        workplace,
         type,
-        experienceLevel: experienceLevel as
-          "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL" | "LEAD" | "EXECUTIVE",
+        experienceLevel,
         salaryRange,
         description: baseConfig.description,
         requirements: baseConfig.requirements,
         status,
-        organizationId: adminOrgId,
-        createdById:
-          i === 1 || i === 8
-            ? adminUserId
-            : jobCreatorPool[i % jobCreatorPool.length],
-        createdAt: toInstant(jobCreatedAt),
-        updatedAt: toInstant(jobCreatedAt),
-      },
-      update: {
-        title: baseConfig.title,
-        status,
-        organizationId: adminOrgId,
-      },
-      where: { id: jobId },
-    });
-
-    createdJobIds.push(jobId);
-    console.log(
-      `  [Job ${i + 1}/20] [${status}] ${baseConfig.title} (${baseConfig.department} - ${workplace} - ${salaryRange})`,
-    );
-  }
-
-  console.log(`\n📊 Status statistics for 20 positions:`);
-  console.log(`   - PUBLISHED (Open):    ${statusCounts.PUBLISHED}`);
-  console.log(`   - DRAFT (Draft):       ${statusCounts.DRAFT}`);
-  console.log(`   - CLOSED (Closed):     ${statusCounts.CLOSED}`);
-
-  console.log("==================================================");
-  console.log("🔗 3.5. Seeding 24 Diverse Tracking Links & Clicks...");
-  console.log("==================================================");
-
-  function getDomainForChannel(channel: SourcingChannel): string {
-    switch (channel) {
-      case SourcingChannel.LINKEDIN:
-        return "linkedin.com";
-      case SourcingChannel.INDEED:
-        return "indeed.com";
-      case SourcingChannel.GOOGLE_JOBS:
-        return "google.com";
-      case SourcingChannel.FACEBOOK:
-        return "facebook.com";
-      case SourcingChannel.TWITTER_X:
-        return "t.co";
-      case SourcingChannel.REDDIT:
-        return "reddit.com";
-      case SourcingChannel.WE_WORK_REMOTELY:
-        return "weworkremotely.com";
-      case SourcingChannel.STACK_OVERFLOW:
-        return "stackoverflow.com";
-      case SourcingChannel.GLASSDOOR:
-        return "glassdoor.com";
-      case SourcingChannel.HANDSHAKE:
-        return "joinhandshake.com";
-      case SourcingChannel.EMAIL:
-        return "mail.google.com";
-      case SourcingChannel.REFERRAL:
-        return "internal.haihire.vn";
-      case SourcingChannel.AGENCY:
-        return "adecco.com.vn";
-      case SourcingChannel.CAREER_SITE:
-        return "careers.haihire.vn";
-      case SourcingChannel.OTHER:
-      default:
-        return "topdev.vn";
+        organizationId: bp.id,
+        createdById: creatorId,
+        createdAt: jobCreatedAt,
+        updatedAt: jobCreatedAt,
+      });
+      createdJobIds.push(jobId);
     }
-  }
 
-  const SEED_TRACKING_LINKS: Array<{
-    name: string;
-    source: SourcingChannel;
-    customSource?: string | null;
-    jobIndex: number | null;
-    campaign?: string | null;
-    medium?: string | null;
-    utmSource?: string | null;
-    utmMedium?: string | null;
-    utmCampaign?: string | null;
-    utmTerm?: string | null;
-    utmContent?: string | null;
-    clicksCount: number;
-    isActive: boolean;
-    ageDays: number;
-    token: string;
-  }> = [
-    {
-      name: "LinkedIn - Tech Hiring Campaign Q3",
-      source: SourcingChannel.LINKEDIN,
-      jobIndex: 0,
-      campaign: "tech-q3-2026",
-      medium: "social",
-      utmSource: "linkedin",
-      utmMedium: "social",
-      utmCampaign: "tech-q3-2026",
-      utmTerm: "fullstack-lead",
-      utmContent: "sponsored-feed-ad",
-      clicksCount: 840,
-      isActive: true,
-      ageDays: 45,
-      token: "lnk-li-q3-fullstack",
-    },
-    {
-      name: "LinkedIn - Recruiter Direct InMail",
-      source: SourcingChannel.LINKEDIN,
-      jobIndex: 1,
-      campaign: "inmail-backend-direct",
-      medium: "inmail",
-      utmSource: "linkedin",
-      utmMedium: "inmail",
-      utmCampaign: "inmail-backend-direct",
-      utmTerm: "senior-backend",
-      utmContent: "talent-solutions-msg",
-      clicksCount: 260,
-      isActive: true,
-      ageDays: 30,
-      token: "lnk-li-inmail-backend",
-    },
-    {
-      name: "LinkedIn - Official Company Page Life",
-      source: SourcingChannel.LINKEDIN,
-      jobIndex: null,
-      campaign: "company-page-hiring",
-      medium: "social",
-      utmSource: "linkedin",
-      utmMedium: "social",
-      utmCampaign: "company-page-hiring",
-      utmTerm: "tech-careers",
-      utmContent: "header-button",
-      clicksCount: 650,
-      isActive: true,
-      ageDays: 60,
-      token: "lnk-li-org-page",
-    },
-    {
-      name: "Indeed - Sponsored Backend Developer",
-      source: SourcingChannel.INDEED,
-      jobIndex: 1,
-      campaign: "indeed-sponsored-vn",
-      medium: "job-board",
-      utmSource: "indeed",
-      utmMedium: "job-board",
-      utmCampaign: "indeed-sponsored-vn",
-      utmTerm: "backend-nodejs",
-      utmContent: "premium-placement",
-      clicksCount: 520,
-      isActive: true,
-      ageDays: 40,
-      token: "lnk-indeed-backend",
-    },
-    {
-      name: "Indeed - Free Organic Feed Sync",
-      source: SourcingChannel.INDEED,
-      jobIndex: null,
-      campaign: "indeed-organic-feed",
-      medium: "job-board",
-      utmSource: "indeed",
-      utmMedium: "job-board",
-      utmCampaign: "indeed-organic-feed",
-      utmTerm: null,
-      utmContent: null,
-      clicksCount: 310,
-      isActive: true,
-      ageDays: 50,
-      token: "lnk-indeed-feed",
-    },
-    {
-      name: "Google for Jobs - Organic Indexing",
-      source: SourcingChannel.GOOGLE_JOBS,
-      jobIndex: null,
-      campaign: "google-jobs-schema",
-      medium: "job-board",
-      utmSource: "google-jobs",
-      utmMedium: "job-board",
-      utmCampaign: "google-jobs-schema",
-      utmTerm: "job-search",
-      utmContent: "rich-snippet",
-      clicksCount: 920,
-      isActive: true,
-      ageDays: 55,
-      token: "lnk-google-organic",
-    },
-    {
-      name: "Facebook - Cộng Đồng Lập Trình Viên JS/TS",
-      source: SourcingChannel.FACEBOOK,
-      jobIndex: 0,
-      campaign: "fb-community-post",
-      medium: "social",
-      utmSource: "facebook",
-      utmMedium: "social",
-      utmCampaign: "fb-community-post",
-      utmTerm: "reactjs-vietnam",
-      utmContent: "pinned-post",
-      clicksCount: 460,
-      isActive: true,
-      ageDays: 35,
-      token: "lnk-fb-js-community",
-    },
-    {
-      name: "Facebook - Ads Retargeting Tech Talent",
-      source: SourcingChannel.FACEBOOK,
-      jobIndex: 2,
-      campaign: "fb-retargeting-devops",
-      medium: "paid-social",
-      utmSource: "facebook",
-      utmMedium: "paid-social",
-      utmCampaign: "fb-retargeting-devops",
-      utmTerm: "cloud-devops",
-      utmContent: "carousel-ad",
-      clicksCount: 230,
-      isActive: true,
-      ageDays: 25,
-      token: "lnk-fb-devops-ads",
-    },
-    {
-      name: "X / Twitter - Founder Hiring Thread",
-      source: SourcingChannel.TWITTER_X,
-      jobIndex: 0,
-      campaign: "twitter-founder-q3",
-      medium: "social",
-      utmSource: "twitter",
-      utmMedium: "social",
-      utmCampaign: "twitter-founder-q3",
-      utmTerm: "tech-lead",
-      utmContent: "retweet-thread",
-      clicksCount: 380,
-      isActive: true,
-      ageDays: 28,
-      token: "lnk-x-founder-thread",
-    },
-    {
-      name: "Reddit - r/forhire & r/vietnamesetech",
-      source: SourcingChannel.REDDIT,
-      jobIndex: 3,
-      campaign: "reddit-monthly-hiring",
-      medium: "social",
-      utmSource: "reddit",
-      utmMedium: "social",
-      utmCampaign: "reddit-monthly-hiring",
-      utmTerm: "qa-automation",
-      utmContent: "monthly-thread-comment",
-      clicksCount: 195,
-      isActive: true,
-      ageDays: 20,
-      token: "lnk-reddit-qa-job",
-    },
-    {
-      name: "WeWorkRemotely - Remote Global Search",
-      source: SourcingChannel.WE_WORK_REMOTELY,
-      jobIndex: 0,
-      campaign: "wwr-featured-listing",
-      medium: "job-board",
-      utmSource: "weworkremotely",
-      utmMedium: "job-board",
-      utmCampaign: "wwr-featured-listing",
-      utmTerm: "remote-fullstack",
-      utmContent: "highlighted-listing",
-      clicksCount: 620,
-      isActive: true,
-      ageDays: 42,
-      token: "lnk-wwr-remote-dev",
-    },
-    {
-      name: "Stack Overflow - Developer Talent Direct",
-      source: SourcingChannel.STACK_OVERFLOW,
-      jobIndex: 4,
-      campaign: "stackoverflow-talent",
-      medium: "job-board",
-      utmSource: "stackoverflow",
-      utmMedium: "job-board",
-      utmCampaign: "stackoverflow-talent",
-      utmTerm: "growth-marketing",
-      utmContent: "sidebar-banner",
-      clicksCount: 290,
-      isActive: true,
-      ageDays: 32,
-      token: "lnk-so-talent-direct",
-    },
-    {
-      name: "Glassdoor - Verified Employer Profile",
-      source: SourcingChannel.GLASSDOOR,
-      jobIndex: null,
-      campaign: "glassdoor-brand-hub",
-      medium: "job-board",
-      utmSource: "glassdoor",
-      utmMedium: "job-board",
-      utmCampaign: "glassdoor-brand-hub",
-      utmTerm: "company-review",
-      utmContent: "profile-cta",
-      clicksCount: 410,
-      isActive: true,
-      ageDays: 50,
-      token: "lnk-glassdoor-hub",
-    },
-    {
-      name: "Handshake - Campus & New Grad Outreach",
-      source: SourcingChannel.HANDSHAKE,
-      jobIndex: 5,
-      campaign: "handshake-fall-grad",
-      medium: "university",
-      utmSource: "handshake",
-      utmMedium: "university",
-      utmCampaign: "handshake-fall-grad",
-      utmTerm: "junior-recruiter",
-      utmContent: "campus-fair-link",
-      clicksCount: 165,
-      isActive: true,
-      ageDays: 18,
-      token: "lnk-handshake-grad",
-    },
-    {
-      name: "Email - Monthly Tech Talent Newsletter",
-      source: SourcingChannel.EMAIL,
-      jobIndex: null,
-      campaign: "talent-newsletter-aug2026",
-      medium: "email",
-      utmSource: "email",
-      utmMedium: "email",
-      utmCampaign: "talent-newsletter-aug2026",
-      utmTerm: "tech-digest",
-      utmContent: "open-positions-section",
-      clicksCount: 340,
-      isActive: true,
-      ageDays: 35,
-      token: "lnk-email-newsletter",
-    },
-    {
-      name: "Referral - Chương Trình Giới Thiệu Nội Bộ",
-      source: SourcingChannel.REFERRAL,
-      jobIndex: null,
-      campaign: "internal-referral-2026",
-      medium: "referral",
-      utmSource: "referral",
-      utmMedium: "referral",
-      utmCampaign: "internal-referral-2026",
-      utmTerm: "haihire-staff",
-      utmContent: "slack-announcement",
-      clicksCount: 280,
-      isActive: true,
-      ageDays: 60,
-      token: "lnk-internal-referral",
-    },
-    {
-      name: "Agency - Adecco Vietnam Săn Đầu Người",
-      source: SourcingChannel.AGENCY,
-      jobIndex: 6,
-      campaign: "adecco-enterprise-sales",
-      medium: "agency",
-      utmSource: "adecco",
-      utmMedium: "agency",
-      utmCampaign: "adecco-enterprise-sales",
-      utmTerm: "saas-account-executive",
-      utmContent: "executive-search",
-      clicksCount: 110,
-      isActive: true,
-      ageDays: 22,
-      token: "lnk-agency-adecco",
-    },
-    {
-      name: "Career Site - Trang Tuyển Dụng Chính Thức",
-      source: SourcingChannel.CAREER_SITE,
-      jobIndex: null,
-      campaign: "careers-direct-brand",
-      medium: "career-portal",
-      utmSource: "careers-site",
-      utmMedium: "career-portal",
-      utmCampaign: "careers-direct-brand",
-      utmTerm: "haihire-jobs",
-      utmContent: "navbar-apply-now",
-      clicksCount: 1450,
-      isActive: true,
-      ageDays: 70,
-      token: "lnk-career-site-main",
-    },
-    {
-      name: "Job Fair - Ngày Hội Việc Làm ĐH Bách Khoa HCM",
-      source: SourcingChannel.OTHER,
-      customSource: "ĐH Bách Khoa TP.HCM - Job Fair",
-      jobIndex: 7,
-      campaign: "jobfair-bachkhoa-2026",
-      medium: "offline-event",
-      utmSource: "jobfair-bachkhoa",
-      utmMedium: "offline-event",
-      utmCampaign: "jobfair-bachkhoa-2026",
-      utmTerm: "ai-llm-engineer",
-      utmContent: "booth-qr-code",
-      clicksCount: 220,
-      isActive: true,
-      ageDays: 14,
-      token: "lnk-bk-jobfair-2026",
-    },
-    {
-      name: "Tech Expo - Triển Lãm Công Nghệ TopDev 2026",
-      source: SourcingChannel.OTHER,
-      customSource: "TopDev Vietnam Tech Expo",
-      jobIndex: null,
-      campaign: "topdev-expo-autumn",
-      medium: "sponsorship",
-      utmSource: "topdev-expo",
-      utmMedium: "sponsorship",
-      utmCampaign: "topdev-expo-autumn",
-      utmTerm: "all-tech-roles",
-      utmContent: "flyer-badge-qr",
-      clicksCount: 430,
-      isActive: true,
-      ageDays: 26,
-      token: "lnk-topdev-expo",
-    },
-    {
-      name: "Startup Fair - TechInAsia Vietnam Conference",
-      source: SourcingChannel.OTHER,
-      customSource: "TechInAsia Vietnam",
-      jobIndex: 8,
-      campaign: "tia-vietnam-2026",
-      medium: "event-partner",
-      utmSource: "techinasia",
-      utmMedium: "event-partner",
-      utmCampaign: "tia-vietnam-2026",
-      utmTerm: "mobile-developer",
-      utmContent: "event-directory",
-      clicksCount: 180,
-      isActive: true,
-      ageDays: 16,
-      token: "lnk-techinasia-fair",
-    },
-    {
-      name: "LinkedIn - Senior Cloud Architect (Đã Tạm Dừng)",
-      source: SourcingChannel.LINKEDIN,
-      jobIndex: 9,
-      campaign: "li-arch-paused",
-      medium: "social",
-      utmSource: "linkedin",
-      utmMedium: "social",
-      utmCampaign: "li-arch-paused",
-      utmTerm: "cloud-architect",
-      utmContent: "sponsored-feed",
-      clicksCount: 95,
-      isActive: false,
-      ageDays: 60,
-      token: "lnk-li-arch-paused",
-    },
-    {
-      name: "Indeed - Closed Position Promotion",
-      source: SourcingChannel.INDEED,
-      jobIndex: 2,
-      campaign: "indeed-devops-old",
-      medium: "job-board",
-      utmSource: "indeed",
-      utmMedium: "job-board",
-      utmCampaign: "indeed-devops-old",
-      utmTerm: "devops-k8s",
-      utmContent: "standard-listing",
-      clicksCount: 120,
-      isActive: false,
-      ageDays: 65,
-      token: "lnk-indeed-devops-closed",
-    },
-    {
-      name: "X / Twitter - Chiến Dịch Mới Mở (Chưa Có Lượt Nhấp)",
-      source: SourcingChannel.TWITTER_X,
-      jobIndex: 1,
-      campaign: "twitter-fresh-launch",
-      medium: "social",
-      utmSource: "twitter",
-      utmMedium: "social",
-      utmCampaign: "twitter-fresh-launch",
-      utmTerm: "backend-hire",
-      utmContent: "fresh-post",
-      clicksCount: 0,
-      isActive: true,
-      ageDays: 1,
-      token: "lnk-x-fresh-zero",
-    },
-  ];
+    await prisma.job.createMany({ data: jobsToInsert });
 
-  const createdTrackingLinks: Array<{
-    id: string;
-    name: string;
-    source: SourcingChannel;
-    customSource: string | null;
-    jobId: string | null;
-    utmSource: string | null;
-    utmMedium: string | null;
-    utmCampaign: string | null;
-    utmTerm: string | null;
-    utmContent: string | null;
-    isActive: boolean;
-  }> = [];
+    // 2. Seed Deterministic Tracking Links & Exact Click Counts
+    const selectedLinkTemplates = SEED_TRACKING_LINKS.slice(
+      0,
+      bp.trackingLinkCount,
+    );
+    const clickWeights = selectedLinkTemplates.map((l) => l.clicksCount);
+    const exactClickRowCounts = allocateExactIntegers(
+      bp.totalTrackingClickRows,
+      clickWeights,
+    );
 
-  const clicksToInsert: Array<{
-    id: string;
-    organizationId: string;
-    trackingLinkId: string;
-    referrer: string | null;
-    referrerDomain: string | null;
-    ipHash: string;
-    userAgent: string;
-    createdAt: Date;
-  }> = [];
+    const createdTrackingLinks: Array<{
+      id: string;
+      name: string;
+      source: SourcingChannel;
+      customSource: string | null;
+      jobId: string | null;
+      utmSource: string | null;
+      utmMedium: string | null;
+      utmCampaign: string | null;
+      utmTerm: string | null;
+      utmContent: string | null;
+      isActive: boolean;
+    }> = [];
+    const trackingLinksToInsert: Prisma.TrackingLinkCreateManyInput[] = [];
+    const clicksToInsert: Prisma.TrackingClickCreateManyInput[] = [];
 
-  for (const item of SEED_TRACKING_LINKS) {
-    const linkId = crypto.randomUUID();
-    const assignedJobId =
-      item.jobIndex !== null && createdJobIds[item.jobIndex]
-        ? createdJobIds[item.jobIndex]
-        : null;
+    for (let li = 0; li < selectedLinkTemplates.length; li++) {
+      const item = selectedLinkTemplates[li];
+      const linkId = detUuid(UUID_NS.TRACKING_LINK, bp.orgIndex, li + 1);
+      const assignedJobId =
+        item.jobIndex !== null && createdJobIds[item.jobIndex]
+          ? createdJobIds[item.jobIndex]
+          : null;
+      const linkCreatedAt = toInstant(
+        new Date(FIXED_SEED_EPOCH_MS - item.ageDays * 86400000),
+      );
+      const token =
+        bp.orgIndex === 1 ? item.token : `${item.token}-d${bp.orgIndex}`;
+      const creatorId = jobCreatorPool[li % jobCreatorPool.length].id;
 
-    const linkCreatedAt = new Date(Date.now() - item.ageDays * 86400000);
-
-    await prisma.trackingLink.upsert({
-      create: {
+      trackingLinksToInsert.push({
         id: linkId,
-        organizationId: adminOrgId,
-        createdById: adminUserId,
+        organizationId: bp.id,
+        createdById: creatorId,
         name: item.name,
-        token: item.token,
+        token,
         source: item.source,
-        customSource: item.customSource || null,
+        customSource: item.customSource ?? null,
         jobId: assignedJobId,
-        campaign: item.campaign || null,
-        medium: item.medium || null,
-        utmSource: item.utmSource || null,
-        utmMedium: item.utmMedium || null,
-        utmCampaign: item.utmCampaign || null,
-        utmTerm: item.utmTerm || null,
-        utmContent: item.utmContent || null,
+        campaign: item.campaign ?? null,
+        medium: item.medium ?? null,
+        utmSource: item.utmSource ?? null,
+        utmMedium: item.utmMedium ?? null,
+        utmCampaign: item.utmCampaign ?? null,
+        utmTerm: item.utmTerm ?? null,
+        utmContent: item.utmContent ?? null,
         clicksCount: item.clicksCount,
         isActive: item.isActive,
-        createdAt: toInstant(linkCreatedAt),
-        updatedAt: toInstant(linkCreatedAt),
-      },
-      update: {},
-      where: { id: linkId },
-    });
+        createdAt: linkCreatedAt,
+        updatedAt: linkCreatedAt,
+      });
 
-    createdTrackingLinks.push({
-      id: linkId,
-      name: item.name,
-      source: item.source,
-      customSource: item.customSource || null,
-      jobId: assignedJobId,
-      utmSource: item.utmSource || null,
-      utmMedium: item.utmMedium || null,
-      utmCampaign: item.utmCampaign || null,
-      utmTerm: item.utmTerm || null,
-      utmContent: item.utmContent || null,
-      isActive: item.isActive,
-    });
+      createdTrackingLinks.push({
+        id: linkId,
+        name: item.name,
+        source: item.source,
+        customSource: item.customSource ?? null,
+        jobId: assignedJobId,
+        utmSource: item.utmSource ?? null,
+        utmMedium: item.utmMedium ?? null,
+        utmCampaign: item.utmCampaign ?? null,
+        utmTerm: item.utmTerm ?? null,
+        utmContent: item.utmContent ?? null,
+        isActive: item.isActive,
+      });
 
-    // Generate representative TrackingClick records for this link
-    if (item.clicksCount > 0) {
-      const clickSamplesCount = Math.min(item.clicksCount, 40);
+      const sampleCount = exactClickRowCounts[li];
       const domain = getDomainForChannel(item.source);
-
-      for (let c = 0; c < clickSamplesCount; c++) {
+      for (let c = 0; c < sampleCount; c++) {
         const clickOffsetMs = Math.floor(
-          Math.random() * item.ageDays * 86400000,
+          (((c * 17 + li * 5) % 997) / 997) * item.ageDays * 86400000,
         );
-        const clickDate = new Date(Date.now() - clickOffsetMs);
-
+        const clickDate = toInstant(
+          new Date(FIXED_SEED_EPOCH_MS - clickOffsetMs),
+        );
         clicksToInsert.push({
-          id: crypto.randomUUID(),
-          organizationId: adminOrgId,
+          id: detUuid(UUID_NS.TRACKING_CLICK, bp.orgIndex, c + 1, li + 1),
+          organizationId: bp.id,
           trackingLinkId: linkId,
-          referrer: `https://${domain}/jobs/feed?ref=${item.token}`,
+          referrer: `https://${domain}/jobs/feed?ref=${token}`,
           referrerDomain: domain,
           ipHash: crypto
             .createHash("sha256")
-            .update(`ip-${c}-${item.token}`)
+            .update(`ip-${bp.orgIndex}-${li}-${c}-${token}`)
             .digest("hex")
             .slice(0, 16),
           userAgent:
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-          createdAt: toInstant(clickDate),
+          createdAt: clickDate,
         });
       }
     }
-  }
 
-  console.log(
-    `✅ Successfully created ${createdTrackingLinks.length} tracking links (full 15 source channels, active/inactive, job-specific and company-wide).`,
-  );
+    await prisma.trackingLink.createMany({ data: trackingLinksToInsert });
 
-  console.log("==================================================");
-  console.log("👥 4. Seeding Exactly 200 Unique Candidates (0-6 jobs each)...");
-  console.log("==================================================");
+    // 3. Seed Candidates, Applications, Notes & Interviews
+    // For Demo 1, reserve 2 slots of 1-job candidates for E2E deterministic candidates
+    const distEntries: Array<[0 | 1 | 2 | 3 | 4 | 5 | 6, number]> =
+      bp.orgIndex === 1
+        ? [
+            [0, bp.candidateJobCountDist[0]],
+            [1, bp.candidateJobCountDist[1] - 2],
+            [2, bp.candidateJobCountDist[2]],
+            [3, bp.candidateJobCountDist[3]],
+            [4, bp.candidateJobCountDist[4]],
+            [5, bp.candidateJobCountDist[5]],
+            [6, bp.candidateJobCountDist[6]],
+          ]
+        : [
+            [0, bp.candidateJobCountDist[0]],
+            [1, bp.candidateJobCountDist[1]],
+            [2, bp.candidateJobCountDist[2]],
+            [3, bp.candidateJobCountDist[3]],
+            [4, bp.candidateJobCountDist[4]],
+            [5, bp.candidateJobCountDist[5]],
+            [6, bp.candidateJobCountDist[6]],
+          ];
 
-  const uniqueCandidates = generate200UniqueCandidates();
-  console.log(
-    `✅ Successfully initialized list of ${uniqueCandidates.length} unique candidates with distinct full names.`,
-  );
+    const nonPinnedJobCounts = buildInterleavedList(distEntries, 5);
+    const jobCountsList: number[] =
+      bp.orgIndex === 1 ? [1, 1, ...nonPinnedJobCounts] : nonPinnedJobCounts;
 
-  // Job count allocation for 200 candidates (0 to 6 jobs):
-  // 0 jobs: 24 candidates (not yet applied - Talent Pool)
-  // 1 job:  76 candidates
-  // 2 jobs: 40 candidates
-  // 3 jobs: 30 candidates
-  // 4 jobs: 16 candidates
-  // 5 jobs: 10 candidates
-  // 6 jobs:  4 candidates
-  // Total = 24 + 76 + 40 + 30 + 16 + 10 + 4 = 200 candidates
-  const jobCountsPool: number[] = [
-    ...Array(24).fill(0),
-    ...Array(76).fill(1),
-    ...Array(40).fill(2),
-    ...Array(30).fill(3),
-    ...Array(16).fill(4),
-    ...Array(10).fill(5),
-    ...Array(4).fill(6),
-  ];
+    // Reserve exact stage counts minus Demo 1's 2 pinned E2E applications (1 APPLIED + 1 SCREENING)
+    const stageEntries: Array<[StageName, number]> =
+      bp.orgIndex === 1
+        ? [
+            ["APPLIED", bp.stageCounts.APPLIED - 1],
+            ["SCREENING", bp.stageCounts.SCREENING - 1],
+            ["INTERVIEW", bp.stageCounts.INTERVIEW],
+            ["OFFER", bp.stageCounts.OFFER],
+            ["HIRED", bp.stageCounts.HIRED],
+            ["REJECTED", bp.stageCounts.REJECTED],
+          ]
+        : [
+            ["APPLIED", bp.stageCounts.APPLIED],
+            ["SCREENING", bp.stageCounts.SCREENING],
+            ["INTERVIEW", bp.stageCounts.INTERVIEW],
+            ["OFFER", bp.stageCounts.OFFER],
+            ["HIRED", bp.stageCounts.HIRED],
+            ["REJECTED", bp.stageCounts.REJECTED],
+          ];
+    const interleavedNonPinnedStages = buildInterleavedList(stageEntries, 11);
 
-  // Shuffle pool to distribute randomly to each candidate
-  for (let i = jobCountsPool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [jobCountsPool[i], jobCountsPool[j]] = [jobCountsPool[j], jobCountsPool[i]];
-  }
+    // Flatten applications plan first so exact stages & interview counts match blueprint 100%
+    interface PlannedApp {
+      id: string;
+      candidateIdx: number;
+      candidateId: string;
+      jobIdx: number;
+      jobId: string;
+      stage: StageName;
+      isPinnedE2E: boolean;
+      createdAt: Date;
+    }
 
-  const jobDistributionStats: Record<number, number> = {
-    0: 0,
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
-    6: 0,
-  };
-  const stageStats: Record<string, number> = {
-    APPLIED: 0,
-    SCREENING: 0,
-    INTERVIEW: 0,
-    OFFER: 0,
-    HIRED: 0,
-    REJECTED: 0,
-  };
+    const totalAppsExpected = jobCountsList.reduce((a, b) => a + b, 0);
+    const allStagesList: StageName[] = [];
+    const pinnedAppIndices = new Set<number>();
 
-  const candidatesToInsert: Array<{
-    id: string;
-    organizationId: string;
-    firstName: string;
-    lastName: string;
-    gender: "MALE" | "FEMALE" | "OTHER";
-    dateOfBirth: Date;
-    email: string;
-    phone: string;
-    resumeUrl: string;
-    resumeFileName: string;
-    resumeFileSize: number;
-    resumeMimeType: string;
-    resumeFileId: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = [];
+    if (bp.orgIndex === 1) {
+      allStagesList.push("APPLIED", "SCREENING", ...interleavedNonPinnedStages);
+      pinnedAppIndices.add(0);
+      pinnedAppIndices.add(1);
+    } else {
+      allStagesList.push(...interleavedNonPinnedStages);
+    }
 
-  const storedFilesToInsert: Array<{
-    id: string;
-    organizationId: string;
-    objectKey: string;
-    originalName: string;
-    mimeType: string;
-    sizeBytes: number;
-    checksum: string;
-  }> = [];
+    if (allStagesList.length !== totalAppsExpected) {
+      throw new Error(
+        `[${bp.slug}] App count mismatch: ${allStagesList.length} stages vs ${totalAppsExpected} jobs`,
+      );
+    }
 
-  const candidateCvTemplates = new Map<
-    string,
-    {
-      organizationId: string;
-      fileName: string;
+    const exactInterviewCounts = buildExactInterviewCounts(
+      allStagesList,
+      bp.totalInterviews,
+      pinnedAppIndices,
+    );
+
+    const orgCandidateCount = jobCountsList.length;
+    const candidatesToInsert: Array<
+      Prisma.CandidateCreateManyInput & { id: string }
+    > = [];
+    const storedFilesToInsert: Prisma.StoredFileCreateManyInput[] = [];
+    const applicationsToInsert: Array<
+      Prisma.ApplicationCreateManyInput & { id: string }
+    > = [];
+    const candidateNotesToInsert: Prisma.CandidateNoteCreateManyInput[] = [];
+    const applicationNotesToInsert: Prisma.ApplicationNoteCreateManyInput[] =
+      [];
+    const interviewsToInsert: Array<
+      Prisma.InterviewCreateManyInput & { id: string }
+    > = [];
+    const cvTemplates: Array<{
+      candidateId: string;
       storedFileId: string;
+      fileName: string;
       fullName: string;
       email: string;
       phone: string;
       gender: string;
       targetRole: string;
-    }
-  >();
+    }> = [];
 
-  const applicationsToInsert: Array<{
-    id: string;
-    organizationId: string;
-    candidateId: string;
-    jobId: string;
-    stage: (typeof STAGES)[number];
-    matchScore: number;
-    resumeUrl: string;
-    resumeFileName: string;
-    resumeFileSize: number;
-    resumeMimeType: string;
-    resumeFileId: string;
-    orderIndex: number;
-    trackingLinkId: string | null;
-    sourceChannel: SourcingChannel;
-    sourceDetails: string | null;
-    referrerDomain: string | null;
-    utmSource: string | null;
-    utmMedium: string | null;
-    utmCampaign: string | null;
-    utmTerm: string | null;
-    utmContent: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = [];
+    const jobStageOrderCounter: Record<string, number> = {};
+    const plannedApps: PlannedApp[] = [];
 
-  const applicationNotesToInsert: Array<{
-    id: string;
-    organizationId: string;
-    applicationId: string;
-    authorId: string;
-    authorName: string;
-    authorRole: string;
-    content: string;
-    isEdited: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = [];
+    for (let cIdx = 0; cIdx < orgCandidateCount; cIdx++) {
+      const isKanbanE2E = bp.orgIndex === 1 && cIdx === 0;
+      const isTestApplicantE2E = bp.orgIndex === 1 && cIdx === 1;
 
-  const candidateNotesToInsert: Array<{
-    id: string;
-    organizationId: string;
-    candidateId: string;
-    authorId: string;
-    authorName: string;
-    authorRole: string;
-    content: string;
-    isEdited: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = [];
+      const template = masterCandidatePool[bp.candidateNameOffset + cIdx];
+      const candidateId = isKanbanE2E
+        ? DEMO1_KANBAN_CANDIDATE_ID
+        : isTestApplicantE2E
+          ? DEMO1_TEST_CANDIDATE_ID
+          : detUuid(UUID_NS.CANDIDATE, bp.orgIndex, cIdx + 1);
+      const storedFileId = isKanbanE2E
+        ? DEMO1_KANBAN_STORED_FILE_ID
+        : isTestApplicantE2E
+          ? DEMO1_TEST_STORED_FILE_ID
+          : detUuid(UUID_NS.STORED_FILE, bp.orgIndex, cIdx + 1);
 
-  const interviewsToInsert: Array<{
-    id: string;
-    organizationId: string;
-    applicationId: string;
-    scheduledAt: Date;
-    type:
-      | "HR_SCREENING"
-      | "TECHNICAL"
-      | "CULTURE_FIT"
-      | "FINAL_ROUND"
-      | "ASSESSMENT";
-    format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
-    linkOrLocation: string;
-    interviewerId: string;
-    interviewer: string;
-    round: number;
-    scorecard: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
-    notes: string | null;
-    updatedAt: Date;
-  }> = [];
+      const fullName = isKanbanE2E
+        ? "Minh Kanban Tran"
+        : isTestApplicantE2E
+          ? "Test Applicant Nguyen"
+          : template.name;
+      const firstName = isKanbanE2E
+        ? "Minh Kanban"
+        : isTestApplicantE2E
+          ? "Test Applicant"
+          : template.firstName;
+      const lastName = isKanbanE2E
+        ? "Tran"
+        : isTestApplicantE2E
+          ? "Nguyen"
+          : template.lastName;
+      const email = isKanbanE2E
+        ? "kanban-candidate@tun.io.vn"
+        : isTestApplicantE2E
+          ? "test-applicant@tun.io.vn"
+          : template.email;
+      const phone = isKanbanE2E
+        ? "0908765432"
+        : isTestApplicantE2E
+          ? "0901234567"
+          : template.phone;
+      const gender =
+        isKanbanE2E || isTestApplicantE2E ? "MALE" : template.gender;
+      const dateOfBirth = isKanbanE2E
+        ? new Date("1996-08-20T00:00:00Z")
+        : isTestApplicantE2E
+          ? new Date("1995-05-15T00:00:00Z")
+          : template.dateOfBirth;
 
-  const interviewerPool = [
-    {
-      id: adminUserId,
-      displayName: formatUserDisplayName(DEMO_ACCOUNTS.ADMIN, "LAST_FIRST"),
-    },
-    ...DEMO_TEAM_USERS.filter((u) => u.role !== "MEMBER").map((u) => ({
-      id: u.id,
-      displayName: formatUserDisplayName(u, "LAST_FIRST"),
-    })),
-  ];
+      const asciiBase = fullName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[đĐ]/g, "d")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      const fileName = isKanbanE2E
+        ? "sample-resume-kanban.pdf"
+        : isTestApplicantE2E
+          ? "sample-resume-test-applicant.pdf"
+          : `CV_${candidateId.slice(0, 8)}_${asciiBase || "Candidate"}.pdf`;
 
-  const noteAuthorPool = [
-    {
-      id: adminUserId,
-      displayName: formatUserDisplayName(DEMO_ACCOUNTS.ADMIN, "LAST_FIRST"),
-      role: "ADMIN" as Role,
-    },
-    ...DEMO_TEAM_USERS.filter(
-      (u) =>
-        u.role === "ADMIN" ||
-        u.role === "RECRUITER" ||
-        u.role === "HIRING_MANAGER",
-    ).map((u) => ({
-      id: u.id,
-      displayName: formatUserDisplayName(u, "LAST_FIRST"),
-      role: u.role,
-    })),
-  ];
+      const daysAgo = isKanbanE2E
+        ? 5
+        : isTestApplicantE2E
+          ? 10
+          : 2 + ((cIdx * 3) % 58);
+      const candidateCreatedAt = toInstant(
+        new Date(FIXED_SEED_EPOCH_MS - daysAgo * 86400000),
+      );
 
-  function getCandidateDemographics(name: string, index: number) {
-    const femaleHints = [
-      "Thị",
-      "Hồng",
-      "Thảo",
-      "Hương",
-      "Trang",
-      "Uyên",
-      "Yến",
-      "Loan",
-      "Oanh",
-      "Linh",
-      "Sarah",
-      "Emily",
-      "Jessica",
-      "Sophia",
-      "Emma",
-      "Ava",
-      "Chloe",
-      "Grace",
-      "Charlotte",
-      "Amelia",
-    ];
-    const maleHints = [
-      "Văn",
-      "Đức",
-      "Hoàng",
-      "Quốc",
-      "Hải",
-      "Tuấn",
-      "Dũng",
-      "Cường",
-      "Nam",
-      "Thắng",
-      "Kiên",
-      "Tú",
-      "James",
-      "Alexander",
-      "Michael",
-      "David",
-      "Daniel",
-      "Lucas",
-      "Oliver",
-      "Ethan",
-      "Liam",
-      "Noah",
-      "Mason",
-      "Logan",
-      "Benjamin",
-      "Henry",
-    ];
-
-    let gender: "MALE" | "FEMALE" | "OTHER" = "MALE";
-    if (femaleHints.some((h) => name.includes(h))) {
-      gender = "FEMALE";
-    } else if (maleHints.some((h) => name.includes(h))) {
-      gender = "MALE";
-    } else {
-      gender = index % 2 === 0 ? "MALE" : "FEMALE";
-    }
-
-    // Realistic date of birth (ages 22 - 38)
-    const birthYear = 1988 + (index % 15);
-    const birthMonth = (index % 12) + 1;
-    const birthDay = ((index * 3) % 27) + 1;
-    const dateOfBirth = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
-
-    return { gender, dateOfBirth };
-  }
-
-  const jobStageOrderCounter: Record<string, number> = {};
-  const slotManager = new InterviewSlotManager();
-
-  for (let i = 0; i < uniqueCandidates.length; i++) {
-    const candidate = uniqueCandidates[i];
-    const jobCount = jobCountsPool[i];
-    jobDistributionStats[jobCount]++;
-
-    const candidateId = crypto.randomUUID();
-    const storedFileId = crypto.randomUUID();
-    const asciiBaseName = candidate.name
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[đĐ]/g, "d")
-      .replace(/[^a-zA-Z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "");
-    const fileName = `CV_${candidateId.slice(0, 8)}_${asciiBaseName || "Candidate"}.pdf`;
-    const resumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/${fileName}`;
-    const resumeFileSize = 2400;
-
-    const firstName = candidate.firstName;
-    const lastName = candidate.lastName;
-
-    const { gender, dateOfBirth } = getCandidateDemographics(candidate.name, i);
-    // Candidates spread over past 60 days
-    const daysAgo = ((i * 0.3) % 60) + (i % 2 === 0 ? 0.05 : 0.2);
-    const candidateCreatedAt = new Date(
-      Date.now() - Math.floor(daysAgo * 86400000),
-    );
-
-    const shuffledJobIds =
-      jobCount > 0 ? [...createdJobIds].sort(() => 0.5 - Math.random()) : [];
-    const selectedJobIds = shuffledJobIds.slice(0, jobCount);
-    const primaryJobIdx =
-      selectedJobIds.length > 0 ? createdJobIds.indexOf(selectedJobIds[0]) : -1;
-    const targetRole =
-      primaryJobIdx >= 0
-        ? BASE_JOB_CONFIGS[primaryJobIdx % BASE_JOB_CONFIGS.length].title
-        : "Software & Product Specialist";
-
-    candidateCvTemplates.set(candidateId, {
-      organizationId: adminOrgId,
-      fileName,
-      storedFileId,
-      fullName: candidate.name,
-      email: candidate.email,
-      phone: candidate.phone,
-      gender,
-      targetRole,
-    });
-
-    candidatesToInsert.push({
-      id: candidateId,
-      organizationId: adminOrgId,
-      firstName,
-      lastName,
-      gender,
-      dateOfBirth: toInstant(dateOfBirth),
-      email: candidate.email,
-      phone: candidate.phone,
-      resumeUrl,
-      resumeFileName: fileName,
-      resumeFileSize,
-      resumeMimeType: "application/pdf",
-      resumeFileId: storedFileId,
-      createdAt: toInstant(candidateCreatedAt),
-      updatedAt: toInstant(candidateCreatedAt),
-    });
-
-    const candNoteAuthor = noteAuthorPool[i % noteAuthorPool.length];
-    candidateNotesToInsert.push({
-      id: crypto.randomUUID(),
-      organizationId: adminOrgId,
-      candidateId,
-      authorId: candNoteAuthor.id,
-      authorName: candNoteAuthor.displayName,
-      authorRole: candNoteAuthor.role,
-      content: "Ứng viên tiềm năng trong Talent Pool.",
-      isEdited: false,
-      createdAt: toInstant(candidateCreatedAt),
-      updatedAt: toInstant(candidateCreatedAt),
-    });
-
-    if (jobCount === 0) {
-      stageStats.APPLIED++;
-    } else {
-      for (let j = 0; j < selectedJobIds.length; j++) {
-        const jobId = selectedJobIds[j];
-        const stage = STAGES[(candidate.candidateIndex + j) % STAGES.length];
-        stageStats[stage]++;
-
-        const orderKey = `${jobId}_${stage}`;
-        jobStageOrderCounter[orderKey] =
-          (jobStageOrderCounter[orderKey] || 0) + 1;
-        const orderIndex = jobStageOrderCounter[orderKey];
-
-        const appId = crypto.randomUUID();
-        let notes = "";
-        let matchScore = 65 + ((candidate.candidateIndex + j * 7) % 31);
-
-        if (stage === "APPLIED" || stage === "SCREENING") {
-          notes =
-            "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
-        } else if (stage === "INTERVIEW") {
-          const roll = Math.random();
-          let interviewCount = 0;
-          if (roll < 0.2) {
-            interviewCount = 0;
-          } else if (roll < 0.7) {
-            interviewCount = 1;
-          } else if (roll < 0.9) {
-            interviewCount = 2;
+      const jobCount = jobCountsList[cIdx];
+      const selectedJobIndices: number[] = [];
+      if (isKanbanE2E || isTestApplicantE2E) {
+        selectedJobIndices.push(1); // Senior Backend Engineer (PUBLISHED)
+      } else {
+        for (let k = 0; k < jobCount; k++) {
+          const picked =
+            (cIdx * 5 + k * 3 + bp.orgIndex) % createdJobIds.length;
+          if (!selectedJobIndices.includes(picked)) {
+            selectedJobIndices.push(picked);
           } else {
-            interviewCount = 3;
-          }
-
-          matchScore = 80 + ((candidate.candidateIndex + j) % 16);
-          if (interviewCount === 0) {
-            notes =
-              "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại.";
-          } else {
-            notes = "Đang trong quy trình phỏng vấn.";
-            for (let r = 1; r <= interviewCount; r++) {
-              const isCompleted = r < interviewCount;
-              const intv = slotManager.generateInterviewObject(
-                r,
-                interviewCount,
-                isCompleted,
-                candidate.candidateIndex + j,
-                interviewerPool,
-              );
-              interviewsToInsert.push({
-                id: crypto.randomUUID(),
-                organizationId: adminOrgId,
-                applicationId: appId,
-                scheduledAt: intv.scheduledAt,
-                type: intv.type,
-                format: intv.format,
-                linkOrLocation: intv.linkOrLocation,
-                interviewerId: intv.interviewerId,
-                interviewer: intv.interviewer,
-                round: intv.round,
-                scorecard: Prisma.DbNull,
-                notes: intv.notes,
-                updatedAt: toInstant(),
-              });
+            let alt = (picked + 1) % createdJobIds.length;
+            while (selectedJobIndices.includes(alt)) {
+              alt = (alt + 1) % createdJobIds.length;
             }
+            selectedJobIndices.push(alt);
           }
-        } else if (stage === "OFFER" || stage === "HIRED") {
-          const interviewCount = Math.floor(Math.random() * 3) + 1;
-          matchScore = 90 + ((candidate.candidateIndex + j) % 9);
-          notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
+        }
+      }
 
-          for (let r = 1; r <= interviewCount; r++) {
-            const intv = slotManager.generateInterviewObject(
-              r,
-              interviewCount,
-              true,
-              candidate.candidateIndex + j,
-              interviewerPool,
-            );
-            interviewsToInsert.push({
-              id: crypto.randomUUID(),
-              organizationId: adminOrgId,
-              applicationId: appId,
-              scheduledAt: intv.scheduledAt,
-              type: intv.type,
-              format: intv.format,
-              linkOrLocation: intv.linkOrLocation,
-              interviewerId: intv.interviewerId,
-              interviewer: intv.interviewer,
-              round: intv.round,
-              scorecard: {
+      const primaryJobIdx = selectedJobIndices[0] ?? -1;
+      const targetRole =
+        primaryJobIdx >= 0
+          ? BASE_JOB_CONFIGS[primaryJobIdx % BASE_JOB_CONFIGS.length].title
+          : "Software & Product Specialist";
+
+      cvTemplates.push({
+        candidateId,
+        storedFileId,
+        fileName,
+        fullName,
+        email,
+        phone,
+        gender,
+        targetRole,
+      });
+
+      candidatesToInsert.push({
+        id: candidateId,
+        organizationId: bp.id,
+        firstName,
+        lastName,
+        gender,
+        dateOfBirth: toInstant(dateOfBirth),
+        email,
+        phone,
+        resumeUrl: `/haihire-resumes/tenants/${bp.id}/resumes/${fileName}`,
+        resumeFileName: fileName,
+        resumeFileSize: 2400,
+        resumeMimeType: "application/pdf",
+        resumeFileId: storedFileId,
+        createdAt: candidateCreatedAt,
+        updatedAt: candidateCreatedAt,
+      });
+
+      const candNoteAuthor =
+        isKanbanE2E || isTestApplicantE2E
+          ? orgUsers[0]
+          : noteAuthorPool[cIdx % noteAuthorPool.length];
+      candidateNotesToInsert.push({
+        id: detUuid(UUID_NS.CANDIDATE_NOTE, bp.orgIndex, cIdx + 1),
+        organizationId: bp.id,
+        candidateId,
+        authorId: candNoteAuthor.id,
+        authorName: candNoteAuthor.displayName,
+        authorRole: candNoteAuthor.role,
+        content: isKanbanE2E
+          ? "Ứng viên mẫu cho Kanban drag & drop test."
+          : isTestApplicantE2E
+            ? "Ứng viên mẫu phục vụ automated tests."
+            : "Ứng viên tiềm năng trong Talent Pool.",
+        isEdited: false,
+        createdAt: candidateCreatedAt,
+        updatedAt: candidateCreatedAt,
+      });
+
+      for (let j = 0; j < selectedJobIndices.length; j++) {
+        const appIdx = plannedApps.length;
+        const jobIdx = selectedJobIndices[j];
+        const stage = allStagesList[appIdx];
+        const appId = isKanbanE2E
+          ? DEMO1_KANBAN_APP_ID
+          : isTestApplicantE2E
+            ? DEMO1_TEST_APP_ID
+            : detUuid(UUID_NS.APPLICATION, bp.orgIndex, appIdx + 1);
+
+        const appCreatedAt = isKanbanE2E
+          ? toInstant(new Date(FIXED_SEED_EPOCH_MS - 5 * 86400000))
+          : isTestApplicantE2E
+            ? toInstant(new Date(FIXED_SEED_EPOCH_MS - 6 * 86400000))
+            : toInstant(
+                new Date(
+                  Math.min(
+                    FIXED_SEED_EPOCH_MS - 1800000,
+                    candidateCreatedAt.getTime() +
+                      (1 + ((cIdx + j * 7) % 36)) * 3600000,
+                  ),
+                ),
+              );
+
+        plannedApps.push({
+          id: appId,
+          candidateIdx: cIdx,
+          candidateId,
+          jobIdx,
+          jobId: createdJobIds[jobIdx],
+          stage,
+          isPinnedE2E: isKanbanE2E || isTestApplicantE2E,
+          createdAt: appCreatedAt,
+        });
+      }
+    }
+
+    // Generate PDFs & update file sizes before creating StoredFile + Candidate + Application
+    const UPLOAD_BATCH = 40;
+    const uploadedByCandidateId = new Map<
+      string,
+      { resumeUrl: string; sizeBytes: number; fileName: string }
+    >();
+    for (let b = 0; b < cvTemplates.length; b += UPLOAD_BATCH) {
+      const chunk = cvTemplates.slice(b, b + UPLOAD_BATCH);
+      const uploadedChunk = await Promise.all(
+        chunk.map(async (tpl) => {
+          const uploaded = await cvStorage.uploadCandidateCv(
+            bp.id,
+            tpl.fileName,
+            {
+              fullName: tpl.fullName,
+              email: tpl.email,
+              phone: tpl.phone,
+              gender: tpl.gender,
+              targetRole: tpl.targetRole,
+            },
+          );
+          storedFilesToInsert.push({
+            id: tpl.storedFileId,
+            organizationId: bp.id,
+            objectKey: uploaded.objectKey,
+            originalName: uploaded.fileName,
+            mimeType: "application/pdf",
+            sizeBytes: uploaded.sizeBytes,
+            checksum: uploaded.checksum,
+          });
+          return [
+            tpl.candidateId,
+            {
+              resumeUrl: uploaded.resumeUrl,
+              sizeBytes: uploaded.sizeBytes,
+              fileName: uploaded.fileName,
+            },
+          ] as const;
+        }),
+      );
+      for (const [candId, meta] of uploadedChunk) {
+        uploadedByCandidateId.set(candId, meta);
+      }
+    }
+
+    for (const cand of candidatesToInsert) {
+      const meta = uploadedByCandidateId.get(cand.id);
+      if (meta) {
+        cand.resumeUrl = meta.resumeUrl;
+        cand.resumeFileName = meta.fileName;
+        cand.resumeFileSize = meta.sizeBytes;
+      }
+    }
+
+    // Build Applications, ApplicationNotes, & Interviews deterministically
+    let interviewSeq = 0;
+    const activeLinks = createdTrackingLinks.filter((l) => l.isActive);
+
+    for (let appIdx = 0; appIdx < plannedApps.length; appIdx++) {
+      const pApp = plannedApps[appIdx];
+      const stage = pApp.stage;
+      const orderKey = `${pApp.jobId}_${stage}`;
+      const isKanban = pApp.id === DEMO1_KANBAN_APP_ID;
+      const isTestApp = pApp.id === DEMO1_TEST_APP_ID;
+
+      let orderIndex: number;
+      if (isKanban) {
+        orderIndex = 0;
+      } else if (isTestApp) {
+        orderIndex = 1;
+      } else {
+        jobStageOrderCounter[orderKey] =
+          (jobStageOrderCounter[orderKey] || 1) + 1;
+        orderIndex = jobStageOrderCounter[orderKey];
+      }
+
+      const interviewCount = exactInterviewCounts[appIdx];
+      let matchScore = 65 + ((pApp.candidateIdx * 5 + pApp.jobIdx * 7) % 31);
+      let noteText = "";
+
+      if (stage === "APPLIED" || stage === "SCREENING") {
+        matchScore = isKanban
+          ? 88
+          : isTestApp
+            ? 82
+            : 68 + ((pApp.candidateIdx + pApp.jobIdx * 5) % 25);
+        noteText = isKanban
+          ? "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test."
+          : isTestApp
+            ? "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test."
+            : "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
+      } else if (stage === "INTERVIEW") {
+        matchScore = 80 + ((pApp.candidateIdx + pApp.jobIdx) % 16);
+        noteText =
+          interviewCount === 0
+            ? "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại."
+            : "Đang trong quy trình phỏng vấn.";
+      } else if (stage === "OFFER" || stage === "HIRED") {
+        matchScore = 90 + ((pApp.candidateIdx + pApp.jobIdx) % 9);
+        noteText = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
+      } else if (stage === "REJECTED") {
+        matchScore = 55 + ((pApp.candidateIdx + pApp.jobIdx) % 20);
+        noteText =
+          interviewCount === 0
+            ? "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí."
+            : `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
+      }
+
+      for (let r = 1; r <= interviewCount; r++) {
+        interviewSeq++;
+        const isCompleted = stage === "INTERVIEW" ? r < interviewCount : true;
+        const intv = sharedSlotManager.generateInterviewObject(
+          r,
+          interviewCount,
+          isCompleted,
+          bp.orgIndex * 1000 + appIdx,
+          interviewerPool,
+        );
+        const scorecard =
+          stage === "OFFER" || stage === "HIRED"
+            ? {
                 overallRating: 5,
                 recommendation: "STRONG_YES",
                 feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
-              },
-              notes: intv.notes,
-              updatedAt: toInstant(),
-            });
-          }
-        } else if (stage === "REJECTED") {
-          const interviewCount = Math.floor(Math.random() * 4);
-          matchScore = 55 + ((candidate.candidateIndex + j) % 20);
+              }
+            : Prisma.DbNull;
 
-          if (interviewCount === 0) {
-            notes =
-              "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.";
-          } else {
-            notes = `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
-            for (let r = 1; r <= interviewCount; r++) {
-              const intv = slotManager.generateInterviewObject(
-                r,
-                interviewCount,
-                true,
-                candidate.candidateIndex + j,
-                interviewerPool,
-              );
-              interviewsToInsert.push({
-                id: crypto.randomUUID(),
-                organizationId: adminOrgId,
-                applicationId: appId,
-                scheduledAt: intv.scheduledAt,
-                type: intv.type,
-                format: intv.format,
-                linkOrLocation: intv.linkOrLocation,
-                interviewerId: intv.interviewerId,
-                interviewer: intv.interviewer,
-                round: intv.round,
-                scorecard: Prisma.DbNull,
-                notes: intv.notes,
-                updatedAt: toInstant(),
-              });
-            }
-          }
-        }
-
-        const appOffsetMs = Math.floor(
-          (1 + ((candidate.candidateIndex + j * 7) % 36)) * 3600000,
-        );
-        const appTime = Math.min(
-          Date.now() - 1800000,
-          candidateCreatedAt.getTime() + appOffsetMs,
-        );
-        const appCreatedAt = new Date(appTime);
-
-        // Attribution mapping: ~80% attributed to a tracking link, ~20% direct
-        const isAttributed = (candidate.candidateIndex * 13 + j * 7) % 10 < 8;
-        let trackingLinkId: string | null = null;
-        let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
-        let sourceDetails: string | null = null;
-        let referrerDomain: string | null = null;
-        let utmSource: string | null = null;
-        let utmMedium: string | null = null;
-        let utmCampaign: string | null = null;
-        let utmTerm: string | null = null;
-        let utmContent: string | null = null;
-
-        const activeLinks = createdTrackingLinks.filter((l) => l.isActive);
-
-        if (isAttributed && activeLinks.length > 0) {
-          // Find links that match this jobId, or company-wide links (jobId == null)
-          const candidateLinks = activeLinks.filter(
-            (l) => l.jobId === jobId || l.jobId === null,
-          );
-          const chosenLink =
-            candidateLinks.length > 0
-              ? candidateLinks[
-                  (candidate.candidateIndex + j) % candidateLinks.length
-                ]
-              : activeLinks[
-                  (candidate.candidateIndex + j) % activeLinks.length
-                ];
-
-          trackingLinkId = chosenLink.id;
-          sourceChannel = chosenLink.source;
-          sourceDetails = chosenLink.customSource || chosenLink.name;
-          referrerDomain = getDomainForChannel(chosenLink.source);
-          utmSource = chosenLink.utmSource;
-          utmMedium = chosenLink.utmMedium;
-          utmCampaign = chosenLink.utmCampaign;
-          utmTerm = chosenLink.utmTerm;
-          utmContent = chosenLink.utmContent;
-        } else {
-          sourceChannel = SourcingChannel.DIRECT;
-          sourceDetails = "Ứng tuyển trực tiếp từ Career Site";
-          referrerDomain =
-            (candidate.candidateIndex + j) % 2 === 0 ? "google.com" : null;
-        }
-
-        applicationsToInsert.push({
-          id: appId,
-          organizationId: adminOrgId,
-          candidateId,
-          jobId,
-          stage,
-          matchScore,
-          resumeUrl,
-          resumeFileName: fileName,
-          resumeFileSize,
-          resumeMimeType: "application/pdf",
-          resumeFileId: storedFileId,
-          orderIndex,
-          trackingLinkId,
-          sourceChannel,
-          sourceDetails,
-          referrerDomain,
-          utmSource,
-          utmMedium,
-          utmCampaign,
-          utmTerm,
-          utmContent,
-          createdAt: toInstant(appCreatedAt),
-          updatedAt: toInstant(appCreatedAt),
+        interviewsToInsert.push({
+          id: detUuid(UUID_NS.INTERVIEW, bp.orgIndex, interviewSeq),
+          organizationId: bp.id,
+          applicationId: pApp.id,
+          scheduledAt: intv.scheduledAt,
+          type: intv.type,
+          format: intv.format,
+          linkOrLocation: intv.linkOrLocation,
+          interviewerId: intv.interviewerId,
+          interviewer: intv.interviewer,
+          round: intv.round,
+          scorecard,
+          notes: intv.notes,
+          createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 3 * 86400000)),
+          updatedAt: toInstant(new Date(FIXED_SEED_EPOCH_MS)),
         });
-
-        if (notes) {
-          const appNoteAuthor =
-            noteAuthorPool[
-              (candidate.candidateIndex + j) % noteAuthorPool.length
-            ];
-          applicationNotesToInsert.push({
-            id: crypto.randomUUID(),
-            organizationId: adminOrgId,
-            applicationId: appId,
-            authorId: appNoteAuthor.id,
-            authorName: appNoteAuthor.displayName,
-            authorRole: appNoteAuthor.role,
-            content: notes,
-            isEdited: false,
-            createdAt: toInstant(appCreatedAt),
-            updatedAt: toInstant(appCreatedAt),
-          });
-        }
       }
-    }
-  }
 
-  // ============================================================================
-  // Deterministic candidates and applications for E2E automated tests
-  // ============================================================================
-  const testCandidateId = "00000000-0000-4000-8000-000000000201";
-  const kanbanCandidateId = "00000000-0000-4000-8000-000000000202";
-  const testStoredFileId = "00000000-0000-4000-8000-000000000211";
-  const kanbanStoredFileId = "00000000-0000-4000-8000-000000000212";
-  const testResumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/sample-resume-test-applicant.pdf`;
-  const kanbanResumeUrl = `/haihire-resumes/tenants/${adminOrgId}/resumes/sample-resume-kanban.pdf`;
+      const isAttributed =
+        !pApp.isPinnedE2E &&
+        (pApp.candidateIdx * 13 + pApp.jobIdx * 7) % 10 < 8;
+      let trackingLinkId: string | null = null;
+      let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
+      let sourceDetails: string | null = null;
+      let referrerDomain: string | null = null;
+      let utmSource: string | null = null;
+      let utmMedium: string | null = null;
+      let utmCampaign: string | null = null;
+      let utmTerm: string | null = null;
+      let utmContent: string | null = null;
 
-  candidateCvTemplates.set(testCandidateId, {
-    organizationId: adminOrgId,
-    fileName: "sample-resume-test-applicant.pdf",
-    storedFileId: testStoredFileId,
-    fullName: "Test Applicant Nguyen",
-    email: "test-applicant@tun.io.vn",
-    phone: "0901234567",
-    gender: "MALE",
-    targetRole: "Senior Backend Engineer (NestJS / PostgreSQL)",
-  });
-  candidateCvTemplates.set(kanbanCandidateId, {
-    organizationId: adminOrgId,
-    fileName: "sample-resume-kanban.pdf",
-    storedFileId: kanbanStoredFileId,
-    fullName: "Minh Kanban Tran",
-    email: "kanban-candidate@tun.io.vn",
-    phone: "0908765432",
-    gender: "MALE",
-    targetRole: "Senior Backend Engineer (NestJS / PostgreSQL)",
-  });
-
-  candidatesToInsert.push({
-    id: testCandidateId,
-    organizationId: adminOrgId,
-    firstName: "Test Applicant",
-    lastName: "Nguyen",
-    gender: "MALE",
-    dateOfBirth: toInstant(new Date("1995-05-15T00:00:00Z")),
-    email: "test-applicant@tun.io.vn",
-    phone: "0901234567",
-    resumeUrl: testResumeUrl,
-    resumeFileName: "sample-resume-test-applicant.pdf",
-    resumeFileSize: 2400,
-    resumeMimeType: "application/pdf",
-    resumeFileId: testStoredFileId,
-    createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
-  });
-  candidateNotesToInsert.push({
-    id: "00000000-0000-4000-8000-000000000501",
-    organizationId: adminOrgId,
-    candidateId: testCandidateId,
-    authorId: adminUserId,
-    authorName: DEMO_ACCOUNTS.ADMIN.name,
-    authorRole: "ADMIN",
-    content: "Ứng viên mẫu phục vụ automated tests.",
-    isEdited: false,
-    createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
-  });
-
-  candidatesToInsert.push({
-    id: kanbanCandidateId,
-    organizationId: adminOrgId,
-    firstName: "Minh Kanban",
-    lastName: "Tran",
-    gender: "MALE",
-    dateOfBirth: toInstant(new Date("1996-08-20T00:00:00Z")),
-    email: "kanban-candidate@tun.io.vn",
-    phone: "0908765432",
-    resumeUrl: kanbanResumeUrl,
-    resumeFileName: "sample-resume-kanban.pdf",
-    resumeFileSize: 2400,
-    resumeMimeType: "application/pdf",
-    resumeFileId: kanbanStoredFileId,
-    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-  });
-  candidateNotesToInsert.push({
-    id: "00000000-0000-4000-8000-000000000502",
-    organizationId: adminOrgId,
-    candidateId: kanbanCandidateId,
-    authorId: adminUserId,
-    authorName: DEMO_ACCOUNTS.ADMIN.name,
-    authorRole: "ADMIN",
-    content: "Ứng viên mẫu cho Kanban drag & drop test.",
-    isEdited: false,
-    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-  });
-
-  // Guarantee Candidate 2 (Kanban) is in APPLIED stage for Job 1 (Senior Backend Engineer)
-  const kanbanAppId = "00000000-0000-4000-8000-000000000301";
-  applicationsToInsert.push({
-    id: kanbanAppId,
-    organizationId: adminOrgId,
-    candidateId: kanbanCandidateId,
-    jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
-    stage: "APPLIED",
-    matchScore: 88,
-    resumeUrl: kanbanResumeUrl,
-    resumeFileName: "sample-resume-kanban.pdf",
-    resumeFileSize: 2400,
-    resumeMimeType: "application/pdf",
-    resumeFileId: kanbanStoredFileId,
-    orderIndex: 0,
-    trackingLinkId: null,
-    sourceChannel: SourcingChannel.DIRECT,
-    sourceDetails: null,
-    referrerDomain: null,
-    utmSource: null,
-    utmMedium: null,
-    utmCampaign: null,
-    utmTerm: null,
-    utmContent: null,
-    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-  });
-  applicationNotesToInsert.push({
-    id: "00000000-0000-4000-8000-000000000401",
-    organizationId: adminOrgId,
-    applicationId: kanbanAppId,
-    authorId: adminUserId,
-    authorName: DEMO_ACCOUNTS.ADMIN.name,
-    authorRole: "ADMIN",
-    content: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
-    isEdited: false,
-    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
-  });
-  stageStats.APPLIED++;
-
-  // Guarantee Candidate 1 is in SCREENING stage for Job 1 so that both stages are available
-  const testAppId = "00000000-0000-4000-8000-000000000302";
-  applicationsToInsert.push({
-    id: testAppId,
-    organizationId: adminOrgId,
-    candidateId: testCandidateId,
-    jobId: createdJobIds[1],
-    stage: "SCREENING",
-    matchScore: 82,
-    resumeUrl: testResumeUrl,
-    resumeFileName: "sample-resume-test-applicant.pdf",
-    resumeFileSize: 2400,
-    resumeMimeType: "application/pdf",
-    resumeFileId: testStoredFileId,
-    orderIndex: 1,
-    trackingLinkId: null,
-    sourceChannel: SourcingChannel.DIRECT,
-    sourceDetails: null,
-    referrerDomain: null,
-    utmSource: null,
-    utmMedium: null,
-    utmCampaign: null,
-    utmTerm: null,
-    utmContent: null,
-    createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
-  });
-  applicationNotesToInsert.push({
-    id: "00000000-0000-4000-8000-000000000402",
-    organizationId: adminOrgId,
-    applicationId: testAppId,
-    authorId: adminUserId,
-    authorName: DEMO_ACCOUNTS.ADMIN.name,
-    authorRole: "ADMIN",
-    content: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
-    isEdited: false,
-    createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
-    updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
-  });
-  stageStats.SCREENING++;
-
-  console.log(
-    `\n📄 Generating & uploading ${candidateCvTemplates.size} tailored CV PDFs to MinIO...`,
-  );
-  const templateEntries = Array.from(candidateCvTemplates.entries());
-  const uploadedByCandidateId = new Map<
-    string,
-    {
-      resumeUrl: string;
-      sizeBytes: number;
-      fileName: string;
-      storedFileId: string;
-    }
-  >();
-  const UPLOAD_BATCH = 25;
-  for (let b = 0; b < templateEntries.length; b += UPLOAD_BATCH) {
-    const chunk = templateEntries.slice(b, b + UPLOAD_BATCH);
-    const results = await Promise.all(
-      chunk.map(async ([candId, tpl]) => {
-        const uploaded = await cvStorage.uploadCandidateCv(
-          tpl.organizationId,
-          tpl.fileName,
-          tpl,
+      if (isAttributed && activeLinks.length > 0) {
+        const candidateLinks = activeLinks.filter(
+          (l) => l.jobId === pApp.jobId || l.jobId === null,
         );
-        storedFilesToInsert.push({
-          id: tpl.storedFileId,
-          organizationId: tpl.organizationId,
-          objectKey: uploaded.objectKey,
-          originalName: uploaded.fileName,
-          mimeType: "application/pdf",
-          sizeBytes: uploaded.sizeBytes,
-          checksum: uploaded.checksum,
-        });
-        return [
-          candId,
-          {
-            resumeUrl: uploaded.resumeUrl,
-            sizeBytes: uploaded.sizeBytes,
-            fileName: uploaded.fileName,
-            storedFileId: tpl.storedFileId,
-          },
-        ] as const;
-      }),
-    );
-    for (const [candId, meta] of results) {
-      uploadedByCandidateId.set(candId, meta);
+        const chosenLink =
+          candidateLinks.length > 0
+            ? candidateLinks[
+                (pApp.candidateIdx + appIdx) % candidateLinks.length
+              ]
+            : activeLinks[(pApp.candidateIdx + appIdx) % activeLinks.length];
+        trackingLinkId = chosenLink.id;
+        sourceChannel = chosenLink.source;
+        sourceDetails = chosenLink.customSource || chosenLink.name;
+        referrerDomain = getDomainForChannel(chosenLink.source);
+        utmSource = chosenLink.utmSource;
+        utmMedium = chosenLink.utmMedium;
+        utmCampaign = chosenLink.utmCampaign;
+        utmTerm = chosenLink.utmTerm;
+        utmContent = chosenLink.utmContent;
+      } else if (!pApp.isPinnedE2E) {
+        sourceDetails = "Ứng tuyển trực tiếp từ Career Site";
+        referrerDomain =
+          (pApp.candidateIdx + pApp.jobIdx) % 2 === 0 ? "google.com" : null;
+      }
+
+      const fileMeta = uploadedByCandidateId.get(pApp.candidateId)!;
+      const candRow = candidatesToInsert[pApp.candidateIdx];
+
+      applicationsToInsert.push({
+        id: pApp.id,
+        organizationId: bp.id,
+        candidateId: pApp.candidateId,
+        jobId: pApp.jobId,
+        stage,
+        matchScore,
+        resumeUrl: fileMeta.resumeUrl,
+        resumeFileName: fileMeta.fileName,
+        resumeFileSize: fileMeta.sizeBytes,
+        resumeMimeType: "application/pdf",
+        resumeFileId: candRow.resumeFileId!,
+        orderIndex,
+        trackingLinkId,
+        sourceChannel,
+        sourceDetails,
+        referrerDomain,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        utmTerm,
+        utmContent,
+        createdAt: pApp.createdAt,
+        updatedAt: pApp.createdAt,
+      });
+
+      const appNoteAuthor = pApp.isPinnedE2E
+        ? orgUsers[0]
+        : noteAuthorPool[appIdx % noteAuthorPool.length];
+      applicationNotesToInsert.push({
+        id: detUuid(UUID_NS.APPLICATION_NOTE, bp.orgIndex, appIdx + 1),
+        organizationId: bp.id,
+        applicationId: pApp.id,
+        authorId: appNoteAuthor.id,
+        authorName: appNoteAuthor.displayName,
+        authorRole: appNoteAuthor.role,
+        content: noteText,
+        isEdited: false,
+        createdAt: pApp.createdAt,
+        updatedAt: pApp.createdAt,
+      });
     }
-  }
 
-  for (const cand of candidatesToInsert) {
-    const meta = uploadedByCandidateId.get(cand.id);
-    if (meta) {
-      cand.resumeUrl = meta.resumeUrl;
-      cand.resumeFileName = meta.fileName;
-      cand.resumeFileSize = meta.sizeBytes;
-      cand.resumeFileId = meta.storedFileId;
-    }
-  }
-  for (const app of applicationsToInsert) {
-    const meta = uploadedByCandidateId.get(app.candidateId);
-    if (meta) {
-      app.resumeUrl = meta.resumeUrl;
-      app.resumeFileName = meta.fileName;
-      app.resumeFileSize = meta.sizeBytes;
-      app.resumeFileId = meta.storedFileId;
-    }
-  }
+    await prisma.storedFile.createMany({ data: storedFilesToInsert });
+    await prisma.candidate.createMany({ data: candidatesToInsert });
+    await prisma.application.createMany({ data: applicationsToInsert });
+    await prisma.applicationNote.createMany({ data: applicationNotesToInsert });
+    await prisma.candidateNote.createMany({ data: candidateNotesToInsert });
+    await prisma.interview.createMany({ data: interviewsToInsert });
+    await prisma.trackingClick.createMany({ data: clicksToInsert });
 
-  await prisma.storedFile.createMany({ data: storedFilesToInsert });
-
-  console.log(
-    `\n⏳ Saving ${candidatesToInsert.length} candidates to database...`,
-  );
-  const BATCH_SIZE = 50;
-  for (let b = 0; b < candidatesToInsert.length; b += BATCH_SIZE) {
-    const chunk = candidatesToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((cand) =>
-        prisma.candidate.upsert({
-          create: cand,
-          update: {},
-          where: { id: cand.id },
-        }),
+    // 4. Seed Deterministic Notifications (all 4 kinds) for Global Admin, Org Owner & Other Members
+    const minMs = 60 * 1000;
+    const nowSlotAnchorMs = Date.now();
+    const upcomingIvs = interviewsToInsert.filter(
+      (iv) => new Date(iv.scheduledAt).getTime() > nowSlotAnchorMs,
+    );
+    const orderedIvs = [
+      ...upcomingIvs,
+      ...interviewsToInsert.filter(
+        (iv) => new Date(iv.scheduledAt).getTime() <= nowSlotAnchorMs,
       ),
-    );
-  }
-
-  console.log(
-    `\n⏳ Saving ${applicationsToInsert.length} application records to database (batched)...`,
-  );
-  for (let b = 0; b < applicationsToInsert.length; b += BATCH_SIZE) {
-    const chunk = applicationsToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((app) =>
-        prisma.application.upsert({
-          create: app,
-          update: {},
-          where: { id: app.id },
-        }),
+    ];
+    const recentApps = [
+      ...applicationsToInsert.filter(
+        (a) => a.stage === "APPLIED" || a.stage === "SCREENING",
       ),
-    );
-    process.stdout.write(
-      `\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`,
-    );
-  }
+      ...applicationsToInsert,
+    ];
 
-  console.log(
-    `\n⏳ Saving ${applicationNotesToInsert.length} application notes to database (batched)...`,
-  );
-  for (let b = 0; b < applicationNotesToInsert.length; b += BATCH_SIZE) {
-    const chunk = applicationNotesToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((note) =>
-        prisma.applicationNote.upsert({
-          create: note,
-          update: {},
-          where: { id: note.id },
-        }),
-      ),
-    );
-  }
+    const KIND_CYCLE: readonly NotificationKind[] = [
+      "applicationReceived",
+      "interviewScheduled",
+      "interviewChanged",
+      "interviewCancelled",
+    ];
+    const MINUTES_STEPS = [
+      5, 18, 42, 95, 180, 260, 420, 900, 1500, 2200, 3100, 4500, 5200, 6100,
+      7200, 8400,
+    ];
 
-  console.log(
-    `\n⏳ Saving ${candidateNotesToInsert.length} candidate notes to database (batched)...`,
-  );
-  for (let b = 0; b < candidateNotesToInsert.length; b += BATCH_SIZE) {
-    const chunk = candidateNotesToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((note) =>
-        prisma.candidateNote.upsert({
-          create: note,
-          update: {},
-          where: { id: note.id },
-        }),
-      ),
-    );
-  }
+    const notificationsToInsert: Prisma.NotificationCreateManyInput[] = [];
+    let notifSeq = 0;
 
-  // Strictly verify uniqueness of interview time slots
-  const slotCollisionCheck = new Set<string>();
-  for (const intv of interviewsToInsert) {
-    const key = intv.scheduledAt.toString();
-    if (slotCollisionCheck.has(key)) {
-      throw new Error(`CRITICAL: Duplicate interview time slot: ${key}`);
-    }
-    slotCollisionCheck.add(key);
-  }
-  console.log(
-    `\n⏳ Saving ${interviewsToInsert.length} interview schedules to database (100% unique time slots verified)...`,
-  );
-  for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
-    const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((intv) =>
-        prisma.interview.upsert({
-          create: intv,
-          update: {},
-          where: { id: intv.id },
-        }),
-      ),
-    );
-  }
-  console.log(
-    `   ✨ Successfully saved: all ${interviewsToInsert.length} interview time slots are conflict-free.`,
-  );
+    const pushAdminInbox = (targetUserId: string) => {
+      const { total, unread } = bp.adminNotifications;
+      for (let i = 0; i < total; i++) {
+        notifSeq++;
+        const kind = KIND_CYCLE[i % KIND_CYCLE.length];
+        const resourceId =
+          kind === "applicationReceived"
+            ? recentApps[(i + bp.orgIndex) % recentApps.length].id
+            : orderedIvs[(i * 2 + bp.orgIndex) % orderedIvs.length].id;
+        const createdAt = toInstant(
+          new Date(FIXED_SEED_EPOCH_MS - MINUTES_STEPS[i] * minMs),
+        );
+        const isUnread = i < unread;
+        const readAt = isUnread
+          ? null
+          : toInstant(new Date(createdAt.getTime() + 45 * minMs));
 
-  console.log(
-    `\n⏳ Saving ${clicksToInsert.length} clicks (TrackingClick) to database...`,
-  );
-  for (let b = 0; b < clicksToInsert.length; b += BATCH_SIZE) {
-    const chunk = clicksToInsert.slice(b, b + BATCH_SIZE);
-    await Promise.all(
-      chunk.map((click) =>
-        prisma.trackingClick.upsert({
-          create: click,
-          update: {},
-          where: { id: click.id },
-        }),
-      ),
-    );
-  }
-  console.log(
-    `   ✨ Successfully saved ${clicksToInsert.length} sample clicks (TrackingClick).`,
-  );
-
-  // ============================================================================
-  // Seed Notifications (all 4 NotificationKinds) & Recent Activity Logs
-  // ============================================================================
-  const nowMs = Date.now();
-  const minMs = 60 * 1000;
-  const hourMs = 60 * minMs;
-
-  const recentApps = [
-    ...applicationsToInsert.filter(
-      (a) => a.stage === "APPLIED" || a.stage === "SCREENING",
-    ),
-    ...applicationsToInsert,
-  ];
-  const uniqueNotifApps: typeof applicationsToInsert = [];
-  const seenNotifAppIds = new Set<string>();
-  for (const app of recentApps) {
-    if (!seenNotifAppIds.has(app.id)) {
-      seenNotifAppIds.add(app.id);
-      uniqueNotifApps.push(app);
-    }
-    if (uniqueNotifApps.length >= 6) break;
-  }
-
-  const upcomingInterviews = interviewsToInsert.filter(
-    (iv) => iv.scheduledAt.getTime() > nowMs,
-  );
-  const pastInterviews = interviewsToInsert.filter(
-    (iv) => iv.scheduledAt.getTime() <= nowMs,
-  );
-  const adminAssignedUpcoming = upcomingInterviews.filter(
-    (iv) => iv.interviewerId === adminUserId,
-  );
-  const otherUpcoming = upcomingInterviews.filter(
-    (iv) => iv.interviewerId !== adminUserId,
-  );
-  const orderedInterviews = [
-    ...adminAssignedUpcoming,
-    ...otherUpcoming,
-    ...pastInterviews,
-  ];
-
-  const getInterview = (index: number) =>
-    orderedInterviews[index % orderedInterviews.length];
-  const getApp = (index: number) =>
-    uniqueNotifApps[index % uniqueNotifApps.length];
-
-  const adminNotificationSpecs: Array<{
-    id: string;
-    kind: NotificationKind;
-    resourceId: string;
-    minutesAgo: number;
-    readMinutesAfter?: number;
-  }> = [
-    {
-      id: "00000000-0000-4000-8000-000000002001",
-      kind: "applicationReceived",
-      resourceId: getApp(0).id,
-      minutesAgo: 5,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002002",
-      kind: "interviewScheduled",
-      resourceId: getInterview(0).id,
-      minutesAgo: 18,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002003",
-      kind: "interviewChanged",
-      resourceId: getInterview(3).id,
-      minutesAgo: 42,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002004",
-      kind: "interviewCancelled",
-      resourceId: getInterview(6).id,
-      minutesAgo: 95,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002005",
-      kind: "applicationReceived",
-      resourceId: getApp(1).id,
-      minutesAgo: 180,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002006",
-      kind: "interviewScheduled",
-      resourceId: getInterview(1).id,
-      minutesAgo: 260,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002007",
-      kind: "interviewChanged",
-      resourceId: getInterview(4).id,
-      minutesAgo: 420,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002008",
-      kind: "interviewScheduled",
-      resourceId: getInterview(2).id,
-      minutesAgo: 900,
-      readMinutesAfter: 30,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002009",
-      kind: "applicationReceived",
-      resourceId: getApp(2).id,
-      minutesAgo: 1500,
-      readMinutesAfter: 120,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002010",
-      kind: "interviewCancelled",
-      resourceId: getInterview(7).id,
-      minutesAgo: 2200,
-      readMinutesAfter: 45,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002011",
-      kind: "interviewChanged",
-      resourceId: getInterview(5).id,
-      minutesAgo: 3100,
-      readMinutesAfter: 90,
-    },
-    {
-      id: "00000000-0000-4000-8000-000000002012",
-      kind: "interviewCancelled",
-      resourceId: getInterview(8).id,
-      minutesAgo: 4500,
-      readMinutesAfter: 180,
-    },
-  ];
-
-  await prisma.notificationPreference.create({
-    data: {
-      organizationId: betaOrgId,
-      userId: betaAdminUserId,
-      applicationWebsite: true,
-      interviewWebsite: true,
-      applicationEmail: false,
-      interviewEmail: false,
-    },
-  });
-
-  await prisma.notification.createMany({
-    data: [
-      ...adminNotificationSpecs.map((spec) => {
-        const createdAt = toInstant(new Date(nowMs - spec.minutesAgo * minMs));
-        const readAt =
-          spec.readMinutesAfter !== undefined
-            ? toInstant(
-                new Date(createdAt.getTime() + spec.readMinutesAfter * minMs),
-              )
-            : null;
-        return {
-          id: spec.id,
-          organizationId: adminOrgId,
-          userId: adminUserId,
-          kind: spec.kind,
-          resourceId: spec.resourceId,
+        notificationsToInsert.push({
+          id: detUuid(UUID_NS.NOTIFICATION, bp.orgIndex, notifSeq),
+          organizationId: bp.id,
+          userId: targetUserId,
+          kind,
+          resourceId,
           createdAt,
           readAt,
-        };
-      }),
-      {
-        id: "00000000-0000-4000-8000-000000002013",
-        organizationId: adminOrgId,
-        userId: DEMO_TEAM_USERS[0].id,
-        kind: "interviewScheduled",
-        resourceId: getInterview(1).id,
-        createdAt: toInstant(new Date(nowMs - 30 * minMs)),
-        readAt: null,
-      },
-      {
-        id: "00000000-0000-4000-8000-000000002014",
-        organizationId: adminOrgId,
-        userId: DEMO_TEAM_USERS[1].id,
-        kind: "applicationReceived",
-        resourceId: getApp(0).id,
-        createdAt: toInstant(new Date(nowMs - 2 * hourMs)),
-        readAt: null,
-      },
-      {
-        id: "00000000-0000-4000-8000-000000002015",
-        organizationId: betaOrgId,
-        userId: betaAdminUserId,
-        kind: "applicationReceived",
-        resourceId: betaAppId,
-        createdAt: toInstant(new Date(nowMs - 45 * minMs)),
-        readAt: null,
-      },
-    ],
-  });
+        });
+      }
+    };
 
-  // Seed representative ActivityLog records so candidate timelines have activity history
-  const appById = new Map(applicationsToInsert.map((a) => [a.id, a]));
-  const sampleActivities = [
-    ...uniqueNotifApps.slice(0, 3).map((app) => ({
-      id: crypto.randomUUID(),
-      organizationId: adminOrgId,
-      candidateId: app.candidateId,
-      applicationId: app.id,
-      type: "APPLIED" as const,
-      title: "Hồ sơ ứng tuyển mới",
-      description: `Ứng viên đã nộp hồ sơ (${app.sourceChannel}).`,
-      actorId: null,
-      actorName: "Career Site",
-      actorRole: null,
-      metadata: { sourceChannel: app.sourceChannel },
-      createdAt: app.createdAt,
-      updatedAt: app.updatedAt,
-    })),
-    ...orderedInterviews.slice(0, 5).flatMap((iv) => {
+    // Identical comprehensive 4-kind inbox for both Global Admin (`admin@tun.io.vn`) and Org Owner (`adminX@tun.io.vn`)
+    pushAdminInbox(GLOBAL_ADMIN_ID);
+    pushAdminInbox(bp.ownerId);
+
+    // 12 deterministic notifications distributed across other members in this org (scoped to their RBAC permissions)
+    const otherMembers = orgUsers.filter(
+      (u) =>
+        u.id !== GLOBAL_ADMIN_ID && u.id !== bp.ownerId && u.role !== "MEMBER",
+    );
+    for (let m = 0; m < bp.otherMemberNotifications; m++) {
+      notifSeq++;
+      const target = otherMembers[m % otherMembers.length];
+      const allowedKinds: readonly NotificationKind[] =
+        target.role === "INTERVIEWER"
+          ? ["interviewScheduled", "interviewChanged", "interviewCancelled"]
+          : KIND_CYCLE;
+      const kind = allowedKinds[m % allowedKinds.length];
+      const resourceId =
+        kind === "applicationReceived"
+          ? recentApps[(m + 3) % recentApps.length].id
+          : orderedIvs[(m + 5) % orderedIvs.length].id;
+      const createdAt = toInstant(
+        new Date(FIXED_SEED_EPOCH_MS - (30 + m * 120) * minMs),
+      );
+      notificationsToInsert.push({
+        id: detUuid(UUID_NS.NOTIFICATION, bp.orgIndex, notifSeq),
+        organizationId: bp.id,
+        userId: target.id,
+        kind,
+        resourceId,
+        createdAt,
+        readAt:
+          m % 3 === 2
+            ? toInstant(new Date(createdAt.getTime() + 20 * minMs))
+            : null,
+      });
+    }
+
+    await prisma.notification.createMany({ data: notificationsToInsert });
+
+    // 5. Seed 10 deterministic ActivityLog entries per org
+    const appById = new Map(applicationsToInsert.map((a) => [a.id, a]));
+    const recruiterActor =
+      orgUsers.find((u) => u.role === "RECRUITER") ?? orgUsers[0];
+    const activityLogsToInsert: Prisma.ActivityLogCreateManyInput[] = [];
+
+    for (let aIdx = 0; aIdx < 5; aIdx++) {
+      const app = recentApps[aIdx];
+      activityLogsToInsert.push({
+        id: detUuid(UUID_NS.ACTIVITY_LOG, bp.orgIndex, aIdx + 1),
+        organizationId: bp.id,
+        candidateId: app.candidateId,
+        applicationId: app.id,
+        type: "APPLIED",
+        title: "Hồ sơ ứng tuyển mới",
+        description: `Ứng viên đã nộp hồ sơ (${app.sourceChannel}).`,
+        actorId: null,
+        actorName: "Career Site",
+        actorRole: null,
+        metadata: { sourceChannel: app.sourceChannel },
+        createdAt: app.createdAt,
+        updatedAt: app.createdAt,
+      });
+    }
+    for (let ivIdx = 0; ivIdx < 5; ivIdx++) {
+      const iv = orderedIvs[ivIdx];
       const app = appById.get(iv.applicationId);
-      if (!app) return [];
-      const scheduler =
-        DEMO_TEAM_USERS.find((u) => u.role === "RECRUITER") ??
-        DEMO_TEAM_USERS[0];
-      return [
-        {
-          id: crypto.randomUUID(),
-          organizationId: adminOrgId,
-          candidateId: app.candidateId,
-          applicationId: app.id,
-          type: "INTERVIEW_SCHEDULED" as const,
-          title: `Đặt lịch phỏng vấn Vòng ${iv.round}`,
-          description: `Phân công ${iv.interviewer} phỏng vấn (${iv.type}).`,
-          actorId: scheduler.id,
-          actorName: formatUserDisplayName(scheduler, "LAST_FIRST"),
-          actorRole: scheduler.role,
-          metadata: { interviewId: iv.id, interviewerId: iv.interviewerId },
-          createdAt: toInstant(new Date(nowMs - 3 * hourMs)),
-          updatedAt: toInstant(new Date(nowMs - 3 * hourMs)),
-        },
-      ];
-    }),
-  ];
-  if (sampleActivities.length > 0) {
-    await prisma.activityLog.createMany({ data: sampleActivities });
-  }
-  console.log(
-    `   ✨ Successfully saved ${adminNotificationSpecs.length} Demo Admin notifications (all 4 kinds), ${sampleActivities.length} activity logs, and ${interviewsToInsert.length} interviews linked to real users.`,
-  );
+      if (!app) continue;
+      activityLogsToInsert.push({
+        id: detUuid(UUID_NS.ACTIVITY_LOG, bp.orgIndex, 6 + ivIdx),
+        organizationId: bp.id,
+        candidateId: app.candidateId,
+        applicationId: app.id,
+        type: "INTERVIEW_SCHEDULED",
+        title: `Đặt lịch phỏng vấn Vòng ${iv.round}`,
+        description: `Phân công ${iv.interviewer} phỏng vấn (${iv.type}).`,
+        actorId: recruiterActor.id,
+        actorName: recruiterActor.displayName,
+        actorRole: recruiterActor.role,
+        metadata: { interviewId: iv.id, interviewerId: iv.interviewerId },
+        createdAt: toInstant(
+          new Date(FIXED_SEED_EPOCH_MS - (ivIdx + 1) * 3 * 3600000),
+        ),
+        updatedAt: toInstant(
+          new Date(FIXED_SEED_EPOCH_MS - (ivIdx + 1) * 3 * 3600000),
+        ),
+      });
+    }
+    await prisma.activityLog.createMany({ data: activityLogsToInsert });
 
+    summaryRows.push({
+      slug: bp.slug,
+      jobs: `${jobsToInsert.length} (${bp.jobStatusCounts.PUBLISHED}/${bp.jobStatusCounts.DRAFT}/${bp.jobStatusCounts.CLOSED})`,
+      links: trackingLinksToInsert.length,
+      clicks: clicksToInsert.length,
+      candidates: candidatesToInsert.length,
+      applications: applicationsToInsert.length,
+      interviews: interviewsToInsert.length,
+      notifications: notificationsToInsert.length,
+    });
+
+    console.log(
+      `✅ ${bp.name}: ${jobsToInsert.length} jobs, ${trackingLinksToInsert.length} links (${clicksToInsert.length} clicks), ${candidatesToInsert.length} candidates, ${applicationsToInsert.length} applications, ${interviewsToInsert.length} interviews, ${notificationsToInsert.length} notifications, 4 audit logs, ${activityLogsToInsert.length} activity logs.`,
+    );
+  }
+
+  console.log("\n==================================================");
+  console.log("📊 FINAL DETERMINISTIC MULTI-ORG SEED SUMMARY");
+  console.log("==================================================");
   console.log(
-    `\n\n✅ Success! Seeded fixed 200 unique candidates (total ${applicationsToInsert.length} applications):`,
+    `- Users seeded: 15 (Global Admin ${DEMO_ACCOUNTS.ADMIN.email} + 4 Org Owners admin1..4@tun.io.vn + 10 Team/Interviewers, Password: ${DEMO_PASSWORD})`,
   );
+  console.log(`- Organizations: 4 (demo-1, demo-2, demo-3, demo-4)`);
   console.log(
-    `   - 0 jobs (Not applied):    ${jobDistributionStats[0]} candidates`,
+    `- Memberships: 60 (15 users × 4 orgs covering all 5 RBAC roles)`,
   );
-  console.log(
-    `   - 1 job:                   ${jobDistributionStats[1]} candidates`,
-  );
-  console.log(
-    `   - 2 jobs:                  ${jobDistributionStats[2]} candidates`,
-  );
-  console.log(
-    `   - 3 jobs:                  ${jobDistributionStats[3]} candidates`,
-  );
-  console.log(
-    `   - 4 jobs:                  ${jobDistributionStats[4]} candidates`,
-  );
-  console.log(
-    `   - 5 jobs:                  ${jobDistributionStats[5]} candidates`,
-  );
-  console.log(
-    `   - 6 jobs:                  ${jobDistributionStats[6]} candidates`,
-  );
-  console.log(`   --------------------------------------------------`);
-  console.log(
-    `   - APPLIED:                 ${stageStats.APPLIED} applications (0 interviews)`,
-  );
-  console.log(
-    `   - SCREENING:               ${stageStats.SCREENING} applications (0 interviews)`,
-  );
-  console.log(
-    `   - INTERVIEW:               ${stageStats.INTERVIEW} applications (0, 1 or more interviews)`,
-  );
-  console.log(
-    `   - OFFER:                   ${stageStats.OFFER} applications (1-3 interviews)`,
-  );
-  console.log(
-    `   - HIRED:                   ${stageStats.HIRED} applications (1-3 interviews)`,
-  );
-  console.log(
-    `   - REJECTED:                ${stageStats.REJECTED} applications (0-3 interviews)`,
-  );
-  console.log(`   --------------------------------------------------`);
-  const attributedCount = applicationsToInsert.filter(
-    (a) => a.trackingLinkId,
-  ).length;
-  console.log(`📊 Source Tracking statistics:`);
-  console.log(
-    `   - Total tracking links:     ${createdTrackingLinks.length} links (full 15 source channels, 5 UTM, active/inactive)`,
-  );
-  console.log(`   - Total detailed clicks:    ${clicksToInsert.length} clicks`);
-  console.log(
-    `   - Sourced applications:     ${attributedCount}/${applicationsToInsert.length} applications (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`,
-  );
-  console.log(
-    `   - Direct / Unattributed:    ${applicationsToInsert.length - attributedCount} applications (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`,
-  );
+  for (const row of summaryRows) {
+    console.log(
+      `  • ${row.slug}: ${row.jobs} jobs | ${row.links} links / ${row.clicks} clicks | ${row.candidates} cands | ${row.applications} apps | ${row.interviews} ivs | ${row.notifications} notifs`,
+    );
+  }
   console.log("==================================================");
 }
 

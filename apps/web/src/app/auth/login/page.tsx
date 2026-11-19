@@ -137,72 +137,50 @@ function LoginForm() {
               {t("auth.quickLoginDev")}
             </p>
 
-            <div className="grid grid-cols-1 gap-2.5">
-              {/* 1. Admin Demo Account */}
-              <button
-                type="button"
-                disabled={Boolean(demoLoadingEmail) || loading}
-                onClick={() => handleQuickLogin(DEMO_ACCOUNTS.ADMIN)}
-                className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-                    AD
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-foreground">
-                        {DEMO_ACCOUNTS.ADMIN.name}
-                      </p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                        {DEMO_ACCOUNTS.ADMIN.badge}
-                      </span>
+            <div className="grid grid-cols-1 gap-2">
+              {Object.values(DEMO_ACCOUNTS).map((account) => {
+                const isGlobalAdmin =
+                  account.email === DEMO_ACCOUNTS.ADMIN.email;
+                return (
+                  <button
+                    key={account.email}
+                    type="button"
+                    disabled={Boolean(demoLoadingEmail) || loading}
+                    onClick={() => handleQuickLogin(account)}
+                    className="w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs shadow-xs group-hover:scale-105 transition-transform ${
+                          isGlobalAdmin
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {account.initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {account.name}
+                          </p>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                            {account.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {account.email} &bull; {account.description}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {DEMO_ACCOUNTS.ADMIN.email} &bull;{" "}
-                      {DEMO_ACCOUNTS.ADMIN.description}
-                    </p>
-                  </div>
-                </div>
-                {demoLoadingEmail === DEMO_ACCOUNTS.ADMIN.email ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                ) : (
-                  <UserCheck className="h-4 w-4 text-primary group-hover:translate-x-0.5 transition-transform" />
-                )}
-              </button>
-
-              {/* 2. Member Demo Account */}
-              <button
-                type="button"
-                disabled={Boolean(demoLoadingEmail) || loading}
-                onClick={() => handleQuickLogin(DEMO_ACCOUNTS.MEMBER)}
-                className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-ring/50 shadow-2xs group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-secondary-foreground font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-                    MB
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-foreground">
-                        {DEMO_ACCOUNTS.MEMBER.name}
-                      </p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary text-secondary-foreground border border-border">
-                        {DEMO_ACCOUNTS.MEMBER.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {DEMO_ACCOUNTS.MEMBER.email} &bull;{" "}
-                      {DEMO_ACCOUNTS.MEMBER.description}
-                    </p>
-                  </div>
-                </div>
-                {demoLoadingEmail === DEMO_ACCOUNTS.MEMBER.email ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : (
-                  <UserCheck className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                )}
-              </button>
+                    {demoLoadingEmail === account.email ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                    ) : (
+                      <UserCheck className="h-4 w-4 shrink-0 text-primary group-hover:translate-x-0.5 transition-transform" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

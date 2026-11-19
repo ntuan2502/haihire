@@ -14,7 +14,7 @@ export class PublicCareerPage {
     slug = "senior-backend-engineer-nestjs-postgresql",
     refQuery?: string,
   ) {
-    const url = `/careers/demo/${slug}${refQuery ? `?ref=${refQuery}` : ""}`;
+    const url = `/careers/demo-1/${slug}${refQuery ? `?ref=${refQuery}` : ""}`;
     const res = await this.page.goto(url, { waitUntil: "domcontentloaded" });
     await expect(
       this.page.locator("form, #career-email, h1").first(),

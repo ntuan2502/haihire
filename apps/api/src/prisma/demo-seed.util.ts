@@ -23,30 +23,30 @@ export interface DemoSeedClient {
 }
 
 /**
- * Ensures default non-production demo accounts (ADMIN + MEMBER), the default
- * Demo organization, and the Admin's OrganizationMember record exist consistently.
+ * Ensures default non-production demo account (`admin@tun.io.vn`), the default
+ * `Demo 1` (`demo-1`) organization, and the Admin's OrganizationMember record exist consistently.
  */
 export async function ensureDefaultDemoAccounts(
   prisma: DemoSeedClient,
 ): Promise<{ adminOrgId: string; adminUserId: string }> {
   const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, BCRYPT_SALT_ROUNDS);
-  const demoOrgSlug = "demo";
-  const demoOrgName = "Demo";
+  const demoOrgSlug = "demo-1";
+  const demoOrgName = "Demo 1";
 
-  const existingOrg = prisma.organization.findFirst
-    ? await prisma.organization.findFirst({
-        where: { OR: [{ slug: demoOrgSlug }, { slug: "admin" }] },
+  const existingOrg = prisma.organization.findUnique
+    ? await prisma.organization.findUnique({
+        where: { slug: demoOrgSlug },
         select: { id: true },
       })
-    : prisma.organization.findUnique
-      ? await prisma.organization.findUnique({
+    : prisma.organization.findFirst
+      ? await prisma.organization.findFirst({
           where: { slug: demoOrgSlug },
           select: { id: true },
         })
       : null;
 
-  const adminUserId = crypto.randomUUID();
-  const adminOrgId = existingOrg?.id || crypto.randomUUID();
+  const adminUserId = "00000000-0000-4000-8000-000000000001";
+  const adminOrgId = existingOrg?.id || "00000000-0000-4000-8000-000000000010";
 
   const adminUser = await prisma.user.upsert({
     where: { email: DEMO_ACCOUNTS.ADMIN.email },
@@ -102,48 +102,6 @@ export async function ensureDefaultDemoAccounts(
       },
       update: {
         role: "ADMIN",
-        updatedAt: toInstant(),
-      },
-    });
-  }
-
-  const memberUser = await prisma.user.upsert({
-    where: { email: DEMO_ACCOUNTS.MEMBER.email },
-    create: {
-      id: crypto.randomUUID(),
-      email: DEMO_ACCOUNTS.MEMBER.email,
-      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-      password: hashedPassword,
-      updatedAt: toInstant(),
-    },
-    update: {
-      email: DEMO_ACCOUNTS.MEMBER.email,
-      firstName: DEMO_ACCOUNTS.MEMBER.firstName,
-      lastName: DEMO_ACCOUNTS.MEMBER.lastName,
-      password: hashedPassword,
-      updatedAt: toInstant(),
-    },
-    select: { id: true },
-  });
-
-  if (typeof prisma.organizationMember?.upsert === "function") {
-    await prisma.organizationMember.upsert({
-      where: {
-        organizationId_userId: {
-          organizationId: adminOrgId,
-          userId: memberUser.id,
-        },
-      },
-      create: {
-        id: crypto.randomUUID(),
-        organizationId: adminOrgId,
-        userId: memberUser.id,
-        role: "MEMBER",
-        updatedAt: toInstant(),
-      },
-      update: {
-        role: "MEMBER",
         updatedAt: toInstant(),
       },
     });

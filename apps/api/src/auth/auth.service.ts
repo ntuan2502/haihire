@@ -88,7 +88,7 @@ export class AuthService {
       env.NODE_ENV !== "production" && env.SEED_DEMO_ON_BOOT;
 
     if (!user && isDevOrDemoEnabled) {
-      const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
+      const demoAccountList = [DEMO_ACCOUNTS.ADMIN];
       const matchedDemo = demoAccountList.find(
         (a) => a.email.toLowerCase() === normalizedEmail,
       );

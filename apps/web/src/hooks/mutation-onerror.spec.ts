@@ -55,7 +55,7 @@ import {
   applicationsApi,
   candidatesApi,
 } from "@/lib/api";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -965,6 +965,61 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
       expect(spy).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  describe("Multi-Tenant Query Isolation (keepPreviousDataForSameOrg & Org-Scoped Keys)", () => {
+    it("preserves previousData across pagination within the same org and clears immediately when orgId changes", () => {
+      const sameOrgPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>("org-1");
+
+      expect(
+        sameOrgPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toEqual({ items: ["org-1-job"] });
+
+      const crossOrgPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>("org-2");
+
+      expect(
+        crossOrgPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toBeUndefined();
+
+      expect(
+        crossOrgPlaceholder({ items: ["org-1-app"] }, {
+          queryKey: ["applications", "paginated", { orgId: "org-1", page: 1 }],
+        } as never),
+      ).toBeUndefined();
+
+      const signedOutPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>(null);
+      expect(
+        signedOutPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toBeUndefined();
+    });
+
+    it("produces org-scoped keys when orgId is provided while preserving base prefixes for invalidation", () => {
+      expect(queryKeys.myOrg()).toEqual(["organization", "my"]);
+      expect(queryKeys.myOrg("org-2")).toEqual([
+        "organization",
+        "my",
+        { orgId: "org-2" },
+      ]);
+      expect(queryKeys.myPermissions()).toEqual(["auth", "me", "permissions"]);
+      expect(queryKeys.myPermissions("org-2", "RECRUITER")).toEqual([
+        "auth",
+        "me",
+        "permissions",
+        { orgId: "org-2", role: "RECRUITER" },
+      ]);
     });
   });
 });

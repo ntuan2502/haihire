@@ -129,7 +129,22 @@ export function useAuthSse({
             });
           }
         } else if (data.type === "ORG_UPDATED") {
-          if (!data.targetUserId || data.targetUserId === currentUserId) {
+          const isSameOrgAlreadyActive = Boolean(
+            data.targetUserId === currentUserId &&
+            data.organizationId &&
+            activeUser?.organizationId === data.organizationId,
+          );
+          const isOtherOrgMetadataUpdate = Boolean(
+            !data.targetUserId &&
+            data.organizationId &&
+            activeUser?.organizationId &&
+            data.organizationId !== activeUser.organizationId,
+          );
+          if (
+            (!data.targetUserId || data.targetUserId === currentUserId) &&
+            !isSameOrgAlreadyActive &&
+            !isOtherOrgMetadataUpdate
+          ) {
             void refreshUser();
           }
         }

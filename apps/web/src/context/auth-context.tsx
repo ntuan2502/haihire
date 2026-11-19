@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { QueryClientContext } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
+import { queryKeys } from "@/hooks/query-keys";
 import { isWorkspaceRoute } from "@/lib/workspace-routes";
 import { useOptionalI18n } from "@/i18n/optional";
 import { useAuthSse } from "./use-auth-sse";
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const userRef = useRef<User | null>(null);
   const tRef = useRef(t);
+  const sessionEpochRef = useRef(0);
 
   useEffect(() => {
     routerRef.current = router;
@@ -92,8 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setSession = useCallback(
     (newAccessToken: string, _newRefreshToken?: string, newUserData?: User) => {
+      sessionEpochRef.current += 1;
       setToken(newAccessToken);
       if (newUserData) {
+        userRef.current = newUserData;
         setUser(newUserData);
         localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
         setAuthCookies(newAccessToken, Boolean(newUserData.organizationId));
@@ -107,6 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    sessionEpochRef.current += 1;
+    userRef.current = null;
     setToken(null);
     setUser(null);
     localStorage.removeItem(USER_KEY);
@@ -123,10 +129,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
+    const requestEpoch = sessionEpochRef.current;
     try {
       const response = await api.get<User>("/auth/me");
+      if (requestEpoch !== sessionEpochRef.current) {
+        return userRef.current;
+      }
       const latestUser = response.data;
 
+      userRef.current = latestUser;
       setUser(latestUser);
       localStorage.setItem(USER_KEY, JSON.stringify(latestUser));
       setAuthCookies(null, Boolean(latestUser.organizationId));
@@ -143,6 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return latestUser;
     } catch (err: unknown) {
+      if (requestEpoch !== sessionEpochRef.current) {
+        return userRef.current;
+      }
       const axiosError = err as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
         const hadClientSession = Boolean(
@@ -155,6 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof window !== "undefined" &&
           isSessionRequiredRoute(window.location.pathname);
 
+        sessionEpochRef.current += 1;
+        userRef.current = null;
         setToken(null);
         setUser(null);
         localStorage.removeItem(USER_KEY);
@@ -186,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (savedUser) {
         const parsedUser: User = JSON.parse(savedUser);
+        userRef.current = parsedUser;
         setUser(parsedUser);
         setAuthCookies(null, Boolean(parsedUser.organizationId));
         hasOptimisticSession = true;
@@ -225,6 +242,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { accessToken, user: userData } = response.data;
 
+    sessionEpochRef.current += 1;
+    userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
@@ -252,6 +271,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { accessToken, user: userData } = response.data;
 
+    sessionEpochRef.current += 1;
+    userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
@@ -260,29 +281,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userData;
   };
 
-  const updateUserOrg = (org: Organization, updatedRole?: string) => {
-    if (!user) return;
-    queryClient?.clear();
-    const isOwner = Boolean(
-      (org as { ownerId?: string })?.ownerId &&
-      (org as { ownerId?: string }).ownerId === user.id,
-    );
-    const updated: User = {
-      ...user,
-      organizationId: org.id,
-      organization: org,
-      isOwner,
-      role: isOwner ? "ADMIN" : (updatedRole as User["role"]) || user.role,
-    };
-    setUser(updated);
-    localStorage.setItem(USER_KEY, JSON.stringify(updated));
-    setAuthCookies(token, true);
-  };
+  const updateUserOrg = useCallback(
+    (org: Organization, updatedRole?: string) => {
+      const currentUser = userRef.current ?? user;
+      if (!currentUser) return;
+      sessionEpochRef.current += 1;
+      const isOrgSwitch = currentUser.organizationId !== org.id;
+      if (isOrgSwitch) {
+        void queryClient?.cancelQueries();
+      }
+      const isOwner = Boolean(
+        (org as { ownerId?: string })?.ownerId &&
+        (org as { ownerId?: string }).ownerId === currentUser.id,
+      );
+      const updated: User = {
+        ...currentUser,
+        organizationId: org.id,
+        organization: org,
+        isOwner,
+        role: isOwner
+          ? "ADMIN"
+          : (updatedRole as User["role"]) || currentUser.role,
+      };
+      userRef.current = updated;
+      setUser(updated);
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      setAuthCookies(token, true);
+      queryClient?.setQueryData(queryKeys.myOrg(org.id), org);
+      queryClient?.setQueryData(queryKeys.myOrg(), org);
+      if (isOrgSwitch && typeof window !== "undefined") {
+        window.dispatchEvent(new Event("haihire:auth-refreshed"));
+      }
+    },
+    [queryClient, token, user],
+  );
 
   const updateUser = useCallback((updatedFields: Partial<User>) => {
+    sessionEpochRef.current += 1;
     setUser((prev) => {
       if (!prev) return prev;
       const next: User = { ...prev, ...updatedFields };
+      userRef.current = next;
       if (typeof window !== "undefined") {
         localStorage.setItem(USER_KEY, JSON.stringify(next));
       }

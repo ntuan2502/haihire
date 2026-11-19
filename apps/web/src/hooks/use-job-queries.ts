@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   PipelineStageItem,
   UpsertPipelineStagesSchema,
 } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useJobs(
   organizationId?: string | null,
@@ -78,7 +73,9 @@ export function useJobs(
       });
     },
     enabled: Boolean(effectiveOrgId || options?.organizationSlug),
-    placeholderData: keepPreviousData,
+    placeholderData: keepPreviousDataForSameOrg<PaginatedResult<Job>>(
+      effectiveOrgId ?? null,
+    ),
   });
 }
 
@@ -122,8 +119,13 @@ export function useOpenJobs(organizationId?: string | null) {
 }
 
 export function useJob(id: string | null) {
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
   return useQuery<Job>({
-    queryKey: ["jobs", id],
+    queryKey:
+      orgId !== undefined
+        ? (["jobs", id, { orgId }] as const)
+        : (["jobs", id] as const),
     queryFn: () => {
       if (!id) throw new Error("Job ID is required");
       return jobsApi.getById(id);

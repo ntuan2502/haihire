@@ -1,16 +1,11 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "./use-has-permission";
 import type { Candidate, CandidateNote, PaginatedResult } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useCandidates(
   organizationId?: string | null,
@@ -54,7 +49,8 @@ export function useCandidates(
       Boolean(effectiveOrgId) &&
       canViewCandidates &&
       (options?.enabled ?? true),
-    placeholderData: keepPreviousData,
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Candidate>>(effectiveOrgId),
   });
 }
 

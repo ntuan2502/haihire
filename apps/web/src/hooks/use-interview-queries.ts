@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   PaginatedResult,
 } from "@/types";
 import type { InterviewScorecard } from "@/lib/interviews";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useInterviews(params?: {
   organizationId?: string | null;
@@ -73,7 +68,8 @@ export function useInterviews(params?: {
       });
     },
     enabled: Boolean(effectiveOrgId) && (params?.enabled ?? true),
-    placeholderData: keepPreviousData,
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Interview>>(effectiveOrgId),
   });
 }
 

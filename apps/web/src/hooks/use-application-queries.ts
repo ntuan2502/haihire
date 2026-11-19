@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   ApplicationStats,
   PaginatedResult,
 } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useApplications(params?: {
   organizationId?: string | null;
@@ -61,7 +56,8 @@ export function useApplications(params?: {
       });
     },
     enabled: (params?.enabled ?? true) && Boolean(effectiveOrgId),
-    placeholderData: keepPreviousData,
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Application>>(effectiveOrgId),
   });
 }
 

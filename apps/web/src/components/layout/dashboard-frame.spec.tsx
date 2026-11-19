@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import type { Organization, User } from "@/types";
 import { DashboardFrame } from "./dashboard-frame";
 
-const { mockPathname } = vi.hoisted(() => ({
+const { mockPathname, mockActiveUser } = vi.hoisted(() => ({
   mockPathname: { current: "/dashboard" },
+  mockActiveUser: { current: null as User | null },
 }));
 
 const mockOrganization: Organization = {
@@ -37,7 +39,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    user: mockUser,
+    user: mockActiveUser.current ?? mockUser,
     isAuthenticated: true,
     isOwner: true,
     logout: vi.fn(),
@@ -68,6 +70,7 @@ describe("DashboardFrame", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPathname.current = "/dashboard";
+    mockActiveUser.current = mockUser;
   });
 
   it("renders unified AppSidebar, DashboardHeader, main-content inset, and child content on /dashboard", () => {
@@ -114,5 +117,53 @@ describe("DashboardFrame", () => {
       name: "Thành viên",
     });
     expect(membersSidebarLink).toHaveAttribute("aria-current", "page");
+  });
+
+  it("remounts workspace children and resets local child state when active organizationId changes", () => {
+    function StatefulWorkspaceChild() {
+      const [draftFilter, setDraftFilter] = useState("initial");
+      return (
+        <div>
+          <span data-testid="draft-filter">{draftFilter}</span>
+          <button
+            type="button"
+            onClick={() => setDraftFilter("org-1-modified")}
+          >
+            Mutate local state
+          </button>
+        </div>
+      );
+    }
+
+    const { rerender } = render(
+      <DashboardFrame>
+        <StatefulWorkspaceChild />
+      </DashboardFrame>,
+    );
+
+    expect(screen.getByTestId("draft-filter")).toHaveTextContent("initial");
+    fireEvent.click(screen.getByRole("button", { name: "Mutate local state" }));
+    expect(screen.getByTestId("draft-filter")).toHaveTextContent(
+      "org-1-modified",
+    );
+
+    mockActiveUser.current = {
+      ...mockUser,
+      organizationId: "org-2",
+      organization: {
+        ...mockOrganization,
+        id: "org-2",
+        name: "Org Two",
+        slug: "org-two",
+      },
+    };
+
+    rerender(
+      <DashboardFrame>
+        <StatefulWorkspaceChild />
+      </DashboardFrame>,
+    );
+
+    expect(screen.getByTestId("draft-filter")).toHaveTextContent("initial");
   });
 });

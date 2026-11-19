@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
+import { queryKeys } from "@/hooks/query-keys";
 import type { ReactNode } from "react";
 import { AuthProvider, useAuth } from "./auth-context";
 import { api, refreshAuthSession } from "@/lib/api/client";
@@ -535,5 +536,125 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("ignores stale in-flight /auth/me responses when updateUserOrg switches organization mid-flight", async () => {
+    window.history.pushState({}, "", "/dashboard");
+    const queryClient = new QueryClient();
+    const cancelSpy = vi.spyOn(queryClient, "cancelQueries");
+    queryClient.setQueryData(queryKeys.myOrgs(), [
+      { id: "org-1", name: "Org One", slug: "org-1" },
+      { id: "org-2", name: "Org Two", slug: "org-2" },
+    ]);
+
+    let resolveStaleMe!: (val: unknown) => void;
+    vi.mocked(api.get)
+      .mockResolvedValueOnce({
+        data: {
+          id: "u-switch",
+          email: "switch@test.local",
+          name: "Switch User",
+          role: "ADMIN",
+          organizationId: "org-1",
+          organization: {
+            id: "org-1",
+            name: "Org One",
+            slug: "org-1",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        },
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStaleMe = resolve;
+          }),
+      );
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.organizationId).toBe("org-1");
+      expect(latestSource).not.toBeNull();
+    });
+
+    // Start an in-flight /auth/me request belonging to the org-1 epoch
+    let inFlightRefresh!: Promise<unknown>;
+    act(() => {
+      inFlightRefresh = result.current.refreshUser();
+    });
+
+    const refreshListener = vi.fn();
+    window.addEventListener("haihire:auth-refreshed", refreshListener);
+
+    // Switch organization to org-2 before the stale /auth/me settles
+    act(() => {
+      result.current.updateUserOrg(
+        {
+          id: "org-2",
+          name: "Org Two",
+          slug: "org-2",
+          ownerId: "u-other",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+        "RECRUITER",
+      );
+    });
+
+    expect(cancelSpy).toHaveBeenCalledTimes(1);
+    expect(refreshListener).toHaveBeenCalledTimes(1);
+    expect(result.current.user?.organizationId).toBe("org-2");
+    expect(result.current.user?.role).toBe("RECRUITER");
+    expect(queryClient.getQueryData(queryKeys.myOrg("org-2"))).toMatchObject({
+      id: "org-2",
+      name: "Org Two",
+    });
+    expect(queryClient.getQueryData(queryKeys.myOrgs())).toHaveLength(2);
+
+    // Resolve the stale /auth/me response with org-1: it must NOT overwrite org-2
+    await act(async () => {
+      resolveStaleMe({
+        data: {
+          id: "u-switch",
+          email: "switch@test.local",
+          name: "Switch User",
+          role: "ADMIN",
+          organizationId: "org-1",
+          organization: {
+            id: "org-1",
+            name: "Org One",
+            slug: "org-1",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        },
+      });
+      await inFlightRefresh;
+    });
+
+    expect(result.current.user?.organizationId).toBe("org-2");
+    expect(result.current.user?.organization?.name).toBe("Org Two");
+
+    // Targeted SSE ORG_UPDATED for the already-active org should not issue redundant /auth/me
+    const getCountBeforeSse = vi.mocked(api.get).mock.calls.length;
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "ORG_UPDATED",
+            targetUserId: "u-switch",
+            organizationId: "org-2",
+          }),
+        }),
+      );
+    });
+    expect(vi.mocked(api.get).mock.calls.length).toBe(getCountBeforeSse);
+
+    window.removeEventListener("haihire:auth-refreshed", refreshListener);
   });
 });

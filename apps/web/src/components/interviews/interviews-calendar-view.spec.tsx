@@ -713,11 +713,16 @@ describe("InterviewsCalendarView Component Tests", () => {
       });
       fireEvent.click(weekBtn);
 
-      // Week card keeps surface compact (no inline Join link or duplicate star emoji)
+      // Week card shows round + score consistently and displays full job title without truncation
       expect(
         screen.queryByText("interviews.joinMeetingShort"),
       ).not.toBeInTheDocument();
       expect(screen.queryByText(/5 ⭐/)).not.toBeInTheDocument();
+      expect(screen.getByText("interviews.roundShort")).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
+      expect(
+        screen.getByText("Senior Backend Developer").className,
+      ).not.toContain("truncate");
 
       const weekCard = screen.getByRole("button", {
         name: "Interview with Nguyen Van A at 14:00",

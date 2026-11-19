@@ -39,7 +39,7 @@ export function CalendarWeekCard({
           : "bg-muted/40 hover:bg-muted/70 border-border border-l-primary"
       }`}
     >
-      {/* Line 1: Time + Format Icon + Rating/Round Pill */}
+      {/* Line 1: Time + Format Icon + Round Badge + Optional Rating Pill */}
       <div className="flex items-center justify-between gap-1 text-[11px]">
         <span className="font-bold text-foreground inline-flex items-center gap-1 font-mono shrink-0">
           <Clock className="h-3 w-3 text-primary" aria-hidden="true" />
@@ -59,7 +59,15 @@ export function CalendarWeekCard({
             />
           )}
 
-          {hasScorecard ? (
+          {event.interview.round ? (
+            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold">
+              {t("interviews.roundShort", {
+                round: event.interview.round,
+              })}
+            </span>
+          ) : null}
+
+          {hasScorecard && (
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
               <Star
                 className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500"
@@ -67,13 +75,7 @@ export function CalendarWeekCard({
               />
               <span>{event.interview.scorecard?.overallRating}</span>
             </span>
-          ) : event.interview.round ? (
-            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold">
-              {t("interviews.roundShort", {
-                round: event.interview.round,
-              })}
-            </span>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -82,9 +84,9 @@ export function CalendarWeekCard({
         {candidateName}
       </h4>
 
-      {/* Line 3: Job Title */}
+      {/* Line 3: Job Title (full text, no truncation) */}
       {event.job?.title && (
-        <p className="text-[11px] text-muted-foreground truncate">
+        <p className="text-[11px] text-muted-foreground whitespace-normal break-words leading-snug">
           {event.job.title}
         </p>
       )}

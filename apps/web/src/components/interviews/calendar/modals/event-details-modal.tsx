@@ -62,14 +62,14 @@ export function EventDetailsModal({
       }
       footer={
         selectedEvent ? (
-          <div className="w-full flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="w-full flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 shrink-0">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={onClose}
-                className="h-8 rounded-md text-xs cursor-pointer"
+                className="h-8 px-2.5 rounded-md text-xs whitespace-nowrap shrink-0 cursor-pointer"
               >
                 {t("common.close")}
               </Button>
@@ -78,7 +78,7 @@ export function EventDetailsModal({
                 onClick={onClose}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
-                  "h-8 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5",
+                  "h-8 px-2 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 whitespace-nowrap shrink-0",
                 )}
               >
                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
@@ -86,7 +86,7 @@ export function EventDetailsModal({
               </Link>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 ml-auto shrink-0">
               {onCancelInterview && (
                 <Button
                   type="button"
@@ -97,7 +97,7 @@ export function EventDetailsModal({
                     onClose();
                     onCancelInterview(evt.application, evt.interview);
                   }}
-                  className="h-8 rounded-md text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive cursor-pointer inline-flex items-center gap-1.5"
+                  className="h-8 px-2.5 rounded-md text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Trash2 className="h-3 w-3" aria-hidden="true" />
                   <span>{t("interviews.cancelThisSchedule")}</span>
@@ -114,7 +114,7 @@ export function EventDetailsModal({
                     onClose();
                     onEditSchedule(evt.application, evt.interview);
                   }}
-                  className="h-8 rounded-md text-xs font-semibold cursor-pointer"
+                  className="h-8 px-2.5 rounded-md text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   {t("interviews.editSchedule")}
                 </Button>
@@ -130,7 +130,7 @@ export function EventDetailsModal({
                     onClose();
                     onOpenScorecard(evt.application, evt.interview);
                   }}
-                  className="h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                  className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Star className="h-3 w-3" aria-hidden="true" />
                   <span>
@@ -144,7 +144,8 @@ export function EventDetailsModal({
           </div>
         ) : undefined
       }
-      size="md"
+      size="lg"
+      footerClassName="px-5 py-3.5"
       bodyClassName="p-5 bg-background space-y-4"
     >
       {selectedEvent && <EventDetailsCard event={selectedEvent} />}

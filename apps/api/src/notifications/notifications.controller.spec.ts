@@ -115,7 +115,7 @@ describe("NotificationsController preferences", () => {
           {
             id: "app-1",
             candidate: {
-              name: "An Nguyen",
+              displayName: null,
               firstName: "An",
               lastName: "Nguyen",
             },
@@ -131,7 +131,7 @@ describe("NotificationsController preferences", () => {
             round: 2,
             application: {
               candidate: {
-                name: "Binh Tran",
+                displayName: null,
                 firstName: "Binh",
                 lastName: "Tran",
               },
@@ -157,6 +157,28 @@ describe("NotificationsController preferences", () => {
       user: { id: "user-1", organizationId: "org-1", role: Role.ADMIN },
     });
 
+    expect(transaction.application.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          candidate: {
+            select: { displayName: true, firstName: true, lastName: true },
+          },
+        }),
+      }),
+    );
+    expect(transaction.interview.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          application: expect.objectContaining({
+            select: expect.objectContaining({
+              candidate: {
+                select: { displayName: true, firstName: true, lastName: true },
+              },
+            }),
+          }),
+        }),
+      }),
+    );
     expect(result.unreadCount).toBe(1);
     expect(result.items).toEqual([
       expect.objectContaining({

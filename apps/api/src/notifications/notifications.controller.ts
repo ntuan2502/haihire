@@ -71,21 +71,21 @@ export class NotificationsController {
     const { items, unreadCount } = await this.prisma.withTenantRls(
       user.organizationId,
       async (tx) => {
-        const [rawItems, count] = await Promise.all([
-          tx.notification.findMany({
-            where,
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: 30,
-            select: {
-              id: true,
-              kind: true,
-              resourceId: true,
-              createdAt: true,
-              readAt: true,
-            },
-          }),
-          tx.notification.count({ where: { ...where, readAt: null } }),
-        ]);
+        const rawItems = await tx.notification.findMany({
+          where,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: 30,
+          select: {
+            id: true,
+            kind: true,
+            resourceId: true,
+            createdAt: true,
+            readAt: true,
+          },
+        });
+        const count = await tx.notification.count({
+          where: { ...where, readAt: null },
+        });
 
         if (rawItems.length === 0) {
           return { items: rawItems, unreadCount: count };
@@ -98,10 +98,13 @@ export class NotificationsController {
           .filter((item) => item.kind !== "applicationReceived")
           .map((item) => item.resourceId);
 
-        const [nameOrder, appRows, interviewRows] = await Promise.all([
-          resolveOrgNameDisplayOrder(tx, user.organizationId),
+        const nameOrder = await resolveOrgNameDisplayOrder(
+          tx,
+          user.organizationId,
+        );
+        const appRows =
           appIds.length > 0 && tx.application?.findMany
-            ? tx.application.findMany({
+            ? await tx.application.findMany({
                 where: {
                   id: { in: appIds },
                   organizationId: user.organizationId,
@@ -109,14 +112,19 @@ export class NotificationsController {
                 select: {
                   id: true,
                   candidate: {
-                    select: { name: true, firstName: true, lastName: true },
+                    select: {
+                      displayName: true,
+                      firstName: true,
+                      lastName: true,
+                    },
                   },
                   job: { select: { title: true } },
                 },
               })
-            : Promise.resolve([]),
+            : [];
+        const interviewRows =
           interviewIds.length > 0 && tx.interview?.findMany
-            ? tx.interview.findMany({
+            ? await tx.interview.findMany({
                 where: {
                   id: { in: interviewIds },
                   organizationId: user.organizationId,
@@ -128,15 +136,18 @@ export class NotificationsController {
                   application: {
                     select: {
                       candidate: {
-                        select: { name: true, firstName: true, lastName: true },
+                        select: {
+                          displayName: true,
+                          firstName: true,
+                          lastName: true,
+                        },
                       },
                       job: { select: { title: true } },
                     },
                   },
                 },
               })
-            : Promise.resolve([]),
-        ]);
+            : [];
 
         const appMap = new Map(appRows.map((row) => [row.id, row]));
         const interviewMap = new Map(interviewRows.map((row) => [row.id, row]));

@@ -187,6 +187,30 @@ export function formatDate(
 }
 
 /**
+ * Format day + month compactly (without year) respecting active organization dateFormat.
+ */
+export function formatDayMonth(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (!dateInput) return "—";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+  const effectiveDateFormat: DateFormat =
+    overrides?.dateFormat ?? activeOrgLocalization?.dateFormat ?? "MM/DD/YYYY";
+
+  const parts = extractCalendarParts(dateInput, effectiveTimezone);
+  if (!parts) return "—";
+
+  const dd = String(parts.day).padStart(2, "0");
+  const mm = String(parts.month).padStart(2, "0");
+
+  if (effectiveDateFormat === "DD/MM/YYYY") return `${dd}/${mm}`;
+  if (effectiveDateFormat === "YYYY-MM-DD") return `${mm}-${dd}`;
+  return `${mm}/${dd}`;
+}
+
+/**
  * Format a clock string (e.g. "14:30") or timestamp according to 24H / 12H preference.
  */
 export function formatTime(

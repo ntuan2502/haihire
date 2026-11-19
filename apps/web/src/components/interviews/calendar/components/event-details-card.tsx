@@ -1,7 +1,8 @@
 "use client";
 
-import { ExternalLink, Star, Video } from "lucide-react";
+import { ExternalLink, MapPin, Star, Video } from "lucide-react";
 import { cn } from "cn";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { formatDate, formatTime } from "@/lib/utils";
 import {
@@ -32,6 +33,12 @@ function getRecommendationBadgeClass(
 
 export function EventDetailsCard({ event }: EventDetailsCardProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
+
+  const isOffice = event.interview.format === "OFFICE";
+  const rawLocation = event.interview.linkOrLocation?.trim();
+  const isHttpUrl = Boolean(rawLocation && rawLocation.startsWith("http"));
 
   return (
     <>
@@ -60,8 +67,12 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
           </span>
           <span className="font-bold text-primary min-w-0 truncate text-right">
             {t("interviews.atTime", {
-              date: formatDate(event.interview.scheduledAt),
-              time: formatTime(event.interview.scheduledAt),
+              date: formatDate(
+                event.interview.scheduledAt,
+                "numeric",
+                locOverrides,
+              ),
+              time: formatTime(event.interview.scheduledAt, locOverrides),
             })}
           </span>
         </div>
@@ -80,7 +91,7 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
             {t("interviews.formatLabel")}:
           </span>
           <span className="font-semibold text-foreground min-w-0 truncate text-right">
-            {event.interview.format === "OFFICE"
+            {isOffice
               ? t("interviews.atOffice")
               : t("interviews.onlineFormat", {
                   format: event.interview.format,
@@ -88,14 +99,17 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
           </span>
         </div>
 
-        {event.interview.linkOrLocation && (
-          <div className="pt-2 border-t border-border flex items-center justify-between gap-3">
+        {rawLocation && (
+          <div className="pt-2 border-t border-border flex items-start justify-between gap-4">
             <span className="text-muted-foreground shrink-0">
-              {t("interviews.meetingUrlLabel")}:
+              {isOffice
+                ? t("interviews.addressLabel")
+                : t("interviews.meetingUrlLabel")}
+              :
             </span>
-            {event.interview.linkOrLocation.startsWith("http") ? (
+            {!isOffice && isHttpUrl ? (
               <a
-                href={event.interview.linkOrLocation}
+                href={rawLocation}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold text-primary hover:underline inline-flex items-center gap-1 shrink-0"
@@ -105,9 +119,15 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </a>
             ) : (
-              <span className="font-medium text-foreground min-w-0 truncate max-w-[200px] text-right">
-                {event.interview.linkOrLocation}
-              </span>
+              <div className="inline-flex items-start justify-end gap-1.5 min-w-0 flex-1 text-right font-medium text-foreground">
+                <MapPin
+                  className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
+                <span className="whitespace-normal break-words leading-relaxed">
+                  {rawLocation}
+                </span>
+              </div>
             )}
           </div>
         )}

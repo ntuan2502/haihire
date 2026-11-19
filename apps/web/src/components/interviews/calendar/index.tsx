@@ -17,9 +17,14 @@ import type {
 export function InterviewsCalendarView({
   applications,
   jobs,
+  calendarMode: controlledCalendarMode,
+  activeMonth,
+  activeDate,
+  onCalendarStateChange,
   onScheduleDate,
   onEditSchedule,
   onOpenScorecard,
+  onCancelInterview,
   onVisibleRangeChange,
   canEdit = true,
 }: InterviewsCalendarViewProps) {
@@ -33,8 +38,11 @@ export function InterviewsCalendarView({
   const {
     calendarMode,
     setCalendarMode,
+    currentYear,
+    currentMonth,
     handlePrevMonth,
     handleNextMonth,
+    handleSelectMonthYear,
     handleToday,
     monthDays,
     weekDays,
@@ -42,7 +50,12 @@ export function InterviewsCalendarView({
     weekTitle,
     dayHeaders,
     visibleRange,
-  } = useCalendarDateMath();
+  } = useCalendarDateMath({
+    controlledMode: controlledCalendarMode,
+    controlledMonth: activeMonth,
+    controlledDate: activeDate,
+    onStateChange: onCalendarStateChange,
+  });
 
   useEffect(() => {
     onVisibleRangeChange?.(visibleRange);
@@ -63,6 +76,9 @@ export function InterviewsCalendarView({
       <CalendarHeader
         calendarMode={calendarMode}
         setCalendarMode={setCalendarMode}
+        currentYear={currentYear}
+        currentMonth={currentMonth}
+        onSelectMonthYear={handleSelectMonthYear}
         monthTitle={monthTitle}
         weekTitle={weekTitle}
         handlePrevMonth={handlePrevMonth}
@@ -88,7 +104,7 @@ export function InterviewsCalendarView({
           dayHeaders={dayHeaders}
           eventsByDate={eventsByDate}
           onScheduleDate={onScheduleDate}
-          onOpenScorecard={onOpenScorecard}
+          onSelectEvent={setSelectedEvent}
           canEdit={canEdit}
         />
       )}
@@ -109,6 +125,7 @@ export function InterviewsCalendarView({
         onClose={() => setSelectedEvent(null)}
         onEditSchedule={onEditSchedule}
         onOpenScorecard={onOpenScorecard}
+        onCancelInterview={onCancelInterview}
         canEdit={canEdit}
       />
     </div>

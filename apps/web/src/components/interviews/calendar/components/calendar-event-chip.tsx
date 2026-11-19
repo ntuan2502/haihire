@@ -1,3 +1,4 @@
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { formatTime, getCandidateDisplayName } from "@/lib/utils";
 import type { CalendarEventItem } from "../types";
@@ -9,9 +10,15 @@ export interface CalendarEventChipProps {
 
 export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
   const { t } = useI18n();
-  const candidateName = getCandidateDisplayName(event.application);
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
+
+  const candidateName = getCandidateDisplayName(
+    event.application,
+    locOverrides,
+  );
   const hasScorecard = Boolean(event.interview.scorecard);
-  const timeStr = formatTime(event.interview.scheduledAt);
+  const timeStr = formatTime(event.interview.scheduledAt, locOverrides);
 
   return (
     <button

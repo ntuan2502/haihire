@@ -1,16 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   combineDateTimeInTimezone,
   extractDateTimeInTimezone,
 } from "@haihire/shared";
-import { resolveEffectiveTimezone } from "@/lib/utils";
+import {
+  formatDate,
+  formatDayMonth,
+  resolveEffectiveTimezone,
+} from "@/lib/utils";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type {
   CalendarDateInfo,
+  CalendarStateUpdate,
   CalendarWeekDayInfo,
   CalendarViewMode,
 } from "../types";
+
+export interface UseCalendarDateMathOptions {
+  initialDate?: Date;
+  controlledMode?: CalendarViewMode;
+  controlledMonth?: string;
+  controlledDate?: string;
+  onStateChange?: (next: CalendarStateUpdate) => void;
+}
 
 export function formatLocalDate(
   year: number,
@@ -33,15 +46,55 @@ function parseYmdParts(ymd: string): {
   return { year: y, monthIndex: m - 1, day: d };
 }
 
-export function useCalendarDateMath(initialDate: Date = new Date()) {
+function isValidMonthParam(value?: string): value is string {
+  return Boolean(value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
+}
+
+function isValidYmdParam(value?: string): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const { year, monthIndex, day } = parseYmdParts(value);
+  const dt = new Date(Date.UTC(year, monthIndex, day));
+  return (
+    dt.getUTCFullYear() === year &&
+    dt.getUTCMonth() === monthIndex &&
+    dt.getUTCDate() === day
+  );
+}
+
+function getMondayOfYmd(ymd: string): string {
+  const { year, monthIndex, day } = parseYmdParts(ymd);
+  const dt = new Date(Date.UTC(year, monthIndex, day));
+  let dayOfWeek = dt.getUTCDay() - 1;
+  if (dayOfWeek === -1) dayOfWeek = 6;
+  return formatLocalDate(year, monthIndex, day - dayOfWeek);
+}
+
+export function useCalendarDateMath(
+  initialDateOrOptions: Date | UseCalendarDateMathOptions = new Date(),
+) {
+  const options: UseCalendarDateMathOptions =
+    initialDateOrOptions instanceof Date
+      ? { initialDate: initialDateOrOptions }
+      : initialDateOrOptions;
+
+  const {
+    initialDate = new Date(),
+    controlledMode,
+    controlledMonth,
+    controlledDate,
+    onStateChange,
+  } = options;
+
   const { t, locale } = useI18n();
   const { localization, isConfigured } = useLocalization();
   const effectiveTimezone = resolveEffectiveTimezone(
     localization.timezone,
     isConfigured,
   );
-  const [calendarMode, setCalendarMode] = useState<CalendarViewMode>("month");
-  const [activeYmd, setActiveYmd] = useState<string>(
+  const locOverrides = isConfigured ? localization : undefined;
+
+  const [internalMode, setInternalMode] = useState<CalendarViewMode>("month");
+  const [internalActiveYmd, setInternalActiveYmd] = useState<string>(
     () => extractDateTimeInTimezone(initialDate, effectiveTimezone).date,
   );
 
@@ -49,6 +102,32 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     () => extractDateTimeInTimezone(new Date(), effectiveTimezone).date,
     [effectiveTimezone],
   );
+
+  const calendarMode: CalendarViewMode = controlledMode ?? internalMode;
+
+  const activeYmd = useMemo(() => {
+    if (controlledMode !== undefined) {
+      if (calendarMode === "week" && isValidYmdParam(controlledDate)) {
+        return controlledDate;
+      }
+      if (calendarMode === "month" && isValidMonthParam(controlledMonth)) {
+        return `${controlledMonth}-01`;
+      }
+      if (calendarMode === "week" && isValidMonthParam(controlledMonth)) {
+        return controlledMonth === todayStr.slice(0, 7)
+          ? todayStr
+          : `${controlledMonth}-01`;
+      }
+    }
+    return internalActiveYmd;
+  }, [
+    controlledMode,
+    calendarMode,
+    controlledDate,
+    controlledMonth,
+    todayStr,
+    internalActiveYmd,
+  ]);
 
   const {
     year: currentYear,
@@ -61,29 +140,149 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     [currentYear, currentMonth, currentDay],
   );
 
-  const setCurrentDate = (next: Date) => {
-    setActiveYmd(extractDateTimeInTimezone(next, effectiveTimezone).date);
-  };
+  const setCurrentDate = useCallback(
+    (next: Date) => {
+      const nextYmd = extractDateTimeInTimezone(next, effectiveTimezone).date;
+      setInternalActiveYmd(nextYmd);
+      if (calendarMode === "week") {
+        onStateChange?.({
+          calendarMode: "week",
+          month: null,
+          date: getMondayOfYmd(nextYmd),
+        });
+      } else {
+        onStateChange?.({
+          calendarMode: "month",
+          month: nextYmd.slice(0, 7),
+          date: null,
+        });
+      }
+    },
+    [effectiveTimezone, calendarMode, onStateChange],
+  );
 
-  const handlePrevMonth = () => {
+  const setCalendarMode = useCallback(
+    (nextMode: CalendarViewMode) => {
+      setInternalMode(nextMode);
+      if (nextMode === "week") {
+        const anchor =
+          activeYmd.slice(0, 7) === todayStr.slice(0, 7) ? todayStr : activeYmd;
+        const monday = getMondayOfYmd(anchor);
+        setInternalActiveYmd(anchor);
+        onStateChange?.({
+          calendarMode: "week",
+          month: null,
+          date: monday,
+        });
+      } else {
+        const anchorForMonth =
+          calendarMode === "week" && activeYmd === getMondayOfYmd(activeYmd)
+            ? formatLocalDate(currentYear, currentMonth, currentDay + 3)
+            : activeYmd;
+        const targetMonth = anchorForMonth.slice(0, 7);
+        const firstOfMonth = `${targetMonth}-01`;
+        setInternalActiveYmd(firstOfMonth);
+        onStateChange?.({
+          calendarMode: "month",
+          month: targetMonth,
+          date: null,
+        });
+      }
+    },
+    [
+      calendarMode,
+      activeYmd,
+      currentYear,
+      currentMonth,
+      currentDay,
+      todayStr,
+      onStateChange,
+    ],
+  );
+
+  const handlePrevMonth = useCallback(() => {
     if (calendarMode === "month") {
-      setActiveYmd(formatLocalDate(currentYear, currentMonth - 1, 1));
+      const nextYmd = formatLocalDate(currentYear, currentMonth - 1, 1);
+      setInternalActiveYmd(nextYmd);
+      onStateChange?.({
+        calendarMode: "month",
+        month: nextYmd.slice(0, 7),
+        date: null,
+      });
     } else {
-      setActiveYmd(formatLocalDate(currentYear, currentMonth, currentDay - 7));
+      const nextYmd = formatLocalDate(
+        currentYear,
+        currentMonth,
+        currentDay - 7,
+      );
+      const monday = getMondayOfYmd(nextYmd);
+      setInternalActiveYmd(nextYmd);
+      onStateChange?.({
+        calendarMode: "week",
+        month: null,
+        date: monday,
+      });
     }
-  };
+  }, [calendarMode, currentYear, currentMonth, currentDay, onStateChange]);
 
-  const handleNextMonth = () => {
+  const handleNextMonth = useCallback(() => {
     if (calendarMode === "month") {
-      setActiveYmd(formatLocalDate(currentYear, currentMonth + 1, 1));
+      const nextYmd = formatLocalDate(currentYear, currentMonth + 1, 1);
+      setInternalActiveYmd(nextYmd);
+      onStateChange?.({
+        calendarMode: "month",
+        month: nextYmd.slice(0, 7),
+        date: null,
+      });
     } else {
-      setActiveYmd(formatLocalDate(currentYear, currentMonth, currentDay + 7));
+      const nextYmd = formatLocalDate(
+        currentYear,
+        currentMonth,
+        currentDay + 7,
+      );
+      const monday = getMondayOfYmd(nextYmd);
+      setInternalActiveYmd(nextYmd);
+      onStateChange?.({
+        calendarMode: "week",
+        month: null,
+        date: monday,
+      });
     }
-  };
+  }, [calendarMode, currentYear, currentMonth, currentDay, onStateChange]);
 
-  const handleToday = () => {
-    setActiveYmd(extractDateTimeInTimezone(new Date(), effectiveTimezone).date);
-  };
+  const handleSelectMonthYear = useCallback(
+    (year: number, monthIndex: number) => {
+      const nextYmd = formatLocalDate(year, monthIndex, 1);
+      setInternalActiveYmd(nextYmd);
+      onStateChange?.({
+        calendarMode: "month",
+        month: nextYmd.slice(0, 7),
+        date: null,
+      });
+    },
+    [onStateChange],
+  );
+
+  const handleToday = useCallback(() => {
+    const nowYmd = extractDateTimeInTimezone(
+      new Date(),
+      effectiveTimezone,
+    ).date;
+    setInternalActiveYmd(nowYmd);
+    if (calendarMode === "week") {
+      onStateChange?.({
+        calendarMode: "week",
+        month: null,
+        date: getMondayOfYmd(nowYmd),
+      });
+    } else {
+      onStateChange?.({
+        calendarMode: "month",
+        month: nowYmd.slice(0, 7),
+        date: null,
+      });
+    }
+  }, [effectiveTimezone, calendarMode, onStateChange]);
 
   const monthDays = useMemo(() => {
     const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
@@ -178,12 +377,13 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
           locale === "vi"
             ? `Th${d.getUTCMonth() + 1}`
             : `M${d.getUTCMonth() + 1}`,
+        displayDate: formatDayMonth(dateStr, locOverrides),
         isToday: dateStr === todayStr,
       });
     }
 
     return days;
-  }, [currentYear, currentMonth, currentDay, todayStr, locale]);
+  }, [currentYear, currentMonth, currentDay, todayStr, locale, locOverrides]);
 
   const monthTitle = useMemo(() => {
     return new Date(
@@ -197,8 +397,8 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
 
   const weekTitle = useMemo(() => {
     if (weekDays.length < 7) return "";
-    return `${t("interviews.week")}: ${weekDays[0].dayNumber}/${weekDays[0].monthName} - ${weekDays[6].dayNumber}/${weekDays[6].monthName}, ${currentYear}`;
-  }, [weekDays, currentYear, t]);
+    return `${t("interviews.week")}: ${formatDate(weekDays[0].dateStr, "numeric", locOverrides)} – ${formatDate(weekDays[6].dateStr, "numeric", locOverrides)}`;
+  }, [weekDays, t, locOverrides]);
 
   const dayHeaders = useMemo(
     () => [
@@ -240,6 +440,8 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     setCalendarMode,
     viewMode: calendarMode,
     setViewMode: setCalendarMode,
+    currentYear,
+    currentMonth,
     currentDate,
     setCurrentDate,
     todayStr,
@@ -248,6 +450,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     handleNextMonth,
     handlePrev: handlePrevMonth,
     handleNext: handleNextMonth,
+    handleSelectMonthYear,
     handleToday,
     monthDays,
     weekDays,

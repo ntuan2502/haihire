@@ -1285,9 +1285,12 @@ export interface TranslationSchema {
     pipelineReviewTooltip: string;
     viewCandidateInPipeline: string;
     roundInterview: string;
+    roundShort: string;
     pvPrefix: string;
     prevPeriod: string;
     nextPeriod: string;
+    selectMonth: string;
+    selectYear: string;
     noScheduleForDay: string;
     candidateInterviewsTitle: string;
     candidateInterviewsMultiple: string;
@@ -1308,6 +1311,7 @@ export interface TranslationSchema {
     modalSubtitle: string;
     targetJobAndCandidate: string;
     officeAddressLabel: string;
+    addressLabel: string;
     meetingUrlLabel: string;
     requiredLabel: string;
     overallRatingTitle: string;

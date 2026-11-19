@@ -24,6 +24,7 @@ import {
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
@@ -81,8 +82,10 @@ export function InterviewsTableRow({
   getRelativeDateBadge,
 }: InterviewsTableRowProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
-  const displayName = getCandidateDisplayName(app);
+  const displayName = getCandidateDisplayName(app, locOverrides);
   const initials = getInitials(displayName);
 
   const getRecommendationBadge = (rec?: string) => {
@@ -157,8 +160,12 @@ export function InterviewsTableRow({
                 <div className="flex items-center gap-1.5 font-bold text-foreground text-xs whitespace-nowrap">
                   <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span>
-                    {formatDate(currentInterview.scheduledAt)} •{" "}
-                    {formatTime(currentInterview.scheduledAt)}
+                    {formatDate(
+                      currentInterview.scheduledAt,
+                      "numeric",
+                      locOverrides,
+                    )}{" "}
+                    • {formatTime(currentInterview.scheduledAt, locOverrides)}
                   </span>
                   {getRelativeDateBadge(currentInterview.scheduledAt)}
                 </div>

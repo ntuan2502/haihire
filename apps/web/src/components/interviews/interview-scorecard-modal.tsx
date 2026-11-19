@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useSubmitScorecardMutation } from "@/hooks/use-queries";
@@ -44,6 +45,8 @@ export function InterviewScorecardModal({
 }: InterviewScorecardModalProps) {
   const { user } = useAuth();
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
   const feedbackId = useId();
   const submitScorecardMutation = useSubmitScorecardMutation();
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
@@ -96,7 +99,7 @@ export function InterviewScorecardModal({
 
   const isSaving = submitScorecardMutation.isPending;
   const isDisabled = !canSubmitScorecard || isSaving;
-  const candidateName = getCandidateDisplayName(application);
+  const candidateName = getCandidateDisplayName(application, locOverrides);
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
@@ -236,8 +239,8 @@ export function InterviewScorecardModal({
               aria-hidden="true"
             />
             <span>
-              {formatDate(interview.scheduledAt)} (
-              {formatTime(interview.scheduledAt)})
+              {formatDate(interview.scheduledAt, "numeric", locOverrides)} (
+              {formatTime(interview.scheduledAt, locOverrides)})
             </span>
           </div>
 

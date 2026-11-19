@@ -1,4 +1,6 @@
 import { Plus } from "lucide-react";
+import { useLocalization } from "@/components/providers/localization-provider";
+import { formatDate } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { CalendarEventChip } from "./calendar-event-chip";
 import type {
@@ -27,6 +29,8 @@ export function CalendarMonthView({
   canEdit = true,
 }: CalendarMonthViewProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
 
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
@@ -81,7 +85,7 @@ export function CalendarMonthView({
                     type="button"
                     onClick={() => onScheduleDate(day.dateStr)}
                     className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded-md hover:bg-primary/10 text-primary flex items-center justify-center transition-all cursor-pointer"
-                    title={`${t("interviews.scheduleNew")} ${day.dateStr}`}
+                    title={`${t("interviews.scheduleNew")} ${formatDate(day.dateStr, "numeric", locOverrides)}`}
                   >
                     <Plus className="h-3 w-3" />
                   </button>

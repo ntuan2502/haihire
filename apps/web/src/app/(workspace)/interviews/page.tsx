@@ -106,6 +106,12 @@ function InterviewsPageContent() {
   const rawViewMode = getParam("viewMode", "table");
   const viewMode: ViewMode = rawViewMode === "calendar" ? "calendar" : "table";
 
+  const rawCalendarMode = getParam("calendarMode", "month");
+  const calendarMode: "month" | "week" =
+    rawCalendarMode === "week" ? "week" : "month";
+  const activeMonthParam = getParam("month", "") || undefined;
+  const activeDateParam = getParam("date", "") || undefined;
+
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
     rawSortBy === "newest" || rawSortBy === "name" ? rawSortBy : "upcoming";
@@ -119,6 +125,11 @@ function InterviewsPageContent() {
         getParam("limit"))
     ) {
       setParams({ tab: null, sortBy: null, limit: null }, true);
+    } else if (
+      viewMode === "table" &&
+      (getParam("calendarMode") || getParam("month") || getParam("date"))
+    ) {
+      setParams({ calendarMode: null, month: null, date: null }, false);
     }
   }, [viewMode, searchParams, getParam, setParams]);
 
@@ -156,6 +167,7 @@ function InterviewsPageContent() {
       setParams(
         {
           viewMode: "calendar",
+          calendarMode: "month",
           interviewId: null,
           tab: null,
           sortBy: null,
@@ -164,7 +176,15 @@ function InterviewsPageContent() {
         true,
       );
     } else {
-      setParam("viewMode", null, false);
+      setParams(
+        {
+          viewMode: null,
+          calendarMode: null,
+          month: null,
+          date: null,
+        },
+        false,
+      );
     }
   };
 
@@ -346,6 +366,19 @@ function InterviewsPageContent() {
           <InterviewsCalendarView
             applications={calendarApplications}
             jobs={jobs}
+            calendarMode={calendarMode}
+            activeMonth={activeMonthParam}
+            activeDate={activeDateParam}
+            onCalendarStateChange={(next) =>
+              setParams(
+                {
+                  calendarMode: next.calendarMode,
+                  month: next.month,
+                  date: next.date,
+                },
+                false,
+              )
+            }
             onScheduleDate={(dateStr) =>
               handleOpenScheduleModal(undefined, dateStr)
             }
@@ -358,6 +391,14 @@ function InterviewsPageContent() {
               )
             }
             onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+            onCancelInterview={
+              canDeleteInterview
+                ? (app, interview) => {
+                    setCancelInterviewState({ app, interview });
+                    setIsCancelModalOpen(true);
+                  }
+                : undefined
+            }
             onVisibleRangeChange={setCalendarRange}
             canEdit={canCreateInterview}
           />

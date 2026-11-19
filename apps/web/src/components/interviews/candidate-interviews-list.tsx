@@ -19,6 +19,7 @@ import {
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import type { Interview } from "@/types";
@@ -52,6 +53,8 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
   const hasCreateInterview = useHasPermission("interview:create");
   const hasUpdateInterview = useHasPermission("interview:update");
   const hasDeleteInterview = useHasPermission("interview:delete");
@@ -207,8 +210,12 @@ export function CandidateInterviewsList({
                 <span className="font-bold text-foreground flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
                   {t("interviews.atTime", {
-                    date: formatDate(scheduled.scheduledAt),
-                    time: formatTime(scheduled.scheduledAt),
+                    date: formatDate(
+                      scheduled.scheduledAt,
+                      "numeric",
+                      locOverrides,
+                    ),
+                    time: formatTime(scheduled.scheduledAt, locOverrides),
                   })}
                 </span>
               </div>

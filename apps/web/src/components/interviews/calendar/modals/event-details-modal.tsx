@@ -1,9 +1,11 @@
 "use client";
 
-import { Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { FileText, Star, Trash2 } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { DetailModal } from "@/components/shared";
-import { getCandidateDisplayName, getInitials } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
+import { cn, getCandidateDisplayName } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { EventDetailsCard } from "../components/event-details-card";
@@ -20,6 +22,10 @@ export interface EventDetailsModalProps {
     app: Application,
     interview: ScheduledInterviewInfo,
   ) => void;
+  onCancelInterview?: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
   canEdit?: boolean;
 }
 
@@ -29,13 +35,16 @@ export function EventDetailsModal({
   onClose,
   onEditSchedule,
   onOpenScorecard,
+  onCancelInterview,
   canEdit = true,
 }: EventDetailsModalProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
   const title = selectedEvent
-    ? getCandidateDisplayName(selectedEvent.application)
+    ? getCandidateDisplayName(selectedEvent.application, locOverrides)
     : t("common.details");
 
   return (
@@ -51,30 +60,50 @@ export function EventDetailsModal({
           </span>
         ) : undefined
       }
-      headerActions={
-        selectedEvent ? (
-          <div
-            aria-hidden="true"
-            className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-black text-[11px] flex items-center justify-center shadow-xs shrink-0"
-          >
-            {getInitials(title)}
-          </div>
-        ) : undefined
-      }
       footer={
         selectedEvent ? (
           <div className="w-full flex flex-wrap items-center justify-between gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="h-8 rounded-md text-xs cursor-pointer"
-            >
-              {t("common.close")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="h-8 rounded-md text-xs cursor-pointer"
+              >
+                {t("common.close")}
+              </Button>
+              <Link
+                href={`/applications/${selectedEvent.application.id}`}
+                onClick={onClose}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "h-8 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5",
+                )}
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{t("applications.viewApplication")}</span>
+              </Link>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2 ml-auto">
+              {onCancelInterview && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const evt = selectedEvent;
+                    onClose();
+                    onCancelInterview(evt.application, evt.interview);
+                  }}
+                  className="h-8 rounded-md text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Trash2 className="h-3 w-3" aria-hidden="true" />
+                  <span>{t("interviews.cancelThisSchedule")}</span>
+                </Button>
+              )}
+
               {canEdit && (
                 <Button
                   type="button"

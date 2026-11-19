@@ -1,6 +1,7 @@
 "use client";
 
 import { History, Star, User } from "lucide-react";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { formatDate, formatTime } from "@/lib/utils";
 import {
   getInterviewTypeLabel,
@@ -19,6 +20,8 @@ export function InterviewsTableSubrow({
   visibleColumnCount,
 }: InterviewsTableSubrowProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
 
   const getRecommendationBadge = (rec?: string) => {
     if (!rec) return null;
@@ -65,8 +68,8 @@ export function InterviewsTableSubrow({
                       : getInterviewTypeLabel(prev.type, t)}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-normal">
-                    {formatDate(prev.scheduledAt)} (
-                    {formatTime(prev.scheduledAt)})
+                    {formatDate(prev.scheduledAt, "numeric", locOverrides)} (
+                    {formatTime(prev.scheduledAt, locOverrides)})
                   </span>
                 </div>
 

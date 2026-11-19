@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  formatDayMonth,
   formatFileSize,
   formatRelativeTime,
   formatTime,
@@ -97,6 +98,21 @@ describe("Frontend utils", () => {
       const date = new Date(2026, 7, 27);
       const result = formatDate(date, "short");
       expect(result).toBe("8/27/2026");
+    });
+  });
+
+  describe("formatDayMonth", () => {
+    it("formats day and month respecting DD/MM/YYYY, MM/DD/YYYY, and YYYY-MM-DD", () => {
+      expect(formatDayMonth("2026-08-27", { dateFormat: "DD/MM/YYYY" })).toBe(
+        "27/08",
+      );
+      expect(formatDayMonth("2026-08-27", { dateFormat: "MM/DD/YYYY" })).toBe(
+        "08/27",
+      );
+      expect(formatDayMonth("2026-08-27", { dateFormat: "YYYY-MM-DD" })).toBe(
+        "08-27",
+      );
+      expect(formatDayMonth(null)).toBe("—");
     });
   });
 

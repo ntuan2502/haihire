@@ -1,11 +1,16 @@
+import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import type { CalendarViewMode } from "../types";
 
 export interface CalendarHeaderProps {
   calendarMode: CalendarViewMode;
   setCalendarMode: (mode: CalendarViewMode) => void;
+  currentYear: number;
+  currentMonth: number;
+  onSelectMonthYear: (year: number, monthIndex: number) => void;
   monthTitle: string;
   weekTitle: string;
   handlePrevMonth: () => void;
@@ -16,18 +21,41 @@ export interface CalendarHeaderProps {
 export function CalendarHeader({
   calendarMode,
   setCalendarMode,
+  currentYear,
+  currentMonth,
+  onSelectMonthYear,
   monthTitle,
   weekTitle,
   handlePrevMonth,
   handleNextMonth,
   handleToday,
 }: CalendarHeaderProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+
+  const monthOptions = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(
+      locale === "vi" ? "vi-VN" : "en-US",
+      { month: "long", timeZone: "UTC" },
+    );
+    return Array.from({ length: 12 }, (_, idx) => {
+      const raw = formatter.format(new Date(Date.UTC(2026, idx, 15)));
+      const label = raw.charAt(0).toUpperCase() + raw.slice(1);
+      return { value: String(idx), label };
+    });
+  }, [locale]);
+
+  const yearOptions = useMemo(() => {
+    const startYear = currentYear - 3;
+    return Array.from({ length: 7 }, (_, i) => {
+      const y = startYear + i;
+      return { value: String(y), label: String(y) };
+    });
+  }, [currentYear]);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card text-card-foreground border border-border shadow-2xs">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-xl bg-card text-card-foreground border border-border shadow-2xs">
       {/* Left: Date Title & Nav Arrows */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -61,8 +89,35 @@ export function CalendarHeader({
         </h2>
       </div>
 
-      {/* Right: Mode Switcher (Month / Week) */}
-      <div className="flex items-center gap-2 self-end sm:self-auto">
+      {/* Right: Month/Year Selectors (Month mode) + Mode Switcher */}
+      <div className="flex flex-wrap items-center gap-2 self-end lg:self-auto">
+        {calendarMode === "month" && (
+          <div className="flex items-center gap-1.5">
+            <CustomSelect
+              size="sm"
+              aria-label={t("interviews.selectMonth")}
+              value={String(currentMonth)}
+              onChange={(val) =>
+                onSelectMonthYear(currentYear, Number.parseInt(val, 10))
+              }
+              options={monthOptions}
+              className="w-32"
+              triggerClassName="text-xs font-semibold h-8"
+            />
+            <CustomSelect
+              size="sm"
+              aria-label={t("interviews.selectYear")}
+              value={String(currentYear)}
+              onChange={(val) =>
+                onSelectMonthYear(Number.parseInt(val, 10), currentMonth)
+              }
+              options={yearOptions}
+              className="w-22"
+              triggerClassName="text-xs font-semibold h-8 tabular-nums"
+            />
+          </div>
+        )}
+
         <div className="flex items-center p-1 rounded-lg bg-muted border border-border">
           <button
             type="button"

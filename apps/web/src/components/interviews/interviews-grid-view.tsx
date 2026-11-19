@@ -26,6 +26,7 @@ import {
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
@@ -59,6 +60,8 @@ export function InterviewsGridView({
   canEdit = true,
 }: InterviewsGridViewProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
   return (
@@ -69,7 +72,7 @@ export function InterviewsGridView({
           const allInterviews = getInterviewsFromApplication(app);
           const currentInterview = allInterviews[0];
           const previousInterviews = allInterviews.slice(1);
-          const displayName = getCandidateDisplayName(app);
+          const displayName = getCandidateDisplayName(app, locOverrides);
           const initials = getInitials(displayName);
           const cardKey = currentInterview?.id
             ? `${app.id}-${currentInterview.id}`
@@ -144,11 +147,18 @@ export function InterviewsGridView({
                       <div className="flex items-center gap-1.5 font-bold text-foreground text-xs whitespace-nowrap">
                         <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="whitespace-nowrap">
-                          {formatDate(currentInterview.scheduledAt)}
+                          {formatDate(
+                            currentInterview.scheduledAt,
+                            "numeric",
+                            locOverrides,
+                          )}
                         </span>
                         <span className="text-muted-foreground/50">•</span>
                         <span className="text-primary whitespace-nowrap">
-                          {formatTime(currentInterview.scheduledAt)}
+                          {formatTime(
+                            currentInterview.scheduledAt,
+                            locOverrides,
+                          )}
                         </span>
                       </div>
                       {currentInterview.round ? (
@@ -313,8 +323,12 @@ export function InterviewsGridView({
                           >
                             <div className="flex items-center justify-between text-foreground font-medium gap-2">
                               <span className="whitespace-nowrap">
-                                {formatDate(prev.scheduledAt)} (
-                                {formatTime(prev.scheduledAt)})
+                                {formatDate(
+                                  prev.scheduledAt,
+                                  "numeric",
+                                  locOverrides,
+                                )}{" "}
+                                ({formatTime(prev.scheduledAt, locOverrides)})
                               </span>
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground font-bold shrink-0 truncate max-w-[140px]">
                                 {prev.round

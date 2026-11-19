@@ -1,16 +1,26 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { resetActiveLocalization, setActiveLocalization } from "@/lib/utils";
 import { EventDetailsCard } from "./event-details-card";
 import { getRecommendationLabel } from "@/lib/interviews";
 import type { CalendarEventItem } from "../types";
 
-const mockT = (key: string) => key;
+const mockT = (key: string, params?: Record<string, string | number>) => {
+  if (key === "interviews.atTime" && params) {
+    return `${params.date} at ${params.time}`;
+  }
+  return key;
+};
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
     t: mockT,
   }),
 }));
+
+afterEach(() => {
+  resetActiveLocalization();
+});
 
 function buildEventWithRecommendation(
   recommendation: "STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO",
@@ -102,5 +112,36 @@ describe("EventDetailsCard recommendation badge semantics", () => {
     );
     expect(strongYesBadge.className).toContain("bg-emerald-50");
     expect(strongYesBadge.className).toContain("text-emerald-700");
+  });
+
+  it("renders addressLabel without truncation for OFFICE format and respects date/time localization", () => {
+    setActiveLocalization({
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "12H",
+      timezone: "Asia/Ho_Chi_Minh",
+    });
+    const base = buildEventWithRecommendation("YES");
+    const officeAddress =
+      "Tang 15, Toa nha Techcombank Saigon Tower, 23 Le Duan, Phuong Ben Nghe, Quan 1, Thanh pho Ho Chi Minh";
+    const officeEvent: CalendarEventItem = {
+      ...base,
+      interview: {
+        ...base.interview,
+        scheduledAt: "2026-05-01T07:30:00.000Z", // 14:30 VN
+        format: "OFFICE",
+        linkOrLocation: officeAddress,
+      },
+    };
+
+    render(<EventDetailsCard event={officeEvent} />);
+
+    expect(screen.getByText("interviews.addressLabel:")).toBeInTheDocument();
+    expect(
+      screen.queryByText("interviews.meetingUrlLabel:"),
+    ).not.toBeInTheDocument();
+    const addrNode = screen.getByText(officeAddress);
+    expect(addrNode).toBeInTheDocument();
+    expect(addrNode.className).not.toContain("truncate");
+    expect(screen.getByText("01/05/2026 at 2:30 PM")).toBeInTheDocument();
   });
 });

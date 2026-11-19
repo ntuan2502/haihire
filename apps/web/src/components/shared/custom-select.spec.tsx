@@ -1,5 +1,12 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CustomSelect } from "./custom-select";
 
 describe("CustomSelect Accessibility (ARIA Listbox)", () => {
@@ -250,5 +257,70 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     fireEvent.change(secondSearch, { target: { value: "Atlantis" } });
     expect(screen.queryAllByRole("option")).toHaveLength(0);
     expect(screen.getByText("No timezone match")).toBeInTheDocument();
+  });
+
+  it("closes only CustomSelect on Escape without closing enclosing Radix Dialog", () => {
+    const onOpenChange = vi.fn();
+    render(
+      <Dialog open={true} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modal Title</DialogTitle>
+            <DialogDescription>Description</DialogDescription>
+          </DialogHeader>
+          <CustomSelect
+            id="modal-select"
+            value="opt1"
+            onChange={vi.fn()}
+            options={options}
+            aria-label="Modal selection"
+          />
+        </DialogContent>
+      </Dialog>,
+    );
+
+    const trigger = screen.getByRole("button", { name: /modal selection/i });
+    fireEvent.click(trigger);
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("selects a portaled option inside Radix Dialog without triggering outside-dismiss", () => {
+    const onOpenChange = vi.fn();
+    const handleChange = vi.fn();
+    render(
+      <Dialog open={true} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modal Title</DialogTitle>
+            <DialogDescription>Description</DialogDescription>
+          </DialogHeader>
+          <CustomSelect
+            id="modal-select-click"
+            value="opt1"
+            onChange={handleChange}
+            options={options}
+            aria-label="Modal click selection"
+          />
+        </DialogContent>
+      </Dialog>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /modal click selection/i }),
+    );
+    const opt2 = screen.getByRole("option", { name: "Option 2" });
+    fireEvent.pointerDown(opt2);
+    fireEvent.mouseDown(opt2);
+    fireEvent.click(opt2);
+
+    expect(handleChange).toHaveBeenCalledWith("opt2");
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });

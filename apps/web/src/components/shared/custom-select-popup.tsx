@@ -73,6 +73,7 @@ export function CustomSelectPopup<T extends string = string>({
       ref={popupRef}
       id={listboxId}
       role="listbox"
+      data-custom-select-popup="true"
       tabIndex={-1}
       aria-label={
         ariaLabel || (typeof placeholder === "string" ? placeholder : undefined)
@@ -80,6 +81,7 @@ export function CustomSelectPopup<T extends string = string>({
       aria-activedescendant={
         focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined
       }
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed",
         ...(coords.top !== undefined ? { top: `${coords.top}px` } : {}),
@@ -91,7 +93,7 @@ export function CustomSelectPopup<T extends string = string>({
         maxWidth: "calc(100vw - 16px)",
       }}
       className={cn(
-        "flex flex-col overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-150 border focus:outline-none rounded-lg p-1 shadow-md border-border bg-popover text-popover-foreground",
+        "flex flex-col overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-150 border focus:outline-none rounded-lg p-1 shadow-md border-border bg-popover text-popover-foreground",
         popupClassName,
       )}
     >
@@ -138,6 +140,10 @@ export function CustomSelectPopup<T extends string = string>({
                 role="option"
                 aria-selected={isSelected}
                 disabled={option.disabled}
+                onMouseDown={(e) => {
+                  // Keep focus inside Radix Dialog/Sheet FocusScope when selecting portaled options
+                  e.preventDefault();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onChange(option.value);

@@ -197,15 +197,30 @@ export function CustomSelect<T extends string = string>({
     }
 
     function handleScrollOrResize() {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect && (rect.bottom < 0 || rect.top > window.innerHeight)) {
+        closeSelect(false);
+        return;
+      }
       updateCoords();
     }
 
+    function handleEscapeCapture(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSelect(true);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscapeCapture, true);
     window.addEventListener("scroll", handleScrollOrResize, true);
     window.addEventListener("resize", handleScrollOrResize);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeCapture, true);
       window.removeEventListener("scroll", handleScrollOrResize, true);
       window.removeEventListener("resize", handleScrollOrResize);
     };
@@ -214,8 +229,8 @@ export function CustomSelect<T extends string = string>({
   // Auto-scroll active option into view when focusedIndex changes
   useEffect(() => {
     if (isOpen && focusedIndex >= 0 && popupRef.current) {
-      const activeElem = popupRef.current.querySelector(
-        `#${listboxId}-opt-${focusedIndex}`,
+      const activeElem = document.getElementById(
+        `${listboxId}-opt-${focusedIndex}`,
       );
       if (
         activeElem &&
@@ -245,6 +260,7 @@ export function CustomSelect<T extends string = string>({
 
     if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       closeSelect(true);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();

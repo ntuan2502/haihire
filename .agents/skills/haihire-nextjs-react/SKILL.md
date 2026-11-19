@@ -49,14 +49,31 @@ Per Tailwind CSS v4 and `ui.shadcn.com` v4 documentation:
   - `@theme inline { ... }` pointing directly to live CSS custom properties (`var(--background)`, `var(--primary)`, etc.) so `.dark` switches apply dynamically at runtime.
 - **Color Space:** Define semantic CSS variables (`:root` and `.dark`) using perceptual `oklch(...)` values instead of hardcoded hex or ad-hoc palette utilities.
 - **Radix UI (`new-york`):**
-  - `apps/web/components.json` specifies `"style": "new-york"`. All primitives in `apps/web/src/components/ui/` are built on the unified `radix-ui` package (`radix-ui`), NOT `@base-ui/react` or legacy `@radix-ui/react-*` packages.
+  - `apps/web/components.json` specifies `"style": "new-york"`. All primitives in `apps/web/src/components/ui/` (`avatar.tsx`, `badge.tsx`, `breadcrumb.tsx`, `button.tsx`, `card.tsx`, `collapsible.tsx`, `dialog.tsx`, `dropdown-menu.tsx`, `input.tsx`, `popover.tsx`, `separator.tsx`, `sheet.tsx`, `sidebar.tsx`, `skeleton.tsx`, `textarea.tsx`, `tooltip.tsx`) are built on the unified `radix-ui` package (`radix-ui`), NOT `@base-ui/react` or legacy `@radix-ui/react-*` packages.
   - Never install `@base-ui/react` or replace `cn` from `"cn"` with manual `clsx` + `tailwind-merge`.
   - Use standard `asChild` / `Slot.Root` composition per `new-york` generated components rather than `render` prop patterns.
+  - Never create raw `createPortal(..., document.body)` overlays or manual `document.addEventListener("mousedown")` menus; Radix `Dialog` / `Sheet` `FocusScope` + `DismissableLayer` + `RemoveScroll` lock non-Radix portals outside `radix-ui`.
 
 ---
 
-## 4. Accessibility & UI Conventions
+## 4. Standardized Overlay Archetypes & Workspace List Layout
+
+- **Shared Overlay Archetypes (`apps/web/src/components/shared/`):**
+  - `ConfirmDestructiveModal` / `ConfirmModal` (`confirm-destructive-modal.tsx`): Destructive and confirmation dialogs with pending lock and optional `confirmMatchText` safeguard.
+  - `FormModal` (`form-modal.tsx`): Modal forms with `sm`/`md`/`lg`/`xl` sizing, sticky header/footer, scrollable body, inline `error` alert, and `isSubmitting` close-lock (pair with `FlowEmailToggleField` from `apps/web/src/components/email/flow-email-toggle-field.tsx` when toggling automated stage emails).
+  - `PreviewModal` (`preview-modal.tsx`): Full-height document/HTML previews (`lg`/`xl`/`full`) with maximize toggle.
+  - `DetailModal` (`detail-modal.tsx`): Read-only / multi-panel detail inspection dialogs.
+  - `SlideOver` / `DetailDrawer` (`slide-over.tsx`): Right-hand `Sheet` detail panels (`sm`..`2xl`).
+  - `FilterDrawer` + `FilterPillGroup` (`filter-drawer.tsx`) & `ColumnPicker` (`column-picker.tsx`): Unified filter slide-overs and `DropdownMenu` column visibility selectors.
+  - `CustomSelect` (`custom-select.tsx`): Searchable/grouped select dropdown backed by Radix `Popover` (`Popover`, `PopoverAnchor`, `PopoverContent`), ensuring full pointer, keyboard search, and wheel/touch scroll compatibility inside modal `Dialog` and `Sheet` overlays.
+- **Unified 5-Page Workspace List Contract (`jobs`, `candidates`, `applications`, `interviews`, `source-tracking`):**
+  - Render titles with `<PageHeader>` (`apps/web/src/components/shared/page-header.tsx`: `text-xl sm:text-2xl font-bold`, `rounded-full` count pill, single-row compact alignment when `!Icon && !subtitle`, `h-9 px-3.5 sm:px-4 text-xs font-semibold` primary CTA buttons).
+  - Keep filter toolbars uniform (`h-9 px-3.5 text-xs font-semibold` outline Filter button with active badge, `RotateCcw` Reset action, mobile wrapping, active filter chips), table `<thead>` headers uppercase with active sort highlight, row action icon buttons `h-8 w-8`, and `<Pagination>` inside the table card footer (`border-t border-border bg-muted/30`).
+
+---
+
+## 5. Accessibility & UI Conventions
 
 - Preserve interactive table headers (`scope="col"`, `aria-sort`), keyboard activation via `useKeyboardClick`, decorative icon `aria-hidden="true"`, and a single `<main id="main-content">` skip-link target.
-- Keep dialogs and destructive flows gated through shared confirmation modals (`ConfirmDestructiveModal`) and consistent status states (`403`/`404`).
+- Keep dialogs and destructive flows gated through `ConfirmDestructiveModal` and consistent status states (`403`/`404`).
 - Respect user and organization localization (`vi` / `en`) and RTL/truncation resilience across narrow and wide viewports (`375px`, `1366px`, `1536px`, `1920px`).

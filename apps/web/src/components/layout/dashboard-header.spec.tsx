@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import type { Permission } from "@haihire/shared";
 import type { User } from "@/types";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardHeader } from "./dashboard-header";
 
-const { mockPathname, mockPermissions } = vi.hoisted(() => ({
+const { mockPathname } = vi.hoisted(() => ({
   mockPathname: { current: "/dashboard" },
-  mockPermissions: { allowed: null as Set<Permission> | null },
 }));
 
 const mockUser: User = {
@@ -27,13 +25,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
   }),
-}));
-
-vi.mock("@/hooks/use-has-permission", () => ({
-  useHasPermission: (permission: Permission) => {
-    if (mockPermissions.allowed === null) return true;
-    return mockPermissions.allowed.has(permission);
-  },
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -63,7 +54,6 @@ describe("DashboardHeader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPathname.current = "/dashboard";
-    mockPermissions.allowed = null;
   });
 
   it("renders single-item Dashboard breadcrumb on /dashboard", () => {
@@ -97,11 +87,12 @@ describe("DashboardHeader", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders quick actions when job:create is permitted and hides New Job button when denied", () => {
-    const { rerender } = renderHeader();
+  it("renders utility controls in the header without a duplicate global New Job CTA", () => {
+    renderHeader();
 
-    const newJobLink = screen.getByRole("link", { name: "Tạo tin mới" });
-    expect(newJobLink).toHaveAttribute("href", "/jobs/new");
+    expect(
+      screen.queryByRole("link", { name: "Tạo tin mới" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /chủ đề|theme|giao diện/i }),
@@ -109,16 +100,5 @@ describe("DashboardHeader", () => {
     expect(
       screen.getByRole("button", { name: /tiếng việt/i }),
     ).toBeInTheDocument();
-
-    mockPermissions.allowed = new Set<Permission>();
-    rerender(
-      <SidebarProvider>
-        <DashboardHeader />
-      </SidebarProvider>,
-    );
-
-    expect(
-      screen.queryByRole("link", { name: "Tạo tin mới" }),
-    ).not.toBeInTheDocument();
   });
 });

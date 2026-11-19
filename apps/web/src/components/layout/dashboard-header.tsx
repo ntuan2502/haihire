@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
 
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -16,11 +15,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/auth-context";
-import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 export interface WorkspaceBreadcrumbItem {
@@ -179,7 +176,6 @@ export function DashboardHeader() {
   const pathname = usePathname();
   const { t } = useI18n();
   const { user, isAuthenticated } = useAuth();
-  const canCreateJob = useHasPermission("job:create");
   const breadcrumbs = buildWorkspaceBreadcrumbs(pathname, t);
 
   return (
@@ -220,14 +216,6 @@ export function DashboardHeader() {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        {canCreateJob && (
-          <Button asChild size="sm">
-            <Link href="/jobs/new" aria-label={t("nav.newJob")}>
-              <Plus aria-hidden="true" />
-              <span className="hidden sm:inline">{t("nav.newJob")}</span>
-            </Link>
-          </Button>
-        )}
         {isAuthenticated && user?.organizationId && (
           <NotificationBell
             organizationId={user.organizationId}

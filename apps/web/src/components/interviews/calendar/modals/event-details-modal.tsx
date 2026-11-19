@@ -1,6 +1,8 @@
+"use client";
+
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CustomModal } from "@/components/shared";
+import { DetailModal } from "@/components/shared";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
@@ -34,13 +36,14 @@ export function EventDetailsModal({
 
   const title = selectedEvent
     ? getCandidateDisplayName(selectedEvent.application)
-    : "";
+    : t("common.details");
 
   return (
-    <CustomModal
+    <DetailModal
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      description={selectedEvent?.application.candidateEmail || undefined}
       badge={
         selectedEvent?.interview.round ? (
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
@@ -48,34 +51,21 @@ export function EventDetailsModal({
           </span>
         ) : undefined
       }
-      size="md"
-      contentClassName="p-5 flex flex-col min-h-0 bg-background space-y-4"
-    >
-      {selectedEvent && (
-        <>
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shadow-xs">
-                {getInitials(
-                  getCandidateDisplayName(selectedEvent.application),
-                )}
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">
-                  {getCandidateDisplayName(selectedEvent.application)}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {selectedEvent.application.candidateEmail}
-                </p>
-              </div>
-            </div>
+      headerActions={
+        selectedEvent ? (
+          <div
+            aria-hidden="true"
+            className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-black text-[11px] flex items-center justify-center shadow-xs shrink-0"
+          >
+            {getInitials(title)}
           </div>
-
-          <EventDetailsCard event={selectedEvent} />
-
-          {/* Modal Actions */}
-          <div className="pt-2 flex items-center justify-between gap-2">
+        ) : undefined
+      }
+      footer={
+        selectedEvent ? (
+          <div className="w-full flex flex-wrap items-center justify-between gap-2">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={onClose}
@@ -84,9 +74,10 @@ export function EventDetailsModal({
               {t("common.close")}
             </Button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
               {canEdit && (
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => {
@@ -103,6 +94,7 @@ export function EventDetailsModal({
               {(Boolean(selectedEvent.interview.scorecard) ||
                 canSubmitScorecard) && (
                 <Button
+                  type="button"
                   size="sm"
                   onClick={() => {
                     const evt = selectedEvent;
@@ -111,7 +103,7 @@ export function EventDetailsModal({
                   }}
                   className="h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
                 >
-                  <Star className="h-3 w-3" />
+                  <Star className="h-3 w-3" aria-hidden="true" />
                   <span>
                     {selectedEvent.interview.scorecard
                       ? t("interviews.viewEvaluation")
@@ -121,8 +113,12 @@ export function EventDetailsModal({
               )}
             </div>
           </div>
-        </>
-      )}
-    </CustomModal>
+        ) : undefined
+      }
+      size="md"
+      bodyClassName="p-5 bg-background space-y-4"
+    >
+      {selectedEvent && <EventDetailsCard event={selectedEvent} />}
+    </DetailModal>
   );
 }

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  CustomModal,
+  PreviewModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
 } from "@/components/shared";
@@ -56,7 +56,7 @@ interface WizardPreviewModalProps {
 export function WizardPreviewModal({
   isOpen,
   onClose,
-  initialJob,
+  initialJob: _initialJob,
   previewDevice,
   setPreviewDevice,
   jobTitle,
@@ -80,15 +80,19 @@ export function WizardPreviewModal({
   const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
 
   return (
-    <CustomModal
+    <PreviewModal
       isOpen={isOpen}
       onClose={onClose}
       title={t("jobs.wizard.previewModalTitle")}
-      badge={t("jobs.wizard.previewLiveBadge")}
-      maxWidth="max-w-6xl"
-      height="h-[90vh]"
+      badge={
+        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary text-secondary-foreground border border-border">
+          {t("jobs.wizard.previewLiveBadge")}
+        </span>
+      }
+      size="xl"
+      height="h-[90dvh]"
       allowMaximize={true}
-      headerRight={
+      headerActions={
         <DevicePreviewSelector
           device={previewDevice}
           onChange={setPreviewDevice}
@@ -96,11 +100,7 @@ export function WizardPreviewModal({
       }
     >
       {({ isMaximized }) => (
-        <DevicePreviewFrame
-          device={previewDevice}
-          isMaximized={isMaximized}
-          url={`nexus.careers/jobs/${initialJob?.id || "engineering-lead"}`}
-        >
+        <DevicePreviewFrame device={previewDevice} isMaximized={isMaximized}>
           <div
             key={`job-preview-content-${previewDevice}`}
             className={cn(
@@ -215,10 +215,9 @@ export function WizardPreviewModal({
                       {t("careers.transparentProcessTitle")}
                     </p>
                     <p className="leading-relaxed text-[11px]">
-                      {t("careers.transparentProcessDesc").replace(
-                        "{orgName}",
-                        orgName || t("jobs.wizard.generalDepartment"),
-                      )}
+                      {t("careers.transparentProcessDesc", {
+                        orgName: orgName || t("jobs.wizard.generalDepartment"),
+                      })}
                     </p>
                   </div>
                 </div>
@@ -431,6 +430,6 @@ export function WizardPreviewModal({
           </div>
         </DevicePreviewFrame>
       )}
-    </CustomModal>
+    </PreviewModal>
   );
 }

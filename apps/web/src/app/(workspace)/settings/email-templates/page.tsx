@@ -102,7 +102,7 @@ export default function EmailTemplatesSettingsPage() {
   }, [remoteFlows]);
 
   const senderName = remoteSettings?.fromName || t("email.defaultSenderName");
-  const senderEmail = remoteSettings?.fromEmail || "careers@nexus.com";
+  const senderEmail = remoteSettings?.fromEmail || "careers@haihire.vn";
 
   const sampleVariables = useMemo(
     () => ({
@@ -113,7 +113,7 @@ export default function EmailTemplatesSettingsPage() {
       job_department: "Engineering",
       job_location: "Hà Nội / Remote",
       job_salary: "35,000,000 - 45,000,000 VND",
-      company_name: "Nexus Corporation",
+      company_name: "HaiHire",
       interview_date: "22/09/2026",
       interview_time: "14:30",
       interview_format: "Google Meet",

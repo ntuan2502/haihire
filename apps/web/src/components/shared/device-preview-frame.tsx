@@ -7,8 +7,6 @@ export type PreviewDeviceType = "desktop" | "tablet" | "mobile";
 
 export interface DevicePreviewFrameProps {
   device: PreviewDeviceType;
-  /** @deprecated Removed in Batch 3C when preview modal callers drop unused url prop. */
-  url?: string;
   isMaximized?: boolean;
   children: ReactNode;
   className?: string;

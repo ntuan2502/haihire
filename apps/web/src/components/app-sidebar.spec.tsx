@@ -124,9 +124,9 @@ describe("AppSidebar", () => {
     expect(screen.queryByText("Design Engineering")).not.toBeInTheDocument();
   });
 
-  it("filters main navigation and settings sub-items by RBAC permissions and excludes locked placeholders", () => {
+  it("filters main navigation and settings sub-items by RBAC permissions, excludes personal account/notifications, and hides Settings when empty", () => {
     mockPermissions.allowed = new Set<Permission>(["job:view"]);
-    renderAppSidebar();
+    const { rerender } = renderAppSidebar();
 
     expect(screen.getByRole("link", { name: "Tổng quan" })).toBeInTheDocument();
     expect(
@@ -144,19 +144,28 @@ describe("AppSidebar", () => {
     expect(
       screen.queryByRole("link", { name: "Theo dõi nguồn" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cài đặt" }),
+    ).not.toBeInTheDocument();
+
+    mockPermissions.allowed = new Set<Permission>(["job:view", "org:view"]);
+    rerender(
+      <SidebarProvider defaultOpen>
+        <AppSidebar />
+      </SidebarProvider>,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Cài đặt" }));
 
+    expect(screen.getByRole("link", { name: "Chung" })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Ngôn ngữ & Khu vực" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Thông báo của tôi" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Tài khoản" })).toBeInTheDocument();
-
+      screen.queryByRole("link", { name: "Thông báo của tôi" }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Chung" }),
+      screen.queryByRole("link", { name: "Tài khoản" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Thành viên" }),
@@ -185,12 +194,12 @@ describe("AppSidebar", () => {
     const settingsBtn = screen.getByRole("button", { name: "Cài đặt" });
     fireEvent.pointerDown(settingsBtn, { button: 0, ctrlKey: false });
 
-    const accountItem = await screen.findByRole("menuitem", {
-      name: "Tài khoản",
+    const generalItem = await screen.findByRole("menuitem", {
+      name: "Chung",
     });
-    expect(accountItem).toBeInTheDocument();
+    expect(generalItem).toBeInTheDocument();
 
-    fireEvent.click(accountItem);
-    expect(mockPush).toHaveBeenCalledWith("/settings/account");
+    fireEvent.click(generalItem);
+    expect(mockPush).toHaveBeenCalledWith("/settings");
   });
 });

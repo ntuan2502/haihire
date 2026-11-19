@@ -130,17 +130,26 @@ describe("UserMenu Accessibility", () => {
     });
   });
 
-  it("has keyboard-accessible settings button", async () => {
+  it("has keyboard-accessible account and settings buttons", async () => {
     render(<UserMenu />);
 
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
+      expect(screen.getByText("settings.tabs.account")).toBeInTheDocument();
       expect(screen.getByText("nav.settings")).toBeInTheDocument();
     });
 
-    const settingsBtn = screen.getByRole("menuitem", {
+    const accountBtn = screen.getByRole("menuitem", {
+      name: /settings\.tabs\.account/i,
+    });
+    expect(accountBtn).toBeInTheDocument();
+    fireEvent.click(accountBtn);
+    expect(mockPush).toHaveBeenCalledWith("/account");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const settingsBtn = await screen.findByRole("menuitem", {
       name: /nav\.settings/i,
     });
     expect(settingsBtn).toBeInTheDocument();

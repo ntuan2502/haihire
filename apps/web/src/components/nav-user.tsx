@@ -85,7 +85,7 @@ export function NavUser() {
               <DropdownMenuItem
                 onSelect={() => {
                   setOpenMobile(false);
-                  router.push("/settings/account");
+                  router.push("/account");
                 }}
               >
                 <BadgeCheck />
@@ -94,7 +94,7 @@ export function NavUser() {
               <DropdownMenuItem
                 onSelect={() => {
                   setOpenMobile(false);
-                  router.push("/settings/notifications");
+                  router.push("/account#notifications");
                 }}
               >
                 <Bell />

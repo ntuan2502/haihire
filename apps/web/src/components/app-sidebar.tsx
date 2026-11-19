@@ -61,14 +61,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/settings",
             isActive: pathname === "/settings",
           },
+          {
+            id: "localization",
+            title: t("settings.tabs.localization"),
+            url: "/settings/localization",
+            isActive: isPathMatch(pathname, "/settings/localization"),
+          },
         ]
       : []),
-    {
-      id: "localization",
-      title: t("settings.tabs.localization"),
-      url: "/settings/localization",
-      isActive: isPathMatch(pathname, "/settings/localization"),
-    },
     ...(canViewEmailTemplates
       ? [
           {
@@ -119,18 +119,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ]
       : []),
-    {
-      id: "notifications",
-      title: t("settings.tabs.notifications"),
-      url: "/settings/notifications",
-      isActive: isPathMatch(pathname, "/settings/notifications"),
-    },
-    {
-      id: "account",
-      title: t("settings.tabs.account"),
-      url: "/settings/account",
-      isActive: isPathMatch(pathname, "/settings/account"),
-    },
   ];
 
   const navItems: NavMainItem[] = [
@@ -196,14 +184,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ]
       : []),
-    {
-      id: "settings",
-      title: t("nav.settings"),
-      url: settingsItems[0]?.url ?? "/settings",
-      icon: Settings,
-      isActive: isPathMatch(pathname, "/settings"),
-      items: settingsItems,
-    },
+    ...(settingsItems.length > 0
+      ? [
+          {
+            id: "settings",
+            title: t("nav.settings"),
+            url: settingsItems[0].url,
+            icon: Settings,
+            isActive: isPathMatch(pathname, "/settings"),
+            items: settingsItems,
+          },
+        ]
+      : []),
   ];
 
   return (

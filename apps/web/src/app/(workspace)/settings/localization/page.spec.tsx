@@ -174,7 +174,9 @@ describe("LocalizationSettingsPage", () => {
   });
 
   it("keeps personal language out of organization settings", () => {
-    vi.mocked(useHasPermission).mockReturnValue(false);
+    vi.mocked(useHasPermission).mockImplementation(
+      (perm) => perm === "org:view",
+    );
     vi.mocked(authApi.updatePreferences).mockResolvedValueOnce({
       id: "user-1",
       email: "admin@acme.com",
@@ -188,7 +190,7 @@ describe("LocalizationSettingsPage", () => {
 
     render(<LocalizationSettingsPage />);
 
-    // Read-only admin hint shown and Save button omitted for non-admins
+    // Read-only banner shown and Save button omitted without org:update
     expect(
       screen.getByText("settings.localization.adminOnlyHint"),
     ).toBeInTheDocument();
@@ -202,6 +204,20 @@ describe("LocalizationSettingsPage", () => {
       }),
     ).not.toBeInTheDocument();
     expect(authApi.updatePreferences).not.toHaveBeenCalled();
+  });
+
+  it("blocks access and renders 403 StatusState when user lacks org:view", () => {
+    vi.mocked(useHasPermission).mockReturnValue(false);
+
+    render(<LocalizationSettingsPage />);
+
+    expect(useMyOrg).toHaveBeenCalledWith({ enabled: false });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
+    );
+    expect(
+      screen.queryByTestId("preview-candidate-name"),
+    ).not.toBeInTheDocument();
   });
 
   it("searches across full sorted timezone catalog in org settings", () => {

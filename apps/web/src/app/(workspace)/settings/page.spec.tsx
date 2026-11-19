@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import GeneralSettingsPage from "./page";
 import * as AuthContextModule from "@/context/auth-context";
-import { Role, type User } from "@haihire/shared";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { Role, type Permission, type User } from "@haihire/shared";
+
+vi.mock("@/hooks/use-has-permission", () => ({
+  useHasPermission: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -40,9 +45,16 @@ vi.mock("@/hooks/use-queries", () => ({
 describe("GeneralSettingsPage - Ownership Controls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useHasPermission).mockReturnValue(true);
   });
 
-  const setupAuthMock = (isOwner: boolean, role: Role = Role.ADMIN) => {
+  const setupAuthMock = (
+    isOwner: boolean,
+    role: Role = Role.ADMIN,
+    grantedPermissions: Permission[] = ["org:view", "org:update"],
+  ) => {
+    const permSet = new Set(grantedPermissions);
+    vi.mocked(useHasPermission).mockImplementation((perm) => permSet.has(perm));
     const user: User = {
       id: isOwner ? "owner-1" : "admin-2",
       name: isOwner ? "Owner User" : "Admin User",
@@ -108,5 +120,29 @@ describe("GeneralSettingsPage - Ownership Controls", () => {
 
     fireEvent.change(confirmInput, { target: { value: "acme-corp" } });
     expect(confirmBtn).toBeEnabled();
+  });
+
+  it("shows standardized read-only banner and omits save button when user has org:view without org:update", () => {
+    setupAuthMock(false, Role.RECRUITER, ["org:view"]);
+
+    render(<GeneralSettingsPage />);
+
+    expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "settings.saveChanges" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders 403 StatusState when user lacks org:view", () => {
+    setupAuthMock(false, Role.MEMBER, []);
+
+    render(<GeneralSettingsPage />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "You do not have permission to access this section. Please contact your administrator if you need access.",
+    );
+    expect(
+      screen.queryByPlaceholderText("settings.placeholders.orgName"),
+    ).not.toBeInTheDocument();
   });
 });

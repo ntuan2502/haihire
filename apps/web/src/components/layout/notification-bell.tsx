@@ -185,7 +185,7 @@ export function NotificationBell({
               type="button"
               onClick={() => {
                 setOpen(false);
-                router.push("/settings/notifications");
+                router.push("/account#notifications");
               }}
               aria-label={t("notificationInbox.settings")}
               title={t("notificationInbox.settings")}

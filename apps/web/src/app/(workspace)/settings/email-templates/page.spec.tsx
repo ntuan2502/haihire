@@ -25,9 +25,10 @@ const mockUpdateFlow = vi.fn();
 
 let mockTemplates: EmailTemplate[] = [];
 let mockFlows: EmailFlowConfig[] = [];
+let mockCanManageTemplates = true;
 
 vi.mock("@/hooks/use-has-permission", () => ({
-  useHasPermission: () => true,
+  useHasPermission: () => mockCanManageTemplates,
 }));
 
 vi.mock("@/hooks/use-queries", () => ({
@@ -119,6 +120,7 @@ vi.mock("@/i18n", () => ({
 describe("EmailTemplatesSettingsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCanManageTemplates = true;
     const sysTemplate: EmailTemplate = {
       id: "uuid-sys-1",
       type: "APPLICATION_CONFIRMATION",
@@ -274,5 +276,13 @@ describe("EmailTemplatesSettingsPage", () => {
     await waitFor(() => {
       expect(mockDeleteTemplate).toHaveBeenCalledWith("uuid-cust-2");
     });
+  });
+
+  it("renders standardized read-only banner when user lacks email:manage_templates", () => {
+    mockCanManageTemplates = false;
+
+    render(<EmailTemplatesSettingsPage />);
+
+    expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
   });
 });

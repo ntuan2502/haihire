@@ -3,6 +3,7 @@
 import { Save } from "lucide-react";
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, type FormEvent } from "react";
@@ -16,12 +17,15 @@ import {
   useDeleteMyOrgMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
-import { ConfirmDestructiveModal, PageHeader } from "@/components/shared";
+import {
+  ConfirmDestructiveModal,
+  PageHeader,
+  StatusState,
+} from "@/components/shared";
 import {
   Building2,
   AlertTriangle,
   Trash2,
-  Shield,
   Globe,
   ExternalLink,
 } from "lucide-react";
@@ -32,9 +36,12 @@ import { toast } from "@/lib/toast";
 export default function GeneralSettingsPage() {
   const router = useRouter();
   const { user, updateUserOrg, refreshUser, isOwner } = useAuth();
+  const canView = useHasPermission("org:view");
   const canEdit = useHasPermission("org:update");
   const { t } = useI18n();
-  const { data: org, isLoading: isOrgLoading } = useMyOrg();
+  const { data: org, isLoading: isOrgLoading } = useMyOrg({
+    enabled: canView,
+  });
   const updateOrgMutation = useUpdateMyOrgMutation();
   const deleteOrgMutation = useDeleteMyOrgMutation();
 
@@ -124,6 +131,25 @@ export default function GeneralSettingsPage() {
     }
   };
 
+  if (!canView) {
+    return (
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
+        <PageHeader
+          title={t("settings.tabs.general")}
+          subtitle={t("settings.tabs.generalSub")}
+          icon={Building2}
+          bordered
+        />
+        <StatusState
+          status="403"
+          variant="card"
+          actionLabel={t("nav.dashboard")}
+          actionHref="/dashboard"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
       <PageHeader
@@ -150,6 +176,8 @@ export default function GeneralSettingsPage() {
               </p>
             </div>
           </div>
+
+          {!canEdit && <SettingsReadOnlyBanner />}
 
           {/* Profile Form */}
           <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -204,9 +232,9 @@ export default function GeneralSettingsPage() {
               </p>
             </div>
 
-            {/* Save Button (Admins only) */}
-            <div className="pt-2">
-              {canEdit ? (
+            {/* Save Button */}
+            {canEdit && (
+              <div className="pt-2">
                 <SettingsButton
                   type="submit"
                   icon={Save}
@@ -217,13 +245,8 @@ export default function GeneralSettingsPage() {
                     ? t("common.saving")
                     : t("settings.saveChanges")}
                 </SettingsButton>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs font-medium text-muted-foreground">
-                  <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{t("settings.readOnlyAdmin")}</span>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </form>
         </SettingsCard>
 

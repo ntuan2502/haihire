@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { proxy } from "./proxy";
+import { proxy, config } from "./proxy";
 import { NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
@@ -278,5 +278,17 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toBe("http://localhost:3000/dashboard");
     expect(res.cookies.get("haihire_has_org")?.value).toBe("true");
+  });
+
+  it("protects /account route via config.matcher and redirects unauthenticated requests to /auth/login", async () => {
+    expect(config.matcher).toContain("/account/:path*");
+
+    const req = createMockRequest("/account");
+    const res = await proxy(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/auth/login?redirect=%2Faccount",
+    );
   });
 });

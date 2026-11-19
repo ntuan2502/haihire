@@ -1,7 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import AccountSettingsPage from "./page";
+import AccountPage from "./page";
 import { authApi } from "@/lib/api/auth";
+import { api } from "@/lib/api/client";
 import { toast } from "@/lib/toast";
 
 vi.mock("@/lib/toast", () => ({
@@ -64,13 +66,26 @@ vi.mock("@/lib/api/auth", () => ({
   },
 }));
 
+vi.mock("@/lib/api/client", () => ({
+  api: {
+    get: vi.fn(),
+    put: vi.fn(),
+  },
+}));
+
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
     setLocale: mockSetLocale,
-    t: (key: string) => {
+    t: (key: string, params?: Record<string, string | number>) => {
+      if (key === "settings.tabs.notificationsScope" && params?.workspace) {
+        return `Chỉ áp dụng cho bạn trong ${params.workspace}.`;
+      }
       const dict: Record<string, string> = {
         "settings.tabs.account": "Tài khoản",
         "settings.tabs.accountSub": "Thông tin cá nhân & bảo mật",
+        "settings.tabs.notifications": "Thông báo của tôi",
+        "settings.tabs.notificationsSub":
+          "Thông báo của bạn trong workspace hiện tại",
         "settings.yourName": "Họ và tên",
         "settings.emailAddress": "Địa chỉ email",
         "settings.accountProfile.firstNameLabel": "Tên",
@@ -123,13 +138,34 @@ vi.mock("@/i18n", () => ({
         "settings.localization.timezoneSearchPlaceholder":
           "Tìm múi giờ, thành phố hoặc UTC...",
         "settings.localization.timezoneNoMatch": "Không tìm thấy múi giờ.",
+        "notificationSettings.website": "Trên Website",
+        "notificationSettings.email": "Qua Email",
+        "notificationSettings.application": "Hồ sơ ứng tuyển mới",
+        "notificationSettings.interview": "Lịch phỏng vấn",
+        "notificationSettings.save": "Lưu cài đặt thông báo",
+        "notificationSettings.saved": "Đã lưu cài đặt thông báo.",
+        "notificationSettings.saveError": "Không thể lưu cài đặt thông báo.",
+        "notificationSettings.loadError": "Không thể tải cài đặt thông báo.",
       };
       return dict[key] || key;
     },
   }),
 }));
 
-describe("AccountSettingsPage Component", () => {
+function renderAccountPage() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <AccountPage />
+    </QueryClientProvider>,
+  );
+}
+
+describe("AccountPage Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCurrentUser = {
@@ -149,10 +185,26 @@ describe("AccountSettingsPage Component", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     };
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        applicationWebsite: true,
+        applicationEmail: false,
+        interviewWebsite: true,
+        interviewEmail: true,
+      },
+    });
+    vi.mocked(api.put).mockResolvedValue({
+      data: {
+        applicationWebsite: false,
+        applicationEmail: false,
+        interviewWebsite: true,
+        interviewEmail: true,
+      },
+    });
   });
 
-  it("renders user information and password change form", () => {
-    render(<AccountSettingsPage />);
+  it("renders user info, password form, notification preferences, and omits redundant Sign Out button", async () => {
+    renderAccountPage();
 
     expect(screen.getByDisplayValue("Alice")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Recruiter")).toBeInTheDocument();
@@ -164,6 +216,39 @@ describe("AccountSettingsPage Component", () => {
     expect(
       screen.getByPlaceholderText("Nhập mật khẩu mới (tối thiểu 6 ký tự)"),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Đăng xuất" }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      await screen.findByText("Chỉ áp dụng cho bạn trong Acme."),
+    ).toBeInTheDocument();
+    const checkboxes = await screen.findAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(4);
+  });
+
+  it("updates notification preferences when toggled and saved", async () => {
+    renderAccountPage();
+
+    const checkboxes = await screen.findAllByRole("checkbox");
+    const saveNotifBtn = screen.getByRole("button", {
+      name: "Lưu cài đặt thông báo",
+    });
+    expect(saveNotifBtn).toBeDisabled();
+
+    fireEvent.click(checkboxes[0]);
+    expect(saveNotifBtn).toBeEnabled();
+    fireEvent.click(saveNotifBtn);
+
+    await waitFor(() => {
+      expect(api.put).toHaveBeenCalledWith("/notifications/preferences", {
+        applicationWebsite: false,
+        applicationEmail: false,
+        interviewWebsite: true,
+        interviewEmail: true,
+      });
+    });
+    expect(toast.success).toHaveBeenCalledWith("Đã lưu cài đặt thông báo.");
   });
 
   it("updates user firstName and lastName via updateProfile and validates blank names", async () => {
@@ -178,7 +263,7 @@ describe("AccountSettingsPage Component", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     const firstNameInput = screen.getByLabelText("Tên");
     const lastNameInput = screen.getByLabelText("Họ và tên đệm");
@@ -216,7 +301,7 @@ describe("AccountSettingsPage Component", () => {
   });
 
   it("disables account save buttons when nothing has changed", () => {
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     for (const name of ["Lưu thay đổi", "Lưu tùy chọn", "Cập nhật mật khẩu"]) {
       expect(screen.getByRole("button", { name })).toBeDisabled();
@@ -230,7 +315,7 @@ describe("AccountSettingsPage Component", () => {
   });
 
   it("shows error when new password is less than 6 characters", async () => {
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     fireEvent.change(screen.getByPlaceholderText("Nhập mật khẩu hiện tại"), {
       target: { value: "oldPassword123" },
@@ -255,7 +340,7 @@ describe("AccountSettingsPage Component", () => {
   });
 
   it("shows error when new password and confirm password do not match", async () => {
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     fireEvent.change(screen.getByPlaceholderText("Nhập mật khẩu hiện tại"), {
       target: { value: "oldPassword123" },
@@ -283,7 +368,7 @@ describe("AccountSettingsPage Component", () => {
       accessToken: "new-access-token",
       refreshToken: "new-refresh-token",
     });
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     const currentInput = screen.getByPlaceholderText("Nhập mật khẩu hiện tại");
     const newInput = screen.getByPlaceholderText(
@@ -306,7 +391,6 @@ describe("AccountSettingsPage Component", () => {
       expect(toast.success).toHaveBeenCalledWith("Đổi mật khẩu thành công.");
     });
 
-    // Inputs should be cleared
     expect((currentInput as HTMLInputElement).value).toBe("");
     expect((newInput as HTMLInputElement).value).toBe("");
     expect((confirmInput as HTMLInputElement).value).toBe("");
@@ -328,7 +412,7 @@ describe("AccountSettingsPage Component", () => {
         },
       },
     });
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     const currentInput = screen.getByPlaceholderText("Nhập mật khẩu hiện tại");
     const newInput = screen.getByPlaceholderText(
@@ -362,7 +446,7 @@ describe("AccountSettingsPage Component", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     const langTrigger = screen.getByRole("button", {
       name: "Ngôn ngữ giao diện ưu tiên",
@@ -419,7 +503,7 @@ describe("AccountSettingsPage Component", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
-    render(<AccountSettingsPage />);
+    renderAccountPage();
 
     const langTrigger = screen.getByRole("button", {
       name: "Ngôn ngữ giao diện ưu tiên",

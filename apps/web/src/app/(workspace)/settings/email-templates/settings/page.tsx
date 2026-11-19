@@ -2,6 +2,7 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import { useState } from "react";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Send, Save, Sliders } from "lucide-react";
@@ -117,11 +118,7 @@ export default function EmailSettingsPage() {
             </div>
           </div>
 
-          {!canManageSettings && (
-            <p className="text-sm text-muted-foreground">
-              {t("settings.readOnlyAdmin")}
-            </p>
-          )}
+          {!canManageSettings && <SettingsReadOnlyBanner />}
           {settingsLoadFailed && (
             <p role="alert" className="text-sm text-destructive">
               {t("errors.generic")}
@@ -352,20 +349,22 @@ export default function EmailSettingsPage() {
               </div>
             )}
 
-            <div className="pt-3">
-              <SettingsButton
-                type="button"
-                icon={Save}
-                pending={updateSettingsMutation.isPending}
-                onClick={handleSaveSettings}
-                disabled={!canEdit || !hasChanges}
-                className="w-full sm:w-auto"
-              >
-                {updateSettingsMutation.isPending
-                  ? t("common.saving")
-                  : t("email.saveSettingsBtn")}
-              </SettingsButton>
-            </div>
+            {canManageSettings && (
+              <div className="pt-3">
+                <SettingsButton
+                  type="button"
+                  icon={Save}
+                  pending={updateSettingsMutation.isPending}
+                  onClick={handleSaveSettings}
+                  disabled={!canEdit || !hasChanges}
+                  className="w-full sm:w-auto"
+                >
+                  {updateSettingsMutation.isPending
+                    ? t("common.saving")
+                    : t("email.saveSettingsBtn")}
+                </SettingsButton>
+              </div>
+            )}
           </fieldset>
         </SettingsCard>
 
@@ -385,6 +384,8 @@ export default function EmailSettingsPage() {
             </div>
           </div>
 
+          {!canSendTest && <SettingsReadOnlyBanner />}
+
           <div className="flex flex-col sm:flex-row xl:flex-col items-stretch sm:items-center xl:items-stretch gap-3">
             <Input
               type="email"
@@ -395,18 +396,20 @@ export default function EmailSettingsPage() {
               placeholder={t("email.testEmailPlaceholder")}
               className="text-xs flex-1"
             />
-            <SettingsButton
-              type="button"
-              icon={Send}
-              pending={isSendingTest}
-              onClick={handleSendTest}
-              disabled={
-                !canSendTest || isSendingTest || !testEmailAddress.trim()
-              }
-              className="w-full sm:w-auto xl:w-full shrink-0"
-            >
-              {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
-            </SettingsButton>
+            {canSendTest && (
+              <SettingsButton
+                type="button"
+                icon={Send}
+                pending={isSendingTest}
+                onClick={handleSendTest}
+                disabled={
+                  !canSendTest || isSendingTest || !testEmailAddress.trim()
+                }
+                className="w-full sm:w-auto xl:w-full shrink-0"
+              >
+                {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
+              </SettingsButton>
+            )}
           </div>
         </SettingsCard>
       </div>

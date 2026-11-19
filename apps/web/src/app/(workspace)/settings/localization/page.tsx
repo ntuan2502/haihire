@@ -10,7 +10,7 @@ import {
   type CurrencyCode,
   type OrganizationLocalizationSettings,
 } from "@haihire/shared";
-import { PageHeader } from "@/components/shared";
+import { PageHeader, StatusState } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import {
@@ -42,9 +42,12 @@ function settingsEqual(
 export default function LocalizationSettingsPage() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const canView = useHasPermission("org:view");
   const canEdit = useHasPermission("org:update");
 
-  const { data: myOrg, isLoading: isOrgLoading } = useMyOrg();
+  const { data: myOrg, isLoading: isOrgLoading } = useMyOrg({
+    enabled: canView,
+  });
   const updateOrgMutation = useUpdateMyOrgMutation();
 
   const savedSettings = useMemo(
@@ -128,6 +131,25 @@ export default function LocalizationSettingsPage() {
   };
 
   const isDisabled = !canEdit || isOrgLoading || updateOrgMutation.isPending;
+
+  if (!canView) {
+    return (
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
+        <PageHeader
+          title={t("settings.localization.title")}
+          subtitle={t("settings.localization.description")}
+          icon={Globe}
+          bordered
+        />
+        <StatusState
+          status="403"
+          variant="card"
+          actionLabel={t("settings.backToSettings")}
+          actionHref="/settings"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">

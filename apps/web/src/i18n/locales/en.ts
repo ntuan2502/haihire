@@ -174,7 +174,7 @@ export const en: TranslationSchema = {
     UNAUTHORIZED: "Your session has expired or is invalid.",
     FORBIDDEN: "You do not have permission to perform this action.",
     FORBIDDEN_READ_ONLY:
-      "Members have read-only access. Only Admins can perform this action.",
+      "You have view-only access and do not have permission to perform this action.",
     SSE_UNAUTHORIZED:
       "Real-time event stream connection is invalid or expired.",
     TRACKING_LINK_NOT_FOUND: "Tracking link not found.",
@@ -1631,7 +1631,7 @@ export const en: TranslationSchema = {
     slugHint:
       "Used in your public job board URL. Only lowercase letters, numbers, and hyphens.",
     readOnlyAdmin:
-      "Read-only access: only Admins can update organization profile.",
+      "You have view-only access and do not have permission to edit settings on this page.",
     dangerZone: "Danger zone",
     dangerZoneDesc: "Irreversible and destructive actions.",
     deleteOrg: "Delete organization",
@@ -1807,7 +1807,7 @@ export const en: TranslationSchema = {
       saveSuccess: "Localization & regional settings saved successfully.",
       saveError: "Failed to save localization settings. Please try again.",
       adminOnlyHint:
-        "Organization regional defaults are managed by Admins. You can still customize your personal interface language above.",
+        "You have view-only access and do not have permission to edit settings on this page.",
       unsavedChanges: "Unsaved regional changes",
       currencies: {
         VND: "VND (₫) — Vietnamese Dong",
@@ -1881,7 +1881,7 @@ export const en: TranslationSchema = {
         },
         emptyState: "No webhook configurations found for your organization.",
         adminOnly:
-          "Only organization Administrators can manage webhook settings.",
+          "You have view-only access and do not have permission to edit settings on this page.",
         enabled: "Active",
         disabled: "Paused",
       },
@@ -1892,7 +1892,7 @@ export const en: TranslationSchema = {
         "Manage and customize granular role permissions for your organization.",
       readOnlyBadge: "Read-only View",
       readOnlyNotice:
-        "You do not have permission to modify roles. Contact an administrator to adjust permissions.",
+        "You have view-only access and do not have permission to edit settings on this page.",
       saveButton: "Save Changes",
       savingButton: "Saving...",
       resetButton: "Reset Changes",

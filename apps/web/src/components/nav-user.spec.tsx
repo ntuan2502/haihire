@@ -103,7 +103,7 @@ describe("NavUser", () => {
     fireEvent.click(accountItem);
 
     expect(mockSetOpenMobile).toHaveBeenCalledWith(false);
-    expect(mockPush).toHaveBeenCalledWith("/settings/account");
+    expect(mockPush).toHaveBeenCalledWith("/account");
   });
 
   it("navigates to Notification settings when clicking Notifications", async () => {
@@ -116,7 +116,7 @@ describe("NavUser", () => {
     fireEvent.click(notificationsItem);
 
     expect(mockSetOpenMobile).toHaveBeenCalledWith(false);
-    expect(mockPush).toHaveBeenCalledWith("/settings/notifications");
+    expect(mockPush).toHaveBeenCalledWith("/account#notifications");
   });
 
   it("logs out when clicking Sign out", async () => {

@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Building2,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
@@ -188,6 +189,21 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
             )}
           </div>
         )}
+
+        {/* Personal Account */}
+        <DropdownMenuItem asChild>
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-foreground hover:bg-accent cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <User
+              className="h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <span>{t("settings.tabs.account")}</span>
+          </button>
+        </DropdownMenuItem>
 
         {/* Settings (if user belongs to an org) */}
         {user.organizationId && (

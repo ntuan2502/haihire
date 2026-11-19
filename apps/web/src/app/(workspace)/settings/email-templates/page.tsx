@@ -23,6 +23,7 @@ import {
   useUpdateEmailTemplateMutation,
 } from "@/hooks/use-queries";
 import { ConfirmDestructiveModal } from "@/components/shared";
+import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import { EmailFlowsCard } from "@/components/email/email-flows-card";
 import { EmailPreviewModal } from "@/components/email/email-preview-modal";
 import {
@@ -268,6 +269,8 @@ export default function EmailTemplatesSettingsPage() {
 
   return (
     <div className="space-y-6 w-full min-w-0">
+      {!canManageTemplates && <SettingsReadOnlyBanner />}
+
       {/* Section 1: 4 Workflow Auto-Send Bindings */}
       <EmailFlowsCard
         flows={remoteFlows}

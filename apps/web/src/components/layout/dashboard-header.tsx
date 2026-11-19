@@ -27,12 +27,10 @@ export interface WorkspaceBreadcrumbItem {
 
 const SETTINGS_SEGMENT_KEYS: Record<string, string> = {
   localization: "settings.tabs.localization",
-  notifications: "settings.tabs.notifications",
   members: "settings.tabs.members",
   roles: "settings.tabs.roles",
   "audit-log": "settings.tabs.auditLog",
   integrations: "settings.tabs.integrations",
-  account: "settings.tabs.account",
 };
 
 export function buildWorkspaceBreadcrumbs(
@@ -167,6 +165,10 @@ export function buildWorkspaceBreadcrumbs(
       ];
     }
     return [{ label: t("nav.settings") }];
+  }
+
+  if (root === "account") {
+    return [{ label: t("settings.tabs.account") }];
   }
 
   return [{ label: t("nav.dashboard") }];

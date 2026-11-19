@@ -238,5 +238,6 @@ export const config = {
     "/interviews/:path*",
     "/source-tracking/:path*",
     "/settings/:path*",
+    "/account/:path*",
   ],
 };

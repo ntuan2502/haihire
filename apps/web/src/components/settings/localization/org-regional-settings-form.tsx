@@ -2,8 +2,9 @@
 
 import { Save } from "lucide-react";
 import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import type { FormEvent } from "react";
-import { Globe, RotateCcw, Shield } from "lucide-react";
+import { Globe, RotateCcw } from "lucide-react";
 import {
   DEFAULT_ORG_LOCALIZATION,
   SUPPORTED_DATE_FORMATS,
@@ -74,10 +75,7 @@ export function OrgRegionalSettingsForm({
       </div>
 
       {!canEdit && (
-        <div className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/60 border border-border text-xs font-medium text-muted-foreground">
-          <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{t("settings.localization.adminOnlyHint")}</span>
-        </div>
+        <SettingsReadOnlyBanner messageKey="settings.localization.adminOnlyHint" />
       )}
 
       {/* 1. Organization Default Language */}

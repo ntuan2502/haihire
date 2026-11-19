@@ -175,7 +175,7 @@ export const vi: TranslationSchema = {
     UNAUTHORIZED: "Phiên làm việc đã hết hạn hoặc không hợp lệ.",
     FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
     FORBIDDEN_READ_ONLY:
-      "Tài khoản thành viên chỉ có quyền xem. Chỉ Quản trị viên mới được thao tác.",
+      "Bạn chỉ có quyền xem và không có quyền thực hiện thao tác này.",
     SSE_UNAUTHORIZED:
       "Phiên kết nối luồng sự kiện thời gian thực không hợp lệ hoặc đã hết hạn.",
     TRACKING_LINK_NOT_FOUND: "Không tìm thấy liên kết theo dõi nguồn ứng viên.",
@@ -1637,7 +1637,7 @@ export const vi: TranslationSchema = {
     slugHint:
       "Dùng làm đường dẫn trang tuyển dụng công khai. Chỉ gồm chữ cái thường, số và dấu gạch nối.",
     readOnlyAdmin:
-      "Quyền chỉ xem: chỉ Quản trị viên mới có thể cập nhật hồ sơ tổ chức.",
+      "Bạn chỉ có quyền xem và không có quyền chỉnh sửa cài đặt ở trang này.",
     dangerZone: "Khu vực nguy hiểm",
     dangerZoneDesc: "Các thao tác phá hủy và không thể khôi phục.",
     deleteOrg: "Xóa tổ chức",
@@ -1814,7 +1814,7 @@ export const vi: TranslationSchema = {
       saveSuccess: "Đã lưu cài đặt ngôn ngữ & khu vực thành công.",
       saveError: "Không thể lưu cài đặt khu vực. Vui lòng thử lại.",
       adminOnlyHint:
-        "Chỉ Quản trị viên mới có quyền chỉnh sửa chuẩn khu vực cấp tổ chức. Bạn vẫn có thể đổi ngôn ngữ giao diện cá nhân ở mục trên.",
+        "Bạn chỉ có quyền xem và không có quyền chỉnh sửa cài đặt ở trang này.",
       unsavedChanges: "Có thay đổi chưa lưu",
       currencies: {
         VND: "VND (₫) — Việt Nam Đồng",
@@ -1888,7 +1888,8 @@ export const vi: TranslationSchema = {
           GENERIC: "Webhook tùy chỉnh",
         },
         emptyState: "Chưa có webhook nào được cấu hình cho tổ chức của bạn.",
-        adminOnly: "Chỉ Quản trị viên mới có quyền quản lý cấu hình webhook.",
+        adminOnly:
+          "Bạn chỉ có quyền xem và không có quyền chỉnh sửa cài đặt ở trang này.",
         enabled: "Đang hoạt động",
         disabled: "Ngừng hoạt động",
       },
@@ -1899,7 +1900,7 @@ export const vi: TranslationSchema = {
         "Quản lý và tùy chỉnh phân quyền chi tiết cho từng vai trò trong tổ chức.",
       readOnlyBadge: "Chế độ xem",
       readOnlyNotice:
-        "Bạn không có quyền thay đổi phân quyền vai trò. Vui lòng liên hệ quản trị viên.",
+        "Bạn chỉ có quyền xem và không có quyền chỉnh sửa cài đặt ở trang này.",
       saveButton: "Lưu thay đổi",
       savingButton: "Đang lưu...",
       resetButton: "Đặt lại",

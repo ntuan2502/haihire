@@ -85,6 +85,20 @@ describe("DashboardHeader", () => {
     expect(
       screen.getByText("Thành viên", { selector: '[aria-current="page"]' }),
     ).toBeInTheDocument();
+
+    mockPathname.current = "/account";
+    rerender(
+      <SidebarProvider>
+        <DashboardHeader />
+      </SidebarProvider>,
+    );
+
+    expect(
+      screen.queryByRole("link", { name: "Cài đặt" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Tài khoản", { selector: '[aria-current="page"]' }),
+    ).toBeInTheDocument();
   });
 
   it("renders utility controls in the header without a duplicate global New Job CTA", () => {

@@ -11,7 +11,7 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     });
 
     const response = await page.goto(
-      "/careers/admin/senior-backend-engineer-nestjs-postgresql",
+      "/careers/demo/senior-backend-engineer-nestjs-postgresql",
       { waitUntil: "networkidle" },
     );
 
@@ -49,7 +49,7 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
       rawConsoleLogs.push({ type: msg.type(), text: msg.text() });
     });
 
-    const targetUrl = "/careers/admin/information-security-secops-specialist";
+    const targetUrl = "/careers/demo/information-security-secops-specialist";
     const response = await page.goto(targetUrl, {
       waitUntil: "networkidle",
     });
@@ -77,7 +77,7 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     await expect(viewOtherLink.first()).toBeVisible();
     await expect(viewOtherLink.first()).toHaveAttribute(
       "href",
-      "/careers/admin",
+      "/careers/demo",
     );
 
     // CRITICAL ACCEPTANCE CRITERIA: Verify ZERO React 19 script tag warnings
@@ -91,7 +91,7 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
 
   test("Case 3: DRAFT job returns 404 Not Found", async ({ page }) => {
     const response = await page.goto(
-      "/careers/admin/customer-success-lead-enterprise-tier-1",
+      "/careers/demo/customer-success-lead-enterprise-tier-1",
       { waitUntil: "networkidle" },
     );
 
@@ -103,7 +103,7 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     page,
   }) => {
     const response = await page.goto(
-      "/careers/admin/non-existent-career-opening-slug-404",
+      "/careers/demo/non-existent-career-opening-slug-404",
       { waitUntil: "networkidle" },
     );
 

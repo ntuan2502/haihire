@@ -24,21 +24,23 @@ export interface DemoSeedClient {
 
 /**
  * Ensures default non-production demo accounts (ADMIN + MEMBER), the default
- * Admin organization, and the Admin's OrganizationMember record exist consistently.
+ * Demo organization, and the Admin's OrganizationMember record exist consistently.
  */
 export async function ensureDefaultDemoAccounts(
   prisma: DemoSeedClient,
 ): Promise<{ adminOrgId: string; adminUserId: string }> {
   const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, BCRYPT_SALT_ROUNDS);
+  const demoOrgSlug = "demo";
+  const demoOrgName = "Demo";
 
-  const existingOrg = prisma.organization.findUnique
-    ? await prisma.organization.findUnique({
-        where: { slug: "admin" },
+  const existingOrg = prisma.organization.findFirst
+    ? await prisma.organization.findFirst({
+        where: { OR: [{ slug: demoOrgSlug }, { slug: "admin" }] },
         select: { id: true },
       })
-    : prisma.organization.findFirst
-      ? await prisma.organization.findFirst({
-          where: { slug: "admin" },
+    : prisma.organization.findUnique
+      ? await prisma.organization.findUnique({
+          where: { slug: demoOrgSlug },
           select: { id: true },
         })
       : null;
@@ -67,17 +69,17 @@ export async function ensureDefaultDemoAccounts(
   });
 
   await prisma.organization.upsert({
-    where: { slug: "admin" },
+    where: existingOrg ? { id: existingOrg.id } : { slug: demoOrgSlug },
     create: {
       id: adminOrgId,
-      name: "Admin",
-      slug: "admin",
+      name: demoOrgName,
+      slug: demoOrgSlug,
       ownerId: adminUser.id,
       updatedAt: toInstant(),
     },
     update: {
-      name: "Admin",
-      slug: "admin",
+      name: demoOrgName,
+      slug: demoOrgSlug,
       ownerId: adminUser.id,
       updatedAt: toInstant(),
     },

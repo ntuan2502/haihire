@@ -178,7 +178,7 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
   test("T2-E2E-10 [F16]: Public careers route with invalid slug renders not found or empty state", async ({
     page,
   }) => {
-    await page.goto("/careers/admin/completely-non-existent-job-slug-12345");
+    await page.goto("/careers/demo/completely-non-existent-job-slug-12345");
     const notFoundOrRedirect = page
       .locator("text=/not found|không tìm thấy|404|hết hạn|closed/i")
       .first();

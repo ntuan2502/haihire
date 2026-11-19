@@ -8,7 +8,12 @@ const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 export const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 import { toInstant } from "../common/date.util.ts";
-import { SourcingChannel } from "@haihire/shared";
+import {
+  formatUserDisplayName,
+  SourcingChannel,
+  type NotificationKind,
+  type Role,
+} from "@haihire/shared";
 import { SeedCvStorage } from "./seed-cv-pdf.util.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
@@ -420,6 +425,109 @@ function generate200UniqueCandidates(): Array<{
   }));
 }
 
+interface SeedTeamUser {
+  id: string;
+  memberId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  title: string;
+}
+
+const DEMO_TEAM_USERS: readonly SeedTeamUser[] = [
+  {
+    id: "00000000-0000-4000-8000-000000001001",
+    memberId: "00000000-0000-4000-8000-000000001101",
+    email: "an.nguyen@tun.io.vn",
+    firstName: "An",
+    lastName: "Nguyễn Văn",
+    role: "HIRING_MANAGER",
+    title: "Engineering Lead",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001002",
+    memberId: "00000000-0000-4000-8000-000000001102",
+    email: "bich.tran@tun.io.vn",
+    firstName: "Bích",
+    lastName: "Trần Thị",
+    role: "RECRUITER",
+    title: "HR Director",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001003",
+    memberId: "00000000-0000-4000-8000-000000001103",
+    email: "cuong.le@tun.io.vn",
+    firstName: "Cường",
+    lastName: "Lê Hoàng",
+    role: "HIRING_MANAGER",
+    title: "CTO",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001004",
+    memberId: "00000000-0000-4000-8000-000000001104",
+    email: "dung.pham@tun.io.vn",
+    firstName: "Dung",
+    lastName: "Phạm Minh",
+    role: "RECRUITER",
+    title: "Talent Acquisition Lead",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001005",
+    memberId: "00000000-0000-4000-8000-000000001105",
+    email: "bao.hoang@tun.io.vn",
+    firstName: "Bảo",
+    lastName: "Hoàng Quốc",
+    role: "INTERVIEWER",
+    title: "Principal Architect",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001006",
+    memberId: "00000000-0000-4000-8000-000000001106",
+    email: "huong.vu@tun.io.vn",
+    firstName: "Hương",
+    lastName: "Vũ Thu",
+    role: "HIRING_MANAGER",
+    title: "VP of Product",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001007",
+    memberId: "00000000-0000-4000-8000-000000001107",
+    email: "kiet.dang@tun.io.vn",
+    firstName: "Kiệt",
+    lastName: "Đặng Tuấn",
+    role: "INTERVIEWER",
+    title: "Staff Backend Engineer",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001008",
+    memberId: "00000000-0000-4000-8000-000000001108",
+    email: "lan.bui@tun.io.vn",
+    firstName: "Lan",
+    lastName: "Bùi Ngọc",
+    role: "ADMIN",
+    title: "Head of People Operations",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001009",
+    memberId: "00000000-0000-4000-8000-000000001109",
+    email: "minh.do@tun.io.vn",
+    firstName: "Minh",
+    lastName: "Đỗ Đức",
+    role: "INTERVIEWER",
+    title: "Engineering Manager",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000001010",
+    memberId: "00000000-0000-4000-8000-000000001110",
+    email: "thao.ngo@tun.io.vn",
+    firstName: "Thảo",
+    lastName: "Ngô Phương",
+    role: "MEMBER",
+    title: "HR Coordinator",
+  },
+];
+
 class InterviewSlotManager {
   // Business-hour interview slots in Vietnam Time (UTC+7): 08:00 - 17:00 ICT
   private static readonly DAILY_TIMES = [
@@ -568,6 +676,7 @@ class InterviewSlotManager {
     totalRounds: number,
     isCompleted: boolean,
     candidateIdx: number,
+    interviewers: ReadonlyArray<{ id: string; displayName: string }>,
   ) {
     const slot = this.allocateSlot(round, totalRounds, isCompleted);
 
@@ -582,16 +691,7 @@ class InterviewSlotManager {
     const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
     const format = formats[(candidateIdx + round) % formats.length];
 
-    const interviewers = [
-      "Nguyễn Văn A (Engineering Lead)",
-      "Trần Minh Đức (CTO)",
-      "Phạm Thu Hương (HR Director)",
-      "Sarah Jenkins (VP Product)",
-      "Lê Hoàng Long (Principal Architect)",
-      "Đặng Quốc Bảo (Senior Tech Lead)",
-      "Vũ Thanh Hà (Head of Talent)",
-    ];
-    const interviewer =
+    const assignedInterviewer =
       interviewers[(candidateIdx * 2 + round) % interviewers.length];
 
     const linkOrLocation =
@@ -608,7 +708,8 @@ class InterviewSlotManager {
       type,
       format,
       linkOrLocation,
-      interviewer,
+      interviewerId: assignedInterviewer.id,
+      interviewer: assignedInterviewer.displayName,
       notes: isCompleted
         ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
         : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
@@ -644,12 +745,19 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await prisma.$executeRawUnsafe(
+    `DROP SCHEMA IF EXISTS "_haihire_test_snapshot" CASCADE;`,
+  );
+  await prisma.notification.deleteMany();
+  await prisma.notificationPreference.deleteMany();
   await prisma.outboxEvent.deleteMany();
   await prisma.emailLog.deleteMany();
   await prisma.emailFlowConfig.deleteMany();
   await prisma.emailSetting.deleteMany();
   await prisma.emailTemplate.deleteMany();
   await prisma.activityLog.deleteMany();
+  await prisma.applicationNote.deleteMany();
+  await prisma.candidateNote.deleteMany();
   await prisma.candidateDocument.deleteMany();
   await prisma.interview.deleteMany();
   await prisma.application.deleteMany();
@@ -658,6 +766,10 @@ export async function runSeed(): Promise<void> {
   await prisma.candidate.deleteMany();
   await prisma.storedFile.deleteMany();
   await prisma.pipelineStage.deleteMany();
+  await prisma.organizationRolePermission.deleteMany();
+  await prisma.organizationWebhookSetting.deleteMany();
+  await prisma.organizationAuditLog.deleteMany();
+  await prisma.platformAuditLog.deleteMany();
   await prisma.inviteLink.deleteMany();
   await prisma.organizationMember.deleteMany();
   await prisma.job.deleteMany();
@@ -696,20 +808,21 @@ export async function runSeed(): Promise<void> {
     where: { email: DEMO_ACCOUNTS.ADMIN.email },
   });
 
-  // 2. Create Org "Admin"
+  // 2. Create Org "Demo"
   await prisma.organization.upsert({
     create: {
       id: adminOrgId,
-      name: "Admin",
-      slug: "admin",
+      name: "Demo",
+      slug: "demo",
       ownerId: adminUserId,
       updatedAt: toInstant(),
     },
     update: {
-      name: "Admin",
+      name: "Demo",
+      slug: "demo",
       ownerId: adminUserId,
     },
-    where: { slug: "admin" },
+    where: { slug: "demo" },
   });
 
   // 3. Create Org Member relationship
@@ -755,19 +868,128 @@ export async function runSeed(): Promise<void> {
     where: { id: "00000000-0000-4000-8000-000000000012" },
   });
 
-  // 5. Seed Email Settings for Admin Organization
+  // 4.5 Create 10 Team / Interviewer Users spanning all 5 RBAC roles
+  for (const teamUser of DEMO_TEAM_USERS) {
+    await prisma.user.upsert({
+      create: {
+        id: teamUser.id,
+        email: teamUser.email,
+        firstName: teamUser.firstName,
+        lastName: teamUser.lastName,
+        password: defaultPasswordHash,
+        updatedAt: toInstant(),
+      },
+      update: {
+        password: defaultPasswordHash,
+        firstName: teamUser.firstName,
+        lastName: teamUser.lastName,
+      },
+      where: { email: teamUser.email },
+    });
+
+    await prisma.organizationMember.upsert({
+      create: {
+        id: teamUser.memberId,
+        organizationId: adminOrgId,
+        userId: teamUser.id,
+        role: teamUser.role,
+        updatedAt: toInstant(),
+      },
+      update: {
+        role: teamUser.role,
+      },
+      where: { id: teamUser.memberId },
+    });
+  }
+
+  // Seed default notification preferences for Demo org members
+  const demoUserIdsForPrefs = [
+    adminUserId,
+    memberUserId,
+    ...DEMO_TEAM_USERS.map((u) => u.id),
+  ];
+  await prisma.notificationPreference.createMany({
+    data: demoUserIdsForPrefs.map((userId) => ({
+      organizationId: adminOrgId,
+      userId,
+      applicationWebsite: true,
+      interviewWebsite: true,
+      applicationEmail: false,
+      interviewEmail: false,
+    })),
+    skipDuplicates: true,
+  });
+
+  // Seed sample organization audit logs for Demo org
+  await prisma.organizationAuditLog.createMany({
+    data: [
+      {
+        id: "00000000-0000-4000-8000-000000003001",
+        organizationId: adminOrgId,
+        actorId: adminUserId,
+        action: "ORG_LOCALIZATION_UPDATED",
+        resource: "ORGANIZATION",
+        metadata: {
+          defaultLanguage: "vi",
+          timezone: "Asia/Ho_Chi_Minh",
+          nameDisplayOrder: "LAST_FIRST",
+        },
+        createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+      },
+      {
+        id: "00000000-0000-4000-8000-000000003002",
+        organizationId: adminOrgId,
+        actorId: adminUserId,
+        action: "MEMBER_ROLE_CHANGED",
+        resource: "MEMBER",
+        metadata: {
+          targetEmail: "an.nguyen@tun.io.vn",
+          previousRole: "INTERVIEWER",
+          newRole: "HIRING_MANAGER",
+        },
+        createdAt: toInstant(new Date(Date.now() - 4 * 86400000)),
+      },
+      {
+        id: "00000000-0000-4000-8000-000000003003",
+        organizationId: adminOrgId,
+        actorId: "00000000-0000-4000-8000-000000001008",
+        action: "MEMBER_ROLE_CHANGED",
+        resource: "MEMBER",
+        metadata: {
+          targetEmail: "bich.tran@tun.io.vn",
+          previousRole: "MEMBER",
+          newRole: "RECRUITER",
+        },
+        createdAt: toInstant(new Date(Date.now() - 2 * 86400000)),
+      },
+      {
+        id: "00000000-0000-4000-8000-000000003004",
+        organizationId: adminOrgId,
+        actorId: adminUserId,
+        action: "ROLE_PERMISSIONS_UPDATED",
+        resource: "ROLE_PERMISSIONS",
+        metadata: {
+          role: "INTERVIEWER",
+          updatedPermissionsCount: 1,
+        },
+        createdAt: toInstant(new Date(Date.now() - 1 * 86400000)),
+      },
+    ],
+  });
+
+  // 5. Seed Email Settings for Demo Organization
   await prisma.emailSetting.upsert({
     create: {
       id: "00000000-0000-4000-8000-000000000021",
       organizationId: adminOrgId,
       provider: "SIMULATED",
-      fromName: "Admin Recruitment Team",
+      fromName: "Demo Recruitment Team",
       fromEmail: "careers@tun.io.vn",
       updatedAt: toInstant(),
     },
     update: {
       provider: "SIMULATED",
-      fromName: "Admin Recruitment Team",
+      fromName: "Demo Recruitment Team",
       fromEmail: "careers@tun.io.vn",
     },
     where: { organizationId: adminOrgId },
@@ -937,18 +1159,28 @@ export async function runSeed(): Promise<void> {
     where: { id: betaWebhookId },
   });
 
-  console.log(`- Org: Admin (id: ${adminOrgId})`);
+  console.log(`- Org: Demo (slug: demo, id: ${adminOrgId})`);
   console.log(
     `- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`,
   );
   console.log(
     `- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`,
   );
+  console.log(
+    `- Team / Interviewers (${DEMO_TEAM_USERS.length} users, Password: ${DEMO_PASSWORD}): ${DEMO_TEAM_USERS.map((u) => `${formatUserDisplayName(u, "LAST_FIRST")} [${u.role}]`).join(", ")}`,
+  );
   console.log(`- Org Beta: Beta Financials (id: ${betaOrgId})`);
   console.log(
     `- Beta Admin: ${DEMO_ACCOUNTS.BETA_ADMIN.email} (Password: ${DEMO_PASSWORD})`,
   );
   console.log(`- Email Settings: SIMULATED (careers@tun.io.vn)`);
+
+  const jobCreatorPool = [
+    adminUserId,
+    ...DEMO_TEAM_USERS.filter(
+      (u) => u.role === "ADMIN" || u.role === "RECRUITER",
+    ).map((u) => u.id),
+  ];
 
   console.log("==================================================");
   console.log("💼 3. Seeding Exactly 20 Jobs (Random Statuses & Details)...");
@@ -1082,7 +1314,10 @@ export async function runSeed(): Promise<void> {
         requirements: baseConfig.requirements,
         status,
         organizationId: adminOrgId,
-        createdById: adminUserId,
+        createdById:
+          i === 1 || i === 8
+            ? adminUserId
+            : jobCreatorPool[i % jobCreatorPool.length],
         createdAt: toInstant(jobCreatedAt),
         updatedAt: toInstant(jobCreatedAt),
       },
@@ -1818,12 +2053,42 @@ export async function runSeed(): Promise<void> {
       | "ASSESSMENT";
     format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
     linkOrLocation: string;
+    interviewerId: string;
     interviewer: string;
     round: number;
     scorecard: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
     notes: string | null;
     updatedAt: Date;
   }> = [];
+
+  const interviewerPool = [
+    {
+      id: adminUserId,
+      displayName: formatUserDisplayName(DEMO_ACCOUNTS.ADMIN, "LAST_FIRST"),
+    },
+    ...DEMO_TEAM_USERS.filter((u) => u.role !== "MEMBER").map((u) => ({
+      id: u.id,
+      displayName: formatUserDisplayName(u, "LAST_FIRST"),
+    })),
+  ];
+
+  const noteAuthorPool = [
+    {
+      id: adminUserId,
+      displayName: formatUserDisplayName(DEMO_ACCOUNTS.ADMIN, "LAST_FIRST"),
+      role: "ADMIN" as Role,
+    },
+    ...DEMO_TEAM_USERS.filter(
+      (u) =>
+        u.role === "ADMIN" ||
+        u.role === "RECRUITER" ||
+        u.role === "HIRING_MANAGER",
+    ).map((u) => ({
+      id: u.id,
+      displayName: formatUserDisplayName(u, "LAST_FIRST"),
+      role: u.role,
+    })),
+  ];
 
   function getCandidateDemographics(name: string, index: number) {
     const femaleHints = [
@@ -1964,13 +2229,14 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(candidateCreatedAt),
     });
 
+    const candNoteAuthor = noteAuthorPool[i % noteAuthorPool.length];
     candidateNotesToInsert.push({
       id: crypto.randomUUID(),
       organizationId: adminOrgId,
       candidateId,
-      authorId: adminUserId,
-      authorName: DEMO_ACCOUNTS.ADMIN.name,
-      authorRole: "ADMIN",
+      authorId: candNoteAuthor.id,
+      authorName: candNoteAuthor.displayName,
+      authorRole: candNoteAuthor.role,
       content: "Ứng viên tiềm năng trong Talent Pool.",
       isEdited: false,
       createdAt: toInstant(candidateCreatedAt),
@@ -2023,6 +2289,7 @@ export async function runSeed(): Promise<void> {
                 interviewCount,
                 isCompleted,
                 candidate.candidateIndex + j,
+                interviewerPool,
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
@@ -2032,6 +2299,7 @@ export async function runSeed(): Promise<void> {
                 type: intv.type,
                 format: intv.format,
                 linkOrLocation: intv.linkOrLocation,
+                interviewerId: intv.interviewerId,
                 interviewer: intv.interviewer,
                 round: intv.round,
                 scorecard: Prisma.DbNull,
@@ -2051,6 +2319,7 @@ export async function runSeed(): Promise<void> {
               interviewCount,
               true,
               candidate.candidateIndex + j,
+              interviewerPool,
             );
             interviewsToInsert.push({
               id: crypto.randomUUID(),
@@ -2060,6 +2329,7 @@ export async function runSeed(): Promise<void> {
               type: intv.type,
               format: intv.format,
               linkOrLocation: intv.linkOrLocation,
+              interviewerId: intv.interviewerId,
               interviewer: intv.interviewer,
               round: intv.round,
               scorecard: {
@@ -2086,6 +2356,7 @@ export async function runSeed(): Promise<void> {
                 interviewCount,
                 true,
                 candidate.candidateIndex + j,
+                interviewerPool,
               );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
@@ -2095,6 +2366,7 @@ export async function runSeed(): Promise<void> {
                 type: intv.type,
                 format: intv.format,
                 linkOrLocation: intv.linkOrLocation,
+                interviewerId: intv.interviewerId,
                 interviewer: intv.interviewer,
                 round: intv.round,
                 scorecard: Prisma.DbNull,
@@ -2185,13 +2457,17 @@ export async function runSeed(): Promise<void> {
         });
 
         if (notes) {
+          const appNoteAuthor =
+            noteAuthorPool[
+              (candidate.candidateIndex + j) % noteAuthorPool.length
+            ];
           applicationNotesToInsert.push({
             id: crypto.randomUUID(),
             organizationId: adminOrgId,
             applicationId: appId,
-            authorId: adminUserId,
-            authorName: DEMO_ACCOUNTS.ADMIN.name,
-            authorRole: "ADMIN",
+            authorId: appNoteAuthor.id,
+            authorName: appNoteAuthor.displayName,
+            authorRole: appNoteAuthor.role,
             content: notes,
             isEdited: false,
             createdAt: toInstant(appCreatedAt),
@@ -2557,6 +2833,249 @@ export async function runSeed(): Promise<void> {
   }
   console.log(
     `   ✨ Successfully saved ${clicksToInsert.length} sample clicks (TrackingClick).`,
+  );
+
+  // ============================================================================
+  // Seed Notifications (all 4 NotificationKinds) & Recent Activity Logs
+  // ============================================================================
+  const nowMs = Date.now();
+  const minMs = 60 * 1000;
+  const hourMs = 60 * minMs;
+
+  const recentApps = [
+    ...applicationsToInsert.filter(
+      (a) => a.stage === "APPLIED" || a.stage === "SCREENING",
+    ),
+    ...applicationsToInsert,
+  ];
+  const uniqueNotifApps: typeof applicationsToInsert = [];
+  const seenNotifAppIds = new Set<string>();
+  for (const app of recentApps) {
+    if (!seenNotifAppIds.has(app.id)) {
+      seenNotifAppIds.add(app.id);
+      uniqueNotifApps.push(app);
+    }
+    if (uniqueNotifApps.length >= 6) break;
+  }
+
+  const upcomingInterviews = interviewsToInsert.filter(
+    (iv) => iv.scheduledAt.getTime() > nowMs,
+  );
+  const pastInterviews = interviewsToInsert.filter(
+    (iv) => iv.scheduledAt.getTime() <= nowMs,
+  );
+  const adminAssignedUpcoming = upcomingInterviews.filter(
+    (iv) => iv.interviewerId === adminUserId,
+  );
+  const otherUpcoming = upcomingInterviews.filter(
+    (iv) => iv.interviewerId !== adminUserId,
+  );
+  const orderedInterviews = [
+    ...adminAssignedUpcoming,
+    ...otherUpcoming,
+    ...pastInterviews,
+  ];
+
+  const getInterview = (index: number) =>
+    orderedInterviews[index % orderedInterviews.length];
+  const getApp = (index: number) =>
+    uniqueNotifApps[index % uniqueNotifApps.length];
+
+  const adminNotificationSpecs: Array<{
+    id: string;
+    kind: NotificationKind;
+    resourceId: string;
+    minutesAgo: number;
+    readMinutesAfter?: number;
+  }> = [
+    {
+      id: "00000000-0000-4000-8000-000000002001",
+      kind: "applicationReceived",
+      resourceId: getApp(0).id,
+      minutesAgo: 5,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002002",
+      kind: "interviewScheduled",
+      resourceId: getInterview(0).id,
+      minutesAgo: 18,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002003",
+      kind: "interviewChanged",
+      resourceId: getInterview(3).id,
+      minutesAgo: 42,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002004",
+      kind: "interviewCancelled",
+      resourceId: getInterview(6).id,
+      minutesAgo: 95,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002005",
+      kind: "applicationReceived",
+      resourceId: getApp(1).id,
+      minutesAgo: 180,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002006",
+      kind: "interviewScheduled",
+      resourceId: getInterview(1).id,
+      minutesAgo: 260,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002007",
+      kind: "interviewChanged",
+      resourceId: getInterview(4).id,
+      minutesAgo: 420,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002008",
+      kind: "interviewScheduled",
+      resourceId: getInterview(2).id,
+      minutesAgo: 900,
+      readMinutesAfter: 30,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002009",
+      kind: "applicationReceived",
+      resourceId: getApp(2).id,
+      minutesAgo: 1500,
+      readMinutesAfter: 120,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002010",
+      kind: "interviewCancelled",
+      resourceId: getInterview(7).id,
+      minutesAgo: 2200,
+      readMinutesAfter: 45,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002011",
+      kind: "interviewChanged",
+      resourceId: getInterview(5).id,
+      minutesAgo: 3100,
+      readMinutesAfter: 90,
+    },
+    {
+      id: "00000000-0000-4000-8000-000000002012",
+      kind: "interviewCancelled",
+      resourceId: getInterview(8).id,
+      minutesAgo: 4500,
+      readMinutesAfter: 180,
+    },
+  ];
+
+  await prisma.notificationPreference.create({
+    data: {
+      organizationId: betaOrgId,
+      userId: betaAdminUserId,
+      applicationWebsite: true,
+      interviewWebsite: true,
+      applicationEmail: false,
+      interviewEmail: false,
+    },
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      ...adminNotificationSpecs.map((spec) => {
+        const createdAt = toInstant(new Date(nowMs - spec.minutesAgo * minMs));
+        const readAt =
+          spec.readMinutesAfter !== undefined
+            ? toInstant(
+                new Date(createdAt.getTime() + spec.readMinutesAfter * minMs),
+              )
+            : null;
+        return {
+          id: spec.id,
+          organizationId: adminOrgId,
+          userId: adminUserId,
+          kind: spec.kind,
+          resourceId: spec.resourceId,
+          createdAt,
+          readAt,
+        };
+      }),
+      {
+        id: "00000000-0000-4000-8000-000000002013",
+        organizationId: adminOrgId,
+        userId: DEMO_TEAM_USERS[0].id,
+        kind: "interviewScheduled",
+        resourceId: getInterview(1).id,
+        createdAt: toInstant(new Date(nowMs - 30 * minMs)),
+        readAt: null,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000002014",
+        organizationId: adminOrgId,
+        userId: DEMO_TEAM_USERS[1].id,
+        kind: "applicationReceived",
+        resourceId: getApp(0).id,
+        createdAt: toInstant(new Date(nowMs - 2 * hourMs)),
+        readAt: null,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000002015",
+        organizationId: betaOrgId,
+        userId: betaAdminUserId,
+        kind: "applicationReceived",
+        resourceId: betaAppId,
+        createdAt: toInstant(new Date(nowMs - 45 * minMs)),
+        readAt: null,
+      },
+    ],
+  });
+
+  // Seed representative ActivityLog records so candidate timelines have activity history
+  const appById = new Map(applicationsToInsert.map((a) => [a.id, a]));
+  const sampleActivities = [
+    ...uniqueNotifApps.slice(0, 3).map((app) => ({
+      id: crypto.randomUUID(),
+      organizationId: adminOrgId,
+      candidateId: app.candidateId,
+      applicationId: app.id,
+      type: "APPLIED" as const,
+      title: "Hồ sơ ứng tuyển mới",
+      description: `Ứng viên đã nộp hồ sơ (${app.sourceChannel}).`,
+      actorId: null,
+      actorName: "Career Site",
+      actorRole: null,
+      metadata: { sourceChannel: app.sourceChannel },
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
+    })),
+    ...orderedInterviews.slice(0, 5).flatMap((iv) => {
+      const app = appById.get(iv.applicationId);
+      if (!app) return [];
+      const scheduler =
+        DEMO_TEAM_USERS.find((u) => u.role === "RECRUITER") ??
+        DEMO_TEAM_USERS[0];
+      return [
+        {
+          id: crypto.randomUUID(),
+          organizationId: adminOrgId,
+          candidateId: app.candidateId,
+          applicationId: app.id,
+          type: "INTERVIEW_SCHEDULED" as const,
+          title: `Đặt lịch phỏng vấn Vòng ${iv.round}`,
+          description: `Phân công ${iv.interviewer} phỏng vấn (${iv.type}).`,
+          actorId: scheduler.id,
+          actorName: formatUserDisplayName(scheduler, "LAST_FIRST"),
+          actorRole: scheduler.role,
+          metadata: { interviewId: iv.id, interviewerId: iv.interviewerId },
+          createdAt: toInstant(new Date(nowMs - 3 * hourMs)),
+          updatedAt: toInstant(new Date(nowMs - 3 * hourMs)),
+        },
+      ];
+    }),
+  ];
+  if (sampleActivities.length > 0) {
+    await prisma.activityLog.createMany({ data: sampleActivities });
+  }
+  console.log(
+    `   ✨ Successfully saved ${adminNotificationSpecs.length} Demo Admin notifications (all 4 kinds), ${sampleActivities.length} activity logs, and ${interviewsToInsert.length} interviews linked to real users.`,
   );
 
   console.log(

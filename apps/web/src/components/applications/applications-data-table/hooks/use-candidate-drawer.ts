@@ -136,7 +136,7 @@ export function useCandidateDrawer({
     options?: Partial<
       RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
     >,
-  ) => {
+  ): Promise<boolean> => {
     try {
       const updated = await updateStageMutation.mutateAsync({
         id: targetApp.id,
@@ -167,11 +167,13 @@ export function useCandidateDrawer({
             }
           : null,
       );
+      return true;
     } catch (err) {
       console.error("Failed to update stage:", err);
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      return false;
     }
   };
 
@@ -197,18 +199,20 @@ export function useCandidateDrawer({
     payload: RejectApplicationConfirmPayload,
   ) => {
     if (!pendingRejectApp) return;
-    const target = pendingRejectApp;
-    await executeStageChange(target, "REJECTED", payload);
-    setPendingRejectApp(null);
+    const ok = await executeStageChange(pendingRejectApp, "REJECTED", payload);
+    if (ok) {
+      setPendingRejectApp(null);
+    }
   };
 
   const handleConfirmOffer = async (
     payload: OfferApplicationConfirmPayload,
   ) => {
     if (!pendingOfferApp) return;
-    const target = pendingOfferApp;
-    await executeStageChange(target, "OFFER", payload);
-    setPendingOfferApp(null);
+    const ok = await executeStageChange(pendingOfferApp, "OFFER", payload);
+    if (ok) {
+      setPendingOfferApp(null);
+    }
   };
 
   const handleDownloadDoc = async (

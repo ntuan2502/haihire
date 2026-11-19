@@ -188,7 +188,6 @@ function TrackingLinkDetailContent() {
             onClose={() => setIsEditModalOpen(false)}
             link={detail.link}
             jobs={jobsList}
-            orgSlug={orgSlug}
           />
         </>
       )}

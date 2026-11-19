@@ -2,10 +2,9 @@
 
 import { useState, useMemo, useRef, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { CustomModal, CustomSelect } from "@/components/shared";
+import { CustomSelect, FormModal } from "@/components/shared";
 import { useFlowTemplateSelection } from "@/components/email/flow-template-selector";
-import { AlertCircle, Briefcase } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { ScheduleInterviewTimingFields } from "./schedule/schedule-interview-timing-fields";
 import { ScheduleInterviewInterviewerFields } from "./schedule/schedule-interview-interviewer-fields";
 import {
@@ -66,9 +65,10 @@ export function ScheduleInterviewModal({
     isConfigured,
   );
   const queryClient = useQueryClient();
-  const canManageInterviews = useHasPermission("interview:create");
+  const canCreateInterviews = useHasPermission("interview:create");
+  const canUpdateInterviews = useHasPermission("interview:update");
   const { data: members = [] } = useOrgInterviewers({
-    enabled: isOpen && canManageInterviews,
+    enabled: isOpen && (canCreateInterviews || canUpdateInterviews),
   });
   const createInterviewMutation = useCreateInterviewMutation();
   const updateInterviewMutation = useUpdateInterviewMutation();
@@ -89,7 +89,9 @@ export function ScheduleInterviewModal({
   const [formError, setFormError] = useState<string | null>(null);
   const hasTouchedEmailRef = useRef(false);
   const hasTouchedTemplateRef = useRef(false);
+  const hasTouchedScheduleRef = useRef(false);
   const initializedSessionRef = useRef<string | null>(null);
+  const initializedTimezoneRef = useRef<string | null>(null);
 
   const {
     canViewEmail,
@@ -145,12 +147,14 @@ export function ScheduleInterviewModal({
   useEffect(() => {
     if (!isOpen) {
       initializedSessionRef.current = null;
+      initializedTimezoneRef.current = null;
+      hasTouchedScheduleRef.current = false;
       return;
     }
 
     const sessionKey = `${selectedJobId ?? ""}:${selectedApplicationId ?? ""}:${editingInterview?.id ?? ""}:${initialDate ?? ""}`;
 
-    // 1. Determine target candidate & job
+    // Determine target candidate & job
     let candidateToUse: Application | undefined;
     if (selectedApplicationId) {
       candidateToUse = applications.find((a) => a.id === selectedApplicationId);
@@ -164,14 +168,28 @@ export function ScheduleInterviewModal({
       if (candidateToUse?.jobId) {
         setModalJobId((prev) => prev || candidateToUse.jobId);
       }
+      // If localization timezone finishes hydrating before user edits date/time, update extracted schedule
+      if (
+        editingInterview &&
+        initializedTimezoneRef.current !== effectiveTimezone &&
+        !hasTouchedScheduleRef.current
+      ) {
+        const { date, time } = extractDateTimeInTimezone(
+          editingInterview.scheduledAt,
+          effectiveTimezone,
+        );
+        setInterviewDate(date);
+        setInterviewTime(time);
+        initializedTimezoneRef.current = effectiveTimezone;
+      }
       return;
     }
     initializedSessionRef.current = sessionKey;
+    initializedTimezoneRef.current = effectiveTimezone;
 
     setFormError(null);
 
     if (editingInterview) {
-      // Update schedule: populate form fields with existing interview data
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
       const { date, time } = extractDateTimeInTimezone(
         editingInterview.scheduledAt,
@@ -191,7 +209,6 @@ export function ScheduleInterviewModal({
       setInterviewerId(editingInterview.interviewerId || "");
       setInterviewNotes(editingInterview.notes || "");
     } else {
-      // New schedule: initialize form fields empty / unpopulated
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
       setModalJobId(initialJobId);
       setModalCandidateId(selectedApplicationId || "");
@@ -213,7 +230,6 @@ export function ScheduleInterviewModal({
     effectiveTimezone,
   ]);
 
-  // When candidate changes manually, keep other fields empty
   const handleCandidateChange = (candId: string) => {
     setModalCandidateId(candId);
   };
@@ -274,7 +290,6 @@ export function ScheduleInterviewModal({
       };
 
       if (editingInterview?.id) {
-        // Update existing interview schedule
         await updateInterviewMutation.mutateAsync({
           id: editingInterview.id,
           data: {
@@ -287,7 +302,6 @@ export function ScheduleInterviewModal({
           },
         });
       } else {
-        // Create new interview schedule (backend advances stage atomically in transaction)
         await createInterviewMutation.mutateAsync({
           applicationId: candidate.id,
           scheduledAt,
@@ -309,9 +323,6 @@ export function ScheduleInterviewModal({
     } catch (err) {
       console.error("Schedule interview failed:", err);
       setFormError(getApiErrorMessage(err, t));
-      // Defense-in-depth: hooks (useCreateInterviewMutation,
-      // useUpdateInterviewMutation) already invalidate on error.
-      // This explicit call is belt-and-suspenders for legacy safety.
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     }
@@ -321,181 +332,170 @@ export function ScheduleInterviewModal({
     createInterviewMutation.isPending || updateInterviewMutation.isPending;
 
   return (
-    <CustomModal
+    <FormModal
       isOpen={isOpen}
       onClose={onClose}
+      onSubmit={handleSaveInterview}
       title={
         editingInterview
           ? t("interviews.editScheduleBtn")
           : t("interviews.modalTitle")
       }
       description={t("interviews.modalSubtitle")}
-      size="3xl"
+      size="lg"
+      noValidate={true}
+      isSubmitting={isSaving}
+      submitLabel={
+        editingInterview
+          ? t("interviews.updateSchedule")
+          : t("interviews.confirmSchedule")
+      }
+      savingLabel={t("interviews.savingSchedule")}
+      cancelLabel={t("common.cancel")}
+      error={formError}
     >
-      <div className="flex-1 overflow-y-auto p-6 md:p-7">
-        {formError && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
+      {/* Section 1: Job & Candidate Selection */}
+      <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3.5">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground uppercase tracking-wider">
+          <Briefcase className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+          <span>{t("interviews.targetJobAndCandidate")}</span>
+        </div>
 
-        <form onSubmit={handleSaveInterview} className="space-y-5 pt-4">
-          {/* Section 1: Job & Candidate Selection */}
-          <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground uppercase tracking-wider">
-              <Briefcase className="h-3.5 w-3.5 text-primary" />
-              <span>{t("interviews.targetJobAndCandidate")}</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Job Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  {t("interviews.targetJob")}
-                </label>
-                <CustomSelect
-                  value={modalJobId}
-                  onChange={(newJobId) => {
-                    setModalJobId(newJobId);
-                    setModalCandidateId("");
-                    onJobChange?.(newJobId);
-                  }}
-                  disabled={Boolean(selectedJobId && selectedApplicationId)}
-                  placeholder={
-                    jobs.length === 0
-                      ? t("interviews.noJobsAvailable")
-                      : t("interviews.placeholders.selectJob")
-                  }
-                  options={
-                    jobs.length === 0
-                      ? [
-                          {
-                            value: "",
-                            label: t("interviews.noJobsAvailable"),
-                            disabled: true,
-                          },
-                        ]
-                      : jobs.map((j) => ({
-                          value: j.id,
-                          label: `${j.title} (${j.department})`,
-                        }))
-                  }
-                  className="w-full"
-                  triggerClassName="h-10 text-xs font-medium"
-                />
-              </div>
-
-              {/* Candidate Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                  <span>
-                    {t("interviews.targetCandidate")}{" "}
-                    <span className="text-rose-500">*</span>
-                  </span>
-                  {currentCandidate && (
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      {t("interviews.stageLabel")}{" "}
-                      <strong className="font-semibold text-primary">
-                        {currentCandidate.stage}
-                      </strong>
-                    </span>
-                  )}
-                </label>
-                <CustomSelect
-                  value={modalCandidateId}
-                  onChange={(val) => handleCandidateChange(val)}
-                  disabled={Boolean(selectedApplicationId)}
-                  placeholder={
-                    !modalJobId && jobs.length > 0
-                      ? t("interviews.placeholders.selectJobFirst")
-                      : modalCandidates.length === 0
-                        ? t("interviews.noCandidatesForJob")
-                        : t("interviews.placeholders.selectCandidate")
-                  }
-                  options={
-                    modalCandidates.length === 0
-                      ? [
-                          {
-                            value: "",
-                            label: modalJobId
-                              ? t("interviews.noCandidatesForJob")
-                              : t("interviews.placeholders.selectJobFirst"),
-                            disabled: true,
-                          },
-                        ]
-                      : modalCandidates.map((c) => ({
-                          value: c.id,
-                          label: `${getCandidateDisplayName(c)} — ${c.candidateEmail}`,
-                        }))
-                  }
-                  className="w-full"
-                  triggerClassName="h-10 text-xs font-medium"
-                />
-              </div>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Job Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              {t("interviews.targetJob")}
+            </label>
+            <CustomSelect
+              value={modalJobId}
+              onChange={(newJobId) => {
+                setModalJobId(newJobId);
+                setModalCandidateId("");
+                onJobChange?.(newJobId);
+              }}
+              disabled={
+                isSaving || Boolean(selectedJobId && selectedApplicationId)
+              }
+              placeholder={
+                jobs.length === 0
+                  ? t("interviews.noJobsAvailable")
+                  : t("interviews.placeholders.selectJob")
+              }
+              options={
+                jobs.length === 0
+                  ? [
+                      {
+                        value: "",
+                        label: t("interviews.noJobsAvailable"),
+                        disabled: true,
+                      },
+                    ]
+                  : jobs.map((j) => ({
+                      value: j.id,
+                      label: j.department
+                        ? `${j.title} (${j.department})`
+                        : j.title,
+                    }))
+              }
+              className="w-full"
+              triggerClassName="h-10 text-xs font-medium"
+            />
           </div>
 
-          {/* Section 2, 3, 4: Timing, Round, Format, Location */}
-          <ScheduleInterviewTimingFields
-            interviewDate={interviewDate}
-            onDateChange={setInterviewDate}
-            interviewTime={interviewTime}
-            onTimeChange={setInterviewTime}
-            interviewType={interviewType}
-            onTypeChange={setInterviewType}
-            interviewFormat={interviewFormat}
-            onFormatChange={setInterviewFormat}
-            linkOrLocation={linkOrLocation}
-            onLinkOrLocationChange={setLinkOrLocation}
-          />
-
-          {/* Section 5: Interviewer, Notes, Email */}
-          <ScheduleInterviewInterviewerFields
-            interviewerId={interviewerId}
-            onInterviewerIdChange={setInterviewerId}
-            interviewNotes={interviewNotes}
-            onNotesChange={setInterviewNotes}
-            members={members}
-            isEditing={Boolean(editingInterview)}
-            sendEmailInvite={sendEmailInvite}
-            onSendEmailInviteChange={(val) => {
-              hasTouchedEmailRef.current = true;
-              setSendEmailInvite(val);
-            }}
-            canViewEmail={canViewEmail}
-            selectedTemplateId={selectedTemplateId}
-            onSelectedTemplateIdChange={(val) => {
-              hasTouchedTemplateRef.current = true;
-              setSelectedTemplateId(val);
-            }}
-            activeTemplates={activeTemplates}
-            isSaving={isSaving}
-          />
-
-          <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="h-9 px-4 rounded-md text-xs font-semibold cursor-pointer"
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="h-9 px-5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer shadow-xs"
-            >
-              {isSaving
-                ? t("interviews.savingSchedule")
-                : editingInterview
-                  ? t("interviews.updateSchedule")
-                  : t("interviews.confirmSchedule")}
-            </Button>
+          {/* Candidate Selector */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between gap-2">
+              <span>
+                {t("interviews.targetCandidate")}{" "}
+                <span className="text-rose-500">*</span>
+              </span>
+              {currentCandidate && (
+                <span className="text-[10px] font-normal text-muted-foreground">
+                  {t("interviews.stageLabel")}{" "}
+                  <strong className="font-semibold text-primary">
+                    {currentCandidate.stage}
+                  </strong>
+                </span>
+              )}
+            </label>
+            <CustomSelect
+              value={modalCandidateId}
+              onChange={(val) => handleCandidateChange(val)}
+              disabled={isSaving || Boolean(selectedApplicationId)}
+              placeholder={
+                !modalJobId && jobs.length > 0
+                  ? t("interviews.placeholders.selectJobFirst")
+                  : modalCandidates.length === 0
+                    ? t("interviews.noCandidatesForJob")
+                    : t("interviews.placeholders.selectCandidate")
+              }
+              options={
+                modalCandidates.length === 0
+                  ? [
+                      {
+                        value: "",
+                        label: modalJobId
+                          ? t("interviews.noCandidatesForJob")
+                          : t("interviews.placeholders.selectJobFirst"),
+                        disabled: true,
+                      },
+                    ]
+                  : modalCandidates.map((c) => ({
+                      value: c.id,
+                      label: `${getCandidateDisplayName(c)} — ${c.candidateEmail}`,
+                    }))
+              }
+              className="w-full"
+              triggerClassName="h-10 text-xs font-medium"
+            />
           </div>
-        </form>
+        </div>
       </div>
-    </CustomModal>
+
+      {/* Section 2, 3, 4: Timing, Round, Format, Location */}
+      <ScheduleInterviewTimingFields
+        interviewDate={interviewDate}
+        onDateChange={(val) => {
+          hasTouchedScheduleRef.current = true;
+          setInterviewDate(val);
+        }}
+        interviewTime={interviewTime}
+        onTimeChange={(val) => {
+          hasTouchedScheduleRef.current = true;
+          setInterviewTime(val);
+        }}
+        interviewType={interviewType}
+        onTypeChange={setInterviewType}
+        interviewFormat={interviewFormat}
+        onFormatChange={setInterviewFormat}
+        linkOrLocation={linkOrLocation}
+        onLinkOrLocationChange={setLinkOrLocation}
+        disabled={isSaving}
+      />
+
+      {/* Section 5: Interviewer, Notes, Email */}
+      <ScheduleInterviewInterviewerFields
+        interviewerId={interviewerId}
+        onInterviewerIdChange={setInterviewerId}
+        interviewNotes={interviewNotes}
+        onNotesChange={setInterviewNotes}
+        members={members}
+        isEditing={Boolean(editingInterview)}
+        sendEmailInvite={sendEmailInvite}
+        onSendEmailInviteChange={(val) => {
+          hasTouchedEmailRef.current = true;
+          setSendEmailInvite(val);
+        }}
+        canViewEmail={canViewEmail}
+        selectedTemplateId={selectedTemplateId}
+        onSelectedTemplateIdChange={(val) => {
+          hasTouchedTemplateRef.current = true;
+          setSelectedTemplateId(val);
+        }}
+        activeTemplates={activeTemplates}
+        isSaving={isSaving}
+      />
+    </FormModal>
   );
 }

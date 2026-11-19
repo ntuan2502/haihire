@@ -495,4 +495,15 @@ export function parseCandidateDocuments(
   return [];
 }
 
+/**
+ * Normalizes optional candidate/recipient email values and rejects display placeholders like "—".
+ */
+export function normalizeEmailAddress(email?: string | null): string {
+  const trimmed = email?.trim() || "";
+  if (!trimmed || trimmed === "—" || !trimmed.includes("@")) {
+    return "";
+  }
+  return trimmed;
+}
+
 export * from "./candidate-formatters";

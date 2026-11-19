@@ -9,6 +9,7 @@ import { FlowTemplateSelect } from "./flow-template-selector";
 export interface FlowEmailToggleFieldProps {
   hasEmail: boolean;
   email?: string;
+  checkboxId?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   sendLabel: string;
@@ -26,6 +27,7 @@ export interface FlowEmailToggleFieldProps {
 
 export function FlowEmailToggleField({
   hasEmail,
+  checkboxId: explicitCheckboxId,
   checked,
   onCheckedChange,
   sendLabel,
@@ -40,7 +42,8 @@ export function FlowEmailToggleField({
   accent = "primary",
   extraContent,
 }: FlowEmailToggleFieldProps) {
-  const checkboxId = useId();
+  const generatedCheckboxId = useId();
+  const checkboxId = explicitCheckboxId ?? generatedCheckboxId;
 
   const accentClass =
     accent === "emerald"

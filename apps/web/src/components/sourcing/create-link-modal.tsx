@@ -8,7 +8,6 @@ export interface CreateLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   jobs: JobOption[];
-  orgSlug?: string;
   defaultJobId?: string;
   lockJob?: boolean;
 }
@@ -21,7 +20,6 @@ export function CreateLinkModal({
   isOpen,
   onClose,
   jobs,
-  orgSlug = "demo",
   defaultJobId,
   lockJob,
 }: CreateLinkModalProps) {
@@ -31,7 +29,6 @@ export function CreateLinkModal({
       onClose={onClose}
       mode="create"
       jobs={jobs}
-      orgSlug={orgSlug}
       defaultJobId={defaultJobId}
       lockJob={lockJob}
     />

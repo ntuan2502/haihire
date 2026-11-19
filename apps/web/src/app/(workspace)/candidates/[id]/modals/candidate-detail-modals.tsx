@@ -5,6 +5,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
+import { normalizeEmailAddress } from "@/lib/utils";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Candidate, Application, CandidateDocument, Job } from "@/types";
 
@@ -124,7 +125,7 @@ export function CandidateDetailModals({
           candidate={{
             id: candidate.id,
             name: candidateName,
-            email: candidateEmail,
+            email: normalizeEmailAddress(candidateEmail),
             phone: candidatePhone,
           }}
           jobTitle={candidateApps[0]?.job?.title}

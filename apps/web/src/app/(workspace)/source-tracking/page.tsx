@@ -310,7 +310,6 @@ function SourceTrackingContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         jobs={jobsList}
-        orgSlug={orgSlug}
       />
 
       {/* Modal Edit Link */}
@@ -320,7 +319,6 @@ function SourceTrackingContent() {
           onClose={() => setEditingLink(null)}
           link={editingLink}
           jobs={jobsList}
-          orgSlug={orgSlug}
         />
       )}
     </div>

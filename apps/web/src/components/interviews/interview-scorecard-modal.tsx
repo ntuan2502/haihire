@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useId, useRef, type FormEvent } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { CustomModal } from "@/components/shared";
+import { FormModal } from "@/components/shared";
 import {
   Star,
-  CheckCircle2,
   AlertCircle,
   Briefcase,
   Calendar,
   ThumbsUp,
   ThumbsDown,
   HelpCircle,
-  Loader2,
   Check,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
@@ -47,6 +44,7 @@ export function InterviewScorecardModal({
 }: InterviewScorecardModalProps) {
   const { user } = useAuth();
   const { t } = useI18n();
+  const feedbackId = useId();
   const submitScorecardMutation = useSubmitScorecardMutation();
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
@@ -60,10 +58,20 @@ export function InterviewScorecardModal({
   const [problemSolvingScore, setProblemSolvingScore] = useState<number>(4);
   const [feedback, setFeedback] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const initializedSessionRef = useRef<string | null>(null);
 
-  // Sync existing scorecard if available
+  // Sync existing scorecard once per (isOpen, interview.id) session so background SSE refetches don't wipe unsaved input
   useEffect(() => {
-    if (!isOpen || !interview) return;
+    if (!isOpen || !interview) {
+      initializedSessionRef.current = null;
+      return;
+    }
+    const sessionKey = interview.id || "__active__";
+    if (initializedSessionRef.current === sessionKey) {
+      return;
+    }
+    initializedSessionRef.current = sessionKey;
+
     setErrorMsg(null);
     if (interview.scorecard) {
       setOverallRating(interview.scorecard.overallRating || 4);
@@ -86,10 +94,13 @@ export function InterviewScorecardModal({
 
   if (!application || !interview) return null;
 
+  const isSaving = submitScorecardMutation.isPending;
+  const isDisabled = !canSubmitScorecard || isSaving;
   const candidateName = getCandidateDisplayName(application);
 
-  const handleSave = async () => {
-    if (!canSubmitScorecard) return;
+  const handleSave = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!canSubmitScorecard || isSaving || !interview.id) return;
     setErrorMsg(null);
     try {
       const scorecardData: InterviewScorecard = {
@@ -104,12 +115,10 @@ export function InterviewScorecardModal({
         evaluatedAt: new Date().toISOString(),
       };
 
-      if (interview.id) {
-        await submitScorecardMutation.mutateAsync({
-          id: interview.id,
-          scorecard: scorecardData,
-        });
-      }
+      await submitScorecardMutation.mutateAsync({
+        id: interview.id,
+        scorecard: scorecardData,
+      });
 
       onSaved?.();
       onClose();
@@ -129,16 +138,17 @@ export function InterviewScorecardModal({
   ) => {
     const starSize = size === "lg" ? "h-6 w-6" : "h-4 w-4";
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
-            disabled={!canSubmitScorecard}
+            disabled={isDisabled}
+            aria-label={`${star}/5`}
             onClick={() => onChange(star)}
-            className={`p-1 rounded-md transition-transform ${
-              canSubmitScorecard
-                ? "hover:scale-115 cursor-pointer focus:outline-hidden"
+            className={`p-1 rounded-md transition-transform focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              !isDisabled
+                ? "hover:scale-115 cursor-pointer"
                 : "cursor-default opacity-80"
             }`}
           >
@@ -148,6 +158,7 @@ export function InterviewScorecardModal({
                   ? "fill-amber-400 text-amber-400"
                   : "text-muted-foreground/30"
               }`}
+              aria-hidden="true"
             />
           </button>
         ))}
@@ -173,27 +184,36 @@ export function InterviewScorecardModal({
   };
 
   return (
-    <CustomModal
+    <FormModal
       isOpen={isOpen}
       onClose={onClose}
+      onSubmit={handleSave}
       title={t("interviews.scorecardTitle")}
       badge={
         <span className="text-[11px] font-semibold text-foreground">
           {candidateName}
         </span>
       }
-      size="lg"
-      contentClassName="flex flex-col min-h-0 bg-background"
+      size="xl"
+      isSubmitting={isSaving}
+      submitDisabled={!canSubmitScorecard || !interview.id}
+      submitLabel={t("interviews.saveScorecard")}
+      savingLabel={t("interviews.savingScorecard")}
+      cancelLabel={t("common.close")}
+      error={errorMsg}
+      bodyClassName="p-0 space-y-0 bg-background"
     >
       {/* Candidate & Interview Summary Strip */}
-      <div className="p-4 sm:px-6 border-b border-border bg-card text-card-foreground flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-primary text-primary-foreground font-bold text-[11px] flex items-center justify-center">
+      <div className="p-4 sm:px-6 border-b border-border bg-card text-card-foreground flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="h-7 w-7 rounded-lg bg-primary text-primary-foreground font-bold text-[11px] flex items-center justify-center shrink-0">
             {candidateName.charAt(0)}
           </div>
-          <div>
-            <span className="font-bold text-foreground">{candidateName}</span>
-            <span className="text-[11px] text-muted-foreground block truncate max-w-[180px]">
+          <div className="min-w-0">
+            <span className="font-bold text-foreground block truncate">
+              {candidateName}
+            </span>
+            <span className="text-[11px] text-muted-foreground block truncate max-w-[200px]">
               {application.candidateEmail}
             </span>
           </div>
@@ -201,14 +221,20 @@ export function InterviewScorecardModal({
 
         <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
           <div className="flex items-center gap-1 font-medium">
-            <Briefcase className="h-3.5 w-3.5 text-primary" />
+            <Briefcase
+              className="h-3.5 w-3.5 text-primary"
+              aria-hidden="true"
+            />
             <span className="truncate max-w-[140px]">
               {job?.title || t("interviews.defaultJob")}
             </span>
           </div>
 
           <div className="flex items-center gap-1 font-medium">
-            <Calendar className="h-3.5 w-3.5 text-emerald-500" />
+            <Calendar
+              className="h-3.5 w-3.5 text-emerald-500"
+              aria-hidden="true"
+            />
             <span>
               {formatDate(interview.scheduledAt)} (
               {formatTime(interview.scheduledAt)})
@@ -227,15 +253,11 @@ export function InterviewScorecardModal({
       <div className="p-6 space-y-6">
         {!canSubmitScorecard && (
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <AlertCircle
+              className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+              aria-hidden="true"
+            />
             <span>{t("interviews.scorecardNoPermission")}</span>
-          </div>
-        )}
-
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -263,14 +285,19 @@ export function InterviewScorecardModal({
             <span>{t("interviews.hiringRecommendation")}</span>
             <span className="text-rose-500">*</span>
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          <div
+            role="radiogroup"
+            aria-label={t("interviews.hiringRecommendation")}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5"
+          >
             {/* STRONG_YES */}
             <button
               type="button"
-              disabled={!canSubmitScorecard}
+              disabled={isDisabled}
+              aria-pressed={recommendation === "STRONG_YES"}
               onClick={() => setRecommendation("STRONG_YES")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "STRONG_YES"
                   ? "bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500 ring-2 ring-emerald-500/20"
@@ -279,11 +306,14 @@ export function InterviewScorecardModal({
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("interviews.recommendations.strongYes")}
                 </span>
                 {recommendation === "STRONG_YES" && (
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  <Check
+                    className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
@@ -294,10 +324,11 @@ export function InterviewScorecardModal({
             {/* YES */}
             <button
               type="button"
-              disabled={!canSubmitScorecard}
+              disabled={isDisabled}
+              aria-pressed={recommendation === "YES"}
               onClick={() => setRecommendation("YES")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "YES"
                   ? "bg-primary/10 border-primary ring-2 ring-primary/20"
@@ -306,11 +337,14 @@ export function InterviewScorecardModal({
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("interviews.recommendations.yes")}
                 </span>
                 {recommendation === "YES" && (
-                  <Check className="h-3.5 w-3.5 text-primary" />
+                  <Check
+                    className="h-3.5 w-3.5 text-primary"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
@@ -321,10 +355,11 @@ export function InterviewScorecardModal({
             {/* NEUTRAL */}
             <button
               type="button"
-              disabled={!canSubmitScorecard}
+              disabled={isDisabled}
+              aria-pressed={recommendation === "NEUTRAL"}
               onClick={() => setRecommendation("NEUTRAL")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "NEUTRAL"
                   ? "bg-amber-50/80 border-amber-500 dark:bg-amber-950/40 dark:border-amber-500 ring-2 ring-amber-500/20"
@@ -333,11 +368,14 @@ export function InterviewScorecardModal({
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                  <HelpCircle className="h-3.5 w-3.5" />
+                  <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("interviews.recommendations.neutral")}
                 </span>
                 {recommendation === "NEUTRAL" && (
-                  <Check className="h-3.5 w-3.5 text-amber-600" />
+                  <Check
+                    className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
@@ -348,10 +386,11 @@ export function InterviewScorecardModal({
             {/* NO */}
             <button
               type="button"
-              disabled={!canSubmitScorecard}
+              disabled={isDisabled}
+              aria-pressed={recommendation === "NO"}
               onClick={() => setRecommendation("NO")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "NO"
                   ? "bg-rose-50/80 border-rose-500 dark:bg-rose-950/40 dark:border-rose-500 ring-2 ring-rose-500/20"
@@ -360,11 +399,14 @@ export function InterviewScorecardModal({
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                  <ThumbsDown className="h-3.5 w-3.5" />
+                  <ThumbsDown className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("interviews.recommendations.no")}
                 </span>
                 {recommendation === "NO" && (
-                  <Check className="h-3.5 w-3.5 text-rose-600" />
+                  <Check
+                    className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
@@ -375,10 +417,11 @@ export function InterviewScorecardModal({
             {/* STRONG_NO */}
             <button
               type="button"
-              disabled={!canSubmitScorecard}
+              disabled={isDisabled}
+              aria-pressed={recommendation === "STRONG_NO"}
               onClick={() => setRecommendation("STRONG_NO")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                canSubmitScorecard ? "cursor-pointer" : "cursor-default"
+              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "STRONG_NO"
                   ? "bg-rose-100/90 border-rose-600 dark:bg-rose-950/70 dark:border-rose-500 ring-2 ring-rose-600/25"
@@ -387,11 +430,14 @@ export function InterviewScorecardModal({
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                  <ThumbsDown className="h-3.5 w-3.5" />
+                  <ThumbsDown className="h-3.5 w-3.5" aria-hidden="true" />
                   {t("interviews.recommendations.strongNo")}
                 </span>
                 {recommendation === "STRONG_NO" && (
-                  <Check className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300" />
+                  <Check
+                    className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300"
+                    aria-hidden="true"
+                  />
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground leading-tight">
@@ -408,8 +454,8 @@ export function InterviewScorecardModal({
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Technical Skills */}
-            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
-              <div>
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-foreground">
                   {t("interviews.technicalCriteria")}
                 </p>
@@ -421,8 +467,8 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Communication Skills */}
-            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
-              <div>
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-foreground">
                   {t("interviews.communicationCriteria")}
                 </p>
@@ -434,8 +480,8 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Culture Fit */}
-            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
-              <div>
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-foreground">
                   {t("interviews.cultureFitCriteria")}
                 </p>
@@ -447,8 +493,8 @@ export function InterviewScorecardModal({
             </div>
 
             {/* Problem Solving */}
-            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex items-center justify-between">
-              <div>
+            <div className="p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-foreground">
                   {t("interviews.problemSolvingCriteria")}
                 </p>
@@ -463,12 +509,16 @@ export function InterviewScorecardModal({
 
         {/* 4. Detailed Feedback & Comments */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground">
+          <label
+            htmlFor={feedbackId}
+            className="text-xs font-bold text-foreground"
+          >
             {t("interviews.detailedFeedback")}
           </label>
           <Textarea
+            id={feedbackId}
             rows={4}
-            disabled={!canSubmitScorecard}
+            disabled={isDisabled}
             placeholder={t("interviews.feedbackPlaceholder")}
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
@@ -476,37 +526,6 @@ export function InterviewScorecardModal({
           />
         </div>
       </div>
-
-      {/* Modal Footer */}
-      <div className="p-4 sm:px-6 border-t border-border bg-card text-card-foreground flex items-center justify-between gap-2 shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          className="h-8 px-3.5 rounded-md text-xs font-semibold cursor-pointer shadow-2xs"
-        >
-          {t("common.close")}
-        </Button>
-
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={!canSubmitScorecard || submitScorecardMutation.isPending}
-          className="h-8 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-2xs cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitScorecardMutation.isPending ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>{t("interviews.savingScorecard")}</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>{t("interviews.saveScorecard")}</span>
-            </>
-          )}
-        </Button>
-      </div>
-    </CustomModal>
+    </FormModal>
   );
 }

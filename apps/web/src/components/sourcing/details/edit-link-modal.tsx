@@ -10,7 +10,6 @@ export interface EditLinkModalProps {
   onClose: () => void;
   link: TrackingLinkItem;
   jobs?: JobOption[];
-  orgSlug?: string;
   defaultJobId?: string;
   lockJob?: boolean;
 }
@@ -24,7 +23,6 @@ export function EditLinkModal({
   onClose,
   link,
   jobs = [],
-  orgSlug = "demo",
   defaultJobId,
   lockJob,
 }: EditLinkModalProps) {
@@ -35,7 +33,6 @@ export function EditLinkModal({
       mode="edit"
       link={link}
       jobs={jobs}
-      orgSlug={orgSlug}
       defaultJobId={defaultJobId}
       lockJob={lockJob}
     />

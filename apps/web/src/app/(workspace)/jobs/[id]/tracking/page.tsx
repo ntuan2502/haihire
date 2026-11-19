@@ -155,7 +155,6 @@ function JobTrackingPageContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         jobs={modalJobs}
-        orgSlug={orgSlug}
         defaultJobId={job.id}
         lockJob={true}
       />
@@ -167,7 +166,6 @@ function JobTrackingPageContent() {
           onClose={() => setEditingLink(null)}
           link={editingLink}
           jobs={modalJobs}
-          orgSlug={orgSlug}
           defaultJobId={job.id}
           lockJob={true}
         />

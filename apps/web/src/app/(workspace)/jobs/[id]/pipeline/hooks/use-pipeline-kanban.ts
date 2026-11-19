@@ -367,7 +367,7 @@ export function usePipelineKanban(jobId: string) {
     options?: Partial<
       RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
     >,
-  ) => {
+  ): Promise<boolean> => {
     try {
       await updateStageMutation.mutateAsync({
         id: candidate.id,
@@ -412,12 +412,14 @@ export function usePipelineKanban(jobId: string) {
           queryKey: ["job-applications", jobId],
         }),
       ]);
+      return true;
     } catch (err) {
       console.error("Failed to move candidate stage", err);
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
+      return false;
     }
   };
 
@@ -453,12 +455,13 @@ export function usePipelineKanban(jobId: string) {
     payload: RejectApplicationConfirmPayload,
   ) => {
     if (!pendingRejectCandidate) return;
-    const target = pendingRejectCandidate;
-    try {
-      await executeMoveCandidateStage(target, "REJECTED", payload);
+    const ok = await executeMoveCandidateStage(
+      pendingRejectCandidate,
+      "REJECTED",
+      payload,
+    );
+    if (ok) {
       setPendingRejectCandidate(null);
-    } catch {
-      // Error already surfaced via executeMoveCandidateStage
     }
   };
 
@@ -466,12 +469,13 @@ export function usePipelineKanban(jobId: string) {
     payload: OfferApplicationConfirmPayload,
   ) => {
     if (!pendingOfferCandidate) return;
-    const target = pendingOfferCandidate;
-    try {
-      await executeMoveCandidateStage(target, "OFFER", payload);
+    const ok = await executeMoveCandidateStage(
+      pendingOfferCandidate,
+      "OFFER",
+      payload,
+    );
+    if (ok) {
       setPendingOfferCandidate(null);
-    } catch {
-      // Error already surfaced via executeMoveCandidateStage
     }
   };
 

@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  useId,
+  type FormEvent,
+} from "react";
 import { Send, Eye, Edit3, Sparkles, User, Briefcase } from "lucide-react";
 import {
   type EmailFlowKey,
@@ -12,12 +20,17 @@ import {
   interpolateTemplate,
 } from "@/lib/email-templates";
 import { useI18n, type TranslationKey } from "@/i18n";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect, CustomModal } from "@/components/shared";
+import { Textarea } from "@/components/ui/textarea";
+import { CustomSelect, FormModal } from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
+import {
+  formatDate,
+  formatTime,
+  getCandidateDisplayName,
+  normalizeEmailAddress,
+} from "@/lib/utils";
 import { EmailHtmlPreview } from "./email-html-preview";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useEmailFlows } from "@/hooks/use-email-queries";
@@ -63,15 +76,27 @@ export function SendEmailModal({
   onSendSuccess,
 }: SendEmailModalProps) {
   const { t } = useI18n();
+  const baseId = useId();
+  const templateSelectId = `${baseId}-template`;
+  const subjectInputId = `${baseId}-subject`;
   const canViewEmail = useHasPermission("email:view");
 
   const candidateDisplayName = candidate
     ? getCandidateDisplayName(candidate)
     : "";
+  const normalizedEmail = normalizeEmailAddress(candidate?.email);
+  const hasEmail = normalizedEmail.length > 0;
   const effectiveJobTitle = jobTitle || t("email.defaultJobTitle");
   const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
-  const { data: remoteTemplates } = useEmailTemplates();
+  const interviewScheduledAt = interviewDetails?.scheduledAt;
+  const interviewFormat = interviewDetails?.format;
+  const interviewLinkOrLocation = interviewDetails?.linkOrLocation;
+  const interviewInterviewer = interviewDetails?.interviewer;
+
+  const { data: remoteTemplates } = useEmailTemplates(undefined, {
+    enabled: isOpen,
+  });
   const { data: remoteFlows } = useEmailFlows(undefined, {
     enabled: isOpen && canViewEmail && Boolean(defaultFlowKey),
   });
@@ -145,35 +170,41 @@ export function SendEmailModal({
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const bodyInputRef = useRef<HTMLTextAreaElement>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOpenRef = useRef(false);
-  const hasManualSelectionRef = useRef(false);
+  const hasManualEditRef = useRef(false);
+  const appliedDefaultRef = useRef<string | null>(null);
 
-  // Variables map for interpolation (only include schedule values when real interviewDetails are provided)
+  // Variables map with primitive dependencies so parent object literals never re-trigger composer resets
+  const candidatePhone = candidate?.phone;
   const variablesMap = useMemo(() => {
     return {
       candidate_name: candidateDisplayName || t("email.defaultCandidateName"),
-      candidate_email: candidate?.email || undefined,
-      candidate_phone: candidate?.phone || undefined,
+      candidate_email: normalizedEmail || undefined,
+      candidate_phone: candidatePhone || undefined,
       job_title: effectiveJobTitle,
       company_name: effectiveOrgName,
-      interview_date: interviewDetails?.scheduledAt
-        ? formatDate(interviewDetails.scheduledAt)
+      interview_date: interviewScheduledAt
+        ? formatDate(interviewScheduledAt)
         : undefined,
-      interview_time: interviewDetails?.scheduledAt
-        ? formatTime(interviewDetails.scheduledAt)
+      interview_time: interviewScheduledAt
+        ? formatTime(interviewScheduledAt)
         : undefined,
-      interview_format: interviewDetails?.format || undefined,
-      interview_link: interviewDetails?.linkOrLocation || undefined,
-      interviewer_name: interviewDetails?.interviewer || undefined,
+      interview_format: interviewFormat || undefined,
+      interview_link: interviewLinkOrLocation || undefined,
+      interviewer_name: interviewInterviewer || undefined,
       sender_name: t("email.defaultSenderName"),
     };
   }, [
     candidateDisplayName,
-    candidate?.email,
-    candidate?.phone,
+    normalizedEmail,
+    candidatePhone,
     effectiveJobTitle,
     effectiveOrgName,
-    interviewDetails,
+    interviewScheduledAt,
+    interviewFormat,
+    interviewLinkOrLocation,
+    interviewInterviewer,
     t,
   ]);
 
@@ -204,32 +235,49 @@ export function SendEmailModal({
     [activeTemplates, variablesMap],
   );
 
-  // Sync default template when modal opens or templates resolve asynchronously
+  // Sync default template when modal opens or async default resolves, preserving manual edits
   useEffect(() => {
     if (!isOpen) {
       wasOpenRef.current = false;
-      hasManualSelectionRef.current = false;
+      hasManualEditRef.current = false;
+      appliedDefaultRef.current = null;
       return;
     }
     if (!wasOpenRef.current) {
       wasOpenRef.current = true;
       setIsPreviewMode(false);
     }
-    if (!hasManualSelectionRef.current) {
+    if (
+      !hasManualEditRef.current &&
+      appliedDefaultRef.current !== resolvedDefaultValue
+    ) {
+      appliedDefaultRef.current = resolvedDefaultValue;
       setSelectedValue(resolvedDefaultValue);
       applyTemplateByValue(resolvedDefaultValue);
     }
   }, [isOpen, resolvedDefaultValue, applyTemplateByValue]);
 
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectTemplate = (nextValue: string) => {
-    hasManualSelectionRef.current = true;
+    hasManualEditRef.current = true;
     setSelectedValue(nextValue);
     applyTemplateByValue(nextValue);
   };
 
-  if (!isOpen || !candidate) return null;
+  if (!candidate) return null;
+
+  const isSending = sendEmailMutation.isPending;
 
   const handleInsertVariable = (varKey: string) => {
+    if (isSending) return;
+    hasManualEditRef.current = true;
     if (!bodyInputRef.current) {
       setBody((prev) => prev + " " + varKey);
       return;
@@ -239,13 +287,18 @@ export function SendEmailModal({
     const end = textarea.selectionEnd;
     const nextBody = body.substring(0, start) + varKey + body.substring(end);
     setBody(nextBody);
-    setTimeout(() => {
+    if (focusTimerRef.current) {
+      clearTimeout(focusTimerRef.current);
+    }
+    focusTimerRef.current = setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + varKey.length, start + varKey.length);
     }, 0);
   };
 
-  const handleSend = async () => {
+  const handleSend = async (e: FormEvent) => {
+    e.preventDefault();
+    if (isSending || !hasEmail || !subject.trim() || !body.trim()) return;
     try {
       const selectedTemplate = activeTemplates.find(
         (tpl) => tpl.id === selectedValue,
@@ -272,7 +325,7 @@ export function SendEmailModal({
       }
 
       const log = await sendEmailMutation.mutateAsync({
-        to: candidate.email,
+        to: normalizedEmail,
         recipientName: candidateDisplayName,
         subject: interpolateTemplate(subject, variablesMap),
         body: interpolateTemplate(body, variablesMap),
@@ -294,200 +347,201 @@ export function SendEmailModal({
     }
   };
 
-  const isSending = sendEmailMutation.isPending;
-
   return (
-    <CustomModal
+    <FormModal
       isOpen={isOpen}
-      onClose={isSending ? () => {} : onClose}
+      onClose={onClose}
+      onSubmit={handleSend}
       title={t("email.modalTitle")}
+      icon={
+        <Send className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+      }
       badge={
         <span className="text-[11px] font-semibold text-foreground">
           {candidateDisplayName}
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-background text-foreground"
+      isSubmitting={isSending}
+      submitDisabled={!subject.trim() || !body.trim() || !hasEmail}
+      submitLabel={t("email.sendBtn")}
+      savingLabel={t("email.sendingBtn")}
+      cancelLabel={t("email.cancel")}
+      bodyClassName="space-y-4 bg-background"
     >
-      {/* Subheader Candidate info strip */}
-      <div className="px-6 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">
-            {candidateDisplayName}
-          </span>
-          <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">{candidate.email}</span>
-        </div>
+      {/* Template Selector */}
+      <div>
+        <label
+          htmlFor={`${templateSelectId}-trigger`}
+          className="block text-xs font-medium text-foreground mb-1.5"
+        >
+          {t("email.selectTemplate")}
+        </label>
+        <CustomSelect
+          id={templateSelectId}
+          value={selectedValue}
+          onChange={handleSelectTemplate}
+          options={templateOptions}
+          disabled={isSending}
+          className="w-full"
+          triggerClassName="h-9 text-xs"
+        />
       </div>
 
-      {/* Modal Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {/* Template Selector */}
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            {t("email.selectTemplate")}
-          </label>
-          <CustomSelect
-            value={selectedValue}
-            onChange={handleSelectTemplate}
-            options={templateOptions}
-            className="w-full"
-            triggerClassName="h-9 text-xs"
+      {/* Recipient Information Pill */}
+      <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-muted-foreground flex-wrap min-w-0">
+          <User
+            className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+            aria-hidden="true"
           />
-        </div>
-
-        {/* Recipient Information Pill */}
-        <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{t("email.recipient")}:</span>
-            <strong className="font-semibold text-foreground">
-              {candidateDisplayName}
-            </strong>
-            <span className="text-muted-foreground">({candidate.email})</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Briefcase className="h-3 w-3 text-muted-foreground" />
-            <span>{jobTitle}</span>
-          </div>
-        </div>
-
-        {/* Subject Field */}
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            {t("email.subject")}
-          </label>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder={t("email.subjectPlaceholder")}
-            className="h-9 text-xs"
-          />
-        </div>
-
-        {/* Edit / Preview Tabs */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1 p-0.5 bg-muted border border-border rounded-lg">
-            <button
-              type="button"
-              onClick={() => setIsPreviewMode(false)}
-              className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                !isPreviewMode
-                  ? "bg-background text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground font-medium"
-              }`}
-            >
-              <Edit3 className="h-3 w-3" />
-              <span>{t("email.tabCompose")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPreviewMode(true)}
-              className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                isPreviewMode
-                  ? "bg-background text-foreground shadow-xs font-semibold"
-                  : "text-muted-foreground hover:text-foreground font-medium"
-              }`}
-            >
-              <Eye className="h-3 w-3" />
-              <span>{t("email.livePreview")}</span>
-            </button>
-          </div>
-
-          {!isPreviewMode && (
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-amber-500" />
-              <span>{t("email.htmlAndVariables")}</span>
+          <span>{t("email.recipient")}:</span>
+          <strong className="font-semibold text-foreground">
+            {candidateDisplayName}
+          </strong>
+          {hasEmail && (
+            <span className="text-muted-foreground break-all">
+              {normalizedEmail}
             </span>
           )}
         </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
+          <Briefcase
+            className="h-3 w-3 text-muted-foreground shrink-0"
+            aria-hidden="true"
+          />
+          <span className="truncate">{effectiveJobTitle}</span>
+        </div>
+      </div>
 
-        {/* Body Editor or Preview Mode */}
-        {!isPreviewMode ? (
-          <div className="space-y-2">
-            <textarea
-              ref={bodyInputRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={10}
-              className="w-full p-3.5 rounded-lg border border-input bg-background text-xs text-foreground font-mono leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-2xs"
-              placeholder={t("email.bodyPlaceholder")}
-            />
+      {/* Subject Field */}
+      <div>
+        <label
+          htmlFor={subjectInputId}
+          className="block text-xs font-medium text-foreground mb-1.5"
+        >
+          {t("email.subject")}
+        </label>
+        <Input
+          id={subjectInputId}
+          value={subject}
+          disabled={isSending}
+          onChange={(e) => {
+            hasManualEditRef.current = true;
+            setSubject(e.target.value);
+          }}
+          placeholder={t("email.subjectPlaceholder")}
+          className="h-9 text-xs"
+        />
+      </div>
 
-            {/* Variable Insertion Pills */}
-            <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                <Sparkles className="h-3 w-3 text-muted-foreground" />
-                <span>{t("email.insertVariableHint")}</span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {TEMPLATE_VARIABLES.map((v) => (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => handleInsertVariable(v.key)}
-                    className="px-2 py-0.5 rounded-md bg-background border border-input text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-2xs"
-                    title={
-                      (v.labelKey ? t(v.labelKey as TranslationKey) : "") ||
-                      v.label
-                    }
-                  >
-                    {v.key}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Live HTML Preview */
-          <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
-            <div className="border-b border-border pb-3 text-xs space-y-1 text-muted-foreground">
-              <div>
-                <strong className="text-foreground">
-                  {t("email.thSubject")}:
-                </strong>{" "}
-                {interpolateTemplate(subject, variablesMap)}
-              </div>
-              <div>
-                <strong className="text-foreground">
-                  {t("email.thRecipient")}:
-                </strong>{" "}
-                {candidateDisplayName} &lt;{candidate.email}&gt;
-              </div>
-            </div>
-            <EmailHtmlPreview
-              title={interpolateTemplate(subject, variablesMap)}
-              body={interpolateTemplate(body, variablesMap)}
-              className="prose prose-xs dark:prose-invert max-w-none text-xs text-foreground leading-relaxed"
-            />
-          </div>
+      {/* Edit / Preview Tabs */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+        <div className="flex items-center gap-1 p-0.5 bg-muted border border-border rounded-lg">
+          <button
+            type="button"
+            disabled={isSending}
+            onClick={() => setIsPreviewMode(false)}
+            className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+              !isPreviewMode
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <Edit3 className="h-3 w-3" aria-hidden="true" />
+            <span>{t("email.tabCompose")}</span>
+          </button>
+          <button
+            type="button"
+            disabled={isSending}
+            onClick={() => setIsPreviewMode(true)}
+            className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+              isPreviewMode
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <Eye className="h-3 w-3" aria-hidden="true" />
+            <span>{t("email.livePreview")}</span>
+          </button>
+        </div>
+
+        {!isPreviewMode && (
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Sparkles className="h-3 w-3 text-amber-500" aria-hidden="true" />
+            <span>{t("email.htmlAndVariables")}</span>
+          </span>
         )}
       </div>
 
-      {/* Modal Footer */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-t border-border bg-muted/30 shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          disabled={isSending}
-          className="cursor-pointer"
-        >
-          {t("email.cancel")}
-        </Button>
+      {/* Body Editor or Preview Mode */}
+      {!isPreviewMode ? (
+        <div className="space-y-2">
+          <Textarea
+            ref={bodyInputRef}
+            value={body}
+            disabled={isSending}
+            onChange={(e) => {
+              hasManualEditRef.current = true;
+              setBody(e.target.value);
+            }}
+            rows={10}
+            className="p-3.5 text-xs font-mono leading-relaxed shadow-2xs"
+            placeholder={t("email.bodyPlaceholder")}
+          />
 
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleSend}
-          disabled={isSending || !subject.trim() || !body.trim()}
-          className="cursor-pointer gap-2"
-        >
-          <Send className="h-3.5 w-3.5" />
-          <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>
-        </Button>
-      </div>
-    </CustomModal>
+          {/* Variable Insertion Pills */}
+          <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+              <Sparkles
+                className="h-3 w-3 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span>{t("email.insertVariableHint")}</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {TEMPLATE_VARIABLES.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  disabled={isSending}
+                  onClick={() => handleInsertVariable(v.key)}
+                  className="px-2 py-0.5 rounded-md bg-background border border-input text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={
+                    (v.labelKey ? t(v.labelKey as TranslationKey) : "") ||
+                    v.label
+                  }
+                >
+                  {v.key}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Live HTML Preview */
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+          <div className="border-b border-border pb-3 text-xs space-y-1 text-muted-foreground">
+            <div>
+              <strong className="text-foreground">
+                {t("email.thSubject")}:
+              </strong>{" "}
+              {interpolateTemplate(subject, variablesMap)}
+            </div>
+            <div>
+              <strong className="text-foreground">
+                {t("email.thRecipient")}:
+              </strong>{" "}
+              {candidateDisplayName} {hasEmail ? `<${normalizedEmail}>` : ""}
+            </div>
+          </div>
+          <EmailHtmlPreview
+            title={interpolateTemplate(subject, variablesMap)}
+            body={interpolateTemplate(body, variablesMap)}
+            className="prose prose-xs dark:prose-invert max-w-none text-xs text-foreground leading-relaxed"
+          />
+        </div>
+      )}
+    </FormModal>
   );
 }

@@ -1,21 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Award, Loader2, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  FlowTemplateSelect,
-  useFlowTemplateSelection,
-} from "@/components/email/flow-template-selector";
+import { Award } from "lucide-react";
+import { FormModal } from "@/components/shared";
+import { FlowEmailToggleField } from "@/components/email/flow-email-toggle-field";
+import { useFlowTemplateSelection } from "@/components/email/flow-template-selector";
 import { useI18n } from "@/i18n";
+import { normalizeEmailAddress } from "@/lib/utils";
 
 export interface OfferApplicationConfirmPayload {
   sendOfferEmail: boolean;
@@ -59,7 +50,7 @@ export function OfferApplicationModal({
   const hasTouchedEmailRef = useRef(false);
   const hasTouchedTemplateRef = useRef(false);
 
-  const normalizedEmail = candidateEmail?.trim() || "";
+  const normalizedEmail = normalizeEmailAddress(candidateEmail);
   const hasEmail = normalizedEmail.length > 0;
 
   useEffect(() => {
@@ -70,28 +61,22 @@ export function OfferApplicationModal({
       setSelectedTemplateId("");
       return;
     }
-    if (!canViewEmail && !hasTouchedEmailRef.current) {
-      setSendOfferEmail(false);
-    } else if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
       setSendOfferEmail(defaultSendEnabled);
     }
     if (!hasTouchedTemplateRef.current) {
       setSelectedTemplateId(defaultTemplateId);
     }
-  }, [
-    isOpen,
-    canViewEmail,
-    matchedFlow,
-    defaultSendEnabled,
-    defaultTemplateId,
-  ]);
+  }, [isOpen, matchedFlow, defaultSendEnabled, defaultTemplateId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    const effectiveSend = canViewEmail && hasEmail ? sendOfferEmail : false;
+    const effectiveSend = hasEmail ? sendOfferEmail : false;
     const effectiveTemplateId =
-      effectiveSend && selectedTemplateId ? selectedTemplateId : undefined;
+      effectiveSend && canViewEmail && selectedTemplateId
+        ? selectedTemplateId
+        : undefined;
     await onConfirm({
       sendOfferEmail: effectiveSend,
       ...(effectiveTemplateId ? { emailTemplateId: effectiveTemplateId } : {}),
@@ -99,102 +84,51 @@ export function OfferApplicationModal({
   };
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open && !isSubmitting) {
-          onClose();
-        }
-      }}
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={t("applications.offerModal.title")}
+      description={t("applications.offerModal.description", {
+        name: candidateName,
+        job: jobTitle,
+      })}
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40">
+          <Award className="h-5 w-5" aria-hidden="true" />
+        </div>
+      }
+      size="sm"
+      showCloseButton={false}
+      isSubmitting={isSubmitting}
+      submitLabel={t("applications.offerModal.confirmButton")}
+      submitVariant="emerald"
+      cancelLabel={t("common.cancel")}
+      bodyClassName="py-4 space-y-4"
     >
-      <DialogContent className="sm:max-w-md p-6 gap-5 bg-card text-card-foreground border border-border rounded-xl shadow-xl">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <DialogHeader className="gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40">
-                <Award className="h-5 w-5" />
-              </div>
-              <DialogTitle className="text-base font-semibold text-foreground">
-                {t("applications.offerModal.title")}
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
-              {t("applications.offerModal.description", {
-                name: candidateName,
-                job: jobTitle,
-              })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="rounded-lg border border-border bg-muted/40 p-3">
-            {hasEmail ? (
-              <>
-                <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={sendOfferEmail}
-                    onChange={(e) => {
-                      hasTouchedEmailRef.current = true;
-                      setSendOfferEmail(e.target.checked);
-                    }}
-                    disabled={isSubmitting}
-                    className="mt-0.5 h-4 w-4 rounded border-input text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-xs text-foreground leading-relaxed flex items-center gap-1.5 flex-wrap">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span>
-                      {t("applications.offerModal.sendEmailLabel", {
-                        email: normalizedEmail,
-                      })}
-                    </span>
-                  </span>
-                </label>
-
-                {sendOfferEmail && canViewEmail && (
-                  <FlowTemplateSelect
-                    selectId="offer-email-template-select"
-                    label={t("applications.offerModal.selectTemplateLabel")}
-                    value={selectedTemplateId}
-                    onChange={(val) => {
-                      hasTouchedTemplateRef.current = true;
-                      setSelectedTemplateId(val);
-                    }}
-                    activeTemplates={activeTemplates}
-                    disabled={isSubmitting}
-                  />
-                )}
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span>{t("applications.offerModal.noEmailHint")}</span>
-              </p>
-            )}
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-lg h-9 px-4 text-xs font-medium cursor-pointer"
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={isSubmitting}
-              className="rounded-lg h-9 px-4 text-xs font-medium cursor-pointer flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              <span>{t("applications.offerModal.confirmButton")}</span>
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <FlowEmailToggleField
+        hasEmail={hasEmail}
+        checked={sendOfferEmail}
+        onCheckedChange={(checked) => {
+          hasTouchedEmailRef.current = true;
+          setSendOfferEmail(checked);
+        }}
+        sendLabel={t("applications.offerModal.sendEmailLabel", {
+          email: normalizedEmail,
+        })}
+        noEmailHint={t("applications.offerModal.noEmailHint")}
+        canSelectTemplate={canViewEmail}
+        templateSelectId="offer-email-template-select"
+        templateLabel={t("applications.offerModal.selectTemplateLabel")}
+        templateValue={selectedTemplateId}
+        onTemplateChange={(val) => {
+          hasTouchedTemplateRef.current = true;
+          setSelectedTemplateId(val);
+        }}
+        activeTemplates={activeTemplates}
+        disabled={isSubmitting}
+        accent="emerald"
+      />
+    </FormModal>
   );
 }

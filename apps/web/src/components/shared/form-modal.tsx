@@ -34,6 +34,7 @@ export interface FormModalProps {
   size?: FormModalSize;
   isSubmitting?: boolean;
   submitLabel?: string;
+  savingLabel?: string;
   submitDisabled?: boolean;
   submitVariant?: "default" | "destructive" | "emerald";
   cancelLabel?: string;
@@ -58,6 +59,7 @@ export function FormModal({
   size = "md",
   isSubmitting = false,
   submitLabel,
+  savingLabel,
   submitDisabled = false,
   submitVariant = "default",
   cancelLabel,
@@ -181,7 +183,7 @@ export function FormModal({
                     )}
                     <span>
                       {isSubmitting
-                        ? t("common.saving")
+                        ? savingLabel || t("common.saving")
                         : submitLabel || t("common.save")}
                     </span>
                   </Button>

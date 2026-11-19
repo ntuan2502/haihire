@@ -25,6 +25,7 @@ interface ScheduleInterviewTimingFieldsProps {
   onFormatChange: (val: InterviewFormat) => void;
   linkOrLocation: string;
   onLinkOrLocationChange: (val: string) => void;
+  disabled?: boolean;
 }
 
 export function ScheduleInterviewTimingFields({
@@ -38,6 +39,7 @@ export function ScheduleInterviewTimingFields({
   onFormatChange,
   linkOrLocation,
   onLinkOrLocationChange,
+  disabled = false,
 }: ScheduleInterviewTimingFieldsProps) {
   const { t } = useI18n();
 
@@ -46,36 +48,50 @@ export function ScheduleInterviewTimingFields({
       {/* Date & Time */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          <label
+            htmlFor="schedule-interview-date"
+            className="text-xs font-bold text-foreground flex items-center gap-1"
+          >
+            <Calendar
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>
               {t("interviews.interviewDate")}{" "}
               <span className="text-rose-500">*</span>
             </span>
           </label>
           <Input
+            id="schedule-interview-date"
             type="date"
             value={interviewDate}
             onChange={(e) => onDateChange(e.target.value)}
+            disabled={disabled}
             className="h-10 rounded-md text-xs bg-background border-input"
-            required
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <label
+            htmlFor="schedule-interview-time"
+            className="text-xs font-bold text-foreground flex items-center gap-1"
+          >
+            <Clock
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>
               {t("interviews.interviewTime")}{" "}
               <span className="text-rose-500">*</span>
             </span>
           </label>
           <Input
+            id="schedule-interview-time"
             type="time"
             value={interviewTime}
             onChange={(e) => onTimeChange(e.target.value)}
+            disabled={disabled}
             className="h-10 rounded-md text-xs bg-background border-input"
-            required
           />
         </div>
       </div>
@@ -84,7 +100,10 @@ export function ScheduleInterviewTimingFields({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-foreground flex items-center gap-1">
-            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+            <Layers
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>
               {t("interviews.roundType")}{" "}
               <span className="text-rose-500">*</span>
@@ -93,6 +112,7 @@ export function ScheduleInterviewTimingFields({
           <CustomSelect
             value={interviewType}
             onChange={(val) => onTypeChange(val as InterviewType)}
+            disabled={disabled}
             placeholder={t("interviews.placeholders.selectRoundType")}
             options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
               value: opt.value,
@@ -106,9 +126,15 @@ export function ScheduleInterviewTimingFields({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-foreground flex items-center gap-1">
             {interviewFormat === "OFFICE" ? (
-              <MapPin className="h-3.5 w-3.5 text-rose-500" />
+              <MapPin
+                className="h-3.5 w-3.5 text-rose-500"
+                aria-hidden="true"
+              />
             ) : (
-              <Video className="h-3.5 w-3.5 text-emerald-500" />
+              <Video
+                className="h-3.5 w-3.5 text-emerald-500"
+                aria-hidden="true"
+              />
             )}
             <span>
               {t("interviews.formatLabel")}{" "}
@@ -118,6 +144,7 @@ export function ScheduleInterviewTimingFields({
           <CustomSelect
             value={interviewFormat}
             onChange={(val) => onFormatChange(val as InterviewFormat)}
+            disabled={disabled}
             placeholder={t("interviews.placeholders.selectFormat")}
             options={[
               { value: "MEET", label: t("interviews.formats.meet") },
@@ -133,8 +160,14 @@ export function ScheduleInterviewTimingFields({
 
       {/* Meeting Link or Office Location */}
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-foreground flex items-center gap-1">
-          <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        <label
+          htmlFor="schedule-interview-location"
+          className="text-xs font-bold text-foreground flex items-center gap-1"
+        >
+          <LinkIcon
+            className="h-3.5 w-3.5 text-muted-foreground"
+            aria-hidden="true"
+          />
           <span>
             {interviewFormat === "OFFICE"
               ? t("interviews.officeAddressLabel")
@@ -142,6 +175,7 @@ export function ScheduleInterviewTimingFields({
           </span>
         </label>
         <Input
+          id="schedule-interview-location"
           type="text"
           placeholder={
             interviewFormat === "OFFICE"
@@ -150,6 +184,7 @@ export function ScheduleInterviewTimingFields({
           }
           value={linkOrLocation}
           onChange={(e) => onLinkOrLocationChange(e.target.value)}
+          disabled={disabled}
           className="h-10 rounded-md text-xs bg-background border-input"
         />
       </div>

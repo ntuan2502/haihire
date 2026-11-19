@@ -12,6 +12,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
+import { normalizeEmailAddress } from "@/lib/utils";
 import type { Application, CandidateDocument, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
@@ -104,7 +105,7 @@ export function ApplicationDetailModals({
           onClose={onCloseRejectModal}
           onConfirm={onConfirmReject}
           candidateName={candidateName}
-          candidateEmail={candidateEmail}
+          candidateEmail={normalizeEmailAddress(candidateEmail)}
           jobTitle={jobTitle}
           isSubmitting={isUpdatingStage}
         />
@@ -117,7 +118,7 @@ export function ApplicationDetailModals({
           onClose={onCloseOfferModal}
           onConfirm={onConfirmOffer}
           candidateName={candidateName}
-          candidateEmail={candidateEmail}
+          candidateEmail={normalizeEmailAddress(candidateEmail)}
           jobTitle={jobTitle}
           isSubmitting={isUpdatingStage}
         />
@@ -144,7 +145,7 @@ export function ApplicationDetailModals({
           candidate={{
             id: app.candidateId,
             name: candidateName,
-            email: candidateEmail,
+            email: normalizeEmailAddress(candidateEmail),
             phone: candidatePhone,
           }}
           jobTitle={jobTitle}

@@ -8,7 +8,7 @@ import { RejectApplicationModal } from "@/components/applications/reject-applica
 import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { getCandidateDisplayName, normalizeEmailAddress } from "@/lib/utils";
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
 import { PipelineCandidatesSidebar } from "@/components/jobs/pipeline/page-components";
 import { PipelineCandidateDetail } from "@/components/jobs/pipeline/pipeline-candidate-detail";
@@ -126,10 +126,10 @@ function JobPipelinePageContent() {
           candidateName={getCandidateDisplayName(
             pipeline.pendingRejectCandidate,
           )}
-          candidateEmail={
+          candidateEmail={normalizeEmailAddress(
             pipeline.pendingRejectCandidate.candidateEmail ??
-            pipeline.pendingRejectCandidate.candidate?.email
-          }
+              pipeline.pendingRejectCandidate.candidate?.email,
+          )}
           jobTitle={pipeline.job.title}
           isSubmitting={pipeline.isMovingStage}
         />
@@ -144,10 +144,10 @@ function JobPipelinePageContent() {
           candidateName={getCandidateDisplayName(
             pipeline.pendingOfferCandidate,
           )}
-          candidateEmail={
+          candidateEmail={normalizeEmailAddress(
             pipeline.pendingOfferCandidate.candidateEmail ??
-            pipeline.pendingOfferCandidate.candidate?.email
-          }
+              pipeline.pendingOfferCandidate.candidate?.email,
+          )}
           jobTitle={pipeline.job.title}
           isSubmitting={pipeline.isMovingStage}
         />

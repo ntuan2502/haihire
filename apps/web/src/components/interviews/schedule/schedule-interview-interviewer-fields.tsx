@@ -1,9 +1,9 @@
 "use client";
 
-import { FileText, Mail, User } from "lucide-react";
+import { FileText, User } from "lucide-react";
 import { CustomSelect } from "@/components/shared";
 import { Input } from "@/components/ui/input";
-import { FlowTemplateSelect } from "@/components/email/flow-template-selector";
+import { FlowEmailToggleField } from "@/components/email/flow-email-toggle-field";
 import { useI18n } from "@/i18n";
 import type { EmailTemplate } from "@/lib/email-templates";
 
@@ -44,11 +44,14 @@ export function ScheduleInterviewInterviewerFields({
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-1.5">
         <label
-          htmlFor="primary-interviewer"
+          htmlFor="primary-interviewer-trigger"
           className="text-xs font-bold text-foreground flex items-center justify-between"
         >
           <span className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
+            <User
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>
               {t("interviews.primaryInterviewer")}{" "}
               <span className="text-rose-500">*</span>
@@ -72,49 +75,45 @@ export function ScheduleInterviewInterviewerFields({
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-foreground flex items-center gap-1">
-          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+        <label
+          htmlFor="schedule-interview-notes"
+          className="text-xs font-bold text-foreground flex items-center gap-1"
+        >
+          <FileText
+            className="h-3.5 w-3.5 text-muted-foreground"
+            aria-hidden="true"
+          />
           <span>{t("interviews.notesOrRequirements")}</span>
         </label>
         <Input
+          id="schedule-interview-notes"
           type="text"
           placeholder={t("interviews.placeholders.notes")}
           value={interviewNotes}
           onChange={(e) => onNotesChange(e.target.value)}
+          disabled={isSaving}
           className="h-10 rounded-md text-xs bg-background border-input"
         />
       </div>
 
       {/* Send Email Invitation Checkbox + Template Override (Create Only) */}
       {!isEditing && (
-        <div className="sm:col-span-2 pt-2 border-t border-border space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="sendEmailInviteCheckbox"
-              checked={sendEmailInvite}
-              onChange={(e) => onSendEmailInviteChange(e.target.checked)}
-              className="rounded border-input text-primary focus:ring-ring accent-primary h-4 w-4 cursor-pointer"
-            />
-            <label
-              htmlFor="sendEmailInviteCheckbox"
-              className="text-xs font-semibold text-foreground cursor-pointer flex items-center gap-1.5"
-            >
-              <Mail className="h-3.5 w-3.5 text-primary" />
-              <span>{t("email.sendEmailInviteCheckbox")}</span>
-            </label>
-          </div>
-
-          {sendEmailInvite && canViewEmail && (
-            <FlowTemplateSelect
-              selectId="interview-email-template-select"
-              label={t("email.interviewTemplateSelectLabel")}
-              value={selectedTemplateId}
-              onChange={onSelectedTemplateIdChange}
-              activeTemplates={activeTemplates}
-              disabled={isSaving}
-            />
-          )}
+        <div className="sm:col-span-2">
+          <FlowEmailToggleField
+            hasEmail={true}
+            checkboxId="sendEmailInviteCheckbox"
+            checked={sendEmailInvite}
+            onCheckedChange={onSendEmailInviteChange}
+            sendLabel={t("email.sendEmailInviteCheckbox")}
+            noEmailHint=""
+            canSelectTemplate={canViewEmail}
+            templateSelectId="interview-email-template-select"
+            templateLabel={t("email.interviewTemplateSelectLabel")}
+            templateValue={selectedTemplateId}
+            onTemplateChange={onSelectedTemplateIdChange}
+            activeTemplates={activeTemplates}
+            disabled={isSaving}
+          />
         </div>
       )}
     </div>

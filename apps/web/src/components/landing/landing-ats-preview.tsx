@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, ArrowUpDown, Menu, User } from "lucide-react";
 import { matchesPersonNameSearch } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,6 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
 import { PipelineCandidateCard } from "@/components/jobs/pipeline/pipeline-candidate-card";
 import { PipelineCandidateDetail } from "@/components/jobs/pipeline/pipeline-candidate-detail";
-import {
-  type OverviewSectionsState,
-  DEFAULT_OVERVIEW_SECTIONS,
-} from "@/components/applications/overview-sections-popover";
 import type {
   Application,
   ApplicationStage,
@@ -50,12 +46,6 @@ export const LandingAtsPreview: React.FC = () => {
   const [isListCollapsed, setIsListCollapsed] = useState(false);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Overview popover state
-  const [overviewSections, setOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
-  const overviewBtnRef = useRef<HTMLButtonElement>(null);
 
   // Notes state
   const [candidateNotesList, setCandidateNotesList] = useState<string[]>([
@@ -430,16 +420,6 @@ export const LandingAtsPreview: React.FC = () => {
             onNextCandidate={handleNextCandidate}
             candidateTab={candidateTab}
             onSelectTab={setCandidateTab}
-            overviewSections={overviewSections}
-            onToggleOverviewSection={(key) =>
-              setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }))
-            }
-            isOverviewPopoverOpen={isOverviewPopoverOpen}
-            onToggleOverviewPopover={() =>
-              setIsOverviewPopoverOpen((prev) => !prev)
-            }
-            onCloseOverviewPopover={() => setIsOverviewPopoverOpen(false)}
-            overviewBtnRef={overviewBtnRef}
             candidateDocuments={candidateDocuments}
             onPreviewDoc={() => {}}
             onDownloadDoc={() => {}}

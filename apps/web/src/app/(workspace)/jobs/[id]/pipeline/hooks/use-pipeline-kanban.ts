@@ -11,10 +11,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
-import {
-  type OverviewSectionsState,
-  DEFAULT_OVERVIEW_SECTIONS,
-} from "@/components/applications/overview-sections-popover";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
@@ -137,11 +133,6 @@ export function usePipelineKanban(jobId: string) {
     parseCandidateTabParam(searchParams.get("tab")),
   );
 
-  const [overviewSections, setOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
-  const overviewBtnRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
     const stageParam = searchParams.get("stage") as ApplicationStage | null;
     if (stageParam && PIPELINE_STAGES.some((s) => s.id === stageParam)) {
@@ -247,10 +238,6 @@ export function usePipelineKanban(jobId: string) {
       true,
     );
     setMobileDetailOpen(false);
-  };
-
-  const handleToggleOverviewSection = (key: keyof OverviewSectionsState) => {
-    setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const stageCounts = useMemo(
@@ -575,11 +562,6 @@ export function usePipelineKanban(jobId: string) {
     setMobileDetailOpen,
     candidateTab,
     setCandidateTab,
-    overviewSections,
-    handleToggleOverviewSection,
-    isOverviewPopoverOpen,
-    setIsOverviewPopoverOpen,
-    overviewBtnRef,
     candidateCountText,
   };
 }

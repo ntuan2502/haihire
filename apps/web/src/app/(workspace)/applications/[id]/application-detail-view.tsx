@@ -96,11 +96,6 @@ export function ApplicationDetailView() {
       <ApplicationNavTabs
         activeTab={state.activeTab}
         setActiveTab={state.setActiveTab}
-        overviewSections={state.overviewSections}
-        setOverviewSections={state.setOverviewSections}
-        isOverviewPopoverOpen={state.isOverviewPopoverOpen}
-        setIsOverviewPopoverOpen={state.setIsOverviewPopoverOpen}
-        overviewBtnRef={state.overviewBtnRef}
         candidateDocumentsCount={state.candidateDocuments.length}
       />
 
@@ -112,7 +107,6 @@ export function ApplicationDetailView() {
         candidateDocuments={state.candidateDocuments}
         candidateName={state.candidateName}
         candidateEmail={state.candidateEmail}
-        overviewSections={state.overviewSections}
         onPreviewDoc={(doc) => state.setPreviewDoc(doc)}
         onDownloadDoc={actions.handleDownloadDoc}
         onScheduleInterview={(intv) => {

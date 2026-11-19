@@ -116,15 +116,31 @@ describe("usePipelineKanban", () => {
     );
   });
 
-  it("toggles overview section visibility", () => {
+  it("switches candidateTab to interviews and clears tab param when returning to overview", () => {
+    mockSearchParamString = "";
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
     const { result } = renderHook(() => usePipelineKanban("job-1"));
 
-    const initialShowNotes = result.current.overviewSections.notes;
-    act(() => {
-      result.current.handleToggleOverviewSection("notes");
-    });
+    expect(result.current.candidateTab).toBe("overview");
 
-    expect(result.current.overviewSections.notes).toBe(!initialShowNotes);
+    act(() => {
+      result.current.setCandidateTab("interviews");
+    });
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      expect.stringContaining("tab=interviews"),
+    );
+
+    act(() => {
+      result.current.setCandidateTab("overview");
+    });
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      expect.not.stringContaining("tab="),
+    );
+    replaceStateSpy.mockRestore();
   });
 
   it("initializes and syncs search, sortBy, and tab with URL query params", () => {

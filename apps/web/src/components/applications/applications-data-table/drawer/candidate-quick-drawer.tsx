@@ -1,12 +1,7 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { getCandidateDisplayName } from "@/lib/utils";
-import {
-  OverviewSectionsPopover,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
 import {
   CandidateDrawerHeader,
   CandidateDrawerSummary,
@@ -24,7 +19,6 @@ import {
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 import { useI18n } from "@/i18n";
-import { type RefObject } from "react";
 
 interface CandidateQuickDrawerProps {
   selectedApp: Application | null;
@@ -34,12 +28,6 @@ interface CandidateQuickDrawerProps {
   selectedJobTitle: string;
   drawerTab: string;
   onTabChange: (tab: string) => void;
-  drawerOverviewSections: OverviewSectionsState;
-  onToggleOverviewSection: (key: keyof OverviewSectionsState) => void;
-  isDrawerOverviewPopoverOpen: boolean;
-  onToggleDrawerOverviewPopover: () => void;
-  onCloseDrawerOverviewPopover: () => void;
-  drawerOverviewBtnRef: RefObject<HTMLButtonElement | null>;
   allScheduledInterviews: ScheduledInterviewInfo[];
   drawerCandidateDocuments: CandidateDocument[];
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
@@ -66,12 +54,6 @@ export function CandidateQuickDrawer({
   selectedJobTitle,
   drawerTab,
   onTabChange,
-  drawerOverviewSections,
-  onToggleOverviewSection,
-  isDrawerOverviewPopoverOpen,
-  onToggleDrawerOverviewPopover,
-  onCloseDrawerOverviewPopover,
-  drawerOverviewBtnRef,
   allScheduledInterviews,
   drawerCandidateDocuments,
   onScheduleInterview,
@@ -116,56 +98,8 @@ export function CandidateQuickDrawer({
         />
         {/* Sub-Navigation Tabs */}
         <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
-          <div
-            className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
-              drawerTab === "overview"
-                ? "border-primary text-primary font-bold"
-                : "border-transparent text-muted-foreground hover:text-foreground font-semibold"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onTabChange("overview");
-                onCloseDrawerOverviewPopover();
-              }}
-              className={`py-2 cursor-pointer whitespace-nowrap ${
-                drawerTab === "overview" ? "pl-3 pr-1" : "px-3"
-              }`}
-            >
-              {t("applications.tabs.overview")}
-            </button>
-
-            {drawerTab === "overview" && (
-              <button
-                ref={drawerOverviewBtnRef}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleDrawerOverviewPopover();
-                }}
-                className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-primary hover:text-primary/80"
-                aria-label={t("applications.toggleSections")}
-                title={t("applications.toggleSections")}
-              >
-                <ChevronDown
-                  className={`h-3 w-3 transition-transform duration-200 ${
-                    isDrawerOverviewPopoverOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-            )}
-
-            <OverviewSectionsPopover
-              isOpen={isDrawerOverviewPopoverOpen}
-              onClose={onCloseDrawerOverviewPopover}
-              sections={drawerOverviewSections}
-              onToggleSection={onToggleOverviewSection}
-              triggerRef={drawerOverviewBtnRef}
-            />
-          </div>
-
           {[
+            { id: "overview", label: t("applications.tabs.overview") },
             { id: "inbox", label: t("applications.tabs.inbox") },
             { id: "ai", label: t("applications.tabs.ai") },
             {
@@ -186,10 +120,7 @@ export function CandidateQuickDrawer({
             <button
               key={tab.id}
               type="button"
-              onClick={() => {
-                onTabChange(tab.id);
-                onCloseDrawerOverviewPopover();
-              }}
+              onClick={() => onTabChange(tab.id)}
               className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                 drawerTab === tab.id
                   ? "border-primary text-primary font-bold"
@@ -206,7 +137,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "overview" && (
             <CandidateOverviewTab
               currentApp={currentApp}
-              drawerOverviewSections={drawerOverviewSections}
               drawerCandidateDocuments={drawerCandidateDocuments}
               onScheduleInterview={onScheduleInterview}
               onCancelInterview={onCancelInterview}

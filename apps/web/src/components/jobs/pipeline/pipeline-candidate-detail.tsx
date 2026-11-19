@@ -1,16 +1,11 @@
 "use client";
 
-import { type RefObject } from "react";
-import { ArrowLeft, ChevronDown, User } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
-import {
-  OverviewSectionsPopover,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
 import type {
   Application,
   ApplicationStage,
@@ -41,12 +36,6 @@ interface PipelineCandidateDetailProps {
   onNextCandidate: () => void;
   candidateTab: string;
   onSelectTab: (tab: string) => void;
-  overviewSections: OverviewSectionsState;
-  onToggleOverviewSection: (key: keyof OverviewSectionsState) => void;
-  isOverviewPopoverOpen: boolean;
-  onToggleOverviewPopover: () => void;
-  onCloseOverviewPopover: () => void;
-  overviewBtnRef: RefObject<HTMLButtonElement | null>;
   candidateDocuments: CandidateDocument[];
   onPreviewDoc: (doc: CandidateDocument) => void;
   onDownloadDoc: (url: string, filename?: string) => void;
@@ -75,12 +64,6 @@ export function PipelineCandidateDetail({
   onNextCandidate,
   candidateTab,
   onSelectTab,
-  overviewSections,
-  onToggleOverviewSection,
-  isOverviewPopoverOpen,
-  onToggleOverviewPopover,
-  onCloseOverviewPopover,
-  overviewBtnRef,
   candidateDocuments,
   onPreviewDoc,
   onDownloadDoc,
@@ -142,58 +125,11 @@ export function PipelineCandidateDetail({
 
           {/* Sub-Navigation Tabs */}
           <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
-            {/* Overview tab with Popover */}
-            <div
-              className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
-                candidateTab === "overview"
-                  ? "border-primary text-foreground font-semibold"
-                  : "border-transparent text-muted-foreground hover:text-foreground font-medium"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab("overview");
-                  onCloseOverviewPopover();
-                }}
-                className={`py-2.5 cursor-pointer whitespace-nowrap ${
-                  candidateTab === "overview" ? "pl-3.5 pr-1" : "px-3.5"
-                }`}
-              >
-                {t("applications.tabs.overview")}
-              </button>
-
-              {candidateTab === "overview" && (
-                <button
-                  ref={overviewBtnRef}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleOverviewPopover();
-                  }}
-                  className="p-1 text-muted-foreground hover:text-foreground rounded-sm hover:bg-accent transition-colors mr-2 cursor-pointer"
-                  title={t("applications.sections.sectionsTitle")}
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                      isOverviewPopoverOpen ? "rotate-180 text-foreground" : ""
-                    }`}
-                  />
-                </button>
-              )}
-
-              {/* Popover */}
-              <OverviewSectionsPopover
-                isOpen={isOverviewPopoverOpen}
-                onClose={onCloseOverviewPopover}
-                triggerRef={overviewBtnRef}
-                sections={overviewSections}
-                onToggleSection={onToggleOverviewSection}
-              />
-            </div>
-
-            {/* Other tabs */}
             {[
+              {
+                id: "overview",
+                label: t("applications.tabs.overview"),
+              },
               {
                 id: "documents",
                 label: t("applications.tabs.documents"),
@@ -237,7 +173,6 @@ export function PipelineCandidateDetail({
             {candidateTab === "overview" && (
               <PipelineCandidateDetailOverview
                 selectedCandidate={selectedCandidate}
-                overviewSections={overviewSections}
                 candidateDocuments={candidateDocuments}
                 onPreviewDoc={onPreviewDoc}
                 onDownloadDoc={onDownloadDoc}

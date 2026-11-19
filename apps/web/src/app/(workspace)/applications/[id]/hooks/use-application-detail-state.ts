@@ -1,12 +1,8 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useApplication, useJob } from "@/hooks/use-queries";
-import {
-  DEFAULT_OVERVIEW_SECTIONS,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
 import {
   isValidUuid,
   getCandidateDisplayName,
@@ -56,11 +52,6 @@ export function useApplicationDetailState() {
   const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
 
-  const [overviewSections, setOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
-  const overviewBtnRef = useRef<HTMLButtonElement>(null);
-
   const candidateDocuments = useMemo(() => {
     if (!app) return [];
     return parseCandidateDocuments({
@@ -101,11 +92,6 @@ export function useApplicationDetailState() {
     jobTitle,
     appliedDate,
     initials,
-    overviewSections,
-    setOverviewSections,
-    isOverviewPopoverOpen,
-    setIsOverviewPopoverOpen,
-    overviewBtnRef,
     previewDoc,
     setPreviewDoc,
     isDeleteModalOpen,

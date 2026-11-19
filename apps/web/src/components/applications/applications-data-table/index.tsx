@@ -87,21 +87,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         selectedJobTitle={drawer.selectedJobTitle}
         drawerTab={drawer.drawerTab}
         onTabChange={drawer.setDrawerTab}
-        drawerOverviewSections={drawer.drawerOverviewSections}
-        onToggleOverviewSection={(key) =>
-          drawer.setDrawerOverviewSections((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-          }))
-        }
-        isDrawerOverviewPopoverOpen={drawer.isDrawerOverviewPopoverOpen}
-        onToggleDrawerOverviewPopover={() =>
-          drawer.setIsDrawerOverviewPopoverOpen((prev) => !prev)
-        }
-        onCloseDrawerOverviewPopover={() =>
-          drawer.setIsDrawerOverviewPopoverOpen(false)
-        }
-        drawerOverviewBtnRef={drawer.drawerOverviewBtnRef}
         allScheduledInterviews={drawer.allScheduledInterviews}
         drawerCandidateDocuments={drawer.drawerCandidateDocuments}
         onScheduleInterview={(intv) => {

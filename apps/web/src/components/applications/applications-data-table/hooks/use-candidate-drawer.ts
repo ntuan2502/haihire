@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useMemo,
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
@@ -22,10 +16,6 @@ import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
-import {
-  DEFAULT_OVERVIEW_SECTIONS,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
 import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import type {
@@ -70,12 +60,6 @@ export function useCandidateDrawer({
     }
   };
 
-  // Drawer Overview sections visibility state
-  const [drawerOverviewSections, setDrawerOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isDrawerOverviewPopoverOpen, setIsDrawerOverviewPopoverOpen] =
-    useState(false);
-  const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
   const [pendingRejectApp, setPendingRejectApp] = useState<Application | null>(
@@ -297,11 +281,6 @@ export function useCandidateDrawer({
     setPendingOfferApp,
     handleConfirmOffer,
     handleDownloadDoc,
-    drawerOverviewSections,
-    setDrawerOverviewSections,
-    isDrawerOverviewPopoverOpen,
-    setIsDrawerOverviewPopoverOpen,
-    drawerOverviewBtnRef,
     drawerPreviewDoc,
     setDrawerPreviewDoc,
     allScheduledInterviews,

@@ -418,13 +418,15 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("tran-van-b-cv.pdf")).toBeInTheDocument();
     });
 
-    it("opens overview sections popover when toggle button is clicked", () => {
+    it("renders overview tab without sections toggle popover and displays all overview sections", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      const popoverToggle = screen.getByLabelText("Hiển thị phần");
-      fireEvent.click(popoverToggle);
-
-      expect(screen.getByText("Các phần hiển thị")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Hiển thị phần")).not.toBeInTheDocument();
+      expect(screen.queryByText("Các phần hiển thị")).not.toBeInTheDocument();
+      expect(screen.getByText("Chưa có phân tích AI")).toBeInTheDocument();
+      expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Tài liệu").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Ghi chú").length).toBeGreaterThan(0);
     });
   });
 

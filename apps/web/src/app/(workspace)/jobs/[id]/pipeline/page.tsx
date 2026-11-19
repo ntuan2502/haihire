@@ -74,16 +74,6 @@ function JobPipelinePageContent() {
           onNextCandidate={pipeline.handleNextCandidate}
           candidateTab={pipeline.candidateTab}
           onSelectTab={pipeline.setCandidateTab}
-          overviewSections={pipeline.overviewSections}
-          onToggleOverviewSection={pipeline.handleToggleOverviewSection}
-          isOverviewPopoverOpen={pipeline.isOverviewPopoverOpen}
-          onToggleOverviewPopover={() =>
-            pipeline.setIsOverviewPopoverOpen((prev) => !prev)
-          }
-          onCloseOverviewPopover={() =>
-            pipeline.setIsOverviewPopoverOpen(false)
-          }
-          overviewBtnRef={pipeline.overviewBtnRef}
           candidateDocuments={pipeline.candidateDocuments}
           onPreviewDoc={(doc) => pipeline.setPreviewDoc(doc)}
           onDownloadDoc={pipeline.handleDownloadDoc}

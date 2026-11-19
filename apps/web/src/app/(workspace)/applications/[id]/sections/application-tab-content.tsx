@@ -6,7 +6,6 @@ import { useI18n } from "@/i18n";
 import { ApplicationOverviewTab } from "./application-overview-tab";
 import { ApplicationNotesCard } from "./application-notes-card";
 import type { Application, CandidateDocument } from "@/types";
-import type { OverviewSectionsState } from "@/components/applications/overview-sections-popover";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
 interface ApplicationTabContentProps {
@@ -16,7 +15,6 @@ interface ApplicationTabContentProps {
   candidateDocuments: CandidateDocument[];
   candidateName: string;
   candidateEmail: string;
-  overviewSections: OverviewSectionsState;
   onPreviewDoc: (doc: CandidateDocument) => void;
   onDownloadDoc: (url: string, filename?: string, targetAppId?: string) => void;
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
@@ -30,7 +28,6 @@ export function ApplicationTabContent({
   candidateDocuments,
   candidateName,
   candidateEmail,
-  overviewSections,
   onPreviewDoc,
   onDownloadDoc,
   onScheduleInterview,
@@ -44,7 +41,6 @@ export function ApplicationTabContent({
         <ApplicationOverviewTab
           app={app}
           canEdit={canEdit}
-          overviewSections={overviewSections}
           candidateDocuments={candidateDocuments}
           onPreviewDoc={onPreviewDoc}
           onDownloadDoc={onDownloadDoc}

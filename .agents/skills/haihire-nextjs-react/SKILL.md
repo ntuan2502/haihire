@@ -1,6 +1,6 @@
 ---
 name: haihire-nextjs-react
-description: Builds and reviews Next.js 16 App Router pages, React 19 UI components, Tailwind CSS v4 tokens, and shadcn base-nova primitives in apps/web. Use when creating routes, editing proxy.ts, styling with CSS variables, or working with forms, modals, and tables in HaiHire.
+description: Builds and reviews Next.js 16 App Router pages, React 19 UI components, Tailwind CSS v4 tokens, and shadcn new-york primitives in apps/web. Use when creating routes, editing proxy.ts, styling with CSS variables, or working with forms, modals, and tables in HaiHire.
 ---
 
 # HaiHire Next.js 16, React 19, Tailwind v4 & shadcn/ui Skill
@@ -8,7 +8,7 @@ description: Builds and reviews Next.js 16 App Router pages, React 19 UI compone
 Stack baselines verified in `apps/web/package.json` and `apps/web/components.json`:
 - **Next.js**: `16.4.5` (`output: "standalone"`, Turbopack/App Router, `src/proxy.ts` exporting `proxy`)
 - **React**: `19.3.1` (`react`, `react-dom`)
-- **UI Primitives**: `shadcn@^4.23.0` (`style: "base-nova"`, `@base-ui/react@^1.9.0`, `lucide-react@^1.70.0`, `class-variance-authority@^0.7.1`)
+- **UI Primitives**: `shadcn@^4.23.0` (`style: "new-york"`, `radix-ui@^1.8.1`, `lucide-react@^1.70.0`, `class-variance-authority@^0.7.1`)
 - **Utility Merging**: standalone `cn@^0.5.2` re-exported from `apps/web/src/lib/utils.ts` (`export { cn } from "cn"`)
 - **Styling**: Tailwind CSS `^4.3.5` CSS-first configuration (`@import "tailwindcss"`, `@theme inline`, `oklch(...)` tokens) with `tw-animate-css@^1.4.0`
 
@@ -38,7 +38,7 @@ Following React 19 official guidance ("You Might Not Need an Effect"):
 
 ---
 
-## 3. Tailwind CSS v4 (`globals.css`) & shadcn `base-nova`
+## 3. Tailwind CSS v4 (`globals.css`) & shadcn `new-york`
 
 Per Tailwind CSS v4 and `ui.shadcn.com` v4 documentation:
 - **CSS-First Configuration:** Never reintroduce `tailwind.config.js` / `tailwind.config.ts`. Configure all theme tokens in `apps/web/src/app/globals.css`:
@@ -48,10 +48,10 @@ Per Tailwind CSS v4 and `ui.shadcn.com` v4 documentation:
   - `@custom-variant dark (&:is(.dark *));`
   - `@theme inline { ... }` pointing directly to live CSS custom properties (`var(--background)`, `var(--primary)`, etc.) so `.dark` switches apply dynamically at runtime.
 - **Color Space:** Define semantic CSS variables (`:root` and `.dark`) using perceptual `oklch(...)` values instead of hardcoded hex or ad-hoc palette utilities.
-- **Base UI (`base-nova`):**
-  - `apps/web/components.json` specifies `"style": "base-nova"`. All primitives in `apps/web/src/components/ui/` are built on `@base-ui/react`, NOT `@radix-ui/react-*`.
-  - Never install `@radix-ui/*` packages or replace `cn` from `"cn"` with manual `clsx` + `tailwind-merge`.
-  - Prefer `render` prop composition or Base UI slot patterns per `base-nova` generated components rather than Radix `asChild`.
+- **Radix UI (`new-york`):**
+  - `apps/web/components.json` specifies `"style": "new-york"`. All primitives in `apps/web/src/components/ui/` are built on the unified `radix-ui` package (`radix-ui`), NOT `@base-ui/react` or legacy `@radix-ui/react-*` packages.
+  - Never install `@base-ui/react` or replace `cn` from `"cn"` with manual `clsx` + `tailwind-merge`.
+  - Use standard `asChild` / `Slot.Root` composition per `new-york` generated components rather than `render` prop patterns.
 
 ---
 

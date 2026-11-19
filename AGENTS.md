@@ -13,10 +13,10 @@ See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 All AI agents working in this repository MUST read and follow:
 
 1. **Architecture & Coding Rules:**
-   - [Engineering Conventions](docs/architecture/conventions.md) — TypeScript discipline, centralized Zod env validation, `DtoPipe` coverage, 2-way i18n, multi-tenant `organizationId` scoping, Next.js 16 `src/proxy.ts` rules, and Shadcn `base-nova` UI standards.
+   - [Engineering Conventions](docs/architecture/conventions.md) — TypeScript discipline, centralized Zod env validation, `DtoPipe` coverage, 2-way i18n, multi-tenant `organizationId` scoping, Next.js 16 `src/proxy.ts` rules, and Shadcn `new-york` UI standards.
    - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-016` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
 2. **HaiHire Specialized Agent Skills (`.agents/skills/`):**
-   - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`base-nova` + `@base-ui/react` + standalone `cn`).
+   - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`new-york` + `radix-ui` + standalone `cn`).
    - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `react-toastify`, 2-tier vi/en i18n.
    - [haihire-nestjs-backend](.agents/skills/haihire-nestjs-backend/SKILL.md) — NestJS `^12.4.0` ESM (`esbuild`), explicit `@Inject`, `DtoPipe`, 64 `APP_ERROR_CODES`, cookie JWT + `tokenVersion`, dynamic `ownerId` RBAC (`5` roles / `41` permissions), BullMQ DLQ queues, MinIO tenant isolation.
    - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `AsyncLocalStorage` transaction propagation, `8` tenant-scoped backend modules, `deletedAt` soft-delete rules.
@@ -33,7 +33,7 @@ All AI agents working in this repository MUST read and follow:
 | **Shared Contracts (`@haihire/shared`)** | `5` Roles, `41` Permissions, `64` `APP_ERROR_CODES`, `17` SSE `AppEventType`s, `16` `SourcingChannel`s, Zod schemas                                                                                                                  | [packages/shared/src/index.ts](packages/shared/src/index.ts)             |
 | **Backend (`apps/api`)**                 | NestJS `^12.4.0` (Express ESM -> `dist/server.mjs`), `15` feature/infra modules imported in `AppModule`, `12` controllers, `109` endpoints, BullMQ (`email-queue`, `orphan-cleanup-queue`), MinIO (`haihire-resumes` private bucket) | [docs/api/overview.md](docs/api/overview.md)                             |
 | **Database (`PostgreSQL 17.6`)**         | Prisma `7.10.1` (`@prisma/adapter-pg` + `pg.Pool`), `3` soft-delete models (`Job`, `Candidate`, `TrackingLink`), `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`)                                                                     | [docs/architecture/data-model.md](docs/architecture/data-model.md)       |
-| **Frontend (`apps/web`)**                | Next.js `16.4.5` (`output: "standalone"`, `src/proxy.ts`), React `19.3.1`, Tailwind CSS `^4.3.5` (`oklch`), Shadcn `base-nova` (`@base-ui/react` + `cn@^0.5.2`), TanStack Query `^5.107.1`                                           | [apps/web/README.md](apps/web/README.md)                                 |
+| **Frontend (`apps/web`)**                | Next.js `16.4.5` (`output: "standalone"`, `src/proxy.ts`), React `19.3.1`, Tailwind CSS `^4.3.5` (`oklch`), Shadcn `new-york` (`radix-ui` + `cn@^0.5.2`), TanStack Query `^5.107.1`                                                  | [apps/web/README.md](apps/web/README.md)                                 |
 
 ---
 

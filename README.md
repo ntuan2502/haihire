@@ -24,7 +24,7 @@ See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 haihire/
 ├── apps/
 │   ├── api/                 # NestJS 12 REST + SSE API, Prisma 7 schema, BullMQ workers
-│   └── web/                 # Next.js 16 App Router portal, Tailwind CSS v4, Shadcn base-nova UI
+│   └── web/                 # Next.js 16 App Router portal, Tailwind CSS v4, Shadcn new-york UI
 ├── packages/
 │   └── shared/              # Pure TS schemas (Zod), RBAC matrix (5 roles / 41 perms), 64 error codes
 ├── monitoring/prometheus/   # Prometheus alert rules + rule unit specs

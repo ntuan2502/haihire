@@ -6,7 +6,7 @@ Post-restructure roadmap tracking operational excellence, release automation, an
 
 ## 1. Completed Baseline (`v0.1.0` + Hardening)
 
-- Multi-tenant NestJS 12 ESM backend and Next.js 16 App Router UI (`src/proxy.ts`, Shadcn `base-nova`, Tailwind CSS v4 `oklch`).
+- Multi-tenant NestJS 12 ESM backend and Next.js 16 App Router UI (`src/proxy.ts`, Shadcn `new-york`, Tailwind CSS v4 `oklch`).
 - Prisma `7.10.1` Stable GA + `@prisma/adapter-pg` with `AsyncLocalStorage` transactions.
 - Closed cross-tenant IDOR vectors (`interviews`, `sourcing`), hardened per-method AST/regex tenant gate auditing (`267` queries), fixed document storage compensation, and tightened demo seed ordering.
 - Aligned `.agents/skills/` (6 focused HaiHire skills) and rebuilt documentation from verified source code.

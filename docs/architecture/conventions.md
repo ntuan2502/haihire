@@ -30,14 +30,14 @@ This document defines mandatory code, validation, security, localization, UI, an
 
 ---
 
-## 4. Next.js 16, Tailwind v4, Shadcn `base-nova` & Data Fetching
+## 4. Next.js 16, Tailwind v4, Shadcn `new-york` & Data Fetching
 
 - **Next.js 16 Proxy Convention (`pnpm lint:nextjs-conventions`):** Use [apps/web/src/proxy.ts](../../apps/web/src/proxy.ts) exporting `proxy(request: NextRequest)`. Never reintroduce `middleware.ts`.
 - **Shared Dashboard Layout (`apps/web/src/app/(workspace)/layout.tsx`):** Consolidate common navigation shell (`AppSidebar` and `DashboardHeader` via `DashboardFrame`) and authentication guard (`AuthGuard`) into the layout root; child dashboard views must not duplicate navigation headers or auth guards.
 - **React Server Components (RSC):** Maintain landing shells, auth layouts, and careers directories as Server Components, delegating interactive UI to dedicated Client Component islands.
 - **Modular Component Boundary:** Keep UI component files under `500` lines of code by decomposing complex views into single-responsibility subcomponents, fieldsets, and sidebars.
 - **Tailwind CSS v4 CSS-First Tokens:** Define design variables using `oklch(...)` and `@theme inline` inside [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css) — never add `tailwind.config.js` / `.ts` or scatter hardcoded color literals where semantic tokens apply.
-- **Shadcn `base-nova` Primitives:** Use `@base-ui/react` primitives (`apps/web/components.json` -> `"style": "base-nova"`) and import `cn` from `@/lib/utils` (`export { cn } from "cn"`). Do not install `@radix-ui/*` packages.
+- **Shadcn `new-york` Primitives:** Use `radix-ui` primitives (`apps/web/components.json` -> `"style": "new-york"`) and import `cn` from `@/lib/utils` (`export { cn } from "cn"`). Do not mix `@base-ui/react` or legacy `@radix-ui/*` packages.
 - **TanStack Query v5 Multi-Tenant Isolation:** Manage query keys centrally in [apps/web/src/hooks/query-keys.ts](../../apps/web/src/hooks/query-keys.ts) with `orgId` scoped keys (`[domain, orgId, ...]`) to guarantee complete cross-tenant cache isolation. Proxy browser calls through [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) (`/api/*`), and invalidate via `createRealtimeInvalidator`.
 - **Notifications & Controlled Forms:** Always import `{ toast } from "@/lib/toast"` (wrapping `react-toastify`), avoid `useEffect` state-mirroring, and validate controlled form state cleanly before submit.
 

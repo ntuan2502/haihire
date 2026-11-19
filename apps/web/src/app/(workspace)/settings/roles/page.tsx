@@ -286,9 +286,21 @@ export default function RolesPermissionsPage() {
         }}
       >
         <DialogContent
-          initialFocus={cancelReset}
-          finalFocus={resetTrigger}
+          className="sm:max-w-sm p-6 gap-4"
+          onOpenAutoFocus={(e) => {
+            if (cancelReset.current) {
+              e.preventDefault();
+              cancelReset.current.focus();
+            }
+          }}
+          onCloseAutoFocus={(e) => {
+            if (resetTrigger.current) {
+              e.preventDefault();
+              resetTrigger.current.focus();
+            }
+          }}
           showCloseButton={false}
+          disableClose={resetDefaultMutation.isPending}
         >
           <DialogHeader>
             <DialogTitle>

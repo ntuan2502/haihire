@@ -3,6 +3,7 @@
 import { type RefObject, type ReactNode, type ComponentType } from "react";
 import { Check, Search } from "lucide-react";
 import { cn } from "cn";
+import { PopoverContent } from "@/components/ui/popover";
 
 export interface CustomSelectOptionItem<T extends string = string> {
   value: T;
@@ -12,17 +13,10 @@ export interface CustomSelectOptionItem<T extends string = string> {
   disabled?: boolean;
 }
 
-export interface PopupCoords {
-  top?: number;
-  bottom?: number;
-  left: number;
-  minWidth: number;
-}
-
 interface CustomSelectPopupProps<T extends string = string> {
-  isOpen: boolean;
-  mounted: boolean;
-  coords: PopupCoords | null;
+  align: "left" | "right";
+  direction: "auto" | "up" | "down";
+  dropdownRef: RefObject<HTMLDivElement | null>;
   listboxId: string;
   popupRef: RefObject<HTMLDivElement | null>;
   ariaLabel?: string;
@@ -44,9 +38,9 @@ interface CustomSelectPopupProps<T extends string = string> {
 }
 
 export function CustomSelectPopup<T extends string = string>({
-  isOpen,
-  mounted,
-  coords,
+  align,
+  direction,
+  dropdownRef,
   listboxId,
   popupRef,
   ariaLabel,
@@ -66,34 +60,54 @@ export function CustomSelectPopup<T extends string = string>({
   onChange,
   closeSelect,
 }: CustomSelectPopupProps<T>) {
-  if (!isOpen || !mounted || !coords) return null;
-
   return (
-    <div
+    <PopoverContent
       ref={popupRef}
+      align={align === "right" ? "end" : "start"}
+      side={direction === "up" ? "top" : "bottom"}
+      sideOffset={6}
+      avoidCollisions={direction === "auto"}
+      collisionPadding={8}
       id={listboxId}
       role="listbox"
       data-custom-select-popup="true"
-      tabIndex={-1}
       aria-label={
         ariaLabel || (typeof placeholder === "string" ? placeholder : undefined)
       }
       aria-activedescendant={
         focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined
       }
+      onOpenAutoFocus={(e) => {
+        e.preventDefault();
+        if (searchable) {
+          searchInputRef.current?.focus();
+        }
+      }}
+      onCloseAutoFocus={(e) => {
+        e.preventDefault();
+      }}
+      onEscapeKeyDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSelect(true);
+      }}
+      onPointerDownOutside={(e) => {
+        if (dropdownRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }}
+      onInteractOutside={(e) => {
+        if (dropdownRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }}
       onKeyDown={handleKeyDown}
       style={{
-        position: "fixed",
-        ...(coords.top !== undefined ? { top: `${coords.top}px` } : {}),
-        ...(coords.bottom !== undefined
-          ? { bottom: `${coords.bottom}px` }
-          : {}),
-        left: `${coords.left}px`,
-        minWidth: `${coords.minWidth}px`,
+        minWidth: "max(var(--radix-popover-trigger-width, 0px), 140px)",
         maxWidth: "calc(100vw - 16px)",
       }}
       className={cn(
-        "flex flex-col overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-150 border focus:outline-none rounded-lg p-1 shadow-md border-border bg-popover text-popover-foreground",
+        "pointer-events-auto w-auto flex flex-col overflow-hidden rounded-lg p-1 shadow-md",
         popupClassName,
       )}
     >
@@ -189,6 +203,6 @@ export function CustomSelectPopup<T extends string = string>({
           })
         )}
       </div>
-    </div>
+    </PopoverContent>
   );
 }

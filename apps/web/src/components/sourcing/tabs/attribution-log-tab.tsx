@@ -40,30 +40,28 @@ export function AttributionLogTab({
   return (
     <div className="space-y-4">
       {/* Table Container */}
-      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
+      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-xs text-muted-foreground">
             {t("common.loading")}
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-              <Users className="h-6 w-6" />
+          <div className="px-6 py-12 sm:p-16 text-center flex flex-col items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+              <Users className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-foreground">
-                {t("sourcing.attribution.emptyTitle")}
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                {t("sourcing.attribution.emptyDesc")}
-              </p>
-            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              {t("sourcing.attribution.emptyTitle")}
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-sm mt-1">
+              {t("sourcing.attribution.emptyDesc")}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <th className="py-3.5 px-5">
                     {t("sourcing.attribution.candidate")}
                   </th>
@@ -156,7 +154,7 @@ export function AttributionLogTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-border p-4">
+          <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -164,6 +162,7 @@ export function AttributionLogTab({
               pageSize={pageSize}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
+              itemLabel={t("sourcing.tabs.attributionLog").toLowerCase()}
             />
           </div>
         )}

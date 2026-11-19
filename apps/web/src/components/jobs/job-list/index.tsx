@@ -87,9 +87,9 @@ export function JobList(props: JobListProps) {
 
       {/* If No Matching Jobs from Search / Filters */}
       {filteredJobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground p-12 sm:p-16 text-center shadow-xs w-full my-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
-            <Search className="h-8 w-8 stroke-[1.5]" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+            <Search className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
           </div>
           <h3 className="text-base font-semibold text-foreground">
             {t("jobs.noJobsFound")}
@@ -103,10 +103,9 @@ export function JobList(props: JobListProps) {
               handleResetFilters();
             }}
             variant="outline"
-            size="sm"
-            className="cursor-pointer"
+            className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
           >
-            {t("common.cancel")}
+            {t("jobs.resetAll")}
           </Button>
         </div>
       ) : (
@@ -150,22 +149,19 @@ export function JobList(props: JobListProps) {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
 
-      {/* Pagination Footer */}
-      {filteredJobs.length > 0 && (
-        <div className="pt-4 border-t border-border">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={total !== undefined ? total : filteredJobs.length}
-            pageSize={pageSize}
-            pageSizeOptions={[10, 20, 50, 100]}
-            onPageChange={(p) => onPageChange?.(p)}
-            onPageSizeChange={(size) => onPageSizeChange?.(size)}
-            itemLabel={t("nav.jobs").toLowerCase()}
-          />
+          <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={total !== undefined ? total : filteredJobs.length}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={(p) => onPageChange?.(p)}
+              onPageSizeChange={(size) => onPageSizeChange?.(size)}
+              itemLabel={t("nav.jobs").toLowerCase()}
+            />
+          </div>
         </div>
       )}
 

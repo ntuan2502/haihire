@@ -84,30 +84,28 @@ export function TrackingLinksTab({
   return (
     <div className="space-y-4">
       {/* Table Container */}
-      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
+      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-xs text-muted-foreground">
             {t("common.loading")}
           </div>
         ) : links.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-              <Link2 className="h-6 w-6" />
+          <div className="px-6 py-12 sm:p-16 text-center flex flex-col items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+              <Link2 className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-foreground">
-                {t("sourcing.links.emptyTitle")}
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                {t("sourcing.links.emptyDesc")}
-              </p>
-            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              {t("sourcing.links.emptyTitle")}
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-sm mt-1">
+              {t("sourcing.links.emptyDesc")}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
@@ -262,10 +260,14 @@ export function TrackingLinksTab({
                             href={buildCareerPath(link)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             title={t("sourcing.modal.previewLabel")}
+                            aria-label={t("sourcing.modal.previewLabel")}
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
+                            <ExternalLink
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
                           </a>
 
                           {/* Edit Link Button */}
@@ -274,10 +276,11 @@ export function TrackingLinksTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => onEditLink(link)}
-                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
                               title={t("common.edit")}
+                              aria-label={t("common.edit")}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
 
@@ -291,8 +294,9 @@ export function TrackingLinksTab({
                               }
                               className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
                               title={t("sourcing.links.toggleStatus")}
+                              aria-label={t("sourcing.links.toggleStatus")}
                             >
-                              <Power className="h-3.5 w-3.5" />
+                              <Power className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
 
@@ -309,7 +313,7 @@ export function TrackingLinksTab({
                               title={t("common.delete")}
                               className="h-8 w-8 p-0 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
                         </div>
@@ -324,7 +328,7 @@ export function TrackingLinksTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-border p-4">
+          <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -332,6 +336,7 @@ export function TrackingLinksTab({
               pageSize={pageSize}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
+              itemLabel={t("sourcing.tabs.trackingLinks").toLowerCase()}
             />
           </div>
         )}

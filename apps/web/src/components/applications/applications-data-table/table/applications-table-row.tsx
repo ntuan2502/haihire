@@ -125,11 +125,11 @@ export function ApplicationsTableRow({
               e.stopPropagation();
               router.push(`/applications/${application.id}`);
             }}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("common.view")}
             aria-label={t("common.view")}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4" aria-hidden="true" />
           </button>
           {canEdit && canDeleteApplication && (
             <button
@@ -138,11 +138,11 @@ export function ApplicationsTableRow({
                 e.stopPropagation();
                 onDeleteApp(application);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>

@@ -58,9 +58,9 @@ export function ApplicationsTableView({
 
   if (baseApplications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground p-16 text-center shadow-xs w-full my-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground/60 mb-4">
-          <FileText className="h-8 w-8 stroke-[1.5]" />
+      <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+          <FileText className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
         </div>
         <h3 className="text-base font-semibold text-foreground">
           {t("applications.noApplicationsYet")}
@@ -70,7 +70,7 @@ export function ApplicationsTableView({
         </p>
         <Button
           onClick={() => router.push("/jobs")}
-          className="h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold px-5 rounded-md shadow-xs gap-1.5 cursor-pointer"
+          className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
         >
           {t("applications.viewActiveJobs")}
         </Button>
@@ -83,7 +83,7 @@ export function ApplicationsTableView({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
+          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <tr>
               {/* Candidate */}
               {visibleColumns.candidate && (
@@ -96,17 +96,21 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("candidate")}
-                    className="flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "candidate"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.candidate")}</span>
                     {sortField === "candidate" ? (
                       <ArrowDown
-                        className={`h-3 w-3 transition-transform ${
+                        className={`h-3 w-3 text-foreground transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -132,17 +136,21 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("email")}
-                    className="flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "email"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.email")}</span>
                     {sortField === "email" ? (
                       <ArrowDown
-                        className={`h-3 w-3 transition-transform ${
+                        className={`h-3 w-3 text-foreground transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -168,17 +176,21 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("job")}
-                    className="flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "job"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.job")}</span>
                     {sortField === "job" ? (
                       <ArrowDown
-                        className={`h-3 w-3 transition-transform ${
+                        className={`h-3 w-3 text-foreground transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -204,17 +216,21 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("status")}
-                    className="flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "status"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.status")}</span>
                     {sortField === "status" ? (
                       <ArrowDown
-                        className={`h-3 w-3 transition-transform ${
+                        className={`h-3 w-3 text-foreground transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -240,17 +256,21 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("score")}
-                    className="flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "score"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.score")}</span>
                     {sortField === "score" ? (
                       <ArrowDown
-                        className={`h-3 w-3 transition-transform ${
+                        className={`h-3 w-3 text-foreground transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
                         aria-hidden="true"
@@ -276,12 +296,16 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3 px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none"
                 >
                   <button
                     type="button"
                     onClick={() => handleSort("applied")}
-                    className="flex items-center gap-1 font-bold text-foreground hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
+                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                      sortField === "applied"
+                        ? "font-bold text-foreground"
+                        : "font-semibold text-muted-foreground hover:text-foreground"
+                    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
                     <span>{t("applications.columns.applied")}</span>
                     {sortField === "applied" ? (
@@ -302,7 +326,7 @@ export function ApplicationsTableView({
               )}
               <th
                 scope="col"
-                className="py-3 px-5 text-right min-w-[100px] font-semibold text-muted-foreground"
+                className="py-3.5 px-4 sm:px-5 text-right min-w-[100px] font-semibold text-muted-foreground"
               >
                 {t("common.actions")}
               </th>
@@ -331,7 +355,7 @@ export function ApplicationsTableView({
       </div>
 
       {/* Pagination & Rows Footer */}
-      <div className="py-3 px-5 border-t border-border bg-muted/30">
+      <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

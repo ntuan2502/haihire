@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { PageHeader } from "@/components/shared/page-header";
 import { StatusState } from "@/components/shared/status-state";
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
@@ -69,29 +70,21 @@ export function CandidatesView() {
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
-            {t("candidates.title")}
-          </h1>
-          <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
-            {filterSort.totalCount}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {canCreateCandidate && (
+      <PageHeader
+        title={t("candidates.title")}
+        badge={filterSort.totalCount}
+        actions={
+          canCreateCandidate ? (
             <Button
-              size="sm"
               onClick={() => router.push("/candidates/new")}
-              className="gap-1.5 cursor-pointer"
+              className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 cursor-pointer shrink-0"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               <span>{t("candidates.addCandidate")}</span>
             </Button>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* Toolbar */}
       <CandidatesToolbar
@@ -116,9 +109,9 @@ export function CandidatesView() {
       {loading && !filterSort.hasPagedResult ? (
         <LoadingSpinner />
       ) : filterSort.candidateRows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground p-12 sm:p-16 text-center shadow-xs w-full my-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
-            <Users className="h-8 w-8 stroke-[1.5]" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+            <Users className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
           </div>
           <h3 className="text-base font-semibold text-foreground">
             {t("candidates.noCandidatesYet")}
@@ -128,12 +121,11 @@ export function CandidatesView() {
           </p>
           {canCreateCandidate && (
             <Button
-              size="sm"
               onClick={() => router.push("/candidates/new")}
-              className="gap-1.5 cursor-pointer"
+              className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
             >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
-              {t("candidates.addCandidate")}
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              <span>{t("candidates.addCandidate")}</span>
             </Button>
           )}
         </div>

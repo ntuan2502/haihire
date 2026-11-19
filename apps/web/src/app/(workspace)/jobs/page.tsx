@@ -14,6 +14,7 @@ import {
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -167,29 +168,21 @@ function JobsPageContent() {
       ) : (
         <div className="w-full p-4 sm:p-6 space-y-4">
           {/* Clean, Non-redundant Header Row with Primary CTA */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
-                {t("jobs.title")}
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
-                {stats.total}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              {canCreateJob && (
+          <PageHeader
+            title={t("jobs.title")}
+            badge={stats.total}
+            actions={
+              canCreateJob ? (
                 <Button
-                  size="sm"
                   onClick={() => router.push("/jobs/new")}
-                  className="gap-1.5 cursor-pointer"
+                  className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 cursor-pointer shrink-0"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                   <span>{t("jobs.createJob")}</span>
                 </Button>
-              )}
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
 
           {/* JobList component with full URL synchronized filter drawer */}
           <JobList

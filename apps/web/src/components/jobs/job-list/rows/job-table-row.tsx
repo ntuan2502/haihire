@@ -79,7 +79,7 @@ export function JobTableRow({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("jobs.viewPublicPage")}
             aria-label={`${t("jobs.viewPublicPage")}: ${job.title}`}
           >
@@ -90,7 +90,7 @@ export function JobTableRow({
           <Link
             href={`/jobs/${job.id}/pipeline`}
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("common.view")}
             aria-label={`${t("common.view")}: ${job.title}`}
           >
@@ -102,7 +102,7 @@ export function JobTableRow({
             <Link
               href={`/jobs/${job.id}/settings`}
               onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.edit")}
               aria-label={`${t("common.edit")}: ${job.title}`}
             >
@@ -118,7 +118,7 @@ export function JobTableRow({
                 e.stopPropagation();
                 onDeleteJob(job.id);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.delete")}
               aria-label={`${t("common.delete")}: ${job.title}`}
             >

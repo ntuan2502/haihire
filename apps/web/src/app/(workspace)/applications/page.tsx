@@ -10,6 +10,7 @@ import {
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 import { useTableParams } from "@/hooks/use-table-params";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { PageHeader } from "@/components/shared/page-header";
 import { useI18n } from "@/i18n";
 
 function ApplicationsPageContent() {
@@ -58,20 +59,11 @@ function ApplicationsPageContent() {
 
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
-      {/* Clean, Non-redundant Header Row (min-h-9 sm:h-9 aligns height with views having CTA button) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9 sm:h-9">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            {t("applications.title")}
-          </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary text-secondary-foreground border border-border">
-            {applicationsData?.total ?? 0}
-          </span>
-        </div>
-
-        {/* Spacer matching the 36px CTA button height of other views to prevent vertical jump */}
-        <div className="hidden sm:block h-9" aria-hidden="true" />
-      </div>
+      {/* Clean, Non-redundant Header Row */}
+      <PageHeader
+        title={t("applications.title")}
+        badge={applicationsData?.total ?? 0}
+      />
 
       <ApplicationsDataTable
         applications={applicationsData?.data || []}

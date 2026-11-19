@@ -23,7 +23,9 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center justify-between gap-4",
+        !Icon && !subtitle
+          ? "flex flex-row items-center justify-between gap-3 flex-wrap min-h-9"
+          : "flex flex-col sm:flex-row sm:items-center justify-between gap-4",
         bordered && "pb-5 border-b border-border",
         className,
       )}
@@ -36,13 +38,13 @@ export function PageHeader({
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
               {title}
             </h1>
             {badge !== undefined &&
               badge !== null &&
               (typeof badge === "string" || typeof badge === "number" ? (
-                <span className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground border border-border shrink-0">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border shrink-0">
                   {badge}
                 </span>
               ) : (

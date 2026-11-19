@@ -1,6 +1,7 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   SegmentedTabs,
   type TabItem,
@@ -64,8 +65,8 @@ export function CandidatesToolbar({
         />
 
         {/* Right: Search Box + Columns Dropdown + Filter Button */}
-        <div className="flex items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("candidates.searchCandidates")}
               aria-label={t("candidates.searchCandidates")}
@@ -81,19 +82,24 @@ export function CandidatesToolbar({
           />
 
           {/* Filters Button */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onOpenFilterDrawer}
-            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-medium text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 shrink-0 cursor-pointer"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <SlidersHorizontal
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
+              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

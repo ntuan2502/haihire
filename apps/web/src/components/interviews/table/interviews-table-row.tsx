@@ -329,7 +329,7 @@ export function InterviewsTableRow({
                 e.stopPropagation();
                 onOpenScheduleModal(app, undefined, currentInterview);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={
                 allInterviews.length > 0
                   ? t("interviews.editSchedule")
@@ -355,7 +355,7 @@ export function InterviewsTableRow({
                 e.stopPropagation();
                 onCancelInterview(app, currentInterview);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("interviews.cancelThisSchedule")}
               aria-label={`${t("interviews.cancelThisSchedule")} - ${displayName}`}
             >

@@ -1,6 +1,7 @@
 "use client";
 
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { ColumnPicker } from "@/components/shared/column-picker";
@@ -105,10 +106,12 @@ export function JobFiltersBar({
           />
 
           {/* Filters Button */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onOpenFiltersDrawer}
-            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-medium text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 shrink-0 cursor-pointer"
           >
             <SlidersHorizontal
               className="h-3.5 w-3.5 text-muted-foreground"
@@ -116,11 +119,11 @@ export function JobFiltersBar({
             />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
+              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -192,9 +195,10 @@ export function JobFiltersBar({
           <button
             type="button"
             onClick={onResetFilters}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-4 cursor-pointer ml-1"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-xs font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {t("jobs.resetAll")}
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
+            <span>{t("jobs.resetAll")}</span>
           </button>
         </div>
       )}

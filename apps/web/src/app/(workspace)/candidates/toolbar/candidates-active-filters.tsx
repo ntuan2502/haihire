@@ -36,18 +36,18 @@ export function CandidatesActiveFilters({
           <button
             type="button"
             onClick={onClearJobFilter}
-            className="hover:text-foreground cursor-pointer"
+            className="hover:text-foreground cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3 w-3" aria-hidden="true" />
           </button>
         </span>
       )}
       <button
         type="button"
         onClick={onResetAllFilters}
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-xs font-medium cursor-pointer transition-colors"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground text-xs font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <RotateCcw className="h-3 w-3" />
+        <RotateCcw className="h-3 w-3" aria-hidden="true" />
         <span>{t("jobs.resetAll")}</span>
       </button>
     </div>

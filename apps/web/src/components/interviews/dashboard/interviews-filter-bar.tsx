@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
+import { Button } from "@/components/ui/button";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { ColumnPicker } from "@/components/shared/column-picker";
 import type { Job } from "@/types";
@@ -95,31 +96,31 @@ export function InterviewsFilterBar({
         {/* Right: View Mode Switcher + Search Box + Columns Dropdown + Filters Button */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto lg:ml-auto">
           {/* View Mode Switcher (Table / Calendar) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-muted border border-border shrink-0">
+          <div className="h-9 flex items-center p-0.5 rounded-lg bg-muted border border-border shrink-0">
             <button
               type="button"
               onClick={() => onViewModeChange("table")}
-              className={`h-8 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === "table"
                   ? "bg-card text-primary shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               title={t("interviews.tableTitle")}
             >
-              <List className="h-3.5 w-3.5" />
+              <List className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">{t("interviews.table")}</span>
             </button>
             <button
               type="button"
               onClick={() => onViewModeChange("calendar")}
-              className={`h-8 px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === "calendar"
                   ? "bg-card text-primary shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
               title={t("interviews.calendarTitle")}
             >
-              <CalendarDays className="h-3.5 w-3.5" />
+              <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">
                 {t("interviews.calendar")}
               </span>
@@ -127,7 +128,7 @@ export function InterviewsFilterBar({
           </div>
 
           {/* Search Input */}
-          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
+          <div className="flex-1 min-w-[160px] sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("interviews.searchPlaceholder")}
               aria-label={t("interviews.searchPlaceholder")}
@@ -184,19 +185,24 @@ export function InterviewsFilterBar({
           )}
 
           {/* Filters Button */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onOpenFilterDrawer}
-            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-semibold text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 shrink-0 cursor-pointer"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+            <SlidersHorizontal
+              className="h-3.5 w-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

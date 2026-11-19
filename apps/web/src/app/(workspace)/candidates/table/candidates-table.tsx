@@ -59,7 +59,7 @@ export function CandidatesTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
+          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <tr>
               {sortableColumns.map((col) => {
                 if (!visibleColumns[col.id]) return null;
@@ -75,23 +75,21 @@ export function CandidatesTable({
                     key={col.id}
                     scope="col"
                     aria-sort={ariaSort}
-                    className="py-3 px-5 select-none"
+                    className="py-3.5 px-4 sm:px-5 select-none"
                   >
                     <button
                       type="button"
                       onClick={() => onSort(col.id)}
-                      className={`flex items-center gap-1 ${
-                        col.id === "added"
-                          ? "font-semibold text-foreground"
+                      className={`flex items-center gap-1 uppercase tracking-wider ${
+                        isSorted
+                          ? "font-bold text-foreground"
                           : "font-semibold text-muted-foreground hover:text-foreground"
                       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                     >
                       <span>{col.label}</span>
                       {isSorted ? (
                         <ArrowDown
-                          className={`h-3 w-3 ${
-                            col.id === "added" ? "text-foreground" : ""
-                          } transition-transform ${
+                          className={`h-3 w-3 text-foreground transition-transform ${
                             sortDirection === "asc" ? "rotate-180" : ""
                           }`}
                           aria-hidden="true"
@@ -110,7 +108,7 @@ export function CandidatesTable({
               {visibleColumns.quickNotes && (
                 <th
                   scope="col"
-                  className="py-3 px-5 font-semibold text-muted-foreground"
+                  className="py-3.5 px-4 sm:px-5 font-semibold text-muted-foreground"
                 >
                   {t("candidates.columns.quickNotes")}
                 </th>
@@ -118,7 +116,7 @@ export function CandidatesTable({
 
               <th
                 scope="col"
-                className="py-3 px-5 text-right min-w-[100px] font-semibold text-muted-foreground"
+                className="py-3.5 px-4 sm:px-5 text-right min-w-[100px] font-semibold text-muted-foreground"
               >
                 {t("common.actions")}
               </th>
@@ -142,7 +140,7 @@ export function CandidatesTable({
       </div>
 
       {/* Pagination & Rows Footer */}
-      <div className="py-3 px-5 border-t border-border bg-muted/30">
+      <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

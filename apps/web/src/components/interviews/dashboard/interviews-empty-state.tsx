@@ -16,22 +16,22 @@ export function InterviewsEmptyState({
   const { t } = useI18n();
 
   return (
-    <div className="py-16 text-center space-y-3 bg-card text-card-foreground rounded-xl border border-border p-8 shadow-2xs">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-        <Calendar className="h-6 w-6" />
+    <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+        <Calendar className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
       </div>
-      <h3 className="text-base font-bold text-foreground">
+      <h3 className="text-base font-semibold text-foreground">
         {t("interviews.noInterviewsFound")}
       </h3>
-      <p className="text-xs text-muted-foreground max-w-md mx-auto">
+      <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
         {t("interviews.noInterviewsFoundDesc")}
       </p>
       {canEdit && (
         <Button
           onClick={onOpenScheduleModal}
-          className="h-9 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+          className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           <span>{t("interviews.scheduleNew")}</span>
         </Button>
       )}

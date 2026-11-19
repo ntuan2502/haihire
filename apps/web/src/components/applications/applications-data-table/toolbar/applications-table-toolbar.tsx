@@ -1,6 +1,7 @@
 "use client";
 
 import { SlidersHorizontal, X, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { ColumnPicker } from "@/components/shared/column-picker";
@@ -128,10 +129,12 @@ export function ApplicationsTableToolbar({
           />
 
           {/* Filters Button */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setIsFilterOpen(true)}
-            className="h-9 px-3.5 rounded-md border border-input bg-background text-xs font-semibold text-foreground flex items-center gap-1.5 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 px-3.5 text-xs font-semibold gap-1.5 shrink-0 cursor-pointer"
           >
             <SlidersHorizontal
               className="h-3.5 w-3.5 text-muted-foreground"
@@ -139,11 +142,11 @@ export function ApplicationsTableToolbar({
             />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
-              <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              <span className="h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                 {secondaryFiltersCount}
               </span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

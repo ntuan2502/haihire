@@ -29,6 +29,8 @@ import {
 } from "@/components/shared/segmented-tabs";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { SearchInput } from "@/components/shared/search-input";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { PageHeader } from "@/components/shared/page-header";
 import { StatusState } from "@/components/shared/status-state";
 import { Plus } from "lucide-react";
 import type { TimeRangeFilter } from "@haihire/shared";
@@ -154,30 +156,22 @@ function SourceTrackingContent() {
 
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
-      {/* Standard Page Header Row matching Jobs & Candidates */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            {t("sourcing.title")}
-          </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary text-secondary-foreground border border-border">
-            {linksCount}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {canCreateLink && (
+      {/* Standard Page Header Row */}
+      <PageHeader
+        title={t("sourcing.title")}
+        badge={linksCount}
+        actions={
+          canCreateLink ? (
             <Button
-              size="sm"
               onClick={() => setIsCreateModalOpen(true)}
-              className="h-9 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 cursor-pointer shrink-0"
             >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               <span>{t("sourcing.newLink")}</span>
             </Button>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* Modern Unified Responsive Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -197,7 +191,7 @@ function SourceTrackingContent() {
         <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
           {/* Search Input (visible on links and attribution tabs) */}
           {activeTab !== "overview" && (
-            <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+            <div className="w-full sm:w-64 md:w-72 sm:flex-initial">
               <SearchInput
                 placeholder={
                   activeTab === "links"
@@ -229,7 +223,7 @@ function SourceTrackingContent() {
               ...jobsList.map((j) => ({ value: j.id, label: j.title })),
             ]}
             placeholder={t("sourcing.allJobs")}
-            className="w-full sm:w-48 shrink-0"
+            className="flex-1 min-w-[140px] sm:flex-initial sm:w-48 shrink-0"
             triggerClassName="w-full h-9 text-xs font-medium bg-background border border-input rounded-md px-3"
           />
 
@@ -247,7 +241,7 @@ function SourceTrackingContent() {
               { value: "90d", label: t("sourcing.time90d") },
               { value: "all", label: t("sourcing.timeAll") },
             ]}
-            className="w-full sm:w-32 shrink-0"
+            className="flex-1 min-w-[120px] sm:flex-initial sm:w-36 shrink-0"
             triggerClassName="w-full h-9 text-xs font-medium bg-background border border-input rounded-md px-3"
           />
         </div>
@@ -327,7 +321,7 @@ function SourceTrackingContent() {
 
 export default function SourceTrackingPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<LoadingSpinner fullScreen />}>
       <SourceTrackingContent />
     </Suspense>
   );

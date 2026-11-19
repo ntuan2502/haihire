@@ -408,6 +408,20 @@ function InterviewsPageContent() {
             router.push(`/jobs/${jobId}/pipeline?${query.toString()}`);
           }}
           canEdit={canCreateInterview}
+          footer={
+            !focusedInterviewId && filteredAndSortedList.length > 0 ? (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                pageSizeOptions={[10, 20, 50, 100]}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+                itemLabel={t("nav.interviews").toLowerCase()}
+              />
+            ) : undefined
+          }
         />
       )}
 
@@ -419,24 +433,6 @@ function InterviewsPageContent() {
           {t("common.viewAll")}
         </Link>
       )}
-
-      {/* Pagination Bar (Only for Table mode) */}
-      {!focusedInterviewId &&
-        filteredAndSortedList.length > 0 &&
-        viewMode !== "calendar" && (
-          <div className="pt-2">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              pageSizeOptions={[10, 20, 50, 100]}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-              itemLabel={t("nav.interviews").toLowerCase()}
-            />
-          </div>
-        )}
 
       {/* Schedule Interview Reusable Modal */}
       <ScheduleInterviewModal

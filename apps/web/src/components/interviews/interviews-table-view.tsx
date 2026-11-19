@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import { addDaysToYmd, resolveEffectiveTimezone } from "@/lib/utils";
 import {
@@ -43,6 +43,7 @@ export interface InterviewsTableViewProps {
     interview: ScheduledInterviewInfo,
   ) => void;
   canEdit?: boolean;
+  footer?: ReactNode;
 }
 
 export function InterviewsTableView({
@@ -54,6 +55,7 @@ export function InterviewsTableView({
   onNavigateToPipeline,
   onCancelInterview,
   canEdit = true,
+  footer,
 }: InterviewsTableViewProps) {
   const { t } = useI18n();
   const { localization, isConfigured } = useLocalization();
@@ -109,11 +111,11 @@ export function InterviewsTableView({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-2xs overflow-hidden transition-all">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden transition-all">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/50 text-muted-foreground uppercase tracking-wider text-[11px] font-bold">
+            <tr className="border-b border-border bg-muted/50 text-muted-foreground uppercase tracking-wider text-[11px] font-semibold">
               <th scope="col" className="py-3.5 px-4 text-left">
                 {t("interviews.tableHeaders.candidate")}
               </th>
@@ -188,6 +190,11 @@ export function InterviewsTableView({
           </tbody>
         </table>
       </div>
+      {footer && (
+        <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

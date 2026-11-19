@@ -124,11 +124,11 @@ export function CandidateTableRow({
               e.stopPropagation();
               router.push(`/candidates/${candidate.id}`);
             }}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
+            className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("common.view")}
             aria-label={t("common.view")}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4" aria-hidden="true" />
           </button>
 
           {/* Quick Edit (Dedicated Edit Page) */}
@@ -139,11 +139,11 @@ export function CandidateTableRow({
                 e.stopPropagation();
                 router.push(`/candidates/${candidate.id}/edit`);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.edit")}
               aria-label={t("common.edit")}
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
 
@@ -155,11 +155,11 @@ export function CandidateTableRow({
                 e.stopPropagation();
                 onDelete(candidate);
               }}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center"
+              className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.delete")}
               aria-label={t("common.delete")}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>

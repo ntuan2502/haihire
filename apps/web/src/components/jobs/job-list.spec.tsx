@@ -195,7 +195,7 @@ describe("JobList Component - Characterization Tests", () => {
       expect(handleSearchChange).toHaveBeenCalledWith("Engineer");
     });
 
-    it("resets search and filters when clicking cancel button in empty state", () => {
+    it("resets search and filters when clicking reset button in empty state", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
       const searchInput = screen.getByPlaceholderText(en.jobs.searchJobs);
@@ -206,8 +206,8 @@ describe("JobList Component - Characterization Tests", () => {
 
       expect(screen.getByText(en.jobs.noJobsFound)).toBeDefined();
 
-      const cancelBtn = screen.getByText(en.common.cancel);
-      fireEvent.click(cancelBtn);
+      const resetBtn = screen.getByText(en.jobs.resetAll);
+      fireEvent.click(resetBtn);
 
       expect(screen.getByText("Senior Full-Stack Engineer")).toBeDefined();
     });

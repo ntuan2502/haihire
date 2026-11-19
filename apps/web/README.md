@@ -9,7 +9,7 @@ Enterprise recruiter dashboard and public careers portal built with **Next.js 16
 - **Framework:** Next.js `16.4.5` (`output: "standalone"`, Turbopack, [next.config.ts](next.config.ts) API/MinIO rewrites, and Next.js 16 boundary proxy [src/proxy.ts](src/proxy.ts))
 - **UI & Styling:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` with `oklch(...)` tokens in [src/app/globals.css](src/app/globals.css), `shadcn@^4.23.0` (`style: "new-york"` backed by `radix-ui@^1.8.1`), standalone `cn@^0.5.2` ([src/lib/utils.ts](src/lib/utils.ts)), `lucide-react@^1.70.0`
 - **Data & Real-Time:** `@tanstack/react-query@^5.107.1` ([src/hooks/query-keys.ts](src/hooks/query-keys.ts)), `axios@^1.21.0` URL Gatekeeper + 401 refresh queue ([src/lib/api/client.ts](src/lib/api/client.ts)), debounced SSE `createRealtimeInvalidator` ([src/lib/realtime-sync.ts](src/lib/realtime-sync.ts))
-- **Notifications & Localization:** `react-toastify@11.2.0` wrapped via [src/lib/toast.ts](src/lib/toast.ts) (`@/lib/toast`), 2-tier 2-way `vi` / `en` i18n (`I18nProvider` + `LocalizationProvider`)
+- **Notifications & Localization:** `sonner@^2.0.8` via [src/components/ui/sonner.tsx](src/components/ui/sonner.tsx) and [src/lib/toast.ts](src/lib/toast.ts) (`@/lib/toast`), 2-tier 2-way `vi` / `en` i18n (`I18nProvider` + `LocalizationProvider`)
 
 ---
 

@@ -1592,10 +1592,18 @@ export const vi: TranslationSchema = {
     joiningButton: "Đang tham gia tổ chức...",
   },
   notificationInbox: {
+    all: "Tất cả",
+    unread: "Chưa đọc",
     readAll: "Đánh dấu tất cả đã đọc",
     empty: "Chưa có thông báo",
+    emptyUnread: "Bạn đã đọc tất cả thông báo",
+    emptyHint:
+      "Cập nhật về hồ sơ ứng tuyển và lịch phỏng vấn sẽ hiển thị tại đây.",
     loadError: "Không thể tải thông báo",
     readError: "Không thể đánh dấu thông báo đã đọc",
+    settings: "Cài đặt thông báo",
+    roundBadge: "Vòng {round}",
+    appliedForJob: "{candidate} đã ứng tuyển vị trí {job}",
     applicationReceived: "Có hồ sơ ứng tuyển mới",
     interviewScheduled: "Đã lên lịch phỏng vấn",
     interviewChanged: "Lịch phỏng vấn đã thay đổi",

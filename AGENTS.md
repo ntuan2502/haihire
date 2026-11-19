@@ -17,7 +17,7 @@ All AI agents working in this repository MUST read and follow:
    - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-016` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
 2. **HaiHire Specialized Agent Skills (`.agents/skills/`):**
    - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`new-york` + `radix-ui` + standalone `cn`).
-   - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `react-toastify`, 2-tier vi/en i18n.
+   - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `sonner`, 2-tier vi/en i18n.
    - [haihire-nestjs-backend](.agents/skills/haihire-nestjs-backend/SKILL.md) — NestJS `^12.4.0` ESM (`esbuild`), explicit `@Inject`, `DtoPipe`, 64 `APP_ERROR_CODES`, cookie JWT + `tokenVersion`, dynamic `ownerId` RBAC (`5` roles / `41` permissions), BullMQ DLQ queues, MinIO tenant isolation.
    - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `AsyncLocalStorage` transaction propagation, `8` tenant-scoped backend modules, `deletedAt` soft-delete rules.
    - [haihire-testing-qa](.agents/skills/haihire-testing-qa/SKILL.md) — Vitest `5.1.0`, `createMockPrismaService`, RTL `jsdom`, Playwright `^1.65.0` E2E specs, `pnpm test:diff` gate.

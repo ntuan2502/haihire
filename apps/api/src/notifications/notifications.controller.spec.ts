@@ -81,4 +81,100 @@ describe("NotificationsController preferences", () => {
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
     expect(count).toHaveBeenCalledWith({ where: { ...where, readAt: null } });
   });
+
+  it("enriches notification items with candidateName, jobTitle, scheduledAt, and round", async () => {
+    const createdAt = new Date("2026-11-19T04:00:00.000Z");
+    const scheduledAt = new Date("2026-11-20T07:30:00.000Z");
+    const transaction = {
+      organization: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ nameDisplayOrder: "LAST_FIRST" }),
+      },
+      notification: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "notif-1",
+            kind: "applicationReceived",
+            resourceId: "app-1",
+            createdAt,
+            readAt: null,
+          },
+          {
+            id: "notif-2",
+            kind: "interviewScheduled",
+            resourceId: "int-1",
+            createdAt,
+            readAt: createdAt,
+          },
+        ]),
+        count: vi.fn().mockResolvedValue(1),
+      },
+      application: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "app-1",
+            candidate: {
+              name: "An Nguyen",
+              firstName: "An",
+              lastName: "Nguyen",
+            },
+            job: { title: "Senior Backend Engineer" },
+          },
+        ]),
+      },
+      interview: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "int-1",
+            scheduledAt,
+            round: 2,
+            application: {
+              candidate: {
+                name: "Binh Tran",
+                firstName: "Binh",
+                lastName: "Tran",
+              },
+              job: { title: "Product Designer" },
+            },
+          },
+        ]),
+      },
+    };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {
+        resolvePermission: vi.fn().mockResolvedValue(true),
+      } as unknown as PermissionResolverService,
+    );
+
+    const result = await controller.list({
+      user: { id: "user-1", organizationId: "org-1", role: Role.ADMIN },
+    });
+
+    expect(result.unreadCount).toBe(1);
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        id: "notif-1",
+        kind: "applicationReceived",
+        resourceId: "app-1",
+        candidateName: "Nguyen An",
+        jobTitle: "Senior Backend Engineer",
+      }),
+      expect.objectContaining({
+        id: "notif-2",
+        kind: "interviewScheduled",
+        resourceId: "int-1",
+        candidateName: "Tran Binh",
+        jobTitle: "Product Designer",
+        scheduledAt: scheduledAt.toISOString(),
+        round: 2,
+      }),
+    ]);
+  });
 });

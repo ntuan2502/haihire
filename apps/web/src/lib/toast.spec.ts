@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockToastify = vi.hoisted(() => ({
+const mockSonner = vi.hoisted(() => ({
   success: vi.fn(() => "id-success"),
   error: vi.fn(() => "id-error"),
   info: vi.fn(() => "id-info"),
   warning: vi.fn(() => "id-warning"),
   dismiss: vi.fn(),
-  isActive: vi.fn(() => false),
+  getToasts: vi.fn(
+    () => [] as Array<{ id: string | number; dismiss?: boolean }>,
+  ),
 }));
 
-vi.mock("react-toastify", () => ({
-  toast: mockToastify,
+vi.mock("sonner", () => ({
+  toast: mockSonner,
 }));
 
 import { toast } from "./toast";
@@ -20,28 +22,28 @@ describe("lib/toast wrapper", () => {
     vi.clearAllMocks();
   });
 
-  it("forwards success, error, info, and warning calls with options to react-toastify", () => {
+  it("forwards success, error, info, and warning calls with normalized ids to sonner", () => {
     expect(toast.success("Saved!", { toastId: "save-1" })).toBe("id-success");
-    expect(mockToastify.success).toHaveBeenCalledWith("Saved!", {
-      toastId: "save-1",
+    expect(mockSonner.success).toHaveBeenCalledWith("Saved!", {
+      id: "save-1",
     });
 
     expect(toast.error("Failed")).toBe("id-error");
-    expect(mockToastify.error).toHaveBeenCalledWith("Failed", undefined);
+    expect(mockSonner.error).toHaveBeenCalledWith("Failed", undefined);
 
     expect(toast.info("Updated")).toBe("id-info");
-    expect(mockToastify.info).toHaveBeenCalledWith("Updated", undefined);
+    expect(mockSonner.info).toHaveBeenCalledWith("Updated", undefined);
 
     expect(toast.warning("Careful")).toBe("id-warning");
-    expect(mockToastify.warning).toHaveBeenCalledWith("Careful", undefined);
+    expect(mockSonner.warning).toHaveBeenCalledWith("Careful", undefined);
   });
 
-  it("forwards dismiss and isActive helpers", () => {
+  it("forwards dismiss and checks active toasts cleanly", () => {
     toast.dismiss("toast-1");
-    expect(mockToastify.dismiss).toHaveBeenCalledWith("toast-1");
+    expect(mockSonner.dismiss).toHaveBeenCalledWith("toast-1");
 
-    mockToastify.isActive.mockReturnValueOnce(true);
+    mockSonner.getToasts.mockReturnValueOnce([{ id: "toast-1" }]);
     expect(toast.isActive("toast-1")).toBe(true);
-    expect(mockToastify.isActive).toHaveBeenCalledWith("toast-1");
+    expect(toast.isActive("toast-missing")).toBe(false);
   });
 });

@@ -33,6 +33,10 @@ export interface WebsiteNotification {
   resourceId: string;
   createdAt: string;
   readAt: string | null;
+  candidateName?: string | null;
+  jobTitle?: string | null;
+  scheduledAt?: string | null;
+  round?: number | null;
 }
 
 export interface WebsiteNotificationInbox {

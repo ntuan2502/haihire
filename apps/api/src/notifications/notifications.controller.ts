@@ -13,11 +13,13 @@ import {
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
+  formatCandidateDisplayName,
   notificationPreferencesSchema,
   notificationKinds,
   type Role,
   type NotificationPreferences,
 } from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../common/candidate-name.util";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
@@ -66,10 +68,10 @@ export class NotificationsController {
         ),
       },
     };
-    const [items, unreadCount] = await this.prisma.withTenantRls(
+    const { items, unreadCount } = await this.prisma.withTenantRls(
       user.organizationId,
-      (tx) =>
-        Promise.all([
+      async (tx) => {
+        const [rawItems, count] = await Promise.all([
           tx.notification.findMany({
             where,
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -83,7 +85,93 @@ export class NotificationsController {
             },
           }),
           tx.notification.count({ where: { ...where, readAt: null } }),
-        ]),
+        ]);
+
+        if (rawItems.length === 0) {
+          return { items: rawItems, unreadCount: count };
+        }
+
+        const appIds = rawItems
+          .filter((item) => item.kind === "applicationReceived")
+          .map((item) => item.resourceId);
+        const interviewIds = rawItems
+          .filter((item) => item.kind !== "applicationReceived")
+          .map((item) => item.resourceId);
+
+        const [nameOrder, appRows, interviewRows] = await Promise.all([
+          resolveOrgNameDisplayOrder(tx, user.organizationId),
+          appIds.length > 0 && tx.application?.findMany
+            ? tx.application.findMany({
+                where: {
+                  id: { in: appIds },
+                  organizationId: user.organizationId,
+                },
+                select: {
+                  id: true,
+                  candidate: {
+                    select: { name: true, firstName: true, lastName: true },
+                  },
+                  job: { select: { title: true } },
+                },
+              })
+            : Promise.resolve([]),
+          interviewIds.length > 0 && tx.interview?.findMany
+            ? tx.interview.findMany({
+                where: {
+                  id: { in: interviewIds },
+                  organizationId: user.organizationId,
+                },
+                select: {
+                  id: true,
+                  scheduledAt: true,
+                  round: true,
+                  application: {
+                    select: {
+                      candidate: {
+                        select: { name: true, firstName: true, lastName: true },
+                      },
+                      job: { select: { title: true } },
+                    },
+                  },
+                },
+              })
+            : Promise.resolve([]),
+        ]);
+
+        const appMap = new Map(appRows.map((row) => [row.id, row]));
+        const interviewMap = new Map(interviewRows.map((row) => [row.id, row]));
+
+        const enriched = rawItems.map((item) => {
+          if (item.kind === "applicationReceived") {
+            const app = appMap.get(item.resourceId);
+            if (!app) return item;
+            return {
+              ...item,
+              candidateName:
+                formatCandidateDisplayName(app.candidate, nameOrder) || null,
+              jobTitle: app.job?.title ?? null,
+            };
+          }
+          const intv = interviewMap.get(item.resourceId);
+          if (!intv) return item;
+          return {
+            ...item,
+            candidateName:
+              formatCandidateDisplayName(
+                intv.application?.candidate,
+                nameOrder,
+              ) || null,
+            jobTitle: intv.application?.job?.title ?? null,
+            scheduledAt:
+              (intv.scheduledAt as Date | string) instanceof Date
+                ? (intv.scheduledAt as Date).toISOString()
+                : String(intv.scheduledAt),
+            round: intv.round ?? null,
+          };
+        });
+
+        return { items: enriched, unreadCount: count };
+      },
     );
     return { items, unreadCount };
   }

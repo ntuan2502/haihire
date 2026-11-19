@@ -1430,10 +1430,17 @@ export interface TranslationSchema {
     joiningButton: string;
   };
   notificationInbox: {
+    all: string;
+    unread: string;
     readAll: string;
     empty: string;
+    emptyUnread: string;
+    emptyHint: string;
     loadError: string;
     readError: string;
+    settings: string;
+    roundBadge: string;
+    appliedForJob: string;
     applicationReceived: string;
     interviewScheduled: string;
     interviewChanged: string;

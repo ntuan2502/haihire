@@ -9,7 +9,7 @@ Stack baselines verified in `apps/web/package.json` and `apps/web/src/lib/`:
 - **Server State**: `@tanstack/react-query@^5.107.1` with centralized `queryKeys` (`apps/web/src/hooks/query-keys.ts`)
 - **HTTP Client**: `axios@^1.21.0` (`apps/web/src/lib/api/client.ts`)
 - **Real-Time Sync**: SSE (`apps/api/src/events/`) + `createRealtimeInvalidator` (`apps/web/src/lib/realtime-sync.ts`) consuming 17 `AppEventType`s from `@haihire/shared`
-- **Toasts**: `react-toastify@11.2.0` wrapped strictly via `apps/web/src/lib/toast.ts` (`@/lib/toast`)
+- **Toasts**: Shadcn `sonner` (`apps/web/src/components/ui/sonner.tsx`) wrapped strictly via `apps/web/src/lib/toast.ts` (`@/lib/toast`)
 - **Localization**: 2-tier 2-way i18n (`I18nProvider` in `apps/web/src/i18n/index.tsx` + `LocalizationProvider` in `apps/web/src/components/providers/localization-provider.tsx`)
 
 ---
@@ -46,7 +46,7 @@ Per TanStack Query v5 official guidelines:
 
 ## 4. Notifications & 2-Way / 2-Tier i18n
 
-- **Notifications:** Always import `{ toast } from "@/lib/toast"`, never `react-toastify` directly.
+- **Notifications:** Always import `{ toast } from "@/lib/toast"`, never `sonner` directly.
 - **API Error Localization (`apps/web/src/lib/api-error.ts`):**
   - Use `getApiErrorMessage(error, t)` everywhere errors are shown to users.
   - It maps backend `payload.code` (`64` `APP_ERROR_CODES` in `@haihire/shared`) -> `t("errors.<CODE>", payload.params)`, falling back cleanly to `payload.message`, status-code fallback (`401`, `403`, `404`, `429`, `500`), or `errors.generic`.

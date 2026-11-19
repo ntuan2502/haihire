@@ -695,7 +695,7 @@ export const en: TranslationSchema = {
     applicantsInPipeline: "{count} applicant{plural} in pipeline",
     totalJobsCount: "{count} job{plural} total",
     filterJobs: "Filter jobs",
-    filterJobsDesc: "Customize your view, then save it for quick access.",
+    filterJobsDesc: "Filter and sort items shown in this view.",
     statusUpper: "STATUS",
     employmentTypeUpper: "EMPLOYMENT TYPE",
     experienceLevelUpper: "EXPERIENCE LEVEL",

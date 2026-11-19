@@ -274,10 +274,13 @@ describe("MembersSettingsPage Component", () => {
     // Click member action button for Nguyen Recruiter (mem-1)
     const actionButtons = screen.getAllByTitle("Thao tác thành viên");
     expect(actionButtons.length).toBeGreaterThan(0);
+    fireEvent.pointerDown(actionButtons[0], { button: 0, ctrlKey: false });
     fireEvent.click(actionButtons[0]);
 
-    // Expect "Transfer Ownership" button to be visible
-    const transferBtn = screen.getByText("Chuyển quyền sở hữu");
+    // Expect "Transfer Ownership" menuitem to be visible
+    const transferBtn = await screen.findByRole("menuitem", {
+      name: "Chuyển quyền sở hữu",
+    });
     expect(transferBtn).toBeInTheDocument();
     fireEvent.click(transferBtn);
 

@@ -299,34 +299,40 @@ describe("JobList Component - Characterization Tests", () => {
 
   // 5. COLUMN VISIBILITY DROPDOWN
   describe("5. Column Visibility Dropdown", () => {
-    it("opens columns toggle dropdown and allows toggling status column", () => {
+    it("opens columns toggle dropdown and allows toggling status column", async () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const columnsBtn = screen.getByText(en.common.columns);
+      const columnsBtn = screen.getByRole("button", {
+        name: en.common.columns,
+      });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      expect(screen.getByText(en.jobs.toggleColumns)).toBeDefined();
+      expect(await screen.findByText(en.jobs.toggleColumns)).toBeDefined();
 
-      // Find checkbox for Status
-      const statusCheckbox = screen.getByLabelText(
-        en.jobs.columns.status,
-      ) as HTMLInputElement;
-      expect(statusCheckbox.checked).toBe(true);
+      // Find menuitemcheckbox for Status
+      const statusItem = screen.getByRole("menuitemcheckbox", {
+        name: en.jobs.columns.status,
+      });
+      expect(statusItem).toHaveAttribute("aria-checked", "true");
 
-      fireEvent.click(statusCheckbox);
-      expect(statusCheckbox.checked).toBe(false);
+      fireEvent.click(statusItem);
+      expect(statusItem).toHaveAttribute("aria-checked", "false");
     });
 
-    it("prevents unchecking locked Title column", () => {
+    it("prevents unchecking locked Title column", async () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const columnsBtn = screen.getByText(en.common.columns);
+      const columnsBtn = screen.getByRole("button", {
+        name: en.common.columns,
+      });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      const titleCheckbox = screen.getByLabelText(
-        en.jobs.columns.title,
-      ) as HTMLInputElement;
-      expect(titleCheckbox.disabled).toBe(true);
+      const titleItem = await screen.findByRole("menuitemcheckbox", {
+        name: en.jobs.columns.title,
+      });
+      expect(titleItem).toHaveAttribute("aria-disabled", "true");
     });
   });
 
@@ -368,14 +374,14 @@ describe("JobList Component - Characterization Tests", () => {
       expect(screen.getByText("Senior Full-Stack Engineer")).toBeDefined();
     });
 
-    it("closes the filter drawer with the cancel button", () => {
+    it("closes the filter drawer with the done button", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
       fireEvent.click(screen.getByText(en.common.filter));
       const drawer = screen.getByRole("dialog");
       expect(within(drawer).queryByText(en.jobs.saveAsView)).toBeNull();
 
-      fireEvent.click(within(drawer).getByText(en.common.cancel));
+      fireEvent.click(within(drawer).getByText(en.jobs.done));
       expect(screen.queryByRole("dialog")).toBeNull();
     });
 

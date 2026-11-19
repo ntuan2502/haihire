@@ -1,9 +1,9 @@
 "use client";
 
-import type { RefObject } from "react";
-import { Columns3, SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
+import { ColumnPicker } from "@/components/shared/column-picker";
 import { useI18n } from "@/i18n";
 import {
   getJobTypeLabel,
@@ -19,9 +19,6 @@ export interface JobFiltersBarProps {
   onClearStatusTabs: () => void;
   search: string;
   onSearchChange: (val: string) => void;
-  isColumnsOpen: boolean;
-  onToggleColumnsOpen: () => void;
-  columnsRef: RefObject<HTMLDivElement | null>;
   visibleColumns: VisibleColumns;
   onToggleColumn: (col: keyof VisibleColumns) => void;
   onOpenFiltersDrawer: () => void;
@@ -45,9 +42,6 @@ export function JobFiltersBar({
   onClearStatusTabs,
   search,
   onSearchChange,
-  isColumnsOpen,
-  onToggleColumnsOpen,
-  columnsRef,
   visibleColumns,
   onToggleColumn,
   onOpenFiltersDrawer,
@@ -75,8 +69,8 @@ export function JobFiltersBar({
         />
 
         {/* Right: Search Box + Columns Dropdown + Filters Button */}
-        <div className="flex items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("jobs.searchJobs")}
               aria-label={t("jobs.searchJobs")}
@@ -85,68 +79,30 @@ export function JobFiltersBar({
             />
           </div>
 
-          {/* Columns Dropdown (Persisted in localStorage) */}
-          <div className="relative shrink-0" ref={columnsRef}>
-            <button
-              type="button"
-              onClick={onToggleColumnsOpen}
-              className={`h-9 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
-                isColumnsOpen ? "ring-2 ring-ring/30 border-ring" : ""
-              }`}
-            >
-              <Columns3
-                className="h-3.5 w-3.5 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <span>{t("common.columns")}</span>
-            </button>
-
-            {isColumnsOpen && (
-              <div className="absolute right-0 mt-1.5 w-44 rounded-lg border border-border bg-popover text-popover-foreground shadow-md p-1.5 z-50">
-                <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase select-none">
-                  {t("jobs.toggleColumns")}
-                </div>
-                <div className="space-y-0.5 mt-1">
-                  {[
-                    {
-                      id: "title",
-                      label: t("jobs.columns.title"),
-                      locked: true,
-                    },
-                    { id: "pipeline", label: t("jobs.columns.pipeline") },
-                    { id: "status", label: t("jobs.columns.status") },
-                  ].map((col) => {
-                    const isChecked =
-                      visibleColumns[col.id as keyof VisibleColumns];
-                    const isLocked = col.locked;
-                    return (
-                      <label
-                        key={col.id}
-                        className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-xs font-medium select-none transition-colors ${
-                          isLocked
-                            ? "opacity-60 cursor-not-allowed text-muted-foreground"
-                            : "text-foreground hover:bg-accent cursor-pointer"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          name={`col-${col.id}`}
-                          aria-label={col.label}
-                          checked={isChecked}
-                          disabled={isLocked}
-                          onChange={() =>
-                            onToggleColumn(col.id as keyof VisibleColumns)
-                          }
-                          className="h-3.5 w-3.5 rounded border-input accent-primary cursor-pointer disabled:cursor-not-allowed"
-                        />
-                        <span>{col.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          <ColumnPicker
+            columns={[
+              {
+                key: "title",
+                label: t("jobs.columns.title"),
+                checked: visibleColumns.title,
+                disabled: true,
+              },
+              {
+                key: "pipeline",
+                label: t("jobs.columns.pipeline"),
+                checked: visibleColumns.pipeline,
+              },
+              {
+                key: "status",
+                label: t("jobs.columns.status"),
+                checked: visibleColumns.status,
+              },
+            ]}
+            onToggle={(key) => onToggleColumn(key as keyof VisibleColumns)}
+            label={t("common.columns")}
+            menuTitle={t("jobs.toggleColumns")}
+            align="end"
+          />
 
           {/* Filters Button */}
           <button

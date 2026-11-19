@@ -15,8 +15,12 @@ import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
 import { getInitials, getUserDisplayName } from "@/lib/utils";
@@ -41,10 +45,14 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
   const displayName = getUserDisplayName(user);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (!open) setIsOrgDropdownOpen(false);
+      }}
+    >
       <DropdownMenuTrigger
         className={cn(
-          "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-ring/30 transition-all cursor-pointer outline-none select-none",
+          "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-ring/30 focus-visible:ring-2 focus-visible:ring-ring transition-all cursor-pointer outline-none select-none",
           className,
         )}
         aria-label={t("common.userProfile")}
@@ -56,7 +64,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
 
       <DropdownMenuContent
         align="end"
-        className="w-68 p-2.5 rounded-xl bg-popover text-popover-foreground border border-border shadow-2xl space-y-1 z-50 overflow-visible"
+        className="w-68 p-2.5 rounded-xl bg-popover text-popover-foreground border border-border shadow-2xl space-y-1"
       >
         {/* User Full Name, Email, Role Badge */}
         <div className="px-2 pt-1 pb-1">
@@ -118,37 +126,37 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                   myOrgs.map((org) => {
                     const isActive = org.id === user.organizationId;
                     return (
-                      <button
-                        type="button"
-                        key={org.id}
-                        role="menuitem"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!isActive) {
-                            try {
-                              await switchOrgMutation.mutateAsync(org.id);
-                              router.push("/dashboard");
-                            } catch (err) {
-                              console.error("Failed to switch workspace:", err);
+                      <DropdownMenuItem key={org.id} asChild>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isActive) {
+                              try {
+                                await switchOrgMutation.mutateAsync(org.id);
+                                router.push("/dashboard");
+                              } catch (err) {
+                                toast.error(getApiErrorMessage(err, t));
+                              }
                             }
-                          }
-                          setIsOrgDropdownOpen(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          isActive
-                            ? "bg-primary/10 text-primary font-semibold cursor-default"
-                            : "text-foreground hover:bg-accent",
-                        )}
-                      >
-                        <span className="truncate">{org.name}</span>
-                        {isActive && (
-                          <Check
-                            className="h-3.5 w-3.5 text-primary shrink-0"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
+                            setIsOrgDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-2.5 py-1.5 flex items-center justify-between text-xs rounded-none cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            isActive
+                              ? "bg-primary/10 text-primary font-semibold cursor-default"
+                              : "text-foreground hover:bg-accent",
+                          )}
+                        >
+                          <span className="truncate">{org.name}</span>
+                          {isActive && (
+                            <Check
+                              className="h-3.5 w-3.5 text-primary shrink-0"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </button>
+                      </DropdownMenuItem>
                     );
                   })
                 ) : user.organization ? (
@@ -162,19 +170,20 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                 ) : null}
 
                 {/* + Create organization item */}
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOrgDropdownOpen(false);
-                    router.push("/auth/onboarding?mode=create");
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/10 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Plus className="h-3 w-3" aria-hidden="true" />
-                  <span>{t("nav.createOrganization")}</span>
-                </button>
+                <DropdownMenuItem asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsOrgDropdownOpen(false);
+                      router.push("/auth/onboarding?mode=create");
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/10 rounded-none cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Plus className="h-3 w-3" aria-hidden="true" />
+                    <span>{t("nav.createOrganization")}</span>
+                  </button>
+                </DropdownMenuItem>
               </div>
             )}
           </div>
@@ -182,33 +191,34 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
 
         {/* Settings (if user belongs to an org) */}
         {user.organizationId && (
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => router.push("/settings")}
-            className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-foreground hover:bg-accent cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Settings
-              className="h-4 w-4 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <span>{t("nav.settings")}</span>
-          </button>
+          <DropdownMenuItem asChild>
+            <button
+              type="button"
+              onClick={() => router.push("/settings")}
+              className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-foreground hover:bg-accent cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Settings
+                className="h-4 w-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span>{t("nav.settings")}</span>
+            </button>
+          </DropdownMenuItem>
         )}
 
-        {/* Divider */}
-        <div className="my-1 border-t border-border" />
+        <DropdownMenuSeparator />
 
         {/* Sign out */}
-        <button
-          type="button"
-          role="menuitem"
-          onClick={logout}
-          className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          <span>{t("nav.signOut")}</span>
-        </button>
+        <DropdownMenuItem asChild variant="destructive">
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold text-foreground hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            <span>{t("nav.signOut")}</span>
+          </button>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

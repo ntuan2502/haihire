@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { createPortal } from "react-dom";
+import type { RefObject } from "react";
 import { Check } from "lucide-react";
 import { useI18n } from "@/i18n";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 export interface OverviewSectionsState {
   ai: boolean;
@@ -37,7 +41,6 @@ export function OverviewSectionsPopover({
   triggerRef,
 }: OverviewSectionsPopoverProps) {
   const { t } = useI18n();
-  const [mounted, setMounted] = useState(false);
 
   const sectionItems: { key: keyof OverviewSectionsState; label: string }[] = [
     { key: "ai", label: t("applications.sections.ai") },
@@ -46,113 +49,63 @@ export function OverviewSectionsPopover({
     { key: "responses", label: t("applications.sections.responses") },
     { key: "notes", label: t("applications.sections.notes") },
   ];
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(
-    null,
-  );
-  const popoverRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen || !mounted) return;
-
-    const updatePosition = () => {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        const popoverWidth = 192; // w-48
-        let left = rect.left - 50;
-        if (typeof window !== "undefined") {
-          if (left + popoverWidth > window.innerWidth - 8) {
-            left = window.innerWidth - popoverWidth - 8;
-          }
-        }
-        if (left < 8) left = 8;
-
-        setCoords({
-          top: rect.bottom + 6,
-          left,
-        });
-      }
-    };
-
-    updatePosition();
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        (popoverRef.current && popoverRef.current.contains(target)) ||
-        (triggerRef.current && triggerRef.current.contains(target))
-      ) {
-        return;
-      }
-      onClose();
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("resize", updatePosition);
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, mounted, onClose, triggerRef]);
-
-  if (!mounted || !isOpen || !coords) return null;
-
-  return createPortal(
-    <div
-      ref={popoverRef}
-      style={{
-        position: "fixed",
-        top: coords.top,
-        left: coords.left,
-        zIndex: 99999,
+  return (
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      className="w-48 rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl py-2 animate-in fade-in-0 zoom-in-95 duration-150"
     >
-      <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        {t("applications.sections.sectionsTitle")}
-      </div>
+      <PopoverAnchor virtualRef={triggerRef} />
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-48 rounded-xl p-2"
+        onPointerDownOutside={(e) => {
+          if (triggerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (triggerRef.current?.contains(e.target as Node)) {
+            e.preventDefault();
+          }
+        }}
+      >
+        <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {t("applications.sections.sectionsTitle")}
+        </div>
 
-      <div className="space-y-0.5">
-        {sectionItems.map(({ key, label }) => {
-          const isChecked = sections[key];
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onToggleSection(key)}
-              className="w-full px-3 py-1.5 flex items-center gap-2.5 hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer"
-            >
-              <div
-                className={`h-4 w-4 rounded flex items-center justify-center transition-colors shrink-0 ${
-                  isChecked
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-input bg-background"
-                }`}
+        <div className="space-y-0.5">
+          {sectionItems.map(({ key, label }) => {
+            const isChecked = sections[key];
+            return (
+              <button
+                key={key}
+                type="button"
+                role="checkbox"
+                aria-checked={isChecked}
+                onClick={() => onToggleSection(key)}
+                className="w-full rounded-md px-2 py-1.5 flex items-center gap-2.5 hover:bg-accent hover:text-accent-foreground transition-colors text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
-              </div>
-              <span className="text-xs font-medium text-foreground">
-                {label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>,
-    document.body,
+                <div
+                  className={`h-4 w-4 rounded flex items-center justify-center transition-colors shrink-0 ${
+                    isChecked
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-input bg-background"
+                  }`}
+                >
+                  {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                </div>
+                <span className="text-xs font-medium text-foreground">
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

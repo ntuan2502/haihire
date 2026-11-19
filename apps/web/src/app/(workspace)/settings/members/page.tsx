@@ -66,7 +66,6 @@ export default function MembersSettingsPage() {
   const [linkToRevoke, setLinkToRevoke] = useState<string | null>(null);
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
 
-  const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -131,7 +130,6 @@ export default function MembersSettingsPage() {
       await refreshUser?.();
       refetchMembers?.();
       toast.success(t("members.transferOwnershipSuccess"));
-      setOpenMenuMemberId(null);
       setIsTransferModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -146,7 +144,6 @@ export default function MembersSettingsPage() {
     try {
       setActionLoadingId(memberToRemove.id);
       await removeMemberMutation.mutateAsync(memberToRemove.id);
-      setOpenMenuMemberId(null);
       setIsRemoveModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -285,8 +282,6 @@ export default function MembersSettingsPage() {
         actionLoadingId={actionLoadingId}
         roleOptions={roleOptions}
         getRoleLabel={getRoleLabel}
-        openMenuMemberId={openMenuMemberId}
-        onOpenMenuChange={setOpenMenuMemberId}
         onRoleChange={handleRoleChange}
         onTransferOwnershipClick={(m) => {
           setMemberToTransfer(m);

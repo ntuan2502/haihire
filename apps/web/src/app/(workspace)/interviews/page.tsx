@@ -147,7 +147,7 @@ function InterviewsPageContent() {
     if (viewMode === "calendar") {
       setParam("jobId", null, false);
     } else {
-      setParams({ jobId: null, sortBy: null }, true);
+      setParams({ jobId: null, sortBy: null, tab: null }, true);
     }
   };
 

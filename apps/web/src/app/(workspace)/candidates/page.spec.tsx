@@ -421,18 +421,19 @@ describe("CandidatesPage Component - Characterization Tests", () => {
 
   // A.1.5: Column visibility
   describe("A.1.5: Column visibility", () => {
-    it("toggles column visibility from the column picker dropdown", () => {
+    it("toggles column visibility from the column picker dropdown", async () => {
       renderWithClient(<CandidatesPage />);
 
       // Columns dropdown button
       const columnsBtn = screen.getByRole("button", { name: /Cột/i });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
       // Uncheck "Số điện thoại"
-      const phoneCheckbox = screen.getByRole("checkbox", {
+      const phoneItem = await screen.findByRole("menuitemcheckbox", {
         name: "Số điện thoại",
       });
-      fireEvent.click(phoneCheckbox);
+      fireEvent.click(phoneItem);
 
       // Header is now hidden
       expect(
@@ -440,16 +441,17 @@ describe("CandidatesPage Component - Characterization Tests", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("persists column visibility selection in localStorage", () => {
+    it("persists column visibility selection in localStorage", async () => {
       renderWithClient(<CandidatesPage />);
 
       const columnsBtn = screen.getByRole("button", { name: /Cột/i });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      const phoneCheckbox = screen.getByRole("checkbox", {
+      const phoneItem = await screen.findByRole("menuitemcheckbox", {
         name: "Số điện thoại",
       });
-      fireEvent.click(phoneCheckbox);
+      fireEvent.click(phoneItem);
 
       const stored = localStorage.getItem("haihire_candidates_columns_v1");
       expect(stored).not.toBeNull();

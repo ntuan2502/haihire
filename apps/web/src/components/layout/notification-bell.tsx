@@ -63,8 +63,12 @@ export function NotificationBell({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={t("settings.tabs.notifications")}
-        className="relative flex size-8 cursor-pointer items-center justify-center rounded-lg hover:bg-accent"
+        aria-label={
+          unread > 0
+            ? `${t("settings.tabs.notifications")} (${unread > 99 ? "99+" : unread})`
+            : t("settings.tabs.notifications")
+        }
+        className="relative flex size-8 cursor-pointer items-center justify-center rounded-lg hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Bell className="size-4" aria-hidden />
         {unread > 0 && (
@@ -77,50 +81,61 @@ export function NotificationBell({
         align="end"
         className="w-72 max-w-[calc(100vw-2rem)]"
       >
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            {t("settings.tabs.notifications")}
-          </DropdownMenuLabel>
-          {unread > 0 && (
-            <DropdownMenuItem
-              disabled={markRead.isPending}
-              onClick={() => markRead.mutate(undefined)}
-            >
-              {t("notificationInbox.readAll")}
-            </DropdownMenuItem>
-          )}
-          {inbox.isError && (
-            <p className="px-1.5 py-1 text-xs text-muted-foreground">
-              {t("notificationInbox.loadError")}
-            </p>
-          )}
-          {inbox.data?.items.length === 0 && (
-            <p className="px-1.5 py-1 text-xs text-muted-foreground">
+        <DropdownMenuLabel>
+          {t("settings.tabs.notifications")}
+        </DropdownMenuLabel>
+        {inbox.isLoading && (
+          <div className="space-y-1.5 px-2 py-2" aria-busy="true">
+            <div className="h-3.5 w-3/4 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-5/6 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted" />
+          </div>
+        )}
+        {inbox.isError && (
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">
+            {t("notificationInbox.loadError")}
+          </p>
+        )}
+        {!inbox.isLoading &&
+          !inbox.isError &&
+          inbox.data?.items.length === 0 && (
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
               {t("notificationInbox.empty")}
             </p>
           )}
-          {inbox.data?.items.map((item) => (
-            <DropdownMenuItem
-              key={item.id}
-              className="flex-col items-start"
-              onClick={() => openNotification(item)}
-            >
-              <span
-                className={
-                  item.readAt ? "text-muted-foreground" : "font-semibold"
-                }
+        {(unread > 0 || (inbox.data?.items.length ?? 0) > 0) && (
+          <DropdownMenuGroup>
+            {unread > 0 && (
+              <DropdownMenuItem
+                disabled={markRead.isPending}
+                onClick={() => markRead.mutate(undefined)}
               >
-                {t(`notificationInbox.${item.kind}`)}
-              </span>
-              <time
-                dateTime={item.createdAt}
-                className="text-xs text-muted-foreground"
+                {t("notificationInbox.readAll")}
+              </DropdownMenuItem>
+            )}
+            {inbox.data?.items.map((item) => (
+              <DropdownMenuItem
+                key={item.id}
+                className="flex-col items-start"
+                onClick={() => openNotification(item)}
               >
-                {formatDate(item.createdAt)} {formatTime(item.createdAt)}
-              </time>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
+                <span
+                  className={
+                    item.readAt ? "text-muted-foreground" : "font-semibold"
+                  }
+                >
+                  {t(`notificationInbox.${item.kind}`)}
+                </span>
+                <time
+                  dateTime={item.createdAt}
+                  className="text-xs text-muted-foreground"
+                >
+                  {formatDate(item.createdAt)} {formatTime(item.createdAt)}
+                </time>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
@@ -110,8 +110,6 @@ export function useApplicationsTable({
   );
 
   // Column Visibility Toggle State (Persisted in localStorage)
-  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
-  const columnsRef = useRef<HTMLDivElement>(null);
   const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
     "haihire_applications_columns_v1",
     {
@@ -123,23 +121,6 @@ export function useApplicationsTable({
       applied: true,
     },
   );
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        columnsRef.current &&
-        !columnsRef.current.contains(event.target as Node)
-      ) {
-        setIsColumnsOpen(false);
-      }
-    }
-    if (isColumnsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isColumnsOpen]);
 
   // Job Map for Fast Lookup
   const jobMap = useMemo(() => {
@@ -338,9 +319,6 @@ export function useApplicationsTable({
     setSortField: filterSort.setSortField,
     setSortDirection: filterSort.setSortDirection,
     // Column Visibility
-    isColumnsOpen,
-    setIsColumnsOpen,
-    columnsRef,
     visibleColumns,
     toggleColumn,
     // Filter Drawer & Secondary Filters

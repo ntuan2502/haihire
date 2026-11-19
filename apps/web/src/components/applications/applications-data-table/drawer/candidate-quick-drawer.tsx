@@ -2,11 +2,15 @@
 
 import { ChevronDown } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
+import { getCandidateDisplayName } from "@/lib/utils";
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
-import { CandidateDrawerHeader } from "./candidate-drawer-header";
+import {
+  CandidateDrawerHeader,
+  CandidateDrawerSummary,
+} from "./candidate-drawer-header";
 import { CandidateOverviewTab } from "./candidate-overview-tab";
 import { CandidateNotesTab } from "./candidate-notes-tab";
 import { CandidateInterviewsTab } from "./candidate-interviews-tab";
@@ -89,23 +93,27 @@ export function CandidateQuickDrawer({
     <SlideOver
       isOpen={Boolean(selectedApp && currentApp)}
       onClose={onClose}
-      maxWidth="max-w-2xl"
+      size="2xl"
+      ariaLabel={getCandidateDisplayName(currentApp)}
     >
-      {/* Drawer Top Navigation Bar & Candidate Header */}
+      {/* Drawer Top Navigation Bar (Pinned) */}
       <CandidateDrawerHeader
         currentApp={currentApp}
         onClose={onClose}
         onViewInPipeline={onViewInPipeline}
-        selectedJobTitle={selectedJobTitle}
-        onStageChange={onStageChange}
-        isStageUpdatePending={isStageUpdatePending}
-        onOpenScheduleModal={onOpenScheduleModal}
-        onOpenDeleteModal={onOpenDeleteModal}
-        isDeleting={isDeleting}
       />
 
-      {/* Drawer Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* Drawer Content (Summary + Tabs Scroll Naturally) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+        <CandidateDrawerSummary
+          currentApp={currentApp}
+          selectedJobTitle={selectedJobTitle}
+          onStageChange={onStageChange}
+          isStageUpdatePending={isStageUpdatePending}
+          onOpenScheduleModal={onOpenScheduleModal}
+          onOpenDeleteModal={onOpenDeleteModal}
+          isDeleting={isDeleting}
+        />
         {/* Sub-Navigation Tabs */}
         <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
           <div

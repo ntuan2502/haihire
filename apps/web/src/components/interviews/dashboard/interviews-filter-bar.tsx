@@ -1,17 +1,16 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
 import { useI18n } from "@/i18n";
 import {
   CalendarDays,
   List,
-  Columns3,
   SlidersHorizontal,
   RotateCcw,
   X,
 } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
+import { ColumnPicker } from "@/components/shared/column-picker";
 import type { Job } from "@/types";
 
 export type ViewMode = "table" | "calendar";
@@ -74,25 +73,6 @@ export function InterviewsFilterBar({
   onClearSortFilter,
 }: InterviewsFilterBarProps) {
   const { t } = useI18n();
-  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
-  const columnsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        columnsRef.current &&
-        !columnsRef.current.contains(event.target as Node)
-      ) {
-        setIsColumnsOpen(false);
-      }
-    }
-    if (isColumnsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isColumnsOpen]);
 
   const isCalendar = viewMode === "calendar";
   const secondaryFiltersCount =
@@ -113,7 +93,7 @@ export function InterviewsFilterBar({
         )}
 
         {/* Right: View Mode Switcher + Search Box + Columns Dropdown + Filters Button */}
-        <div className="flex items-center gap-2.5 w-full lg:w-auto lg:ml-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto lg:ml-auto">
           {/* View Mode Switcher (Table / Calendar) */}
           <div className="flex items-center p-0.5 rounded-lg bg-muted border border-border shrink-0">
             <button
@@ -147,7 +127,7 @@ export function InterviewsFilterBar({
           </div>
 
           {/* Search Input */}
-          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("interviews.searchPlaceholder")}
               aria-label={t("interviews.searchPlaceholder")}
@@ -158,79 +138,49 @@ export function InterviewsFilterBar({
 
           {/* Columns Dropdown (Table View Only) */}
           {viewMode === "table" && (
-            <div className="relative shrink-0" ref={columnsRef}>
-              <button
-                type="button"
-                onClick={() => setIsColumnsOpen((prev) => !prev)}
-                className={`h-9 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
-                  isColumnsOpen ? "ring-2 ring-ring/20 border-ring" : ""
-                }`}
-              >
-                <Columns3 className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{t("common.columns")}</span>
-              </button>
-
-              {isColumnsOpen && (
-                <div className="absolute right-0 mt-1.5 w-44 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-2 z-50">
-                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase select-none">
-                    {t("interviews.toggleColumns")}
-                  </div>
-                  <div className="space-y-0.5 mt-1">
-                    {[
-                      {
-                        id: "candidate" as const,
-                        label: t("interviews.columns.candidate"),
-                        locked: true,
-                      },
-                      {
-                        id: "job" as const,
-                        label: t("interviews.columns.job"),
-                      },
-                      {
-                        id: "schedule" as const,
-                        label: t("interviews.columns.schedule"),
-                      },
-                      {
-                        id: "interviewer" as const,
-                        label: t("interviews.columns.interviewer"),
-                      },
-                      {
-                        id: "status" as const,
-                        label: t("interviews.columns.status"),
-                      },
-                      {
-                        id: "rating" as const,
-                        label: t("interviews.columns.rating"),
-                      },
-                    ].map((col) => {
-                      const isChecked = visibleColumns[col.id];
-                      const isLocked = col.locked;
-                      return (
-                        <label
-                          key={col.id}
-                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-xs font-semibold select-none transition-colors ${
-                            isLocked
-                              ? "opacity-60 cursor-not-allowed text-muted-foreground"
-                              : "text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            name={`col-${col.id}`}
-                            aria-label={col.label}
-                            checked={isChecked}
-                            disabled={isLocked}
-                            onChange={() => onToggleColumn(col.id)}
-                            className="h-3.5 w-3.5 rounded border-input text-primary focus:ring-ring accent-primary cursor-pointer disabled:cursor-not-allowed"
-                          />
-                          <span>{col.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            <ColumnPicker
+              columns={[
+                {
+                  key: "candidate",
+                  label: t("interviews.columns.candidate"),
+                  checked: visibleColumns.candidate,
+                  disabled: true,
+                },
+                {
+                  key: "job",
+                  label: t("interviews.columns.job"),
+                  checked: visibleColumns.job,
+                },
+                {
+                  key: "schedule",
+                  label: t("interviews.columns.schedule"),
+                  checked: visibleColumns.schedule,
+                },
+                {
+                  key: "interviewer",
+                  label: t("interviews.columns.interviewer"),
+                  checked: visibleColumns.interviewer,
+                },
+                {
+                  key: "status",
+                  label: t("interviews.columns.status"),
+                  checked: visibleColumns.status,
+                },
+                {
+                  key: "rating",
+                  label: t("interviews.columns.rating"),
+                  checked: visibleColumns.rating,
+                },
+              ]}
+              onToggle={(key) =>
+                onToggleColumn(
+                  key as keyof InterviewsFilterBarProps["visibleColumns"],
+                )
+              }
+              label={t("common.columns")}
+              menuTitle={t("interviews.toggleColumns")}
+              align="end"
+            />
           )}
 
           {/* Filters Button */}

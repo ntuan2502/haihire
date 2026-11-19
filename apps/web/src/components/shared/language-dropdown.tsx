@@ -12,7 +12,6 @@ import {
 
 export interface LanguageDropdownProps {
   size?: "sm" | "md";
-  variant?: "landing" | "default";
   direction?: "up" | "down";
   className?: string;
 }

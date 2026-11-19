@@ -40,9 +40,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         handleClearStages={table.handleClearStages}
         search={table.search}
         onSearchChangeHandler={table.onSearchChangeHandler}
-        isColumnsOpen={table.isColumnsOpen}
-        setIsColumnsOpen={table.setIsColumnsOpen}
-        columnsRef={table.columnsRef}
         visibleColumns={table.visibleColumns}
         toggleColumn={table.toggleColumn}
         setIsFilterOpen={table.setIsFilterOpen}

@@ -306,7 +306,7 @@ describe("CandidateDrawer Component", () => {
       />,
     );
 
-    const closeBtn = screen.getByRole("button", { name: "" });
+    const closeBtn = screen.getByRole("button", { name: "common.close" });
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalled();
   });

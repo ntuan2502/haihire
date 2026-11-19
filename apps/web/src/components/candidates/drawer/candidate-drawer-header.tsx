@@ -19,11 +19,11 @@ export function CandidateDrawerHeader({
   const canUpdateCandidate = useHasPermission("candidate:update");
 
   return (
-    <div className="flex items-center justify-between border-b border-border pb-3">
+    <div className="shrink-0 flex items-center justify-between gap-2 flex-wrap border-b border-border px-4 sm:px-6 py-3.5">
       <span className="text-xs font-semibold text-muted-foreground">
         {t("candidates.candidateDetail")}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {canUpdateCandidate && (
           <button
             type="button"
@@ -47,7 +47,8 @@ export function CandidateDrawerHeader({
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+          aria-label={t("common.close")}
+          className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <X className="h-4 w-4" />
         </button>

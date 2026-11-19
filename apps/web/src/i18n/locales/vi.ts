@@ -699,8 +699,7 @@ export const vi: TranslationSchema = {
     applicantsInPipeline: "{count} ứng viên trong quy trình",
     totalJobsCount: "Tổng cộng {count} tin tuyển dụng",
     filterJobs: "Lọc tin tuyển dụng",
-    filterJobsDesc:
-      "Tùy chỉnh chế độ xem của bạn, sau đó lưu lại để truy cập nhanh chóng.",
+    filterJobsDesc: "Lọc và sắp xếp dữ liệu hiển thị trong danh sách này.",
     statusUpper: "TRẠNG THÁI",
     employmentTypeUpper: "LOẠI HÌNH LÀM VIỆC",
     experienceLevelUpper: "KINH NGHIỆM",

@@ -2,7 +2,13 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
-import { useRef, useEffect } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -41,8 +47,6 @@ interface MembersListCardProps {
   actionLoadingId: string | null;
   roleOptions: CustomSelectOption<Role>[];
   getRoleLabel: (role: string) => string;
-  openMenuMemberId: string | null;
-  onOpenMenuChange: (id: string | null) => void;
   onRoleChange: (memberId: string, role: Role) => void;
   onTransferOwnershipClick: (member: { id: string; name: string }) => void;
   onRemoveMemberClick: (member: { id: string; name: string }) => void;
@@ -57,33 +61,11 @@ export function MembersListCard({
   actionLoadingId,
   roleOptions,
   getRoleLabel,
-  openMenuMemberId,
-  onOpenMenuChange,
   onRoleChange,
   onTransferOwnershipClick,
   onRemoveMemberClick,
 }: MembersListCardProps) {
   const { t } = useI18n();
-  const menuContainerRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        menuContainerRef.current &&
-        menuContainerRef.current.contains(e.target as Node)
-      ) {
-        return;
-      }
-      onOpenMenuChange(null);
-    };
-    if (openMenuMemberId) {
-      document.addEventListener("click", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [openMenuMemberId, onOpenMenuChange]);
 
   return (
     <SettingsCard className="space-y-4">
@@ -193,69 +175,55 @@ export function MembersListCard({
                 )}
 
                 {canEdit && !isMemberOwner && !m.isCurrent && (
-                  <div className="relative">
-                    <SettingsButton
-                      variant="ghost"
-                      size="icon-sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenMenuChange(
-                          openMenuMemberId === m.id ? null : m.id,
-                        );
-                      }}
-                      disabled={actionLoadingId === m.id}
-                      title={t("members.memberActionsTitle")}
-                      aria-label={t("members.memberActionsTitle")}
-                    >
-                      {actionLoadingId === m.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <MoreHorizontal className="h-4 w-4" />
-                      )}
-                    </SettingsButton>
-
-                    {openMenuMemberId === m.id && (
-                      <div
-                        ref={menuContainerRef}
-                        className="absolute right-0 top-full mt-1.5 w-48 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-md z-30 animate-in fade-in zoom-in-95 duration-100"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SettingsButton
+                        variant="ghost"
+                        size="icon-sm"
+                        type="button"
+                        disabled={actionLoadingId === m.id}
+                        title={t("members.memberActionsTitle")}
+                        aria-label={t("members.memberActionsTitle")}
                       >
-                        {isOwner && (
-                          <>
-                            <SettingsButton
-                              variant="ghost"
-                              type="button"
-                              onClick={() => {
-                                onOpenMenuChange(null);
-                                onTransferOwnershipClick({
-                                  id: m.id,
-                                  name: m.name,
-                                });
-                              }}
-                              className="w-full justify-start rounded-md px-2.5 font-medium"
-                            >
-                              <Crown className="h-3.5 w-3.5 shrink-0" />
-                              <span>{t("members.transferOwnership")}</span>
-                            </SettingsButton>
-                            <div className="my-1 border-t border-border" />
-                          </>
+                        {actionLoadingId === m.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <MoreHorizontal className="h-4 w-4" />
                         )}
+                      </SettingsButton>
+                    </DropdownMenuTrigger>
 
-                        <SettingsButton
-                          variant="ghost"
-                          type="button"
-                          onClick={() => {
-                            onOpenMenuChange(null);
-                            onRemoveMemberClick({ id: m.id, name: m.name });
-                          }}
-                          className="w-full justify-start rounded-md px-2.5 font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                          <span>{t("members.removeMember")}</span>
-                        </SettingsButton>
-                      </div>
-                    )}
-                  </div>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {isOwner && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onTransferOwnershipClick({
+                                id: m.id,
+                                name: m.name,
+                              })
+                            }
+                            className="gap-2 text-xs font-medium cursor-pointer"
+                          >
+                            <Crown className="h-3.5 w-3.5 shrink-0" />
+                            <span>{t("members.transferOwnership")}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() =>
+                          onRemoveMemberClick({ id: m.id, name: m.name })
+                        }
+                        className="gap-2 text-xs font-medium cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>{t("members.removeMember")}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { X, RotateCcw } from "lucide-react";
-import { SlideOver } from "@/components/shared/slide-over";
-import { CustomSelect } from "@/components/shared/custom-select";
-import { Button } from "@/components/ui/button";
+import {
+  FilterDrawer,
+  FilterPillGroup,
+  CustomSelect,
+} from "@/components/shared";
 import { useI18n } from "@/i18n";
 import type { JobFilterCriteria } from "../types";
 
@@ -40,216 +41,112 @@ export function JobFilterDrawer({
 }: JobFilterDrawerProps) {
   const { t } = useI18n();
 
+  const hasActiveFilters =
+    statusFilters.length > 0 ||
+    typeFilters.length > 0 ||
+    expFilters.length > 0 ||
+    workplaceFilters.length > 0 ||
+    sortBy !== "created" ||
+    sortOrder !== "desc";
+
   return (
-    <SlideOver
+    <FilterDrawer
       isOpen={isOpen}
       onClose={onClose}
-      maxWidth="max-w-sm"
-      panelClassName="justify-between"
+      title={t("jobs.filterJobs")}
+      description={t("jobs.filterJobsDesc")}
+      hasActiveFilters={hasActiveFilters}
+      onReset={onResetFilters}
+      resetLabel={t("jobs.resetAll")}
+      doneLabel={t("jobs.done")}
     >
-      {/* Header */}
-      <div className="p-6 border-b border-border flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            {t("jobs.filterJobs")}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {t("jobs.filterJobsDesc")}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1 transition-colors cursor-pointer"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+      {/* 1. STATUS */}
+      <FilterPillGroup
+        label={t("jobs.statusUpper")}
+        options={[
+          { value: "PUBLISHED", label: t("jobs.openStatus") },
+          { value: "DRAFT", label: t("jobs.draftStatus") },
+          { value: "CLOSED", label: t("jobs.closed") },
+        ]}
+        selected={statusFilters}
+        onToggle={(val) => onToggleFilter("status", statusFilters, val)}
+      />
 
-      {/* Body: Filter Sections */}
-      <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
-        {/* 1. STATUS */}
-        <div className="space-y-2.5">
-          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
-            {t("jobs.statusUpper")}
-          </span>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "PUBLISHED", label: t("jobs.openStatus") },
-              { id: "DRAFT", label: t("jobs.draftStatus") },
-              { id: "CLOSED", label: t("jobs.closed") },
-            ].map((st) => (
-              <button
-                key={st.id}
-                type="button"
-                onClick={() => onToggleFilter("status", statusFilters, st.id)}
-                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                  statusFilters.includes(st.id)
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                {st.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 2. EMPLOYMENT TYPE */}
+      <FilterPillGroup
+        label={t("jobs.employmentTypeUpper")}
+        options={[
+          { value: "FULL_TIME", label: t("jobs.fullTime") },
+          { value: "PART_TIME", label: t("jobs.partTime") },
+          { value: "CONTRACT", label: t("jobs.contract") },
+          { value: "INTERNSHIP", label: t("jobs.internship") },
+        ]}
+        selected={typeFilters}
+        onToggle={(val) => onToggleFilter("type", typeFilters, val)}
+      />
 
-        {/* 2. EMPLOYMENT TYPE */}
-        <div className="space-y-2.5">
-          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
-            {t("jobs.employmentTypeUpper")}
-          </span>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "FULL_TIME", label: t("jobs.fullTime") },
-              { id: "PART_TIME", label: t("jobs.partTime") },
-              { id: "CONTRACT", label: t("jobs.contract") },
-              { id: "INTERNSHIP", label: t("jobs.internship") },
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onToggleFilter("type", typeFilters, item.id)}
-                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                  typeFilters.includes(item.id)
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 3. EXPERIENCE LEVEL */}
+      <FilterPillGroup
+        label={t("jobs.experienceLevelUpper")}
+        options={[
+          { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
+          { value: "MID_LEVEL", label: t("jobs.experience.mid") },
+          { value: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
+          { value: "LEAD", label: t("jobs.experience.lead") },
+          { value: "EXECUTIVE", label: t("jobs.experience.executive") },
+        ]}
+        selected={expFilters}
+        onToggle={(val) => onToggleFilter("exp", expFilters, val)}
+      />
 
-        {/* 3. EXPERIENCE LEVEL */}
-        <div className="space-y-2.5">
-          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
-            {t("jobs.experienceLevelUpper")}
-          </span>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
-              { id: "MID_LEVEL", label: t("jobs.experience.mid") },
-              { id: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
-              { id: "LEAD", label: t("jobs.experience.lead") },
-              { id: "EXECUTIVE", label: t("jobs.experience.executive") },
-            ].map((exp) => (
-              <button
-                key={exp.id}
-                type="button"
-                onClick={() => onToggleFilter("exp", expFilters, exp.id)}
-                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                  expFilters.includes(exp.id)
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                {exp.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 4. WORK ARRANGEMENT */}
+      <FilterPillGroup
+        label={t("jobs.workArrangementUpper")}
+        options={[
+          { value: "REMOTE", label: t("jobs.workplace.remote") },
+          { value: "HYBRID", label: t("jobs.workplace.hybrid") },
+          { value: "ON_SITE", label: t("jobs.workplace.onsite") },
+        ]}
+        selected={workplaceFilters}
+        onToggle={(val) => onToggleFilter("workplace", workplaceFilters, val)}
+      />
 
-        {/* 4. WORK ARRANGEMENT */}
-        <div className="space-y-2.5">
-          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
-            {t("jobs.workArrangementUpper")}
-          </span>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "REMOTE", label: t("jobs.workplace.remote") },
-              { id: "HYBRID", label: t("jobs.workplace.hybrid") },
-              { id: "ON_SITE", label: t("jobs.workplace.onsite") },
-            ].map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() =>
-                  onToggleFilter("workplace", workplaceFilters, w.id)
-                }
-                className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                  workplaceFilters.includes(w.id)
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                    : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                {w.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* 5. SORT BY */}
+      <div className="space-y-2.5">
+        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          {t("jobs.sortByUpper")}
+        </h4>
+        <div className="grid grid-cols-2 gap-2">
+          <CustomSelect
+            value={sortBy}
+            onChange={(val) =>
+              onFilterUpdate({
+                sortBy: val as "created" | "title" | "applicants",
+              })
+            }
+            options={[
+              { value: "created", label: t("jobs.dateCreated") },
+              { value: "title", label: t("jobs.jobTitle") },
+              { value: "applicants", label: t("jobs.applicants") },
+            ]}
+            className="w-full"
+            triggerClassName="h-9 text-xs font-normal"
+          />
 
-        {/* 5. SORT BY */}
-        <div className="space-y-2.5">
-          <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider block">
-            {t("jobs.sortByUpper")}
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <CustomSelect
-              value={sortBy}
-              onChange={(val) =>
-                onFilterUpdate({
-                  sortBy: val as "created" | "title" | "applicants",
-                })
-              }
-              options={[
-                { value: "created", label: t("jobs.dateCreated") },
-                { value: "title", label: t("jobs.jobTitle") },
-                { value: "applicants", label: t("jobs.applicants") },
-              ]}
-              className="w-full"
-              triggerClassName="h-9 text-xs font-normal"
-            />
-
-            <CustomSelect
-              value={sortOrder}
-              onChange={(val) =>
-                onFilterUpdate({ sortOrder: val as "desc" | "asc" })
-              }
-              options={[
-                { value: "desc", label: t("jobs.descending") },
-                { value: "asc", label: t("jobs.ascending") },
-              ]}
-              className="w-full"
-              triggerClassName="h-9 text-xs font-normal"
-            />
-          </div>
+          <CustomSelect
+            value={sortOrder}
+            onChange={(val) =>
+              onFilterUpdate({ sortOrder: val as "desc" | "asc" })
+            }
+            options={[
+              { value: "desc", label: t("jobs.descending") },
+              { value: "asc", label: t("jobs.ascending") },
+            ]}
+            className="w-full"
+            triggerClassName="h-9 text-xs font-normal"
+          />
         </div>
       </div>
-
-      {/* Footer Actions */}
-      <div className="p-4 border-t border-border flex items-center justify-between bg-muted/40">
-        <button
-          type="button"
-          onClick={onResetFilters}
-          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span>{t("jobs.resetAll")}</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="cursor-pointer"
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onClose}
-            className="cursor-pointer"
-          >
-            {t("jobs.done")}
-          </Button>
-        </div>
-      </div>
-    </SlideOver>
+    </FilterDrawer>
   );
 }

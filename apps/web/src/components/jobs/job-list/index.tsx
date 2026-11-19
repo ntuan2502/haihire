@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
@@ -29,8 +29,6 @@ export function JobList(props: JobListProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Column Visibility Toggle State persisted in localStorage
-  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
-  const columnsRef = useRef<HTMLDivElement>(null);
   const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
     "haihire_jobs_columns_v1",
     {
@@ -39,23 +37,6 @@ export function JobList(props: JobListProps) {
       status: true,
     },
   );
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        columnsRef.current &&
-        !columnsRef.current.contains(event.target as Node)
-      ) {
-        setIsColumnsOpen(false);
-      }
-    }
-    if (isColumnsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isColumnsOpen]);
 
   // Filters and stage aggregation hooks
   const {
@@ -90,9 +71,6 @@ export function JobList(props: JobListProps) {
         onClearStatusTabs={() => handleFilterUpdate({ status: [] })}
         search={search}
         onSearchChange={setSearch}
-        isColumnsOpen={isColumnsOpen}
-        onToggleColumnsOpen={() => setIsColumnsOpen((prev) => !prev)}
-        columnsRef={columnsRef}
         visibleColumns={visibleColumns as VisibleColumns}
         onToggleColumn={(col) =>
           toggleColumn(col as keyof typeof visibleColumns)

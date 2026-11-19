@@ -69,12 +69,12 @@ export function CandidateDrawer({
       <SlideOver
         isOpen={!!candidate}
         onClose={onClose}
-        maxWidth="max-w-2xl"
-        panelClassName="justify-between overflow-y-auto"
+        size="2xl"
+        ariaLabel={candidate.name || t("candidates.candidateDetail")}
       >
-        <div className="p-6 space-y-5 flex-1">
-          <CandidateDrawerHeader candidateId={candidate.id} onClose={onClose} />
+        <CandidateDrawerHeader candidateId={candidate.id} onClose={onClose} />
 
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
           <CandidateDrawerDetails
             candidate={candidate}
             details={selectedCandidateDetails}
@@ -83,8 +83,8 @@ export function CandidateDrawer({
           {/* Card 3: Tabs */}
           <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
             {/* Tabs Header */}
-            <div className="flex items-center justify-between border-b border-border">
-              <div className="flex items-center gap-6 text-xs font-semibold -mb-px">
+            <div className="flex items-center justify-between border-b border-border overflow-x-auto scrollbar-none">
+              <div className="flex items-center gap-6 text-xs font-semibold -mb-px whitespace-nowrap">
                 <button
                   type="button"
                   onClick={() => setDrawerTab("applications")}

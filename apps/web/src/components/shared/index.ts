@@ -21,6 +21,5 @@ export * from "./preview-modal";
 export * from "./detail-modal";
 export * from "./filter-drawer";
 export * from "./column-picker";
-export * from "./custom-modal";
 export * from "./error-fallback";
 export * from "./authenticated-document-viewer";

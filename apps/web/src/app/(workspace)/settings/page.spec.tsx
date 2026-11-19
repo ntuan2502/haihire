@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import GeneralSettingsPage from "./page";
 import * as AuthContextModule from "@/context/auth-context";
 import { Role, type User } from "@haihire/shared";
@@ -85,5 +85,28 @@ describe("GeneralSettingsPage - Ownership Controls", () => {
 
     expect(screen.queryByText("settings.dangerZone")).not.toBeInTheDocument();
     expect(screen.queryByText("settings.deleteOrg")).not.toBeInTheDocument();
+  });
+
+  it("delete organization confirmation always requires persisted org slug even after editing unsaved slug field", () => {
+    setupAuthMock(true);
+
+    render(<GeneralSettingsPage />);
+
+    const slugInput = screen.getByLabelText("settings.urlSlug");
+    fireEvent.change(slugInput, { target: { value: "unsaved-draft-slug" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "common.delete" }));
+
+    const dialog = screen.getByRole("dialog");
+    const confirmInput = within(dialog).getByRole("textbox");
+    const confirmBtn = within(dialog).getByRole("button", {
+      name: "settings.deleteOrgButton",
+    });
+
+    fireEvent.change(confirmInput, { target: { value: "unsaved-draft-slug" } });
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(confirmInput, { target: { value: "acme-corp" } });
+    expect(confirmBtn).toBeEnabled();
   });
 });

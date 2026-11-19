@@ -17,6 +17,7 @@ import {
 import { useInterview } from "@/hooks/use-interview-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
+import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import { type ScheduledInterviewInfo } from "@/lib/interviews";
@@ -76,6 +77,7 @@ function InterviewsPageContent() {
     app: Application;
     interview: ScheduledInterviewInfo;
   } | null>(null);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   // Synchronized URL Query State for Pagination, Search & Filters
   const {
@@ -387,7 +389,10 @@ function InterviewsPageContent() {
           onOpenScorecard={handleOpenScorecard}
           onCancelInterview={
             canDeleteInterview
-              ? (app, interview) => setCancelInterviewState({ app, interview })
+              ? (app, interview) => {
+                  setCancelInterviewState({ app, interview });
+                  setIsCancelModalOpen(true);
+                }
               : undefined
           }
           onNavigateToPipeline={(jobId, applicationId, stage) => {
@@ -468,22 +473,27 @@ function InterviewsPageContent() {
       />
 
       {/* Cancel Interview Confirmation Modal */}
-      {cancelInterviewState && (
-        <CancelInterviewModal
-          isOpen={!!cancelInterviewState}
-          onClose={() => setCancelInterviewState(null)}
-          onConfirm={async () => {
-            if (cancelInterviewState.interview?.id) {
-              await deleteInterviewMutation.mutateAsync(
-                cancelInterviewState.interview.id,
-              );
-              setCancelInterviewState(null);
-            }
-          }}
-          candidateName={getCandidateDisplayName(cancelInterviewState.app)}
-          isCancelling={deleteInterviewMutation.isPending}
-        />
-      )}
+      <CancelInterviewModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={async () => {
+          if (!cancelInterviewState?.interview?.id) return;
+          try {
+            await deleteInterviewMutation.mutateAsync(
+              cancelInterviewState.interview.id,
+            );
+            setIsCancelModalOpen(false);
+          } catch (err: unknown) {
+            toast.error(getApiErrorMessage(err, t));
+          }
+        }}
+        candidateName={
+          cancelInterviewState
+            ? getCandidateDisplayName(cancelInterviewState.app)
+            : ""
+        }
+        isCancelling={deleteInterviewMutation.isPending}
+      />
 
       {/* Interviews Filter Drawer */}
       <InterviewsFilterDrawer

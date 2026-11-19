@@ -59,9 +59,12 @@ export default function MembersSettingsPage() {
 
   const [memberToTransfer, setMemberToTransfer] =
     useState<MemberModalTarget | null>(null);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] =
     useState<MemberModalTarget | null>(null);
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
   const [linkToRevoke, setLinkToRevoke] = useState<string | null>(null);
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
 
   const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -94,7 +97,7 @@ export default function MembersSettingsPage() {
       setRevokingId(linkToRevoke);
       await revokeInviteMutation.mutateAsync(linkToRevoke);
       await refetchLinks();
-      setLinkToRevoke(null);
+      setIsRevokeModalOpen(false);
     } catch (err) {
       console.error(err);
       const msg = getApiErrorMessage(err, t);
@@ -129,7 +132,7 @@ export default function MembersSettingsPage() {
       refetchMembers?.();
       toast.success(t("members.transferOwnershipSuccess"));
       setOpenMenuMemberId(null);
-      setMemberToTransfer(null);
+      setIsTransferModalOpen(false);
     } catch (err) {
       console.error(err);
       toast.error(getApiErrorMessage(err, t));
@@ -144,7 +147,7 @@ export default function MembersSettingsPage() {
       setActionLoadingId(memberToRemove.id);
       await removeMemberMutation.mutateAsync(memberToRemove.id);
       setOpenMenuMemberId(null);
-      setMemberToRemove(null);
+      setIsRemoveModalOpen(false);
     } catch (err) {
       console.error(err);
       toast.error(getApiErrorMessage(err, t));
@@ -262,7 +265,10 @@ export default function MembersSettingsPage() {
         getRoleLabel={getRoleLabel}
         serverInviteLinks={serverInviteLinks}
         refetchLinks={refetchLinks}
-        onRevokeClick={(linkId) => setLinkToRevoke(linkId)}
+        onRevokeClick={(linkId) => {
+          setLinkToRevoke(linkId);
+          setIsRevokeModalOpen(true);
+        }}
         revokingId={revokingId}
         onError={(msg) => toast.error(msg)}
         displayHost={appHost || "localhost:3000"}
@@ -282,28 +288,37 @@ export default function MembersSettingsPage() {
         openMenuMemberId={openMenuMemberId}
         onOpenMenuChange={setOpenMenuMemberId}
         onRoleChange={handleRoleChange}
-        onTransferOwnershipClick={(m) => setMemberToTransfer(m)}
-        onRemoveMemberClick={(m) => setMemberToRemove(m)}
+        onTransferOwnershipClick={(m) => {
+          setMemberToTransfer(m);
+          setIsTransferModalOpen(true);
+        }}
+        onRemoveMemberClick={(m) => {
+          setMemberToRemove(m);
+          setIsRemoveModalOpen(true);
+        }}
       />
 
       {/* Confirmation Modals */}
       <RemoveMemberModal
+        isOpen={isRemoveModalOpen}
         member={memberToRemove}
-        onClose={() => setMemberToRemove(null)}
+        onClose={() => setIsRemoveModalOpen(false)}
         onConfirm={handleConfirmRemoveMember}
         isLoading={actionLoadingId === memberToRemove?.id}
       />
 
       <TransferOwnershipModal
+        isOpen={isTransferModalOpen}
         member={memberToTransfer}
-        onClose={() => setMemberToTransfer(null)}
+        onClose={() => setIsTransferModalOpen(false)}
         onConfirm={handleConfirmTransferOwnership}
         isLoading={actionLoadingId === memberToTransfer?.id}
       />
 
       <RevokeLinkModal
+        isOpen={isRevokeModalOpen}
         linkId={linkToRevoke}
-        onClose={() => setLinkToRevoke(null)}
+        onClose={() => setIsRevokeModalOpen(false)}
         onConfirm={handleConfirmRevokeLink}
         isLoading={!!revokingId}
       />

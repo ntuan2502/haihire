@@ -125,6 +125,8 @@ export function useCandidateDrawer({
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
+      throw err;
     }
   };
 

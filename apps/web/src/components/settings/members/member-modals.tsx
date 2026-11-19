@@ -9,13 +9,15 @@ export interface MemberModalTarget {
 }
 
 interface RemoveMemberModalProps {
+  isOpen?: boolean;
   member: MemberModalTarget | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   isLoading: boolean;
 }
 
 export function RemoveMemberModal({
+  isOpen,
   member,
   onClose,
   onConfirm,
@@ -25,21 +27,17 @@ export function RemoveMemberModal({
 
   return (
     <ConfirmDestructiveModal
-      isOpen={!!member}
+      isOpen={isOpen ?? Boolean(member)}
       onClose={onClose}
       onConfirm={onConfirm}
       title={t("members.removeMemberConfirmTitle")}
-      description={
+      description={t("members.removeMemberConfirmWarning")}
+      notice={
         member ? (
-          <span>
-            {t("members.removeMemberConfirmWarning")}{" "}
-            <strong className="font-semibold text-foreground">
-              ({member.name})
-            </strong>
+          <span className="font-semibold text-foreground break-words">
+            {member.name}
           </span>
-        ) : (
-          t("members.removeMemberConfirmWarning")
-        )
+        ) : undefined
       }
       confirmMatchText={member?.name}
       confirmButtonLabel={t("members.removeMember")}
@@ -51,13 +49,15 @@ export function RemoveMemberModal({
 }
 
 interface TransferOwnershipModalProps {
+  isOpen?: boolean;
   member: MemberModalTarget | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   isLoading: boolean;
 }
 
 export function TransferOwnershipModal({
+  isOpen,
   member,
   onClose,
   onConfirm,
@@ -67,21 +67,21 @@ export function TransferOwnershipModal({
 
   return (
     <ConfirmDestructiveModal
-      isOpen={!!member}
+      isOpen={isOpen ?? Boolean(member)}
       onClose={onClose}
       onConfirm={onConfirm}
       title={t("members.transferOwnershipConfirmTitle")}
-      description={
+      description={t("members.transferOwnershipConfirmDesc")}
+      notice={
         member ? (
-          <span>
-            {t("members.transferOwnershipConfirmDesc")}{" "}
-            <strong className="font-semibold text-foreground">
-              ({member.name})
-            </strong>
-            ? {t("members.transferOwnershipConfirmNote")}
-          </span>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground break-words">
+              {member.name}
+            </p>
+            <p>{t("members.transferOwnershipConfirmNote")}</p>
+          </div>
         ) : (
-          t("members.transferOwnershipConfirmDesc")
+          t("members.transferOwnershipConfirmNote")
         )
       }
       confirmButtonLabel={t("members.transferOwnershipConfirmButton")}
@@ -93,13 +93,15 @@ export function TransferOwnershipModal({
 }
 
 interface RevokeLinkModalProps {
+  isOpen?: boolean;
   linkId: string | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void> | void;
   isLoading: boolean;
 }
 
 export function RevokeLinkModal({
+  isOpen,
   linkId,
   onClose,
   onConfirm,
@@ -109,7 +111,7 @@ export function RevokeLinkModal({
 
   return (
     <ConfirmDestructiveModal
-      isOpen={!!linkId}
+      isOpen={isOpen ?? Boolean(linkId)}
       onClose={onClose}
       onConfirm={onConfirm}
       title={t("members.revokeLinkConfirmTitle")}

@@ -42,6 +42,7 @@ export default function GeneralSettingsPage() {
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isFinalizingDelete, setIsFinalizingDelete] = useState(false);
   const [appHost, setAppHost] = useState("");
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function GeneralSettingsPage() {
   }, [org, user]);
 
   const savedOrg = org ?? user?.organization;
+  const persistedOrgSlug = savedOrg?.slug || "";
   const hasProfileChanges =
     orgName.trim() !== (savedOrg?.name ?? "") ||
     orgSlug.trim().toLowerCase() !== (savedOrg?.slug ?? "");
@@ -108,14 +110,17 @@ export default function GeneralSettingsPage() {
 
   // Handle deleting organization
   const handleDeleteOrg = async () => {
+    setIsFinalizingDelete(true);
     try {
       await deleteOrgMutation.mutateAsync();
-      setDeleteModalOpen(false);
       await refreshUser();
+      setDeleteModalOpen(false);
       router.replace("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
       toast.error(getApiErrorMessage(err, t));
+    } finally {
+      setIsFinalizingDelete(false);
     }
   };
 
@@ -310,11 +315,13 @@ export default function GeneralSettingsPage() {
         onConfirm={handleDeleteOrg}
         title={t("settings.deleteOrg")}
         description={t("settings.dangerZoneDesc")}
-        notice={t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
-        confirmMatchText={orgSlug}
+        notice={t("settings.deleteOrgConfirmPrompt", {
+          slug: persistedOrgSlug,
+        })}
+        confirmMatchText={persistedOrgSlug}
         confirmButtonLabel={t("settings.deleteOrgButton")}
         cancelButtonLabel={t("common.cancel")}
-        isLoading={deleteOrgMutation.isPending}
+        isLoading={deleteOrgMutation.isPending || isFinalizingDelete}
         variant="danger"
       />
     </div>

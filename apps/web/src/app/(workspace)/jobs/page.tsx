@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
-import { ConfirmDestructiveModal } from "@/components/shared";
+import { WizardDeleteModal } from "@/components/jobs/wizard";
 import { JobList } from "@/components/jobs/job-list";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
@@ -126,17 +126,20 @@ function JobsPageContent() {
     id: string;
     title: string;
   } | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleJobDeleted = (id: string) => {
     const job = jobs.find((j) => j.id === id);
     setJobToDelete({ id, title: job?.title || id });
+    setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDeleteJob = async () => {
     if (!jobToDelete) return;
     try {
       await deleteJobMutation.mutateAsync(jobToDelete.id);
-      setJobToDelete(null);
+      toast.success(t("common.delete"));
+      setIsDeleteModalOpen(false);
     } catch (err) {
       console.error("Failed to delete job:", err);
       toast.error(getApiErrorMessage(err, t));
@@ -232,23 +235,13 @@ function JobsPageContent() {
       )}
 
       {/* Delete Job Confirmation Modal */}
-      {jobToDelete && (
-        <ConfirmDestructiveModal
-          isOpen={!!jobToDelete}
-          onClose={() => setJobToDelete(null)}
-          onConfirm={handleConfirmDeleteJob}
-          title={t("jobs.wizard.deleteConfirmTitle")}
-          description={t("jobs.wizard.deleteConfirmQuestion", {
-            title: jobToDelete.title,
-          })}
-          notice={t("jobs.wizard.deleteConfirmNotice")}
-          confirmMatchText={jobToDelete.title}
-          confirmButtonLabel={t("jobs.wizard.confirmDeleteButton")}
-          cancelButtonLabel={t("common.cancel")}
-          isLoading={deleteJobMutation.isPending}
-          variant="danger"
-        />
-      )}
+      <WizardDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDeleteJob}
+        jobTitle={jobToDelete?.title ?? ""}
+        isDeleting={deleteJobMutation.isPending}
+      />
     </div>
   );
 }

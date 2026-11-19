@@ -14,6 +14,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDestructiveModal } from "@/components/shared";
 import { Pagination } from "@/components/shared/pagination";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
@@ -45,6 +46,10 @@ export function TrackingLinksTab({
 }: TrackingLinksTabProps) {
   const { t } = useI18n();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [linkToDelete, setLinkToDelete] = useState<TrackingLinkItem | null>(
+    null,
+  );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const buildCareerPath = (link: TrackingLinkItem) => {
     const titleSlug = link.jobTitle ? slugify(link.jobTitle) : "";
@@ -297,12 +302,11 @@ export function TrackingLinksTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                if (
-                                  confirm(t("sourcing.links.deleteConfirm"))
-                                ) {
-                                  onDeleteLink(link.id);
-                                }
+                                setLinkToDelete(link);
+                                setIsDeleteModalOpen(true);
                               }}
+                              aria-label={t("common.delete")}
+                              title={t("common.delete")}
                               className="h-8 w-8 p-0 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -332,6 +336,33 @@ export function TrackingLinksTab({
           </div>
         )}
       </div>
+
+      <ConfirmDestructiveModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          if (!linkToDelete || !onDeleteLink) return;
+          await onDeleteLink(linkToDelete.id);
+          setIsDeleteModalOpen(false);
+        }}
+        title={t("common.delete")}
+        description={t("sourcing.links.deleteConfirm")}
+        notice={
+          linkToDelete ? (
+            <div className="flex flex-col gap-0.5 text-xs">
+              <span className="font-semibold text-foreground break-words">
+                {linkToDelete.name}
+              </span>
+              <span className="font-mono text-[11px] text-muted-foreground break-all">
+                {linkToDelete.token}
+              </span>
+            </div>
+          ) : undefined
+        }
+        confirmButtonLabel={t("common.delete")}
+        cancelButtonLabel={t("common.cancel")}
+        variant="danger"
+      />
     </div>
   );
 }

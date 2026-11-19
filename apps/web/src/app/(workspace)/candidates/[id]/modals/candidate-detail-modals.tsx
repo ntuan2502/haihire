@@ -96,6 +96,7 @@ export function CandidateDetailModals({
         isOpen={!!docToDelete}
         onClose={() => setDocToDelete(null)}
         onConfirm={onConfirmDeleteDoc}
+        documentName={docToDelete?.name}
         isLoading={isDeletingDoc}
       />
 

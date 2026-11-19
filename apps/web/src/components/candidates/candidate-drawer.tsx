@@ -172,6 +172,7 @@ export function CandidateDrawer({
         isOpen={!!drawerDocToDelete}
         onClose={() => setDrawerDocToDelete(null)}
         onConfirm={handleConfirmDeleteDrawerDoc}
+        documentName={drawerDocToDelete?.name}
         isLoading={isDeletingDoc}
       />
     </>

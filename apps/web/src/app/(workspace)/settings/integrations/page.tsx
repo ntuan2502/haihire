@@ -47,7 +47,11 @@ export default function IntegrationsSettingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSetting, setEditingSetting] =
     useState<WebhookSettingResponse | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<{
+    id: string;
+    label?: string;
+  } | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleOpenAdd = () => {
     setEditingSetting(null);
@@ -100,11 +104,11 @@ export default function IntegrationsSettingsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deletingId) return;
+    if (!deletingTarget) return;
     try {
-      await deleteMutation.mutateAsync(deletingId);
+      await deleteMutation.mutateAsync(deletingTarget.id);
       toast.success(t("common.delete"));
-      setDeletingId(null);
+      setIsDeleteModalOpen(false);
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err, t, "errors.GENERIC_ERROR"));
     }
@@ -225,7 +229,14 @@ export default function IntegrationsSettingsPage() {
             isAdmin={canManageIntegrations}
             onOpenAdd={handleOpenAdd}
             onOpenEdit={handleOpenEdit}
-            onDelete={(id) => setDeletingId(id)}
+            onDelete={(id) => {
+              const found = webhookSettings.find((s) => s.id === id);
+              setDeletingTarget({
+                id,
+                label: found?.webhookUrl || found?.provider,
+              });
+              setIsDeleteModalOpen(true);
+            }}
             onTest={handleTestRow}
             isTesting={testMutation.isPending}
           />
@@ -248,10 +259,11 @@ export default function IntegrationsSettingsPage() {
 
       {/* Delete Confirmation Modal */}
       <DeleteWebhookModal
-        isOpen={Boolean(deletingId)}
-        onClose={() => setDeletingId(null)}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDelete}
         isDeleting={deleteMutation.isPending}
+        targetLabel={deletingTarget?.label}
       />
     </div>
   );

@@ -590,7 +590,9 @@ describe("CandidateDrawer Component", () => {
 
     // Modal opens, fill confirm text and submit form
     const confirmInput = screen.getByRole("textbox");
-    fireEvent.change(confirmInput, { target: { value: "XÓA" } });
+    fireEvent.change(confirmInput, {
+      target: { value: "Pham_Thi_Ung_Vien_CV.pdf" },
+    });
     fireEvent.submit(confirmInput.closest("form")!);
 
     await waitFor(() => {

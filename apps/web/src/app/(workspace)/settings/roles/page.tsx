@@ -1,15 +1,6 @@
 "use client";
 
 import { SettingsButton } from "@/components/settings/settings-button";
-import { useRef } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useState, useMemo } from "react";
 import {
   useRolePermissionsMatrix,
@@ -19,8 +10,12 @@ import {
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { Role, type Permission } from "@haihire/shared";
-import { ShieldCheck, RotateCcw, RefreshCw, Save, Loader2 } from "lucide-react";
-import { PageHeader, StatusState } from "@/components/shared";
+import { ShieldCheck, RotateCcw, RefreshCw, Save } from "lucide-react";
+import {
+  ConfirmDestructiveModal,
+  PageHeader,
+  StatusState,
+} from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { RolesMatrixTable } from "@/components/settings/roles/roles-matrix-table";
@@ -145,15 +140,11 @@ export default function RolesPermissionsPage() {
     }
   };
 
-  const resetTrigger = useRef<HTMLButtonElement>(null);
-  const cancelReset = useRef<HTMLButtonElement>(null);
-
   const headerActions = (
     <>
       <SettingsButton
         variant="outline"
         size="sm"
-        ref={resetTrigger}
         onClick={() => setIsResetConfirmOpen(true)}
         disabled={isSaving || resetDefaultMutation.isPending}
         icon={RefreshCw}
@@ -279,61 +270,17 @@ export default function RolesPermissionsPage() {
       )}
 
       {/* Reset to Default Confirmation Modal */}
-      <Dialog
-        open={isResetConfirmOpen}
-        onOpenChange={(open) => {
-          if (!resetDefaultMutation.isPending) setIsResetConfirmOpen(open);
-        }}
-      >
-        <DialogContent
-          className="sm:max-w-sm p-6 gap-4"
-          onOpenAutoFocus={(e) => {
-            if (cancelReset.current) {
-              e.preventDefault();
-              cancelReset.current.focus();
-            }
-          }}
-          onCloseAutoFocus={(e) => {
-            if (resetTrigger.current) {
-              e.preventDefault();
-              resetTrigger.current.focus();
-            }
-          }}
-          showCloseButton={false}
-          disableClose={resetDefaultMutation.isPending}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {t("settings.rolesMatrix.resetDefaultConfirmTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {t("settings.rolesMatrix.resetDefaultConfirmMessage")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <SettingsButton
-              ref={cancelReset}
-              variant="outline"
-              size="sm"
-              onClick={() => setIsResetConfirmOpen(false)}
-              disabled={resetDefaultMutation.isPending}
-            >
-              {t("settings.rolesMatrix.resetDefaultCancelButton")}
-            </SettingsButton>
-            <SettingsButton
-              variant="destructive"
-              size="sm"
-              onClick={handleConfirmResetToDefault}
-              disabled={resetDefaultMutation.isPending}
-            >
-              {resetDefaultMutation.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
-              {t("settings.rolesMatrix.resetDefaultConfirmButton")}
-            </SettingsButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDestructiveModal
+        isOpen={isResetConfirmOpen}
+        onClose={() => setIsResetConfirmOpen(false)}
+        onConfirm={handleConfirmResetToDefault}
+        title={t("settings.rolesMatrix.resetDefaultConfirmTitle")}
+        description={t("settings.rolesMatrix.resetDefaultConfirmMessage")}
+        confirmButtonLabel={t("settings.rolesMatrix.resetDefaultConfirmButton")}
+        cancelButtonLabel={t("settings.rolesMatrix.resetDefaultCancelButton")}
+        isLoading={resetDefaultMutation.isPending}
+        variant="warning"
+      />
     </div>
   );
 }

@@ -56,6 +56,7 @@ export default function EmailTemplatesSettingsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EmailTemplate | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -231,7 +232,7 @@ export default function EmailTemplatesSettingsPage() {
     try {
       await deleteTemplateMutation.mutateAsync(deleteTarget.id);
       const deletedId = deleteTarget.id;
-      setDeleteTarget(null);
+      setIsDeleteModalOpen(false);
       if (selectedId === deletedId) {
         const remaining = templates.filter((tpl) => tpl.id !== deletedId);
         if (remaining[0]) {
@@ -295,7 +296,10 @@ export default function EmailTemplatesSettingsPage() {
             onDraftChange={setDraft}
             onOpenPreview={() => setIsPreviewModalOpen(true)}
             onResetDefault={handleResetDefault}
-            onDelete={() => setDeleteTarget(activeTemplate)}
+            onDelete={() => {
+              setDeleteTarget(activeTemplate);
+              setIsDeleteModalOpen(true);
+            }}
             onDuplicate={() => handleDuplicateTemplate(activeTemplate)}
             onSave={handleSaveTemplate}
             onInsertVariable={handleInsertVariable}
@@ -327,8 +331,8 @@ export default function EmailTemplatesSettingsPage() {
       )}
 
       <ConfirmDestructiveModal
-        isOpen={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         title={t("email.deleteConfirmTitle")}
         description={t("email.deleteConfirmDesc", {

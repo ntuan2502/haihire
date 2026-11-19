@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import {
   useCreateJobMutation,
   useUpdateJobMutation,
@@ -143,7 +144,9 @@ export function useJobWizardSubmit({
       router.push("/jobs");
     } catch (err) {
       console.error("Failed to delete job:", err);
-      form.setFormError(t("jobs.wizard.errors.deleteFailed"));
+      const message = getApiErrorMessage(err, t);
+      toast.error(message);
+      form.setFormError(message);
     }
   };
 

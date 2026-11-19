@@ -253,7 +253,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           isOpen={Boolean(deleteConfirmOpen && initialJob)}
           onClose={() => setDeleteConfirmOpen(false)}
           onConfirm={submit.handleDeleteJob}
-          jobTitle={form.jobTitle}
+          jobTitle={initialJob?.title || ""}
           isDeleting={submit.isDeleting}
         />
 

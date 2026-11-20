@@ -239,5 +239,6 @@ export const config = {
     "/source-tracking/:path*",
     "/settings/:path*",
     "/account/:path*",
+    "/notifications/:path*",
   ],
 };

@@ -138,6 +138,7 @@ describe("UserMenu Accessibility", () => {
 
     await waitFor(() => {
       expect(screen.getByText("settings.tabs.account")).toBeInTheDocument();
+      expect(screen.getByText("settings.notifications")).toBeInTheDocument();
       expect(screen.getByText("nav.settings")).toBeInTheDocument();
     });
 
@@ -147,6 +148,14 @@ describe("UserMenu Accessibility", () => {
     expect(accountBtn).toBeInTheDocument();
     fireEvent.click(accountBtn);
     expect(mockPush).toHaveBeenCalledWith("/account");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const notificationsBtn = await screen.findByRole("menuitem", {
+      name: /settings\.notifications/i,
+    });
+    expect(notificationsBtn).toBeInTheDocument();
+    fireEvent.click(notificationsBtn);
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
 
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     const settingsBtn = await screen.findByRole("menuitem", {

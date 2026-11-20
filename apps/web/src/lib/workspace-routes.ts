@@ -7,6 +7,7 @@ export const WORKSPACE_ROUTE_PREFIXES = [
   "/source-tracking",
   "/settings",
   "/account",
+  "/notifications",
 ] as const;
 
 export function isWorkspaceRoute(pathname: string): boolean {

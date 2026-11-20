@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Bell,
   ChevronDown,
   Check,
   Plus,
@@ -204,6 +205,23 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
             <span>{t("settings.tabs.account")}</span>
           </button>
         </DropdownMenuItem>
+
+        {/* Notifications (if user belongs to an org) */}
+        {user.organizationId && (
+          <DropdownMenuItem asChild>
+            <button
+              type="button"
+              onClick={() => router.push("/notifications")}
+              className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-foreground hover:bg-accent cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Bell
+                className="h-4 w-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span>{t("settings.notifications")}</span>
+            </button>
+          </DropdownMenuItem>
+        )}
 
         {/* Settings (if user belongs to an org) */}
         {user.organizationId && (

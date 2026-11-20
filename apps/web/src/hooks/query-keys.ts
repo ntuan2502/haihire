@@ -144,4 +144,13 @@ export const queryKeys = {
     ["webhook-settings", { orgId }] as const,
   webhookSetting: (id?: string | null) =>
     ["webhook-settings", "detail", id] as const,
+  notifications: (
+    orgId?: string | null,
+    userId?: string | null,
+    params?: Record<string, unknown>,
+  ) =>
+    [
+      "notifications",
+      { orgId: orgId ?? null, userId: userId ?? null, ...(params ?? {}) },
+    ] as const,
 };

@@ -1,27 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ArrowRight,
   Bell,
   BellOff,
   Calendar,
-  CalendarCheck,
-  CalendarClock,
-  CalendarX,
   CheckCheck,
   Clock,
   Settings,
-  UserPlus,
-  type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "cn";
-import type {
-  NotificationKind,
-  WebsiteNotification,
-  WebsiteNotificationInbox,
-} from "@haihire/shared";
+import type { WebsiteNotification } from "@haihire/shared";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,39 +21,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
-import { api } from "@/lib/api/client";
 import { formatDate, formatRelativeTime, formatTime } from "@/lib/utils";
-import { toast } from "@/lib/toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import {
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
+  useNotificationsQuery,
+} from "@/hooks/use-notification-queries";
+import {
+  NOTIFICATION_KIND_STYLES,
+  formatNotificationContextLine,
+  getNotificationHref,
+} from "@/components/notifications/notification-utils";
 
 type InboxFilter = "all" | "unread";
-
-const KIND_STYLES: Record<
-  NotificationKind,
-  { icon: LucideIcon; boxClass: string; iconClass: string }
-> = {
-  applicationReceived: {
-    icon: UserPlus,
-    boxClass: "bg-primary/10 border-primary/20",
-    iconClass: "text-primary",
-  },
-  interviewScheduled: {
-    icon: CalendarCheck,
-    boxClass: "bg-emerald-500/10 border-emerald-500/20",
-    iconClass: "text-emerald-600 dark:text-emerald-400",
-  },
-  interviewChanged: {
-    icon: CalendarClock,
-    boxClass: "bg-amber-500/10 border-amber-500/20",
-    iconClass: "text-amber-600 dark:text-amber-400",
-  },
-  interviewCancelled: {
-    icon: CalendarX,
-    boxClass: "bg-destructive/10 border-destructive/20",
-    iconClass: "text-destructive",
-  },
-};
 
 export function NotificationBell({
   organizationId,
@@ -71,69 +45,44 @@ export function NotificationBell({
   organizationId: string;
   userId: string;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured ? localization : undefined;
+  const relOverrides = locOverrides
+    ? {
+        ...locOverrides,
+        defaultLanguage: locale ?? locOverrides.defaultLanguage,
+      }
+    : undefined;
   const router = useRouter();
-  const cache = useQueryClient();
   const canViewApplications = useHasPermission("application:view");
   const canViewInterviews = useHasPermission("interview:view");
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<InboxFilter>("all");
 
-  const queryKey = ["notifications", organizationId, userId] as const;
-  const inbox = useQuery({
-    queryKey,
-    queryFn: async () =>
-      (await api.get<WebsiteNotificationInbox>("/notifications")).data,
-  });
-  const markRead = useMutation({
-    mutationFn: (id?: string) =>
-      api.patch(id ? `/notifications/${id}/read` : "/notifications/read"),
-    onSuccess: () => cache.invalidateQueries({ queryKey }),
-    onError: () => toast.error(t("notificationInbox.readError")),
-  });
+  const inbox = useNotificationsQuery(organizationId, userId);
+  const markRead = useMarkNotificationReadMutation();
+  const markAllRead = useMarkAllNotificationsReadMutation();
 
   const items = inbox.data?.items ?? [];
   const unread = inbox.data?.unreadCount ?? 0;
   const visibleItems =
     filter === "unread" ? items.filter((item) => !item.readAt) : items;
+  const isMarking = markRead.isPending || markAllRead.isPending;
 
-  function getNotificationHref(item: WebsiteNotification): string | null {
-    if (item.kind === "applicationReceived") {
-      return canViewApplications
-        ? `/applications/${encodeURIComponent(item.resourceId)}`
-        : null;
-    }
-    if (item.kind === "interviewCancelled") {
-      return null;
-    }
-    return canViewInterviews
-      ? `/interviews?interviewId=${encodeURIComponent(item.resourceId)}`
-      : null;
+  function resolveHref(item: WebsiteNotification): string | null {
+    return getNotificationHref(item, {
+      canViewApplications,
+      canViewInterviews,
+    });
   }
 
   function openNotification(item: WebsiteNotification) {
-    const href = getNotificationHref(item);
+    const href = resolveHref(item);
     if (!item.readAt) markRead.mutate(item.id);
     if (!href) return;
     setOpen(false);
     router.push(href);
-  }
-
-  function formatContextLine(item: WebsiteNotification): string | null {
-    if (
-      item.kind === "applicationReceived" &&
-      item.candidateName &&
-      item.jobTitle
-    ) {
-      return t("notificationInbox.appliedForJob", {
-        candidate: item.candidateName,
-        job: item.jobTitle,
-      });
-    }
-    const parts = [item.candidateName, item.jobTitle].filter(
-      (part): part is string => Boolean(part && part.trim().length > 0),
-    );
-    return parts.length > 0 ? parts.join(" • ") : null;
   }
 
   return (
@@ -173,8 +122,8 @@ export function NotificationBell({
             {unread > 0 && (
               <button
                 type="button"
-                disabled={markRead.isPending}
-                onClick={() => markRead.mutate(undefined)}
+                disabled={isMarking}
+                onClick={() => markAllRead.mutate()}
                 className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <CheckCheck className="size-3.5" aria-hidden="true" />
@@ -297,10 +246,10 @@ export function NotificationBell({
                   icon: KindIcon,
                   boxClass,
                   iconClass,
-                } = KIND_STYLES[item.kind];
-                const contextLine = formatContextLine(item);
+                } = NOTIFICATION_KIND_STYLES[item.kind];
+                const contextLine = formatNotificationContextLine(item, t);
                 const isUnread = !item.readAt;
-                const isNavigable = getNotificationHref(item) !== null;
+                const isNavigable = resolveHref(item) !== null;
 
                 return (
                   <DropdownMenuItem
@@ -365,8 +314,12 @@ export function NotificationBell({
                             aria-hidden="true"
                           />
                           <span className="truncate">
-                            {formatDate(item.scheduledAt)}{" "}
-                            {formatTime(item.scheduledAt)}
+                            {formatDate(
+                              item.scheduledAt,
+                              "numeric",
+                              locOverrides,
+                            )}{" "}
+                            {formatTime(item.scheduledAt, locOverrides)}
                             {item.round
                               ? ` · ${t("notificationInbox.roundBadge", {
                                   round: String(item.round),
@@ -383,9 +336,13 @@ export function NotificationBell({
                         />
                         <time
                           dateTime={item.createdAt}
-                          title={`${formatDate(item.createdAt)} ${formatTime(item.createdAt)}`}
+                          title={`${formatDate(
+                            item.createdAt,
+                            "numeric",
+                            locOverrides,
+                          )} ${formatTime(item.createdAt, locOverrides)}`}
                         >
-                          {formatRelativeTime(item.createdAt)}
+                          {formatRelativeTime(item.createdAt, relOverrides)}
                         </time>
                       </div>
                     </div>
@@ -395,6 +352,23 @@ export function NotificationBell({
             </DropdownMenuGroup>
           )}
         </div>
+
+        {/* Footer */}
+        {!inbox.isLoading && !inbox.isError && (
+          <div className="border-t border-border bg-muted/20 p-2">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push("/notifications");
+              }}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <span>{t("notificationInbox.viewAll")}</span>
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

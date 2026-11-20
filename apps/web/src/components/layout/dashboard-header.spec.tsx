@@ -99,6 +99,17 @@ describe("DashboardHeader", () => {
     expect(
       screen.getByText("Tài khoản", { selector: '[aria-current="page"]' }),
     ).toBeInTheDocument();
+
+    mockPathname.current = "/notifications";
+    rerender(
+      <SidebarProvider>
+        <DashboardHeader />
+      </SidebarProvider>,
+    );
+
+    expect(
+      screen.getByText("Thông báo", { selector: '[aria-current="page"]' }),
+    ).toBeInTheDocument();
   });
 
   it("renders utility controls in the header without a duplicate global New Job CTA", () => {

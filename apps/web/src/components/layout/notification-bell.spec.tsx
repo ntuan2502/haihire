@@ -185,4 +185,9 @@ it("blocks navigation on cancelled interview notifications while keeping them re
     );
   });
   expect(mockPush).not.toHaveBeenCalled();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "notificationInbox.viewAll" }),
+  );
+  expect(mockPush).toHaveBeenCalledWith("/notifications");
 });

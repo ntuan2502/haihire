@@ -1436,12 +1436,27 @@ export interface TranslationSchema {
   notificationInbox: {
     all: string;
     unread: string;
+    read: string;
     readAll: string;
+    viewAll: string;
+    pageSubtitle: string;
+    pageSubtitleWorkspace: string;
+    filterKindAll: string;
+    clearFilters: string;
     empty: string;
     emptyUnread: string;
+    emptyFiltered: string;
     emptyHint: string;
     loadError: string;
+    retry: string;
     readError: string;
+    unreadError: string;
+    markAsRead: string;
+    markAsUnread: string;
+    groupToday: string;
+    groupYesterday: string;
+    groupEarlier: string;
+    itemLabel: string;
     settings: string;
     roundBadge: string;
     appliedForJob: string;

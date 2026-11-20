@@ -12,3 +12,4 @@ export * from "./use-interview-queries";
 export * from "./use-organization-queries";
 export * from "./use-email-queries";
 export * from "./use-activity-queries";
+export * from "./use-notification-queries";

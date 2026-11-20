@@ -291,4 +291,16 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
       "http://localhost:3000/auth/login?redirect=%2Faccount",
     );
   });
+
+  it("protects /notifications route via config.matcher and redirects unauthenticated requests to /auth/login", async () => {
+    expect(config.matcher).toContain("/notifications/:path*");
+
+    const req = createMockRequest("/notifications");
+    const res = await proxy(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/auth/login?redirect=%2Fnotifications",
+    );
+  });
 });

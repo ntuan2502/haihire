@@ -1,4 +1,4 @@
-# REST & SSE API Overview (`13` Controllers / `114` Endpoints)
+# REST & SSE API Overview (`13` Controllers / `115` Endpoints)
 
 HaiHire exposes a REST API plus one Server-Sent Events (SSE) stream from `apps/api` (`PORT=3001` default, proxied by Next.js `/api/*` rewrites in `apps/web/next.config.ts`).
 
@@ -23,7 +23,7 @@ Every `APP_ERROR_CODES` key (`64` codes in [packages/shared/src/errors.ts](../..
 
 ---
 
-## 2. Endpoint Surface Summary (`114` Total)
+## 2. Endpoint Surface Summary (`115` Total)
 
 | Controller                  | Prefix              | Endpoints | Highlights & Primary Auth                                                                                                                                                                                                             |
 | :-------------------------- | :------------------ | :-------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -38,7 +38,7 @@ Every `APP_ERROR_CODES` key (`64` codes in [packages/shared/src/errors.ts](../..
 | `EmailController`           | `/email`            |   `14`    | `GET variables`, templates CRUD + duplicate + `by-type/:type` (`6`), `GET flows`, `PUT flows/:flowKey`, `GET/PUT settings`, `POST send`, `POST test`, `GET logs`                                                                      |
 | `SourcingController`        | `/sourcing`         |    `8`    | `GET stats`, `GET links`, `GET links/:id`, `POST links`, `PATCH links/:id`, `DELETE links/:id`, `GET attribution-log`, `POST public/click`                                                                                            |
 | `WebhookSettingsController` | `/webhook-settings` |    `6`    | `GET /`, `GET :id`, `POST /`, `PATCH :id`, `DELETE :id`, `POST test`                                                                                                                                                                  |
-| `NotificationsController`   | `/notifications`    |    `5`    | `GET /`, `GET/PUT preferences`, `PATCH read`, `PATCH :id/read`. Requires an active workspace and scopes records to the signed-in user.                                                                                                |
+| `NotificationsController`   | `/notifications`    |    `6`    | `GET /`, `GET/PUT preferences`, `PATCH read`, `PATCH :id/read`, `PATCH :id/unread`. Requires an active workspace and scopes records to the signed-in user.                                                                            |
 | `EventsController`          | `/events`           |    `1`    | `@Sse("sse")` (`GET /events/sse`) real-time workspace event stream                                                                                                                                                                    |
 
 ---

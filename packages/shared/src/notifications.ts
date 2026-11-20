@@ -27,6 +27,26 @@ export const notificationKinds = [
 
 export type NotificationKind = (typeof notificationKinds)[number];
 
+export const notificationStatusFilters = ["all", "unread", "read"] as const;
+
+export type NotificationStatusFilter =
+  (typeof notificationStatusFilters)[number];
+
+export const notificationKindFilters = ["all", ...notificationKinds] as const;
+
+export type NotificationKindFilter = (typeof notificationKindFilters)[number];
+
+export const listNotificationsQuerySchema = z.strictObject({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  status: z.enum(notificationStatusFilters).optional(),
+  kind: z.enum(notificationKindFilters).optional(),
+});
+
+export type ListNotificationsQuery = z.infer<
+  typeof listNotificationsQuerySchema
+>;
+
 export interface WebsiteNotification {
   id: string;
   kind: NotificationKind;
@@ -42,4 +62,8 @@ export interface WebsiteNotification {
 export interface WebsiteNotificationInbox {
   items: WebsiteNotification[];
   unreadCount: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }

@@ -171,6 +171,10 @@ export function buildWorkspaceBreadcrumbs(
     return [{ label: t("settings.tabs.account") }];
   }
 
+  if (root === "notifications") {
+    return [{ label: t("settings.notifications") }];
+  }
+
   return [{ label: t("nav.dashboard") }];
 }
 

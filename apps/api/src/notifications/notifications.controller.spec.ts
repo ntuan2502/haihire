@@ -70,7 +70,14 @@ describe("NotificationsController preferences", () => {
       controller.list({
         user: { id: "user-1", organizationId: "org-1", role: Role.INTERVIEWER },
       }),
-    ).resolves.toEqual({ items: [], unreadCount: 0 });
+    ).resolves.toEqual({
+      items: [],
+      unreadCount: 0,
+      total: 0,
+      page: 1,
+      limit: 30,
+      totalPages: 0,
+    });
     const where = {
       organizationId: "org-1",
       userId: "user-1",
@@ -80,6 +87,110 @@ describe("NotificationsController preferences", () => {
     };
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
     expect(count).toHaveBeenCalledWith({ where: { ...where, readAt: null } });
+  });
+
+  it("supports status, kind, and pagination filters while keeping global unreadCount and enforcing RBAC", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const count = vi
+      .fn()
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(0);
+    const transaction = { notification: { findMany, count } };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {
+        resolvePermission: vi.fn(
+          async (_organizationId, _role, permission) =>
+            permission === "interview:view",
+        ),
+      } as unknown as PermissionResolverService,
+    );
+
+    const res = await controller.list(
+      {
+        user: { id: "user-1", organizationId: "org-1", role: Role.INTERVIEWER },
+      },
+      { page: 2, limit: 10, status: "read", kind: "interviewScheduled" },
+    );
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: "org-1",
+          userId: "user-1",
+          kind: { in: ["interviewScheduled"] },
+          readAt: { not: null },
+        },
+        skip: 10,
+        take: 10,
+      }),
+    );
+    expect(res).toEqual({
+      items: [],
+      unreadCount: 5,
+      total: 2,
+      page: 2,
+      limit: 10,
+      totalPages: 1,
+    });
+
+    // Filtering by a category without RBAC access returns empty kind set and still preserves global unreadCount
+    await controller.list(
+      {
+        user: { id: "user-1", organizationId: "org-1", role: Role.INTERVIEWER },
+      },
+      { status: "unread", kind: "applicationReceived" },
+    );
+    expect(findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: {
+          organizationId: "org-1",
+          userId: "user-1",
+          kind: { in: [] },
+          readAt: null,
+        },
+        skip: 0,
+        take: 20,
+      }),
+    );
+  });
+
+  it("marks a single read notification back as unread scoped to caller and org", async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const transaction = { notification: { updateMany } };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {} as PermissionResolverService,
+    );
+
+    await controller.unreadOne(
+      {
+        user: { id: "user-1", organizationId: "org-1", role: Role.RECRUITER },
+      },
+      "notif-99",
+    );
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "notif-99",
+        organizationId: "org-1",
+        userId: "user-1",
+        readAt: { not: null },
+      },
+      data: { readAt: null },
+    });
   });
 
   it("enriches notification items with candidateName, jobTitle, scheduledAt, and round", async () => {

@@ -1,8 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { User } from "@/types";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NavUser } from "./nav-user";
+import { api } from "@/lib/api/client";
+
+vi.mock("@/lib/api/client", () => ({
+  api: {
+    get: vi.fn().mockResolvedValue({ data: { items: [], unreadCount: 0 } }),
+  },
+}));
 
 const { mockPush, mockLogout, mockSetOpenMobile } = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -106,7 +114,7 @@ describe("NavUser", () => {
     expect(mockPush).toHaveBeenCalledWith("/account");
   });
 
-  it("navigates to Notification settings when clicking Notifications", async () => {
+  it("navigates to Notifications page when clicking Notifications", async () => {
     renderNavUser();
     openUserMenu();
 
@@ -116,7 +124,33 @@ describe("NavUser", () => {
     fireEvent.click(notificationsItem);
 
     expect(mockSetOpenMobile).toHaveBeenCalledWith(false);
-    expect(mockPush).toHaveBeenCalledWith("/account#notifications");
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
+  });
+
+  it("renders unread count badge in Notifications menu item when QueryClientProvider is present", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: { items: [], unreadCount: 4 },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <SidebarProvider>
+          <NavUser />
+        </SidebarProvider>
+      </QueryClientProvider>,
+    );
+
+    openUserMenu();
+
+    const notificationsItem = await screen.findByRole("menuitem", {
+      name: /Thông báo/i,
+    });
+    await waitFor(() => {
+      expect(notificationsItem).toHaveTextContent("4");
+    });
   });
 
   it("logs out when clicking Sign out", async () => {

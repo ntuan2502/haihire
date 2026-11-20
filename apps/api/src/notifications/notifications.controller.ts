@@ -7,6 +7,7 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Query,
   Request,
   UseGuards,
 } from "@nestjs/common";
@@ -14,8 +15,10 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   formatCandidateDisplayName,
+  listNotificationsQuerySchema,
   notificationPreferencesSchema,
   notificationKinds,
+  type ListNotificationsQuery,
   type Role,
   type NotificationPreferences,
 } from "@haihire/shared";
@@ -46,7 +49,11 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  async list(@Request() { user }: NotificationRequest) {
+  async list(
+    @Request() { user }: NotificationRequest,
+    @Query(DtoPipe(listNotificationsQuerySchema))
+    query: ListNotificationsQuery = {},
+  ) {
     const [applications, interviews] = await Promise.all([
       this.permissions.resolvePermission(
         user.organizationId,
@@ -59,22 +66,48 @@ export class NotificationsController {
         "interview:view",
       ),
     ]);
-    const where = {
+    const allowedKinds = notificationKinds.filter((kind) =>
+      kind === "applicationReceived" ? applications : interviews,
+    );
+    const filteredKinds =
+      query.kind && query.kind !== "all"
+        ? allowedKinds.includes(query.kind)
+          ? [query.kind]
+          : []
+        : allowedKinds;
+
+    const baseWhere = {
       organizationId: user.organizationId,
       userId: user.id,
-      kind: {
-        in: notificationKinds.filter((kind) =>
-          kind === "applicationReceived" ? applications : interviews,
-        ),
-      },
+      kind: { in: allowedKinds },
     };
-    const { items, unreadCount } = await this.prisma.withTenantRls(
-      user.organizationId,
-      async (tx) => {
-        const rawItems = await tx.notification.findMany({
-          where,
+    const filteredWhere = {
+      organizationId: user.organizationId,
+      userId: user.id,
+      kind: { in: filteredKinds },
+      ...(query.status === "unread"
+        ? { readAt: null }
+        : query.status === "read"
+          ? { readAt: { not: null } }
+          : {}),
+    };
+
+    const hasQueryParams =
+      query.page !== undefined ||
+      query.limit !== undefined ||
+      query.status !== undefined ||
+      query.kind !== undefined;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? (hasQueryParams ? 20 : 30);
+    const skip = (page - 1) * limit;
+
+    return this.prisma.withTenantRls(user.organizationId, async (tx) => {
+      const [rawItems, unreadCount, total] = await Promise.all([
+        tx.notification.findMany({
+          where: filteredWhere,
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 30,
+          skip,
+          take: limit,
           select: {
             id: true,
             kind: true,
@@ -82,109 +115,127 @@ export class NotificationsController {
             createdAt: true,
             readAt: true,
           },
-        });
-        const count = await tx.notification.count({
-          where: { ...where, readAt: null },
-        });
+        }),
+        tx.notification.count({
+          where: { ...baseWhere, readAt: null },
+        }),
+        tx.notification.count({
+          where: filteredWhere,
+        }),
+      ]);
 
-        if (rawItems.length === 0) {
-          return { items: rawItems, unreadCount: count };
-        }
+      const totalPages = Math.ceil(total / limit);
 
-        const appIds = rawItems
-          .filter((item) => item.kind === "applicationReceived")
-          .map((item) => item.resourceId);
-        const interviewIds = rawItems
-          .filter((item) => item.kind !== "applicationReceived")
-          .map((item) => item.resourceId);
+      if (rawItems.length === 0) {
+        return {
+          items: rawItems,
+          unreadCount,
+          total,
+          page,
+          limit,
+          totalPages,
+        };
+      }
 
-        const nameOrder = await resolveOrgNameDisplayOrder(
-          tx,
-          user.organizationId,
-        );
-        const appRows =
-          appIds.length > 0 && tx.application?.findMany
-            ? await tx.application.findMany({
-                where: {
-                  id: { in: appIds },
-                  organizationId: user.organizationId,
-                },
-                select: {
-                  id: true,
-                  candidate: {
-                    select: {
-                      displayName: true,
-                      firstName: true,
-                      lastName: true,
-                    },
+      const appIds = rawItems
+        .filter((item) => item.kind === "applicationReceived")
+        .map((item) => item.resourceId);
+      const interviewIds = rawItems
+        .filter((item) => item.kind !== "applicationReceived")
+        .map((item) => item.resourceId);
+
+      const nameOrder = await resolveOrgNameDisplayOrder(
+        tx,
+        user.organizationId,
+      );
+      const appRows =
+        appIds.length > 0 && tx.application?.findMany
+          ? await tx.application.findMany({
+              where: {
+                id: { in: appIds },
+                organizationId: user.organizationId,
+              },
+              select: {
+                id: true,
+                candidate: {
+                  select: {
+                    displayName: true,
+                    firstName: true,
+                    lastName: true,
                   },
-                  job: { select: { title: true } },
                 },
-              })
-            : [];
-        const interviewRows =
-          interviewIds.length > 0 && tx.interview?.findMany
-            ? await tx.interview.findMany({
-                where: {
-                  id: { in: interviewIds },
-                  organizationId: user.organizationId,
-                },
-                select: {
-                  id: true,
-                  scheduledAt: true,
-                  round: true,
-                  application: {
-                    select: {
-                      candidate: {
-                        select: {
-                          displayName: true,
-                          firstName: true,
-                          lastName: true,
-                        },
+                job: { select: { title: true } },
+              },
+            })
+          : [];
+      const interviewRows =
+        interviewIds.length > 0 && tx.interview?.findMany
+          ? await tx.interview.findMany({
+              where: {
+                id: { in: interviewIds },
+                organizationId: user.organizationId,
+              },
+              select: {
+                id: true,
+                scheduledAt: true,
+                round: true,
+                application: {
+                  select: {
+                    candidate: {
+                      select: {
+                        displayName: true,
+                        firstName: true,
+                        lastName: true,
                       },
-                      job: { select: { title: true } },
                     },
+                    job: { select: { title: true } },
                   },
                 },
-              })
-            : [];
+              },
+            })
+          : [];
 
-        const appMap = new Map(appRows.map((row) => [row.id, row]));
-        const interviewMap = new Map(interviewRows.map((row) => [row.id, row]));
+      const appMap = new Map(appRows.map((row) => [row.id, row]));
+      const interviewMap = new Map(interviewRows.map((row) => [row.id, row]));
 
-        const enriched = rawItems.map((item) => {
-          if (item.kind === "applicationReceived") {
-            const app = appMap.get(item.resourceId);
-            if (!app) return item;
-            return {
-              ...item,
-              candidateName:
-                formatCandidateDisplayName(app.candidate, nameOrder) || null,
-              jobTitle: app.job?.title ?? null,
-            };
-          }
-          const intv = interviewMap.get(item.resourceId);
-          if (!intv) return item;
+      const enriched = rawItems.map((item) => {
+        if (item.kind === "applicationReceived") {
+          const app = appMap.get(item.resourceId);
+          if (!app) return item;
           return {
             ...item,
             candidateName:
-              formatCandidateDisplayName(
-                intv.application?.candidate,
-                nameOrder,
-              ) || null,
-            jobTitle: intv.application?.job?.title ?? null,
-            scheduledAt:
-              (intv.scheduledAt as Date | string) instanceof Date
-                ? (intv.scheduledAt as Date).toISOString()
-                : String(intv.scheduledAt),
-            round: intv.round ?? null,
+              formatCandidateDisplayName(app.candidate, nameOrder) || null,
+            jobTitle: app.job?.title ?? null,
           };
-        });
+        }
+        const intv = interviewMap.get(item.resourceId);
+        if (!intv) return item;
+        return {
+          ...item,
+          candidateName:
+            formatCandidateDisplayName(
+              intv.application?.candidate,
+              nameOrder,
+            ) || null,
+          jobTitle: intv.application?.job?.title ?? null,
+          scheduledAt:
+            (intv.scheduledAt as Date | string) instanceof Date
+              ? (intv.scheduledAt as Date).toISOString()
+              : String(intv.scheduledAt),
+          round: intv.round ?? null,
+        };
+      });
 
-        return { items: enriched, unreadCount: count };
-      },
-    );
-    return { items, unreadCount };
+      return {
+        items: enriched,
+        unreadCount,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    });
   }
 
   @Patch("read")
@@ -215,6 +266,24 @@ export class NotificationsController {
           readAt: null,
         },
         data: { readAt: new Date() },
+      }),
+    );
+  }
+
+  @Patch(":id/unread")
+  async unreadOne(
+    @Request() { user }: NotificationRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    await this.prisma.withTenantRls(user.organizationId, (tx) =>
+      tx.notification.updateMany({
+        where: {
+          id,
+          organizationId: user.organizationId,
+          userId: user.id,
+          readAt: { not: null },
+        },
+        data: { readAt: null },
       }),
     );
   }

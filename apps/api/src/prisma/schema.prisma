@@ -433,7 +433,7 @@ model EmailFlowConfig {
   flowKey        EmailFlowKey
   templateId     String?
   template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  enabled        Boolean        @default(true)
+  enabled        Boolean        @default(false)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 

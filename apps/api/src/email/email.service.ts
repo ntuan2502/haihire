@@ -26,7 +26,6 @@ import {
   type EmailFlowKey,
   type TemplateDefinition,
   DEFAULT_TEMPLATES,
-  EMAIL_FLOW_DEFINITIONS,
   interpolateEmail as interpolate,
 } from "@haihire/shared";
 
@@ -174,12 +173,7 @@ export class EmailService {
       return override && override.enabled ? override : undefined;
     }
 
-    const defaultType = EMAIL_FLOW_DEFINITIONS[flowKey].defaultTemplateType;
-    const fallback = await this.templates.getTemplateByType(
-      organizationId,
-      defaultType,
-    );
-    return fallback && fallback.enabled ? fallback : undefined;
+    return undefined;
   }
 
   async getSettings(organizationId?: string, userOrgId?: string | null) {

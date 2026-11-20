@@ -157,7 +157,7 @@ export class ApplicationsStageService {
         currentUser.role === "ADMIN" ||
         hasPermission(currentUser.role as Role, "email:send");
       const shouldSendRejectionEmail =
-        callerCanSendEmail && isRejecting && dto.sendRejectionEmail !== false;
+        callerCanSendEmail && isRejecting && dto.sendRejectionEmail === true;
       const shouldSendOfferEmail =
         callerCanSendEmail && isOffering && dto.sendOfferEmail === true;
       const descriptionParts = [

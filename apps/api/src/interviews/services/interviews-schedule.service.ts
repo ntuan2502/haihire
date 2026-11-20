@@ -277,7 +277,7 @@ export class InterviewsScheduleService {
         },
       });
 
-      if (dto.sendInvitationEmail && candidate.email) {
+      if (dto.sendInvitationEmail === true && candidate.email) {
         try {
           const template =
             typeof this.emailService.resolveFlowTemplate === "function"

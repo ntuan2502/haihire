@@ -285,4 +285,26 @@ describe("EmailTemplatesSettingsPage", () => {
 
     expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
   });
+
+  it("keeps disabled flow OFF (enabled: false) when assigning a template to an unassigned/disabled flow", async () => {
+    render(<EmailTemplatesSettingsPage />);
+
+    const selectTrigger = screen.getByRole("button", { name: "Mời phỏng vấn" });
+    fireEvent.click(selectTrigger);
+
+    const templateOption = await screen.findByRole("option", {
+      name: /Thư mời Tech Lead/,
+    });
+    fireEvent.click(templateOption);
+
+    await waitFor(() => {
+      expect(mockUpdateFlow).toHaveBeenCalledWith({
+        flowKey: "INTERVIEW_SCHEDULED",
+        data: {
+          templateId: "uuid-cust-2",
+          enabled: false,
+        },
+      });
+    });
+  });
 });

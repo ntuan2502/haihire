@@ -210,4 +210,34 @@ describe("OfferApplicationModal", () => {
       });
     });
   });
+
+  it("defaults checkbox to unchecked when flows are unloaded or email:view permission is absent", async () => {
+    mockCanViewEmail = false;
+    mockFlows = [];
+    const onConfirm = vi.fn().mockResolvedValueOnce(undefined);
+
+    render(
+      <OfferApplicationModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onConfirm={onConfirm}
+        candidateName="Le Van D"
+        candidateEmail="vand@example.com"
+        jobTitle="Product Manager"
+      />,
+    );
+
+    const checkbox = screen.getByRole("checkbox") as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xác nhận chuyển giai đoạn" }),
+    );
+
+    await waitFor(() => {
+      expect(onConfirm).toHaveBeenCalledWith({
+        sendOfferEmail: false,
+      });
+    });
+  });
 });

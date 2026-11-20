@@ -908,6 +908,9 @@ describe("EmailService", () => {
       expect(diService).toBeDefined();
       const config = diService.getSystemEmailConfig();
       expect(config).toBeDefined();
+      await expect(
+        diService.resolveFlowTemplate("org-no-flows", "APPLICATION_RECEIVED"),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -1021,21 +1024,39 @@ describe("EmailService", () => {
         enabled: true,
       });
 
-      // Default bound flow resolves system template
-      const resolvedDefault = await service.resolveFlowTemplate(
-        "org-res",
-        "APPLICATION_REJECTED",
-      );
-      expect(resolvedDefault?.type).toBe("REJECTION");
-      expect(resolvedDefault?.isSystem).toBe(true);
+      // Newly seeded flows default to disabled (opt-in) with default system template pre-bound
+      const initialFlows = await service.getFlows("org-res");
+      expect(initialFlows).toHaveLength(4);
+      expect(initialFlows.every((flow) => flow.enabled === false)).toBe(true);
+      expect(
+        initialFlows.every((flow) =>
+          Boolean(flow.templateId && flow.template?.isSystem),
+        ),
+      ).toBe(true);
 
-      // Override picks custom template even when flow points elsewhere
+      // Default disabled flow suppresses automated dispatch until explicitly enabled
+      expect(
+        await service.resolveFlowTemplate("org-res", "APPLICATION_REJECTED"),
+      ).toBeUndefined();
+
+      // Explicit override resolves custom template even when the flow itself is disabled
       const resolvedOverride = await service.resolveFlowTemplate(
         "org-res",
         "APPLICATION_REJECTED",
         customReject.id,
       );
       expect(resolvedOverride?.id).toBe(customReject.id);
+
+      // Enabling the bound flow resolves the assigned system template
+      await service.updateFlow("org-res", "APPLICATION_REJECTED", {
+        enabled: true,
+      });
+      const resolvedDefault = await service.resolveFlowTemplate(
+        "org-res",
+        "APPLICATION_REJECTED",
+      );
+      expect(resolvedDefault?.type).toBe("REJECTION");
+      expect(resolvedDefault?.isSystem).toBe(true);
 
       // Disabled or cross-org override returns undefined
       expect(
@@ -1053,7 +1074,13 @@ describe("EmailService", () => {
         ),
       ).toBeUndefined();
 
-      // Disabling a flow suppresses default dispatch
+      // Enabling then disabling a flow controls default dispatch
+      await service.updateFlow("org-res", "APPLICATION_RECEIVED", {
+        enabled: true,
+      });
+      expect(
+        await service.resolveFlowTemplate("org-res", "APPLICATION_RECEIVED"),
+      ).toBeDefined();
       await service.updateFlow("org-res", "APPLICATION_RECEIVED", {
         enabled: false,
       });

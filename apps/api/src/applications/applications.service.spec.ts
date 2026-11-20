@@ -715,6 +715,15 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   });
 
   describe("Rejection, Reopening, Soft-Delete & Stats Integrity", () => {
+    it("suppresses automated rejection email by default when sendRejectionEmail is omitted", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
     it("saves rejectionReason & rejectedAt and suppresses automated email when sendRejectionEmail=false", async () => {
       const updated = await service.updateStage("app-1", {
         stage: "REJECTED",

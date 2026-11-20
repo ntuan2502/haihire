@@ -84,7 +84,7 @@ export function ScheduleInterviewModal({
   const [linkOrLocation, setLinkOrLocation] = useState<string>("");
   const [interviewerId, setInterviewerId] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
-  const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(true);
+  const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
   const hasTouchedEmailRef = useRef(false);
@@ -122,7 +122,7 @@ export function ScheduleInterviewModal({
     if (!isOpen || editingInterview) {
       hasTouchedEmailRef.current = false;
       hasTouchedTemplateRef.current = false;
-      setSendEmailInvite(true);
+      setSendEmailInvite(false);
       setSelectedTemplateId("");
       return;
     }

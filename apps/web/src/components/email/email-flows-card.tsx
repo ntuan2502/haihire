@@ -152,7 +152,7 @@ export function EmailFlowsCard({
                     const normalized = nextId || null;
                     onUpdateFlow(flowKey, {
                       templateId: normalized,
-                      enabled: normalized ? (flow?.enabled ?? true) : false,
+                      enabled: normalized ? (flow?.enabled ?? false) : false,
                     });
                   }}
                   className="w-full"

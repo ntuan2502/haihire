@@ -45,7 +45,7 @@ export function OfferApplicationModal({
     defaultTemplateId,
   } = useFlowTemplateSelection("APPLICATION_OFFER", isOpen);
 
-  const [sendOfferEmail, setSendOfferEmail] = useState(true);
+  const [sendOfferEmail, setSendOfferEmail] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const hasTouchedEmailRef = useRef(false);
   const hasTouchedTemplateRef = useRef(false);
@@ -57,17 +57,25 @@ export function OfferApplicationModal({
     if (!isOpen) {
       hasTouchedEmailRef.current = false;
       hasTouchedTemplateRef.current = false;
-      setSendOfferEmail(true);
+      setSendOfferEmail(false);
       setSelectedTemplateId("");
       return;
     }
-    if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
+    if (!canViewEmail && !hasTouchedEmailRef.current) {
+      setSendOfferEmail(false);
+    } else if (matchedFlow !== undefined && !hasTouchedEmailRef.current) {
       setSendOfferEmail(defaultSendEnabled);
     }
     if (!hasTouchedTemplateRef.current) {
       setSelectedTemplateId(defaultTemplateId);
     }
-  }, [isOpen, matchedFlow, defaultSendEnabled, defaultTemplateId]);
+  }, [
+    isOpen,
+    canViewEmail,
+    matchedFlow,
+    defaultSendEnabled,
+    defaultTemplateId,
+  ]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -15,6 +15,8 @@ import {
 import {
   useSwitchOrgMutation,
   useUpdateMyOrgMutation,
+  useUploadOrgLogoMutation,
+  useDeleteOrgLogoMutation,
   useDeleteMyOrgMutation,
   useCreateInviteLinkMutation,
   useRevokeInviteLinkMutation,
@@ -79,6 +81,8 @@ vi.mock("@/lib/api", () => ({
   organizationsApi: {
     switchOrg: vi.fn(),
     updateMyOrg: vi.fn(),
+    uploadMyOrgLogo: vi.fn(),
+    deleteMyOrgLogo: vi.fn(),
     deleteMyOrg: vi.fn(),
     createInviteLink: vi.fn(),
     revokeInviteLink: vi.fn(),
@@ -327,6 +331,41 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
         result.current.mutateAsync({ name: "HaiHire Corp" }),
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it("useUploadOrgLogoMutation and useDeleteOrgLogoMutation invalidate myOrg on error", async () => {
+      const { queryClient, wrapper } = createWrapper();
+      const spy = vi.spyOn(queryClient, "invalidateQueries");
+      const mockFile = new File(["png"], "logo.png", { type: "image/png" });
+
+      vi.mocked(organizationsApi.uploadMyOrgLogo).mockResolvedValueOnce({
+        id: "org-1",
+        logoUrl: "/organizations/public/org-1/logo?v=1",
+      } as never);
+      const { result: uploadHook } = renderHook(
+        () => useUploadOrgLogoMutation(),
+        { wrapper },
+      );
+      await uploadHook.current.mutateAsync(mockFile);
+      expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.myOrg() });
+
+      vi.mocked(organizationsApi.uploadMyOrgLogo).mockRejectedValueOnce(
+        new Error("Upload failed"),
+      );
+      await expect(uploadHook.current.mutateAsync(mockFile)).rejects.toThrow();
+      expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.myOrg() });
+
+      const callsAfterUpload = spy.mock.calls.length;
+      vi.mocked(organizationsApi.deleteMyOrgLogo).mockRejectedValueOnce(
+        new Error("Delete logo failed"),
+      );
+      const { result: deleteHook } = renderHook(
+        () => useDeleteOrgLogoMutation(),
+        { wrapper },
+      );
+      await expect(deleteHook.current.mutateAsync()).rejects.toThrow();
+      expect(spy.mock.calls.length).toBe(callsAfterUpload + 1);
+      expect(spy).toHaveBeenLastCalledWith({ queryKey: queryKeys.myOrg() });
     });
 
     it("useDeleteMyOrgMutation invalidates myOrg on success and error", async () => {

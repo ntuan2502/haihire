@@ -1702,6 +1702,25 @@ export const en: TranslationSchema = {
     backToSettings: "Back to Settings",
     generalProfileDesc:
       "Manage your organization's display name, public careers URL, and basic workspace details.",
+    logo: {
+      title: "Organization logo",
+      description:
+        "Displayed in the workspace switcher and public careers portal.",
+      uploadButton: "Upload logo",
+      changeButton: "Change logo",
+      removeButton: "Remove logo",
+      uploading: "Uploading...",
+      removing: "Removing...",
+      hint: "Supports PNG, JPG, or WebP images up to 2 MB.",
+      invalidTypeError: "Only PNG, JPG, or WebP images are supported.",
+      fileTooLargeError: "Logo file size must not exceed 2 MB.",
+      uploadSuccess: "Organization logo updated.",
+      removeSuccess: "Organization logo removed.",
+      removeConfirmTitle: "Remove organization logo",
+      removeConfirmDesc:
+        "Are you sure you want to remove the current logo? The workspace will fall back to organization initials.",
+      removeConfirmAction: "Remove logo",
+    },
     orgNameRequiredError: "Organization name is required.",
     orgSlugRequiredError: "URL slug is required.",
     accountProfileDesc:
@@ -2018,6 +2037,8 @@ export const en: TranslationSchema = {
       actionOwnershipTransferred: "Ownership Transferred",
       actionOrgDeleted: "Organization Deleted",
       actionOrgLocalizationUpdated: "Localization Updated",
+      actionOrgLogoUpdated: "Organization Logo Updated",
+      actionOrgLogoRemoved: "Organization Logo Removed",
       resources: {
         ORGANIZATION: "Organization",
         MEMBER: "Member",
@@ -2032,6 +2053,8 @@ export const en: TranslationSchema = {
         permissionsUpdated: "{count} permissions updated",
         ownershipTransferred: "Organization ownership transferred",
         localizationUpdated: "Updated localization: {fields}",
+        logoUpdated: "Image file: {fileName}",
+        logoRemoved: "Removed organization logo",
         localizationFields: {
           timezone: "Timezone",
           defaultLocale: "Default Language",

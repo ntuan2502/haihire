@@ -25,6 +25,7 @@ const mockUser: User = {
     id: "org-1",
     name: "HaiHire Corp",
     slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -37,6 +38,7 @@ const mockOrgs: Organization[] = [
     id: "org-1",
     name: "HaiHire Corp",
     slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -109,6 +111,12 @@ describe("UserMenu Accessibility", () => {
       expect(screen.getByText("HaiHire Corp")).toBeInTheDocument();
     });
 
+    expect(
+      document.body.querySelector(
+        'img[src="/api/organizations/public/org-1/logo?v=1"]',
+      ),
+    ).toBeInTheDocument();
+
     const orgSwitcherBtn = screen.getByRole("button", {
       name: "HaiHire Corp",
     });
@@ -118,6 +126,7 @@ describe("UserMenu Accessibility", () => {
     fireEvent.click(orgSwitcherBtn);
     expect(orgSwitcherBtn).toHaveAttribute("aria-expanded", "true");
 
+    expect(screen.getByText("P")).toBeInTheDocument();
     const partnerOrgBtn = screen.getByRole("menuitem", {
       name: "Partner Org",
     });

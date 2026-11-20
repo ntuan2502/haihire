@@ -59,6 +59,26 @@ export const organizationsApi = {
     return response.data;
   },
 
+  uploadMyOrgLogo: async (file: File): Promise<Organization> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post<Organization>(
+      "/organizations/my/logo",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data;
+  },
+
+  deleteMyOrgLogo: async (): Promise<Organization> => {
+    const response = await api.delete<Organization>("/organizations/my/logo");
+    return response.data;
+  },
+
   deleteMyOrg: async (): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete<{ success: boolean; message: string }>(
       "/organizations/my",
@@ -111,7 +131,12 @@ export const organizationsApi = {
     valid: boolean;
     token?: string;
     role?: string;
-    organization?: { id: string; name: string; slug: string };
+    organization?: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl?: string | null;
+    };
     createdByName?: string;
     expiresAt?: string | null;
     message?: string;

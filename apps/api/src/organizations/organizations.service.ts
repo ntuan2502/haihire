@@ -75,6 +75,22 @@ export class OrganizationsService implements OnModuleInit {
     return this.core.getPublicOrg(slug);
   }
 
+  uploadMyOrgLogo(
+    userId: string,
+    file: Express.Multer.File | undefined,
+    activeOrgId?: string | null,
+  ) {
+    return this.core.uploadMyOrgLogo(userId, file, activeOrgId);
+  }
+
+  deleteMyOrgLogo(userId: string, activeOrgId?: string | null) {
+    return this.core.deleteMyOrgLogo(userId, activeOrgId);
+  }
+
+  preparePublicOrgLogo(orgId: string) {
+    return this.core.preparePublicOrgLogo(orgId);
+  }
+
   // ==========================================
   // 2. MEMBERSHIP & RBAC MANAGEMENT
   // ==========================================

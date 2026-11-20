@@ -21,6 +21,10 @@ import {
 import { EventsService } from "../../events/events.service";
 import { EmailSystemService } from "../../email/services/email-system.service";
 import { env } from "../../config/env";
+import {
+  attachOrganizationLogoUrl,
+  buildOrganizationLogoUrl,
+} from "../organization-logo.util";
 
 type MockUserTableCompat = {
   store?: Array<Record<string, unknown>>;
@@ -559,6 +563,8 @@ export class OrganizationsInvitesService {
         name: true,
         slug: true,
         ownerId: true,
+        logoObjectKey: true,
+        logoUpdatedAt: true,
         nameDisplayOrder: true,
       },
     });
@@ -602,6 +608,7 @@ export class OrganizationsInvitesService {
         id: link.organizationId,
         name: org?.name || "Organization",
         slug: org?.slug || "org",
+        logoUrl: org ? buildOrganizationLogoUrl(org) : null,
       },
       createdByName,
       expiresAt: link.expiresAt
@@ -753,6 +760,8 @@ export class OrganizationsInvitesService {
           name: true,
           slug: true,
           ownerId: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
           defaultLanguage: true,
           timezone: true,
           dateFormat: true,
@@ -763,7 +772,10 @@ export class OrganizationsInvitesService {
         },
       });
       const org = orgRecord
-        ? { ...orgRecord, ...normalizeOrgLocalization(orgRecord) }
+        ? attachOrganizationLogoUrl({
+            ...orgRecord,
+            ...normalizeOrgLocalization(orgRecord),
+          })
         : null;
 
       return {
@@ -851,6 +863,8 @@ export class OrganizationsInvitesService {
           name: true,
           slug: true,
           ownerId: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
           defaultLanguage: true,
           timezone: true,
           dateFormat: true,
@@ -867,7 +881,10 @@ export class OrganizationsInvitesService {
           "Organization not found.",
         );
       }
-      const org = { ...orgRecord, ...normalizeOrgLocalization(orgRecord) };
+      const org = attachOrganizationLogoUrl({
+        ...orgRecord,
+        ...normalizeOrgLocalization(orgRecord),
+      });
 
       const assignedRole = this.resolveValidInviteRole(inviteLink.role);
 

@@ -62,6 +62,7 @@ export class MinioService implements OnModuleInit {
     file: Express.Multer.File,
     folder = "resumes",
     tenantOrgId?: string | null,
+    allowedExtensions: ReadonlySet<string> = new Set([".pdf"]),
   ): Promise<UploadResult> {
     if (!tenantOrgId || !tenantOrgId.trim()) {
       throw new AppBadRequestException(
@@ -77,8 +78,7 @@ export class MinioService implements OnModuleInit {
       );
     }
     const ext = extname(file.originalname).toLowerCase();
-    const allowed = new Set([".pdf"]);
-    if (!ext || !allowed.has(ext)) {
+    if (!ext || !allowedExtensions.has(ext)) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
         `Disallowed or missing file extension: ${ext || "(none)"}`,

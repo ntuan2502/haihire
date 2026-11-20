@@ -1,12 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  logoFileFilter,
   resumeFileFilter,
+  validateImageMagicBytes,
   validateMagicBytes,
   sanitizeFilename,
   validateUploadedFile,
+  validateUploadedLogoFile,
 } from "./upload-utils";
 import type { Request } from "express";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, MAX_ORG_LOGO_SIZE_BYTES } from "@haihire/shared";
 import { AppBadRequestException } from "./app-exception";
 
 describe("upload-utils resumeFileFilter", () => {
@@ -262,6 +265,84 @@ describe("upload-utils resumeFileFilter", () => {
       } as Express.Multer.File;
 
       expect(() => validateUploadedFile(goodFile)).not.toThrow();
+    });
+  });
+
+  describe("Organization Logo Upload Validation", () => {
+    const pngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+    ]);
+    const jpgBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    const webpBuffer = Buffer.concat([
+      Buffer.from("RIFF"),
+      Buffer.from([0x24, 0x00, 0x00, 0x00]),
+      Buffer.from("WEBP"),
+      Buffer.from([0x56, 0x50, 0x38, 0x20]),
+    ]);
+
+    it("accepts valid PNG, JPG, and WebP buffers", () => {
+      expect(validateImageMagicBytes(pngBuffer, ".png")).toBe(true);
+      expect(validateImageMagicBytes(jpgBuffer, ".jpg")).toBe(true);
+      expect(validateImageMagicBytes(jpgBuffer, ".jpeg")).toBe(true);
+      expect(validateImageMagicBytes(webpBuffer, ".webp")).toBe(true);
+
+      const res = validateUploadedLogoFile({
+        originalname: "brand.png",
+        mimetype: "image/png",
+        size: pngBuffer.length,
+        buffer: pngBuffer,
+      } as Express.Multer.File);
+      expect(res).toEqual({ ext: ".png", mimeType: "image/png" });
+    });
+
+    it("rejects SVG uploads in both filter and byte validation", () => {
+      const cb = vi.fn();
+      logoFileFilter(
+        {} as Request,
+        {
+          originalname: "logo.svg",
+          mimetype: "image/svg+xml",
+        } as Express.Multer.File,
+        cb,
+      );
+      expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
+
+      expect(
+        validateImageMagicBytes(
+          Buffer.from("<svg><script>alert(1)</script></svg>"),
+          ".svg",
+        ),
+      ).toBe(false);
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "logo.svg",
+          mimetype: "image/svg+xml",
+          size: 32,
+          buffer: Buffer.from("<svg></svg>"),
+        } as Express.Multer.File),
+      ).toThrow();
+    });
+
+    it("rejects forged magic bytes disguised as .png", () => {
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "fake.png",
+          mimetype: "image/png",
+          size: 16,
+          buffer: Buffer.from("<script>alert(1)</script>"),
+        } as Express.Multer.File),
+      ).toThrow(AppBadRequestException);
+    });
+
+    it("rejects logo files exceeding 2 MB", () => {
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "huge.png",
+          mimetype: "image/png",
+          size: MAX_ORG_LOGO_SIZE_BYTES + 1,
+          buffer: pngBuffer,
+        } as Express.Multer.File),
+      ).toThrow("2 MB");
     });
   });
 });

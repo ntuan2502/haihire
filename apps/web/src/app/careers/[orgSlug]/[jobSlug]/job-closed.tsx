@@ -11,7 +11,6 @@ import {
 } from "@/lib/jobs";
 import {
   Briefcase,
-  Building2,
   MapPin,
   Clock,
   DollarSign,
@@ -20,6 +19,7 @@ import {
   Archive,
   ChevronLeft,
 } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import type { Job, Organization } from "@/types";
 
 export interface JobClosedProps {
@@ -35,7 +35,11 @@ export function JobClosed({ job, org, orgSlug }: JobClosedProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200">
       {/* Top Navbar */}
-      <CareersHeader orgName={orgName} orgSlug={orgSlug} />
+      <CareersHeader
+        orgName={orgName}
+        orgSlug={orgSlug}
+        orgLogoUrl={org?.logoUrl}
+      />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -87,7 +91,12 @@ export function JobClosed({ job, org, orgSlug }: JobClosedProps) {
             {/* Meta Row */}
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground font-medium pt-1">
               <div className="flex items-center gap-1.5">
-                <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                <OrganizationLogo
+                  name={orgName}
+                  logoUrl={org?.logoUrl}
+                  size="xs"
+                  decorative
+                />
                 <span>{orgName}</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -145,7 +154,11 @@ export function JobClosed({ job, org, orgSlug }: JobClosedProps) {
         </div>
       </main>
 
-      <CareersFooter />
+      <CareersFooter
+        orgName={orgName}
+        orgSlug={orgSlug}
+        orgLogoUrl={org?.logoUrl}
+      />
     </div>
   );
 }

@@ -26,6 +26,7 @@ import { toInstant } from "../common/date.util";
 import { formatInterviewRecord } from "../interviews/constants";
 
 import { EventsService } from "../events/events.service";
+import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
 
 @Injectable()
 export class JobsService {
@@ -72,12 +73,24 @@ export class JobsService {
     }
 
     let targetOrgId = filter?.organizationId || userOrgId || undefined;
-    let targetOrg: { id: string; name: string; slug: string } | null = null;
+    let targetOrg: {
+      id: string;
+      name: string;
+      slug: string;
+      logoObjectKey?: string | null;
+      logoUpdatedAt?: Date | string | null;
+    } | null = null;
 
     if (filter?.organizationSlug) {
       targetOrg = await this.prisma.organization.findFirst({
         where: { slug: filter.organizationSlug as string },
-        select: { id: true, name: true, slug: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
+        },
       });
       if (!targetOrg) {
         return { data: [], total: 0, page, limit, totalPages: 0 };
@@ -86,7 +99,13 @@ export class JobsService {
     } else if (targetOrgId) {
       targetOrg = await this.prisma.organization.findFirst({
         where: { id: targetOrgId as string },
-        select: { id: true, name: true, slug: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
+        },
       });
     }
 
@@ -261,10 +280,10 @@ export class JobsService {
 
     const orgMap = new Map<
       string,
-      { id: string; name: string; slug: string }
+      { id: string; name: string; slug: string; logoUrl: string | null }
     >();
     if (targetOrg) {
-      orgMap.set(targetOrg.id, targetOrg);
+      orgMap.set(targetOrg.id, attachOrganizationLogoUrl(targetOrg));
     } else {
       const allOrgs = await this.prisma.organization.findMany({
         where: {
@@ -282,10 +301,12 @@ export class JobsService {
           id: true,
           name: true,
           slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
         },
       });
       for (const o of allOrgs) {
-        orgMap.set(o.id, o);
+        orgMap.set(o.id, attachOrganizationLogoUrl(o));
       }
     }
 
@@ -371,14 +392,21 @@ export class JobsService {
       );
     }
 
-    let organization: { id: string; name: string; slug: string } | null = null;
+    let organization: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl?: string | null;
+    } | null = null;
     if (job.organizationId) {
-      organization = await this.prisma.organization.findFirst({
+      const orgRow = await this.prisma.organization.findFirst({
         where: { id: job.organizationId as string },
         select: {
           id: true,
           name: true,
           slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
           defaultLanguage: true,
           timezone: true,
           dateFormat: true,
@@ -387,6 +415,7 @@ export class JobsService {
           defaultCurrency: true,
         },
       });
+      organization = orgRow ? attachOrganizationLogoUrl(orgRow) : null;
     }
 
     if (isPublic) {

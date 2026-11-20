@@ -100,6 +100,7 @@ export function JobDetailsClient({
       <CareersHeader
         orgName={orgName}
         orgSlug={orgSlug}
+        orgLogoUrl={org?.logoUrl}
         showShareButton={true}
         onShare={handleCopyLink}
         copiedLink={copiedLink}
@@ -123,6 +124,7 @@ export function JobDetailsClient({
         <JobDetailsHero
           job={job}
           orgName={orgName}
+          orgLogoUrl={org?.logoUrl}
           onApplyClick={handleApplyClick}
         />
 
@@ -144,7 +146,11 @@ export function JobDetailsClient({
       </main>
 
       {/* Footer */}
-      <CareersFooter orgName={orgName} orgSlug={orgSlug} />
+      <CareersFooter
+        orgName={orgName}
+        orgSlug={orgSlug}
+        orgLogoUrl={org?.logoUrl}
+      />
     </div>
   );
 }

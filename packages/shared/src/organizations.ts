@@ -1053,11 +1053,27 @@ export function normalizeOrgLocalization(
   };
 }
 
+export const MAX_ORG_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+
+export const ALLOWED_ORG_LOGO_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export const ALLOWED_ORG_LOGO_EXTENSIONS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+] as const;
+
 export interface Organization {
   id: string;
   name: string;
   slug: string;
   ownerId?: string | null;
+  logoUrl?: string | null;
   defaultLanguage?: OrgLanguage;
   timezone?: string;
   dateFormat?: DateFormat;

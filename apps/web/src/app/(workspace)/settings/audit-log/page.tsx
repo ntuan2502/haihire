@@ -115,6 +115,18 @@ export default function AuditLogPage() {
           className:
             "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800",
         };
+      case "ORG_LOGO_UPDATED":
+        return {
+          label: t("settings.auditLog.actionOrgLogoUpdated"),
+          className:
+            "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+        };
+      case "ORG_LOGO_REMOVED":
+        return {
+          label: t("settings.auditLog.actionOrgLogoRemoved"),
+          className:
+            "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+        };
       default:
         return {
           label: action,
@@ -198,6 +210,21 @@ export default function AuditLogPage() {
       }
     }
 
+    if (
+      log.action === "ORG_LOGO_UPDATED" &&
+      typeof record.fileName === "string"
+    ) {
+      lines.push(
+        t("settings.auditLog.metadataLabels.logoUpdated", {
+          fileName: record.fileName,
+        }).replace("{fileName}", record.fileName),
+      );
+    }
+
+    if (log.action === "ORG_LOGO_REMOVED") {
+      lines.push(t("settings.auditLog.metadataLabels.logoRemoved"));
+    }
+
     return lines;
   };
 
@@ -226,6 +253,14 @@ export default function AuditLogPage() {
     {
       value: "ORG_LOCALIZATION_UPDATED",
       label: t("settings.auditLog.actionOrgLocalizationUpdated"),
+    },
+    {
+      value: "ORG_LOGO_UPDATED",
+      label: t("settings.auditLog.actionOrgLogoUpdated"),
+    },
+    {
+      value: "ORG_LOGO_REMOVED",
+      label: t("settings.auditLog.actionOrgLogoRemoved"),
     },
   ];
 

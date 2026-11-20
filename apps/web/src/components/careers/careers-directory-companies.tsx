@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Building2, MapPin, ArrowRight } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
 import { useI18n } from "@/i18n";
@@ -10,6 +11,7 @@ export interface CompanyDirectoryItem {
   id: string;
   name: string;
   slug: string;
+  logoUrl?: string | null;
   jobs: Job[];
   departments: Set<string>;
   locations: Set<string>;
@@ -45,8 +47,6 @@ export function CareersDirectoryCompanies({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {companies.map((company) => {
-        const initial = company.name.charAt(0).toUpperCase();
-
         return (
           <div
             key={company.slug}
@@ -56,10 +56,13 @@ export function CareersDirectoryCompanies({
               {/* Company Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3.5">
-                  {/* Company Avatar with Gradient */}
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-primary to-sky-500 text-primary-foreground font-black text-lg flex items-center justify-center shadow-sm shrink-0">
-                    {initial}
-                  </div>
+                  <OrganizationLogo
+                    name={company.name}
+                    logoUrl={company.logoUrl}
+                    size="xl"
+                    variant="gradient"
+                    decorative
+                  />
                   <div>
                     <Link
                       href={`/careers/${company.slug}`}

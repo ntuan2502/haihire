@@ -72,35 +72,35 @@ User (email unique, tokenVersion, preferredLanguage?, preferredTimezone?)
 
 ## 3. Prisma Models Inventory (`27`)
 
-|  #  | Model                        | Table (`@@map`)                | Tenant Isolation Column / Rule                                                                                 |    Soft Delete    |
-| :-: | :--------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------- | :---------------: |
-|  1  | `Organization`               | `organization`                 | Root entity (`id`, `slug` unique, `ownerId` `Restrict`)                                                        |        No         |
-|  2  | `User`                       | `user`                         | Global identity (`email` unique, `tokenVersion`, `OrganizationMember` join)                                    |        No         |
-|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`                                                  |        No         |
-|  4  | `OrganizationRolePermission` | `organization_role_permission` | `organizationId` (Cascade), unique `[organizationId, role, permission]`                                        |        No         |
-|  5  | `InviteLink`                 | `invite_link`                  | `organizationId` (Cascade), `token` unique                                                                     |        No         |
-|  6  | `Job`                        | `job`                          | `organizationId` (Cascade), indexed `[organizationId, deletedAt, status, createdAt]`, `salaryMin`/`Max`/`Curr` | Yes (`deletedAt`) |
-|  7  | `Candidate`                  | `candidate`                    | `organizationId` (Cascade), partial unique `[organizationId, email] WHERE "deletedAt" IS NULL`                 | Yes (`deletedAt`) |
-|  8  | `Application`                | `application`                  | Direct `organizationId` (Cascade) + `stageId` (`SetNull` -> `PipelineStage`); unique `[candidateId, jobId]`    |        No         |
-|  9  | `Interview`                  | `interview`                    | Direct `organizationId` (Cascade) + `interviewerId` (`SetNull` -> `User`)                                      |        No         |
-| 10  | `EmailTemplate`              | `email_template`               | `organizationId` (Cascade)                                                                                     |        No         |
-| 11  | `EmailFlowConfig`            | `email_flow_config`            | `organizationId` (Cascade), unique `[organizationId, flowKey]`                                                 |        No         |
-| 12  | `EmailSetting`               | `email_setting`                | `organizationId` unique (Cascade); holds AES-256 encrypted secrets                                             |        No         |
-| 13  | `EmailLog`                   | `email_log`                    | `scope` (`SYSTEM` \| `ORGANIZATION`), optional `organizationId` (Cascade), `applicationId` (`SetNull`)         |        No         |
-| 14  | `ActivityLog`                | `activity_log`                 | `organizationId` (Cascade), `candidateId` (Cascade), `applicationId` (`SetNull`)                               |        No         |
-| 15  | `CandidateDocument`          | `candidate_document`           | `organizationId` (Cascade), `candidateId` (Cascade), optional `storedFileId` (`SetNull`)                       |        No         |
-| 16  | `TrackingLink`               | `tracking_link`                | `organizationId` (Cascade), partial unique `[token] WHERE "deletedAt" IS NULL`                                 | Yes (`deletedAt`) |
-| 17  | `TrackingClick`              | `tracking_click`               | Direct `organizationId` (Cascade), indexed `[organizationId, createdAt]` & `[trackingLinkId, createdAt]`       |        No         |
-| 18  | `OrganizationWebhookSetting` | `organization_webhook_setting` | `organizationId` (Cascade), unique `[organizationId, eventType, provider]`                                     |        No         |
-| 19  | `OrganizationAuditLog`       | `organization_audit_log`       | `organizationId` (`Restrict`), `actorId` (`SetNull`)                                                           |        No         |
-| 20  | `PlatformAuditLog`           | `platform_audit_log`           | Platform-wide security/admin event table (`organizationId`, `actorId`, `action`, `resource`)                   |        No         |
-| 21  | `ApplicationNote`            | `application_note`             | `organizationId` (Cascade), `applicationId` (Cascade)                                                          |        No         |
-| 22  | `CandidateNote`              | `candidate_note`               | `organizationId` (Cascade), `candidateId` (Cascade)                                                            |        No         |
-| 23  | `PipelineStage`              | `pipeline_stage`               | `organizationId` (Cascade), optional `jobId` (Cascade), ordered `[organizationId, jobId, orderIndex]`          |        No         |
-| 24  | `StoredFile`                 | `stored_file`                  | `organizationId` (Cascade), `objectKey` unique (`haihire-resumes` bucket metadata)                             |        No         |
-| 25  | `OutboxEvent`                | `outbox_event`                 | `organizationId` (Cascade), transactional outbox (`status`, `nextAttemptAt`)                                   |        No         |
-| 26  | `NotificationPreference`     | `notification_preference`      | Workspace and user form a composite primary key.                                                               |        No         |
-| 27  | `Notification`               | `notification`                 | Workspace and recipient scope the inbox.                                                                       |        No         |
+|  #  | Model                        | Table (`@@map`)                | Tenant Isolation Column / Rule                                                                                       |    Soft Delete    |
+| :-: | :--------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------- | :---------------: |
+|  1  | `Organization`               | `organization`                 | Root entity (`id`, `slug` unique, `ownerId` `Restrict`, optional `logoObjectKey` / `logoMimeType` / `logoUpdatedAt`) |        No         |
+|  2  | `User`                       | `user`                         | Global identity (`email` unique, `tokenVersion`, `OrganizationMember` join)                                          |        No         |
+|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`                                                        |        No         |
+|  4  | `OrganizationRolePermission` | `organization_role_permission` | `organizationId` (Cascade), unique `[organizationId, role, permission]`                                              |        No         |
+|  5  | `InviteLink`                 | `invite_link`                  | `organizationId` (Cascade), `token` unique                                                                           |        No         |
+|  6  | `Job`                        | `job`                          | `organizationId` (Cascade), indexed `[organizationId, deletedAt, status, createdAt]`, `salaryMin`/`Max`/`Curr`       | Yes (`deletedAt`) |
+|  7  | `Candidate`                  | `candidate`                    | `organizationId` (Cascade), partial unique `[organizationId, email] WHERE "deletedAt" IS NULL`                       | Yes (`deletedAt`) |
+|  8  | `Application`                | `application`                  | Direct `organizationId` (Cascade) + `stageId` (`SetNull` -> `PipelineStage`); unique `[candidateId, jobId]`          |        No         |
+|  9  | `Interview`                  | `interview`                    | Direct `organizationId` (Cascade) + `interviewerId` (`SetNull` -> `User`)                                            |        No         |
+| 10  | `EmailTemplate`              | `email_template`               | `organizationId` (Cascade)                                                                                           |        No         |
+| 11  | `EmailFlowConfig`            | `email_flow_config`            | `organizationId` (Cascade), unique `[organizationId, flowKey]`                                                       |        No         |
+| 12  | `EmailSetting`               | `email_setting`                | `organizationId` unique (Cascade); holds AES-256 encrypted secrets                                                   |        No         |
+| 13  | `EmailLog`                   | `email_log`                    | `scope` (`SYSTEM` \| `ORGANIZATION`), optional `organizationId` (Cascade), `applicationId` (`SetNull`)               |        No         |
+| 14  | `ActivityLog`                | `activity_log`                 | `organizationId` (Cascade), `candidateId` (Cascade), `applicationId` (`SetNull`)                                     |        No         |
+| 15  | `CandidateDocument`          | `candidate_document`           | `organizationId` (Cascade), `candidateId` (Cascade), optional `storedFileId` (`SetNull`)                             |        No         |
+| 16  | `TrackingLink`               | `tracking_link`                | `organizationId` (Cascade), partial unique `[token] WHERE "deletedAt" IS NULL`                                       | Yes (`deletedAt`) |
+| 17  | `TrackingClick`              | `tracking_click`               | Direct `organizationId` (Cascade), indexed `[organizationId, createdAt]` & `[trackingLinkId, createdAt]`             |        No         |
+| 18  | `OrganizationWebhookSetting` | `organization_webhook_setting` | `organizationId` (Cascade), unique `[organizationId, eventType, provider]`                                           |        No         |
+| 19  | `OrganizationAuditLog`       | `organization_audit_log`       | `organizationId` (`Restrict`), `actorId` (`SetNull`)                                                                 |        No         |
+| 20  | `PlatformAuditLog`           | `platform_audit_log`           | Platform-wide security/admin event table (`organizationId`, `actorId`, `action`, `resource`)                         |        No         |
+| 21  | `ApplicationNote`            | `application_note`             | `organizationId` (Cascade), `applicationId` (Cascade)                                                                |        No         |
+| 22  | `CandidateNote`              | `candidate_note`               | `organizationId` (Cascade), `candidateId` (Cascade)                                                                  |        No         |
+| 23  | `PipelineStage`              | `pipeline_stage`               | `organizationId` (Cascade), optional `jobId` (Cascade), ordered `[organizationId, jobId, orderIndex]`                |        No         |
+| 24  | `StoredFile`                 | `stored_file`                  | `organizationId` (Cascade), `objectKey` unique (`haihire-resumes` bucket metadata)                                   |        No         |
+| 25  | `OutboxEvent`                | `outbox_event`                 | `organizationId` (Cascade), transactional outbox (`status`, `nextAttemptAt`)                                         |        No         |
+| 26  | `NotificationPreference`     | `notification_preference`      | Workspace and user form a composite primary key.                                                                     |        No         |
+| 27  | `Notification`               | `notification`                 | Workspace and recipient scope the inbox.                                                                             |        No         |
 
 ---
 

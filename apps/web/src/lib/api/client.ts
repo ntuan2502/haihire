@@ -190,6 +190,25 @@ export const getDocumentUrl = (
   return `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
+export const resolveOrganizationLogoUrl = (
+  logoUrl?: string | null,
+): string | null => {
+  if (!logoUrl) return null;
+  const trimmed = logoUrl.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("blob:") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("/api/")
+  ) {
+    return trimmed;
+  }
+  const apiUrl = getApiBaseUrl().replace(/\/+$/, "");
+  return `${apiUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+};
+
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,

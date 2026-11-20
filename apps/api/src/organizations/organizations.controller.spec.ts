@@ -32,6 +32,9 @@ describe("OrganizationsController", () => {
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
     getAuditLogs: vi.fn(),
+    uploadMyOrgLogo: vi.fn(),
+    deleteMyOrgLogo: vi.fn(),
+    preparePublicOrgLogo: vi.fn(),
   };
 
   const mockAuthService = {
@@ -673,6 +676,99 @@ describe("OrganizationsController", () => {
         "user-owner",
         "org-3",
       );
+    });
+  });
+
+  describe("Organization Logo Endpoints (POST/DELETE my/logo & GET public/:id/logo)", () => {
+    it("enforces org:update permission on uploadMyOrgLogo and deleteMyOrgLogo", async () => {
+      const allowedCtx = createMockContext(
+        ownerReq,
+        controller.uploadMyOrgLogo,
+      );
+      expect(rolesGuard.canActivate(allowedCtx)).toBe(true);
+
+      const deniedUploadCtx = createMockContext(
+        memberReq,
+        controller.uploadMyOrgLogo,
+      );
+      expect(() => rolesGuard.canActivate(deniedUploadCtx)).toThrow(
+        AppForbiddenException,
+      );
+
+      const deniedDeleteCtx = createMockContext(
+        memberReq,
+        controller.deleteMyOrgLogo,
+      );
+      expect(() => rolesGuard.canActivate(deniedDeleteCtx)).toThrow(
+        AppForbiddenException,
+      );
+
+      const file = {
+        originalname: "logo.png",
+        mimetype: "image/png",
+        size: 16,
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      } as Express.Multer.File;
+      mockService.uploadMyOrgLogo.mockResolvedValueOnce({
+        id: "org-1",
+        logoUrl: "/organizations/public/org-1/logo?v=123",
+      });
+
+      const uploaded = await controller.uploadMyOrgLogo(ownerReq, file);
+      expect(mockService.uploadMyOrgLogo).toHaveBeenCalledWith(
+        "user-owner",
+        file,
+        "org-1",
+      );
+      expect(uploaded.logoUrl).toBe("/organizations/public/org-1/logo?v=123");
+
+      mockService.deleteMyOrgLogo.mockResolvedValueOnce({
+        id: "org-1",
+        logoUrl: null,
+      });
+      const removed = await controller.deleteMyOrgLogo(ownerReq);
+      expect(mockService.deleteMyOrgLogo).toHaveBeenCalledWith(
+        "user-owner",
+        "org-1",
+      );
+      expect(removed.logoUrl).toBeNull();
+    });
+
+    it("streams public org logo with nosniff and immutable cache headers when version query is present", async () => {
+      const mockStream = {
+        on: vi.fn().mockReturnThis(),
+        pipe: vi.fn(),
+      };
+      mockService.preparePublicOrgLogo.mockResolvedValueOnce({
+        stream: mockStream,
+        mimeType: "image/webp",
+      });
+      const mockRes = {
+        setHeader: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        end: vi.fn(),
+        headersSent: false,
+      };
+
+      await controller.getPublicOrgLogo(
+        "00000000-0000-4000-8000-000000000001",
+        mockRes as never,
+        "1700000000",
+      );
+
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "image/webp",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "X-Content-Type-Options",
+        "nosniff",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Cache-Control",
+        "public, max-age=31536000, immutable",
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
     });
   });
 });

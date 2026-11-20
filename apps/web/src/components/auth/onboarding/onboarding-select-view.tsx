@@ -1,7 +1,8 @@
 "use client";
 
-import { Building2, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "cn";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -64,9 +65,13 @@ export function OnboardingSelectView({
                 )}
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0 group-hover:scale-105 transition-transform">
-                    <Building2 className="h-5 w-5" />
-                  </div>
+                  <OrganizationLogo
+                    name={org.name}
+                    logoUrl={org.logoUrl}
+                    size="lg"
+                    decorative
+                    className="group-hover:scale-105 transition-transform"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                       {org.name}

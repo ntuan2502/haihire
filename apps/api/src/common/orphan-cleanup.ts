@@ -71,6 +71,11 @@ export async function cleanupOrphans(
     candidate?: {
       findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
     };
+    organization?: {
+      findMany(
+        args?: unknown,
+      ): Promise<Array<{ logoObjectKey?: string | null }>>;
+    };
   }
   const activeDb: DbQueryable =
     options.dbClient ||
@@ -135,6 +140,27 @@ export async function cleanupOrphans(
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(
       `MinIO Orphan Cleanup aborted: Failed to query Candidate references: ${message}`,
+      { cause: err },
+    );
+  }
+
+  try {
+    const orgs = activeDb.organization
+      ? await activeDb.organization.findMany({
+          where: { logoObjectKey: { not: null } },
+          select: { logoObjectKey: true },
+        })
+      : [];
+    for (const org of orgs) {
+      if (org.logoObjectKey) {
+        const objName = extractObjectNameFromUrl(org.logoObjectKey, bucketName);
+        if (objName) activeReferencedObjectNames.add(objName);
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `MinIO Orphan Cleanup aborted: Failed to query Organization references: ${message}`,
       { cause: err },
     );
   }

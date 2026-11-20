@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, ChevronsUpDown, GalleryVerticalEnd, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { useAuth } from "@/context/auth-context";
 import {
   useMyOrgs,
@@ -62,9 +63,13 @@ export function TeamSwitcher() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <GalleryVerticalEnd className="size-4" aria-hidden="true" />
-              </div>
+              <OrganizationLogo
+                name={activeOrganization?.name}
+                logoUrl={activeOrganization?.logoUrl}
+                size="md"
+                variant="sidebar"
+                decorative
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
                   {activeOrganization?.name ?? t("nav.organizationFallback")}
@@ -92,12 +97,12 @@ export function TeamSwitcher() {
                 disabled={switchOrganization.isPending}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  <GalleryVerticalEnd
-                    className="size-3.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                </div>
+                <OrganizationLogo
+                  name={organization.name}
+                  logoUrl={organization.logoUrl}
+                  size="sm"
+                  decorative
+                />
                 {organization.name}
                 {organization.id === user?.organizationId && (
                   <DropdownMenuShortcut>

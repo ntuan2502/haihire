@@ -9,9 +9,9 @@ import {
   Plus,
   Settings,
   LogOut,
-  Building2,
   User,
 } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { useAuth } from "@/context/auth-context";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import {
@@ -104,9 +104,11 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
               className="w-full text-left p-2 flex items-center justify-between hover:bg-accent transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <Building2
-                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-                  aria-hidden="true"
+                <OrganizationLogo
+                  name={user.organization?.name}
+                  logoUrl={user.organization?.logoUrl}
+                  size="xs"
+                  decorative
                 />
                 <span className="text-xs font-semibold text-foreground truncate">
                   {user.organization?.name || t("nav.noOrganization")}
@@ -150,7 +152,15 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                               : "text-foreground hover:bg-accent",
                           )}
                         >
-                          <span className="truncate">{org.name}</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <OrganizationLogo
+                              name={org.name}
+                              logoUrl={org.logoUrl}
+                              size="xs"
+                              decorative
+                            />
+                            <span className="truncate">{org.name}</span>
+                          </div>
                           {isActive && (
                             <Check
                               className="h-3.5 w-3.5 text-primary shrink-0"
@@ -163,7 +173,15 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                   })
                 ) : user.organization ? (
                   <div className="w-full px-2.5 py-1.5 flex items-center justify-between text-xs bg-primary/10 text-primary font-semibold cursor-default">
-                    <span className="truncate">{user.organization.name}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <OrganizationLogo
+                        name={user.organization.name}
+                        logoUrl={user.organization.logoUrl}
+                        size="xs"
+                        decorative
+                      />
+                      <span className="truncate">{user.organization.name}</span>
+                    </div>
                     <Check
                       className="h-3.5 w-3.5 text-primary shrink-0"
                       aria-hidden="true"

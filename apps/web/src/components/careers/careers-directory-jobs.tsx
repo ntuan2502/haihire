@@ -3,12 +3,12 @@
 import Link from "next/link";
 import {
   Briefcase,
-  Building2,
   Clock,
   DollarSign,
   MapPin,
   ChevronRight,
 } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { getJobTypeLabel } from "@/lib/jobs";
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
@@ -60,10 +60,15 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
                   >
                     {job.title}
                   </Link>
-                  <p className="text-xs font-semibold text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                    <Building2 className="h-3 w-3 text-muted-foreground" />
+                  <div className="text-xs font-semibold text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                    <OrganizationLogo
+                      name={orgName}
+                      logoUrl={job.organization?.logoUrl}
+                      size="xs"
+                      decorative
+                    />
                     <span>{orgName}</span>
-                  </p>
+                  </div>
                 </div>
 
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">

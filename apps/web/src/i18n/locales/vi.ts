@@ -1710,6 +1710,25 @@ export const vi: TranslationSchema = {
     backToSettings: "Quay lại Cài đặt",
     generalProfileDesc:
       "Quản lý tên hiển thị, đường dẫn trang tuyển dụng và thông tin cơ bản của tổ chức.",
+    logo: {
+      title: "Logo tổ chức",
+      description:
+        "Hiển thị trên thanh điều hướng và cổng tuyển dụng công khai của tổ chức.",
+      uploadButton: "Tải logo lên",
+      changeButton: "Thay đổi logo",
+      removeButton: "Xóa logo",
+      uploading: "Đang tải lên...",
+      removing: "Đang xóa...",
+      hint: "Hỗ trợ định dạng PNG, JPG hoặc WebP, dung lượng tối đa 2 MB.",
+      invalidTypeError: "Chỉ hỗ trợ tệp ảnh PNG, JPG hoặc WebP.",
+      fileTooLargeError: "Dung lượng logo không được vượt quá 2 MB.",
+      uploadSuccess: "Đã cập nhật logo tổ chức.",
+      removeSuccess: "Đã xóa logo tổ chức.",
+      removeConfirmTitle: "Xóa logo tổ chức",
+      removeConfirmDesc:
+        "Bạn có chắc chắn muốn xóa logo hiện tại? Hệ thống sẽ hiển thị lại chữ viết tắt của tổ chức.",
+      removeConfirmAction: "Xóa logo",
+    },
     orgNameRequiredError: "Vui lòng nhập tên tổ chức.",
     orgSlugRequiredError: "Vui lòng nhập đường dẫn định danh.",
     accountProfileDesc:
@@ -2025,6 +2044,8 @@ export const vi: TranslationSchema = {
       actionOwnershipTransferred: "Chuyển giao quyền sở hữu",
       actionOrgDeleted: "Xóa tổ chức",
       actionOrgLocalizationUpdated: "Cập nhật ngôn ngữ & khu vực",
+      actionOrgLogoUpdated: "Cập nhật logo tổ chức",
+      actionOrgLogoRemoved: "Xóa logo tổ chức",
       resources: {
         ORGANIZATION: "Tổ chức",
         MEMBER: "Thành viên",
@@ -2039,6 +2060,8 @@ export const vi: TranslationSchema = {
         permissionsUpdated: "Đã cập nhật {count} quyền hạn",
         ownershipTransferred: "Đã chuyển giao quyền sở hữu tổ chức",
         localizationUpdated: "Cập nhật bản địa hóa: {fields}",
+        logoUpdated: "Tệp ảnh: {fileName}",
+        logoRemoved: "Đã gỡ bỏ logo tổ chức",
         localizationFields: {
           timezone: "Múi giờ",
           defaultLocale: "Ngôn ngữ mặc định",

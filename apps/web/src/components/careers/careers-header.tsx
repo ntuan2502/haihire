@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import {
   UserMenu,
   MobileDrawer,
@@ -27,6 +28,8 @@ export interface CareersHeaderProps {
   orgName?: string;
   /** Organization slug (if viewing a company or job page) */
   orgSlug?: string;
+  /** Organization logo URL (if configured) */
+  orgLogoUrl?: string | null;
   /** Whether to show the share button */
   showShareButton?: boolean;
   /** Share click handler */
@@ -40,6 +43,7 @@ export interface CareersHeaderProps {
 export function CareersHeader({
   orgName,
   orgSlug,
+  orgLogoUrl,
   showShareButton = false,
   onShare,
   copiedLink = false,
@@ -61,9 +65,13 @@ export function CareersHeader({
               href={`/careers/${orgSlug}`}
               className="flex items-center gap-3 min-w-0 group hover:opacity-90 transition-opacity"
             >
-              <div className="h-9 w-9 shrink-0 rounded-lg bg-gradient-to-tr from-primary to-sky-500 flex items-center justify-center text-primary-foreground font-black text-base shadow-sm group-hover:scale-105 transition-transform">
-                {orgName.charAt(0).toUpperCase()}
-              </div>
+              <OrganizationLogo
+                name={orgName}
+                logoUrl={orgLogoUrl}
+                variant="gradient"
+                decorative
+                className="h-9 w-9 rounded-lg text-base shadow-sm group-hover:scale-105 transition-transform"
+              />
               <div className="min-w-0">
                 <div className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">
                   <span>{t("careers.companyPage")}</span>

@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
+import { extname } from "node:path";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CreateOrgDto } from "../dto/create-org.dto";
 import { UpdateOrgDto } from "../dto/update-org.dto";
@@ -9,6 +10,7 @@ import {
   AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
+  AppServiceUnavailableException,
 } from "../../common/app-exception";
 import {
   APP_ERROR_CODES,
@@ -21,6 +23,15 @@ import {
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { EventsService } from "../../events/events.service";
+import { MinioService, type UploadResult } from "../../minio/minio.service";
+import { fixUtf8String } from "../../common/doc-utils";
+import {
+  ALLOWED_LOGO_EXTENSIONS,
+  ALLOWED_LOGO_MIME_TYPES,
+  sanitizeFilename,
+  validateUploadedLogoFile,
+} from "../../common/upload-utils";
+import { attachOrganizationLogoUrl } from "../organization-logo.util";
 
 type MockUserTableCompat = {
   store?: Array<Record<string, unknown>>;
@@ -40,6 +51,8 @@ const ORG_CORE_SELECT = {
   name: true,
   slug: true,
   ownerId: true,
+  logoObjectKey: true,
+  logoUpdatedAt: true,
   defaultLanguage: true,
   timezone: true,
   dateFormat: true,
@@ -53,6 +66,8 @@ const ORG_PUBLIC_SELECT = {
   id: true,
   name: true,
   slug: true,
+  logoObjectKey: true,
+  logoUpdatedAt: true,
   defaultLanguage: true,
   timezone: true,
   dateFormat: true,
@@ -74,16 +89,40 @@ export class OrganizationsCoreService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(MinioService)
+    private readonly minioService?: MinioService,
   ) {}
 
-  private withLocalization<T extends Record<string, unknown>>(
+  private withLocalization<
+    T extends {
+      id: string;
+      logoObjectKey?: string | null;
+      logoMimeType?: string | null;
+      logoUpdatedAt?: Date | string | null;
+    } & Partial<Record<keyof OrganizationLocalizationSettings, unknown>>,
+  >(
     org: T,
-  ): Omit<T, keyof OrganizationLocalizationSettings> &
-    OrganizationLocalizationSettings {
+  ): Omit<
+    T,
+    | keyof OrganizationLocalizationSettings
+    | "logoObjectKey"
+    | "logoMimeType"
+    | "logoUpdatedAt"
+  > &
+    OrganizationLocalizationSettings & { logoUrl: string | null } {
+    const withUrl = attachOrganizationLogoUrl(org);
     return {
-      ...org,
+      ...withUrl,
       ...normalizeOrgLocalization(org),
-    };
+    } as Omit<
+      T,
+      | keyof OrganizationLocalizationSettings
+      | "logoObjectKey"
+      | "logoMimeType"
+      | "logoUpdatedAt"
+    > &
+      OrganizationLocalizationSettings & { logoUrl: string | null };
   }
 
   async create(userId: string, dto: CreateOrgDto) {
@@ -377,9 +416,8 @@ export class OrganizationsCoreService {
     };
   }
 
-  async updateMyOrg(
+  private async resolveAndAuthorizeOrgUpdate(
     userId: string,
-    dto: UpdateOrgDto,
     activeOrgId?: string | null,
   ) {
     let orgId = activeOrgId || null;
@@ -418,6 +456,7 @@ export class OrganizationsCoreService {
         id: true,
         slug: true,
         ownerId: true,
+        logoObjectKey: true,
       },
     });
 
@@ -483,6 +522,19 @@ export class OrganizationsCoreService {
         "Members have read-only access. Only Admins can perform this action.",
       );
     }
+
+    return { orgId, currentOrg };
+  }
+
+  async updateMyOrg(
+    userId: string,
+    dto: UpdateOrgDto,
+    activeOrgId?: string | null,
+  ) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
 
     if (dto.slug) {
       const normalizedSlug = dto.slug.toLowerCase().trim();
@@ -573,6 +625,214 @@ export class OrganizationsCoreService {
     return updatedOrg ? this.withLocalization(updatedOrg) : null;
   }
 
+  async uploadMyOrgLogo(
+    userId: string,
+    file: Express.Multer.File | undefined,
+    activeOrgId?: string | null,
+  ) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
+
+    const validated = validateUploadedLogoFile(file);
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    let uploadResult: UploadResult;
+    try {
+      uploadResult = await this.minioService.uploadFile(
+        file!,
+        "logos",
+        orgId,
+        ALLOWED_LOGO_EXTENSIONS,
+      );
+    } catch (error) {
+      if (error instanceof AppBadRequestException) {
+        throw error;
+      }
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload organization logo to storage service",
+      );
+    }
+
+    const updatedOrg = await runInTransaction(this.prisma, async (tx) => {
+      return tx.organization.update({
+        where: { id: orgId },
+        data: {
+          logoObjectKey: uploadResult.fileName,
+          logoMimeType: validated.mimeType,
+          logoUpdatedAt: toInstant(),
+        },
+        select: ORG_CORE_SELECT,
+      });
+    }).catch(async (dbError) => {
+      await this.minioService!.deleteFile(uploadResult.fileName).catch(
+        (err) => {
+          this.logger.warn(
+            `Failed to compensate uploaded logo '${uploadResult.fileName}': ${String(err)}`,
+          );
+        },
+      );
+      throw dbError;
+    });
+
+    if (
+      currentOrg.logoObjectKey &&
+      currentOrg.logoObjectKey !== uploadResult.fileName
+    ) {
+      await this.minioService
+        .deleteFile(currentOrg.logoObjectKey)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to remove previous logo '${currentOrg.logoObjectKey}': ${String(err)}`,
+          );
+        });
+    }
+
+    const cleanName = sanitizeFilename(
+      fixUtf8String(file!.originalname || `logo${validated.ext}`),
+    );
+    await this.auditLog?.logOrg(
+      orgId,
+      userId,
+      "ORG_LOGO_UPDATED",
+      "ORGANIZATION",
+      {
+        fileName: cleanName,
+        mimeType: validated.mimeType,
+        sizeBytes: file!.size ?? file!.buffer?.length ?? 0,
+      },
+    );
+
+    this.eventsService?.emit({
+      type: "ORG_UPDATED",
+      organizationId: orgId,
+      data: { updatedBy: userId },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: orgId,
+    });
+
+    return this.withLocalization(updatedOrg);
+  }
+
+  async deleteMyOrgLogo(userId: string, activeOrgId?: string | null) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
+
+    const updatedOrg = await this.prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        logoObjectKey: null,
+        logoMimeType: null,
+        logoUpdatedAt: null,
+      },
+      select: ORG_CORE_SELECT,
+    });
+
+    if (currentOrg.logoObjectKey) {
+      await this.minioService
+        ?.deleteFile(currentOrg.logoObjectKey)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to delete logo '${currentOrg.logoObjectKey}' from storage: ${String(err)}`,
+          );
+        });
+
+      await this.auditLog?.logOrg(
+        orgId,
+        userId,
+        "ORG_LOGO_REMOVED",
+        "ORGANIZATION",
+        null,
+      );
+
+      this.eventsService?.emit({
+        type: "ORG_UPDATED",
+        organizationId: orgId,
+        data: { updatedBy: userId },
+      });
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
+        organizationId: orgId,
+      });
+    }
+
+    return this.withLocalization(updatedOrg);
+  }
+
+  async preparePublicOrgLogo(orgId: string) {
+    const org = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        logoObjectKey: true,
+        logoMimeType: true,
+      },
+    });
+
+    if (!org || !org.logoObjectKey) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    const normalizedKey = this.minioService.extractObjectName(
+      org.logoObjectKey,
+    );
+    const safeTenant = org.id.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!normalizedKey.startsWith(`tenants/${safeTenant}/logos/`)) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+
+    const ext = extname(normalizedKey).toLowerCase();
+    const fallbackMime =
+      ext === ".png"
+        ? "image/png"
+        : ext === ".webp"
+          ? "image/webp"
+          : "image/jpeg";
+    const normalizedMime = org.logoMimeType?.trim().toLowerCase();
+    const mimeType =
+      normalizedMime && ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)
+        ? normalizedMime
+        : fallbackMime;
+
+    try {
+      const stream = await this.minioService.getObjectStream(
+        normalizedKey,
+        org.id,
+      );
+      return { stream, mimeType };
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+  }
+
   async deleteMyOrg(userId: string, activeOrgId?: string | null) {
     let orgId = activeOrgId || null;
     let fallbackRole: string | undefined;
@@ -611,6 +871,7 @@ export class OrganizationsCoreService {
         id: true,
         ownerId: true,
         name: true,
+        logoObjectKey: true,
       },
     });
 
@@ -701,6 +962,12 @@ export class OrganizationsCoreService {
         where: { id: orgId },
       });
     });
+
+    if (currentOrg.logoObjectKey) {
+      await this.minioService
+        ?.deleteFile(currentOrg.logoObjectKey)
+        .catch(() => {});
+    }
 
     for (const targetUserId of affectedUserIds) {
       this.eventsService?.emit({

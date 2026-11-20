@@ -8,6 +8,10 @@ import {
   type ProxyRecord,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
+import type { MinioService } from "../../minio/minio.service";
+import type { OrganizationsAuditLogService } from "./organizations-audit-log.service";
+import type { EventsService } from "../../events/events.service";
+import { Readable } from "node:stream";
 
 describe("OrganizationsCoreService", () => {
   let service: OrganizationsCoreService;
@@ -526,6 +530,162 @@ describe("OrganizationsCoreService", () => {
       const deleteRes = await service.deleteMyOrg("user-admin");
       expect(deleteRes.success).toBe(true);
       expect(deleteRes.message).toBe("Organization deleted successfully");
+    });
+  });
+
+  describe("Organization Logo Upload, Remove, and Public Stream", () => {
+    const pngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+    ]);
+    const validPngFile = {
+      originalname: "acme-logo.png",
+      mimetype: "image/png",
+      size: pngBuffer.length,
+      buffer: pngBuffer,
+    } as Express.Multer.File;
+
+    const createLogoMocks = () => {
+      const mockMinio = {
+        uploadFile: vi.fn().mockResolvedValue({
+          url: "http://minio/haihire-resumes/tenants/org-1/logos/new.png",
+          fileName: "tenants/org-1/logos/new.png",
+          originalName: "acme-logo.png",
+          size: pngBuffer.length,
+          mimeType: "image/png",
+        }),
+        deleteFile: vi.fn().mockResolvedValue(undefined),
+        extractObjectName: vi.fn((v: string) => v),
+        getObjectStream: vi.fn().mockResolvedValue(Readable.from([pngBuffer])),
+      };
+      const mockAuditLog = {
+        logOrg: vi.fn().mockResolvedValue(undefined),
+        logPlatform: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockEvents = { emit: vi.fn() };
+      const logoService = new OrganizationsCoreService(
+        mockPrisma,
+        mockAuditLog as unknown as OrganizationsAuditLogService,
+        mockEvents as unknown as EventsService,
+        mockMinio as unknown as MinioService,
+      );
+      return { logoService, mockMinio, mockAuditLog, mockEvents };
+    };
+
+    it("uploads a new logo, removes the replaced object, logs audit, and emits ORG_UPDATED", async () => {
+      organizationTable.store[0].logoObjectKey =
+        "tenants/org-1/logos/previous.png";
+      const { logoService, mockMinio, mockAuditLog, mockEvents } =
+        createLogoMocks();
+
+      const updated = await logoService.uploadMyOrgLogo(
+        "user-owner",
+        validPngFile,
+        "org-1",
+      );
+
+      expect(mockMinio.uploadFile).toHaveBeenCalledWith(
+        validPngFile,
+        "logos",
+        "org-1",
+        expect.any(Set),
+      );
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "tenants/org-1/logos/previous.png",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-owner",
+        "ORG_LOGO_UPDATED",
+        "ORGANIZATION",
+        expect.objectContaining({ mimeType: "image/png" }),
+      );
+      expect(mockEvents.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "ORG_UPDATED",
+          organizationId: "org-1",
+        }),
+      );
+      expect(updated.logoUrl).toMatch(
+        /^\/organizations\/public\/org-1\/logo\?v=\d+$/,
+      );
+      expect("logoObjectKey" in updated).toBe(false);
+    });
+
+    it("compensates MinIO upload if DB transaction fails while saving logo metadata", async () => {
+      const { logoService, mockMinio } = createLogoMocks();
+      vi.spyOn(mockPrisma.organization, "update").mockRejectedValueOnce(
+        new Error("DB write failure"),
+      );
+
+      await expect(
+        logoService.uploadMyOrgLogo("user-owner", validPngFile, "org-1"),
+      ).rejects.toThrow("DB write failure");
+
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "tenants/org-1/logos/new.png",
+      );
+    });
+
+    it("denies uploadMyOrgLogo and deleteMyOrgLogo when caller lacks org:update", async () => {
+      const { logoService, mockMinio } = createLogoMocks();
+
+      await expect(
+        logoService.uploadMyOrgLogo("user-member", validPngFile, "org-1"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+      });
+
+      await expect(
+        logoService.deleteMyOrgLogo("user-member", "org-1"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+      });
+
+      expect(mockMinio.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it("clears logo metadata, deletes object, and logs ORG_LOGO_REMOVED on deleteMyOrgLogo", async () => {
+      organizationTable.store[0].logoObjectKey =
+        "tenants/org-1/logos/current.png";
+      organizationTable.store[0].logoMimeType = "image/png";
+      const { logoService, mockMinio, mockAuditLog, mockEvents } =
+        createLogoMocks();
+
+      const updated = await logoService.deleteMyOrgLogo("user-owner", "org-1");
+
+      expect(updated.logoUrl).toBeNull();
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "tenants/org-1/logos/current.png",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-owner",
+        "ORG_LOGO_REMOVED",
+        "ORGANIZATION",
+        null,
+      );
+      expect(mockEvents.emit).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ORG_UPDATED" }),
+      );
+    });
+
+    it("streams tenant logo via preparePublicOrgLogo and throws 404 when missing", async () => {
+      const { logoService, mockMinio } = createLogoMocks();
+
+      await expect(
+        logoService.preparePublicOrgLogo("org-1"),
+      ).rejects.toMatchObject({ code: APP_ERROR_CODES.DOCUMENT_NOT_FOUND });
+
+      organizationTable.store[0].logoObjectKey =
+        "tenants/org-1/logos/brand.png";
+      organizationTable.store[0].logoMimeType = "image/png";
+
+      const result = await logoService.preparePublicOrgLogo("org-1");
+      expect(result.mimeType).toBe("image/png");
+      expect(mockMinio.getObjectStream).toHaveBeenCalledWith(
+        "tenants/org-1/logos/brand.png",
+        "org-1",
+      );
     });
   });
 });

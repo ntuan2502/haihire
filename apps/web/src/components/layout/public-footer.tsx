@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { cn } from "cn";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 
 export interface PublicFooterProps {
   /** Company/Organization name (optional) */
   orgName?: string;
   /** Company/Organization slug (optional) */
   orgSlug?: string;
+  /** Organization logo URL (optional) */
+  orgLogoUrl?: string | null;
   /** Custom additional CSS classes */
   className?: string;
   /** Custom max-width container class (default: max-w-7xl) */
@@ -19,6 +22,7 @@ export interface PublicFooterProps {
 export function PublicFooter({
   orgName,
   orgSlug,
+  orgLogoUrl,
   className,
   maxWidthClassName = "max-w-7xl",
 }: PublicFooterProps) {
@@ -45,9 +49,14 @@ export function PublicFooter({
               href={`/careers/${orgSlug}`}
               className="flex items-center gap-2 group hover:opacity-85 transition-opacity"
             >
-              <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
+              <OrganizationLogo
+                name={displayName}
+                logoUrl={orgLogoUrl}
+                size="sm"
+                variant="gradient"
+                decorative
+                className="font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform"
+              />
               <span className="font-semibold text-foreground">
                 {displayName} {t("careers.title")}
               </span>

@@ -152,6 +152,7 @@ export function OrgCareersClient({
       <CareersHeader
         orgName={orgName}
         orgSlug={orgSlug}
+        orgLogoUrl={initialOrg.logoUrl}
         showShareButton={true}
         onShare={handleCopyPortalLink}
         copiedLink={copiedLink}
@@ -378,7 +379,11 @@ export function OrgCareersClient({
       </main>
 
       {/* Footer */}
-      <CareersFooter orgName={orgName} orgSlug={orgSlug} />
+      <CareersFooter
+        orgName={orgName}
+        orgSlug={orgSlug}
+        orgLogoUrl={initialOrg.logoUrl}
+      />
     </div>
   );
 }

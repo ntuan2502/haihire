@@ -1,9 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from "@testing-library/react";
 import GeneralSettingsPage from "./page";
 import * as AuthContextModule from "@/context/auth-context";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role, type Permission, type User } from "@haihire/shared";
+import { toast } from "@/lib/toast";
+
+const { mockUploadLogoMutate, mockDeleteLogoMutate, mockOrgState } = vi.hoisted(
+  () => ({
+    mockUploadLogoMutate: vi.fn(),
+    mockDeleteLogoMutate: vi.fn(),
+    mockOrgState: {
+      current: {
+        id: "org-1",
+        name: "Acme Corp",
+        slug: "acme-corp",
+        ownerId: "owner-1",
+        logoUrl: null as string | null,
+      },
+    },
+  }),
+);
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 
 vi.mock("@/hooks/use-has-permission", () => ({
   useHasPermission: vi.fn(),
@@ -24,12 +56,7 @@ vi.mock("@/i18n", () => ({
 
 vi.mock("@/hooks/use-queries", () => ({
   useMyOrg: () => ({
-    data: {
-      id: "org-1",
-      name: "Acme Corp",
-      slug: "acme-corp",
-      ownerId: "owner-1",
-    },
+    data: mockOrgState.current,
     isLoading: false,
   }),
   useUpdateMyOrgMutation: () => ({
@@ -40,12 +67,27 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useUploadOrgLogoMutation: () => ({
+    mutateAsync: mockUploadLogoMutate,
+    isPending: false,
+  }),
+  useDeleteOrgLogoMutation: () => ({
+    mutateAsync: mockDeleteLogoMutate,
+    isPending: false,
+  }),
 }));
 
 describe("GeneralSettingsPage - Ownership Controls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useHasPermission).mockReturnValue(true);
+    mockOrgState.current = {
+      id: "org-1",
+      name: "Acme Corp",
+      slug: "acme-corp",
+      ownerId: "owner-1",
+      logoUrl: null,
+    };
   });
 
   const setupAuthMock = (
@@ -143,6 +185,72 @@ describe("GeneralSettingsPage - Ownership Controls", () => {
     );
     expect(
       screen.queryByPlaceholderText("settings.placeholders.orgName"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("allows users with org:update to upload valid PNG logo, rejects SVG client-side, and confirms logo removal", async () => {
+    mockOrgState.current.logoUrl = "/organizations/public/org-1/logo?v=10";
+    mockUploadLogoMutate.mockResolvedValueOnce({
+      ...mockOrgState.current,
+      logoUrl: "/organizations/public/org-1/logo?v=20",
+    });
+    mockDeleteLogoMutate.mockResolvedValueOnce({
+      ...mockOrgState.current,
+      logoUrl: null,
+    });
+    setupAuthMock(false, Role.RECRUITER, ["org:view", "org:update"]);
+
+    render(<GeneralSettingsPage />);
+
+    const fileInput = screen.getByLabelText(
+      "settings.logo.changeButton",
+    ) as HTMLInputElement;
+
+    const svgFile = new File(["<svg></svg>"], "malicious.svg", {
+      type: "image/svg+xml",
+    });
+    fireEvent.change(fileInput, { target: { files: [svgFile] } });
+    expect(toast.error).toHaveBeenCalledWith("settings.logo.invalidTypeError");
+    expect(mockUploadLogoMutate).not.toHaveBeenCalled();
+
+    const pngFile = new File(
+      [new Uint8Array([0x89, 0x50, 0x4e, 0x47])],
+      "logo.png",
+      {
+        type: "image/png",
+      },
+    );
+    fireEvent.change(fileInput, { target: { files: [pngFile] } });
+    await waitFor(() => {
+      expect(mockUploadLogoMutate).toHaveBeenCalledWith(pngFile);
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "settings.logo.removeButton" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "settings.logo.removeConfirmAction",
+      }),
+    );
+    await waitFor(() => {
+      expect(mockDeleteLogoMutate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("hides logo upload and remove controls when user lacks org:update", () => {
+    mockOrgState.current.logoUrl = "/organizations/public/org-1/logo?v=10";
+    setupAuthMock(false, Role.RECRUITER, ["org:view"]);
+
+    render(<GeneralSettingsPage />);
+
+    expect(screen.getByRole("img", { name: "Acme Corp" })).toBeInTheDocument();
+    expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: /settings\.logo\.(upload|change|remove)Button/,
+      }),
     ).not.toBeInTheDocument();
   });
 });

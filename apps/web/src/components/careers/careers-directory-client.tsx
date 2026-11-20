@@ -51,6 +51,7 @@ export function CareersDirectoryClient({
           id: orgId,
           name: orgName,
           slug: orgSlug,
+          logoUrl: job.organization?.logoUrl ?? null,
           jobs: [],
           departments: new Set(),
           locations: new Set(),
@@ -58,6 +59,9 @@ export function CareersDirectoryClient({
       }
 
       const item = orgMap.get(orgSlug)!;
+      if (!item.logoUrl && job.organization?.logoUrl) {
+        item.logoUrl = job.organization.logoUrl;
+      }
       item.jobs.push(job);
       if (job.department) item.departments.add(job.department);
       if (job.location) item.locations.add(job.location);

@@ -6,7 +6,6 @@ import { useAuth } from "@/context/auth-context";
 import { organizationsApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
-  Building2,
   Shield,
   User as UserIcon,
   UserPlus,
@@ -14,6 +13,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel } from "@/lib/roles";
@@ -27,6 +27,7 @@ interface PublicInviteData {
     id: string;
     name: string;
     slug: string;
+    logoUrl?: string | null;
   };
   createdByName?: string;
   expiresAt?: string | null;
@@ -156,9 +157,12 @@ export default function JoinOrganizationPage() {
           {/* Organization Preview Card */}
           <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0">
-                <Building2 className="h-5 w-5" />
-              </div>
+              <OrganizationLogo
+                name={inviteData.organization?.name}
+                logoUrl={inviteData.organization?.logoUrl}
+                size="lg"
+                decorative
+              />
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-foreground truncate">
                   {inviteData.organization?.name ||

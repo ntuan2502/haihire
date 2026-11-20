@@ -31,6 +31,7 @@ import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { ensureDefaultDemoAccounts } from "../prisma/demo-seed.util";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
+import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
 
 const USER_PROFILE_SELECT = {
   id: true,
@@ -48,6 +49,8 @@ const ORG_SUMMARY_SELECT = {
   name: true,
   slug: true,
   ownerId: true,
+  logoObjectKey: true,
+  logoUpdatedAt: true,
   defaultLanguage: true,
   timezone: true,
   dateFormat: true,
@@ -195,7 +198,9 @@ export class AuthService {
       role: activeRole,
       name: formatUserDisplayName(sanitizedUser, orgOrder),
       isOwner,
-      organization,
+      organization: organization
+        ? attachOrganizationLogoUrl(organization)
+        : null,
     };
   }
 

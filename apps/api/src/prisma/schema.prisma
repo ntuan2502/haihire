@@ -150,6 +150,9 @@ model Organization {
   name             String
   slug             String                       @unique
   ownerId          String
+  logoObjectKey    String?
+  logoMimeType     String?
+  logoUpdatedAt    DateTime?
   defaultLanguage  String                       @default("vi")
   timezone         String                       @default("Asia/Ho_Chi_Minh")
   dateFormat       String                       @default("DD/MM/YYYY")
@@ -183,7 +186,7 @@ model Organization {
   updatedAt        DateTime                     @updatedAt
 
   notificationPreferences NotificationPreference[]
-  notifications Notification[]
+  notifications           Notification[]
 
   @@index([ownerId])
   @@map("organization")
@@ -210,7 +213,7 @@ model User {
   updatedAt          DateTime               @updatedAt
 
   notificationPreferences NotificationPreference[]
-  notifications Notification[]
+  notifications           Notification[]
 
   @@map("user")
 }
@@ -582,12 +585,12 @@ model TrackingClick {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   trackingLinkId String
-  trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
   referrer       String?
   referrerDomain String?
   ipHash         String?
   userAgent      String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime     @default(now())
 
   @@index([organizationId, createdAt])
   @@index([trackingLinkId, createdAt])
@@ -699,26 +702,26 @@ model PipelineStage {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  job            Job?             @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  applications   Application[]
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job          Job?          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applications Application[]
 
   @@index([organizationId, jobId, orderIndex])
   @@map("pipeline_stage")
 }
 
 model StoredFile {
-  id                 String              @id @default(uuid())
-  organizationId     String
-  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  objectKey          String              @unique
-  bucket             String              @default("haihire-resumes")
-  originalName       String
-  mimeType           String
-  sizeBytes          Int
-  checksum           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  objectKey      String       @unique
+  bucket         String       @default("haihire-resumes")
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksum       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   candidates         Candidate[]
   applications       Application[]
@@ -750,14 +753,14 @@ model OutboxEvent {
 }
 
 model NotificationPreference {
-  organizationId String
-  userId String
-  applicationWebsite Boolean @default(true)
-  interviewWebsite Boolean @default(true)
-  applicationEmail Boolean @default(false)
-  interviewEmail Boolean @default(false)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId     String
+  userId             String
+  applicationWebsite Boolean      @default(true)
+  interviewWebsite   Boolean      @default(true)
+  applicationEmail   Boolean      @default(false)
+  interviewEmail     Boolean      @default(false)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([organizationId, userId])
   @@index([userId])
@@ -765,15 +768,15 @@ model NotificationPreference {
 }
 
 model Notification {
-  id String @id @default(uuid())
+  id             String       @id @default(uuid())
   organizationId String
-  userId String
-  kind String
-  resourceId String
-  createdAt DateTime @default(now())
-  readAt DateTime?
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  kind           String
+  resourceId     String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, userId, createdAt])
   @@index([userId])

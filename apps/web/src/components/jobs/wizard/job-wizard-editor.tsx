@@ -278,6 +278,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           coverLetterSetting={form.coverLetterSetting}
           screeningQuestions={form.screeningQuestions}
           orgName={user?.organization?.name}
+          orgLogoUrl={user?.organization?.logoUrl}
         />
       </div>
 

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
+  OrganizationLogo,
   PreviewModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
@@ -51,6 +52,7 @@ interface WizardPreviewModalProps {
   coverLetterSetting: "required" | "off";
   screeningQuestions: ScreeningQuestion[];
   orgName?: string;
+  orgLogoUrl?: string | null;
 }
 
 export function WizardPreviewModal({
@@ -74,6 +76,7 @@ export function WizardPreviewModal({
   coverLetterSetting,
   screeningQuestions,
   orgName,
+  orgLogoUrl,
 }: WizardPreviewModalProps) {
   const { t } = useI18n();
   const { localization } = useLocalization();
@@ -114,6 +117,18 @@ export function WizardPreviewModal({
           >
             {/* Top Branding / Department Tag */}
             <div className="space-y-3">
+              {orgName && (
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                  <OrganizationLogo
+                    name={orgName}
+                    logoUrl={orgLogoUrl}
+                    size="sm"
+                    decorative
+                  />
+                  <span>{orgName}</span>
+                </div>
+              )}
+
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
                 <Sparkles className="h-3.5 w-3.5 text-foreground" />
                 <span>{department || t("jobs.wizard.generalDepartment")}</span>

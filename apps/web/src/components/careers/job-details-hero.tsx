@@ -2,13 +2,13 @@
 
 import {
   Briefcase,
-  Building2,
   Clock,
   DollarSign,
   Globe2,
   MapPin,
   Sparkles,
 } from "lucide-react";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import {
@@ -21,12 +21,14 @@ import type { Job } from "@/types";
 interface JobDetailsHeroProps {
   job: Job;
   orgName: string;
+  orgLogoUrl?: string | null;
   onApplyClick: () => void;
 }
 
 export function JobDetailsHero({
   job,
   orgName,
+  orgLogoUrl,
   onApplyClick,
 }: JobDetailsHeroProps) {
   const { t } = useI18n();
@@ -59,7 +61,12 @@ export function JobDetailsHero({
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground font-medium pt-1">
             <div className="flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <OrganizationLogo
+                name={orgName}
+                logoUrl={orgLogoUrl}
+                size="xs"
+                decorative
+              />
               <span>{orgName}</span>
             </div>
             <div className="flex items-center gap-1.5">

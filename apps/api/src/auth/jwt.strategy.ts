@@ -10,6 +10,7 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import type { Request } from "express";
 import { PrismaService } from "../prisma/prisma.service";
 import { env } from "../config/env";
+import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
 
 export interface JwtPayload {
   sub: string;
@@ -109,6 +110,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       name: string;
       slug: string;
       ownerId: string;
+      logoUrl?: string | null;
       defaultLanguage?: string;
       timezone?: string;
       dateFormat?: string;
@@ -125,6 +127,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           name: true,
           slug: true,
           ownerId: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
           defaultLanguage: true,
           timezone: true,
           dateFormat: true,
@@ -135,7 +139,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
 
       if (org) {
-        organization = org;
+        organization = attachOrganizationLogoUrl(org);
         isOwner = Boolean(org.ownerId === user.id);
         activeOrgId = org.id;
 
@@ -172,6 +176,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
               name: true,
               slug: true,
               ownerId: true,
+              logoObjectKey: true,
+              logoUpdatedAt: true,
               defaultLanguage: true,
               timezone: true,
               dateFormat: true,
@@ -181,7 +187,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             },
           });
           if (org) {
-            organization = org;
+            organization = attachOrganizationLogoUrl(org);
             isOwner = Boolean(org.ownerId === user.id);
             activeOrgId = org.id;
             activeRole = isOwner ? "ADMIN" : member.role;

@@ -235,5 +235,54 @@ describe("orphan-cleanup", () => {
       expect(report.deletedCount).toBe(1);
       expect(mockMinioClient.removeObject).not.toHaveBeenCalled();
     });
+
+    it("preserves active organization logos referenced via logoObjectKey while removing stale replaced logos", async () => {
+      const now = new Date();
+      const fortyDaysAgo = new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000);
+
+      const mockDb = {
+        candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },
+        application: { findMany: vi.fn().mockResolvedValue([]) },
+        candidate: { findMany: vi.fn().mockResolvedValue([]) },
+        organization: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              { logoObjectKey: "tenants/org-1/logos/current-logo.png" },
+            ]),
+        },
+      };
+
+      const items = [
+        {
+          name: "tenants/org-1/logos/current-logo.png",
+          size: 5120,
+          lastModified: fortyDaysAgo,
+        },
+        {
+          name: "tenants/org-1/logos/replaced-old-logo.png",
+          size: 2048,
+          lastModified: fortyDaysAgo,
+        },
+      ];
+
+      mockMinioClient.listObjects.mockReturnValue(createMockStream(items));
+
+      const report = await cleanupOrphans({
+        dryRun: false,
+        thresholdDays: 30,
+        dbClient: mockDb,
+        minioClient: mockMinioClient as unknown as Minio.Client,
+      });
+
+      expect(report.deletedFiles).toEqual([
+        "tenants/org-1/logos/replaced-old-logo.png",
+      ]);
+      expect(mockMinioClient.removeObject).toHaveBeenCalledTimes(1);
+      expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
+        "haihire-resumes",
+        "tenants/org-1/logos/replaced-old-logo.png",
+      );
+    });
   });
 });

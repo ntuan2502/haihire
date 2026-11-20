@@ -70,6 +70,38 @@ export function useUpdateMyOrgMutation() {
   });
 }
 
+function useOrgProfileMutation<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<Organization>,
+) {
+  const queryClient = useQueryClient();
+  const { updateUserOrg } = useAuth();
+
+  return useMutation({
+    mutationFn,
+    onSuccess: (updatedOrg) => {
+      if (updatedOrg) {
+        updateUserOrg(updatedOrg);
+        queryClient.setQueryData(queryKeys.myOrg(updatedOrg.id), updatedOrg);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
+  });
+}
+
+export function useUploadOrgLogoMutation() {
+  return useOrgProfileMutation((file: File) =>
+    organizationsApi.uploadMyOrgLogo(file),
+  );
+}
+
+export function useDeleteOrgLogoMutation() {
+  return useOrgProfileMutation(() => organizationsApi.deleteMyOrgLogo());
+}
+
 export function useTransferOwnershipMutation() {
   const queryClient = useQueryClient();
 

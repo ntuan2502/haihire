@@ -14,9 +14,13 @@ import {
   Query,
   Request,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
+import { MAX_ORG_LOGO_SIZE_BYTES } from "@haihire/shared";
 import { OrganizationsService } from "./organizations.service";
 import { AuthService } from "../auth/auth.service";
 import { setAuthCookies, setHasOrgCookie } from "../auth/auth-cookies";
@@ -36,6 +40,7 @@ import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { logoFileFilter } from "../common/upload-utils";
 
 @Controller("organizations")
 export class OrganizationsController {
@@ -280,6 +285,39 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:update")
+  @Post("my/logo")
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_ORG_LOGO_SIZE_BYTES },
+      fileFilter: logoFileFilter,
+    }),
+  )
+  uploadMyOrgLogo(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.orgsService.uploadMyOrgLogo(
+      req.user.id,
+      file,
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:update")
+  @Delete("my/logo")
+  deleteMyOrgLogo(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+  ) {
+    return this.orgsService.deleteMyOrgLogo(
+      req.user.id,
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("org:transfer_ownership")
   @Post("my/transfer-ownership")
   @HttpCode(HttpStatus.OK)
@@ -374,6 +412,31 @@ export class OrganizationsController {
       result.organization?.id ?? null,
     );
     return result;
+  }
+
+  // Public endpoint to stream organization logo (no auth needed)
+  @Get("public/:id/logo")
+  async getPublicOrgLogo(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Res() res: Response,
+    @Query("v") version?: string,
+  ) {
+    const { stream, mimeType } =
+      await this.orgsService.preparePublicOrgLogo(id);
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader(
+      "Cache-Control",
+      version ? "public, max-age=31536000, immutable" : "public, max-age=300",
+    );
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        res.status(404).end();
+      }
+    });
+    stream.pipe(res);
   }
 
   // Public endpoint to view organization profile by slug (no auth needed)

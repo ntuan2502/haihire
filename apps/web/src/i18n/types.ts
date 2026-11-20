@@ -1533,6 +1533,23 @@ export interface TranslationSchema {
     currentPasswordRequiredError: string;
     backToSettings: string;
     generalProfileDesc: string;
+    logo: {
+      title: string;
+      description: string;
+      uploadButton: string;
+      changeButton: string;
+      removeButton: string;
+      uploading: string;
+      removing: string;
+      hint: string;
+      invalidTypeError: string;
+      fileTooLargeError: string;
+      uploadSuccess: string;
+      removeSuccess: string;
+      removeConfirmTitle: string;
+      removeConfirmDesc: string;
+      removeConfirmAction: string;
+    };
     orgNameRequiredError: string;
     orgSlugRequiredError: string;
     accountProfileDesc: string;
@@ -1820,6 +1837,8 @@ export interface TranslationSchema {
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
       actionOrgLocalizationUpdated: string;
+      actionOrgLogoUpdated: string;
+      actionOrgLogoRemoved: string;
       resources: {
         ORGANIZATION: string;
         MEMBER: string;
@@ -1834,6 +1853,8 @@ export interface TranslationSchema {
         permissionsUpdated: string;
         ownershipTransferred: string;
         localizationUpdated: string;
+        logoUpdated: string;
+        logoRemoved: string;
         localizationFields: {
           timezone: string;
           defaultLocale: string;

@@ -54,13 +54,13 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "^1.65.1",
     "eslint": "catalog:",
     "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
+    "lint-staged": "^17.6.1",
     "prettier": "catalog:",
     "tsx": "catalog:",
-    "turbo": "^2.11.10",
+    "turbo": "^2.11.12",
     "yaml": "^2.9.1"
   },
   "packageManager": "pnpm@12.18.0"

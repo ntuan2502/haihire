@@ -17,6 +17,7 @@ import { useApplicationsFilterSort } from "./use-applications-filter-sort";
 export function useApplicationsTable({
   applications: initialApplications,
   jobs,
+  loading = false,
   fixedJobId,
   totalCount: propTotalCount,
   totalPages: propTotalPages,
@@ -240,7 +241,8 @@ export function useApplicationsTable({
       {
         id: "ALL",
         label: t("common.all"),
-        count: stageCounts?.ALL ?? filterSort.totalCount,
+        count:
+          stageCounts?.ALL ?? (loading ? undefined : filterSort.totalCount),
       },
       {
         id: "APPLIED",
@@ -273,7 +275,7 @@ export function useApplicationsTable({
         count: stageCounts?.REJECTED,
       },
     ],
-    [t, stageCounts, filterSort.totalCount],
+    [t, stageCounts, loading, filterSort.totalCount],
   );
 
   const onSearchChangeHandler = (val: string) => {

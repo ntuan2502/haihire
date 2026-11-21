@@ -6,11 +6,17 @@ import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/auth-context";
 
-export function DashboardFrame({ children }: { children: ReactNode }) {
+export function DashboardFrame({
+  children,
+  defaultSidebarOpen = true,
+}: {
+  children: ReactNode;
+  defaultSidebarOpen?: boolean;
+}) {
   const { user } = useAuth();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <AppSidebar />
       <SidebarInset id="main-content" className="min-w-0">
         <DashboardHeader />

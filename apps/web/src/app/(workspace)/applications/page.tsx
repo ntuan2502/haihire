@@ -46,14 +46,15 @@ function ApplicationsPageContent() {
   const { data: appStats } = useApplicationStats(user?.organizationId);
 
   const stageCounts = useMemo(() => {
+    if (!appStats) return undefined;
     return {
-      ALL: appStats?.totalApplications ?? 0,
-      APPLIED: appStats?.byStage.APPLIED ?? 0,
-      SCREENING: appStats?.byStage.SCREENING ?? 0,
-      INTERVIEW: appStats?.byStage.INTERVIEW ?? 0,
-      OFFER: appStats?.byStage.OFFER ?? 0,
-      HIRED: appStats?.byStage.HIRED ?? 0,
-      REJECTED: appStats?.byStage.REJECTED ?? 0,
+      ALL: appStats.totalApplications ?? 0,
+      APPLIED: appStats.byStage.APPLIED ?? 0,
+      SCREENING: appStats.byStage.SCREENING ?? 0,
+      INTERVIEW: appStats.byStage.INTERVIEW ?? 0,
+      OFFER: appStats.byStage.OFFER ?? 0,
+      HIRED: appStats.byStage.HIRED ?? 0,
+      REJECTED: appStats.byStage.REJECTED ?? 0,
     };
   }, [appStats]);
 
@@ -62,7 +63,7 @@ function ApplicationsPageContent() {
       {/* Clean, Non-redundant Header Row */}
       <PageHeader
         title={t("applications.title")}
-        badge={applicationsData?.total ?? 0}
+        badge={applicationsData ? applicationsData.total : undefined}
       />
 
       <ApplicationsDataTable

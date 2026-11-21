@@ -1,35 +1,28 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useEffect, Suspense } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { LoadingSpinner } from "@/components/shared/loading-spinner";
-
-function JobDetailRedirect() {
-  const params = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawJobId = params?.id;
-  const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
-
-  useEffect(() => {
-    if (jobId) {
-      const qs = searchParams.toString();
-      const target = `/jobs/${jobId}/pipeline${qs ? `?${qs}` : ""}`;
-      router.replace(target);
-    }
-  }, [jobId, searchParams, router]);
-
-  return (
-    <div className="flex-1 flex items-center justify-center p-12">
-      <LoadingSpinner />
-    </div>
-  );
+interface JobDetailPageProps {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function JobDetailPage() {
-  return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
-      <JobDetailRedirect />
-    </Suspense>
+export default async function JobDetailPage({
+  params,
+  searchParams,
+}: JobDetailPageProps) {
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(resolvedSearchParams)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== undefined) qs.append(key, item);
+      }
+    } else if (value !== undefined) {
+      qs.set(key, value);
+    }
+  }
+  const query = qs.toString();
+  redirect(
+    `/jobs/${encodeURIComponent(id)}/pipeline${query ? `?${query}` : ""}`,
   );
 }

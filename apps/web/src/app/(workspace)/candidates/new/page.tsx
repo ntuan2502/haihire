@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { usePermissionState } from "@/hooks/use-has-permission";
 import { useCreateCandidateMutation } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,15 @@ function AddCandidatePageContent() {
   const { localization } = useLocalization();
   const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
   const { t } = useI18n();
-  const canCreateCandidate = useHasPermission("candidate:create");
+  const canCreateCandidateState = usePermissionState("candidate:create");
+  const canCreateCandidate = canCreateCandidateState.allowed;
+  const permLoading = canCreateCandidateState.isLoading;
 
   useEffect(() => {
-    if (!authLoading && !canCreateCandidate) {
+    if (!authLoading && !permLoading && !canCreateCandidate) {
       router.replace("/candidates");
     }
-  }, [authLoading, canCreateCandidate, router]);
+  }, [authLoading, permLoading, canCreateCandidate, router]);
 
   const createCandidateMutation = useCreateCandidateMutation();
 

@@ -72,7 +72,7 @@ export function CandidatesView() {
       {/* Header Row */}
       <PageHeader
         title={t("candidates.title")}
-        badge={filterSort.totalCount}
+        badge={filterSort.hasPagedResult ? filterSort.totalCount : undefined}
         actions={
           canCreateCandidate ? (
             <Button

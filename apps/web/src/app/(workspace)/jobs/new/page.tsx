@@ -4,18 +4,19 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { JobWizardEditor } from "@/components/jobs/job-wizard-editor";
 import { useAuth } from "@/context/auth-context";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { usePermissionState } from "@/hooks/use-has-permission";
 
 export default function CreateJobPage() {
   const router = useRouter();
   const { loading } = useAuth();
-  const canCreateJob = useHasPermission("job:create");
+  const { allowed: canCreateJob, isLoading: permLoading } =
+    usePermissionState("job:create");
 
   useEffect(() => {
-    if (!loading && !canCreateJob) {
+    if (!loading && !permLoading && !canCreateJob) {
       router.replace("/jobs");
     }
-  }, [loading, canCreateJob, router]);
+  }, [loading, permLoading, canCreateJob, router]);
 
   return <JobWizardEditor mode="create" />;
 }

@@ -53,12 +53,23 @@ function LoginForm() {
     }
   }, [isAuthenticated, user, authLoading, redirectUrl, router]);
 
-  if (authLoading || isAuthenticated) {
+  if (isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-3">
         <Loader2 className="h-7 w-7 animate-spin text-primary" />
         <p className="text-xs text-muted-foreground font-medium">
           {t("auth.alreadySignedIn")}
+        </p>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-3">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground font-medium">
+          {t("common.loading")}
         </p>
       </div>
     );

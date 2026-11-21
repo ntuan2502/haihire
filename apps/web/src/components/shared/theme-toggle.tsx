@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { Moon, Sun, Laptop, Check } from "lucide-react";
 import { useTheme } from "next-themes";
+import {
+  useInitialTheme,
+  syncThemeCookies,
+} from "@/components/providers/theme-provider";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
 import {
@@ -23,13 +27,22 @@ export function ThemeToggle({
   direction = "down",
   className,
 }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const initialTheme = useInitialTheme();
   const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && theme) {
+      syncThemeCookies(theme, resolvedTheme);
+    }
+  }, [mounted, theme, resolvedTheme]);
+
+  const activeTheme = mounted ? (theme ?? initialTheme) : initialTheme;
 
   const THEME_OPTIONS = [
     {
@@ -49,33 +62,8 @@ export function ThemeToggle({
     },
   ];
 
-  if (!mounted) {
-    return (
-      <div className={cn("relative", className)}>
-        <button
-          type="button"
-          disabled
-          aria-label={t("theme.toggleTheme")}
-          className={cn(
-            "flex items-center justify-center rounded-md border border-input bg-background text-foreground shadow-xs transition-colors outline-none select-none opacity-60 pointer-events-none",
-            size === "sm" ? "h-7 w-7 text-xs" : "h-8 w-8 text-xs",
-            className,
-          )}
-        >
-          <Sun
-            className={cn(
-              size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4",
-              "text-foreground",
-            )}
-            aria-hidden="true"
-          />
-        </button>
-      </div>
-    );
-  }
-
   const currentOption =
-    THEME_OPTIONS.find((opt) => opt.id === theme) || THEME_OPTIONS[2];
+    THEME_OPTIONS.find((opt) => opt.id === activeTheme) || THEME_OPTIONS[2];
   const CurrentIcon = currentOption.icon;
 
   return (
@@ -105,12 +93,15 @@ export function ThemeToggle({
         className="w-40"
       >
         {THEME_OPTIONS.map((opt) => {
-          const isSelected = opt.id === theme;
+          const isSelected = opt.id === activeTheme;
           const Icon = opt.icon;
           return (
             <DropdownMenuItem
               key={opt.id}
-              onClick={() => setTheme(opt.id)}
+              onClick={() => {
+                setTheme(opt.id);
+                syncThemeCookies(opt.id);
+              }}
               className={cn(
                 "flex items-center justify-between text-xs cursor-pointer",
                 isSelected && "bg-accent text-accent-foreground font-medium",

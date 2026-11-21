@@ -149,7 +149,7 @@ function JobsPageContent() {
 
   return (
     <div className="flex-1">
-      {(jobsLoading && !jobsData) || (allJobsLoading && total === 0) ? (
+      {(jobsLoading && !jobsData) || allJobsLoading ? (
         <LoadingSpinner />
       ) : !allJobsLoading &&
         stats.total === 0 &&

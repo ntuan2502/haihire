@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocalizationProvider, useLocalization } from "./localization-provider";
 import { useAuth } from "@/context/auth-context";
@@ -234,5 +234,67 @@ describe("LocalizationProvider", () => {
     expect(mockSetLocale).toHaveBeenCalledWith("en");
     // UTC noon -> America/New_York (EDT UTC-4 on 2026-08-27) formats differently from HCM (UTC+7)
     expect(screen.getByTestId("configured")).toHaveTextContent("true");
+  });
+
+  it("does not leave sticky localStorage or NEXT_LOCALE cookie after seeding org defaultLanguage", async () => {
+    mockSetLocale.mockImplementation(async (nextLocale: string) => {
+      localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale);
+      document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    });
+
+    const org = {
+      id: "org-1",
+      name: "Acme",
+      slug: "acme",
+      defaultLanguage: "vi" as const,
+      timezone: "Asia/Ho_Chi_Minh",
+      dateFormat: "DD/MM/YYYY" as const,
+      timeFormat: "24H" as const,
+      nameDisplayOrder: "FIRST_LAST" as const,
+      defaultCurrency: "VND" as const,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    vi.mocked(useAuth).mockReturnValue({
+      user: {
+        id: "u1",
+        email: "a@b.com",
+        name: "Member",
+        role: "MEMBER",
+        preferredLanguage: null,
+        organizationId: "org-1",
+        organization: org,
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      loading: false,
+      isAuthenticated: true,
+      canEdit: true,
+      isAdmin: false,
+      isOwner: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+      setSession: vi.fn(),
+      updateUserOrg: vi.fn(),
+      refreshUser: vi.fn(),
+      updateUser: vi.fn(),
+    });
+
+    vi.mocked(useMyOrg).mockReturnValue({
+      data: org,
+      isLoading: false,
+    } as ReturnType<typeof useMyOrg>);
+
+    render(
+      <LocalizationProvider>
+        <ProbeConsumer />
+      </LocalizationProvider>,
+    );
+
+    expect(mockSetLocale).toHaveBeenCalledWith("vi");
+    await waitFor(() => {
+      expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull();
+      expect(document.cookie).not.toContain("NEXT_LOCALE=");
+    });
   });
 });

@@ -16,12 +16,14 @@ import { queryKeys } from "@/hooks/query-keys";
 import { isWorkspaceRoute } from "@/lib/workspace-routes";
 import { useOptionalI18n } from "@/i18n/optional";
 import { useAuthSse } from "./use-auth-sse";
+import type { Permission } from "@haihire/shared";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  initialPermissions?: Permission[] | null;
   login: (email: string, password: string) => Promise<User>;
   register: (
     firstName: string,
@@ -74,15 +76,42 @@ function isSessionRequiredRoute(pathname: string): boolean {
   return isWorkspaceRoute(pathname) || pathname.startsWith("/auth/onboarding");
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export interface AuthProviderProps {
+  children: ReactNode;
+  initialUser?: User | null;
+  initialPermissions?: Permission[] | null;
+  initialHasSessionHint?: boolean;
+}
+
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialPermissions = null,
+  initialHasSessionHint,
+}: AuthProviderProps) {
   const router = useRouter();
   const routerRef = useRef(router);
   const queryClient = useContext(QueryClientContext) ?? null;
   const { t } = useOptionalI18n();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => initialUser ?? null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const userRef = useRef<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(() =>
+    initialUser ? false : initialHasSessionHint === false ? false : true,
+  );
+  const [ssrPermissions, setSsrPermissions] = useState<{
+    orgId: string | null;
+    role: string | null;
+    permissions: Permission[];
+  } | null>(() =>
+    initialUser && Array.isArray(initialPermissions)
+      ? {
+          orgId: initialUser.organizationId ?? null,
+          role: initialUser.role ?? null,
+          permissions: initialPermissions,
+        }
+      : null,
+  );
+  const userRef = useRef<User | null>(initialUser ?? null);
   const tRef = useRef(t);
   const sessionEpochRef = useRef(0);
 
@@ -115,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRef.current = null;
     setToken(null);
     setUser(null);
+    setSsrPermissions(null);
     localStorage.removeItem(USER_KEY);
     queryClient?.clear();
     try {
@@ -173,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userRef.current = null;
         setToken(null);
         setUser(null);
+        setSsrPermissions(null);
         localStorage.removeItem(USER_KEY);
         queryClient?.clear();
 
@@ -194,8 +225,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient]);
 
-  // Initialize auth state from localStorage and verify with backend
+  // Initialize auth state from SSR preloaded session, or cookie/localStorage fallback
   useEffect(() => {
+    if (sessionEpochRef.current !== 0) {
+      return;
+    }
+
+    if (initialUser) {
+      userRef.current = initialUser;
+      setUser(initialUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(initialUser));
+      setAuthCookies(null, Boolean(initialUser.organizationId));
+      if (initialUser.organization) {
+        queryClient?.setQueryData(
+          queryKeys.myOrg(initialUser.organization.id),
+          initialUser.organization,
+        );
+        queryClient?.setQueryData(queryKeys.myOrg(), initialUser.organization);
+      }
+      if (Array.isArray(initialPermissions) && initialUser.organizationId) {
+        queryClient?.setQueryData(
+          queryKeys.myPermissions(initialUser.organizationId, initialUser.role),
+          { permissions: initialPermissions },
+        );
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (initialHasSessionHint === false) {
+      userRef.current = null;
+      setUser(null);
+      localStorage.removeItem(USER_KEY);
+      clearAuthCookies();
+      setLoading(false);
+      return;
+    }
+
     let hasOptimisticSession = false;
     try {
       const savedUser = localStorage.getItem(USER_KEY);
@@ -218,7 +284,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().finally(() => {
       setLoading(false);
     });
-  }, [refreshUser]);
+  }, [
+    refreshUser,
+    initialUser,
+    initialPermissions,
+    initialHasSessionHint,
+    queryClient,
+  ]);
 
   // SSE Real-Time Sync, 15m JWT Reconnect & Background Visibility Wake-Up
   const currentUserId = user?.id;
@@ -246,6 +318,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
+    setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
@@ -275,6 +348,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
+    setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
@@ -294,15 +368,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (org as { ownerId?: string })?.ownerId &&
         (org as { ownerId?: string }).ownerId === currentUser.id,
       );
+      const nextRole = isOwner
+        ? "ADMIN"
+        : (updatedRole as User["role"]) || currentUser.role;
       const updated: User = {
         ...currentUser,
         organizationId: org.id,
         organization: org,
         isOwner,
-        role: isOwner
-          ? "ADMIN"
-          : (updatedRole as User["role"]) || currentUser.role,
+        role: nextRole,
       };
+      if (isOrgSwitch || nextRole !== currentUser.role) {
+        setSsrPermissions(null);
+      }
       userRef.current = updated;
       setUser(updated);
       localStorage.setItem(USER_KEY, JSON.stringify(updated));
@@ -336,6 +414,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "ADMIN";
   const isMember = user?.role === "MEMBER";
   const canEdit = isOwner || isAdmin || user?.role === "RECRUITER";
+  const activeInitialPermissions =
+    ssrPermissions &&
+    user &&
+    ssrPermissions.orgId === (user.organizationId ?? null) &&
+    ssrPermissions.role === (user.role ?? null)
+      ? ssrPermissions.permissions
+      : null;
 
   return (
     <AuthContext.Provider
@@ -343,6 +428,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         loading,
+        initialPermissions: activeInitialPermissions,
         login,
         register,
         logout,
@@ -370,6 +456,7 @@ export function useAuth(): AuthContextType {
       user: null,
       token: null,
       loading: false,
+      initialPermissions: null,
       login: async () => {
         throw new Error("useAuth must be used within an AuthProvider");
       },

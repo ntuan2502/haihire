@@ -51,7 +51,8 @@ function JobTrackingPageContent() {
   const [editingLink, setEditingLink] = useState<TrackingLinkItem | null>(null);
 
   const { data: myOrg } = useMyOrg();
-  const orgSlug = myOrg?.slug || user?.organizationId || "demo";
+  const orgSlug =
+    myOrg?.slug || user?.organization?.slug || user?.organizationId || "demo";
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: rawJobs = [] } = useAllJobs(user?.organizationId);

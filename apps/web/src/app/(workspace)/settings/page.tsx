@@ -63,20 +63,18 @@ export default function GeneralSettingsPage() {
   const deleteLogoMutation = useDeleteOrgLogoMutation();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
 
+  const savedOrg = org ?? user?.organization;
+
   // Form states
-  const [orgName, setOrgName] = useState("");
-  const [orgSlug, setOrgSlug] = useState("");
+  const [orgName, setOrgName] = useState(() => savedOrg?.name || "");
+  const [orgSlug, setOrgSlug] = useState(() => savedOrg?.slug || "");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [removeLogoModalOpen, setRemoveLogoModalOpen] = useState(false);
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const [isFinalizingDelete, setIsFinalizingDelete] = useState(false);
-  const [appHost, setAppHost] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setAppHost(window.location.host);
-    }
-  }, []);
+  const [appHost] = useState(() =>
+    typeof window !== "undefined" ? window.location.host : "",
+  );
 
   const displayHost = appHost || "localhost:3000";
 
@@ -91,7 +89,6 @@ export default function GeneralSettingsPage() {
     }
   }, [org, user]);
 
-  const savedOrg = org ?? user?.organization;
   const persistedOrgSlug = savedOrg?.slug || "";
   const isLogoMutating =
     uploadLogoMutation.isPending || deleteLogoMutation.isPending;
@@ -386,7 +383,10 @@ export default function GeneralSettingsPage() {
                 {t("settings.urlSlug")}
               </label>
               <div className="flex items-center rounded-md border border-input bg-transparent dark:bg-input/30 overflow-hidden shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-                <span className="px-3 h-9 inline-flex items-center bg-muted text-muted-foreground text-xs font-medium select-none border-r border-input shrink-0">
+                <span
+                  suppressHydrationWarning
+                  className="px-3 h-9 inline-flex items-center bg-muted text-muted-foreground text-xs font-medium select-none border-r border-input shrink-0"
+                >
                   {displayHost}/
                 </span>
                 <input
@@ -452,7 +452,10 @@ export default function GeneralSettingsPage() {
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t("settings.urlSlug")}
               </p>
-              <p className="text-xs font-mono text-foreground break-all">
+              <p
+                suppressHydrationWarning
+                className="text-xs font-mono text-foreground break-all"
+              >
                 {displayHost}/careers/{orgSlug || "..."}
               </p>
             </div>

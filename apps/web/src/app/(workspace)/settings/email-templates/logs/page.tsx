@@ -26,7 +26,7 @@ export default function EmailLogsPage() {
   const [logStatusFilter, setLogStatusFilter] = useState<string>("ALL");
   const [viewingLog, setViewingLog] = useState<EmailLog | null>(null);
 
-  const { data: remoteLogsResponse } = useEmailLogs({
+  const { data: remoteLogsResponse, isLoading: logsLoading } = useEmailLogs({
     page: logPage,
     limit: logLimit,
     search: logSearch.trim() || undefined,
@@ -122,7 +122,15 @@ export default function EmailLogsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {logs.length === 0 ? (
+            {logsLoading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i}>
+                  <td colSpan={6} className="px-4 py-3.5">
+                    <div className="h-5 w-full rounded bg-muted/60 animate-pulse" />
+                  </td>
+                </tr>
+              ))
+            ) : logs.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}

@@ -40,6 +40,7 @@ export interface MemberItem {
 
 interface MembersListCardProps {
   members: MemberItem[];
+  isLoading?: boolean;
   canManageMembers: boolean;
   canEdit: boolean;
   isOwner: boolean;
@@ -54,6 +55,7 @@ interface MembersListCardProps {
 
 export function MembersListCard({
   members,
+  isLoading = false,
   canManageMembers,
   canEdit,
   isOwner,
@@ -77,159 +79,183 @@ export function MembersListCard({
           <h3 className="text-xs font-semibold text-foreground">
             {t("members.activeMembers")}
           </h3>
-          <p className="text-[11px] text-muted-foreground">
-            {members.length === 1
-              ? t("members.memberCountOne", { count: members.length })
-              : t("members.memberCountOther", { count: members.length })}
-          </p>
+          {isLoading ? (
+            <div className="mt-1 h-3 w-20 rounded bg-muted animate-pulse" />
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              {members.length === 1
+                ? t("members.memberCountOne", { count: members.length })
+                : t("members.memberCountOther", { count: members.length })}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Member list */}
-      <div className="divide-y divide-border pt-1">
-        {members.map((m, index) => {
-          const isMemberOwner = m.isOwner;
-          const displayName = getUserDisplayName(m);
-
-          return (
+      {isLoading ? (
+        <div className="divide-y divide-border pt-1" aria-busy="true">
+          {[1, 2, 3].map((i) => (
             <div
-              key={m.id || index}
+              key={i}
               className="py-3 flex items-center justify-between gap-4"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Avatar */}
-                <div className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-border">
-                  {m.avatarUrl ? (
-                    // Intentional img for user avatar (Next.js Image not suitable for arbitrary external URLs with signed params).
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={m.avatarUrl}
-                      alt={displayName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span>{getInitials(displayName)}</span>
-                  )}
-                </div>
-
-                {/* Name and Email */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-foreground truncate">
-                      {displayName}
-                    </span>
-                    {m.isCurrent && (
-                      <span className="text-[11px] text-muted-foreground font-medium">
-                        ({t("common.you")})
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {m.email}
-                  </p>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-32 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-44 rounded bg-muted/60 animate-pulse" />
                 </div>
               </div>
+              <div className="h-8 w-36 rounded-md bg-muted/60 animate-pulse shrink-0" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="divide-y divide-border pt-1">
+          {members.map((m, index) => {
+            const isMemberOwner = m.isOwner;
+            const displayName = getUserDisplayName(m);
 
-              {/* Right side role badge & actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                {isMemberOwner && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                    <Crown
-                      className="h-3 w-3 text-amber-500 fill-amber-500"
-                      aria-hidden="true"
-                    />
-                    <span>{t("members.roleOwner")}</span>
-                  </span>
-                )}
-
-                {canManageMembers ? (
-                  <div className="flex items-center gap-1.5">
-                    {actionLoadingId === m.id && (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            return (
+              <div
+                key={m.id || index}
+                className="py-3 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Avatar */}
+                  <div className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-border">
+                    {m.avatarUrl ? (
+                      // Intentional img for user avatar (Next.js Image not suitable for arbitrary external URLs with signed params).
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.avatarUrl}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{getInitials(displayName)}</span>
                     )}
-                    <CustomSelect<Role>
-                      value={(m.role?.toUpperCase() as Role) || Role.MEMBER}
-                      onChange={(newRole) => onRoleChange(m.id, newRole)}
-                      options={roleOptions}
-                      disabled={
-                        isMemberOwner ||
-                        m.isCurrent ||
-                        currentUserId === m.id ||
-                        actionLoadingId === m.id
-                      }
-                      size="sm"
-                      aria-label={t("members.roleLabel")}
-                      className="w-36"
-                    />
                   </div>
-                ) : (
-                  !isMemberOwner && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-                      <Shield
-                        className="h-3 w-3 text-muted-foreground"
+
+                  {/* Name and Email */}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {displayName}
+                      </span>
+                      {m.isCurrent && (
+                        <span className="text-[11px] text-muted-foreground font-medium">
+                          ({t("common.you")})
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {m.email}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right side role badge & actions */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isMemberOwner && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                      <Crown
+                        className="h-3 w-3 text-amber-500 fill-amber-500"
                         aria-hidden="true"
                       />
-                      <span>{getRoleLabel(m.role)}</span>
+                      <span>{t("members.roleOwner")}</span>
                     </span>
-                  )
-                )}
+                  )}
 
-                {canEdit && !isMemberOwner && !m.isCurrent && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SettingsButton
-                        variant="ghost"
-                        size="icon-sm"
-                        type="button"
-                        disabled={actionLoadingId === m.id}
-                        title={t("members.memberActionsTitle")}
-                        aria-label={t("members.memberActionsTitle")}
-                      >
-                        {actionLoadingId === m.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <MoreHorizontal className="h-4 w-4" />
-                        )}
-                      </SettingsButton>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end" className="w-48">
-                      {isOwner && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              onTransferOwnershipClick({
-                                id: m.id,
-                                name: m.name,
-                              })
-                            }
-                            className="gap-2 text-xs font-medium cursor-pointer"
-                          >
-                            <Crown className="h-3.5 w-3.5 shrink-0" />
-                            <span>{t("members.transferOwnership")}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
+                  {canManageMembers ? (
+                    <div className="flex items-center gap-1.5">
+                      {actionLoadingId === m.id && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                       )}
-
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() =>
-                          onRemoveMemberClick({ id: m.id, name: m.name })
+                      <CustomSelect<Role>
+                        value={(m.role?.toUpperCase() as Role) || Role.MEMBER}
+                        onChange={(newRole) => onRoleChange(m.id, newRole)}
+                        options={roleOptions}
+                        disabled={
+                          isMemberOwner ||
+                          m.isCurrent ||
+                          currentUserId === m.id ||
+                          actionLoadingId === m.id
                         }
-                        className="gap-2 text-xs font-medium cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                        <span>{t("members.removeMember")}</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                        size="sm"
+                        aria-label={t("members.roleLabel")}
+                        className="w-36"
+                      />
+                    </div>
+                  ) : (
+                    !isMemberOwner && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                        <Shield
+                          className="h-3 w-3 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <span>{getRoleLabel(m.role)}</span>
+                      </span>
+                    )
+                  )}
+
+                  {canEdit && !isMemberOwner && !m.isCurrent && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SettingsButton
+                          variant="ghost"
+                          size="icon-sm"
+                          type="button"
+                          disabled={actionLoadingId === m.id}
+                          title={t("members.memberActionsTitle")}
+                          aria-label={t("members.memberActionsTitle")}
+                        >
+                          {actionLoadingId === m.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </SettingsButton>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end" className="w-48">
+                        {isOwner && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                onTransferOwnershipClick({
+                                  id: m.id,
+                                  name: m.name,
+                                })
+                              }
+                              className="gap-2 text-xs font-medium cursor-pointer"
+                            >
+                              <Crown className="h-3.5 w-3.5 shrink-0" />
+                              <span>{t("members.transferOwnership")}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
+
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() =>
+                            onRemoveMemberClick({ id: m.id, name: m.name })
+                          }
+                          className="gap-2 text-xs font-medium cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                          <span>{t("members.removeMember")}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </SettingsCard>
   );
 }

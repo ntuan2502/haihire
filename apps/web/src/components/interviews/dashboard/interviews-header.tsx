@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 
 export interface InterviewsHeaderProps {
-  totalCount: number;
+  totalCount?: number;
   canEdit: boolean;
   onOpenScheduleModal: () => void;
 }

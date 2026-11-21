@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   render,
   screen,
@@ -49,6 +50,8 @@ function installMatchMediaMock(initialDark: boolean) {
 describe("ThemeToggle with system ThemeProvider", () => {
   beforeEach(() => {
     localStorage.clear();
+    document.cookie = "haihire_theme=; max-age=0; path=/";
+    document.cookie = "haihire_resolved_theme=; max-age=0; path=/";
     document.documentElement.className = "";
     document.documentElement.style.colorScheme = "";
   });
@@ -115,6 +118,50 @@ describe("ThemeToggle with system ThemeProvider", () => {
     await waitFor(() => {
       expect(document.documentElement.classList.contains("dark")).toBe(false);
       expect(document.documentElement.style.colorScheme).toBe("light");
+    });
+  });
+
+  it("renders initialTheme icon at full opacity on SSR and syncs haihire_theme cookie on selection", async () => {
+    installMatchMediaMock(false);
+
+    const ssrHtml = renderToStaticMarkup(
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        initialTheme="dark"
+      >
+        <ThemeToggle />
+      </ThemeProvider>,
+    );
+    expect(ssrHtml).not.toContain("opacity-60");
+    expect(ssrHtml).not.toContain(" disabled");
+    expect(ssrHtml).toContain("lucide-moon");
+
+    render(
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        initialTheme="light"
+      >
+        <ThemeToggle />
+      </ThemeProvider>,
+    );
+
+    const trigger = await screen.findByRole("button", {
+      name: /chuyển đổi giao diện|toggle theme/i,
+    });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+
+    const darkOption = await screen.findByRole("menuitem", {
+      name: /tối|dark/i,
+    });
+    fireEvent.click(darkOption);
+
+    await waitFor(() => {
+      expect(document.cookie).toContain("haihire_theme=dark");
+      expect(document.cookie).toContain("haihire_resolved_theme=dark");
     });
   });
 });

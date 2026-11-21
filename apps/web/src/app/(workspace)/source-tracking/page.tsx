@@ -77,7 +77,8 @@ function SourceTrackingContent() {
 
   // Organization info (for public career site link slug)
   const { data: myOrg } = useMyOrg();
-  const orgSlug = myOrg?.slug || user?.organizationId || "demo";
+  const orgSlug =
+    myOrg?.slug || user?.organization?.slug || user?.organizationId || "demo";
 
   // Jobs for filters and modal
   const { data: rawJobs = [] } = useAllJobs(user?.organizationId);
@@ -121,6 +122,9 @@ function SourceTrackingContent() {
     deleteLinkMutation.mutate(id);
   };
 
+  const hasLinksCount = linksData !== undefined || stats !== undefined;
+  const hasAttributionCount =
+    attributionData !== undefined || stats !== undefined;
   const linksCount = linksData?.total ?? stats?.totalLinksCount ?? 0;
   const attributionCount = attributionData?.total ?? stats?.trackedCount ?? 0;
 
@@ -130,15 +134,15 @@ function SourceTrackingContent() {
       {
         id: "links",
         label: t("sourcing.tabs.trackingLinks"),
-        count: linksCount,
+        count: hasLinksCount ? linksCount : undefined,
       },
       {
         id: "attribution",
         label: t("sourcing.tabs.attributionLog"),
-        count: attributionCount,
+        count: hasAttributionCount ? attributionCount : undefined,
       },
     ],
-    [t, linksCount, attributionCount],
+    [t, hasLinksCount, linksCount, hasAttributionCount, attributionCount],
   );
 
   if (!canViewSourcing) {
@@ -159,7 +163,7 @@ function SourceTrackingContent() {
       {/* Standard Page Header Row */}
       <PageHeader
         title={t("sourcing.title")}
-        badge={linksCount}
+        badge={hasLinksCount ? linksCount : undefined}
         actions={
           canCreateLink ? (
             <Button

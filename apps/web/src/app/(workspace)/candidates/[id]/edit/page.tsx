@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { usePermissionState } from "@/hooks/use-has-permission";
 import {
   useCandidate,
   useUpdateCandidateDetailsMutation,
@@ -27,13 +27,15 @@ function EditCandidatePageContent() {
   const { localization } = useLocalization();
   const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
   const { t } = useI18n();
-  const canUpdateCandidate = useHasPermission("candidate:update");
+  const canUpdateCandidateState = usePermissionState("candidate:update");
+  const canUpdateCandidate = canUpdateCandidateState.allowed;
+  const permLoading = canUpdateCandidateState.isLoading;
 
   useEffect(() => {
-    if (!authLoading && !canUpdateCandidate) {
+    if (!authLoading && !permLoading && !canUpdateCandidate) {
       router.replace("/candidates");
     }
-  }, [authLoading, canUpdateCandidate, router]);
+  }, [authLoading, permLoading, canUpdateCandidate, router]);
 
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 

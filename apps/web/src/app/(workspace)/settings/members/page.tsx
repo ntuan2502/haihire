@@ -47,11 +47,18 @@ export default function MembersSettingsPage() {
     [t],
   );
 
-  const { data: members = [], refetch: refetchMembers } = useOrgMembers({
+  const {
+    data: members = [],
+    isLoading: membersLoading,
+    refetch: refetchMembers,
+  } = useOrgMembers({
     enabled: canManageMembers,
   });
-  const { data: serverInviteLinks = [], refetch: refetchLinks } =
-    useInviteLinks({ enabled: canManageMembers });
+  const {
+    data: serverInviteLinks = [],
+    isLoading: linksLoading,
+    refetch: refetchLinks,
+  } = useInviteLinks({ enabled: canManageMembers });
   const revokeInviteMutation = useRevokeInviteLinkMutation();
   const updateMemberRoleMutation = useUpdateMemberRoleMutation();
   const removeMemberMutation = useRemoveMemberMutation();
@@ -70,12 +77,9 @@ export default function MembersSettingsPage() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
-  const [appHost, setAppHost] = useState("");
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setAppHost(window.location.host);
-    }
-  }, []);
+  const [appHost] = useState(() =>
+    typeof window !== "undefined" ? window.location.host : "",
+  );
 
   const [mountedTime, setMountedTime] = useState<number>(0);
   useEffect(() => {
@@ -261,6 +265,7 @@ export default function MembersSettingsPage() {
         roleOptions={inviteRoleOptions}
         getRoleLabel={getRoleLabel}
         serverInviteLinks={serverInviteLinks}
+        isLoading={Boolean(linksLoading)}
         refetchLinks={refetchLinks}
         onRevokeClick={(linkId) => {
           setLinkToRevoke(linkId);
@@ -275,6 +280,7 @@ export default function MembersSettingsPage() {
       {/* Team members list card */}
       <MembersListCard
         members={combinedMembers}
+        isLoading={Boolean(membersLoading)}
         canManageMembers={canManageMembers}
         canEdit={canManageMembers}
         isOwner={isOwner}

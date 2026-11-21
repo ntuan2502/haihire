@@ -56,7 +56,8 @@ function TrackingLinkDetailContent() {
 
   // Organization slug for real public career URLs
   const { data: myOrg } = useMyOrg();
-  const orgSlug = myOrg?.slug || user?.organizationId || "demo";
+  const orgSlug =
+    myOrg?.slug || user?.organization?.slug || user?.organizationId || "demo";
 
   // Jobs for navbar and edit modal
   const { data: rawJobs = [] } = useAllJobs(user?.organizationId);

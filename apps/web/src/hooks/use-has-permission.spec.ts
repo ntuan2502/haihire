@@ -1,12 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useHasPermission } from "./use-has-permission";
+import { useHasPermission, usePermissionState } from "./use-has-permission";
 import * as AuthContextModule from "@/context/auth-context";
 import * as OrgQueriesModule from "./use-organization-queries";
 import { Role, type User, type Permission } from "@haihire/shared";
 
 describe("useHasPermission hook", () => {
-  const mockUserRole = (role: Role | null, isOwner = false) => {
+  const mockUserRole = (
+    role: Role | null,
+    isOwner = false,
+    initialPermissions: Permission[] | null = null,
+  ) => {
     const mockUser: User | null = role
       ? {
           id: "u-1",
@@ -14,6 +18,7 @@ describe("useHasPermission hook", () => {
           name: "Test User",
           role,
           isOwner,
+          organizationId: "org-1",
           createdAt: "2026-01-01T00:00:00.000Z",
         }
       : null;
@@ -22,10 +27,13 @@ describe("useHasPermission hook", () => {
       user: mockUser,
       token: "tok",
       loading: false,
+      initialPermissions,
       login: vi.fn(),
       register: vi.fn(),
       logout: vi.fn(),
       updateUserOrg: vi.fn(),
+      updateUser: vi.fn(),
+      setSession: vi.fn(),
       refreshUser: vi.fn(),
       isAuthenticated: Boolean(role),
       isAdmin: role === Role.ADMIN,
@@ -183,6 +191,30 @@ describe("useHasPermission hook", () => {
       expect(matrixSpy).toHaveBeenCalledWith(
         expect.objectContaining({ enabled: false }),
       );
+    });
+
+    it("resolves custom permission immediately from SSR initialPermissions before query settles", () => {
+      mockUserRole(Role.MEMBER, false, ["candidate:create" as Permission]);
+      vi.spyOn(OrgQueriesModule, "useMyPermissions").mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      const { result } = renderHook(() =>
+        usePermissionState("candidate:create"),
+      );
+      expect(result.current).toEqual({ allowed: true, isLoading: false });
+    });
+
+    it("reports isLoading=true in usePermissionState when non-admin query is pending without initialPermissions", () => {
+      mockUserRole(Role.MEMBER, false, null);
+      vi.spyOn(OrgQueriesModule, "useMyPermissions").mockReturnValue({
+        data: undefined,
+        isLoading: true,
+      } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      const { result } = renderHook(() => usePermissionState("job:create"));
+      expect(result.current).toEqual({ allowed: false, isLoading: true });
     });
   });
 });

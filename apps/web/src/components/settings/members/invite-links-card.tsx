@@ -21,6 +21,7 @@ interface InviteLinksCardProps {
   roleOptions?: CustomSelectOption<Role>[];
   getRoleLabel?: (role: string) => string;
   serverInviteLinks: InviteLink[];
+  isLoading?: boolean;
   refetchLinks: () => void;
   onRevokeClick: (linkId: string) => void;
   revokingId: string | null;
@@ -34,6 +35,7 @@ export function InviteLinksCard({
   roleOptions,
   getRoleLabel,
   serverInviteLinks,
+  isLoading = false,
   refetchLinks,
   onRevokeClick,
   revokingId,
@@ -205,19 +207,42 @@ export function InviteLinksCard({
         </div>
       )}
 
-      {/* Invite links list / empty state */}
-      {!isCreateLinkOpen && serverInviteLinks.length === 0 && (
-        <div className="py-8 text-center space-y-2">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Link2 className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <p className="text-xs font-semibold text-foreground">
-            {t("members.noActiveInviteLinks")}
-          </p>
-          <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
-            {t("members.noActiveInviteLinksDesc")}
-          </p>
+      {/* Invite links loading / list / empty state */}
+      {!isCreateLinkOpen && isLoading && serverInviteLinks.length === 0 ? (
+        <div className="divide-y divide-border pt-1" aria-busy="true">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="py-3 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-7 w-7 rounded-full bg-muted animate-pulse shrink-0" />
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-44 rounded bg-muted/60 animate-pulse" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="h-7 w-24 rounded-md bg-muted/60 animate-pulse" />
+              </div>
+            </div>
+          ))}
         </div>
+      ) : (
+        !isCreateLinkOpen &&
+        serverInviteLinks.length === 0 && (
+          <div className="py-8 text-center space-y-2">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Link2 className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">
+              {t("members.noActiveInviteLinks")}
+            </p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              {t("members.noActiveInviteLinksDesc")}
+            </p>
+          </div>
+        )
       )}
 
       {serverInviteLinks.length > 0 && (

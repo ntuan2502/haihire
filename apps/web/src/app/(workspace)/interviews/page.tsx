@@ -287,19 +287,31 @@ function InterviewsPageContent() {
 
   const interviewTabs = useMemo(
     () => [
-      { id: "ALL", label: t("common.all"), count: totalCandidateCount },
+      {
+        id: "ALL",
+        label: t("common.all"),
+        count: allData ? totalCandidateCount : undefined,
+      },
       {
         id: "UPCOMING",
         label: t("interviews.kpiScheduled"),
-        count: scheduledCount,
+        count: upcomingData ? scheduledCount : undefined,
       },
       {
         id: "AWAITING",
         label: t("interviews.kpiAwaiting"),
-        count: awaitingCount,
+        count: awaitingData ? awaitingCount : undefined,
       },
     ],
-    [t, totalCandidateCount, scheduledCount, awaitingCount],
+    [
+      t,
+      allData,
+      totalCandidateCount,
+      upcomingData,
+      scheduledCount,
+      awaitingData,
+      awaitingCount,
+    ],
   );
 
   // Open Schedule Modal (for new schedule or editing existing interview)
@@ -328,7 +340,7 @@ function InterviewsPageContent() {
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Standard Header Row */}
       <InterviewsHeader
-        totalCount={totalCandidateCount}
+        totalCount={allData ? totalCandidateCount : undefined}
         canEdit={canCreateInterview}
         onOpenScheduleModal={() => handleOpenScheduleModal()}
       />

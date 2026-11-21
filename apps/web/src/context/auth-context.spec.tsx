@@ -180,6 +180,81 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
   });
+
+  it("skips initial /auth/me fetch when initialHasSessionHint is false and clears stale localStorage", async () => {
+    setWindowPath("/auth/login");
+    localStorage.setItem(
+      "haihire_recruiter_user",
+      JSON.stringify({ id: "stale-user", email: "stale@test.local" }),
+    );
+    const noSessionWrapper = ({ children }: { children: ReactNode }) => (
+      <AuthProvider initialUser={null} initialHasSessionHint={false}>
+        {children}
+      </AuthProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: noSessionWrapper,
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(api.get).not.toHaveBeenCalled();
+    expect(localStorage.getItem("haihire_recruiter_user")).toBeNull();
+  });
+
+  it("hydrates SSR initialUser and initialPermissions into QueryClient without redundant /auth/me", async () => {
+    setWindowPath("/dashboard");
+    const queryClient = new QueryClient();
+    const ssrUser = {
+      id: "u-ssr",
+      email: "ssr@test.local",
+      name: "SSR User",
+      role: "MEMBER" as const,
+      isOwner: false,
+      organizationId: "org-ssr",
+      organization: {
+        id: "org-ssr",
+        name: "SSR Org",
+        slug: "ssr-org",
+        ownerId: "owner-1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    const ssrWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider
+          initialUser={ssrUser}
+          initialPermissions={["job:create", "candidate:create"]}
+          initialHasSessionHint={true}
+        >
+          {children}
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper: ssrWrapper });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user?.id).toBe("u-ssr");
+    expect(result.current.initialPermissions).toEqual([
+      "job:create",
+      "candidate:create",
+    ]);
+    expect(api.get).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(queryKeys.myOrg("org-ssr"))).toMatchObject({
+      id: "org-ssr",
+      name: "SSR Org",
+    });
+    expect(
+      queryClient.getQueryData(queryKeys.myPermissions("org-ssr", "MEMBER")),
+    ).toEqual({
+      permissions: ["job:create", "candidate:create"],
+    });
+  });
 });
 
 interface MockEventSourceInstance {

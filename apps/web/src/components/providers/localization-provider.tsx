@@ -64,6 +64,11 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       ? `${activeOrg.id}:${localization.defaultLanguage}:${localization.timezone}:${localization.dateFormat}:${localization.timeFormat}:${localization.nameDisplayOrder}:${localization.defaultCurrency}:${locale}`
       : "none";
 
+  // Synchronously seed active regional formatting for SSR and frame-0 hydration
+  if (hasOrg && activeOrg) {
+    setActiveLocalization(localization, locale);
+  }
+
   // 2-tier language precedence: DB user.preferredLanguage -> localStorage/cookie -> org.defaultLanguage
   useEffect(() => {
     const userPrefLang = user?.preferredLanguage;
@@ -94,7 +99,14 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       !hasCookie &&
       localization.defaultLanguage !== locale
     ) {
-      setLocale(localization.defaultLanguage);
+      void Promise.resolve(setLocale(localization.defaultLanguage)).then(() => {
+        try {
+          window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+          document.cookie = `${LOCALE_COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+        } catch {
+          // Best-effort cleanup so org default seeding stays non-sticky
+        }
+      });
     }
   }, [
     user?.id,

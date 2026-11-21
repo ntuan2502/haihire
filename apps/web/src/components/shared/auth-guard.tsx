@@ -13,14 +13,8 @@ export interface AuthGuardProps {
 
 export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   const router = useRouter();
-  const { user, isAuthenticated, loading, refreshUser } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const { t } = useI18n();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      refreshUser();
-    }
-  }, [isAuthenticated, refreshUser]);
 
   useEffect(() => {
     if (!loading) {

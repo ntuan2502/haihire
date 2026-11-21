@@ -93,26 +93,31 @@ export function useCandidatesFilterSort(
     };
   }, [candidateRows, totalCount]);
 
+  const hasPagedResult = Boolean(pagedResult);
   const candidateTabs = useMemo(
     () => [
-      { id: "ALL", label: t("common.all"), count: candidateCounts.all },
+      {
+        id: "ALL",
+        label: t("common.all"),
+        count: hasPagedResult ? candidateCounts.all : undefined,
+      },
       {
         id: "WITH_RESUME",
         label: t("candidates.withCv"),
-        count: candidateCounts.withResume,
+        count: hasPagedResult ? candidateCounts.withResume : undefined,
       },
       {
         id: "HAS_APPLICATIONS",
         label: t("candidates.hasApplications"),
-        count: candidateCounts.hasApplications,
+        count: hasPagedResult ? candidateCounts.hasApplications : undefined,
       },
       {
         id: "UNASSIGNED",
         label: t("candidates.unassigned"),
-        count: candidateCounts.unassigned,
+        count: hasPagedResult ? candidateCounts.unassigned : undefined,
       },
     ],
-    [t, candidateCounts],
+    [t, hasPagedResult, candidateCounts],
   );
 
   const toggleCandidateFilter = (filterId: string) => {

@@ -17,6 +17,11 @@ export function useMyOrg(options?: { enabled?: boolean }) {
     queryKey: queryKeys.myOrg(user?.organizationId),
     queryFn: () => organizationsApi.getMyOrg(),
     enabled: options?.enabled ?? true,
+    initialData: () =>
+      user?.organization &&
+      (!user.organizationId || user.organization.id === user.organizationId)
+        ? user.organization
+        : undefined,
   });
 }
 

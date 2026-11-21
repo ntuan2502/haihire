@@ -46,19 +46,23 @@ function OnboardingContent() {
 
   // Derive initial mode: "select" | "create" | "join"
   const urlMode = searchParams.get("mode");
-  const [mode, setMode] = useState<"select" | "create" | "join">("select");
+  const [mode, setMode] = useState<"select" | "create" | "join">(() =>
+    urlMode === "create" || urlMode === "join" ? urlMode : "select",
+  );
 
   useEffect(() => {
     if (urlMode === "create") {
       setMode("create");
     } else if (urlMode === "join") {
       setMode("join");
-    } else if (!authLoading && !user?.organizationId && myOrgs.length === 0) {
-      setMode("create");
-    } else if (!authLoading && (user?.organizationId || myOrgs.length > 0)) {
-      setMode("select");
+    } else if (!authLoading && !orgsLoading) {
+      if (!user?.organizationId && myOrgs.length === 0) {
+        setMode("create");
+      } else if (user?.organizationId || myOrgs.length > 0) {
+        setMode("select");
+      }
     }
-  }, [urlMode, user?.organizationId, myOrgs.length, authLoading]);
+  }, [urlMode, user?.organizationId, myOrgs.length, authLoading, orgsLoading]);
 
   // Handle switching view mode and updating URL query string
   const handleSwitchMode = (newMode: "select" | "create" | "join") => {

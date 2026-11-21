@@ -289,6 +289,7 @@ export class OrganizationsCoreService {
   async getMyOrgs(userId: string) {
     const ownedOrgs = await this.prisma.organization.findMany({
       where: { ownerId: userId },
+      orderBy: getPreferredOwnedOrgOrderBy(),
       select: ORG_CORE_SELECT,
     });
 
@@ -309,6 +310,7 @@ export class OrganizationsCoreService {
       memberOrgIds.length > 0
         ? await this.prisma.organization.findMany({
             where: { id: { in: memberOrgIds } },
+            orderBy: getPreferredOwnedOrgOrderBy(),
             select: ORG_CORE_SELECT,
           })
         : [];

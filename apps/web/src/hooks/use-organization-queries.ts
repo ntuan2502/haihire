@@ -66,6 +66,9 @@ export function useUpdateMyOrgMutation() {
       if (updatedOrg) {
         updateUserOrg(updatedOrg);
         queryClient.setQueryData(queryKeys.myOrg(updatedOrg.id), updatedOrg);
+        queryClient.setQueryData<Organization[]>(queryKeys.myOrgs(), (prev) =>
+          prev?.map((org) => (org.id === updatedOrg.id ? updatedOrg : org)),
+        );
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },

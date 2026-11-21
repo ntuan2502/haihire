@@ -711,4 +711,74 @@ describe("OrganizationsCoreService", () => {
       );
     });
   });
+
+  describe("getMyOrgs deterministic ordering", () => {
+    it("preserves stable organization order after updating owned and member organizations", async () => {
+      organizationTable.store[0].createdAt = "2026-01-01T00:00:00.000Z";
+      organizationTable.store[1].createdAt = "2026-01-03T00:00:00.000Z";
+      organizationTable.store.push(
+        {
+          id: "org-3",
+          name: "Gamma Holdings",
+          slug: "gamma",
+          ownerId: "user-owner",
+          createdAt: "2026-01-02T00:00:00.000Z",
+        },
+        {
+          id: "org-4",
+          name: "Delta Partners",
+          slug: "delta",
+          ownerId: "user-delta-owner",
+          createdAt: "2026-01-04T00:00:00.000Z",
+        },
+      );
+      organizationMemberTable.store.push({
+        id: "mem-4",
+        organizationId: "org-4",
+        userId: "user-owner",
+        role: "MEMBER",
+      });
+
+      const findManySpy = vi.spyOn(mockPrisma.organization, "findMany");
+
+      const beforeUpdate = await service.getMyOrgs("user-owner");
+      expect(beforeUpdate.map((o) => o.id)).toEqual([
+        "org-1",
+        "org-3",
+        "org-2",
+        "org-4",
+      ]);
+
+      await service.updateMyOrg(
+        "user-owner",
+        { name: "Acme Corporation Renamed" },
+        "org-1",
+      );
+
+      // Simulate PostgreSQL MVCC tuple relocation to end of heap after UPDATE
+      const [movedOwned] = organizationTable.store.splice(0, 1);
+      organizationTable.store.push(movedOwned);
+
+      const afterUpdate = await service.getMyOrgs("user-owner");
+      expect(afterUpdate.map((o) => o.id)).toEqual([
+        "org-1",
+        "org-3",
+        "org-2",
+        "org-4",
+      ]);
+      expect(afterUpdate[0]?.name).toBe("Acme Corporation Renamed");
+      expect(findManySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { ownerId: "user-owner" },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        }),
+      );
+      expect(findManySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { in: ["org-2", "org-4"] } },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        }),
+      );
+    });
+  });
 });

@@ -62,7 +62,7 @@ export function InterviewsFilterDrawer({
     >
       {/* 1. FILTER BY JOB */}
       <div className="space-y-2.5">
-        <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h4 className="text-xs font-semibold text-foreground">
           {t("applications.filterByJob")}
         </h4>
         <CustomSelect
@@ -111,7 +111,7 @@ export function InterviewsFilterDrawer({
 
           {/* 3. SORT BY */}
           <div className="space-y-2.5">
-            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+            <h4 className="text-xs font-semibold text-foreground">
               {t("jobs.sortByUpper")}
             </h4>
             <CustomSelect

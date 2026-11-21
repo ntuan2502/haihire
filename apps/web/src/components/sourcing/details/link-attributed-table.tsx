@@ -46,7 +46,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-border bg-muted/50 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <tr className="border-b border-border bg-muted/50 text-[10px] font-bold text-muted-foreground">
                 <th className="py-3 px-5">
                   {t("sourcing.details.colCandidate")}
                 </th>

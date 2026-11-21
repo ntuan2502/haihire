@@ -207,7 +207,7 @@ function AddCandidatePageContent() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`rounded-xl border-2 border-dashed p-7 text-center transition-all ${
+          className={`rounded-xl border-2 border-dashed p-7 text-center transition-colors ${
             isDragging
               ? "border-primary bg-accent/50"
               : selectedFile

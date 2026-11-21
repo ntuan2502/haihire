@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { MailPlus, Sparkles } from "lucide-react";
+import { MailPlus } from "lucide-react";
 import { CustomSelect, FormModal } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -209,12 +209,8 @@ export function EmailTemplateCreateModal({
       </div>
 
       <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-          <Sparkles
-            className="h-3.5 w-3.5 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <span>{t("email.insertVariableHint")}</span>
+        <div className="text-[11px] font-medium text-foreground">
+          {t("email.insertVariableHint")}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {TEMPLATE_VARIABLES.map((v) => (

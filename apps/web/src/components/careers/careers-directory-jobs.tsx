@@ -49,18 +49,18 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
         return (
           <div
             key={job.id}
-            className="p-5 rounded-xl bg-card text-card-foreground border border-border shadow-xs hover:border-primary/40 transition-all flex flex-col justify-between space-y-4"
+            className="p-5 rounded-xl bg-card text-card-foreground border border-border hover:border-foreground/20 transition-colors flex flex-col justify-between space-y-4"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <Link
                     href={`/careers/${orgSlug}/${slugify(job.title)}`}
-                    className="text-sm font-bold text-foreground hover:text-primary transition-colors"
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {job.title}
                   </Link>
-                  <div className="text-xs font-semibold text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <div className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1.5">
                     <OrganizationLogo
                       name={orgName}
                       logoUrl={job.organization?.logoUrl}
@@ -71,24 +71,24 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
                   </div>
                 </div>
 
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                <span className="rounded-md px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground shrink-0">
                   {job.department}
                 </span>
               </div>
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap pt-1">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 stroke-[1.5]" />
                   <span>{job.location}</span>
                 </span>
                 {job.salaryRange && (
-                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                    <DollarSign className="h-3 w-3 shrink-0" />
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium font-mono tabular-nums">
+                    <DollarSign className="h-3.5 w-3.5 shrink-0 stroke-[1.5]" />
                     <span>{job.salaryRange}</span>
                   </span>
                 )}
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0 stroke-[1.5]" />
                   <span>{getJobTypeLabel(job.type, t)}</span>
                 </span>
               </div>
@@ -97,14 +97,14 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
             <div className="flex items-center justify-between pt-3 border-t border-border">
               <Link
                 href={`/careers/${orgSlug}`}
-                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("careers.companyPage")} &rarr;
               </Link>
 
               <Link
                 href={`/careers/${orgSlug}/${slugify(job.title)}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium transition-colors cursor-pointer"
               >
                 <span>{t("careers.applyNow")}</span>
                 <ChevronRight className="h-3.5 w-3.5" />

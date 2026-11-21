@@ -47,7 +47,7 @@ export function ColumnPicker({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-48">
-        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground">
           {menuTitle}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

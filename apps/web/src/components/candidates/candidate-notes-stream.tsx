@@ -191,7 +191,7 @@ export function CandidateNotesStream({
               <MessageSquare className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-foreground">
                 {t("candidates.notesTitle")}
               </h3>
               <p className="text-[11px] text-muted-foreground">
@@ -210,7 +210,7 @@ export function CandidateNotesStream({
       {/* Composer (Trello / Stream style rich input) */}
       {canCreateNote && (
         <div
-          className={`rounded-xl border transition-all duration-200 bg-card text-card-foreground ${
+          className={`rounded-xl border transition-colors duration-200 bg-card text-card-foreground ${
             isFocused || composerContent
               ? "border-ring shadow-sm ring-2 ring-ring/20"
               : "border-border shadow-2xs hover:border-input"
@@ -253,7 +253,7 @@ export function CandidateNotesStream({
                     disabled={
                       !composerContent.trim() || addNoteMutation.isPending
                     }
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {addNoteMutation.isPending ? (
                       <>
@@ -306,13 +306,13 @@ export function CandidateNotesStream({
             return (
               <div
                 key={note.id}
-                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs hover:shadow-xs transition-all duration-150"
+                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs hover:shadow-xs transition-colors duration-150"
               >
                 {/* Note Header */}
                 <div className="flex items-center justify-between gap-2 pb-2 border-b border-border">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
-                      className={`h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs ${avatarBg}`}
+                      className={`h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-2xs ${avatarBg}`}
                       title={note.authorName}
                     >
                       {initials}
@@ -332,7 +332,7 @@ export function CandidateNotesStream({
                   <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-muted-foreground">
                     {note.isEdited && (
                       <span
-                        className="italic text-muted-foreground"
+                        className="text-muted-foreground"
                         title={formatDate(note.updatedAt)}
                       >
                         {t("applications.notesStream.edited")}
@@ -428,7 +428,7 @@ export function CandidateNotesStream({
                           disabled={
                             !editContent.trim() || updateNoteMutation.isPending
                           }
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 transition-all"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-2xs disabled:opacity-50 transition-colors"
                         >
                           {updateNoteMutation.isPending ? (
                             <Loader2 className="h-3 w-3 animate-spin" />

@@ -449,7 +449,7 @@ export default function GeneralSettingsPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-muted/40 p-3.5 space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold text-muted-foreground">
                 {t("settings.urlSlug")}
               </p>
               <p

@@ -83,7 +83,7 @@ export function ApplicationsTableView({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
             <tr>
               {/* Candidate */}
               {visibleColumns.candidate && (
@@ -101,7 +101,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("candidate")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "candidate"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"
@@ -141,7 +141,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("email")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "email"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"
@@ -181,7 +181,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("job")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "job"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"
@@ -221,7 +221,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("status")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "status"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"
@@ -261,7 +261,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("score")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "score"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"
@@ -301,7 +301,7 @@ export function ApplicationsTableView({
                   <button
                     type="button"
                     onClick={() => handleSort("applied")}
-                    className={`flex items-center gap-1 uppercase tracking-wider ${
+                    className={`flex items-center gap-1 ${
                       sortField === "applied"
                         ? "font-bold text-foreground"
                         : "font-semibold text-muted-foreground hover:text-foreground"

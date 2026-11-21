@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
-import { ArrowLeft, Sparkles, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Trash2, Plus } from "lucide-react";
 import type { ScoringCriterion } from "./types";
 
 interface WizardStepScoringProps {
@@ -86,8 +86,7 @@ export function WizardStepScoring({
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-secondary-foreground">
-            <Sparkles className="h-3 w-3" />
+          <span className="inline-flex items-center rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
             {t("jobs.wizard.writtenByAiBadge")}
           </span>
           <span className="text-xs font-semibold text-foreground">
@@ -178,7 +177,7 @@ export function WizardStepScoring({
       {/* Add Criterion Inline Form */}
       {isAddingCriterion ? (
         <div className="p-5 rounded-xl border border-border bg-muted/30 space-y-4">
-          <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          <h4 className="text-xs font-medium text-foreground">
             {t("jobs.wizard.addCustomCriterionTitle")}
           </h4>
 

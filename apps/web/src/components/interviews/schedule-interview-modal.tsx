@@ -356,7 +356,7 @@ export function ScheduleInterviewModal({
     >
       {/* Section 1: Job & Candidate Selection */}
       <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3.5">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground uppercase tracking-wider">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
           <Briefcase className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
           <span>{t("interviews.targetJobAndCandidate")}</span>
         </div>

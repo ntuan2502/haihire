@@ -47,7 +47,7 @@ export function WizardStepCompensationAccordion({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-lg border border-border bg-muted/30 transition-all">
+    <div className="rounded-lg border border-border bg-muted/30 transition-colors">
       <button
         type="button"
         onClick={() => setCompensationOpen(!compensationOpen)}

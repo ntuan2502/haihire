@@ -25,7 +25,7 @@ export function ApplicationDocumentsSection({
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
       {showHeader && (
-        <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           <span>{t("applications.documents")}</span>
         </h3>

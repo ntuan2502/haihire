@@ -113,7 +113,7 @@ export function JobList(props: JobListProps) {
         <div className="rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
                 <tr>
                   <th scope="col" className="py-3.5 px-5 min-w-[280px]">
                     {t("jobs.jobTitle")}

@@ -26,10 +26,9 @@ const SIZE_CLASSES: Record<OrganizationLogoSize, string> = {
 };
 
 const FALLBACK_VARIANT_CLASSES: Record<OrganizationLogoVariant, string> = {
-  default: "bg-primary/10 border border-primary/20 text-primary font-bold",
-  sidebar: "bg-sidebar-primary text-sidebar-primary-foreground font-bold",
-  gradient:
-    "bg-gradient-to-tr from-primary to-sky-500 text-primary-foreground font-black shadow-sm",
+  default: "bg-primary/10 border border-primary/20 text-primary font-semibold",
+  sidebar: "bg-sidebar-primary text-sidebar-primary-foreground font-semibold",
+  gradient: "bg-primary text-primary-foreground font-semibold",
 };
 
 function getOrganizationInitials(

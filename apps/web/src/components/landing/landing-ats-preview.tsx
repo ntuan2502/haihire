@@ -227,11 +227,8 @@ export const LandingAtsPreview: React.FC = () => {
       id="demo"
       className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20"
     >
-      {/* Background Atmosphere Glow */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-primary/15 blur-[120px] rounded-full" />
-
       {/* Main macOS Application Frame */}
-      <div className="relative rounded-2xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden ring-1 ring-border/40 transition-colors">
+      <div className="relative rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden transition-colors">
         {/* 1. macOS Window Titlebar */}
         <div className="flex items-center justify-between border-b border-border bg-muted/80 px-3 sm:px-6 py-2 select-none">
           <div className="flex items-center gap-1.5 shrink-0">
@@ -240,12 +237,12 @@ export const LandingAtsPreview: React.FC = () => {
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500/80 ring-1 ring-emerald-400/30" />
           </div>
 
-          <div className="text-[11px] sm:text-xs font-semibold text-muted-foreground truncate max-w-[160px] sm:max-w-none px-2">
+          <div className="text-xs font-medium text-muted-foreground truncate max-w-[160px] sm:max-w-none px-2">
             {t("landing.mockupAtsWindowTitle", { brand: "HaiHire" })}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 shrink-0">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
             <span>{t("landing.mockupActiveCandidates")}</span>
           </div>
         </div>
@@ -255,11 +252,11 @@ export const LandingAtsPreview: React.FC = () => {
           <div className="flex items-center gap-4 sm:gap-6 min-w-0">
             <BrandLogo size="sm" />
 
-            <div className="hidden sm:flex items-center gap-1 text-xs font-semibold">
+            <div className="hidden sm:flex items-center gap-1 text-xs font-medium">
               <span className="px-3 py-1.5 rounded-md text-muted-foreground">
                 {t("nav.dashboard")}
               </span>
-              <span className="px-3 py-1.5 rounded-md bg-primary/10 text-primary font-bold">
+              <span className="px-3 py-1.5 rounded-md bg-secondary text-foreground font-medium">
                 {t("nav.jobs")}
               </span>
               <span className="px-3 py-1.5 rounded-md text-muted-foreground">
@@ -275,7 +272,7 @@ export const LandingAtsPreview: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground font-bold text-xs flex items-center justify-center shadow-xs">
+            <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground font-medium text-xs flex items-center justify-center">
               AT
             </div>
           </div>
@@ -288,10 +285,10 @@ export const LandingAtsPreview: React.FC = () => {
               {t("nav.jobs")}
             </span>
             <span className="text-muted-foreground shrink-0">/</span>
-            <span className="font-bold text-foreground truncate">
+            <span className="font-medium text-foreground truncate">
               {mockJob.title}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full ml-1 shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md ml-1 shrink-0">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>{mockJob.location}</span>
             </span>
@@ -322,7 +319,7 @@ export const LandingAtsPreview: React.FC = () => {
           <aside
             className={`w-full ${
               isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-84"
-            } shrink-0 flex flex-col h-full border-r border-border bg-card overflow-hidden transition-all duration-200 ${
+            } shrink-0 flex flex-col h-full border-r border-border bg-card overflow-hidden transition-colors duration-200 ${
               mobileDetailOpen ? "hidden md:flex" : "flex"
             }`}
           >
@@ -355,7 +352,7 @@ export const LandingAtsPreview: React.FC = () => {
                     { value: "name", label: t("candidates.candidateName") },
                   ]}
                   className="w-auto"
-                  triggerClassName="h-7 text-xs py-1 px-2.5 font-semibold"
+                  triggerClassName="h-7 text-xs py-1 px-2.5 font-medium"
                 />
 
                 <button
@@ -367,7 +364,7 @@ export const LandingAtsPreview: React.FC = () => {
                 </button>
               </div>
 
-              <p className="text-[10px] text-muted-foreground font-medium pt-0.5">
+              <p className="text-xs text-muted-foreground font-mono tabular-nums pt-0.5">
                 {candidateCountText}
               </p>
             </div>
@@ -380,10 +377,10 @@ export const LandingAtsPreview: React.FC = () => {
                     <User className="h-5 w-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-foreground">
+                    <h4 className="text-xs font-medium text-foreground">
                       {t("candidates.noCandidatesYet")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {t("candidates.noApplicationsMatchingStage")}
                     </p>
                   </div>

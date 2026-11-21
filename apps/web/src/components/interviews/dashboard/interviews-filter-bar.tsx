@@ -100,7 +100,7 @@ export function InterviewsFilterBar({
             <button
               type="button"
               onClick={() => onViewModeChange("table")}
-              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                 viewMode === "table"
                   ? "bg-card text-primary shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -113,7 +113,7 @@ export function InterviewsFilterBar({
             <button
               type="button"
               onClick={() => onViewModeChange("calendar")}
-              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-full px-2.5 rounded-md flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                 viewMode === "calendar"
                   ? "bg-card text-primary shadow-xs"
                   : "text-muted-foreground hover:text-foreground"

@@ -9,7 +9,7 @@ import {
   useId,
   type FormEvent,
 } from "react";
-import { Send, Eye, Edit3, Sparkles, User, Briefcase } from "lucide-react";
+import { Send, Eye, Edit3, User, Briefcase } from "lucide-react";
 import {
   type EmailFlowKey,
   type EmailTemplateType,
@@ -116,7 +116,7 @@ export function SendEmailModal({
         })),
         {
           value: ADHOC_TEMPLATE_VALUE,
-          label: `✏️ ${t("email.customAdHocOption")}`,
+          label: t("email.customAdHocOption"),
         },
       ];
     }
@@ -134,7 +134,7 @@ export function SendEmailModal({
       })),
       {
         value: ADHOC_TEMPLATE_VALUE,
-        label: `✏️ ${t("email.customAdHocOption")}`,
+        label: t("email.customAdHocOption"),
       },
     ];
   }, [activeTemplates, t]);
@@ -467,9 +467,8 @@ export function SendEmailModal({
         </div>
 
         {!isPreviewMode && (
-          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-            <Sparkles className="h-3 w-3 text-amber-500" aria-hidden="true" />
-            <span>{t("email.htmlAndVariables")}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {t("email.htmlAndVariables")}
           </span>
         )}
       </div>
@@ -492,12 +491,8 @@ export function SendEmailModal({
 
           {/* Variable Insertion Pills */}
           <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              <Sparkles
-                className="h-3 w-3 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <span>{t("email.insertVariableHint")}</span>
+            <div className="text-[11px] font-medium text-muted-foreground">
+              {t("email.insertVariableHint")}
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {TEMPLATE_VARIABLES.map((v) => (

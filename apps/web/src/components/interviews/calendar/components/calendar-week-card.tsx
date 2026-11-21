@@ -33,7 +33,7 @@ export function CalendarWeekCard({
         candidate: candidateName,
         time: formattedTime,
       })}
-      className={`w-full text-left p-2.5 rounded-lg border border-l-2 space-y-1 transition-all cursor-pointer shadow-2xs hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      className={`w-full text-left p-2.5 rounded-lg border border-l-2 space-y-1 transition-colors cursor-pointer shadow-2xs hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         hasScorecard
           ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/80 border-l-emerald-500"
           : "bg-muted/40 hover:bg-muted/70 border-border border-l-primary"

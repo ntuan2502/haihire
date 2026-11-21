@@ -21,7 +21,6 @@ import {
   Globe2,
   MapPin,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import {
   getJobTypeLabel,
@@ -129,8 +128,7 @@ export function WizardPreviewModal({
                 </div>
               )}
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground border border-border">
-                <Sparkles className="h-3.5 w-3.5 text-foreground" />
+              <div className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground border border-border">
                 <span>{department || t("jobs.wizard.generalDepartment")}</span>
               </div>
 

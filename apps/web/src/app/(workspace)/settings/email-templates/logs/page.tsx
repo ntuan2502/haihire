@@ -111,7 +111,7 @@ export default function EmailLogsPage() {
         }
       >
         <table className="w-full text-left text-xs min-w-[640px]">
-          <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
             <tr>
               <th className="px-4 py-3">{t("email.thSentAt")}</th>
               <th className="px-4 py-3">{t("email.thRecipient")}</th>

@@ -195,7 +195,7 @@ export function PipelineCandidateDetail({
             {candidateTab === "interviews" && (
               <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <h3 className="text-xs font-semibold text-muted-foreground">
                     {t("applications.tabs.interviews")}
                   </h3>
                   {canCreateInterview && (

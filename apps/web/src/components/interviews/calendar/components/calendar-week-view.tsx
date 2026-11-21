@@ -41,15 +41,13 @@ export function CalendarWeekView({
                 {/* Day Header */}
                 <div className="flex items-center justify-between gap-1.5 pb-2 border-b border-border">
                   <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    <span className="text-xs font-medium text-muted-foreground block">
                       {dayName}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`text-sm font-extrabold tabular-nums ${
-                          day.isToday
-                            ? "text-primary font-black"
-                            : "text-foreground"
+                        className={`text-sm font-semibold tabular-nums ${
+                          day.isToday ? "text-primary" : "text-foreground"
                         }`}
                       >
                         {day.displayDate}

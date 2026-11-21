@@ -12,7 +12,7 @@ export function StageBadge({ stage, className = "" }: StageBadgeProps) {
   const stageInfo = useStageInfo(stage);
   return (
     <span
-      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider shrink-0 ${stageInfo.badgeBg} ${className}`}
+      className={`px-2 py-0.5 rounded-md text-xs font-medium border shrink-0 ${stageInfo.badgeBg} ${className}`}
     >
       {stageInfo.label}
     </span>

@@ -61,7 +61,7 @@ export function AttributionLogTab({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
                   <th className="py-3.5 px-5">
                     {t("sourcing.attribution.candidate")}
                   </th>

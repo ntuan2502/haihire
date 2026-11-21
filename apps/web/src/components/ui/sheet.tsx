@@ -125,7 +125,7 @@ function SheetContent({
           <SheetPrimitive.Close
             disabled={disableClose}
             aria-label={t("common.close")}
-            className="absolute top-4 right-4 z-10 rounded-md p-1 text-muted-foreground opacity-70 ring-offset-background transition-all hover:opacity-100 hover:text-foreground hover:bg-accent focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none cursor-pointer"
+            className="absolute top-4 right-4 z-10 rounded-md p-1 text-muted-foreground opacity-70 ring-offset-background transition-colors hover:opacity-100 hover:text-foreground hover:bg-accent focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none cursor-pointer"
           >
             <XIcon className="size-4" />
             <span className="sr-only">{t("common.close")}</span>

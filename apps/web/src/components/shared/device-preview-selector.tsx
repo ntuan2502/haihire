@@ -59,7 +59,7 @@ export function DevicePreviewSelector({
             type="button"
             onClick={() => onChange(opt.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
+              "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer",
               isActive
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground",

@@ -36,7 +36,7 @@ export function PipelineCandidatesSidebar({
 
   return (
     <aside
-      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-border bg-card text-card-foreground overflow-hidden transition-all duration-200 ${
+      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-border bg-card text-card-foreground overflow-hidden transition-colors duration-200 ${
         mobileDetailOpen ? "hidden md:flex" : "flex"
       }`}
     >

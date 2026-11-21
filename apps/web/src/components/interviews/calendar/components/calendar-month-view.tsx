@@ -84,7 +84,7 @@ export function CalendarMonthView({
                   <button
                     type="button"
                     onClick={() => onScheduleDate(day.dateStr)}
-                    className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded-md hover:bg-primary/10 text-primary flex items-center justify-center transition-all cursor-pointer"
+                    className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded-md hover:bg-primary/10 text-primary flex items-center justify-center transition-colors cursor-pointer"
                     title={`${t("interviews.scheduleNew")} ${formatDate(day.dateStr, "numeric", locOverrides)}`}
                   >
                     <Plus className="h-3 w-3" />

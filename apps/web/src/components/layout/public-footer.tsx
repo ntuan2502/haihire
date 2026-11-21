@@ -33,7 +33,7 @@ export function PublicFooter({
   return (
     <footer
       className={cn(
-        "border-t border-border bg-card/70 backdrop-blur-xs py-6 sm:py-8 text-center text-xs text-muted-foreground mt-auto transition-colors select-none",
+        "border-t border-border bg-card py-6 sm:py-8 text-center text-xs text-muted-foreground mt-auto transition-colors select-none",
         className,
       )}
     >
@@ -55,7 +55,7 @@ export function PublicFooter({
                 size="sm"
                 variant="gradient"
                 decorative
-                className="font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform"
+                className="font-semibold text-xs"
               />
               <span className="font-semibold text-foreground">
                 {displayName} {t("careers.title")}
@@ -66,7 +66,7 @@ export function PublicFooter({
               href="/"
               className="flex items-center gap-2 group hover:opacity-85 transition-opacity"
             >
-              <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform">
+              <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs">
                 {BRAND_CONFIG.monogram}
               </div>
               <span className="font-semibold text-foreground">
@@ -80,7 +80,7 @@ export function PublicFooter({
           {t("careers.poweredBy")}{" "}
           <Link
             href="/"
-            className="font-bold text-foreground hover:text-primary transition-colors"
+            className="font-semibold text-foreground hover:text-primary transition-colors"
           >
             {BRAND_CONFIG.legalName}
           </Link>{" "}

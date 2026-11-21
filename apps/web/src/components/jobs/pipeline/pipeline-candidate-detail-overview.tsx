@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
@@ -33,13 +32,12 @@ export function PipelineCandidateDetailOverview({
     <div className="space-y-5">
       <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-emerald-500" />
+          <div className="text-xs font-medium text-muted-foreground">
             <span>{t("applications.matchScore")}</span>
           </div>
           {selectedCandidate.matchScore !== null &&
           selectedCandidate.matchScore !== undefined ? (
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-sm font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
               {selectedCandidate.matchScore}%
             </span>
           ) : (
@@ -52,7 +50,7 @@ export function PipelineCandidateDetailOverview({
           selectedCandidate.matchScore !== undefined && (
             <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                className="h-full bg-emerald-500 rounded-full transition-[width] duration-500"
                 style={{
                   width: `${Math.max(0, Math.min(100, selectedCandidate.matchScore))}%`,
                 }}
@@ -70,7 +68,7 @@ export function PipelineCandidateDetailOverview({
 
       <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h3 className="text-xs font-medium text-foreground">
             {t("applications.tabs.interviews")}
           </h3>
           {canCreateInterview && (

@@ -16,7 +16,6 @@ import {
   FileText,
   Loader2,
   ShieldCheck,
-  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -183,9 +182,9 @@ export function JobPublicApplyForm({
 
   return (
     <div ref={formRef} className="lg:col-span-5 sticky top-24 space-y-6">
-      <div className="p-6 sm:p-8 rounded-2xl bg-card text-card-foreground border border-border shadow-xs space-y-6">
+      <div className="p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border space-y-6">
         <div>
-          <h2 className="text-lg font-extrabold text-foreground">
+          <h2 className="text-lg font-medium text-foreground">
             {t("careers.submitApplication")}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
@@ -276,7 +275,7 @@ export function JobPublicApplyForm({
                 <div key={field.id} className="space-y-1.5">
                   <label
                     htmlFor={field.id}
-                    className="text-[11px] font-bold text-foreground uppercase tracking-wider"
+                    className="text-xs font-medium text-foreground"
                   >
                     {field.label} <span className="text-rose-500">*</span>
                   </label>
@@ -297,7 +296,7 @@ export function JobPublicApplyForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="career-email"
-                className="text-[11px] font-bold text-foreground uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.email")} <span className="text-rose-500">*</span>
               </label>
@@ -315,7 +314,7 @@ export function JobPublicApplyForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="career-phone"
-                className="text-[11px] font-bold text-foreground uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.phone")}
               </label>
@@ -331,7 +330,7 @@ export function JobPublicApplyForm({
 
             {/* Resume Upload Box */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+              <label className="text-xs font-medium text-foreground">
                 {t("careers.resume")} <span className="text-rose-500">*</span>
               </label>
 
@@ -410,7 +409,7 @@ export function JobPublicApplyForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="career-notes"
-                className="text-[11px] font-bold text-foreground uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.notes")}
               </label>
@@ -420,12 +419,12 @@ export function JobPublicApplyForm({
                 placeholder={t("careers.placeholders.notes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-3 text-xs rounded-md bg-background border border-input focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-all resize-none"
+                className="w-full p-3 text-xs rounded-md bg-background border border-input focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-colors resize-none"
               />
             </div>
 
             {/* Privacy note */}
-            <div className="pt-1 flex items-start gap-2 text-[10px] text-muted-foreground leading-normal">
+            <div className="pt-1 flex items-start gap-2 text-xs text-muted-foreground leading-normal">
               <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
               <span>{t("careers.privacyNotice")}</span>
             </div>
@@ -434,7 +433,7 @@ export function JobPublicApplyForm({
             <Button
               type="submit"
               disabled={applyMutation.isPending}
-              className="w-full h-11 rounded-md text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer disabled:opacity-50"
+              className="w-full h-11 rounded-lg text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer disabled:opacity-50"
             >
               {applyMutation.isPending ? (
                 <>
@@ -442,10 +441,7 @@ export function JobPublicApplyForm({
                   {t("careers.submitting")}
                 </>
               ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {t("careers.submitApplication")}
-                </>
+                <>{t("careers.submitApplication")}</>
               )}
             </Button>
           </form>

@@ -40,7 +40,7 @@ function PipelineStageRow({ item }: { item: PipelineStageBreakdown }) {
       {/* Progress Track */}
       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${
+          className={`h-full rounded-full transition-[width] duration-500 ${
             item.count > 0 ? stageInfo.barColor : "bg-transparent"
           }`}
           style={{ width: `${Math.min(100, Math.max(0, item.percentage))}%` }}

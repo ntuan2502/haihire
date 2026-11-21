@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import { useI18n } from "@/i18n";
 
 interface WizardDraftBannerProps {
@@ -17,7 +16,6 @@ export function WizardDraftBanner({
   return (
     <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <span>
           {t("jobs.wizard.draftRestored")}
           {draftSavedAt ? ` (${draftSavedAt})` : ""}.

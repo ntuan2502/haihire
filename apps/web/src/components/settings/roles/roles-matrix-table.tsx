@@ -71,7 +71,7 @@ export function RolesMatrixTable({
                 <tr className="bg-muted/50 border-y border-border">
                   <td
                     colSpan={ROLES.length + 1}
-                    className="py-2 px-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground"
+                    className="py-2 px-4 font-semibold text-xs text-muted-foreground"
                   >
                     <span className="sticky left-4 inline-block">
                       {t(`settings.rolesMatrix.${category.categoryKey}`)}

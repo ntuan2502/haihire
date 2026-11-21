@@ -139,7 +139,7 @@ export function DashboardPipeline({
                             `/jobs/${job.id}/pipeline?stage=${stage.id}`,
                           )
                         }
-                        className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
+                        className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
                         title={`${stage.label}: ${count}`}
                         aria-label={`${stage.label}: ${count}`}
                       >
@@ -149,7 +149,7 @@ export function DashboardPipeline({
                           {displayLabel}
                         </span>
                         <span
-                          className={`text-[11px] font-black ${stage.textColor} shrink-0`}
+                          className={`text-[11px] font-semibold font-mono tabular-nums ${stage.textColor} shrink-0`}
                         >
                           {count}
                         </span>

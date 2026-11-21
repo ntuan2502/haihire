@@ -148,7 +148,7 @@ export function CandidateDrawerSummary({
 
       {/* Candidate Header Card */}
       <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs flex items-start gap-4">
-        <div className="h-11 w-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+        <div className="h-11 w-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm shadow-sm shrink-0">
           {getInitials(getCandidateDisplayName(currentApp))}
         </div>
 

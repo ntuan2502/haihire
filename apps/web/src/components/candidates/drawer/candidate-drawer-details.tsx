@@ -52,7 +52,7 @@ export function CandidateDrawerDetails({
 
       {/* Card 1: Details */}
       <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
-        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-foreground">
           {t("common.details")}
         </h3>
 

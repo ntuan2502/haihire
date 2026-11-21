@@ -82,14 +82,14 @@ export function InterviewsGridView({
           return (
             <div
               key={cardKey}
-              className="group rounded-xl bg-card text-card-foreground border border-border p-5 shadow-2xs hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between space-y-4"
+              className="group rounded-xl bg-card text-card-foreground border border-border p-5 hover:border-primary/40 transition-colors flex flex-col justify-between space-y-4"
             >
               {/* Top: Header, Job, Schedule */}
               <div className="space-y-3.5">
                 {/* Candidate Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center shrink-0">
                       {initials}
                     </div>
                     <div className="min-w-0">

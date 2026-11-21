@@ -18,7 +18,6 @@ import {
   DollarSign,
   Search,
   ArrowRight,
-  Sparkles,
   AlertCircle,
   Globe2,
   ChevronRight,
@@ -160,43 +159,36 @@ export function OrgCareersClient({
       />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background via-muted/40 to-muted/70 border-b border-border py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-radial-[circle_at_top_right] from-primary/5 via-transparent to-transparent pointer-events-none" />
-
+      <section className="relative overflow-hidden bg-background border-b border-border py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <span>{t("careers.hiringTalentBadge")}</span>
-            </div>
-          </div>
+          <p className="text-xs font-mono text-muted-foreground">
+            {t("careers.hiringTalentBadge")}
+          </p>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-tight leading-tight text-balance">
+          <h1 className="text-3xl sm:text-5xl font-medium text-foreground tracking-tight leading-[1.08] text-balance">
             {t("careers.buildCareerWith")}{" "}
-            <span className="inline-block bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent">
-              {orgName}
-            </span>
+            <span className="text-foreground">{orgName}</span>
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             {t("careers.companyHeroDesc")}
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-semibold text-muted-foreground">
-            <div className="px-4 py-2 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-primary" />
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium text-muted-foreground">
+            <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
               <span>
-                <strong className="text-foreground font-extrabold">
+                <strong className="text-foreground font-medium font-mono tabular-nums">
                   {filteredJobs.length}
                 </strong>{" "}
                 {t("careers.openPositions")}
               </span>
             </div>
             {departments.length > 0 && (
-              <div className="px-4 py-2 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+              <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
                 <span>
-                  <strong className="text-foreground font-extrabold">
+                  <strong className="text-foreground font-medium font-mono tabular-nums">
                     {departments.length}
                   </strong>{" "}
                   {t("careers.departmentsCount")}
@@ -315,44 +307,44 @@ export function OrgCareersClient({
                 <Link
                   key={job.id}
                   href={jobUrl}
-                  className="group relative flex flex-col justify-between p-6 rounded-2xl bg-card text-card-foreground border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200"
+                  className="group relative flex flex-col justify-between p-6 rounded-xl bg-card text-card-foreground border border-border hover:border-foreground/20 transition-colors duration-200"
                 >
                   <div className="space-y-3.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-foreground border border-border">
                         {job.department}
                       </span>
                       {job.workplace && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary text-secondary-foreground">
-                          <Globe2 className="h-3 w-3 text-primary" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                          <Globe2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
                           {getWorkplaceLabel(job.workplace, t)}
                         </span>
                       )}
                       {job.experienceLevel && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary text-secondary-foreground">
-                          <Briefcase className="h-3 w-3 text-primary" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                          <Briefcase className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
                           {getExperienceLevelLabel(job.experienceLevel, t)}
                         </span>
                       )}
                       {job.salaryRange && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-                          <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium font-mono tabular-nums bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                          <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[1.5]" />
                           {job.salaryRange}
                         </span>
                       )}
                     </div>
 
-                    <h2 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    <h2 className="text-lg font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
                       {job.title}
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-medium">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5]" />
                         <span>{job.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5]" />
                         <span>{getJobTypeLabel(job.type, t)}</span>
                       </div>
                     </div>
@@ -363,13 +355,11 @@ export function OrgCareersClient({
                   </div>
 
                   <div className="pt-6 mt-4 border-t border-border flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                    <span className="text-xs font-medium text-foreground group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
                       {t("careers.viewDetailAndApply")}
                       <ChevronRight className="h-3.5 w-3.5" />
                     </span>
-                    <div className="h-8 w-8 rounded-full bg-muted group-hover:bg-primary/10 text-muted-foreground group-hover:text-primary flex items-center justify-center transition-colors">
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                 </Link>
               );

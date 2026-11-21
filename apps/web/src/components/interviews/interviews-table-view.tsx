@@ -95,14 +95,14 @@ export function InterviewsTableView({
 
     if (dateYmd === todayYmd) {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
           {t("dashboard.today")}
         </span>
       );
     }
     if (dateYmd === tomorrowYmd) {
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
           {t("dashboard.tomorrow")}
         </span>
       );
@@ -111,11 +111,11 @@ export function InterviewsTableView({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden transition-all">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden transition-colors">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/50 text-muted-foreground uppercase tracking-wider text-[11px] font-semibold">
+            <tr className="border-b border-border bg-muted/50 text-muted-foreground text-xs font-medium">
               <th scope="col" className="py-3.5 px-4 text-left">
                 {t("interviews.tableHeaders.candidate")}
               </th>

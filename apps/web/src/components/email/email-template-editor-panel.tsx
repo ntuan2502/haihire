@@ -2,15 +2,7 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import type { RefObject } from "react";
-import {
-  Copy,
-  Eye,
-  Lock,
-  RotateCcw,
-  Save,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { Copy, Eye, Lock, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared";
 import { useI18n, type TranslationKey } from "@/i18n";
@@ -198,12 +190,8 @@ export function EmailTemplateEditorPanel({
       </div>
 
       <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-          <Sparkles
-            className="h-3.5 w-3.5 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <span>{t("email.insertVariableHint")}</span>
+        <div className="text-[11px] font-medium text-foreground">
+          {t("email.insertVariableHint")}
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {TEMPLATE_VARIABLES.map((v) => (

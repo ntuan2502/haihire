@@ -68,15 +68,14 @@ export function CareersHeader({
               <OrganizationLogo
                 name={orgName}
                 logoUrl={orgLogoUrl}
-                variant="gradient"
                 decorative
-                className="h-9 w-9 rounded-lg text-base shadow-sm group-hover:scale-105 transition-transform"
+                className="h-9 w-9 rounded-lg text-base"
               />
               <div className="min-w-0">
-                <div className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <span>{t("careers.companyPage")}</span>
                 </div>
-                <div className="text-sm sm:text-base font-extrabold text-foreground leading-tight truncate">
+                <div className="text-sm sm:text-base font-medium text-foreground leading-tight truncate">
                   {orgName}
                 </div>
               </div>

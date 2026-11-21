@@ -75,7 +75,7 @@ export function SegmentedTabs<T extends string = string>({
               aria-pressed={isActive}
               onClick={handleClick}
               className={cn(
-                "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
+                "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-colors duration-150 cursor-pointer shrink-0 select-none",
                 size === "sm"
                   ? "px-3 py-1.5 text-xs"
                   : "px-3.5 py-2 text-xs sm:text-sm",
@@ -126,7 +126,7 @@ export function SegmentedTabs<T extends string = string>({
             aria-selected={isActive}
             onClick={() => onChange?.(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
+              "flex items-center gap-1.5 rounded-md whitespace-nowrap transition-colors duration-150 cursor-pointer shrink-0 select-none",
               size === "sm"
                 ? "px-3 py-1.5 text-xs"
                 : "px-3.5 py-2 text-xs sm:text-sm",

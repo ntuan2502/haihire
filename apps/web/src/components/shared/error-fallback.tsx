@@ -178,7 +178,7 @@ export function ErrorFallback({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full sm:w-auto">
           <Button
             onClick={() => reset()}
-            className="h-10 px-5 rounded-md text-xs sm:text-sm font-semibold bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all"
+            className="h-10 px-5 rounded-md text-xs sm:text-sm font-semibold bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             <span>{tryAgainText}</span>
@@ -186,7 +186,7 @@ export function ErrorFallback({
 
           <Link
             href={homeHref}
-            className="h-10 px-4 rounded-md text-xs sm:text-sm font-medium bg-secondary hover:bg-secondary/80 active:scale-[0.98] text-secondary-foreground border border-border inline-flex items-center justify-center gap-2 select-none transition-all"
+            className="h-10 px-4 rounded-md text-xs sm:text-sm font-medium bg-secondary hover:bg-secondary/80 active:scale-[0.98] text-secondary-foreground border border-border inline-flex items-center justify-center gap-2 select-none transition-colors"
           >
             <Home className="h-4 w-4" />
             <span>{goHomeText}</span>

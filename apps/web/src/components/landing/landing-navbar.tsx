@@ -38,7 +38,7 @@ export const LandingNavbar = () => {
             <nav className="hidden md:flex items-center gap-1">
               <Link
                 href="/careers"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-all cursor-pointer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
               >
                 <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{t("landing.navCareers")}</span>
@@ -65,17 +65,15 @@ export const LandingNavbar = () => {
                 <Link
                   href="/auth/login"
                   prefetch={false}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 cursor-pointer"
+                  className="inline-flex items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 cursor-pointer"
                 >
-                  <LogIn className="h-4 w-4 text-muted-foreground" />
                   <span>{t("landing.signIn")}</span>
                 </Link>
                 <Link
                   href="/auth/register"
                   prefetch={false}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary hover:bg-primary/90 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-md bg-primary hover:bg-primary/90 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-primary-foreground transition-colors cursor-pointer"
                 >
-                  <UserPlus className="h-4 w-4" />
                   <span>{t("landing.signUp")}</span>
                 </Link>
               </div>

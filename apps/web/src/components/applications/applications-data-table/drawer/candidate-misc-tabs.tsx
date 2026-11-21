@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, FileCheck, Mail } from "lucide-react";
+import { FileCheck, Mail } from "lucide-react";
 import { getCandidateDisplayName } from "@/lib/utils";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import type { Application } from "@/types";
@@ -9,9 +9,8 @@ import { useI18n } from "@/i18n";
 export function CandidateAiTab() {
   const { t } = useI18n();
   return (
-    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2.5 text-xs text-foreground font-medium">
-        <Sparkles className="h-4 w-4 text-primary shrink-0" />
+    <div className="rounded-xl border border-border bg-muted/40 p-4 flex items-center justify-between gap-4">
+      <div className="text-xs text-foreground font-medium">
         <span>{t("applications.noAiAnalysis")}</span>
       </div>
       <button
@@ -20,9 +19,8 @@ export function CandidateAiTab() {
         title={t("applications.comingSoonTooltip", {
           action: t("applications.runAnalysis"),
         })}
-        className="h-8 px-3.5 rounded-md bg-primary/60 text-primary-foreground/80 text-xs font-semibold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
+        className="h-8 px-3.5 rounded-md bg-primary/60 text-primary-foreground/80 text-xs font-medium flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
       >
-        <Sparkles className="h-3 w-3" />
         <span>{t("applications.runAnalysis")}</span>
       </button>
     </div>
@@ -37,7 +35,7 @@ export function CandidateResponsesTab({
   const { t } = useI18n();
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
-      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+      <h3 className="text-xs font-medium text-foreground flex items-center gap-1.5">
         <FileCheck className="h-3.5 w-3.5 text-muted-foreground" />
         <span>{t("applications.sections.responses")}</span>
       </h3>

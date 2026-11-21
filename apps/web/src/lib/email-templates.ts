@@ -225,14 +225,6 @@ const EMAIL_FLOW_META_KEYS: Record<
   },
 };
 
-const EMAIL_TEMPLATE_TYPE_ICONS: Record<EmailTemplateType, string> = {
-  APPLICATION_CONFIRMATION: "✉️",
-  INTERVIEW_INVITATION: "📅",
-  REJECTION: "🤝",
-  OFFER: "🏆",
-  CUSTOM: "✏️",
-};
-
 /**
  * Resolves a localized display label for an email template type enum value.
  */
@@ -258,7 +250,7 @@ export function getEmailTemplateTypeOptions(t: (key: string) => string): Array<{
     Object.keys(EMAIL_TEMPLATE_TYPE_LABEL_KEYS) as EmailTemplateType[]
   ).map((typeKey) => ({
     value: typeKey,
-    label: `${EMAIL_TEMPLATE_TYPE_ICONS[typeKey]} ${getEmailTemplateTypeLabel(typeKey, t)}`,
+    label: getEmailTemplateTypeLabel(typeKey, t),
   }));
 }
 

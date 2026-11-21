@@ -59,7 +59,7 @@ export function CandidatesTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           {/* Table Header */}
-          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
             <tr>
               {sortableColumns.map((col) => {
                 if (!visibleColumns[col.id]) return null;
@@ -80,7 +80,7 @@ export function CandidatesTable({
                     <button
                       type="button"
                       onClick={() => onSort(col.id)}
-                      className={`flex items-center gap-1 uppercase tracking-wider ${
+                      className={`flex items-center gap-1 ${
                         isSorted
                           ? "font-bold text-foreground"
                           : "font-semibold text-muted-foreground hover:text-foreground"

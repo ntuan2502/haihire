@@ -54,7 +54,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
     >
       <DropdownMenuTrigger
         className={cn(
-          "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-ring/30 focus-visible:ring-2 focus-visible:ring-ring transition-all cursor-pointer outline-none select-none",
+          "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-ring/30 focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer outline-none select-none",
           className,
         )}
         aria-label={t("common.userProfile")}
@@ -92,7 +92,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
 
         {/* Organization Selector Box with Dropdown */}
         {showOrgSwitcher && (
-          <div className="w-full my-1 rounded-lg bg-muted/50 border border-border overflow-hidden transition-all">
+          <div className="w-full my-1 rounded-lg bg-muted/50 border border-border overflow-hidden transition-colors">
             <button
               type="button"
               onClick={(e) => {

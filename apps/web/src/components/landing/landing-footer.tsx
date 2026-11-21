@@ -22,7 +22,7 @@ export const LandingFooter: React.FC = () => {
 
           {/* Product Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+            <h4 className="text-xs font-medium text-foreground">
               {t("landing.footerColProduct")}
             </h4>
             <ul className="space-y-2 text-xs">
@@ -63,7 +63,7 @@ export const LandingFooter: React.FC = () => {
 
           {/* Resources */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+            <h4 className="text-xs font-medium text-foreground">
               {t("landing.footerColResources")}
             </h4>
             <ul className="space-y-2 text-xs">
@@ -88,7 +88,7 @@ export const LandingFooter: React.FC = () => {
 
           {/* Company */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+            <h4 className="text-xs font-medium text-foreground">
               {t("landing.footerColCompany")}
             </h4>
             <ul className="space-y-2 text-xs">
@@ -109,9 +109,9 @@ export const LandingFooter: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           {/* System Status Indicator */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
+          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <span
-              className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+              className="h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-500 animate-pulse"
               aria-hidden="true"
             />
             <span>{t("landing.footerSystemsNormal")}</span>

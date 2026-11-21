@@ -162,9 +162,9 @@ export function CareersDirectoryClient({
             <button
               type="button"
               onClick={() => setViewMode("companies")}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "companies"
-                  ? "bg-background text-primary shadow-xs"
+                  ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -179,9 +179,9 @@ export function CareersDirectoryClient({
             <button
               type="button"
               onClick={() => setViewMode("jobs")}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "jobs"
-                  ? "bg-background text-primary shadow-xs"
+                  ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

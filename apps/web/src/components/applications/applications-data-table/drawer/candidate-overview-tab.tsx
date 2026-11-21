@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
@@ -42,7 +41,7 @@ export function CandidateOverviewTab({
           <span className="text-xs font-medium text-muted-foreground">
             {t("applications.matchScore")}:
           </span>
-          <span className="font-bold text-sm text-foreground">
+          <span className="font-semibold font-mono tabular-nums text-sm text-foreground">
             {currentApp.matchScore !== null &&
             currentApp.matchScore !== undefined
               ? `${currentApp.matchScore}%`
@@ -55,9 +54,8 @@ export function CandidateOverviewTab({
           title={t("applications.comingSoonTooltip", {
             action: t("applications.runAnalysis"),
           })}
-          className="text-xs text-primary/60 opacity-60 cursor-not-allowed flex items-center gap-1 font-medium"
+          className="text-xs text-muted-foreground opacity-60 cursor-not-allowed font-medium"
         >
-          <Sparkles className="h-3 w-3" />
           <span>{t("applications.runAnalysis")}</span>
         </button>
       </div>
@@ -82,7 +80,7 @@ export function CandidateOverviewTab({
 
       {/* Responses Card */}
       <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
-        <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+        <h3 className="text-xs font-medium text-foreground">
           {t("applications.sections.responses")}
         </h3>
         <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2 text-muted-foreground">

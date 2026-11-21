@@ -28,7 +28,7 @@ export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
         candidate: candidateName,
         time: timeStr,
       })}
-      className={`w-full text-left h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-all hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      className={`w-full text-left h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-colors hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         hasScorecard
           ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-200"
           : "bg-primary/10 border-primary text-foreground"

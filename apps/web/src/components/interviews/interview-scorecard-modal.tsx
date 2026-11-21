@@ -149,9 +149,9 @@ export function InterviewScorecardModal({
             disabled={isDisabled}
             aria-label={`${star}/5`}
             onClick={() => onChange(star)}
-            className={`p-1 rounded-md transition-transform focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`p-1 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
               !isDisabled
-                ? "hover:scale-115 cursor-pointer"
+                ? "hover:bg-accent cursor-pointer"
                 : "cursor-default opacity-80"
             }`}
           >
@@ -276,7 +276,7 @@ export function InterviewScorecardModal({
           </div>
           <div className="flex items-center gap-3">
             {renderStarRating(overallRating, setOverallRating, "lg")}
-            <span className="text-2xl font-black text-amber-500 dark:text-amber-400 min-w-8 text-center">
+            <span className="text-2xl font-semibold font-mono tabular-nums text-amber-500 dark:text-amber-400 min-w-8 text-center">
               {overallRating}
             </span>
           </div>
@@ -299,7 +299,7 @@ export function InterviewScorecardModal({
               disabled={isDisabled}
               aria-pressed={recommendation === "STRONG_YES"}
               onClick={() => setRecommendation("STRONG_YES")}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                 !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "STRONG_YES"
@@ -330,7 +330,7 @@ export function InterviewScorecardModal({
               disabled={isDisabled}
               aria-pressed={recommendation === "YES"}
               onClick={() => setRecommendation("YES")}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                 !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "YES"
@@ -361,7 +361,7 @@ export function InterviewScorecardModal({
               disabled={isDisabled}
               aria-pressed={recommendation === "NEUTRAL"}
               onClick={() => setRecommendation("NEUTRAL")}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                 !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "NEUTRAL"
@@ -392,7 +392,7 @@ export function InterviewScorecardModal({
               disabled={isDisabled}
               aria-pressed={recommendation === "NO"}
               onClick={() => setRecommendation("NO")}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                 !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "NO"
@@ -423,7 +423,7 @@ export function InterviewScorecardModal({
               disabled={isDisabled}
               aria-pressed={recommendation === "STRONG_NO"}
               onClick={() => setRecommendation("STRONG_NO")}
-              className={`p-3 rounded-xl border text-left transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
                 !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
               } ${
                 recommendation === "STRONG_NO"

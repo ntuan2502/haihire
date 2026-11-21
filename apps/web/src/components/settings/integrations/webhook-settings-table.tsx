@@ -83,7 +83,7 @@ export function WebhookSettingsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
               <tr>
                 <th className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.eventType")}

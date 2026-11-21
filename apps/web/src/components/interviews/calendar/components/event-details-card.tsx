@@ -163,7 +163,7 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
             </span>
           </div>
           {event.interview.scorecard.feedback && (
-            <p className="text-[11px] text-muted-foreground italic pt-1 line-clamp-2">
+            <p className="text-[11px] text-muted-foreground pt-1 line-clamp-2">
               &ldquo;{event.interview.scorecard.feedback}&rdquo;
             </p>
           )}

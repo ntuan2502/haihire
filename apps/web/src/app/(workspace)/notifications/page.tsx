@@ -418,7 +418,7 @@ function NotificationsPageContent() {
                   key={group.key}
                   aria-label={t(GROUP_TITLE_KEYS[group.key])}
                 >
-                  <div className="border-b border-border/70 bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <div className="border-b border-border/70 bg-muted/40 px-4 py-2 text-[11px] font-semibold text-muted-foreground">
                     {t(GROUP_TITLE_KEYS[group.key])}
                   </div>
                   <div className="divide-y divide-border/60">

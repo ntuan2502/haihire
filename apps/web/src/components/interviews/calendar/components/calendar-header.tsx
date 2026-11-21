@@ -84,7 +84,7 @@ export function CalendarHeader({
           {t("interviews.today")}
         </Button>
 
-        <h2 className="text-base sm:text-lg font-extrabold text-foreground">
+        <h2 className="text-base sm:text-lg font-semibold text-foreground">
           {calendarMode === "month" ? monthTitle : weekTitle}
         </h2>
       </div>
@@ -122,7 +122,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={() => setCalendarMode("month")}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
               calendarMode === "month"
                 ? "bg-card text-primary shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -133,7 +133,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={() => setCalendarMode("week")}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
               calendarMode === "week"
                 ? "bg-card text-primary shadow-2xs"
                 : "text-muted-foreground hover:text-foreground"

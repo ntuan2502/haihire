@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Sparkles, Building2, Briefcase, Users } from "lucide-react";
+import { Search, Building2, Briefcase, Users } from "lucide-react";
 import { useI18n } from "@/i18n";
 
 interface CareersDirectoryHeroProps {
@@ -21,21 +21,16 @@ export function CareersDirectoryHero({
   const { t } = useI18n();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-background via-muted/40 to-muted/70 border-b border-border py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
-      <div className="absolute inset-0 bg-radial-[circle_at_top_right] from-primary/5 via-transparent to-transparent pointer-events-none" />
-
+    <section className="relative overflow-hidden bg-background border-b border-border py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
       <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
-        {/* Eyebrow Badge */}
-        <div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-2xs">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>{t("careers.heroBadge")}</span>
-          </div>
-        </div>
+        {/* Eyebrow */}
+        <p className="text-xs font-mono text-muted-foreground">
+          {t("careers.heroBadge")}
+        </p>
 
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-foreground text-balance">
+        <h1 className="text-3xl sm:text-5xl font-medium tracking-tight leading-[1.08] text-foreground text-balance">
           {t("careers.heroTitlePart1")}{" "}
-          <span className="inline-block bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent">
+          <span className="text-foreground">
             {t("careers.heroTitleHighlight")}
           </span>
         </h1>
@@ -46,7 +41,7 @@ export function CareersDirectoryHero({
 
         {/* Search Box */}
         <div className="pt-2 max-w-2xl mx-auto">
-          <div className="relative flex items-center rounded-xl bg-card shadow-md p-1.5 border border-border focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20 transition-all">
+          <div className="relative flex items-center rounded-xl bg-card shadow-xs p-1.5 border border-border focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20 transition-colors">
             <Search
               className="h-5 w-5 text-muted-foreground ml-3.5 shrink-0"
               aria-hidden="true"
@@ -73,29 +68,29 @@ export function CareersDirectoryHero({
         </div>
 
         {/* Quick Metrics Bar */}
-        <div className="pt-3 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-semibold text-muted-foreground">
-          <div className="px-4 py-2 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" />
+        <div className="pt-3 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium text-muted-foreground">
+          <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
             <span>
-              <strong className="text-foreground font-extrabold">
+              <strong className="text-foreground font-medium font-mono tabular-nums">
                 {companiesCount}
               </strong>{" "}
               {t("careers.metricsCompanies")}
             </span>
           </div>
-          <div className="px-4 py-2 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-primary" />
+          <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
             <span>
-              <strong className="text-foreground font-extrabold">
+              <strong className="text-foreground font-medium font-mono tabular-nums">
                 {publishedJobsCount}
               </strong>{" "}
               {t("careers.metricsPositions")}
             </span>
           </div>
-          <div className="px-4 py-2 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
+          <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
             <span>
-              <strong className="text-foreground font-extrabold">
+              <strong className="text-foreground font-medium font-mono tabular-nums">
                 {departmentsCount}
               </strong>{" "}
               {t("careers.metricsDepartments")}

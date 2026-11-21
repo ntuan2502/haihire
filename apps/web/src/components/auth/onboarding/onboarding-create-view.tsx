@@ -95,7 +95,7 @@ export function OnboardingCreateView({
         <Button
           type="submit"
           disabled={submitting}
-          className="w-full h-10 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-md shadow-xs transition-all cursor-pointer"
+          className="w-full h-10 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-md shadow-xs transition-colors cursor-pointer"
         >
           {submitting
             ? t("onboarding.creatingOrg")

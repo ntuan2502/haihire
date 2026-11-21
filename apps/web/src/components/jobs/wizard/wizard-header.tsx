@@ -80,7 +80,7 @@ export function WizardHeader({
                   key={step.id}
                   type="button"
                   onClick={() => onStepClick(step.id)}
-                  className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`flex items-center gap-2 text-xs transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     isActive
                       ? "font-semibold text-foreground"
                       : isPassed
@@ -119,7 +119,7 @@ export function WizardHeader({
                   <span
                     key={s.id}
                     className={cn(
-                      "h-1.5 rounded-full transition-all duration-300",
+                      "h-1.5 rounded-full transition-[width] duration-300",
                       isCurrent
                         ? "w-4 bg-primary"
                         : isPassed

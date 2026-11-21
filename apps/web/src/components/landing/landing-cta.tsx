@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 
@@ -12,17 +12,13 @@ export const LandingCta: React.FC = () => {
 
   return (
     <section className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-      <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/10 via-card to-card p-8 sm:p-14 text-center shadow-md">
-        {/* Glow Effects */}
-        <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/15 blur-[100px] rounded-full" />
-
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-8 sm:p-12 text-center">
         <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-primary">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>{t("landing.ctaBadge")}</span>
-          </div>
+          <p className="text-xs font-mono text-muted-foreground mb-3">
+            {t("landing.ctaBadge")}
+          </p>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground tracking-tight leading-tight">
             {t("landing.ctaTitle")}
           </h2>
 
@@ -34,7 +30,7 @@ export const LandingCta: React.FC = () => {
             {isAuthenticated ? (
               <Link
                 href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
-                className="inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-sm font-black shadow-sm hover:scale-105 active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-11 text-sm font-medium transition-colors"
               >
                 <span>{t("landing.enterDashboard")}</span>
                 <ArrowRight className="h-4 w-4" />
@@ -43,7 +39,7 @@ export const LandingCta: React.FC = () => {
               <Link
                 href="/auth/register"
                 prefetch={false}
-                className="inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-sm font-black shadow-sm hover:scale-105 active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-11 text-sm font-medium transition-colors"
               >
                 <span>{t("landing.ctaButton")}</span>
                 <ArrowRight className="h-4 w-4" />
@@ -51,7 +47,7 @@ export const LandingCta: React.FC = () => {
             )}
           </div>
 
-          <p className="mt-5 text-xs text-muted-foreground font-medium">
+          <p className="mt-5 text-xs text-muted-foreground">
             {t("landing.ctaHint")}
           </p>
         </div>

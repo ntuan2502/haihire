@@ -58,7 +58,7 @@ export function OnboardingSelectView({
                 key={org.id}
                 onClick={() => onSelectOrg(org)}
                 className={cn(
-                  "w-full p-4 rounded-xl border bg-card text-card-foreground flex items-center justify-between cursor-pointer transition-all group text-left",
+                  "w-full p-4 rounded-xl border bg-card text-card-foreground flex items-center justify-between cursor-pointer transition-colors group text-left",
                   isActive
                     ? "border-primary/40 shadow-xs ring-1 ring-ring/20"
                     : "border-border hover:border-ring/40 hover:bg-accent/40",
@@ -70,7 +70,6 @@ export function OnboardingSelectView({
                     logoUrl={org.logoUrl}
                     size="lg"
                     decorative
-                    className="group-hover:scale-105 transition-transform"
                   />
                   <div>
                     <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">

@@ -95,9 +95,7 @@ export function FilterPillGroup<T extends string = string>({
 
   return (
     <div className="space-y-2.5">
-      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
-        {label}
-      </h4>
+      <h4 className="text-xs font-semibold text-foreground">{label}</h4>
       <div
         className={cn(
           columns === 2

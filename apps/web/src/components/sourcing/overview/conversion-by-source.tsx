@@ -31,7 +31,7 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <tr className="border-b border-border text-[10px] font-bold text-muted-foreground">
                 <th className="pb-3 pr-4 font-bold">
                   {t("sourcing.links.source")}
                 </th>

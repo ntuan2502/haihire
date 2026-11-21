@@ -156,7 +156,7 @@ export function ApplicationNotesStream({
             <div className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/10 text-primary">
               <MessageSquare className="h-3.5 w-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-foreground">
               {t("applications.notesStream.title")}
             </h3>
             {notes.length > 0 && (
@@ -173,7 +173,7 @@ export function ApplicationNotesStream({
 
       {/* Trello-Style Composer */}
       {canCreateNote && (
-        <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-all duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
+        <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-colors duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
           <div className="flex gap-2.5">
             <div
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
@@ -294,7 +294,7 @@ export function ApplicationNotesStream({
             return (
               <div
                 key={note.id}
-                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs transition-all hover:border-ring/50"
+                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs transition-colors hover:border-ring/50"
               >
                 <div className="flex items-start gap-2.5">
                   {/* Author Avatar */}
@@ -328,7 +328,7 @@ export function ApplicationNotesStream({
                         </span>
 
                         {note.isEdited && (
-                          <span className="text-[10px] text-muted-foreground italic">
+                          <span className="text-[10px] text-muted-foreground">
                             {t("applications.notesStream.edited")}
                           </span>
                         )}

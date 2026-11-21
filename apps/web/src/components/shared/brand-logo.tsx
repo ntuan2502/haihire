@@ -43,13 +43,13 @@ export function BrandLogo({
       {/* Monogram Badge */}
       <div
         className={cn(
-          "relative flex items-center justify-center font-black tracking-tighter bg-primary text-primary-foreground shadow-xs p-0.5 transition-transform hover:scale-105",
+          "relative flex items-center justify-center font-semibold tracking-tight bg-primary text-primary-foreground",
           sizeStyles.icon,
           iconClassName,
         )}
       >
         <div className="flex h-full w-full items-center justify-center rounded-[inherit] bg-primary">
-          <span className="font-extrabold tracking-tighter text-primary-foreground">
+          <span className="font-semibold tracking-tight text-primary-foreground">
             {BRAND_CONFIG.monogram}
           </span>
         </div>
@@ -60,7 +60,7 @@ export function BrandLogo({
         <div className="flex flex-col">
           <div
             className={cn(
-              "flex items-center font-black tracking-tight",
+              "flex items-center font-semibold tracking-tight",
               sizeStyles.text,
               textClassName,
             )}

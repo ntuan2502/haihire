@@ -75,7 +75,7 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
 
       {/* UTM Parameters Divider & Section */}
       <div className="pt-3 border-t border-border space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <p className="text-[10px] font-bold text-muted-foreground">
           {t("sourcing.details.configUtmParameters")}
         </p>
 

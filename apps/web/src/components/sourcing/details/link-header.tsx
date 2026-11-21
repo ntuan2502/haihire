@@ -59,7 +59,7 @@ export function LinkHeader({
         {/* Title + Badges + Metadata */}
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
               {link.name}
             </h1>
             <ChannelBadge
@@ -112,7 +112,7 @@ export function LinkHeader({
                   key={opt.key}
                   type="button"
                   onClick={() => onTimeRangeChange(opt.key)}
-                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer ${
                     active
                       ? "bg-primary text-primary-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"

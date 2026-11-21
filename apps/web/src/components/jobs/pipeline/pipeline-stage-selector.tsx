@@ -64,7 +64,7 @@ export function PipelineStageSelector({
                   // Ignore
                 }
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 border transition-colors cursor-pointer whitespace-nowrap ${
                 isSelected
                   ? stage.activePill
                   : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"

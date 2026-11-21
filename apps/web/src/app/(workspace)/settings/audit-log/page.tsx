@@ -373,7 +373,7 @@ export default function AuditLogPage() {
               }
             >
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
                   <tr>
                     <th className="py-3 px-4">
                       {t("settings.auditLog.colTimestamp")}
@@ -426,7 +426,7 @@ export default function AuditLogPage() {
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground italic">
+                              <span className="text-xs text-muted-foreground">
                                 {t("settings.auditLog.systemActor")}
                               </span>
                             )}

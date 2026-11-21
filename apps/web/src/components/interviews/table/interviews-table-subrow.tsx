@@ -29,7 +29,7 @@ export function InterviewsTableSubrow({
     const label = getRecommendationLabel(rec, t);
     return (
       <span
-        className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+        className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
           isYes
             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
             : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"

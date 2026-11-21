@@ -115,7 +115,7 @@ export function DayDetailsModal({
       bodyClassName="p-4 sm:p-5 bg-background space-y-3"
     >
       <div className="flex items-center justify-between pb-3 border-b border-border gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-xs font-semibold text-muted-foreground">
           {t("interviews.candidateInterviewsMultiple", {
             count: events.length,
           })}
@@ -135,7 +135,7 @@ export function DayDetailsModal({
               className="h-8 w-8 text-muted-foreground/50"
               aria-hidden="true"
             />
-            <p className="text-xs text-muted-foreground italic">
+            <p className="text-xs text-muted-foreground">
               {t("interviews.noScheduleForDay")}
             </p>
           </div>
@@ -180,7 +180,7 @@ export function DayDetailsModal({
                   candidate: candidateName,
                   time: formattedTime,
                 })}
-                className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:border-primary/50 space-y-2.5 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-colors hover:border-primary/50 space-y-2.5 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   hasScorecard
                     ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60"
                     : "bg-card hover:bg-muted/40 border-border text-card-foreground"

@@ -200,7 +200,7 @@ export function ConfirmDestructiveModal({
                 }
                 disabled={isLoading}
                 autoComplete="off"
-                className={`h-9 text-xs transition-all ${
+                className={`h-9 text-xs transition-colors ${
                   inputText.length > 0 && !isMatchValid
                     ? "border-destructive focus-visible:ring-destructive/30"
                     : isMatchValid && inputText.length > 0

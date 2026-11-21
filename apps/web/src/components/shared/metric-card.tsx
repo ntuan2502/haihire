@@ -27,14 +27,14 @@ const COLOR_STYLES: Record<
   }
 > = {
   blue: {
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-    iconBorder: "border-primary/20",
+    iconBg: "bg-secondary",
+    iconColor: "text-foreground",
+    iconBorder: "border-border",
   },
   indigo: {
-    iconBg: "bg-violet-500/10",
-    iconColor: "text-violet-600 dark:text-violet-400",
-    iconBorder: "border-violet-500/20",
+    iconBg: "bg-secondary",
+    iconColor: "text-muted-foreground",
+    iconBorder: "border-border",
   },
   emerald: {
     iconBg: "bg-emerald-500/10",
@@ -73,11 +73,11 @@ export function MetricCard({
   const content = (
     <>
       <div className="min-w-0 pr-3">
-        <p className="text-xs font-semibold text-muted-foreground truncate">
+        <p className="text-xs font-medium text-muted-foreground truncate">
           {label}
         </p>
         <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+          <span className="text-2xl sm:text-3xl font-medium font-mono tabular-nums text-foreground tracking-tight">
             {value}
           </span>
           {badge && (
@@ -106,7 +106,7 @@ export function MetricCard({
 
       <div
         className={cn(
-          "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border transition-transform",
+          "h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border",
           styles.iconBg,
           styles.iconColor,
           styles.iconBorder,
@@ -123,7 +123,7 @@ export function MetricCard({
         type="button"
         onClick={onClick}
         className={cn(
-          "w-full text-left p-4 sm:p-5 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center justify-between transition-all hover:shadow-xs cursor-pointer hover:border-ring/40",
+          "w-full text-left p-4 sm:p-5 rounded-xl bg-card text-card-foreground border border-border flex items-center justify-between transition-colors cursor-pointer hover:border-ring/40",
           className,
         )}
       >
@@ -135,7 +135,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "p-4 sm:p-5 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex items-center justify-between transition-all hover:shadow-xs",
+        "p-4 sm:p-5 rounded-xl bg-card text-card-foreground border border-border flex items-center justify-between transition-colors",
         className,
       )}
     >

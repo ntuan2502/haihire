@@ -144,7 +144,7 @@ function LoginForm() {
       {showDemoLogin && (
         <>
           <div className="space-y-2.5 pt-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               {t("auth.quickLoginDev")}
             </p>
 
@@ -158,11 +158,11 @@ function LoginForm() {
                     type="button"
                     disabled={Boolean(demoLoadingEmail) || loading}
                     onClick={() => handleQuickLogin(account)}
-                    className="w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
+                    className="w-full p-2.5 rounded-xl border text-left transition-colors cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-bold text-xs shadow-xs group-hover:scale-105 transition-transform ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-medium text-xs shadow-xs ${
                           isGlobalAdmin
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-secondary-foreground"
@@ -198,7 +198,7 @@ function LoginForm() {
           {/* Divider */}
           <div className="relative flex items-center py-1">
             <div className="grow border-t border-border" />
-            <span className="shrink mx-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="shrink mx-3 text-xs font-medium text-muted-foreground">
               {t("auth.orEmail")}
             </span>
             <div className="grow border-t border-border" />

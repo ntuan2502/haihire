@@ -94,7 +94,7 @@ export function InterviewsTableRow({
     const label = getRecommendationLabel(rec, t);
     return (
       <span
-        className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+        className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
           isYes
             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
             : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
@@ -120,7 +120,7 @@ export function InterviewsTableRow({
           title={t("interviews.viewCandidateInPipeline")}
           aria-label={`${t("interviews.viewCandidateInPipeline")}: ${displayName}`}
         >
-          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs group-hover/cand:scale-105 transition-transform">
+          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground font-semibold text-[11px] flex items-center justify-center shrink-0">
             {initials}
           </div>
           <div className="min-w-0">

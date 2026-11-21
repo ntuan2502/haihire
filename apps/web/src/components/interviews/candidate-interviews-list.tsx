@@ -361,7 +361,7 @@ export function CandidateInterviewsList({
                     <span className="text-[10px] font-semibold text-muted-foreground block mb-0.5">
                       {t("interviews.detailedFeedback")}:
                     </span>
-                    <p className="text-foreground/90 italic bg-card/60 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                    <p className="text-foreground/90 bg-card/60 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
                       &ldquo;{scheduled.scorecard.feedback}&rdquo;
                     </p>
                   </div>

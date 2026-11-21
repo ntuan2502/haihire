@@ -74,7 +74,7 @@ export function WizardStepPublish({
       >
         {/* Card 1: Publish Now */}
         <label
-          className={`w-full block text-left relative p-5 rounded-xl border transition-all cursor-pointer shadow-xs space-y-3 ${
+          className={`w-full block text-left relative p-5 rounded-xl border transition-colors cursor-pointer shadow-xs space-y-3 ${
             publishMode === "publish"
               ? "border-primary bg-accent/40 ring-1 ring-ring/30"
               : "border-border bg-card hover:bg-accent/20"
@@ -118,7 +118,7 @@ export function WizardStepPublish({
 
         {/* Card 2: Save as draft */}
         <label
-          className={`w-full block text-left relative p-5 rounded-xl border transition-all cursor-pointer shadow-xs space-y-3 ${
+          className={`w-full block text-left relative p-5 rounded-xl border transition-colors cursor-pointer shadow-xs space-y-3 ${
             publishMode === "draft"
               ? "border-primary bg-accent/40 ring-1 ring-ring/30"
               : "border-border bg-card hover:bg-accent/20"
@@ -157,7 +157,7 @@ export function WizardStepPublish({
         {/* Card 3: Closed (Edit mode only) */}
         {mode === "edit" && (
           <label
-            className={`w-full block text-left relative p-5 rounded-xl border transition-all cursor-pointer shadow-xs space-y-3 ${
+            className={`w-full block text-left relative p-5 rounded-xl border transition-colors cursor-pointer shadow-xs space-y-3 ${
               publishMode === "closed"
                 ? "border-primary bg-accent/40 ring-1 ring-ring/30"
                 : "border-border bg-card hover:bg-accent/20"
@@ -197,7 +197,7 @@ export function WizardStepPublish({
 
       {/* Job Summary Card */}
       <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
-        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-foreground">
           {t("jobs.wizard.jobSummaryTitle")}
         </h3>
 

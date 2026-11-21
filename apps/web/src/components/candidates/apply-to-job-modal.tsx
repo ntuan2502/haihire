@@ -180,7 +180,7 @@ export function ApplyToJobModal({
             />
           </div>
         ) : openJobs.length === 0 ? (
-          <div className="text-center py-8 text-xs text-muted-foreground italic">
+          <div className="text-center py-8 text-xs text-muted-foreground">
             {t("applications.noActiveJobs")}
           </div>
         ) : (
@@ -195,7 +195,7 @@ export function ApplyToJobModal({
             return (
               <div
                 key={job.id}
-                className="p-3.5 sm:p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-ring/50 flex items-center justify-between gap-3 transition-all shadow-2xs"
+                className="p-3.5 sm:p-4 rounded-xl border border-border bg-card text-card-foreground hover:border-ring/50 flex items-center justify-between gap-3 transition-colors shadow-2xs"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">

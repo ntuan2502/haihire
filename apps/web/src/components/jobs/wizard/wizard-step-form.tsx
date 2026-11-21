@@ -69,7 +69,7 @@ export function WizardStepForm({
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-[11px] font-semibold text-muted-foreground">
           {t("jobs.wizard.customizeFormTitle")}
         </span>
         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -79,7 +79,7 @@ export function WizardStepForm({
 
       {/* Section 1: Personal Information */}
       <div className="space-y-4 bg-card text-card-foreground p-6 rounded-xl border border-border shadow-xs">
-        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-foreground">
           {t("jobs.wizard.personalInfoTitle")}
         </h3>
 
@@ -124,7 +124,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setPhoneSetting("hidden")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   phoneSetting === "hidden"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -135,7 +135,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setPhoneSetting("optional")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   phoneSetting === "optional"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -146,7 +146,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setPhoneSetting("required")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   phoneSetting === "required"
                     ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -161,7 +161,7 @@ export function WizardStepForm({
 
       {/* Section 2: Documents */}
       <div className="space-y-4 bg-card text-card-foreground p-6 rounded-xl border border-border shadow-xs">
-        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-foreground">
           {t("jobs.wizard.documentsTitle")}
         </h3>
 
@@ -186,7 +186,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setResumeSetting("off")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   resumeSetting === "off"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -197,7 +197,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setResumeSetting("required")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   resumeSetting === "required"
                     ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -228,7 +228,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setCoverLetterSetting("off")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   coverLetterSetting === "off"
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -239,7 +239,7 @@ export function WizardStepForm({
               <button
                 type="button"
                 onClick={() => setCoverLetterSetting("required")}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   coverLetterSetting === "required"
                     ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -255,7 +255,7 @@ export function WizardStepForm({
       {/* Section 3: Screening Questions */}
       <div className="space-y-4 bg-card text-card-foreground p-6 rounded-xl border border-border shadow-xs">
         <div>
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          <h3 className="text-xs font-semibold text-foreground">
             {t("jobs.wizard.screeningQuestionsTitle")}
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">

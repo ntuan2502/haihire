@@ -216,15 +216,16 @@ describe("AuthController", () => {
       );
     });
 
-    it("logout clears haihire_token, haihire_refresh_token, and haihire_has_org cookies with maxAge 0", async () => {
+    it("logout clears haihire_token, haihire_refresh_token, and haihire_has_org cookies with maxAge 0 and forwards active orgId", async () => {
       mockAuthService.logout.mockResolvedValue(undefined);
 
       const result = await controller.logout(
-        { user: { id: "u-1" } },
+        { user: { id: "u-1", organizationId: "org-2" } },
         mockResponse as unknown as Response,
       );
 
       expect(result).toEqual({ success: true });
+      expect(mockAuthService.logout).toHaveBeenCalledWith("u-1", "org-2");
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         "haihire_token",
         "",

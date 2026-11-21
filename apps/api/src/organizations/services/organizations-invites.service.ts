@@ -24,6 +24,8 @@ import { env } from "../../config/env";
 import {
   attachOrganizationLogoUrl,
   buildOrganizationLogoUrl,
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
 } from "../organization-logo.util";
 
 type MockUserTableCompat = {
@@ -164,7 +166,7 @@ export class OrganizationsInvitesService {
     ) {
       const firstMembership = await this.prisma.organizationMember.findFirst({
         where: { userId: user.id },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true, role: true },
       });
       if (firstMembership?.organizationId) {
@@ -176,6 +178,7 @@ export class OrganizationsInvitesService {
     if (!orgId && typeof this.prisma.organization?.findFirst === "function") {
       const ownedOrg = await this.prisma.organization.findFirst({
         where: { ownerId: user.id },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true },
       });
       if (ownedOrg?.id) {
@@ -724,13 +727,15 @@ export class OrganizationsInvitesService {
 
       // Record persistent membership in OrganizationMember
       const newMemberId = crypto.randomUUID();
+      const nowTimestamp = toInstant();
       await tx.organizationMember.create({
         data: {
           id: newMemberId,
           organizationId: link.organizationId,
           userId,
           role: assignedRole,
-          updatedAt: toInstant(),
+          lastAccessedAt: nowTimestamp,
+          updatedAt: nowTimestamp,
         },
       });
 
@@ -902,6 +907,12 @@ export class OrganizationsInvitesService {
 
       if (existingMembership) {
         // User is already a member - switch active organization to this org
+        if (typeof tx.organizationMember?.updateMany === "function") {
+          await tx.organizationMember.updateMany({
+            where: { userId, organizationId: org.id },
+            data: { lastAccessedAt: toInstant() },
+          });
+        }
         if (txUserCompat?.store) {
           await txUserCompat.update?.({
             where: { id: userId },
@@ -950,13 +961,15 @@ export class OrganizationsInvitesService {
 
       // Record new persistent membership
       const newMemberId = crypto.randomUUID();
+      const memberTimestamp = toInstant();
       await tx.organizationMember.create({
         data: {
           id: newMemberId,
           organizationId: org.id,
           userId,
           role: assignedRole,
-          updatedAt: toInstant(),
+          lastAccessedAt: memberTimestamp,
+          updatedAt: memberTimestamp,
         },
       });
 

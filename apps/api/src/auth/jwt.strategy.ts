@@ -10,7 +10,11 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import type { Request } from "express";
 import { PrismaService } from "../prisma/prisma.service";
 import { env } from "../config/env";
-import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
+import {
+  ORG_SUMMARY_SELECT,
+  getPreferredMembershipOrderBy,
+  serializeOrganizationSummary,
+} from "../organizations/organization-logo.util";
 
 export interface JwtPayload {
   sub: string;
@@ -122,24 +126,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (requestedOrgId) {
       const org = await this.prisma.organization.findUnique({
         where: { id: requestedOrgId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-          logoObjectKey: true,
-          logoUpdatedAt: true,
-          defaultLanguage: true,
-          timezone: true,
-          dateFormat: true,
-          timeFormat: true,
-          nameDisplayOrder: true,
-          defaultCurrency: true,
-        },
+        select: ORG_SUMMARY_SELECT,
       });
 
       if (org) {
-        organization = attachOrganizationLogoUrl(org);
+        organization = serializeOrganizationSummary(org);
         isOwner = Boolean(org.ownerId === user.id);
         activeOrgId = org.id;
 
@@ -165,29 +156,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (this.prisma.organizationMember?.findFirst) {
         const member = await this.prisma.organizationMember.findFirst({
           where: { userId: user.id },
-          orderBy: { createdAt: "asc" },
+          orderBy: getPreferredMembershipOrderBy(),
           select: { organizationId: true, role: true },
         });
         if (member) {
           const org = await this.prisma.organization.findUnique({
             where: { id: member.organizationId },
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              ownerId: true,
-              logoObjectKey: true,
-              logoUpdatedAt: true,
-              defaultLanguage: true,
-              timezone: true,
-              dateFormat: true,
-              timeFormat: true,
-              nameDisplayOrder: true,
-              defaultCurrency: true,
-            },
+            select: ORG_SUMMARY_SELECT,
           });
           if (org) {
-            organization = attachOrganizationLogoUrl(org);
+            organization = serializeOrganizationSummary(org);
             isOwner = Boolean(org.ownerId === user.id);
             activeOrgId = org.id;
             activeRole = isOwner ? "ADMIN" : member.role;

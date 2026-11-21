@@ -15,6 +15,10 @@ import {
   hasPermission,
   type NameDisplayOrder,
 } from "@haihire/shared";
+import {
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
+} from "../organization-logo.util";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 type MockUserTableCompat = {
@@ -151,7 +155,7 @@ export class OrganizationsMembersService {
     if (typeof client.organizationMember?.findFirst === "function") {
       const userMember = await client.organizationMember.findFirst({
         where: { userId },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true, role: true },
       });
       if (userMember?.organizationId) {
@@ -164,6 +168,7 @@ export class OrganizationsMembersService {
     if (typeof client.organization?.findFirst === "function") {
       const ownedOrg = await client.organization.findFirst({
         where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true },
       });
       if (ownedOrg?.id) {
@@ -185,11 +190,12 @@ export class OrganizationsMembersService {
     if (!currentOrgId) {
       const userMember = await this.prisma.organizationMember.findFirst({
         where: { userId },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true },
       });
       const ownedOrg = await this.prisma.organization.findFirst({
         where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true },
       });
       currentOrgId = userMember?.organizationId || ownedOrg?.id || null;

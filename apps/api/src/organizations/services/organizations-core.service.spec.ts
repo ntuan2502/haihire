@@ -362,12 +362,35 @@ describe("OrganizationsCoreService", () => {
       });
     });
 
-    it("switches user organization context successfully when membership exists", async () => {
+    it("switches user organization context successfully when membership exists and stamps lastAccessedAt", async () => {
+      const targetBefore = organizationMemberTable.store.find(
+        (m) => m.userId === "user-owner" && m.organizationId === "org-2",
+      );
+      expect(targetBefore?.lastAccessedAt).toBeUndefined();
+
       const res = await service.switchOrg("user-owner", "org-2");
       expect(res.success).toBe(true);
       expect(res.organization.id).toBe("org-2");
       const updatedUser = userTable.store.find((u) => u.id === "user-owner");
       expect(updatedUser?.organizationId).toBe("org-2");
+
+      const targetAfter = organizationMemberTable.store.find(
+        (m) => m.userId === "user-owner" && m.organizationId === "org-2",
+      );
+      expect(targetAfter?.lastAccessedAt).toBeInstanceOf(Date);
+    });
+
+    it("stamps lastAccessedAt on creator membership when creating an organization", async () => {
+      const res = await service.create("user-no-org", {
+        name: "Brand New Org",
+        slug: "brand-new-org",
+      });
+      const membership = organizationMemberTable.store.find(
+        (m) =>
+          m.userId === "user-no-org" &&
+          m.organizationId === res.organization.id,
+      );
+      expect(membership?.lastAccessedAt).toBeInstanceOf(Date);
     });
   });
 

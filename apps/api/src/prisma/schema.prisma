@@ -225,11 +225,13 @@ model OrganizationMember {
   userId         String
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           Role         @default(MEMBER)
+  lastAccessedAt DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, userId])
   @@index([userId])
+  @@index([userId, lastAccessedAt])
   @@map("organization_member")
 }
 

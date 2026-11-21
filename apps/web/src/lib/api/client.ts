@@ -2,19 +2,23 @@ import axios, { type InternalAxiosRequestConfig } from "axios";
 import { env } from "../env";
 import { isWorkspaceRoute } from "../workspace-routes";
 
+export const getBrowserApiBaseUrl = () => {
+  // Always resolve a browser-reachable API base URL (never INTERNAL_API_URL),
+  // so <img src> links remain consistent across SSR hydration and client renders.
+  const customUrl = env.NEXT_PUBLIC_API_URL;
+  if (
+    customUrl &&
+    !customUrl.includes("localhost") &&
+    !customUrl.includes("127.0.0.1")
+  ) {
+    return customUrl;
+  }
+  return "/api";
+};
+
 export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
-    // In browser, if an external non-localhost URL is explicitly provided, use it.
-    // Otherwise, always use relative "/api" so requests proxy through Next.js rewrites.
-    const customUrl = env.NEXT_PUBLIC_API_URL;
-    if (
-      customUrl &&
-      !customUrl.includes("localhost") &&
-      !customUrl.includes("127.0.0.1")
-    ) {
-      return customUrl;
-    }
-    return "/api";
+    return getBrowserApiBaseUrl();
   }
   // Server-side (SSR / Server Actions) communicates directly with backend via validated internal URL
   return env.INTERNAL_API_URL;
@@ -205,7 +209,7 @@ export const resolveOrganizationLogoUrl = (
   ) {
     return trimmed;
   }
-  const apiUrl = getApiBaseUrl().replace(/\/+$/, "");
+  const apiUrl = getBrowserApiBaseUrl().replace(/\/+$/, "");
   return `${apiUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
 };
 

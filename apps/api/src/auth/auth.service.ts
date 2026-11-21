@@ -31,7 +31,12 @@ import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { ensureDefaultDemoAccounts } from "../prisma/demo-seed.util";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
-import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
+import {
+  ORG_SUMMARY_SELECT,
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
+  serializeOrganizationSummary,
+} from "../organizations/organization-logo.util";
 
 const USER_PROFILE_SELECT = {
   id: true,
@@ -42,21 +47,6 @@ const USER_PROFILE_SELECT = {
   preferredLanguage: true,
   preferredTimezone: true,
   createdAt: true,
-} as const;
-
-const ORG_SUMMARY_SELECT = {
-  id: true,
-  name: true,
-  slug: true,
-  ownerId: true,
-  logoObjectKey: true,
-  logoUpdatedAt: true,
-  defaultLanguage: true,
-  timezone: true,
-  dateFormat: true,
-  timeFormat: true,
-  nameDisplayOrder: true,
-  defaultCurrency: true,
 } as const;
 
 @Injectable()
@@ -158,7 +148,7 @@ export class AuthService {
       if (this.prisma.organizationMember?.findFirst) {
         const member = await this.prisma.organizationMember.findFirst({
           where: { userId: sanitizedUser.id },
-          orderBy: { createdAt: "asc" },
+          orderBy: getPreferredMembershipOrderBy(),
           select: { organizationId: true, role: true },
         });
         if (member) {
@@ -176,6 +166,7 @@ export class AuthService {
       if (!organization) {
         const owned = await this.prisma.organization.findFirst({
           where: { ownerId: sanitizedUser.id },
+          orderBy: getPreferredOwnedOrgOrderBy(),
           select: ORG_SUMMARY_SELECT,
         });
         if (owned) {
@@ -199,7 +190,7 @@ export class AuthService {
       name: formatUserDisplayName(sanitizedUser, orgOrder),
       isOwner,
       organization: organization
-        ? attachOrganizationLogoUrl(organization)
+        ? serializeOrganizationSummary(organization)
         : null,
     };
   }
@@ -279,7 +270,7 @@ export class AuthService {
     if (!activeOrgId && this.prisma.organizationMember?.findFirst) {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true, role: true },
       });
       if (member) {
@@ -296,6 +287,7 @@ export class AuthService {
     if (!activeOrgId && this.prisma.organization?.findFirst) {
       const owned = await this.prisma.organization.findFirst({
         where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true },
       });
       if (owned) {
@@ -592,7 +584,7 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string, activeOrgId?: string | null): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -602,13 +594,23 @@ export class AuthService {
     });
 
     if (user) {
+      const now = toInstant();
       await this.prisma.user.update({
         where: { id: userId },
         data: {
           tokenVersion: { increment: 1 },
-          updatedAt: toInstant(),
+          updatedAt: now,
         },
       });
+      if (
+        activeOrgId &&
+        typeof this.prisma.organizationMember?.updateMany === "function"
+      ) {
+        await this.prisma.organizationMember.updateMany({
+          where: { userId, organizationId: activeOrgId },
+          data: { lastAccessedAt: now },
+        });
+      }
     }
   }
 
@@ -792,7 +794,7 @@ export class AuthService {
       if (this.prisma.organizationMember?.findFirst) {
         const member = await this.prisma.organizationMember.findFirst({
           where: { userId: user.id },
-          orderBy: { createdAt: "asc" },
+          orderBy: getPreferredMembershipOrderBy(),
           select: { organizationId: true, role: true },
         });
         if (member) {
@@ -812,6 +814,7 @@ export class AuthService {
       if (!organization) {
         const owned = await this.prisma.organization.findFirst({
           where: { ownerId: user.id },
+          orderBy: getPreferredOwnedOrgOrderBy(),
           select: ORG_SUMMARY_SELECT,
         });
         if (owned) {
@@ -838,10 +841,7 @@ export class AuthService {
         : user.preferredTimezone,
       isOwner,
       organization: organization
-        ? {
-            ...organization,
-            timezone: canonicalizeTimezone(organization.timezone),
-          }
+        ? serializeOrganizationSummary(organization)
         : organization,
     };
   }

@@ -19,6 +19,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { MAX_ORG_LOGO_SIZE_BYTES } from "@haihire/shared";
 import { OrganizationsService } from "./organizations.service";
@@ -415,6 +416,7 @@ export class OrganizationsController {
   }
 
   // Public endpoint to stream organization logo (no auth needed)
+  @Throttle({ default: { limit: 600, ttl: 60000 } })
   @Get("public/:id/logo")
   async getPublicOrgLogo(
     @Param("id", new ParseUUIDPipe()) id: string,

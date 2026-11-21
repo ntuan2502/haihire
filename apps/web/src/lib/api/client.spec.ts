@@ -1,13 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
+import { env } from "../env";
 import {
   buildDocumentDownloadPath,
   downloadAuthenticatedFile,
   fetchAuthenticatedDocumentPreview,
+  getApiBaseUrl,
+  getBrowserApiBaseUrl,
   getDocumentUrl,
   refreshAuthSession,
+  resolveOrganizationLogoUrl,
   api,
 } from "./client";
+
+describe("resolveOrganizationLogoUrl (client.ts)", () => {
+  it("resolves browser-reachable /api prefix for default/localhost settings and never leaks INTERNAL_API_URL", () => {
+    const prevInternal = env.INTERNAL_API_URL;
+    const prevPublic = env.NEXT_PUBLIC_API_URL;
+    try {
+      env.INTERNAL_API_URL = "http://internal-api:3001";
+      env.NEXT_PUBLIC_API_URL = "http://localhost:13001";
+
+      expect(getApiBaseUrl()).toBe("/api");
+      expect(getBrowserApiBaseUrl()).toBe("/api");
+      expect(
+        resolveOrganizationLogoUrl("/organizations/public/org-1/logo?v=123"),
+      ).toBe("/api/organizations/public/org-1/logo?v=123");
+    } finally {
+      env.INTERNAL_API_URL = prevInternal;
+      env.NEXT_PUBLIC_API_URL = prevPublic;
+    }
+  });
+
+  it("uses external NEXT_PUBLIC_API_URL when configured and handles passthrough or blank values", () => {
+    const prevPublic = env.NEXT_PUBLIC_API_URL;
+    try {
+      env.NEXT_PUBLIC_API_URL = "https://api.example.com/";
+      expect(
+        resolveOrganizationLogoUrl("/organizations/public/org-1/logo?v=456"),
+      ).toBe("https://api.example.com/organizations/public/org-1/logo?v=456");
+
+      expect(
+        resolveOrganizationLogoUrl("/api/organizations/public/org-1/logo?v=1"),
+      ).toBe("/api/organizations/public/org-1/logo?v=1");
+      expect(
+        resolveOrganizationLogoUrl("https://cdn.example.com/logo.png"),
+      ).toBe("https://cdn.example.com/logo.png");
+      expect(resolveOrganizationLogoUrl("blob:http://localhost/1")).toBe(
+        "blob:http://localhost/1",
+      );
+      expect(resolveOrganizationLogoUrl("data:image/png;base64,AAA")).toBe(
+        "data:image/png;base64,AAA",
+      );
+      expect(resolveOrganizationLogoUrl(null)).toBeNull();
+      expect(resolveOrganizationLogoUrl("   ")).toBeNull();
+    } finally {
+      env.NEXT_PUBLIC_API_URL = prevPublic;
+    }
+  });
+});
 
 describe("getDocumentUrl & buildDocumentDownloadPath (client.ts)", () => {
   beforeEach(() => {

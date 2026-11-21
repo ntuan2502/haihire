@@ -134,11 +134,11 @@ export class AuthController {
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   async logout(
-    @Request() req: { user?: { id?: string } },
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Res({ passthrough: true }) res: Response,
   ) {
     if (req?.user?.id) {
-      await this.authService.logout(req.user.id);
+      await this.authService.logout(req.user.id, req.user.organizationId);
     }
     clearAuthCookies(res);
     return { success: true };

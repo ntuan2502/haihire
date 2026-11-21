@@ -14,7 +14,7 @@ HaiHire uses **PostgreSQL 17.6** managed through **Prisma `7.10.1`** with the na
 
 ```text
 Organization (tenant root, ownerId -> User)
- ├── OrganizationMember (organizationId, userId, role)
+ ├── OrganizationMember (organizationId, userId, role, lastAccessedAt?)
  ├── OrganizationRolePermission (organizationId, role, permission, granted)
  ├── InviteLink (organizationId, token, role, status)
  ├── OrganizationAuditLog (organizationId, actorId, action, resource)
@@ -76,7 +76,7 @@ User (email unique, tokenVersion, preferredLanguage?, preferredTimezone?)
 | :-: | :--------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------- | :---------------: |
 |  1  | `Organization`               | `organization`                 | Root entity (`id`, `slug` unique, `ownerId` `Restrict`, optional `logoObjectKey` / `logoMimeType` / `logoUpdatedAt`) |        No         |
 |  2  | `User`                       | `user`                         | Global identity (`email` unique, `tokenVersion`, `OrganizationMember` join)                                          |        No         |
-|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`                                                        |        No         |
+|  3  | `OrganizationMember`         | `organization_member`          | `organizationId` (Cascade), unique `[organizationId, userId]`, indexed `[userId, lastAccessedAt]`                    |        No         |
 |  4  | `OrganizationRolePermission` | `organization_role_permission` | `organizationId` (Cascade), unique `[organizationId, role, permission]`                                              |        No         |
 |  5  | `InviteLink`                 | `invite_link`                  | `organizationId` (Cascade), `token` unique                                                                           |        No         |
 |  6  | `Job`                        | `job`                          | `organizationId` (Cascade), indexed `[organizationId, deletedAt, status, createdAt]`, `salaryMin`/`Max`/`Curr`       | Yes (`deletedAt`) |

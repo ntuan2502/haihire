@@ -31,7 +31,11 @@ import {
   sanitizeFilename,
   validateUploadedLogoFile,
 } from "../../common/upload-utils";
-import { attachOrganizationLogoUrl } from "../organization-logo.util";
+import {
+  attachOrganizationLogoUrl,
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
+} from "../organization-logo.util";
 
 type MockUserTableCompat = {
   store?: Array<Record<string, unknown>>;
@@ -142,6 +146,7 @@ export class OrganizationsCoreService {
     }
 
     const orgId = crypto.randomUUID();
+    const now = toInstant();
     let org;
     try {
       org = await runInTransaction(this.prisma, async (tx) => {
@@ -151,7 +156,7 @@ export class OrganizationsCoreService {
             name: dto.name.trim(),
             slug: normalizedSlug,
             ownerId: userId,
-            updatedAt: toInstant(),
+            updatedAt: now,
           },
           select: ORG_CORE_SELECT,
         });
@@ -169,11 +174,13 @@ export class OrganizationsCoreService {
             organizationId: createdOrg.id,
             userId,
             role: "ADMIN",
-            updatedAt: toInstant(),
+            lastAccessedAt: now,
+            updatedAt: now,
           },
           update: {
             role: "ADMIN",
-            updatedAt: toInstant(),
+            lastAccessedAt: now,
+            updatedAt: now,
           },
         });
 
@@ -259,7 +266,7 @@ export class OrganizationsCoreService {
 
     const member = await this.prisma.organizationMember.findFirst({
       where: { userId },
-      orderBy: { createdAt: "asc" },
+      orderBy: getPreferredMembershipOrderBy(),
       select: { organizationId: true },
     });
     const orgId = member?.organizationId || legacyOrgId;
@@ -273,6 +280,7 @@ export class OrganizationsCoreService {
 
     const owned = await this.prisma.organization.findFirst({
       where: { ownerId: userId },
+      orderBy: getPreferredOwnedOrgOrderBy(),
       select: ORG_CORE_SELECT,
     });
     return owned ? this.withLocalization(owned) : null;
@@ -356,6 +364,7 @@ export class OrganizationsCoreService {
     }
 
     const targetRole = isOwner ? "ADMIN" : membership?.role || "MEMBER";
+    const now = toInstant();
 
     if (isOwner && !membership) {
       await this.prisma.organizationMember.upsert({
@@ -370,12 +379,22 @@ export class OrganizationsCoreService {
           organizationId: targetOrgId,
           userId,
           role: "ADMIN",
-          updatedAt: toInstant(),
+          lastAccessedAt: now,
+          updatedAt: now,
         },
         update: {
           role: "ADMIN",
-          updatedAt: toInstant(),
+          lastAccessedAt: now,
+          updatedAt: now,
         },
+      });
+    } else if (
+      membership &&
+      typeof this.prisma.organizationMember?.updateMany === "function"
+    ) {
+      await this.prisma.organizationMember.updateMany({
+        where: { organizationId: targetOrgId, userId },
+        data: { lastAccessedAt: now },
       });
     }
 
@@ -426,11 +445,12 @@ export class OrganizationsCoreService {
     if (!orgId) {
       const userMember = await this.prisma.organizationMember.findFirst({
         where: { userId },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true, role: true },
       });
       const ownedOrg = await this.prisma.organization.findFirst({
         where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true },
       });
       const user = await this.prisma.user.findFirst({
@@ -840,11 +860,12 @@ export class OrganizationsCoreService {
     if (!orgId) {
       const userMember = await this.prisma.organizationMember.findFirst({
         where: { userId },
-        orderBy: { createdAt: "asc" },
+        orderBy: getPreferredMembershipOrderBy(),
         select: { organizationId: true, role: true },
       });
       const ownedOrg = await this.prisma.organization.findFirst({
         where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
         select: { id: true, name: true, ownerId: true },
       });
       const user = await this.prisma.user.findFirst({

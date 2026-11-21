@@ -770,5 +770,26 @@ describe("OrganizationsController", () => {
       );
       expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
     });
+
+    it("applies generous 600 req/min rate limit override on public org logo endpoint without skipping throttle completely", () => {
+      expect(
+        Reflect.getMetadata(
+          "THROTTLER:LIMITdefault",
+          OrganizationsController.prototype.getPublicOrgLogo,
+        ),
+      ).toBe(600);
+      expect(
+        Reflect.getMetadata(
+          "THROTTLER:TTLdefault",
+          OrganizationsController.prototype.getPublicOrgLogo,
+        ),
+      ).toBe(60000);
+      expect(
+        Reflect.getMetadata(
+          "THROTTLER:SKIPdefault",
+          OrganizationsController.prototype.getPublicOrgLogo,
+        ),
+      ).toBeUndefined();
+    });
   });
 });

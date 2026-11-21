@@ -202,6 +202,51 @@ describe("prisma-composer-mock helper", () => {
       expect(byDateDesc.map((r) => r.id)).toEqual(["c1", "c3", "c2"]);
     });
 
+    it("supports Prisma array orderBy with { sort, nulls: 'last' | 'first' } and tie-breakers", async () => {
+      const mock = createMockPrismaService({
+        organizationMember: [
+          {
+            id: "m-null-1",
+            organizationId: "org-3",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-null-2",
+            organizationId: "org-1",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-recent",
+            organizationId: "org-2",
+            lastAccessedAt: new Date("2026-11-20T10:00:00Z"),
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+        ],
+      });
+
+      const rows = await (
+        mock.organizationMember as unknown as {
+          findMany: (
+            args: unknown,
+          ) => Promise<Array<{ organizationId: string }>>;
+        }
+      ).findMany({
+        orderBy: [
+          { lastAccessedAt: { sort: "desc", nulls: "last" } },
+          { createdAt: "asc" },
+          { organizationId: "asc" },
+        ],
+      });
+
+      expect(rows.map((r) => r.organizationId)).toEqual([
+        "org-2",
+        "org-1",
+        "org-3",
+      ]);
+    });
+
     it("rolls back store mutations when a $transaction callback throws", async () => {
       const mock = createMockPrismaService({
         job: [{ id: "j1", title: "Original Title" }],

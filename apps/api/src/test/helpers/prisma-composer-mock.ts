@@ -645,19 +645,35 @@ export function createMockTable<T = MockRecord>(
           matchPrismaWhere(item as MockRecord, args?.where),
         );
         if (args?.orderBy) {
-          const orderClauses: Array<[string, string]> = Array.isArray(
+          type OrderSpec = string | { sort: string; nulls?: "first" | "last" };
+          const orderClauses: Array<[string, OrderSpec]> = Array.isArray(
             args.orderBy,
           )
-            ? args.orderBy.flatMap((o: Record<string, string>) =>
+            ? args.orderBy.flatMap((o: Record<string, OrderSpec>) =>
                 Object.entries(o),
               )
-            : Object.entries(args.orderBy as Record<string, string>);
+            : Object.entries(args.orderBy as Record<string, OrderSpec>);
 
           if (orderClauses.length > 0) {
             filtered.sort((a, b) => {
-              for (const [sortKey, sortDir] of orderClauses) {
+              for (const [sortKey, rawSpec] of orderClauses) {
+                const sortDir =
+                  typeof rawSpec === "string"
+                    ? rawSpec
+                    : (rawSpec?.sort ?? "asc");
+                const nullsOrder =
+                  typeof rawSpec === "object" && rawSpec !== null
+                    ? rawSpec.nulls
+                    : undefined;
                 const va = (a as MockRecord)[sortKey];
                 const vb = (b as MockRecord)[sortKey];
+                const aIsNull = va === null || va === undefined;
+                const bIsNull = vb === null || vb === undefined;
+                if (nullsOrder && (aIsNull || bIsNull)) {
+                  if (aIsNull && bIsNull) continue;
+                  if (nullsOrder === "first") return aIsNull ? -1 : 1;
+                  return aIsNull ? 1 : -1;
+                }
                 let cmp = 0;
                 if (typeof va === "number" && typeof vb === "number") {
                   cmp = va - vb;

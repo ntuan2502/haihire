@@ -33,11 +33,7 @@ function JobSettingsPageContent() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!job) {
@@ -49,7 +45,7 @@ function JobSettingsPageContent() {
 
 export default function JobSettingsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobSettingsPageContent />
     </Suspense>
   );

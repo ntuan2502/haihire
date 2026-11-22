@@ -74,11 +74,7 @@ function JobTablePageContent() {
     useJobApplications(jobId);
 
   if (jobLoading || appsLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!job) return null;
@@ -141,7 +137,7 @@ function JobTablePageContent() {
 
 export default function JobTablePage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobTablePageContent />
     </Suspense>
   );

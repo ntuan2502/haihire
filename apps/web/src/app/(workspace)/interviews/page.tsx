@@ -325,6 +325,19 @@ function InterviewsPageContent() {
     setScorecardModalOpen(true);
   };
 
+  const isInitialLoading =
+    viewMode === "calendar"
+      ? calendarLoading && !calendarInterviewsData
+      : (jobsLoading ||
+          appsLoading ||
+          (Boolean(focusedInterviewId) && focusedInterview.isLoading)) &&
+        !interviewsData &&
+        !focusedInterview.data;
+
+  if (isInitialLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Standard Header Row */}
@@ -460,7 +473,7 @@ function InterviewsPageContent() {
 
 export default function InterviewsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <InterviewsPageContent />
     </Suspense>
   );

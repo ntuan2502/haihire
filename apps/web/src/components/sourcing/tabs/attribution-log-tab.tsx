@@ -5,6 +5,7 @@ import type { AttributionLogItem, PaginatedResult } from "@haihire/shared";
 import type { ApplicationStage } from "@/types";
 import { ChannelBadge } from "../channel-badge";
 import { StageBadge } from "@/components/shared/stage-badge";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Pagination } from "@/components/shared/pagination";
 import {
   getCandidateDisplayName,
@@ -42,9 +43,7 @@ export function AttributionLogTab({
       {/* Table Container */}
       <div className="rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-muted-foreground">
-            {t("common.loading")}
-          </div>
+          <LoadingSpinner />
         ) : logs.length === 0 ? (
           <div className="px-6 py-12 sm:p-16 text-center flex flex-col items-center justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">

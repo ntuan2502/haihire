@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { normalizeDateForInput, isValidUuid } from "@/lib/utils";
@@ -145,11 +146,7 @@ function EditCandidatePageContent() {
   };
 
   if (candidateLoading && !isInitialized && isCandidateIdValid) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if ((!isCandidateIdValid || !candidate) && !candidateLoading) {

@@ -17,7 +17,7 @@ import type {
   WebhookProviderType,
 } from "@haihire/shared";
 import { Plus, Plug } from "lucide-react";
-import { PageHeader, StatusState } from "@/components/shared";
+import { LoadingSpinner, PageHeader, StatusState } from "@/components/shared";
 import {
   WebhookSettingsTable,
   WebhookModal,
@@ -181,6 +181,10 @@ export default function IntegrationsSettingsPage() {
         />
       </div>
     );
+  }
+
+  if (isLoading && webhookSettings.length === 0) {
+    return <LoadingSpinner />;
   }
 
   return (

@@ -67,6 +67,10 @@ export function CandidatesView() {
     );
   }
 
+  if (loading && !filterSort.hasPagedResult) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Header Row */}
@@ -106,9 +110,7 @@ export function CandidatesView() {
       />
 
       {/* Content Area */}
-      {loading && !filterSort.hasPagedResult ? (
-        <LoadingSpinner />
-      ) : filterSort.candidateRows.length === 0 ? (
+      {filterSort.candidateRows.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
             <Users className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />

@@ -25,11 +25,7 @@ export function ApplicationDetailView() {
   });
 
   if (state.loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if ((!state.isAppIdValid || !state.app) && !state.loading) {

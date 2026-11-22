@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   ConfirmDestructiveModal,
+  LoadingSpinner,
   OrganizationLogo,
   PageHeader,
   StatusState,
@@ -140,6 +141,10 @@ export default function GeneralSettingsPage() {
         />
       </div>
     );
+  }
+
+  if (isOrgLoading && !savedOrg) {
+    return <LoadingSpinner />;
   }
 
   return (

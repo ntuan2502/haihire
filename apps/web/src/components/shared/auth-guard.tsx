@@ -3,7 +3,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useI18n } from "@/i18n";
 import { LoadingSpinner } from "./loading-spinner";
 
 export interface AuthGuardProps {
@@ -14,7 +13,6 @@ export interface AuthGuardProps {
 export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   const router = useRouter();
   const { user, isAuthenticated, loading } = useAuth();
-  const { t } = useI18n();
 
   useEffect(() => {
     if (!loading) {
@@ -31,7 +29,7 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
     !isAuthenticated ||
     (requireOrg && user && !user.organizationId)
   ) {
-    return <LoadingSpinner fullScreen text={t("common.loadingWorkspace")} />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return <>{children}</>;

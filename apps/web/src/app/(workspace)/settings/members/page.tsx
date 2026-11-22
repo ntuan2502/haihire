@@ -28,7 +28,7 @@ import {
   RevokeLinkModal,
   type MemberModalTarget,
 } from "@/components/settings/members";
-import { PageHeader, StatusState } from "@/components/shared";
+import { LoadingSpinner, PageHeader, StatusState } from "@/components/shared";
 
 export default function MembersSettingsPage() {
   const { user, isOwner, refreshUser } = useAuth();
@@ -241,6 +241,13 @@ export default function MembersSettingsPage() {
         />
       </div>
     );
+  }
+
+  if (
+    (membersLoading && members.length === 0) ||
+    (linksLoading && serverInviteLinks.length === 0)
+  ) {
+    return <LoadingSpinner />;
   }
 
   return (

@@ -45,7 +45,7 @@ export default function EmailTemplatesLayout({
   ];
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200 min-w-0">
+    <div className="flex flex-1 flex-col w-full space-y-6 animate-in fade-in duration-200 min-w-0">
       <PageHeader
         title={t("email.templatesTitle")}
         subtitle={

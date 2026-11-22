@@ -119,13 +119,13 @@ function TrackingLinkDetailContent() {
     );
   }
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-24 space-y-4">
-          <LoadingSpinner />
-        </div>
-      ) : isError || !detail ? (
+      {isError || !detail ? (
         <StatusState
           status="404"
           variant="card"
@@ -198,7 +198,7 @@ function TrackingLinkDetailContent() {
 
 export default function SourceTrackingDetailPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <TrackingLinkDetailContent />
     </Suspense>
   );

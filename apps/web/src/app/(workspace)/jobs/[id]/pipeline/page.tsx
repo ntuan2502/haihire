@@ -22,11 +22,7 @@ function JobPipelinePageContent() {
   const pipeline = usePipelineKanban(jobId);
 
   if (pipeline.jobLoading || pipeline.appsLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!pipeline.job) return null;
@@ -164,7 +160,7 @@ function JobPipelinePageContent() {
 
 export default function JobPipelinePage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobPipelinePageContent />
     </Suspense>
   );

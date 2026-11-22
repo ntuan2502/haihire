@@ -82,11 +82,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   };
 
   if (jobLoading) {
-    return (
-      <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center bg-background text-foreground">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!job) {
@@ -311,7 +307,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
 export default function JobDetailLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobDetailLayoutContent>{children}</JobDetailLayoutContent>
     </Suspense>
   );

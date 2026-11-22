@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDestructiveModal } from "@/components/shared";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Pagination } from "@/components/shared/pagination";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
@@ -86,9 +87,7 @@ export function TrackingLinksTab({
       {/* Table Container */}
       <div className="rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-muted-foreground">
-            {t("common.loading")}
-          </div>
+          <LoadingSpinner />
         ) : links.length === 0 ? (
           <div className="px-6 py-12 sm:p-16 text-center flex flex-col items-center justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">

@@ -13,6 +13,7 @@ import { Role, type Permission } from "@haihire/shared";
 import { ShieldCheck, RotateCcw, RefreshCw, Save } from "lucide-react";
 import {
   ConfirmDestructiveModal,
+  LoadingSpinner,
   PageHeader,
   StatusState,
 } from "@/components/shared";
@@ -201,6 +202,10 @@ export default function RolesPermissionsPage() {
     );
   }
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full space-y-6 animate-in fade-in duration-200">
       <PageHeader
@@ -229,21 +234,6 @@ export default function RolesPermissionsPage() {
           <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-semibold">
             {dirtyCount}
           </span>
-        </div>
-      )}
-
-      {/* Loading Skeleton */}
-      {isLoading && (
-        <div className="w-full bg-card rounded-xl border border-border p-6 space-y-4">
-          <div className="h-6 bg-muted rounded-md w-1/4 animate-pulse" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="h-10 bg-muted/60 rounded-md w-full animate-pulse"
-              />
-            ))}
-          </div>
         </div>
       )}
 

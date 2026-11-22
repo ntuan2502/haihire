@@ -104,11 +104,7 @@ export function CandidateDetailView() {
   }
 
   if (state.loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if ((!state.isCandidateIdValid || !state.candidate) && !state.loading) {

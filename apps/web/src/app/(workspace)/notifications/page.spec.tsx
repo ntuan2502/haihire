@@ -166,7 +166,9 @@ describe("NotificationsPage", () => {
 
     renderPage();
 
-    expect(screen.getByText("Workspace: HaiHire Corp")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Workspace: HaiHire Corp"),
+    ).toBeInTheDocument();
     expect(
       await screen.findByText("notificationInbox.groupToday"),
     ).toBeVisible();

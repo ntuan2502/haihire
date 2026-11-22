@@ -99,12 +99,8 @@ function JobTrackingPageContent() {
     );
   }
 
-  if (jobLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingSpinner />
-      </div>
-    );
+  if (jobLoading || (linksLoading && !linksData)) {
+    return <LoadingSpinner />;
   }
 
   if (!job) return null;
@@ -177,7 +173,7 @@ function JobTrackingPageContent() {
 
 export default function JobTrackingPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobTrackingPageContent />
     </Suspense>
   );

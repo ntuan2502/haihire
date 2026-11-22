@@ -158,6 +158,15 @@ function SourceTrackingContent() {
     );
   }
 
+  const isInitialTabLoading =
+    (activeTab === "overview" && statsLoading && !stats) ||
+    (activeTab === "links" && linksLoading && !linksData) ||
+    (activeTab === "attribution" && attributionLoading && !attributionData);
+
+  if (isInitialTabLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Standard Page Header Row */}
@@ -325,7 +334,7 @@ function SourceTrackingContent() {
 
 export default function SourceTrackingPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <SourceTrackingContent />
     </Suspense>
   );

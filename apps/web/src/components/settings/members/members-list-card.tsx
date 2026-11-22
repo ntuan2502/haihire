@@ -13,6 +13,7 @@ import {
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared/custom-select";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Role } from "@haihire/shared";
 import {
   Users,
@@ -79,9 +80,7 @@ export function MembersListCard({
           <h3 className="text-xs font-semibold text-foreground">
             {t("members.activeMembers")}
           </h3>
-          {isLoading ? (
-            <div className="mt-1 h-3 w-20 rounded bg-muted animate-pulse" />
-          ) : (
+          {!isLoading && (
             <p className="text-[11px] text-muted-foreground">
               {members.length === 1
                 ? t("members.memberCountOne", { count: members.length })
@@ -93,23 +92,7 @@ export function MembersListCard({
 
       {/* Member list */}
       {isLoading ? (
-        <div className="divide-y divide-border pt-1" aria-busy="true">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="py-3 flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-muted animate-pulse shrink-0" />
-                <div className="space-y-1.5">
-                  <div className="h-3.5 w-32 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-44 rounded bg-muted/60 animate-pulse" />
-                </div>
-              </div>
-              <div className="h-8 w-36 rounded-md bg-muted/60 animate-pulse shrink-0" />
-            </div>
-          ))}
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="divide-y divide-border pt-1">
           {members.map((m, index) => {

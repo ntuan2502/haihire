@@ -140,9 +140,7 @@ function DashboardContent() {
     <div className="flex flex-1 flex-col">
       <h1 className="sr-only">{t("dashboard.title")}</h1>
       {loading ? (
-        <div className="flex flex-1 items-center justify-center py-12">
-          <LoadingSpinner />
-        </div>
+        <LoadingSpinner />
       ) : jobs.length === 0 ? (
         <StartRecruiting onOpenCreateJob={() => router.push("/jobs/new")} />
       ) : (

@@ -252,7 +252,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
 
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getByText("Loading workspace...")).toBeInTheDocument();
+      expect(screen.getByText("Loading...")).toBeInTheDocument();
       expect(screen.queryByText("Tran Van B")).not.toBeInTheDocument();
     });
   });

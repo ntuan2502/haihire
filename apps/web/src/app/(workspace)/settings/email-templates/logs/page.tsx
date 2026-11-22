@@ -11,6 +11,7 @@ import {
 import { useI18n } from "@/i18n";
 import { formatDateTime } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/shared";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
 import { EmailPreviewModal } from "@/components/email/email-preview-modal";
@@ -40,6 +41,10 @@ export default function EmailLogsPage() {
   useEffect(() => {
     setLogPage(1);
   }, [logSearch, logStatusFilter]);
+
+  if (logsLoading && logs.length === 0) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="space-y-4 w-full min-w-0">
@@ -135,13 +140,11 @@ export default function EmailLogsPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {logsLoading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <tr key={i}>
-                  <td colSpan={6} className="px-4 py-3.5">
-                    <div className="h-5 w-full rounded bg-muted/60 animate-pulse" />
-                  </td>
-                </tr>
-              ))
+              <tr>
+                <td colSpan={6}>
+                  <LoadingSpinner />
+                </td>
+              </tr>
             ) : logs.length === 0 ? (
               <tr>
                 <td

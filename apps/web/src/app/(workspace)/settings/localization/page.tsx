@@ -10,7 +10,7 @@ import {
   type CurrencyCode,
   type OrganizationLocalizationSettings,
 } from "@haihire/shared";
-import { PageHeader, StatusState } from "@/components/shared";
+import { LoadingSpinner, PageHeader, StatusState } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import {
@@ -149,6 +149,10 @@ export default function LocalizationSettingsPage() {
         />
       </div>
     );
+  }
+
+  if (isOrgLoading && !myOrg && !user?.organization) {
+    return <LoadingSpinner />;
   }
 
   return (

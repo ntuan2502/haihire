@@ -22,7 +22,7 @@ import {
   useUpdateEmailFlowMutation,
   useUpdateEmailTemplateMutation,
 } from "@/hooks/use-queries";
-import { ConfirmDestructiveModal } from "@/components/shared";
+import { ConfirmDestructiveModal, LoadingSpinner } from "@/components/shared";
 import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import { EmailFlowsCard } from "@/components/email/email-flows-card";
 import { EmailPreviewModal } from "@/components/email/email-preview-modal";
@@ -270,38 +270,7 @@ export default function EmailTemplatesSettingsPage() {
     : [];
 
   if (isInitialLoading) {
-    return (
-      <div className="space-y-6 w-full min-w-0" aria-busy="true">
-        {!canManageTemplates && <SettingsReadOnlyBanner />}
-        <div className="rounded-xl border border-border bg-card p-5 sm:p-6 space-y-4">
-          <div className="h-5 w-48 rounded-md bg-muted animate-pulse" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-28 rounded-xl bg-muted/60 border border-border animate-pulse"
-              />
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-          <div className="xl:col-span-4 rounded-xl border border-border bg-card p-5 space-y-3">
-            <div className="h-5 w-36 rounded-md bg-muted animate-pulse" />
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-14 rounded-lg bg-muted/60 animate-pulse"
-              />
-            ))}
-          </div>
-          <div className="xl:col-span-8 rounded-xl border border-border bg-card p-5 space-y-4">
-            <div className="h-6 w-1/3 rounded-md bg-muted animate-pulse" />
-            <div className="h-10 w-full rounded-md bg-muted/60 animate-pulse" />
-            <div className="h-64 w-full rounded-md bg-muted/60 animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

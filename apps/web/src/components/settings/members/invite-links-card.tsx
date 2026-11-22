@@ -8,6 +8,7 @@ import {
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared/custom-select";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Link2, Plus, X, Shield, Copy, Check, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
@@ -209,25 +210,7 @@ export function InviteLinksCard({
 
       {/* Invite links loading / list / empty state */}
       {!isCreateLinkOpen && isLoading && serverInviteLinks.length === 0 ? (
-        <div className="divide-y divide-border pt-1" aria-busy="true">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="py-3 flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-full bg-muted animate-pulse shrink-0" />
-                <div className="space-y-1.5">
-                  <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-44 rounded bg-muted/60 animate-pulse" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="h-7 w-24 rounded-md bg-muted/60 animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <LoadingSpinner />
       ) : (
         !isCreateLinkOpen &&
         serverInviteLinks.length === 0 && (

@@ -11,9 +11,9 @@ import {
   Webhook,
   CheckCircle2,
   PauseCircle,
-  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 
 export interface WebhookSettingsTableProps {
   webhookSettings: WebhookSettingResponse[];
@@ -56,10 +56,7 @@ export function WebhookSettingsTable({
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground overflow-hidden shadow-xs">
       {isLoading ? (
-        <div className="flex items-center justify-center p-12 text-muted-foreground text-xs">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" aria-hidden="true" />
-          <span>{t("common.loading")}</span>
-        </div>
+        <LoadingSpinner />
       ) : webhookSettings.length === 0 ? (
         <div className="text-center py-12 px-4 space-y-3">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">

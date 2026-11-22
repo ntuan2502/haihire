@@ -6,7 +6,7 @@ import { CandidatesView } from "./candidates-view";
 
 export default function CandidatesPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <CandidatesView />
     </Suspense>
   );

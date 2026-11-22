@@ -58,6 +58,10 @@ function ApplicationsPageContent() {
     };
   }, [appStats]);
 
+  if ((jobsLoading || appsLoading) && !applicationsData) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex-1 w-full p-4 sm:p-6 space-y-4">
       {/* Clean, Non-redundant Header Row */}
@@ -94,7 +98,7 @@ function ApplicationsPageContent() {
 
 export default function ApplicationsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <ApplicationsPageContent />
     </Suspense>
   );

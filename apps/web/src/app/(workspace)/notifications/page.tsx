@@ -216,6 +216,10 @@ function NotificationsPageContent() {
 
   const organizationName = user?.organization?.name;
 
+  if (inbox.isLoading && !inbox.data) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div
       data-testid="notifications-shell"
@@ -328,20 +332,7 @@ function NotificationsPageContent() {
 
         {/* Notifications List Card */}
         <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden">
-          {inbox.isLoading && (
-            <div className="divide-y divide-border/60" aria-busy="true">
-              {[0, 1, 2, 3, 4].map((idx) => (
-                <div key={idx} className="flex items-start gap-3.5 px-4 py-4">
-                  <div className="size-9 shrink-0 animate-pulse rounded-lg bg-muted" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3.5 w-1/3 animate-pulse rounded bg-muted" />
-                    <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-                    <div className="h-2.5 w-1/4 animate-pulse rounded bg-muted" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {inbox.isLoading && <LoadingSpinner />}
 
           {inbox.isError && (
             <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
@@ -465,13 +456,7 @@ function NotificationsPageContent() {
 
 export default function NotificationsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-1 items-center justify-center p-8">
-          <LoadingSpinner />
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingSpinner />}>
       <NotificationsPageContent />
     </Suspense>
   );

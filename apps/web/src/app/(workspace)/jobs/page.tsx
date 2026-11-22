@@ -148,7 +148,7 @@ function JobsPageContent() {
   };
 
   return (
-    <div className="flex-1">
+    <div className="flex flex-1 flex-col">
       {(jobsLoading && !jobsData) || allJobsLoading ? (
         <LoadingSpinner />
       ) : !allJobsLoading &&
@@ -241,7 +241,7 @@ function JobsPageContent() {
 
 export default function JobsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner fullScreen />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <JobsPageContent />
     </Suspense>
   );

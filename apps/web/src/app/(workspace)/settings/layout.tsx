@@ -8,7 +8,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     >
       <section
         data-testid="settings-content"
-        className="w-full flex-1 min-w-0 p-4 sm:p-6 space-y-6"
+        className="flex flex-1 flex-col w-full min-w-0 p-4 sm:p-6 space-y-6"
       >
         {children}
       </section>

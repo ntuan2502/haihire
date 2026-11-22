@@ -17,6 +17,7 @@ import {
 } from "@/components/settings/audit-log/audit-log-formatters";
 import {
   CustomSelect,
+  LoadingSpinner,
   PageHeader,
   StatusState,
   type CustomSelectOption,
@@ -112,6 +113,10 @@ export default function AuditLogPage() {
   const logs = data?.data ?? [];
   const total = data?.total ?? 0;
 
+  if (isLoading && !data) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
       <PageHeader
@@ -132,20 +137,8 @@ export default function AuditLogPage() {
         }
       />
 
-      {/* Loading Skeleton */}
-      {isLoading && (
-        <div className="w-full bg-card rounded-xl border border-border p-6 shadow-xs space-y-4">
-          <div className="h-5 bg-muted rounded-md w-1/4 animate-pulse" />
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-12 bg-muted/60 rounded-lg w-full animate-pulse"
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Loading */}
+      {isLoading && <LoadingSpinner />}
 
       {/* Error State */}
       {isError && (

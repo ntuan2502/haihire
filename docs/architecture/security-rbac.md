@@ -15,9 +15,9 @@ HaiHire implements defense-in-depth security across network boundaries, authenti
 
 ## 2. Multi-Tenant Data Isolation
 
-- **Global Request Boundary (`TenantGuard`):** [apps/api/src/common/guards/tenant.guard.ts](../../apps/api/src/common/guards/tenant.guard.ts) inspects `req.query.organizationId`, `req.body.organizationId`, and `req.params.organizationId` against `req.user.organizationId` and persistent `OrganizationMember` rows, throwing `AppForbiddenException(ORG_FORBIDDEN_ACTION)` on unauthorized cross-tenant targets.
-- **Service-Layer `organizationId` Scoping:** All **8 tenant-scoped backend modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`) enforce `organizationId` filtering in Prisma `where` clauses or parent relation verification.
-- **Automated Static Gate (`pnpm lint:tenant-scope`):** [scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts) audits `267` Prisma queries across `29` service files, isolating function boundaries per method so guards in earlier methods never mask later queries.
+- **Global Request Boundary (`TenantGuard`):** [apps/api/src/common/guards/tenant.guard.ts](../../apps/api/src/common/guards/tenant.guard.ts) inspects `req.query.organizationId`, `req.body.organizationId`, and `req.params.organizationId` (rejecting conflicting or non-string inputs), validates active membership, and synchronizes `req.user.organizationId`, `req.user.role`, `req.user.isOwner`, and `req.user.organization` before `RolesGuard` executes, throwing `AppForbiddenException(ORG_FORBIDDEN_ACTION)` on unauthorized cross-tenant targets.
+- **Service-Layer `organizationId` Scoping:** All **10 tenant-scoped backend modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`, `email`, `notifications`) enforce `organizationId` filtering in Prisma `where` clauses or parent relation verification.
+- **Automated Static Gate (`pnpm lint:tenant-scope`):** [scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts) audits `321` Prisma queries across `34` service files, stripping `select: { ... }` projections before lookahead, ignoring non-call `typeof` checks, and isolating function boundaries per method so guards in earlier methods never mask later queries.
 
 ---
 

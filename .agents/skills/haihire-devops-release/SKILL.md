@@ -24,7 +24,7 @@ Never consider a non-trivial task complete until the applicable gates (and befor
 6. `lint:error-i18n`: Every `APP_ERROR_CODES` key localized in both `en.ts` and `vi.ts`.
 7. `lint:api-contract`: API endpoint contract & leak audit.
 8. `lint:prometheus-rules`: Monitoring & Prometheus alert rule schema audit.
-9. `lint:tenant-scope`: Static tenant isolation audit across all 8 tenant-scoped backend modules (`0` unsafe queries).
+9. `lint:tenant-scope`: Static tenant isolation audit across all 10 tenant-scoped backend modules (`0` unsafe queries).
 10. `lint:doc-links`: Markdown relative-link audit across `docs/`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, and package `README.md` files (rejects `file://` links, `\`, and dead targets).
 11. `lint:doc-sync`: Checks that all code-path references outside code blocks exist on disk, environment variables used by the code are declared in the local template, and `docs/PROJECT_METRICS.md` matches the generated source inventory.
 12. `check:prod-email-provider`: Rejects `SIMULATED` email provider in production configs.

@@ -32,14 +32,14 @@ Per Prisma 7 official architecture:
 
 ## 3. Mandatory Multi-Tenant Query Isolation (`pnpm lint:tenant-scope`)
 
-For authenticated HTTP requests, `TenantRlsInterceptor` propagates the tenant context into Prisma. The transaction configures PostgreSQL RLS. Keep explicit tenant filters in service queries and use the existing Prisma context helpers.
+For authenticated HTTP requests, `TenantRlsInterceptor` propagates the tenant context into Prisma, and `PrismaService` wraps itself in an `AsyncLocalStorage` `Proxy` forwarding all `27` model delegates and raw queries to `als.getStore()` inside `runInTransaction`. Keep explicit tenant filters in service queries and use the existing Prisma context helpers.
 
-CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma query across the **8 tenant-scoped modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`):
+CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma query across the **10 tenant-scoped modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`, `email`, `notifications`):
 - Every query against a tenant-owned model MUST satisfy one of four verified rules:
-  1. **Inline `organizationId` / `targetOrgId` filter inside the query's 350-character lookahead window** (or `organizationId` in `select` if checking immediately after).
-  2. **Model in `MODELS_WITHOUT_ORG_COLUMN`** (`Organization` only — defined in `scripts/tenant-scoping.config.ts`). `Application`, `Interview`, and `TrackingClick` all carry `organizationId` directly and enforce both direct tenant filters/checks and parent ownership verification.
-  3. **Parent ownership guard in the SAME enclosing method** (`entity.organizationId !== ...`, `entity.organizationId === ...`, or `throw new AppForbiddenException`). Never assume an earlier method's guard covers a later method, and keep lookback guards inside the same method as the query.
-  4. **Explicitly whitelisted safe public pattern** in `SAFE_QUERY_PATTERNS` (`findBySlug`, `healthCheck`, `recordClick`).
+  1. **Inline `organizationId` / `targetOrgId` filter inside the query's 350-character lookahead window** (`select: { ... }` projections are stripped before scanning, so merely selecting `organizationId` without filtering in `where` fails the gate; non-call `typeof` reflection checks are ignored).
+  2. **Model in `MODELS_WITHOUT_ORG_COLUMN`** (`Organization` and `User` — defined in `scripts/tenant-scoping.config.ts`). `Application`, `Interview`, and `TrackingClick` all carry `organizationId` directly and enforce both direct tenant filters/checks and parent ownership verification.
+  3. **Parent ownership guard in the SAME enclosing method** (`entity.organizationId !== ...`, `entity.organizationId === ...`, prior `organizationId`-filtered `where`, or post-query `throw new AppForbiddenException` checking `.organizationId`). Never assume an earlier method's guard covers a later method, and keep guards inside the same method as the query.
+  4. **Explicitly whitelisted safe public pattern** in `SAFE_QUERY_PATTERNS` (`findBySlug`, `healthCheck`, `recordClick`, `where: { token ... }` invite resolution, and `where: { userId }` default membership lookup).
 - Never suppress cross-tenant warnings by copying unrelated guards into methods; enforce true relational `organizationId` filtering on `findMany`, `findFirst`, `update`, `updateMany`, and `deleteMany`, especially in enrichment queries (e.g., `candidate.findMany` and `job.findMany` inside `InterviewsQueryService`).
 
 ---

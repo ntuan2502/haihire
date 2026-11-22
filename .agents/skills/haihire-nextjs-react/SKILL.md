@@ -65,7 +65,7 @@ Per Tailwind CSS v4 and `ui.shadcn.com` v4 documentation:
   - `DetailModal` (`detail-modal.tsx`): Read-only / multi-panel detail inspection dialogs.
   - `SlideOver` / `DetailDrawer` (`slide-over.tsx`): Right-hand `Sheet` detail panels (`sm`..`2xl`).
   - `FilterDrawer` + `FilterPillGroup` (`filter-drawer.tsx`) & `ColumnPicker` (`column-picker.tsx`): Unified filter slide-overs and `DropdownMenu` column visibility selectors.
-  - `CustomSelect` (`custom-select.tsx`): Searchable/grouped select dropdown backed by Radix `Popover` (`Popover`, `PopoverAnchor`, `PopoverContent`), ensuring full pointer, keyboard search, and wheel/touch scroll compatibility inside modal `Dialog` and `Sheet` overlays.
+  - `CustomSelect` (`custom-select.tsx`): Searchable/grouped select dropdown backed by Radix `Popover` (`Popover`, `PopoverAnchor`, `PopoverContent`), ensuring full pointer, keyboard search, and wheel/touch scroll compatibility inside modal `Dialog` and `Sheet` overlays. External `<label htmlFor>` attributes MUST target `${id}-trigger` (matching the rendered Radix trigger button `id`).
 - **Unified 5-Page Workspace List Contract (`jobs`, `candidates`, `applications`, `interviews`, `source-tracking`):**
   - Render titles with `<PageHeader>` (`apps/web/src/components/shared/page-header.tsx`: `text-xl sm:text-2xl font-bold`, `rounded-full` count pill, single-row compact alignment when `!Icon && !subtitle`, `h-9 px-3.5 sm:px-4 text-xs font-semibold` primary CTA buttons).
   - Keep filter toolbars uniform (`h-9 px-3.5 text-xs font-semibold` outline Filter button with active badge, `RotateCcw` Reset action, mobile wrapping, active filter chips), table `<thead>` headers uppercase with active sort highlight, row action icon buttons `h-8 w-8`, and `<Pagination>` inside the table card footer (`border-t border-border bg-muted/30`).
@@ -76,4 +76,5 @@ Per Tailwind CSS v4 and `ui.shadcn.com` v4 documentation:
 
 - Preserve interactive table headers (`scope="col"`, `aria-sort`), keyboard activation via `useKeyboardClick`, decorative icon `aria-hidden="true"`, and a single `<main id="main-content">` skip-link target.
 - Keep dialogs and destructive flows gated through `ConfirmDestructiveModal` and consistent status states (`403`/`404`).
+- Use unified full-page `<LoadingSpinner />` (`apps/web/src/components/shared/loading-spinner.tsx`) with `common.loading` (`"Đang tải dữ liệu..."` / `"Loading..."`) for workspace loading states; do not add ad-hoc `animate-pulse` skeletons, extra padding wrappers (`p-12`/`p-24`/`py-12`), or `fullScreen` props on `<Suspense>` fallbacks inside `(workspace)`.
 - Respect user and organization localization (`vi` / `en`) and RTL/truncation resilience across narrow and wide viewports (`375px`, `1366px`, `1536px`, `1920px`).

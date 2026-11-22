@@ -84,6 +84,26 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-04 [F16]: Dashboard layout and navigation persist across routes", async ({
     adminPage,
   }) => {
+    const consoleIssues: string[] = [];
+    adminPage.on("console", (msg) => {
+      if (msg.type() === "error" || msg.type() === "warning") {
+        consoleIssues.push(msg.text());
+      }
+    });
+
+    // Visit landing page as an authenticated user (triggers LocalizationProvider + LandingAtsPreview)
+    await adminPage.goto("/", { waitUntil: "networkidle" });
+    await expect(
+      adminPage.locator('#demo [data-testid^="candidate-card-"]').first(),
+    ).toBeVisible({ timeout: 10000 });
+
+    const hydrationOrScriptIssues = consoleIssues.filter(
+      (text) =>
+        text.toLowerCase().includes("hydration") ||
+        text.includes("Encountered a script tag"),
+    );
+    expect(hydrationOrScriptIssues).toHaveLength(0);
+
     await adminPage.goto("/dashboard");
     const header = adminPage.locator("header, nav").first();
     await expect(header).toBeVisible({ timeout: 10000 });

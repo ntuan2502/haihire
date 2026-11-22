@@ -37,7 +37,7 @@ export function ApplicationsTableRow({
   canEdit,
 }: ApplicationsTableRowProps) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const canDeleteApplication = useHasPermission("application:delete");
   const stageInfo = getStageInfo(application.stage);
   const displayName = getCandidateDisplayName(application);
@@ -112,7 +112,9 @@ export function ApplicationsTableRow({
       {/* Applied */}
       {visibleColumns.applied && (
         <td className="py-4 px-5 text-muted-foreground">
-          {formatRelativeTime(application.createdAt)}
+          {formatRelativeTime(application.createdAt, {
+            defaultLanguage: locale,
+          })}
         </td>
       )}
 

@@ -22,7 +22,7 @@ export function DashboardRecentApplications({
   jobs,
   totalCount,
 }: DashboardRecentApplicationsProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const badgeCount = totalCount ?? applications.length;
 
   return (
@@ -93,7 +93,9 @@ export function DashboardRecentApplications({
 
                 {/* Timestamp */}
                 <span className="text-[10px] text-muted-foreground shrink-0">
-                  {formatRelativeTime(app.createdAt)}
+                  {formatRelativeTime(app.createdAt, {
+                    defaultLanguage: locale,
+                  })}
                 </span>
               </Link>
             );

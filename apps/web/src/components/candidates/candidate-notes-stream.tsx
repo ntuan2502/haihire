@@ -55,7 +55,7 @@ export function CandidateNotesStream({
   maxHeight,
   placeholder,
 }: CandidateNotesStreamProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const canCreateNote = useHasPermission("candidate:update");
 
@@ -339,7 +339,9 @@ export function CandidateNotesStream({
                       </span>
                     )}
                     <span title={formatDate(note.createdAt)}>
-                      {formatRelativeTime(note.createdAt)}
+                      {formatRelativeTime(note.createdAt, {
+                        defaultLanguage: locale,
+                      })}
                     </span>
 
                     {/* Quick action buttons on hover */}

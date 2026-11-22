@@ -15,6 +15,7 @@ import type { Application } from "@/types";
 import { formatDate, getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
 
 interface PipelineCandidateDetailHeaderProps {
   selectedCandidate: Application;
@@ -33,21 +34,23 @@ export function PipelineCandidateDetailHeader({
   onNextCandidate,
   onDeleteApplication,
 }: PipelineCandidateDetailHeaderProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { localization } = useLocalization();
   const canDeleteApplication = useHasPermission("application:delete");
+  const displayName = getCandidateDisplayName(selectedCandidate, localization);
 
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3.5">
           <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground font-semibold text-base flex items-center justify-center shadow-xs shrink-0">
-            {getInitials(getCandidateDisplayName(selectedCandidate))}
+            {getInitials(displayName)}
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-semibold text-foreground">
-                {getCandidateDisplayName(selectedCandidate)}
+                {displayName}
               </h2>
               <StageBadge stage={selectedCandidate.stage} />
             </div>
@@ -78,7 +81,10 @@ export function PipelineCandidateDetailHeader({
                 <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>
                   {t("applications.applied")}{" "}
-                  {formatDate(selectedCandidate.createdAt)}
+                  {formatDate(selectedCandidate.createdAt, "numeric", {
+                    ...localization,
+                    defaultLanguage: locale,
+                  })}
                 </span>
               </span>
             </div>

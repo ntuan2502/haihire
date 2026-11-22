@@ -16,7 +16,7 @@ interface LinkAttributedTableProps {
 }
 
 export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
@@ -71,7 +71,9 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
               {items.map((item) => {
                 const displayName = getCandidateDisplayName(item);
                 const initials = getInitials(displayName);
-                const appliedTime = formatRelativeTime(item.appliedAt);
+                const appliedTime = formatRelativeTime(item.appliedAt, {
+                  defaultLanguage: locale,
+                });
 
                 return (
                   <tr

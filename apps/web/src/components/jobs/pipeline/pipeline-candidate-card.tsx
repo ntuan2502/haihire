@@ -8,6 +8,7 @@ import {
   getCandidateDisplayName,
 } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
 import { getStageLabel } from "@/lib/stages";
 import { useKeyboardClick } from "@/hooks/use-keyboard-click";
 import type { Application } from "@/types";
@@ -25,8 +26,9 @@ export function PipelineCandidateCard({
   onSelect,
   canDrag = true,
 }: PipelineCandidateCardProps) {
-  const { t } = useI18n();
-  const displayName = getCandidateDisplayName(candidate);
+  const { t, locale } = useI18n();
+  const { localization } = useLocalization();
+  const displayName = getCandidateDisplayName(candidate, localization);
   const initials = getInitials(displayName);
   const matchScore = (candidate as unknown as { matchScore?: number })
     .matchScore;
@@ -94,7 +96,12 @@ export function PipelineCandidateCard({
         </p>
 
         <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
-          <span>{formatRelativeTime(candidate.createdAt)}</span>
+          <span suppressHydrationWarning>
+            {formatRelativeTime(candidate.createdAt, {
+              ...localization,
+              defaultLanguage: locale,
+            })}
+          </span>
           {candidate.applicationNotes &&
             candidate.applicationNotes.length > 0 && (
               <>

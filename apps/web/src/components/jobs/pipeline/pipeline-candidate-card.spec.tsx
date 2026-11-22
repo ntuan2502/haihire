@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { PipelineCandidateCard } from "./pipeline-candidate-card";
+import { resetActiveLocalization } from "@/lib/utils";
 import type { Application } from "@/types";
+
+let mockLocale: "en" | "vi" = "en";
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
+    locale: mockLocale,
     t: (key: string, params?: Record<string, string | number>) => {
       const dict: Record<string, string> = {
         "pipeline.viewCandidateLabel": "View candidate {name}, stage {stage}",
@@ -21,6 +25,10 @@ vi.mock("@/i18n", () => ({
 }));
 
 describe("PipelineCandidateCard Component", () => {
+  beforeEach(() => {
+    mockLocale = "en";
+    resetActiveLocalization();
+  });
   const mockCandidate: Application = {
     id: "app-101",
     candidateId: "cand-1",
@@ -197,5 +205,34 @@ describe("PipelineCandidateCard Component", () => {
       fireEvent.keyDown(card, { key: "ArrowDown" });
       expect(handleSelect).toHaveBeenCalledTimes(2);
     }
+  });
+
+  it("formats relative time deterministically using useI18n locale even when runtime localization is unset (SSR parity)", () => {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    const candidateAged = {
+      ...mockCandidate,
+      createdAt: fiveDaysAgo.toISOString(),
+    };
+
+    resetActiveLocalization();
+    mockLocale = "vi";
+    const { rerender } = render(
+      <PipelineCandidateCard
+        candidate={candidateAged}
+        isSelected={false}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("5 ngày trước")).toBeInTheDocument();
+
+    mockLocale = "en";
+    rerender(
+      <PipelineCandidateCard
+        candidate={candidateAged}
+        isSelected={false}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("5d ago")).toBeInTheDocument();
   });
 });

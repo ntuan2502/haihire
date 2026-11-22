@@ -55,7 +55,7 @@ export function ApplicationNotesStream({
   maxHeight,
   placeholder,
 }: ApplicationNotesStreamProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const canCreateNote = useHasPermission("application:update");
 
@@ -324,7 +324,10 @@ export function ApplicationNotesStream({
                           className="text-[10px] text-muted-foreground cursor-default"
                           title={formatDate(note.createdAt, "standard")}
                         >
-                          • {formatRelativeTime(note.createdAt)}
+                          •{" "}
+                          {formatRelativeTime(note.createdAt, {
+                            defaultLanguage: locale,
+                          })}
                         </span>
 
                         {note.isEdited && (

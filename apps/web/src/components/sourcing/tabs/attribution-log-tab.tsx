@@ -32,7 +32,7 @@ export function AttributionLogTab({
   onPageChange,
   onPageSizeChange,
 }: AttributionLogTabProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const logs = data?.data ?? [];
   const total = data?.total ?? 0;
@@ -141,7 +141,9 @@ export function AttributionLogTab({
 
                       {/* Applied */}
                       <td className="py-3.5 px-5 text-right text-muted-foreground font-mono text-[11px]">
-                        {formatRelativeTime(log.appliedAt)}
+                        {formatRelativeTime(log.appliedAt, {
+                          defaultLanguage: locale,
+                        })}
                       </td>
                     </tr>
                   );

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import Script from "next/script";
 import { Geist } from "next/font/google";
 import {
   ThemeProvider,
@@ -255,11 +254,6 @@ export default async function RootLayout({
         initialResolvedTheme ? { colorScheme: initialResolvedTheme } : undefined
       }
     >
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`try{var d=document.documentElement,t=localStorage.getItem('theme'),mode=(t==='light'||t==='dark'||t==='system')?t:'system',isDark=mode==='dark'||(mode==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches),resolved=isDark?'dark':'light';if(isDark){d.classList.add('dark');d.classList.remove('light');}else{d.classList.remove('dark');d.classList.add('light');}d.style.colorScheme=resolved;try{document.cookie='${THEME_COOKIE_KEY}='+mode+'; path=/; max-age=31536000; SameSite=Lax';document.cookie='${RESOLVED_THEME_COOKIE_KEY}='+resolved+'; path=/; max-age=31536000; SameSite=Lax';}catch(_){}}catch(_){}`}
-        </Script>
-      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans transition-colors duration-200">
         <a
           href="#main-content"

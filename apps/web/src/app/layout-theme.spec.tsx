@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ReactNode } from "react";
+import { createElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const { mockCookiesGet, mockHeadersGet } = vi.hoisted(() => ({
-  mockCookiesGet: vi.fn(),
-  mockHeadersGet: vi.fn(),
-}));
+const { mockCookiesGet, mockHeadersGet, serverInsertedCallbacks } = vi.hoisted(
+  () => ({
+    mockCookiesGet: vi.fn(),
+    mockHeadersGet: vi.fn(),
+    serverInsertedCallbacks: [] as Array<() => ReactNode>,
+  }),
+);
 
-const capturedScripts: Array<{ id?: string; body: string }> = [];
 const capturedThemeProviderProps: Array<Record<string, unknown>> = [];
 
 vi.mock("next/headers", () => ({
@@ -19,18 +21,14 @@ vi.mock("next/headers", () => ({
   }),
 }));
 
-vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "--font-geist-sans" }),
+vi.mock("next/navigation", () => ({
+  useServerInsertedHTML: (cb: () => ReactNode) => {
+    serverInsertedCallbacks.push(cb);
+  },
 }));
 
-vi.mock("next/script", () => ({
-  default: ({ id, children }: { id?: string; children?: ReactNode }) => {
-    capturedScripts.push({
-      id,
-      body: typeof children === "string" ? children : String(children ?? ""),
-    });
-    return null;
-  },
+vi.mock("next/font/google", () => ({
+  Geist: () => ({ variable: "--font-geist-sans" }),
 }));
 
 vi.mock("./globals.css", () => ({}));
@@ -74,7 +72,7 @@ function mockMatchMedia(isDark: boolean) {
 
 describe("RootLayout theme and locale initialization", () => {
   beforeEach(() => {
-    capturedScripts.length = 0;
+    serverInsertedCallbacks.length = 0;
     capturedThemeProviderProps.length = 0;
     mockCookiesGet.mockReset().mockReturnValue(undefined);
     mockHeadersGet.mockReset().mockReturnValue(null);
@@ -85,10 +83,11 @@ describe("RootLayout theme and locale initialization", () => {
     document.documentElement.style.colorScheme = "";
   });
 
-  it("enables system theme tracking by default on ThemeProvider", async () => {
+  it("enables system theme tracking by default on ThemeProvider and renders no inline <script> in RootLayout", async () => {
     const element = await RootLayout({ children: <div>child</div> });
-    renderToStaticMarkup(element);
+    const html = renderToStaticMarkup(element);
 
+    expect(html).not.toContain("<script");
     expect(capturedThemeProviderProps).toHaveLength(1);
     expect(capturedThemeProviderProps[0]).toMatchObject({
       attribute: "class",
@@ -98,13 +97,44 @@ describe("RootLayout theme and locale initialization", () => {
     });
   });
 
-  it("theme-init pre-paint script resolves system theme according to OS dark/light and syncs cookies", async () => {
-    const element = await RootLayout({ children: <div>child</div> });
-    renderToStaticMarkup(element);
+  it("ThemeInitScript injects #theme-init via useServerInsertedHTML once and renders empty JSX", async () => {
+    const { ThemeInitScript, ThemeProvider, THEME_INIT_SCRIPT } =
+      await vi.importActual<
+        typeof import("@/components/providers/theme-provider")
+      >("@/components/providers/theme-provider");
 
-    const initScript = capturedScripts.find((s) => s.id === "theme-init");
-    expect(initScript).toBeDefined();
-    const runInitScript = () => new Function(initScript!.body)();
+    const rendered = renderToStaticMarkup(createElement(ThemeInitScript));
+    expect(rendered).toBe("");
+    expect(serverInsertedCallbacks).toHaveLength(1);
+
+    const insertedNode = serverInsertedCallbacks[0]() as ReactElement<{
+      id?: string;
+      dangerouslySetInnerHTML?: { __html: string };
+    }> | null;
+    expect(insertedNode).not.toBeNull();
+    expect(insertedNode?.type).toBe("script");
+    expect(insertedNode?.props.id).toBe("theme-init");
+    expect(insertedNode?.props.dangerouslySetInnerHTML?.__html).toBe(
+      THEME_INIT_SCRIPT,
+    );
+
+    // Repeating callback within same render ref is idempotent
+    expect(serverInsertedCallbacks[0]()).toBeNull();
+
+    // ThemeProvider marks next-themes script block as text/plain so React 19 never warns
+    mockMatchMedia(false);
+    const providerHtml = renderToStaticMarkup(
+      createElement(ThemeProvider, null, createElement("span", null, "ok")),
+    );
+    expect(providerHtml).toContain('type="text/plain"');
+  });
+
+  it("theme-init pre-paint script resolves system theme according to OS dark/light and syncs cookies", async () => {
+    const { THEME_INIT_SCRIPT } = await vi.importActual<
+      typeof import("@/components/providers/theme-provider")
+    >("@/components/providers/theme-provider");
+
+    const runInitScript = () => new Function(THEME_INIT_SCRIPT)();
 
     // Stored "system" + OS dark -> dark
     localStorage.setItem("theme", "system");

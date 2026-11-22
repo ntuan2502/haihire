@@ -12,7 +12,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { usePermissionState } from "@/hooks/use-has-permission";
-import { useCreateCandidateMutation } from "@/hooks/use-queries";
+import {
+  useCreateCandidateMutation,
+  useDebouncedCandidateDuplicateCheck,
+} from "@/hooks/use-queries";
+import { CandidateDuplicateAlert } from "@/components/candidates/candidate-duplicate-alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -66,6 +70,14 @@ function AddCandidatePageContent() {
   // Status & Validation
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: duplicateCheck } = useDebouncedCandidateDuplicateCheck({
+    email,
+    phone,
+    firstName,
+    lastName,
+    dateOfBirth,
+  });
 
   // Handle Drag & Drop
   const handleDragOver = (e: DragEvent) => {
@@ -411,6 +423,8 @@ function AddCandidatePageContent() {
           </div>
         </div>
 
+        <CandidateDuplicateAlert result={duplicateCheck} mode="form" />
+
         {/* Error Message Display */}
         {errorMsg && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium">
@@ -422,7 +436,9 @@ function AddCandidatePageContent() {
         <div className="flex items-center gap-3 pt-2">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting || Boolean(duplicateCheck?.hasBlockingDuplicate)
+            }
             className="px-5 font-semibold text-xs cursor-pointer"
           >
             {isSubmitting ? t("common.saving") : t("candidates.addCandidate")}

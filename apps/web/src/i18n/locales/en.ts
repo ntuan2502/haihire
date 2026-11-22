@@ -1064,6 +1064,21 @@ export const en: TranslationSchema = {
     candidateNotFound:
       "The candidate you are trying to edit does not exist or has been removed.",
     notesTitle: "Candidate Notes",
+    duplicate: {
+      blockingTitle: "Email already exists in this organization",
+      blockingDesc:
+        "Each candidate within an organization must have a unique email address. Please review the existing profile below before proceeding.",
+      warningTitle: "Similar candidate profile detected",
+      warningDesc:
+        "These details match an existing candidate profile. Please review before saving if you do not intend to create a duplicate.",
+      detailWarningTitle: "Potential duplicate profile detected",
+      detailWarningDesc:
+        "This candidate shares matching details with another profile in your organization (for example, multiple applications using different emails).",
+      reasonEmail: "Same email",
+      reasonPhone: "Same phone",
+      reasonNameDob: "Same name & DOB",
+      viewProfile: "View profile",
+    },
   },
   applications: {
     title: "Applications",

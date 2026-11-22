@@ -7,8 +7,10 @@ import { useAuth } from "@/context/auth-context";
 import { usePermissionState } from "@/hooks/use-has-permission";
 import {
   useCandidate,
+  useDebouncedCandidateDuplicateCheck,
   useUpdateCandidateDetailsMutation,
 } from "@/hooks/use-queries";
+import { CandidateDuplicateAlert } from "@/components/candidates/candidate-duplicate-alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -61,6 +63,16 @@ function EditCandidatePageContent() {
   // Status & Validation
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: duplicateCheck } = useDebouncedCandidateDuplicateCheck({
+    email,
+    phone,
+    firstName,
+    lastName,
+    dateOfBirth,
+    excludeId: candidate?.id,
+    enabled: isInitialized && Boolean(candidate?.id),
+  });
 
   // Pre-fill form when candidate data is loaded
   useEffect(() => {
@@ -333,11 +345,15 @@ function EditCandidatePageContent() {
           </div>
         </div>
 
+        <CandidateDuplicateAlert result={duplicateCheck} mode="form" />
+
         {/* Form Actions */}
         <div className="flex items-center gap-3 pt-3">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting || Boolean(duplicateCheck?.hasBlockingDuplicate)
+            }
             className="font-semibold h-10 px-5 text-xs cursor-pointer gap-2"
           >
             {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

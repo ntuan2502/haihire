@@ -947,6 +947,18 @@ export interface TranslationSchema {
     invalidCandidateId: string;
     candidateNotFound: string;
     notesTitle: string;
+    duplicate: {
+      blockingTitle: string;
+      blockingDesc: string;
+      warningTitle: string;
+      warningDesc: string;
+      detailWarningTitle: string;
+      detailWarningDesc: string;
+      reasonEmail: string;
+      reasonPhone: string;
+      reasonNameDob: string;
+      viewProfile: string;
+    };
   };
   applications: {
     title: string;

@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { Readable } from "node:stream";
+import { APP_ERROR_CODES, normalizeCandidatePhone } from "@haihire/shared";
 import { CandidatesService } from "./candidates.service";
 import {
   CandidatesCrudService,
@@ -750,6 +751,148 @@ describe("CandidatesService (Characterization Tests)", () => {
       const list = await service.findAll("org-1", { page: 1, limit: 10 });
       const cand1 = list.data.find((c: { id: string }) => c.id === "cand-1");
       expect(cand1?.applicationsCount).toBe(1);
+    });
+  });
+
+  describe("Duplicate detection & conflict handling", () => {
+    it("normalizes Vietnamese and international phone formats consistently", () => {
+      expect(normalizeCandidatePhone("+84 901-234-567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("84901234567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("0901 234 567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("+1 (555) 123-4567")).toBe("15551234567");
+      expect(normalizeCandidatePhone("12345")).toBeNull();
+      expect(normalizeCandidatePhone("")).toBeNull();
+      expect(normalizeCandidatePhone(null)).toBeNull();
+    });
+
+    it("includes { email } params in CANDIDATE_EMAIL_EXISTS exception on create and update", async () => {
+      let createErr: unknown;
+      try {
+        await service.create(
+          {
+            organizationId: "org-1",
+            firstName: "Another",
+            lastName: "Person",
+            email: "  NguyenVanA@Example.com ",
+          },
+          undefined,
+          "org-1",
+        );
+      } catch (err) {
+        createErr = err;
+      }
+      expect(createErr).toBeInstanceOf(AppConflictException);
+      expect((createErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((createErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      let updatePrecheckErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "nguyenvana@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updatePrecheckErr = err;
+      }
+      expect(updatePrecheckErr).toBeInstanceOf(AppConflictException);
+      expect((updatePrecheckErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      vi.spyOn(mockPrisma.candidate, "update").mockRejectedValueOnce({
+        code: "P2002",
+      });
+      let updateRaceErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "race-condition@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updateRaceErr = err;
+      }
+      expect(updateRaceErr).toBeInstanceOf(AppConflictException);
+      expect((updateRaceErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((updateRaceErr as AppConflictException).params).toEqual({
+        email: "race-condition@example.com",
+      });
+    });
+
+    it("detects BLOCKING email matches and WARNING phone / name+DOB matches within tenant", async () => {
+      const cand1Dob = (candidateTable.store[0].dateOfBirth as Date)
+        .toISOString()
+        .slice(0, 10);
+
+      const emailAndPhoneResult = await service.checkDuplicates(
+        {
+          email: "NGUYENVANA@EXAMPLE.COM",
+          phone: "+84 912-345-678",
+        },
+        "org-1",
+      );
+      expect(emailAndPhoneResult.hasBlockingDuplicate).toBe(true);
+      expect(emailAndPhoneResult.hasWarningDuplicate).toBe(true);
+      expect(emailAndPhoneResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        severity: "BLOCKING",
+        matchReasons: ["EMAIL"],
+      });
+      expect(emailAndPhoneResult.matches[1]).toMatchObject({
+        id: "cand-2",
+        severity: "WARNING",
+        matchReasons: ["PHONE"],
+      });
+
+      const nameDobResult = await service.checkDuplicates(
+        {
+          firstName: " a ",
+          lastName: " nguyen   van ",
+          dateOfBirth: cand1Dob,
+        },
+        "org-1",
+      );
+      expect(nameDobResult.hasBlockingDuplicate).toBe(false);
+      expect(nameDobResult.hasWarningDuplicate).toBe(true);
+      expect(nameDobResult.matches).toHaveLength(1);
+      expect(nameDobResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        matchReasons: ["NAME_DOB"],
+        severity: "WARNING",
+      });
+
+      const excludedResult = await service.checkDuplicates(
+        {
+          email: "nguyenvana@example.com",
+          phone: "0901234567",
+          excludeId: "cand-1",
+        },
+        "org-1",
+      );
+      expect(excludedResult.matches).toEqual([]);
+
+      const deletedAndOtherTenant = await service.checkDuplicates(
+        {
+          email: "levanc@example.com",
+        },
+        "org-1",
+      );
+      expect(deletedAndOtherTenant.matches).toEqual([]);
+
+      const otherTenantEmail = await service.checkDuplicates(
+        {
+          email: "phamvand@example.com",
+        },
+        "org-1",
+      );
+      expect(otherTenantEmail.matches).toEqual([]);
     });
   });
 });

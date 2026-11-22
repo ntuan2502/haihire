@@ -8,9 +8,12 @@ import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
+  useCandidateDuplicateCheck,
   useDeleteCandidateMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
+import { normalizeDateForInput } from "@/lib/utils";
+import { CandidateDuplicateAlert } from "@/components/candidates/candidate-duplicate-alert";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application } from "@/types";
 
@@ -30,6 +33,16 @@ export function CandidateDetailView() {
   const canViewCandidates = useHasPermission("candidate:view");
 
   const state = useCandidateDetailState();
+  const { data: duplicateCheck } = useCandidateDuplicateCheck({
+    phone: state.candidate?.phone || undefined,
+    firstName: state.candidate?.firstName || undefined,
+    lastName: state.candidate?.lastName || undefined,
+    dateOfBirth: state.candidate?.dateOfBirth
+      ? normalizeDateForInput(state.candidate.dateOfBirth)
+      : undefined,
+    excludeId: state.candidate?.id,
+    enabled: Boolean(state.candidate?.id),
+  });
   const docActions = useCandidateDocumentActions({
     candidate: state.candidate,
     documentFilter: state.documentFilter,
@@ -139,6 +152,8 @@ export function CandidateDetailView() {
         onOpenSendEmail={() => setIsSendEmailOpen(true)}
         onOpenDeleteModal={() => setIsDeleteModalOpen(true)}
       />
+
+      <CandidateDuplicateAlert result={duplicateCheck} mode="detail" />
 
       <CandidateProfileCard
         candidateName={state.candidateName}

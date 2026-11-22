@@ -29,8 +29,10 @@ import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import {
+  checkCandidateDuplicateSchema,
   createCandidateSchema,
   updateCandidateSchema,
+  type CheckCandidateDuplicateSchema,
   type CreateCandidateSchema,
   type UpdateCandidateSchema,
 } from "@haihire/shared";
@@ -65,6 +67,20 @@ export class CandidatesController {
         limit: query?.limit,
         search: query?.search,
       },
+      req?.user?.organizationId,
+    );
+  }
+
+  @Get("check-duplicate")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  checkDuplicates(
+    @Query(DtoPipe(checkCandidateDuplicateSchema))
+    query: CheckCandidateDuplicateSchema,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.checkDuplicates(
+      query,
       req?.user?.organizationId,
     );
   }

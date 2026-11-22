@@ -1067,6 +1067,21 @@ export const vi: TranslationSchema = {
       "Mã định danh ứng viên không hợp lệ. Cần một mã UUID hợp lệ.",
     candidateNotFound: "Ứng viên bạn đang tìm không tồn tại hoặc đã bị xóa.",
     notesTitle: "Ghi chú ứng viên",
+    duplicate: {
+      blockingTitle: "Email đã tồn tại trong tổ chức",
+      blockingDesc:
+        "Mỗi ứng viên trong tổ chức cần có địa chỉ email duy nhất. Vui lòng kiểm tra hồ sơ bên dưới trước khi tiếp tục.",
+      warningTitle: "Phát hiện hồ sơ ứng viên tương tự",
+      warningDesc:
+        "Thông tin này trùng khớp với hồ sơ đang có. Vui lòng kiểm tra trước khi lưu nếu không muốn tạo trùng.",
+      detailWarningTitle: "Phát hiện hồ sơ nghi trùng",
+      detailWarningDesc:
+        "Hồ sơ này có thông tin trùng khớp với ứng viên khác trong tổ chức (có thể do ứng viên nộp nhiều lần bằng email khác nhau).",
+      reasonEmail: "Trùng email",
+      reasonPhone: "Trùng SĐT",
+      reasonNameDob: "Trùng họ tên & ngày sinh",
+      viewProfile: "Xem hồ sơ",
+    },
   },
   applications: {
     title: "Hồ sơ ứng tuyển",

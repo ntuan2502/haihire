@@ -305,6 +305,7 @@ export class ApplicationsSagaService {
               firstName: true,
               lastName: true,
               displayName: true,
+              phone: true,
             },
           });
 
@@ -314,6 +315,19 @@ export class ApplicationsSagaService {
               existingCandidate,
               nameOrder,
             );
+            if (!existingCandidate.phone && candidatePhone) {
+              await tx.candidate.updateMany({
+                where: {
+                  id: existingCandidate.id,
+                  organizationId: orgId,
+                  deletedAt: null,
+                },
+                data: {
+                  phone: candidatePhone,
+                  updatedAt: toInstant(),
+                },
+              });
+            }
           } else {
             const newCandidate = await tx.candidate.create({
               data: {

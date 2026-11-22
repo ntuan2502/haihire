@@ -139,6 +139,10 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       data: id === VALID_CANDIDATE_ID ? currentCandidate : null,
       isLoading: false,
     }),
+    useCandidateDuplicateCheck: () => ({
+      data: undefined,
+      isLoading: false,
+    }),
     useCandidateActivities: () => ({
       data: { data: [] },
       isLoading: false,

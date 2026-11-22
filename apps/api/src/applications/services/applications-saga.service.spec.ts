@@ -706,5 +706,33 @@ describe("ApplicationsSagaService", () => {
         ),
       ).rejects.toBeInstanceOf(AppConflictException);
     });
+
+    it("backfills empty candidate phone on returning apply without overwriting an existing non-empty phone", async () => {
+      candidateTable.store[0].phone = null;
+      await service.create({
+        jobId: "job-1",
+        firstName: "Existing",
+        lastName: "Candidate",
+        candidateEmail: "existing@example.com",
+        candidatePhone: "0909888777",
+      });
+      expect(candidateTable.store[0].phone).toBe("0909888777");
+
+      // Second job with a different phone submitted must preserve the existing non-empty phone
+      await jobTable.create({
+        id: "job-2",
+        title: "Staff Frontend Engineer",
+        status: "PUBLISHED",
+        organizationId: "org-1",
+      });
+      await service.create({
+        jobId: "job-2",
+        firstName: "Existing",
+        lastName: "Candidate",
+        candidateEmail: "existing@example.com",
+        candidatePhone: "0911222333",
+      });
+      expect(candidateTable.store[0].phone).toBe("0909888777");
+    });
   });
 });

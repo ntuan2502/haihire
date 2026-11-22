@@ -878,5 +878,25 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         }),
       );
     });
+
+    it("executes joinByToken and join inside withSystemRlsBypass so multi-org users can accept cross-org invites", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+      const withSystemRlsBypass = vi.fn(
+        async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrismaService),
+      );
+      (
+        mockPrismaService as { withSystemRlsBypass?: unknown }
+      ).withSystemRlsBypass = withSystemRlsBypass;
+
+      const joined = await service.joinByToken("usr-1", link.token);
+      expect(joined.success).toBe(true);
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(1);
+
+      const secondLink = await service.createInviteLink("usr-2", {
+        role: "RECRUITER",
+      });
+      await service.join("usr-3", { inviteCodeOrSlug: secondLink.token });
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -71,7 +71,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     // 2. UI Verification: member visits job pipeline; candidate real emails are not leaked in DOM
     await memberPage.goto(`/jobs/${seededJobId}/pipeline`);
     const pipelineContainer = memberPage
-      .locator("main, [data-testid^='stage-pill-']")
+      .locator("[data-testid^='stage-pill-'], [data-testid^='candidate-card-']")
       .first();
     await expect(pipelineContainer).toBeVisible({ timeout: 10000 });
 
@@ -123,8 +123,11 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     await expect(darkOption).toBeVisible({ timeout: 5000 });
     await darkOption.click();
 
-    // Explicitly assert html element contains dark class
+    // Explicitly assert html element contains dark class and dropdown closed
     await expect(html).toHaveClass(/dark/, { timeout: 5000 });
+    await expect(adminPage.locator('[role="menu"]')).toBeHidden({
+      timeout: 5000,
+    });
 
     // 2. Switch back to Light Mode
     await themeTrigger.click();
@@ -162,7 +165,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
 
     const searchInput = adminPage
       .locator(
-        'input[type="search"], input[placeholder*="search" i], input[placeholder*="tìm kiếm" i]',
+        'input[type="search"], input[placeholder*="search" i], input[placeholder*="tìm" i]',
       )
       .first();
     await expect(searchInput).toBeVisible({ timeout: 8000 });
@@ -173,16 +176,12 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   }) => {
     await adminPage.goto("/dashboard");
     const userMenuTrigger = adminPage
-      .locator(
-        'button[aria-label="User profile"], button[aria-label="Hồ sơ người dùng"], [data-testid="user-menu-trigger"]',
-      )
+      .locator('[data-testid="user-menu-trigger"]')
       .first();
-    await expect(userMenuTrigger).toBeVisible({ timeout: 8000 });
+    await expect(userMenuTrigger).toBeVisible({ timeout: 10000 });
     await userMenuTrigger.click();
 
-    const menuContent = adminPage
-      .locator('[role="menu"], [role="listbox"]')
-      .first();
+    const menuContent = adminPage.locator('[role="menu"]').first();
     await expect(menuContent).toBeVisible({ timeout: 5000 });
     const menuText = await menuContent.textContent();
     expect(menuText).toContain("admin@tun.io.vn");

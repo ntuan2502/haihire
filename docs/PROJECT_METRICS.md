@@ -11,8 +11,8 @@ This inventory is generated from the Prisma schema, API controllers, AppModule, 
 | Project modules registered directly in AppModule |                     16 |
 | Backend controllers                              |                     13 |
 | API endpoints                                    | 119 (118 REST + 1 SSE) |
-| Playwright spec files                            |                     13 |
-| Playwright test declarations                     |                     67 |
+| Playwright spec files                            |                     14 |
+| Playwright test declarations                     |                     68 |
 | CI gates defined in check-all                    |                     18 |
 | Keys in the local environment template           |                     56 |
 | Pre-release dependency declarations              |                      0 |

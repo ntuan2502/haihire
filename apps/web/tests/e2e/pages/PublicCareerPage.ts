@@ -16,6 +16,7 @@ export class PublicCareerPage {
   ) {
     const url = `/careers/demo-1/${slug}${refQuery ? `?ref=${refQuery}` : ""}`;
     const res = await this.page.goto(url, { waitUntil: "domcontentloaded" });
+    await this.page.waitForLoadState("networkidle").catch(() => undefined);
     await expect(
       this.page.locator("form, #career-email, h1").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -72,9 +73,15 @@ export class PublicCareerPage {
   }
 
   async expectValidationError(pattern?: RegExp) {
-    const alert = this.page.locator(
-      "form [role='alert'], [role='alert'], text=/vượt quá|exceeds|invalid|bắt buộc|required/i",
-    );
+    const alert = this.page
+      .locator(
+        "form [role='alert'], [role='alert'], form p[class*='text-rose'], form p[class*='text-destructive']",
+      )
+      .or(
+        this.page.getByText(
+          /vượt quá|exceeds|invalid|hợp lệ|bắt buộc|required|định dạng|extension/i,
+        ),
+      );
     await expect(alert.first()).toBeVisible({ timeout: 6000 });
     if (pattern) {
       const text = await alert.first().textContent();

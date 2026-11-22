@@ -82,24 +82,27 @@ test.describe("Theme Toggle E2E Flow", () => {
     await expect(toggleButton).toBeVisible({ timeout: 5000 });
     await toggleButton.click();
 
-    await page
+    const lightItem = page
       .locator(
         "[role='menuitem']:has-text('Light'), [role='menuitem']:has-text('Sáng')",
       )
-      .first()
-      .click();
+      .first();
+    await expect(lightItem).toBeVisible({ timeout: 5000 });
+    await lightItem.click();
+    await expect(page.locator("[role='menu']")).toBeHidden({ timeout: 5000 });
     await expect(page.locator("html")).not.toHaveClass(/dark/, {
       timeout: 5000,
     });
 
     // Select System option while OS colorScheme is dark
     await toggleButton.click();
-    await page
+    const systemItem = page
       .locator(
         "[role='menuitem']:has-text('System'), [role='menuitem']:has-text('Hệ thống')",
       )
-      .first()
-      .click();
+      .first();
+    await expect(systemItem).toBeVisible({ timeout: 5000 });
+    await systemItem.click();
 
     await expect(page.locator("html")).toHaveClass(/dark/, { timeout: 5000 });
 

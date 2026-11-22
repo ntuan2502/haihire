@@ -616,8 +616,19 @@ export class OrganizationsInvitesService {
     };
   }
 
+  private runCrossOrgInviteTx<T>(
+    fn: (tx: PrismaService) => Promise<T>,
+  ): Promise<T> {
+    // Accepting an invite token is inherently cross-tenant when the caller
+    // already belongs to another organization, so bypass tenant RLS for the token lookup/join tx.
+    if (typeof this.prisma.withSystemRlsBypass === "function") {
+      return this.prisma.withSystemRlsBypass(fn);
+    }
+    return runInTransaction(this.prisma, fn);
+  }
+
   async joinByToken(userId: string, token: string) {
-    const result = await runInTransaction(this.prisma, async (tx) => {
+    const result = await this.runCrossOrgInviteTx(async (tx) => {
       const link = await tx.inviteLink.findFirst({
         where: { token },
         select: {
@@ -816,7 +827,7 @@ export class OrganizationsInvitesService {
     }
 
     let joinedNewMember = false;
-    const result = await runInTransaction(this.prisma, async (tx) => {
+    const result = await this.runCrossOrgInviteTx(async (tx) => {
       const inviteLink = await tx.inviteLink.findFirst({
         where: { token: rawInput },
         select: {

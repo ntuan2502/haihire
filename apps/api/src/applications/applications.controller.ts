@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Optional,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -37,20 +38,57 @@ import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { AppBadRequestException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, hasPermission, Role } from "@haihire/shared";
+import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("applications")
 export class ApplicationsController {
   constructor(
     @Inject(ApplicationsService)
     private readonly applicationsService: ApplicationsService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {}
+
+  private async resolveCandidateAccess(
+    req?: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+    fallbackOrgId?: string,
+  ): Promise<boolean> {
+    const user = req?.user;
+    if (!user) return false;
+    if (user.isOwner) return true;
+    const tenantOrgId = user.organizationId || fallbackOrgId;
+    if (this.permissionResolver && tenantOrgId) {
+      return this.permissionResolver.resolvePermission(
+        tenantOrgId,
+        user.role as Role,
+        "candidate:view",
+      );
+    }
+    return hasPermission(user.role || "", "candidate:view");
+  }
 
   @Get()
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
   @RequirePermission("application:view")
-  findAll(
-    @Request() req: { user?: { id?: string; organizationId?: string | null } },
+  async findAll(
+    @Request()
+    req: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
     @Query("organizationId") organizationId?: string,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -60,6 +98,10 @@ export class ApplicationsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
+    const fullCandidateAccess = await this.resolveCandidateAccess(
+      req,
+      organizationId,
+    );
     return this.applicationsService.findAll(
       organizationId,
       {
@@ -70,6 +112,7 @@ export class ApplicationsController {
         stage,
       },
       req?.user?.organizationId,
+      fullCandidateAccess,
     );
   }
 
@@ -89,14 +132,23 @@ export class ApplicationsController {
   @Get("job/:jobId")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
-  findByJob(
+  async findByJob(
     @Param("jobId", new ParseUUIDPipe()) jobId: string,
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
-    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
   ) {
     const parsedLimit = limit ? Number.parseInt(limit, 10) : undefined;
     const parsedOffset = offset ? Number.parseInt(offset, 10) : undefined;
+    const fullCandidateAccess = await this.resolveCandidateAccess(req);
     return this.applicationsService.findByJob(
       jobId,
       req?.user?.organizationId || undefined,
@@ -104,17 +156,31 @@ export class ApplicationsController {
         limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
         offset: Number.isFinite(parsedOffset) ? parsedOffset : undefined,
       },
+      fullCandidateAccess,
     );
   }
 
   @Get(":id")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
-  findOne(
+  async findOne(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
   ) {
-    return this.applicationsService.findOne(id, req?.user?.organizationId);
+    const fullCandidateAccess = await this.resolveCandidateAccess(req);
+    return this.applicationsService.findOne(
+      id,
+      req?.user?.organizationId,
+      fullCandidateAccess,
+    );
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })

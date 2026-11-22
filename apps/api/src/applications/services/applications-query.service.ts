@@ -32,6 +32,57 @@ function createEmptyStageCounts(): Record<ApplicationStage, number> {
   );
 }
 
+/**
+ * Redacts personal identifying information and resume metadata when the caller
+ * lacks `candidate:view` permission.
+ */
+function maskCandidateRecord<T extends Record<string, unknown>>(
+  candidate: T,
+): T & { name: string } {
+  return {
+    ...candidate,
+    name: "[Masked]",
+    firstName: "[Masked]",
+    lastName: "[Masked]",
+    displayName: "[Masked]",
+    gender: null,
+    dateOfBirth: null,
+    email: "",
+    phone: null,
+    resumeUrl: null,
+    resumeFileName: null,
+    resumeFileSize: null,
+    resumeMimeType: null,
+    resumeFileId: null,
+  };
+}
+
+function maskApplicationFields<
+  TCandidate extends Record<string, unknown>,
+  TApp extends Record<string, unknown>,
+  TEmpty extends null | undefined,
+>(
+  app: TApp,
+  candidate: TCandidate | null | undefined,
+  emptyCandidateFallback: TEmpty,
+) {
+  return {
+    ...app,
+    candidate: candidate
+      ? maskCandidateRecord(candidate)
+      : emptyCandidateFallback,
+    candidateName: "[Masked]",
+    candidateEmail: "",
+    candidatePhone: null as string | null,
+    resumeUrl: "",
+    resumeFileName: "",
+    resumeFileSize: null as number | null,
+    resumeMimeType: null as string | null,
+    resumeFileId: null as string | null,
+    interviews: [] as Array<Record<string, unknown>>,
+  };
+}
+
 @Injectable()
 export class ApplicationsQueryService {
   constructor(
@@ -49,6 +100,7 @@ export class ApplicationsQueryService {
     jobId: string,
     organizationId?: string,
     options?: { limit?: number; offset?: number },
+    fullCandidateAccess = true,
   ) {
     const job = await this.prisma.job.findFirst({
       where: { id: jobId, deletedAt: null },
@@ -147,6 +199,17 @@ export class ApplicationsQueryService {
       });
     }
 
+    if (!fullCandidateAccess) {
+      return applications.map((app) => {
+        const candidate =
+          app.candidate ||
+          (candidateMap?.get(
+            app.candidateId,
+          ) as unknown as typeof app.candidate);
+        return maskApplicationFields(app, candidate, undefined);
+      });
+    }
+
     const nameOrder = await resolveOrgNameDisplayOrder(
       this.prisma,
       job.organizationId,
@@ -211,6 +274,7 @@ export class ApplicationsQueryService {
       stage?: string;
     },
     tenantOrgId?: string | null,
+    fullCandidateAccess = true,
   ) {
     if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
       throw new AppForbiddenException(
@@ -290,10 +354,13 @@ export class ApplicationsQueryService {
 
     if (options?.search && options.search.trim() !== "") {
       const q = foldVietnameseAccents(options.search);
-      const matchedCandidateIds = await findMatchingCandidateIds(this.prisma, {
-        organizationId: targetOrgId,
-        rawSearch: options.search,
-      });
+      // Do not oracle-match candidate PII when the caller lacks candidate:view
+      const matchedCandidateIds = fullCandidateAccess
+        ? await findMatchingCandidateIds(this.prisma, {
+            organizationId: targetOrgId,
+            rawSearch: options.search,
+          })
+        : [];
       const matchingJobIds = jobs
         .filter((j) => foldVietnameseAccents(j.title).includes(q))
         .map((j) => j.id);
@@ -344,7 +411,7 @@ export class ApplicationsQueryService {
 
     const appIds = pagedApps.map((a) => a.id);
     const allInterviews =
-      appIds.length > 0
+      fullCandidateAccess && appIds.length > 0
         ? await this.prisma.interview.findMany({
             where: { applicationId: { in: appIds } },
           })
@@ -354,6 +421,24 @@ export class ApplicationsQueryService {
       const list = interviewsByApp.get(intv.applicationId) || [];
       list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
+    }
+
+    if (!fullCandidateAccess) {
+      const data = pagedApps.map((app) => {
+        const candidate = candidateMap.get(app.candidateId);
+        const job = jobMap.get(app.jobId);
+        return {
+          ...maskApplicationFields(app, candidate, undefined),
+          job,
+        };
+      });
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
     }
 
     const nameOrder = await resolveOrgNameDisplayOrder(
@@ -478,7 +563,11 @@ export class ApplicationsQueryService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null) {
+  async findOne(
+    id: string,
+    tenantOrgId?: string | null,
+    fullCandidateAccess = true,
+  ) {
     const where: { id: string; organizationId?: string } = { id };
     if (tenantOrgId) {
       where.organizationId = tenantOrgId;
@@ -564,6 +653,13 @@ export class ApplicationsQueryService {
         `Application with ID ${id} not found`,
         { id },
       );
+    }
+
+    if (!fullCandidateAccess) {
+      return {
+        ...maskApplicationFields(app, candidate, null),
+        job: job || null,
+      };
     }
 
     const appInterviews = (

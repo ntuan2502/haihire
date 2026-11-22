@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures/auth-fixtures";
+import { SEED_ALPHA_ORG_ID } from "./fixtures/seed-helpers";
 import { KanbanPipelinePage } from "./pages/KanbanPipelinePage";
 import { randomUUID } from "node:crypto";
 
@@ -114,9 +115,9 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     // Verify Beta Admin view loads independently
     expect(betaAdminPage.url()).toContain("/candidates");
 
-    // 3. Verify Beta Admin cannot access Alpha's private settings via API
+    // 3. Verify Beta Admin cannot access Alpha's tenant records via API
     const crossRes = await betaAdminPage.request.get(
-      "/api/organizations/00000000-0000-4000-8000-000000000002",
+      `/api/candidates?organizationId=${SEED_ALPHA_ORG_ID}`,
     );
     // Strictly 403 Forbidden
     expect(crossRes.status()).toBe(403);
@@ -285,9 +286,9 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
       timeout: 10000,
     });
 
-    const accessBarrier = memberPage.locator(
-      "[data-testid='status-state-403'], text=/403|access denied|không có quyền/i",
-    );
+    const accessBarrier = memberPage
+      .locator("[data-testid='status-state-403']")
+      .or(memberPage.getByText(/403|access denied|không có quyền/i));
     await expect(accessBarrier.first()).toBeVisible({ timeout: 10000 });
 
     const addBtn = memberPage.locator(

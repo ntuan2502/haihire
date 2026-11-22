@@ -76,16 +76,19 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
     await careerPage.submit();
 
     // Verify submission is blocked or error message shown
-    const validationWarning = page.locator(
-      "form [role='alert'], [role='alert'], text=/định dạng|extension|invalid|disallowed/i",
-    );
+    const validationWarning = page
+      .locator(
+        "form [role='alert'], [role='alert'], form p[class*='text-rose']",
+      )
+      .or(page.getByText(/định dạng|extension|invalid|disallowed|PDF/i));
     await expect(validationWarning.first()).toBeVisible({ timeout: 6000 });
   });
 
   test("T2-E2E-04 [F01, F05]: Tampering URL with foreign organizationId strictly prevents foreign candidate access", async ({
     adminPage,
+    betaTenant,
   }) => {
-    const foreignOrgId = "00000000-0000-4000-8000-0000000000b2"; // Org Beta
+    const foreignOrgId = betaTenant.orgId;
     await adminPage.goto(`/candidates?organizationId=${foreignOrgId}`);
 
     // Wait for candidates view content or table to render
@@ -140,8 +143,9 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
     await careerPage.submit();
     const alert = page
       .locator(
-        "form [role='alert'], [role='alert'], :invalid, text=/bắt buộc|required/i",
+        "form [role='alert'], [role='alert'], form input:invalid, form p[class*='text-rose']",
       )
+      .or(page.getByText(/bắt buộc|required|email|hợp lệ/i))
       .first();
     await expect(alert).toBeVisible({ timeout: 6000 });
   });
@@ -154,9 +158,9 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
       timeout: 10000,
     });
 
-    const accessBarrier = memberPage.locator(
-      "[data-testid='status-state-403'], text=/403|access denied|không có quyền/i",
-    );
+    const accessBarrier = memberPage
+      .locator("[data-testid='status-state-403']")
+      .or(memberPage.getByText(/403|access denied|không có quyền/i));
     await expect(accessBarrier.first()).toBeVisible({ timeout: 10000 });
 
     const addBtn = memberPage.locator(

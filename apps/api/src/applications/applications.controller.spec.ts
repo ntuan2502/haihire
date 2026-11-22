@@ -13,6 +13,7 @@ import type { ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { PublicApplyDto } from "./dto/public-apply.dto";
+import type { PermissionResolverService } from "../auth/permission-resolver.service";
 
 describe("ApplicationsController", () => {
   let controller: ApplicationsController;
@@ -298,6 +299,109 @@ describe("ApplicationsController", () => {
       const stats = await controller.getStats(recruiterReq as never, "org-1");
       expect(mockService.getStats).toHaveBeenCalledWith("org-1", "org-1");
       expect(stats.totalApplications).toBe(150);
+    });
+  });
+
+  describe("Application Read Endpoints Candidate PII Masking (candidate:view)", () => {
+    it("passes fullCandidateAccess = false for Role.MEMBER and true for Role.RECRUITER on findAll, findByJob, and findOne", async () => {
+      mockService.findAll.mockResolvedValue({ data: [], total: 0 });
+      mockService.findByJob.mockResolvedValue([]);
+      mockService.findOne.mockResolvedValue({ id: "app-1" });
+
+      await controller.findAll(memberReq as never, "org-1", "1", "20");
+      expect(mockService.findAll).toHaveBeenCalledWith(
+        "org-1",
+        {
+          page: 1,
+          limit: 20,
+          search: undefined,
+          jobId: undefined,
+          stage: undefined,
+        },
+        "org-1",
+        false,
+      );
+
+      await controller.findByJob("job-1", "50", "0", memberReq as never);
+      expect(mockService.findByJob).toHaveBeenCalledWith(
+        "job-1",
+        "org-1",
+        { limit: 50, offset: 0 },
+        false,
+      );
+
+      await controller.findOne("app-1", memberReq as never);
+      expect(mockService.findOne).toHaveBeenCalledWith("app-1", "org-1", false);
+
+      await controller.findAll(recruiterReq as never, "org-1");
+      expect(mockService.findAll).toHaveBeenLastCalledWith(
+        "org-1",
+        expect.any(Object),
+        "org-1",
+        true,
+      );
+
+      await controller.findByJob(
+        "job-1",
+        undefined,
+        undefined,
+        recruiterReq as never,
+      );
+      expect(mockService.findByJob).toHaveBeenLastCalledWith(
+        "job-1",
+        "org-1",
+        { limit: undefined, offset: undefined },
+        true,
+      );
+
+      await controller.findOne("app-1", recruiterReq as never);
+      expect(mockService.findOne).toHaveBeenLastCalledWith(
+        "app-1",
+        "org-1",
+        true,
+      );
+    });
+
+    it("passes fullCandidateAccess = true when PermissionResolverService grants candidate:view override for MEMBER or user isOwner", async () => {
+      const resolvePermission = vi.fn().mockResolvedValue(true);
+      const customController = new ApplicationsController(service, {
+        resolvePermission,
+      } as unknown as PermissionResolverService);
+
+      mockService.findByJob.mockResolvedValue([]);
+      await customController.findByJob(
+        "job-1",
+        undefined,
+        undefined,
+        memberReq as never,
+      );
+
+      expect(resolvePermission).toHaveBeenCalledWith(
+        "org-1",
+        Role.MEMBER,
+        "candidate:view",
+      );
+      expect(mockService.findByJob).toHaveBeenCalledWith(
+        "job-1",
+        "org-1",
+        { limit: undefined, offset: undefined },
+        true,
+      );
+
+      const ownerReq = {
+        user: {
+          id: "owner-1",
+          role: Role.MEMBER,
+          isOwner: true,
+          organizationId: "org-1",
+        },
+      };
+      await customController.findOne("app-1", ownerReq as never);
+      expect(mockService.findOne).toHaveBeenLastCalledWith(
+        "app-1",
+        "org-1",
+        true,
+      );
     });
   });
 

@@ -215,7 +215,7 @@ jobs:
           name: "HaiHire Enterprise ATS ${{ needs.publish-images.outputs.tag-name }}"
           generate_release_notes: true
           draft: false
-          prerelease: true
+          prerelease: ${{ contains(needs.publish-images.outputs.tag-name, '-') }}
           body: |
             ## 🚀 HaiHire Enterprise ATS ${{ needs.publish-images.outputs.tag-name }}
 

@@ -32,25 +32,25 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-border text-[10px] font-bold text-muted-foreground">
-                <th className="pb-3 pr-4 font-bold">
+                <th scope="col" className="pb-3 pr-4 font-bold">
                   {t("sourcing.links.source")}
                 </th>
-                <th className="pb-3 px-3 text-center">
+                <th scope="col" className="pb-3 px-3 text-center">
                   {t("pipeline.stages.applied")}
                 </th>
-                <th className="pb-3 px-3 text-center">
+                <th scope="col" className="pb-3 px-3 text-center">
                   {t("pipeline.stages.screening")}
                 </th>
-                <th className="pb-3 px-3 text-center">
+                <th scope="col" className="pb-3 px-3 text-center">
                   {t("pipeline.stages.interview")}
                 </th>
-                <th className="pb-3 px-3 text-center">
+                <th scope="col" className="pb-3 px-3 text-center">
                   {t("pipeline.stages.offer")}
                 </th>
-                <th className="pb-3 px-3 text-center">
+                <th scope="col" className="pb-3 px-3 text-center">
                   {t("pipeline.stages.hired")}
                 </th>
-                <th className="pb-3 pl-3 text-right">
+                <th scope="col" className="pb-3 pl-3 text-right">
                   {t("sourcing.overview.hireRate")}
                 </th>
               </tr>

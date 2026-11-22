@@ -4,7 +4,7 @@
 
 ---
 
-## 1. Standard Stack Baseline (Decision `D-016`)
+## 1. Standard Stack Baseline (Decision `D-001`)
 
 HaiHire standardizes on **Prisma `7.10.1` (Stable GA)** with the driver-adapter architecture:
 

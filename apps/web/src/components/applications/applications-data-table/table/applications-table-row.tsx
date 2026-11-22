@@ -40,6 +40,7 @@ export function ApplicationsTableRow({
   const { t } = useI18n();
   const canDeleteApplication = useHasPermission("application:delete");
   const stageInfo = getStageInfo(application.stage);
+  const displayName = getCandidateDisplayName(application);
 
   return (
     <tr
@@ -57,7 +58,7 @@ export function ApplicationsTableRow({
             }}
             className="text-left font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
           >
-            {getCandidateDisplayName(application)}
+            {displayName}
           </button>
         </td>
       )}
@@ -127,7 +128,7 @@ export function ApplicationsTableRow({
             }}
             className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("common.view")}
-            aria-label={t("common.view")}
+            aria-label={`${t("common.view")}: ${displayName}`}
           >
             <Eye className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -140,7 +141,7 @@ export function ApplicationsTableRow({
               }}
               className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.delete")}
-              aria-label={t("common.delete")}
+              aria-label={`${t("common.delete")}: ${displayName}`}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>

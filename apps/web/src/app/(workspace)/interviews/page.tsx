@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
-import { Pagination } from "@/components/shared/pagination";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
@@ -16,24 +13,16 @@ import {
 } from "@/hooks/use-queries";
 import { useInterview } from "@/hooks/use-interview-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { StatusState } from "@/components/shared/status-state";
-import { toast } from "@/lib/toast";
-import { getApiErrorMessage } from "@/lib/api-error";
-import { extractDateTimeInTimezone } from "@haihire/shared";
 import { type ScheduledInterviewInfo } from "@/lib/interviews";
-import { getCandidateDisplayName, resolveEffectiveTimezone } from "@/lib/utils";
-import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
-import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
-import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
-import { CancelInterviewModal } from "@/components/interviews/cancel-interview-modal";
+import { resolveEffectiveTimezone } from "@/lib/utils";
 import {
   InterviewsHeader,
   InterviewsFilterBar,
-  InterviewsFilterDrawer,
-  InterviewsEmptyState,
   type ViewMode,
   type SortOption,
 } from "@/components/interviews/dashboard";
+import { InterviewsContentView } from "@/components/interviews/dashboard/interviews-content-view";
+import { InterviewsModalsBundle } from "@/components/interviews/dashboard/interviews-modals-bundle";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -368,187 +357,91 @@ function InterviewsPageContent() {
       />
 
       {/* Content Section */}
-      {viewMode === "calendar" ? (
-        <div className="space-y-3">
-          {calendarLoading && !calendarInterviewsData && (
-            <div className="py-4 flex justify-center">
-              <LoadingSpinner />
-            </div>
-          )}
-          <InterviewsCalendarView
-            applications={calendarApplications}
-            jobs={jobs}
-            calendarMode={calendarMode}
-            activeMonth={activeMonthParam}
-            activeDate={activeDateParam}
-            onCalendarStateChange={(next) =>
-              setParams(
-                {
-                  calendarMode: next.calendarMode,
-                  month: next.month,
-                  date: next.date,
-                },
-                false,
-              )
-            }
-            onScheduleDate={(dateStr) =>
-              handleOpenScheduleModal(undefined, dateStr)
-            }
-            onEditSchedule={(app, intv) =>
-              handleOpenScheduleModal(
-                app,
-                extractDateTimeInTimezone(intv.scheduledAt, effectiveTimezone)
-                  .date,
-                intv,
-              )
-            }
-            onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
-            onCancelInterview={
-              canDeleteInterview
-                ? (app, interview) => {
-                    setCancelInterviewState({ app, interview });
-                    setIsCancelModalOpen(true);
-                  }
-                : undefined
-            }
-            onVisibleRangeChange={setCalendarRange}
-            canEdit={canCreateInterview}
-          />
-        </div>
-      ) : (jobsLoading || appsLoading || focusedInterview.isLoading) &&
-        !interviewsData ? (
-        <div className="py-20 flex justify-center">
-          <LoadingSpinner />
-        </div>
-      ) : focusedInterviewId && focusedInterview.isError ? (
-        <StatusState
-          status="404"
-          variant="card"
-          title={getApiErrorMessage(focusedInterview.error, t)}
-          actionLabel={t("common.viewAll")}
-          onAction={() => router.push("/interviews")}
-        />
-      ) : filteredAndSortedList.length === 0 ? (
-        <InterviewsEmptyState
-          canEdit={canCreateInterview}
-          onOpenScheduleModal={() => handleOpenScheduleModal()}
-        />
-      ) : (
-        <InterviewsTableView
-          applications={paginatedList}
-          jobs={jobs}
-          visibleColumns={visibleColumns}
-          onOpenScheduleModal={handleOpenScheduleModal}
-          onOpenScorecard={handleOpenScorecard}
-          onCancelInterview={
-            canDeleteInterview
-              ? (app, interview) => {
-                  setCancelInterviewState({ app, interview });
-                  setIsCancelModalOpen(true);
-                }
-              : undefined
+      <InterviewsContentView
+        viewMode={viewMode}
+        calendarMode={calendarMode}
+        activeMonthParam={activeMonthParam}
+        activeDateParam={activeDateParam}
+        effectiveTimezone={effectiveTimezone}
+        calendarLoading={calendarLoading}
+        hasCalendarData={Boolean(calendarInterviewsData)}
+        calendarApplications={calendarApplications}
+        jobs={jobs}
+        jobsLoading={jobsLoading}
+        appsLoading={appsLoading}
+        hasInterviewsData={Boolean(interviewsData)}
+        focusedInterviewId={focusedInterviewId}
+        focusedInterviewLoading={focusedInterview.isLoading}
+        focusedInterviewIsError={focusedInterview.isError}
+        focusedInterviewError={focusedInterview.error}
+        paginatedList={filteredAndSortedList}
+        visibleColumns={visibleColumns}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        canCreateInterview={canCreateInterview}
+        canDeleteInterview={canDeleteInterview}
+        onCalendarStateChange={(next) =>
+          setParams(
+            {
+              calendarMode: next.calendarMode,
+              month: next.month,
+              date: next.date,
+            },
+            false,
+          )
+        }
+        onVisibleRangeChange={setCalendarRange}
+        onOpenScheduleModal={handleOpenScheduleModal}
+        onOpenScorecard={handleOpenScorecard}
+        onRequestCancel={(app, interview) => {
+          setCancelInterviewState({ app, interview });
+          setIsCancelModalOpen(true);
+        }}
+        onNavigateToPipeline={(jobId, applicationId, stage) => {
+          const query = new URLSearchParams();
+          query.set("stage", stage || "INTERVIEW");
+          if (applicationId) {
+            query.set("applicationId", applicationId);
           }
-          onNavigateToPipeline={(jobId, applicationId, stage) => {
-            const query = new URLSearchParams();
-            if (stage) {
-              query.set("stage", stage);
-            } else {
-              query.set("stage", "INTERVIEW");
-            }
-            if (applicationId) {
-              query.set("applicationId", applicationId);
-            }
-            router.push(`/jobs/${jobId}/pipeline?${query.toString()}`);
-          }}
-          canEdit={canCreateInterview}
-          footer={
-            !focusedInterviewId && filteredAndSortedList.length > 0 ? (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                pageSize={pageSize}
-                pageSizeOptions={[10, 20, 50, 100]}
-                onPageChange={setCurrentPage}
-                onPageSizeChange={setPageSize}
-                itemLabel={t("nav.interviews").toLowerCase()}
-              />
-            ) : undefined
-          }
-        />
-      )}
+          router.push(`/jobs/${jobId}/pipeline?${query.toString()}`);
+        }}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        onResetFocused={() => router.push("/interviews")}
+      />
 
-      {focusedInterviewId && (
-        <Link
-          href="/interviews"
-          className="text-sm font-medium text-primary underline"
-        >
-          {t("common.viewAll")}
-        </Link>
-      )}
-
-      {/* Schedule Interview Reusable Modal */}
-      <ScheduleInterviewModal
-        isOpen={scheduleModalOpen}
-        onClose={() => {
+      <InterviewsModalsBundle
+        jobs={jobs}
+        modalApplications={modalApplications}
+        scheduleModalOpen={scheduleModalOpen}
+        onCloseScheduleModal={() => {
           setScheduleModalOpen(false);
           setScheduleModalJobId("");
           setSelectedAppForSchedule(undefined);
           setScheduleDate(undefined);
           setSelectedInterviewForEdit(undefined);
         }}
-        jobs={jobs}
-        applications={modalApplications}
-        selectedJobId={selectedAppForSchedule?.jobId || undefined}
-        selectedApplicationId={selectedAppForSchedule?.id || undefined}
-        initialDate={scheduleDate}
-        editingInterview={selectedInterviewForEdit}
-        onJobChange={setScheduleModalJobId}
-      />
-
-      {/* Post-Interview Scorecard Modal */}
-      <InterviewScorecardModal
-        isOpen={scorecardModalOpen}
-        onClose={() => {
+        selectedAppForSchedule={selectedAppForSchedule}
+        scheduleDate={scheduleDate}
+        selectedInterviewForEdit={selectedInterviewForEdit}
+        onScheduleJobChange={setScheduleModalJobId}
+        scorecardModalOpen={scorecardModalOpen}
+        onCloseScorecardModal={() => {
           setScorecardModalOpen(false);
           setSelectedAppForScorecard(undefined);
           setSelectedInterviewForScorecard(undefined);
         }}
-        application={selectedAppForScorecard}
-        interview={selectedInterviewForScorecard}
-        job={jobs.find(
-          (j) => String(j.id) === String(selectedAppForScorecard?.jobId),
-        )}
-      />
-
-      {/* Cancel Interview Confirmation Modal */}
-      <CancelInterviewModal
-        isOpen={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
-        onConfirm={async () => {
-          if (!cancelInterviewState?.interview?.id) return;
-          try {
-            await deleteInterviewMutation.mutateAsync(
-              cancelInterviewState.interview.id,
-            );
-            setIsCancelModalOpen(false);
-          } catch (err: unknown) {
-            toast.error(getApiErrorMessage(err, t));
-          }
-        }}
-        candidateName={
-          cancelInterviewState
-            ? getCandidateDisplayName(cancelInterviewState.app)
-            : ""
-        }
-        isCancelling={deleteInterviewMutation.isPending}
-      />
-
-      {/* Interviews Filter Drawer */}
-      <InterviewsFilterDrawer
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        jobs={jobs}
+        selectedAppForScorecard={selectedAppForScorecard}
+        selectedInterviewForScorecard={selectedInterviewForScorecard}
+        isCancelModalOpen={isCancelModalOpen}
+        onCloseCancelModal={() => setIsCancelModalOpen(false)}
+        cancelInterviewState={cancelInterviewState}
+        onDeleteInterview={(id) => deleteInterviewMutation.mutateAsync(id)}
+        isCancellingInterview={deleteInterviewMutation.isPending}
+        isFilterOpen={isFilterOpen}
+        onCloseFilter={() => setIsFilterOpen(false)}
         selectedJobFilter={selectedJobFilter}
         onJobFilterChange={(val) => setParam("jobId", val)}
         activeTab={activeTab}

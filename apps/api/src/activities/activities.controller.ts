@@ -81,12 +81,15 @@ export class ActivitiesController {
       };
     },
   ) {
-    return this.activitiesService.createActivity({
-      ...dto,
-      organizationId: req.user.organizationId || "",
-      actorId: req.user.id,
-      actorName: req.user.name || "System User",
-      actorRole: req.user.role || "MEMBER",
-    });
+    return this.activitiesService.createActivity(
+      {
+        ...dto,
+        organizationId: req.user.organizationId || "",
+        actorId: req.user.id,
+        actorName: req.user.name || "System User",
+        actorRole: req.user.role || "MEMBER",
+      },
+      { verifyTargets: true },
+    );
   }
 }

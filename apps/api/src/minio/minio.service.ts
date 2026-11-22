@@ -150,9 +150,18 @@ export class MinioService implements OnModuleInit {
     if (clean.startsWith(`${this.bucketName}/`)) {
       clean = clean.slice(this.bucketName.length + 1);
     }
-    // Prevent directory traversal
-    if (clean.includes("..")) {
-      throw new Error("Invalid object path: directory traversal not allowed");
+    // Prevent directory traversal (including percent-encoded sequences)
+    let decoded = clean;
+    try {
+      decoded = decodeURIComponent(clean);
+    } catch {
+      // keep raw path if malformed URI sequence
+    }
+    if (clean.includes("..") || decoded.includes("..")) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Invalid object path: directory traversal not allowed",
+      );
     }
     return clean;
   }

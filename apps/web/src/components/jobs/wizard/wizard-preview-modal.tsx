@@ -360,7 +360,7 @@ export function WizardPreviewModal({
                     {/* Screening Questions Preview */}
                     {screeningQuestions.length > 0 && (
                       <div className="space-y-3 pt-2 border-t border-border">
-                        <h4 className="text-[11px] font-semibold text-foreground uppercase">
+                        <h4 className="text-[11px] font-semibold text-foreground">
                           {t("jobs.wizard.screeningQuestionsPreviewTitle")}
                         </h4>
                         {screeningQuestions.map((q) => (

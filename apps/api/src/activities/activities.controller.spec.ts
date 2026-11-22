@@ -106,4 +106,30 @@ describe("ActivitiesController RBAC & Guard Authorization", () => {
     expect(rolesGuard.canActivate(interviewerCtx)).toBe(true);
     expect(rolesGuard.canActivate(memberCtx)).toBe(true);
   });
+
+  it("POST /activities validates candidateId ownership when verifyTargets is enabled", async () => {
+    const { ActivitiesService } = await import("./activities.service");
+    const { AppNotFoundException } = await import("../common/app-exception");
+    const mockPrisma = {
+      candidate: { findFirst: vi.fn().mockResolvedValue(null) },
+      application: { findFirst: vi.fn() },
+      activityLog: { create: vi.fn() },
+    };
+    const svc = new ActivitiesService(mockPrisma as never);
+
+    await expect(
+      svc.createActivity(
+        {
+          organizationId: "org-1",
+          candidateId: "cand-other-org",
+          type: "NOTE_ADDED",
+          title: "Note",
+          description: "Cross-tenant attempt",
+          actorName: "User",
+        },
+        { verifyTargets: true },
+      ),
+    ).rejects.toThrow(AppNotFoundException);
+    expect(mockPrisma.activityLog.create).not.toHaveBeenCalled();
+  });
 });

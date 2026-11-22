@@ -15,7 +15,7 @@ curl -fsS http://127.0.0.1:3001/health
 
 ---
 
-## 2. Production Alert Rules Matrix (`14` Rules)
+## 2. Production Alert Rules Matrix (`16` Rules)
 
 | Alert Rule                          | Expression Trigger                                | `for` |  Severity  | Linked SOP                                                                            |
 | :---------------------------------- | :------------------------------------------------ | :---: | :--------: | :------------------------------------------------------------------------------------ |

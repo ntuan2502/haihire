@@ -34,15 +34,64 @@ export class TenantGuard implements CanActivate {
         select: { organizationId: true },
       });
 
-      const isMember = userMemberships.some(
+      const matchedMembership = userMemberships.find(
         (m) => m.organizationId === requestedOrgId,
-      );
-      if (!isMember) {
+      ) as
+        | {
+            organizationId: string;
+            role?: string;
+            organization?: { ownerId?: string | null } | null;
+          }
+        | undefined;
+      if (!matchedMembership) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
           "Access denied: You do not have permission to access resources in this organization.",
           { organizationId: requestedOrgId },
         );
+      }
+
+      // Synchronize active tenant, role, and ownership context before RolesGuard runs
+      let resolvedRole = matchedMembership.role;
+      let resolvedOwnerId = matchedMembership.organization?.ownerId;
+      if (
+        !resolvedRole &&
+        typeof (this.prisma.organizationMember as { findFirst?: unknown })
+          ?.findFirst === "function"
+      ) {
+        try {
+          const membershipDetail =
+            (await this.prisma.organizationMember.findFirst({
+              where: {
+                userId: req.user.id,
+                organizationId: requestedOrgId,
+              },
+              select: {
+                role: true,
+                organization: { select: { ownerId: true } },
+              },
+            })) as
+              | {
+                  role?: string;
+                  organization?: { ownerId?: string | null } | null;
+                }
+              | null
+              | undefined;
+          resolvedRole = membershipDetail?.role;
+          resolvedOwnerId = membershipDetail?.organization?.ownerId;
+        } catch {
+          // Non-fatal fallback for lightweight mocks without findFirst
+        }
+      }
+
+      req.user.organizationId = requestedOrgId;
+      if (resolvedRole) {
+        req.user.role = resolvedRole;
+      }
+      if (resolvedOwnerId !== undefined) {
+        req.user.isOwner = resolvedOwnerId === req.user.id;
+      } else if (resolvedRole) {
+        req.user.isOwner = false;
       }
     } catch (err) {
       if (err instanceof AppForbiddenException) {

@@ -62,22 +62,22 @@ export function AttributionLogTab({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
-                  <th className="py-3.5 px-5">
+                  <th scope="col" className="py-3.5 px-5">
                     {t("sourcing.attribution.candidate")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th scope="col" className="py-3.5 px-4">
                     {t("sourcing.attribution.job")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th scope="col" className="py-3.5 px-4">
                     {t("sourcing.attribution.source")}
                   </th>
-                  <th className="py-3.5 px-4">
+                  <th scope="col" className="py-3.5 px-4">
                     {t("sourcing.attribution.campaign")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.attribution.status")}
                   </th>
-                  <th className="py-3.5 px-5 text-right">
+                  <th scope="col" className="py-3.5 px-5 text-right">
                     {t("sourcing.attribution.applied")}
                   </th>
                 </tr>

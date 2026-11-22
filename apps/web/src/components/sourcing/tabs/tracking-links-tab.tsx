@@ -106,22 +106,28 @@ export function TrackingLinksTab({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
-                  <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-5">
+                    {t("sourcing.links.name")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4">
+                    {t("sourcing.links.source")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4">
+                    {t("sourcing.links.job")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.clicks")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.apps")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.cvr")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.status")}
                   </th>
-                  <th className="py-3.5 px-5 text-right">
+                  <th scope="col" className="py-3.5 px-5 text-right">
                     {t("sourcing.links.actions")}
                   </th>
                 </tr>

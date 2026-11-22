@@ -29,7 +29,7 @@ export function InterviewsTableSubrow({
     const label = getRecommendationLabel(rec, t);
     return (
       <span
-        className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
           isYes
             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
             : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
@@ -88,8 +88,11 @@ export function InterviewsTableSubrow({
                 {prev.scorecard && (
                   <div className="pt-1 border-t border-border flex items-center justify-between text-[10px]">
                     <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
-                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
-                      {prev.scorecard.overallRating} ⭐
+                      <Star
+                        className="h-2.5 w-2.5 fill-amber-400 text-amber-400"
+                        aria-hidden="true"
+                      />
+                      {prev.scorecard.overallRating}
                     </span>
                     {getRecommendationBadge(prev.scorecard.recommendation)}
                   </div>

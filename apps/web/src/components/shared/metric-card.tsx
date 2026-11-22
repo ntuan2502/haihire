@@ -112,7 +112,7 @@ export function MetricCard({
           styles.iconBorder,
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
     </>
   );

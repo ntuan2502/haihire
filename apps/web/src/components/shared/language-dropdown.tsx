@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 import { cn } from "cn";
 import {
@@ -35,16 +35,10 @@ export function LanguageDropdown({
         title={current.label}
         aria-label={current.label}
       >
-        <span
-          className={cn(
-            "leading-none select-none",
-            size === "sm" ? "text-sm" : "text-base",
-          )}
-          role="img"
-          aria-label={current.label}
-        >
-          {current.flag}
-        </span>
+        <Globe
+          className="h-3.5 w-3.5 text-muted-foreground"
+          aria-hidden="true"
+        />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
@@ -66,7 +60,9 @@ export function LanguageDropdown({
               )}
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm leading-none">{loc.flag}</span>
+                <span className="font-mono text-[11px] font-medium text-muted-foreground">
+                  {loc.shortLabel}
+                </span>
                 <span>{loc.label}</span>
               </div>
               {isSelected && (

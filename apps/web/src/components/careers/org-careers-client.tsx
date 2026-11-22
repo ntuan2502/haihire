@@ -200,7 +200,10 @@ export function OrgCareersClient({
       </section>
 
       {/* Main Content: Search, Filter, Jobs Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
+      <main
+        id="main-content"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8"
+      >
         {/* Search & Filter Bar */}
         <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">

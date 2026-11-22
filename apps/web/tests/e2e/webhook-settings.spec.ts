@@ -32,13 +32,11 @@ test.describe("Webhook Settings E2E Flow", () => {
   }) => {
     // 1. Mock auth/me for admin
     await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+      ({ token }) => {
         document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
         document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
       },
-      { token: "mock-jwt-token-admin-12345", user: adminUser },
+      { token: "mock-jwt-token-admin-12345" },
     );
 
     await page.route("**/api/auth/me", async (route) => {
@@ -142,13 +140,11 @@ test.describe("Webhook Settings E2E Flow", () => {
     page,
   }) => {
     await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+      ({ token }) => {
         document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
         document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
       },
-      { token: "mock-jwt-token-admin-12345", user: adminUser },
+      { token: "mock-jwt-token-admin-12345" },
     );
 
     await page.route("**/api/auth/me", async (route) => {
@@ -201,7 +197,7 @@ test.describe("Webhook Settings E2E Flow", () => {
 
     // Verify toast notification appears
     const toast = page.locator(
-      ".Toastify__toast, div[role='alert'], div[role='status']",
+      "[data-sonner-toast], div[role='alert'], div[role='status']",
     );
     await expect(toast.first()).toBeVisible({ timeout: 5000 });
   });
@@ -211,13 +207,11 @@ test.describe("Webhook Settings E2E Flow", () => {
   }) => {
     // Mock member user
     await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+      ({ token }) => {
         document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
         document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
       },
-      { token: "mock-jwt-token-member-12345", user: memberUser },
+      { token: "mock-jwt-token-member-12345" },
     );
 
     await page.route("**/api/auth/me", async (route) => {

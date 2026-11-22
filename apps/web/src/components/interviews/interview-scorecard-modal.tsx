@@ -3,16 +3,11 @@
 import { useState, useEffect, useId, useRef, type FormEvent } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { FormModal } from "@/components/shared";
+import { Star, AlertCircle, Briefcase, Calendar } from "lucide-react";
 import {
-  Star,
-  AlertCircle,
-  Briefcase,
-  Calendar,
-  ThumbsUp,
-  ThumbsDown,
-  HelpCircle,
-  Check,
-} from "lucide-react";
+  ScorecardRecommendationPicker,
+  type ScorecardRecommendation,
+} from "./scorecard-recommendation-picker";
 import { useAuth } from "@/context/auth-context";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
@@ -52,9 +47,8 @@ export function InterviewScorecardModal({
   const canSubmitScorecard = useHasPermission("interview:scorecard_submit");
 
   const [overallRating, setOverallRating] = useState<number>(4);
-  const [recommendation, setRecommendation] = useState<
-    "STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO"
-  >("YES");
+  const [recommendation, setRecommendation] =
+    useState<ScorecardRecommendation>("YES");
   const [technicalScore, setTechnicalScore] = useState<number>(4);
   const [communicationScore, setCommunicationScore] = useState<number>(4);
   const [cultureScore, setCultureScore] = useState<number>(4);
@@ -283,172 +277,11 @@ export function InterviewScorecardModal({
         </div>
 
         {/* 2. Recommendation Decision Buttons */}
-        <div className="space-y-2.5">
-          <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <span>{t("interviews.hiringRecommendation")}</span>
-            <span className="text-rose-500">*</span>
-          </label>
-          <div
-            role="radiogroup"
-            aria-label={t("interviews.hiringRecommendation")}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5"
-          >
-            {/* STRONG_YES */}
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={recommendation === "STRONG_YES"}
-              onClick={() => setRecommendation("STRONG_YES")}
-              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
-              } ${
-                recommendation === "STRONG_YES"
-                  ? "bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500 ring-2 ring-emerald-500/20"
-                  : "bg-card border-border hover:border-ring/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                  <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t("interviews.recommendations.strongYes")}
-                </span>
-                {recommendation === "STRONG_YES" && (
-                  <Check
-                    className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
-                {t("interviews.recommendations.strongYesDesc")}
-              </p>
-            </button>
-
-            {/* YES */}
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={recommendation === "YES"}
-              onClick={() => setRecommendation("YES")}
-              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
-              } ${
-                recommendation === "YES"
-                  ? "bg-primary/10 border-primary ring-2 ring-primary/20"
-                  : "bg-card border-border hover:border-ring/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                  <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t("interviews.recommendations.yes")}
-                </span>
-                {recommendation === "YES" && (
-                  <Check
-                    className="h-3.5 w-3.5 text-primary"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
-                {t("interviews.recommendations.yesDesc")}
-              </p>
-            </button>
-
-            {/* NEUTRAL */}
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={recommendation === "NEUTRAL"}
-              onClick={() => setRecommendation("NEUTRAL")}
-              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
-              } ${
-                recommendation === "NEUTRAL"
-                  ? "bg-amber-50/80 border-amber-500 dark:bg-amber-950/40 dark:border-amber-500 ring-2 ring-amber-500/20"
-                  : "bg-card border-border hover:border-ring/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                  <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t("interviews.recommendations.neutral")}
-                </span>
-                {recommendation === "NEUTRAL" && (
-                  <Check
-                    className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
-                {t("interviews.recommendations.neutralDesc")}
-              </p>
-            </button>
-
-            {/* NO */}
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={recommendation === "NO"}
-              onClick={() => setRecommendation("NO")}
-              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
-              } ${
-                recommendation === "NO"
-                  ? "bg-rose-50/80 border-rose-500 dark:bg-rose-950/40 dark:border-rose-500 ring-2 ring-rose-500/20"
-                  : "bg-card border-border hover:border-ring/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                  <ThumbsDown className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t("interviews.recommendations.no")}
-                </span>
-                {recommendation === "NO" && (
-                  <Check
-                    className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
-                {t("interviews.recommendations.noDesc")}
-              </p>
-            </button>
-
-            {/* STRONG_NO */}
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={recommendation === "STRONG_NO"}
-              onClick={() => setRecommendation("STRONG_NO")}
-              className={`p-3 rounded-xl border text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${
-                !isDisabled ? "cursor-pointer" : "cursor-default opacity-80"
-              } ${
-                recommendation === "STRONG_NO"
-                  ? "bg-rose-100/90 border-rose-600 dark:bg-rose-950/70 dark:border-rose-500 ring-2 ring-rose-600/25"
-                  : "bg-card border-border hover:border-ring/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                  <ThumbsDown className="h-3.5 w-3.5" aria-hidden="true" />
-                  {t("interviews.recommendations.strongNo")}
-                </span>
-                {recommendation === "STRONG_NO" && (
-                  <Check
-                    className="h-3.5 w-3.5 text-rose-700 dark:text-rose-300"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">
-                {t("interviews.recommendations.strongNoDesc")}
-              </p>
-            </button>
-          </div>
-        </div>
+        <ScorecardRecommendationPicker
+          value={recommendation}
+          disabled={isDisabled}
+          onChange={setRecommendation}
+        />
 
         {/* 3. Detailed Criteria Assessment */}
         <div className="space-y-3">

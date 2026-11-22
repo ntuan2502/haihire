@@ -10,6 +10,7 @@ import {
 } from "@haihire/shared";
 import {
   AppBadRequestException,
+  AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
@@ -623,6 +624,10 @@ export class ApplicationsQueryService {
 
     // Update candidate profile directly
     if (existing.candidateId) {
+      const targetOrgId =
+        existing.job?.organizationId ||
+        existing.candidate?.organizationId ||
+        tenantOrgId;
       const candidateUpdate: Record<string, unknown> = {};
       if (dto.firstName !== undefined) {
         const trimmed = normalizeNameInput(dto.firstName);
@@ -647,12 +652,59 @@ export class ApplicationsQueryService {
       if (dto.displayName !== undefined) {
         candidateUpdate.displayName = dto.displayName?.trim() || null;
       }
-      if (dto.candidateEmail !== undefined)
-        candidateUpdate.email = dto.candidateEmail.toLowerCase();
+      if (dto.candidateEmail !== undefined) {
+        const normalizedEmail = dto.candidateEmail.trim().toLowerCase();
+        if (targetOrgId && this.prisma.candidate?.findFirst) {
+          const dup = await this.prisma.candidate.findFirst({
+            where: {
+              organizationId: targetOrgId,
+              email: normalizedEmail,
+              id: { not: existing.candidateId },
+              deletedAt: null,
+            },
+            select: { id: true, organizationId: true },
+          });
+          if (dup) {
+            throw new AppConflictException(
+              APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+              "A candidate with this email already exists in your organization.",
+            );
+          }
+        }
+        candidateUpdate.email = normalizedEmail;
+      }
       if (dto.candidatePhone !== undefined)
         candidateUpdate.phone = dto.candidatePhone;
-      if (dto.resumeUrl !== undefined)
+      if (dto.resumeUrl !== undefined) {
+        if (dto.resumeUrl && targetOrgId) {
+          const safeTenant = targetOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+          let cleanPath = dto.resumeUrl.trim();
+          try {
+            if (
+              cleanPath.startsWith("http://") ||
+              cleanPath.startsWith("https://")
+            ) {
+              cleanPath = new URL(cleanPath).pathname;
+            }
+          } catch {
+            // keep raw path
+          }
+          cleanPath = cleanPath.replace(/\\/g, "/").replace(/^\/+/, "");
+          if (cleanPath.startsWith("haihire-resumes/")) {
+            cleanPath = cleanPath.slice("haihire-resumes/".length);
+          }
+          if (
+            cleanPath.startsWith("tenants/") &&
+            !cleanPath.startsWith(`tenants/${safeTenant}/`)
+          ) {
+            throw new AppForbiddenException(
+              APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+              "Cross-tenant resume URL is not allowed.",
+            );
+          }
+        }
         candidateUpdate.resumeUrl = dto.resumeUrl;
+      }
       if (dto.resumeFileName !== undefined)
         candidateUpdate.resumeFileName = dto.resumeFileName;
 

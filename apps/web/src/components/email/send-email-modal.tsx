@@ -9,17 +9,16 @@ import {
   useId,
   type FormEvent,
 } from "react";
-import { Send, Eye, Edit3, User, Briefcase } from "lucide-react";
+import { Send, Eye, Edit3 } from "lucide-react";
 import {
   type EmailFlowKey,
   type EmailTemplateType,
   type EmailLog,
   DEFAULT_EMAIL_TEMPLATES,
-  TEMPLATE_VARIABLES,
   getEmailTemplateTypeLabel,
   interpolateTemplate,
 } from "@/lib/email-templates";
-import { useI18n, type TranslationKey } from "@/i18n";
+import { useI18n } from "@/i18n";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomSelect, FormModal } from "@/components/shared";
@@ -31,7 +30,11 @@ import {
   getCandidateDisplayName,
   normalizeEmailAddress,
 } from "@/lib/utils";
-import { EmailHtmlPreview } from "./email-html-preview";
+import {
+  SendEmailPreviewPane,
+  SendEmailRecipientBanner,
+  SendEmailVariableBar,
+} from "./send-email-modal-sections";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useEmailFlows } from "@/hooks/use-email-queries";
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
@@ -389,30 +392,12 @@ export function SendEmailModal({
       </div>
 
       {/* Recipient Information Pill */}
-      <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-muted-foreground flex-wrap min-w-0">
-          <User
-            className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-            aria-hidden="true"
-          />
-          <span>{t("email.recipient")}:</span>
-          <strong className="font-semibold text-foreground">
-            {candidateDisplayName}
-          </strong>
-          {hasEmail && (
-            <span className="text-muted-foreground break-all">
-              {normalizedEmail}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
-          <Briefcase
-            className="h-3 w-3 text-muted-foreground shrink-0"
-            aria-hidden="true"
-          />
-          <span className="truncate">{effectiveJobTitle}</span>
-        </div>
-      </div>
+      <SendEmailRecipientBanner
+        candidateDisplayName={candidateDisplayName}
+        normalizedEmail={normalizedEmail}
+        hasEmail={hasEmail}
+        effectiveJobTitle={effectiveJobTitle}
+      />
 
       {/* Subject Field */}
       <div>
@@ -489,53 +474,20 @@ export function SendEmailModal({
             placeholder={t("email.bodyPlaceholder")}
           />
 
-          {/* Variable Insertion Pills */}
-          <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-1.5">
-            <div className="text-[11px] font-medium text-muted-foreground">
-              {t("email.insertVariableHint")}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {TEMPLATE_VARIABLES.map((v) => (
-                <button
-                  key={v.key}
-                  type="button"
-                  disabled={isSending}
-                  onClick={() => handleInsertVariable(v.key)}
-                  className="px-2 py-0.5 rounded-md bg-background border border-input text-[11px] font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={
-                    (v.labelKey ? t(v.labelKey as TranslationKey) : "") ||
-                    v.label
-                  }
-                >
-                  {v.key}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* Live HTML Preview */
-        <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
-          <div className="border-b border-border pb-3 text-xs space-y-1 text-muted-foreground">
-            <div>
-              <strong className="text-foreground">
-                {t("email.thSubject")}:
-              </strong>{" "}
-              {interpolateTemplate(subject, variablesMap)}
-            </div>
-            <div>
-              <strong className="text-foreground">
-                {t("email.thRecipient")}:
-              </strong>{" "}
-              {candidateDisplayName} {hasEmail ? `<${normalizedEmail}>` : ""}
-            </div>
-          </div>
-          <EmailHtmlPreview
-            title={interpolateTemplate(subject, variablesMap)}
-            body={interpolateTemplate(body, variablesMap)}
-            className="prose prose-xs dark:prose-invert max-w-none text-xs text-foreground leading-relaxed"
+          <SendEmailVariableBar
+            isSending={isSending}
+            onInsertVariable={handleInsertVariable}
           />
         </div>
+      ) : (
+        <SendEmailPreviewPane
+          subject={subject}
+          body={body}
+          variablesMap={variablesMap}
+          candidateDisplayName={candidateDisplayName}
+          normalizedEmail={normalizedEmail}
+          hasEmail={hasEmail}
+        />
       )}
     </FormModal>
   );

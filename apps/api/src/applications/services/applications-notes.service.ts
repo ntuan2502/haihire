@@ -45,12 +45,12 @@ export class ApplicationsNotesService {
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId },
       include: {
-        job: { select: { organizationId: true } },
-        candidate: { select: { organizationId: true } },
+        job: { select: { organizationId: true, deletedAt: true } },
+        candidate: { select: { organizationId: true, deletedAt: true } },
       },
     });
 
-    if (!app) {
+    if (!app || app.job?.deletedAt || app.candidate?.deletedAt) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.APPLICATION_NOT_FOUND,
         `Application with ID ${applicationId} not found`,
@@ -96,12 +96,12 @@ export class ApplicationsNotesService {
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId },
       include: {
-        job: { select: { organizationId: true } },
-        candidate: { select: { organizationId: true } },
+        job: { select: { organizationId: true, deletedAt: true } },
+        candidate: { select: { organizationId: true, deletedAt: true } },
       },
     });
 
-    if (!app) {
+    if (!app || app.job?.deletedAt || app.candidate?.deletedAt) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.APPLICATION_NOT_FOUND,
         `Application with ID ${applicationId} not found`,

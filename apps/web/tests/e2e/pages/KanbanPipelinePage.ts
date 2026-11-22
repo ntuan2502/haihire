@@ -67,9 +67,8 @@ export class KanbanPipelinePage {
 
   async expectCandidateInStage(candidateId: string, stage: string) {
     const stagePill = this.page.locator(`[data-testid="stage-pill-${stage}"]`);
-    if (await stagePill.isVisible()) {
-      await stagePill.click();
-    }
+    await expect(stagePill).toBeVisible();
+    await stagePill.click();
     const candidateCard = this.page.locator(
       `[data-testid="candidate-card-${candidateId}"]`,
     );
@@ -77,9 +76,7 @@ export class KanbanPipelinePage {
   }
 
   async expectToastError(pattern: RegExp) {
-    const toast = this.page.locator(
-      ".Toastify__toast, [role='alert'], [role='status']",
-    );
+    const toast = this.page.locator("[role='alert'], [role='status']");
     await expect(toast.first()).toBeVisible({ timeout: 6000 });
     const text = await toast.first().textContent();
     expect(text).toMatch(pattern);

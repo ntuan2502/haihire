@@ -53,7 +53,7 @@ jobs:
   # 1. ARCHITECTURAL QUALITY GATES
   # ============================================================================
   ci-gates:
-    name: 11 CI Architecture Gates
+    name: 15 CI Architecture Gates
     needs: path-filter
     if: |
       (github.event_name == 'pull_request' || 
@@ -128,7 +128,7 @@ jobs:
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
           pnpm db:generate
 
-      - name: Run 11 Architecture Quality Gates (Fast)
+      - name: Run 15 Architecture Quality Gates (Fast)
         run: pnpm check:all:fast
 
   # ============================================================================
@@ -212,7 +212,7 @@ jobs:
           pnpm db:migrate
 
       - name: Audit Test Differences
-        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
+        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD
 
       - name: Run Unit Tests with Coverage
         run: |

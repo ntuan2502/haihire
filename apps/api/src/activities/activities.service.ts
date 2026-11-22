@@ -1,7 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { Prisma } from "@prisma/client";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { toInstant } from "../common/date.util";
 import crypto from "node:crypto";
@@ -35,12 +38,50 @@ export class ActivitiesService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async createActivity(dto: CreateActivityDto) {
+  async createActivity(
+    dto: CreateActivityDto,
+    options?: { verifyTargets?: boolean },
+  ) {
     if (!dto.organizationId) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "User must belong to an organization to record an activity.",
       );
+    }
+
+    if (options?.verifyTargets) {
+      const candidate = await this.prisma.candidate.findFirst({
+        where: {
+          id: dto.candidateId,
+          organizationId: dto.organizationId,
+          deletedAt: null,
+        },
+        select: { id: true, organizationId: true },
+      });
+      if (!candidate) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+          "Candidate not found in this organization.",
+          { candidateId: dto.candidateId },
+        );
+      }
+      if (dto.applicationId) {
+        const application = await this.prisma.application.findFirst({
+          where: {
+            id: dto.applicationId,
+            candidateId: dto.candidateId,
+            organizationId: dto.organizationId,
+          },
+          select: { id: true, organizationId: true },
+        });
+        if (!application) {
+          throw new AppNotFoundException(
+            APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+            "Application not found for this candidate in this organization.",
+            { applicationId: dto.applicationId },
+          );
+        }
+      }
     }
 
     const id = crypto.randomUUID();

@@ -48,5 +48,5 @@ CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma que
 
 - **3 Soft-Deletable Models:** `Job`, `Candidate`, and `TrackingLink` carry `deletedAt DateTime?`.
 - Always filter `deletedAt: null` on active reads, counts, search lists, public job listings, and application sagas (`job.findFirst({ where: { id: dto.jobId, deletedAt: null } })`, `candidate.findFirst({ where: { id: candidateId, deletedAt: null } })`).
-- **Soft-deleted Candidate re-application:** `Candidate` has a unique constraint on `(organizationId, email)`. When creating an application by `email`, query by `(organizationId, email)` selecting `deletedAt`, and if found with `deletedAt !== null`, restore it (`deletedAt: null, updatedAt: toInstant()`) inside the transaction before linking the new `Application`.
+- **Soft-deleted Candidate re-application:** `Candidate` does not enforce a global unique constraint on `(organizationId, email)` so soft-deleted candidate history remains immutable. When creating an application by `email`, always filter `{ organizationId, email, deletedAt: null }` so re-applying creates a fresh active `Candidate` record rather than resurrecting soft-deleted history.
 - For non-deleted lookups by relation (`Interview` -> `Application` -> `Job` / `Candidate`), check `deletedAt` / stage rules consistently before allowing mutations.

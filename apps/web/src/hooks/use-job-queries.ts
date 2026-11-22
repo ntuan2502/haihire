@@ -85,7 +85,7 @@ export function useAllJobs(organizationId?: string | null) {
     organizationId !== undefined ? organizationId : user?.organizationId;
 
   return useQuery<Job[]>({
-    queryKey: ["jobs", "all", effectiveOrgId],
+    queryKey: queryKeys.allJobs(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
       const res = await jobsApi.getAll({
@@ -104,7 +104,7 @@ export function useOpenJobs(organizationId?: string | null) {
     organizationId !== undefined ? organizationId : user?.organizationId;
 
   return useQuery<Job[]>({
-    queryKey: ["jobs", "open", effectiveOrgId],
+    queryKey: queryKeys.openJobs(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
       const res = await jobsApi.getAll({

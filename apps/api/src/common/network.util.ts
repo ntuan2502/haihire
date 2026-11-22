@@ -63,19 +63,24 @@ export function validatePublicHost(host: string): string | null {
   return null;
 }
 
-export const lookupPublicAddress: LookupFunction = (
-  hostname,
-  options,
-  callback,
-) => {
-  lookup(hostname, { all: true }, (error, addresses) => {
-    if (error) return callback(error, "");
-    const first = addresses[0];
-    if (!first || addresses.some(({ address }) => !isPublicAddress(address))) {
-      return callback(new Error(publicAddressRequired), "");
-    }
-    // Return only the vetted DNS answers to this connection.
-    if (options.all) return callback(null, addresses);
-    callback(null, first.address, first.family);
-  });
-};
+export function createLookupPublicAddress(
+  errorMessage: string = publicAddressRequired,
+): LookupFunction {
+  return (hostname, options, callback) => {
+    lookup(hostname, { all: true }, (error, addresses) => {
+      if (error) return callback(error, "");
+      const first = addresses[0];
+      if (
+        !first ||
+        addresses.some(({ address }) => !isPublicAddress(address))
+      ) {
+        return callback(new Error(errorMessage), "");
+      }
+      // Return only the vetted DNS answers to this connection.
+      if (options.all) return callback(null, addresses);
+      callback(null, first.address, first.family);
+    });
+  };
+}
+
+export const lookupPublicAddress: LookupFunction = createLookupPublicAddress();

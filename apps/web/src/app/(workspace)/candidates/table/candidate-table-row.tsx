@@ -30,6 +30,7 @@ export function CandidateTableRow({
   const { t } = useI18n();
   const canUpdateCandidate = useHasPermission("candidate:update");
   const canDeleteCandidate = useHasPermission("candidate:delete");
+  const displayName = getCandidateDisplayName(candidate.candidate ?? candidate);
 
   return (
     <tr
@@ -48,7 +49,7 @@ export function CandidateTableRow({
             }}
             className="text-left font-semibold text-foreground hover:underline underline-offset-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer"
           >
-            {getCandidateDisplayName(candidate.candidate ?? candidate)}
+            {displayName}
           </button>
         </td>
       )}
@@ -126,7 +127,7 @@ export function CandidateTableRow({
             }}
             className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             title={t("common.view")}
-            aria-label={t("common.view")}
+            aria-label={`${t("common.view")}: ${displayName}`}
           >
             <Eye className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -141,7 +142,7 @@ export function CandidateTableRow({
               }}
               className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.edit")}
-              aria-label={t("common.edit")}
+              aria-label={`${t("common.edit")}: ${displayName}`}
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -157,7 +158,7 @@ export function CandidateTableRow({
               }}
               className="h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={t("common.delete")}
-              aria-label={t("common.delete")}
+              aria-label={`${t("common.delete")}: ${displayName}`}
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>

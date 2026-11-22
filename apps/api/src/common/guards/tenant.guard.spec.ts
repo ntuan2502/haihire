@@ -86,4 +86,42 @@ describe("TenantGuard", () => {
       AppForbiddenException,
     );
   });
+
+  it("should synchronize req.user organizationId, role, and isOwner to the requested membership", async () => {
+    const mockPrisma = {
+      organizationMember: {
+        findMany: async () => [
+          {
+            organizationId: "org-2",
+            role: "MEMBER",
+            organization: { ownerId: "usr-owner-2" },
+          },
+        ],
+      },
+    } as never;
+
+    const guard = new TenantGuard(mockPrisma);
+    const req = {
+      user: {
+        id: "usr-1",
+        organizationId: "org-1",
+        role: "ADMIN",
+        isOwner: true,
+      },
+      query: { organizationId: "org-2" },
+      body: {},
+    };
+
+    const mockContext = {
+      switchToHttp: () => ({
+        getRequest: () => req,
+      }),
+    } as unknown as ExecutionContext;
+
+    const result = await guard.canActivate(mockContext);
+    expect(result).toBe(true);
+    expect(req.user.organizationId).toBe("org-2");
+    expect(req.user.role).toBe("MEMBER");
+    expect(req.user.isOwner).toBe(false);
+  });
 });

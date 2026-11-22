@@ -72,7 +72,7 @@ export function ApplicationsBySource({
                 {/* Progress bar container */}
                 <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${dotColor} transition-[width] duration-500`}
+                    className={`h-full rounded-full ${dotColor}`}
                     style={{ width: `${Math.max(item.percentage, 2)}%` }}
                   />
                 </div>

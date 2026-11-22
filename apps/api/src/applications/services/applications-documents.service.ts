@@ -49,6 +49,16 @@ export class ApplicationsDocumentsService {
     tenantOrgId?: string | null,
   ) {
     const existing = await this.query.findOne(id, tenantOrgId);
+    const targetOrgId =
+      existing.job?.organizationId ||
+      existing.candidate?.organizationId ||
+      tenantOrgId;
+    if (tenantOrgId && targetOrgId && targetOrgId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+      );
+    }
 
     if (!file) {
       throw new AppBadRequestException(
@@ -62,10 +72,9 @@ export class ApplicationsDocumentsService {
       fixUtf8String(file.originalname || "document.pdf"),
     );
 
-    const targetOrgId = existing.job?.organizationId || tenantOrgId;
-
     let uploadResult: {
       url: string;
+      fileName?: string;
       originalName: string;
       size: number;
       mimeType: string;
@@ -88,43 +97,53 @@ export class ApplicationsDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    await runInTransaction(this.prisma, async (tx) => {
-      if (existing.candidateId) {
-        try {
-          const cand = await tx.candidate.findFirst({
-            where: { id: existing.candidateId },
-            select: { id: true, organizationId: true },
-          });
-          if (cand) {
-            await tx.candidateDocument.create({
-              data: {
-                id: newDocId,
-                candidateId: cand.id,
-                organizationId: cand.organizationId,
-                name: cleanDocName,
-                url: uploadResult.url,
-                size: uploadResult.size ?? null,
-                mimeType: uploadResult.mimeType ?? null,
-                type: documentType || "Resume",
-                updatedAt: toInstant(),
-              },
+    try {
+      await runInTransaction(this.prisma, async (tx) => {
+        if (existing.candidateId) {
+          try {
+            const cand = await tx.candidate.findFirst({
+              where: { id: existing.candidateId },
+              select: { id: true, organizationId: true },
             });
+            if (cand) {
+              await tx.candidateDocument.create({
+                data: {
+                  id: newDocId,
+                  candidateId: cand.id,
+                  organizationId: cand.organizationId,
+                  name: cleanDocName,
+                  url: uploadResult.url,
+                  size: uploadResult.size ?? null,
+                  mimeType: uploadResult.mimeType ?? null,
+                  type: documentType || "Resume",
+                  updatedAt: toInstant(),
+                },
+              });
+            }
+          } catch {
+            // ignore if mock or table unavailable in test
           }
-        } catch {
-          // ignore if mock or table unavailable in test
         }
-      }
 
-      await tx.application.update({
-        where: { id },
-        data: {
-          resumeUrl: uploadResult.url,
-          resumeFileName: cleanDocName,
-          resumeFileSize: uploadResult.size ?? null,
-          resumeMimeType: uploadResult.mimeType ?? null,
-        },
+        await tx.application.update({
+          where: { id },
+          data: {
+            resumeUrl: uploadResult.url,
+            resumeFileName: cleanDocName,
+            resumeFileSize: uploadResult.size ?? null,
+            resumeMimeType: uploadResult.mimeType ?? null,
+          },
+        });
       });
-    });
+    } catch (err) {
+      const cleanupKey = uploadResult.fileName || uploadResult.url;
+      if (cleanupKey) {
+        await this.minioService
+          .deleteFile?.(cleanupKey)
+          ?.catch(() => undefined);
+      }
+      throw err;
+    }
 
     const orgId =
       existing.job?.organizationId ||

@@ -87,10 +87,10 @@ describe("Task #39 Accessibility Fixes: Table & Navigation", () => {
     expect(candidateBtn).toHaveClass("focus-visible:ring-2");
 
     // Action buttons have accessible aria-labels
-    const viewBtn = screen.getByRole("button", { name: "View" });
+    const viewBtn = screen.getByRole("button", { name: "View: John Doe" });
     expect(viewBtn).toBeInTheDocument();
 
-    const deleteBtn = screen.getByRole("button", { name: "Delete" });
+    const deleteBtn = screen.getByRole("button", { name: "Delete: John Doe" });
     expect(deleteBtn).toBeInTheDocument();
   });
 

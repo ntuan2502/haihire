@@ -1416,6 +1416,8 @@ export interface TranslationSchema {
     inviteLinkHint: string;
     createOrgInstead: string;
     joinOrgInstead: string;
+    orgCreatedToast: string;
+    orgJoinedToast: string;
   };
   join: {
     title: string;

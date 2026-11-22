@@ -113,12 +113,24 @@ export default function EmailLogsPage() {
         <table className="w-full text-left text-xs min-w-[640px]">
           <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">{t("email.thSentAt")}</th>
-              <th className="px-4 py-3">{t("email.thRecipient")}</th>
-              <th className="px-4 py-3">{t("email.thTemplate")}</th>
-              <th className="px-4 py-3">{t("email.thSubject")}</th>
-              <th className="px-4 py-3">{t("email.thStatus")}</th>
-              <th className="px-4 py-3 text-right">{t("email.thActions")}</th>
+              <th scope="col" className="px-4 py-3">
+                {t("email.thSentAt")}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t("email.thRecipient")}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t("email.thTemplate")}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t("email.thSubject")}
+              </th>
+              <th scope="col" className="px-4 py-3">
+                {t("email.thStatus")}
+              </th>
+              <th scope="col" className="px-4 py-3 text-right">
+                {t("email.thActions")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

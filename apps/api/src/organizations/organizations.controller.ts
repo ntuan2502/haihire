@@ -164,7 +164,7 @@ export class OrganizationsController {
   @Patch("my/members/:memberId/role")
   updateMemberRole(
     @Request() req: { user: { id: string; organizationId?: string | null } },
-    @Param("memberId") memberId: string,
+    @Param("memberId", new ParseUUIDPipe()) memberId: string,
     @Body(DtoPipe(UpdateMemberRoleDto)) body: UpdateMemberRoleDto,
   ) {
     return this.orgsService.updateMemberRole(
@@ -180,7 +180,7 @@ export class OrganizationsController {
   @Delete("my/members/:memberId")
   removeMember(
     @Request() req: { user: { id: string; organizationId?: string | null } },
-    @Param("memberId") memberId: string,
+    @Param("memberId", new ParseUUIDPipe()) memberId: string,
   ) {
     return this.orgsService.removeMember(
       req.user.id,

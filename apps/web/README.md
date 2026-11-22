@@ -15,7 +15,7 @@ Enterprise recruiter dashboard and public careers portal built with **Next.js 16
 
 ## Architectural Conventions
 
-- **No `middleware.ts`:** Route protection and JWT cookie session checks run inside `proxy()` exported by [src/proxy.ts](src/proxy.ts) (enforced by CI Gate 15).
+- **No `middleware.ts`:** Route protection and JWT cookie session checks run inside `proxy()` exported by [src/proxy.ts](src/proxy.ts) (enforced by CI Gate 14).
 - **Controlled Forms:** Interactive forms use explicit React state + `@haihire/shared` Zod schemas with localized server error mapping via `getApiErrorMessage()`.
 - **Private Resume Downloads:** Document previews and downloads always proxy through tenant-authenticated backend endpoints (`/applications/:id/documents/download`, `/candidates/:id/documents/download`), never raw `/haihire-resumes/` paths.
 - **Radix `new-york` Primitives & Overlay Archetypes:** Interactive overlays compose unified `radix-ui` primitives under `src/components/ui/` ([dialog.tsx](src/components/ui/dialog.tsx), [sheet.tsx](src/components/ui/sheet.tsx), [dropdown-menu.tsx](src/components/ui/dropdown-menu.tsx), [popover.tsx](src/components/ui/popover.tsx), [tooltip.tsx](src/components/ui/tooltip.tsx), [sidebar.tsx](src/components/ui/sidebar.tsx)) via standardized archetypes in `src/components/shared/`:
@@ -39,4 +39,4 @@ pnpm --filter web typecheck  # Run tsc --noEmit
 pnpm --filter web test       # Run Vitest + React Testing Library jsdom suite
 ```
 
-Playwright end-to-end tests live in `apps/web/tests/e2e/` (`9` spec files) and run from the workspace root via `pnpm test:e2e`.
+Playwright end-to-end tests live in `apps/web/tests/e2e/` (`13` spec files) and run from the workspace root via `pnpm test:e2e`.

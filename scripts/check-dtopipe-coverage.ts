@@ -61,7 +61,13 @@ export function checkDtoPipeCoverage(baseDir?: string): {
         totalPiped++;
       }
 
-      if (line.includes("@Query(DtoPipe")) {
+      if (line.includes("@Query()")) {
+        violations.push({
+          file: path.relative(process.cwd(), file),
+          line: i + 1,
+          snippet: line.trim(),
+        });
+      } else if (line.includes("@Query(DtoPipe")) {
         totalQueryPiped++;
       }
     }

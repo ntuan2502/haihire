@@ -43,6 +43,16 @@ export class CandidatesDocumentsService {
     tenantOrgId?: string | null,
   ) {
     const candidate = await this.profileService.findOne(id, tenantOrgId);
+    if (
+      tenantOrgId &&
+      candidate.organizationId &&
+      candidate.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
 
     if (!file) {
       throw new AppBadRequestException(
@@ -58,6 +68,7 @@ export class CandidatesDocumentsService {
 
     let uploadResult: {
       url: string;
+      fileName?: string;
       originalName: string;
       size: number;
       mimeType: string;
@@ -82,37 +93,47 @@ export class CandidatesDocumentsService {
     const normalizedType =
       !documentType || documentType === "All" ? "Resume" : documentType;
 
-    await runInTransaction(this.prisma, async (tx) => {
-      try {
-        await tx.candidateDocument.create({
-          data: {
-            id: newDocId,
-            candidateId: id,
-            organizationId: candidate.organizationId,
-            name: cleanDocName,
-            url: uploadResult.url,
-            size: uploadResult.size ?? null,
-            mimeType: uploadResult.mimeType ?? null,
-            type: normalizedType,
-            updatedAt: toInstant(),
-          },
-        });
-      } catch {
-        // ignore if mock or table unavailable in test
-      }
+    try {
+      await runInTransaction(this.prisma, async (tx) => {
+        try {
+          await tx.candidateDocument.create({
+            data: {
+              id: newDocId,
+              candidateId: id,
+              organizationId: candidate.organizationId,
+              name: cleanDocName,
+              url: uploadResult.url,
+              size: uploadResult.size ?? null,
+              mimeType: uploadResult.mimeType ?? null,
+              type: normalizedType,
+              updatedAt: toInstant(),
+            },
+          });
+        } catch {
+          // ignore if mock or table unavailable in test
+        }
 
-      if (!candidate.resumeUrl) {
-        await tx.candidate.update({
-          where: { id },
-          data: {
-            resumeUrl: uploadResult.url,
-            resumeFileName: cleanDocName,
-            resumeFileSize: uploadResult.size ?? null,
-            resumeMimeType: uploadResult.mimeType ?? null,
-          },
-        });
+        if (!candidate.resumeUrl) {
+          await tx.candidate.update({
+            where: { id },
+            data: {
+              resumeUrl: uploadResult.url,
+              resumeFileName: cleanDocName,
+              resumeFileSize: uploadResult.size ?? null,
+              resumeMimeType: uploadResult.mimeType ?? null,
+            },
+          });
+        }
+      });
+    } catch (err) {
+      const cleanupKey = uploadResult.fileName || uploadResult.url;
+      if (cleanupKey) {
+        await this.minioService
+          .deleteFile?.(cleanupKey)
+          ?.catch(() => undefined);
       }
-    });
+      throw err;
+    }
 
     if (candidate.organizationId) {
       this.eventsService?.emit({
@@ -138,6 +159,16 @@ export class CandidatesDocumentsService {
     currentUser?: { id?: string; name?: string } | null,
   ) {
     const candidate = await this.profileService.findOne(id, tenantOrgId);
+    if (
+      tenantOrgId &&
+      candidate.organizationId &&
+      candidate.organizationId !== tenantOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
 
     const downloadUrl = targetUrl || candidate.resumeUrl;
     if (!downloadUrl) {

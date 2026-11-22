@@ -35,14 +35,14 @@ export function ApplicationDetailHeader({
     <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-base shadow-sm shrink-0">
+        <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shadow-sm shrink-0">
           {initials}
         </div>
 
         {/* Info */}
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-black text-foreground">
+            <h1 className="text-xl font-bold text-foreground">
               {candidateName}
             </h1>
             <StageBadge stage={stage} />

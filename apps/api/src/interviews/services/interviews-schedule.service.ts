@@ -135,6 +135,17 @@ export class InterviewsScheduleService {
           where: { id: app.jobId },
         })
       : null;
+
+    if (
+      (candidate as { deletedAt?: Date | null } | null)?.deletedAt ||
+      (job as { deletedAt?: Date | null } | null)?.deletedAt
+    ) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+        "Cannot schedule an interview for a deleted candidate or job.",
+        { applicationId: dto.applicationId },
+      );
+    }
     const orgId = candidate?.organizationId || job?.organizationId;
 
     if (organizationId && orgId && orgId !== organizationId) {

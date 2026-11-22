@@ -268,8 +268,20 @@ export class CandidatesCrudService {
       );
     }
 
+    const dateOfBirth = parseCalendarDate(dto.dateOfBirth);
+
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+        "First name and last name are required.",
+      );
+    }
+
     let uploadResult: {
       url: string;
+      fileName?: string;
       originalName: string;
       size: number;
       mimeType: string;
@@ -293,37 +305,38 @@ export class CandidatesCrudService {
       };
     }
 
-    const dateOfBirth = parseCalendarDate(dto.dateOfBirth);
-
-    const firstName = normalizeNameInput(dto.firstName);
-    const lastName = normalizeNameInput(dto.lastName);
-    if (!firstName || !lastName) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-        "First name and last name are required.",
-      );
-    }
     const displayName = dto.displayName?.trim() || null;
     const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
 
-    const created = await this.prisma.candidate.create({
-      data: {
-        id: crypto.randomUUID(),
-        organizationId: orgId,
-        firstName,
-        lastName,
-        displayName,
-        gender: dto.gender ? dto.gender : null,
-        dateOfBirth,
-        email,
-        phone: dto.phone?.trim() || null,
-        resumeUrl: uploadResult.url || null,
-        resumeFileName: uploadResult.originalName || null,
-        resumeFileSize: uploadResult.size || null,
-        resumeMimeType: uploadResult.mimeType || "application/pdf",
-        updatedAt: toInstant(),
-      },
-    });
+    let created;
+    try {
+      created = await this.prisma.candidate.create({
+        data: {
+          id: crypto.randomUUID(),
+          organizationId: orgId,
+          firstName,
+          lastName,
+          displayName,
+          gender: dto.gender ? dto.gender : null,
+          dateOfBirth,
+          email,
+          phone: dto.phone?.trim() || null,
+          resumeUrl: uploadResult.url || null,
+          resumeFileName: uploadResult.originalName || null,
+          resumeFileSize: uploadResult.size || null,
+          resumeMimeType: uploadResult.mimeType || "application/pdf",
+          updatedAt: toInstant(),
+        },
+      });
+    } catch (err) {
+      const cleanupKey = file ? uploadResult.fileName || uploadResult.url : "";
+      if (cleanupKey) {
+        await this.minioService
+          .deleteFile?.(cleanupKey)
+          ?.catch(() => undefined);
+      }
+      throw err;
+    }
 
     this.eventsService?.emit({
       type: "CANDIDATES_CHANGED",

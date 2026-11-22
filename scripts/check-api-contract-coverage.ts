@@ -130,8 +130,10 @@ const expectedControllers = [
   "email.controller.ts",
   "interviews.controller.ts",
   "jobs.controller.ts",
+  "notifications.controller.ts",
   "organizations.controller.ts",
   "sourcing.controller.ts",
+  "webhook-settings.controller.ts",
 ];
 
 const missingControllers: string[] = [];

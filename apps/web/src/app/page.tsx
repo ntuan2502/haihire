@@ -17,7 +17,10 @@ export default function HomePage() {
       <LandingNavbar />
 
       {/* Main Content Flow */}
-      <main className="relative z-10 flex flex-col overflow-x-clip">
+      <main
+        id="main-content"
+        className="relative z-10 flex flex-col overflow-x-clip"
+      >
         {/* 1. Hero Section */}
         <LandingHero />
 

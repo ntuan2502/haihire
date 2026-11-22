@@ -94,7 +94,7 @@ export function InterviewsTableRow({
     const label = getRecommendationLabel(rec, t);
     return (
       <span
-        className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
           isYes
             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
             : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
@@ -304,7 +304,7 @@ export function InterviewsTableRow({
                   className="h-3 w-3 fill-amber-400 text-amber-400"
                   aria-hidden="true"
                 />
-                <span>{currentInterview.scorecard.overallRating} ⭐</span>
+                <span>{currentInterview.scorecard.overallRating}</span>
               </button>
               {getRecommendationBadge(
                 currentInterview.scorecard.recommendation,

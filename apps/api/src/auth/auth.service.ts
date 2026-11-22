@@ -404,7 +404,7 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(dto.password, BCRYPT_SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
     const id = crypto.randomUUID();
 
     await this.prisma.user.create({
@@ -523,8 +523,12 @@ export class AuthService {
     // Refresh Token Rotation (RTR): Detect reuse of previously exchanged refresh token
     if (this.redis && decoded.jti) {
       try {
-        const isRevoked = await this.redis.get(`revoked_rt:${decoded.jti}`);
-        if (isRevoked) {
+        const rtKey = `revoked_rt:${decoded.jti}`;
+        const isRevoked = await this.redis.get(rtKey);
+        const setResult = isRevoked
+          ? null
+          : await this.redis.set(rtKey, "1", "EX", 7 * 24 * 3600, "NX");
+        if (isRevoked || setResult === null) {
           // Token reuse detected! Invalidate all sessions for this user.
           await this.prisma.user.update({
             where: { id: user.id },
@@ -535,13 +539,6 @@ export class AuthService {
             "Compromised refresh token reuse detected. All sessions revoked.",
           );
         }
-        // Mark this refresh token jti as revoked with a 7-day TTL
-        await this.redis.set(
-          `revoked_rt:${decoded.jti}`,
-          "1",
-          "EX",
-          7 * 24 * 3600,
-        );
       } catch (err) {
         if (err instanceof AppUnauthorizedException) throw err;
       }
@@ -661,7 +658,7 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = bcrypt.hashSync(newPass, BCRYPT_SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(newPass, BCRYPT_SALT_ROUNDS);
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {

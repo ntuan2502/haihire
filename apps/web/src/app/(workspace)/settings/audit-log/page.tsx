@@ -9,8 +9,12 @@ import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
 import { History, Filter, Info, ChevronDown, ChevronUp } from "lucide-react";
 import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { getOrgRoleLabel } from "@/lib/roles";
 import { formatDateTime, getInitials, getUserDisplayName } from "@/lib/utils";
+import {
+  formatAuditMetadataLines,
+  getAuditActionBadge,
+  getAuditResourceLabel,
+} from "@/components/settings/audit-log/audit-log-formatters";
 import {
   CustomSelect,
   PageHeader,
@@ -20,27 +24,6 @@ import {
 import { Pagination } from "@/components/shared/pagination";
 
 const PAGE_SIZE = 20;
-
-const RESOURCE_KEYS = new Set([
-  "ORGANIZATION",
-  "MEMBER",
-  "ROLE_PERMISSIONS",
-  "SYSTEM",
-]);
-
-const LOCALIZATION_FIELD_MAP: Record<string, string> = {
-  timezone: "settings.auditLog.metadataLabels.localizationFields.timezone",
-  defaultLanguage:
-    "settings.auditLog.metadataLabels.localizationFields.defaultLocale",
-  defaultLocale:
-    "settings.auditLog.metadataLabels.localizationFields.defaultLocale",
-  defaultCurrency:
-    "settings.auditLog.metadataLabels.localizationFields.defaultCurrency",
-  nameDisplayOrder:
-    "settings.auditLog.metadataLabels.localizationFields.nameDisplayOrder",
-  dateFormat: "settings.auditLog.metadataLabels.localizationFields.dateFormat",
-  timeFormat: "settings.auditLog.metadataLabels.localizationFields.timeFormat",
-};
 
 export default function AuditLogPage() {
   const { t } = useI18n();
@@ -69,163 +52,6 @@ export default function AuditLogPage() {
 
   const toggleRow = (id: string) => {
     setExpandedRowId((prev) => (prev === id ? null : id));
-  };
-
-  const getActionBadge = (action: string) => {
-    switch (action) {
-      case "ROLE_PERMISSIONS_UPDATED":
-        return {
-          label: t("settings.auditLog.actionRolePermissionsUpdated"),
-          className:
-            "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
-        };
-      case "ROLE_PERMISSIONS_RESET":
-        return {
-          label: t("settings.auditLog.actionRolePermissionsReset"),
-          className:
-            "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-        };
-      case "MEMBER_ROLE_CHANGED":
-        return {
-          label: t("settings.auditLog.actionMemberRoleChanged"),
-          className:
-            "bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800",
-        };
-      case "MEMBER_REMOVED":
-        return {
-          label: t("settings.auditLog.actionMemberRemoved"),
-          className:
-            "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
-        };
-      case "OWNERSHIP_TRANSFERRED":
-        return {
-          label: t("settings.auditLog.actionOwnershipTransferred"),
-          className:
-            "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-        };
-      case "ORG_DELETED":
-        return {
-          label: t("settings.auditLog.actionOrgDeleted"),
-          className:
-            "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800",
-        };
-      case "ORG_LOCALIZATION_UPDATED":
-        return {
-          label: t("settings.auditLog.actionOrgLocalizationUpdated"),
-          className:
-            "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800",
-        };
-      case "ORG_LOGO_UPDATED":
-        return {
-          label: t("settings.auditLog.actionOrgLogoUpdated"),
-          className:
-            "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-        };
-      case "ORG_LOGO_REMOVED":
-        return {
-          label: t("settings.auditLog.actionOrgLogoRemoved"),
-          className:
-            "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800",
-        };
-      default:
-        return {
-          label: action,
-          className: "bg-secondary text-secondary-foreground border-border",
-        };
-    }
-  };
-
-  const getResourceLabel = (resource: string) => {
-    const normalized = resource?.trim().toUpperCase();
-    const key = RESOURCE_KEYS.has(normalized) ? normalized : "OTHER";
-    return t(`settings.auditLog.resources.${key}`);
-  };
-
-  const formatAuditMetadataLines = (
-    log: OrganizationAuditLogRecord,
-  ): string[] => {
-    const metadata = log.metadata;
-    if (!metadata || typeof metadata !== "object") return [];
-    const record = metadata as Record<string, unknown>;
-    const lines: string[] = [];
-
-    if (typeof record.role === "string" && record.role.trim()) {
-      const roleLabel =
-        record.role === "ALL"
-          ? t("settings.auditLog.metadataLabels.allRoles")
-          : getOrgRoleLabel(record.role, t);
-      lines.push(
-        t("settings.auditLog.metadataLabels.roleTarget", {
-          role: roleLabel,
-        }).replace("{role}", roleLabel),
-      );
-    }
-
-    const permCount = Array.isArray(record.permissions)
-      ? record.permissions.length
-      : record.permissions && typeof record.permissions === "object"
-        ? Object.keys(record.permissions).length
-        : typeof record.changes === "number"
-          ? record.changes
-          : null;
-    if (permCount !== null) {
-      lines.push(
-        t("settings.auditLog.metadataLabels.permissionsUpdated", {
-          count: permCount,
-        }).replace("{count}", String(permCount)),
-      );
-    }
-
-    if (
-      typeof record.oldRole === "string" &&
-      typeof record.newRole === "string"
-    ) {
-      const oldRoleLabel = getOrgRoleLabel(record.oldRole, t);
-      const newRoleLabel = getOrgRoleLabel(record.newRole, t);
-      lines.push(
-        t("settings.auditLog.metadataLabels.roleChanged", {
-          oldRole: oldRoleLabel,
-          newRole: newRoleLabel,
-        })
-          .replace("{oldRole}", oldRoleLabel)
-          .replace("{newRole}", newRoleLabel),
-      );
-    }
-
-    if (log.action === "OWNERSHIP_TRANSFERRED") {
-      lines.push(t("settings.auditLog.metadataLabels.ownershipTransferred"));
-    }
-
-    if (log.action === "ORG_LOCALIZATION_UPDATED") {
-      const fieldLabels = Object.keys(record)
-        .filter((k) => k in LOCALIZATION_FIELD_MAP)
-        .map((k) => t(LOCALIZATION_FIELD_MAP[k]));
-      if (fieldLabels.length > 0) {
-        const joined = fieldLabels.join(", ");
-        lines.push(
-          t("settings.auditLog.metadataLabels.localizationUpdated", {
-            fields: joined,
-          }).replace("{fields}", joined),
-        );
-      }
-    }
-
-    if (
-      log.action === "ORG_LOGO_UPDATED" &&
-      typeof record.fileName === "string"
-    ) {
-      lines.push(
-        t("settings.auditLog.metadataLabels.logoUpdated", {
-          fileName: record.fileName,
-        }).replace("{fileName}", record.fileName),
-      );
-    }
-
-    if (log.action === "ORG_LOGO_REMOVED") {
-      lines.push(t("settings.auditLog.metadataLabels.logoRemoved"));
-    }
-
-    return lines;
   };
 
   const actionOptions: CustomSelectOption<string>[] = [
@@ -375,33 +201,33 @@ export default function AuditLogPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
                   <tr>
-                    <th className="py-3 px-4">
+                    <th scope="col" className="py-3 px-4">
                       {t("settings.auditLog.colTimestamp")}
                     </th>
-                    <th className="py-3 px-4">
+                    <th scope="col" className="py-3 px-4">
                       {t("settings.auditLog.colActor")}
                     </th>
-                    <th className="py-3 px-4">
+                    <th scope="col" className="py-3 px-4">
                       {t("settings.auditLog.colAction")}
                     </th>
-                    <th className="py-3 px-4">
+                    <th scope="col" className="py-3 px-4">
                       {t("settings.auditLog.colResource")}
                     </th>
-                    <th className="py-3 px-4 text-right">
+                    <th scope="col" className="py-3 px-4 text-right">
                       {t("settings.auditLog.colMetadata")}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {logs.map((log: OrganizationAuditLogRecord) => {
-                    const badge = getActionBadge(log.action);
+                    const badge = getAuditActionBadge(log.action, t);
                     const isExpanded = expandedRowId === log.id;
                     const hasMetadata =
                       log.metadata !== null &&
                       typeof log.metadata === "object" &&
                       Object.keys(log.metadata).length > 0;
                     const summaryLines = isExpanded
-                      ? formatAuditMetadataLines(log)
+                      ? formatAuditMetadataLines(log, t)
                       : [];
 
                     return (
@@ -439,7 +265,7 @@ export default function AuditLogPage() {
                             </span>
                           </td>
                           <td className="py-3.5 px-4 text-xs font-medium text-foreground whitespace-nowrap">
-                            {getResourceLabel(log.resource)}
+                            {getAuditResourceLabel(log.resource, t)}
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
                             {hasMetadata ? (

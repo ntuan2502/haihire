@@ -94,7 +94,7 @@ pnpm check:all       # Full 18-gate CI architecture, security, i18n, doc, and bu
 - **Database Schema (`27` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
 - **Security & RBAC:** [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)
 - **Engineering Conventions:** [docs/architecture/conventions.md](docs/architecture/conventions.md)
-- **REST & SSE API (`13` Controllers / `114` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
+- **REST & SSE API (`13` Controllers / `118` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
 - **Decisions Log:** [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)
 - **Onboarding & QA:** [docs/guides/onboarding.md](docs/guides/onboarding.md)
 - **SRE Runbooks:** [docs/runbooks/alerts.md](docs/runbooks/alerts.md)

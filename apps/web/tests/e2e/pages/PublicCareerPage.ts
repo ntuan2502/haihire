@@ -43,9 +43,8 @@ export class PublicCareerPage {
       const phoneInput = this.page.locator(
         "#career-phone, form input[type='tel']",
       );
-      if (await phoneInput.isVisible()) {
-        await phoneInput.fill(candidate.phone);
-      }
+      await expect(phoneInput).toBeVisible();
+      await phoneInput.fill(candidate.phone);
     }
   }
 

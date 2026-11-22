@@ -199,7 +199,7 @@ describe("DashboardPage", () => {
       </DashboardFrame>,
     );
 
-    expect(screen.getByText("TIN TUYỂN DỤNG ĐANG MỞ")).toBeInTheDocument();
+    expect(screen.getByText("Tin tuyển dụng đang mở")).toBeInTheDocument();
     expect(screen.getByText("14")).toBeInTheDocument();
     expect(screen.getByText("22")).toBeInTheDocument();
     expect(

@@ -9,9 +9,11 @@ import {
   type FormEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
+import { queryKeys } from "@/hooks/query-keys";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link2, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
@@ -25,6 +27,7 @@ import { OnboardingCreateView } from "@/components/auth/onboarding/onboarding-cr
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const {
     user,
     isAuthenticated,
@@ -156,7 +159,8 @@ function OnboardingContent() {
 
       const newOrg = res.data.organization;
       updateUserOrg(newOrg, "ADMIN");
-      toast.success(`Organization ${newOrg.name} created!`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+      toast.success(t("onboarding.orgCreatedToast", { name: newOrg.name }));
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -187,7 +191,8 @@ function OnboardingContent() {
 
       const joinedOrg = res.data.organization;
       updateUserOrg(joinedOrg, res.data.role);
-      toast.success(`Successfully joined ${joinedOrg.name}!`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+      toast.success(t("onboarding.orgJoinedToast", { name: joinedOrg.name }));
 
       setTimeout(() => {
         router.push("/dashboard");

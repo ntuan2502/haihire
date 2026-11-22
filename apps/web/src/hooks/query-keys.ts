@@ -32,6 +32,8 @@ export function keepPreviousDataForSameOrg<TData>(
 
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
+  allJobs: (orgId?: string | null) => ["jobs", "all", { orgId }] as const,
+  openJobs: (orgId?: string | null) => ["jobs", "open", { orgId }] as const,
   jobStages: (jobId?: string | null, orgId?: string | null) =>
     ["jobs", "stages", jobId, { orgId }] as const,
   applications: (jobId?: string | null, orgId?: string | null) =>
@@ -142,8 +144,10 @@ export const queryKeys = {
     ["sourcing", "attribution-log", params] as const,
   webhookSettings: (orgId?: string | null) =>
     ["webhook-settings", { orgId }] as const,
-  webhookSetting: (id?: string | null) =>
-    ["webhook-settings", "detail", id] as const,
+  webhookSetting: (id?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["webhook-settings", "detail", id, { orgId }] as const)
+      : (["webhook-settings", "detail", id] as const),
   notifications: (
     orgId?: string | null,
     userId?: string | null,

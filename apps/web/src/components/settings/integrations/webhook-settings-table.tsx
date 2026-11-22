@@ -85,19 +85,19 @@ export function WebhookSettingsTable({
           <table className="w-full text-left text-xs">
             <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
               <tr>
-                <th className="py-3 px-4">
+                <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.eventType")}
                 </th>
-                <th className="py-3 px-4">
+                <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.provider")}
                 </th>
-                <th className="py-3 px-4">
+                <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.status")}
                 </th>
-                <th className="py-3 px-4">
+                <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
-                <th className="py-3 px-4 text-right">
+                <th scope="col" className="py-3 px-4 text-right">
                   {t("settings.integrations.webhooks.table.actions")}
                 </th>
               </tr>

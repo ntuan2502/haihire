@@ -64,11 +64,6 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       ? `${activeOrg.id}:${localization.defaultLanguage}:${localization.timezone}:${localization.dateFormat}:${localization.timeFormat}:${localization.nameDisplayOrder}:${localization.defaultCurrency}:${locale}`
       : "none";
 
-  // Synchronously seed active regional formatting on client for frame-0 hydration (never mutate on SSR)
-  if (typeof window !== "undefined" && hasOrg && activeOrg) {
-    setActiveLocalization(localization, locale);
-  }
-
   // 2-tier language precedence: DB user.preferredLanguage -> localStorage/cookie -> org.defaultLanguage
   useEffect(() => {
     const userPrefLang = user?.preferredLanguage;

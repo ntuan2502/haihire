@@ -90,6 +90,9 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
         consoleIssues.push(msg.text());
       }
     });
+    adminPage.on("pageerror", (err) => {
+      consoleIssues.push(err.message);
+    });
 
     // Visit landing page as an authenticated user (triggers LocalizationProvider + LandingAtsPreview)
     await adminPage.goto("/", { waitUntil: "networkidle" });

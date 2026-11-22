@@ -4,6 +4,7 @@ import { FileText, Eye, Download } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
 
 interface ApplicationDocumentsSectionProps {
   documents: CandidateDocument[];
@@ -20,7 +21,8 @@ export function ApplicationDocumentsSection({
   onDownload,
   showHeader = true,
 }: ApplicationDocumentsSectionProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { localization } = useLocalization();
 
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
@@ -48,7 +50,10 @@ export function ApplicationDocumentsSection({
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
                     {doc.type || t("candidates.resume")} •{" "}
-                    {formatDate(doc.createdAt, "short")}
+                    {formatDate(doc.createdAt, "short", {
+                      ...localization,
+                      defaultLanguage: locale,
+                    })}
                   </p>
                 </div>
               </div>

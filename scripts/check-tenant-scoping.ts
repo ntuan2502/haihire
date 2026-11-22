@@ -145,7 +145,7 @@ export function checkTenantScoping(options?: {
       const lineNumber = content.slice(0, matchIndex).split("\n").length;
       const lineSnippet = lines[lineNumber - 1]?.trim() || "";
 
-      // Skip import statements and comments
+      // Skip import statements, comments, and typeof/non-invocation property references
       if (
         lineSnippet.startsWith("import ") ||
         lineSnippet.startsWith("export ") ||
@@ -153,6 +153,14 @@ export function checkTenantScoping(options?: {
         lineSnippet.startsWith("/*") ||
         lineSnippet.startsWith("*")
       ) {
+        continue;
+      }
+
+      const afterMatch = content.slice(matchIndex + match[0].length);
+      const isInvocation =
+        /^\s*(?:<[^>]*>\s*)?[(`]/.test(afterMatch) ||
+        /^\?\.\s*[A-Za-z0-9_]+\s*(?:<[^>]*>\s*)?\(/.test(afterMatch);
+      if (lineSnippet.includes("typeof ") || !isInvocation) {
         continue;
       }
 
@@ -171,11 +179,21 @@ export function checkTenantScoping(options?: {
         continue;
       }
 
-      // Step 2: Context window check (lookahead 350 characters for organizationId / targetOrgId)
+      // Step 2: Context window check (lookahead 350 characters for organizationId / targetOrgId,
+      // excluding `select: { ... }` projections so selecting the column does not mask missing `where` scope)
       const contextWindow = content.slice(matchIndex, matchIndex + 350);
+      let sanitizedWindow = contextWindow;
+      for (let pass = 0; pass < 3; pass++) {
+        const nextWindow = sanitizedWindow.replace(
+          /select\s*:\s*\{[^{}]*\}/g,
+          "",
+        );
+        if (nextWindow === sanitizedWindow) break;
+        sanitizedWindow = nextWindow;
+      }
       if (
-        contextWindow.includes("organizationId") ||
-        contextWindow.includes("targetOrgId")
+        sanitizedWindow.includes("organizationId") ||
+        sanitizedWindow.includes("targetOrgId")
       ) {
         explicitFilterCount++;
         continue;
@@ -193,10 +211,26 @@ export function checkTenantScoping(options?: {
       const funcPrefix =
         lastHeaderIndex >= 0 ? beforeContent.slice(lastHeaderIndex) : "";
 
+      const tailSlice = content.slice(matchIndex, matchIndex + 900);
+      const nextMethodOffset = tailSlice
+        .slice(20)
+        .search(
+          /\n {0,2}(?:(?:async|private|public|protected|function)\s+)+[A-Za-z0-9_]+\s*\(|\n {0,2}(?!(?:if|for|while|switch|catch|else|return|await|throw|new)\b)[A-Za-z0-9_]+\s*\([^)]*\)\s*(?::\s*[^{;\n]+)?\{/,
+        );
+      const afterWindow =
+        nextMethodOffset >= 0
+          ? tailSlice.slice(0, 20 + nextMethodOffset)
+          : tailSlice;
+
       const hasParentGuard =
         funcPrefix.includes(".organizationId !==") ||
         funcPrefix.includes(".organizationId ===") ||
-        funcPrefix.includes("throw new AppForbiddenException");
+        funcPrefix.includes("throw new AppForbiddenException") ||
+        /where\s*:\s*\{[\s\S]*?\borganizationId\b/.test(funcPrefix) ||
+        (afterWindow.includes("throw new AppForbiddenException") &&
+          (afterWindow.includes("organizationId") ||
+            afterWindow.includes("appOrgId") ||
+            afterWindow.includes("if (otherOrg)")));
 
       if (hasParentGuard) {
         parentGuardCount++;

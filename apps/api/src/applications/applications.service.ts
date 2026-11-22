@@ -102,7 +102,12 @@ export class ApplicationsService {
     id: string,
     dto: UpdateStageDto,
     tenantOrgId?: string | null,
-    currentUser?: { id?: string; name?: string; role?: string } | null,
+    currentUser?: {
+      id?: string;
+      name?: string;
+      role?: string;
+      isOwner?: boolean;
+    } | null,
   ) {
     return this.stage.updateStage(id, dto, tenantOrgId, currentUser);
   }

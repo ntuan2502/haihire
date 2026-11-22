@@ -362,7 +362,7 @@ export class JobsService {
     if (!job || job.deletedAt) {
       if (!isPublic && tenantOrgId) {
         const otherOrgJob = await this.prisma.job.findFirst({
-          where: { id },
+          where: { id, deletedAt: null },
           select: { id: true, organizationId: true },
         });
         if (
@@ -373,7 +373,7 @@ export class JobsService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
             "Access denied: job belongs to another organization.",
-            { id, organizationId: otherOrgJob.organizationId },
+            { id },
           );
         }
       }

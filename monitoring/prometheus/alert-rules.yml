@@ -42,7 +42,7 @@ groups:
           description: "MinIO storage bucket check failed for >1m. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighHttp5xxErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9) * 100 > 5
         for: 2m
         labels:
           severity: high
@@ -111,7 +111,7 @@ groups:
             See runbook: docs/runbooks/dlq-recovery.md
 
       - alert: BullMQDLQGrowing
-        expr: rate(bullmq_dlq_size[15m]) > 0
+        expr: deriv(bullmq_dlq_size[15m]) > 0
         for: 5m
         labels:
           severity: critical

@@ -25,12 +25,31 @@ async function bootstrap() {
   });
   app.enableShutdownHooks();
 
+  const expressApp = app.getHttpAdapter().getInstance() as {
+    set?: (setting: string, val: unknown) => void;
+  };
+  if (typeof expressApp?.set === "function") {
+    expressApp.set("trust proxy", 1);
+  }
+
   const metricsService = app.get(MetricsService, { strict: false });
 
   // Strict CORS whitelist from FRONTEND_URL
   const allowedOrigins = env.FRONTEND_URL.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const allowedHosts = new Set(
+    allowedOrigins
+      .map((origin) => {
+        try {
+          return new URL(origin).host.toLowerCase();
+        } catch {
+          return null;
+        }
+      })
+      .filter((h): h is string => Boolean(h)),
+  );
+  const defaultCanonicalHost = Array.from(allowedHosts)[0] || "localhost";
 
   app.enableCors({
     origin: allowedOrigins.length > 0 ? allowedOrigins : false,
@@ -61,7 +80,7 @@ async function bootstrap() {
     },
   );
 
-  // Production HTTPS redirection (bypass for loopback and internal health/metrics probes)
+  // Production HTTPS redirection (bypass for loopback, private Docker networks, and health/metrics probes)
   if (env.NODE_ENV === "production") {
     app.use(
       (
@@ -74,28 +93,57 @@ async function bootstrap() {
         res: ServerResponse,
         next: () => void,
       ) => {
-        const url = req.url || "";
+        const rawUrl = req.url || "/";
+        const url = `/${rawUrl.replace(/^\/+/, "")}`;
         const isProbe =
           url === "/health" ||
           url === "/metrics" ||
           url.startsWith("/api/health") ||
           url.startsWith("/health");
-        const remoteIp = req.socket?.remoteAddress;
+        const remoteIp = req.socket?.remoteAddress || "";
+        const normalizedIp = remoteIp.startsWith("::ffff:")
+          ? remoteIp.slice(7)
+          : remoteIp;
         const isLoopback =
-          remoteIp === "127.0.0.1" ||
-          remoteIp === "::1" ||
-          remoteIp === "::ffff:127.0.0.1";
-        const forwardedProto = req.headers["x-forwarded-proto"];
+          normalizedIp === "127.0.0.1" || normalizedIp === "::1";
+        const isPrivateNetwork =
+          normalizedIp.startsWith("10.") ||
+          normalizedIp.startsWith("192.168.") ||
+          /^172\.(1[6-9]|2\d|3[01])\./.test(normalizedIp) ||
+          normalizedIp.startsWith("fc") ||
+          normalizedIp.startsWith("fd") ||
+          normalizedIp.startsWith("fe80:");
+        const forwardedProtoHeader = req.headers["x-forwarded-proto"];
+        const forwardedProto = Array.isArray(forwardedProtoHeader)
+          ? forwardedProtoHeader[0]
+          : forwardedProtoHeader;
         const isHttps = req.secure || forwardedProto === "https";
 
-        if (isProbe || isLoopback || isHttps) {
+        if (isHttps) {
+          res.setHeader(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+          );
+        }
+
+        if (
+          isProbe ||
+          isLoopback ||
+          isHttps ||
+          (isPrivateNetwork && forwardedProto !== "http")
+        ) {
           next();
           return;
         }
 
-        const host = req.headers.host || "localhost";
+        const rawHost = Array.isArray(req.headers.host)
+          ? req.headers.host[0]
+          : req.headers.host || "";
+        const safeHost = allowedHosts.has(rawHost.toLowerCase())
+          ? rawHost
+          : defaultCanonicalHost;
         res.writeHead(301, {
-          Location: `https://${host}${url}`,
+          Location: `https://${safeHost}${url}`,
         });
         res.end();
       },
@@ -202,7 +250,12 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Graceful shutdown on SIGTERM / SIGINT with 30s timeout guard
+  let isShuttingDown = false;
   const gracefulShutdown = async (signal: string) => {
+    if (isShuttingDown) {
+      return;
+    }
+    isShuttingDown = true;
     console.log(
       `[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`,
     );

@@ -296,6 +296,24 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+function isTransientRefreshError(err: unknown): boolean {
+  const e = err as {
+    response?: { status?: number };
+    code?: string;
+  };
+  const status = e?.response?.status;
+  if (typeof status === "number") {
+    return status >= 500 || status === 429;
+  }
+  const code = e?.code;
+  return (
+    code === "ERR_NETWORK" ||
+    code === "ECONNABORTED" ||
+    code === "ETIMEDOUT" ||
+    code === "ERR_CANCELED"
+  );
+}
+
 export async function refreshAuthSession(): Promise<string> {
   if (typeof window === "undefined") {
     return "";
@@ -328,10 +346,13 @@ export async function refreshAuthSession(): Promise<string> {
     return nextToken;
   } catch (refreshErr) {
     processQueue(refreshErr, null);
-    if (hasClientSessionState()) {
-      await clearServerAndClientSession();
-    } else {
-      clearClientAuthCookies();
+    if (!isTransientRefreshError(refreshErr)) {
+      if (hasClientSessionState()) {
+        await clearServerAndClientSession();
+      } else {
+        clearClientAuthCookies();
+      }
+      window.dispatchEvent(new CustomEvent("haihire:auth-expired"));
     }
     throw refreshErr;
   } finally {

@@ -11,6 +11,7 @@ describe("AuthController", () => {
     refreshToken: ReturnType<typeof vi.fn>;
     changePassword: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
+    logoutWithRefreshToken: ReturnType<typeof vi.fn>;
     getProfile: ReturnType<typeof vi.fn>;
     updatePreferences: ReturnType<typeof vi.fn>;
     getMyPermissions: ReturnType<typeof vi.fn>;
@@ -28,6 +29,7 @@ describe("AuthController", () => {
       refreshToken: vi.fn(),
       changePassword: vi.fn(),
       logout: vi.fn(),
+      logoutWithRefreshToken: vi.fn(),
       getProfile: vi.fn(),
       updatePreferences: vi.fn(),
       getMyPermissions: vi.fn(),
@@ -297,6 +299,29 @@ describe("AuthController", () => {
 
       expect(mockAuthService.getProfile).toHaveBeenCalledWith("u-1", "org-2");
       expect(result).toEqual({ id: "u-1", organizationId: "org-2" });
+    });
+
+    it("refresh returns 401 instead of 500 URIError on malformed cookie encoding, and logout revokes via refresh token when access token is expired", async () => {
+      await expect(
+        controller.refresh(
+          { headers: { cookie: "haihire_refresh_token=%E0%A4%A" } },
+          {},
+          mockResponse as unknown as Response,
+        ),
+      ).rejects.toMatchObject({ status: 401 });
+
+      mockAuthService.logoutWithRefreshToken.mockResolvedValue(undefined);
+      const logoutRes = await controller.logout(
+        {
+          user: undefined,
+          cookies: { haihire_refresh_token: "valid-refresh-jwt" },
+        } as never,
+        mockResponse as unknown as Response,
+      );
+      expect(logoutRes).toEqual({ success: true });
+      expect(mockAuthService.logoutWithRefreshToken).toHaveBeenCalledWith(
+        "valid-refresh-jwt",
+      );
     });
   });
 });

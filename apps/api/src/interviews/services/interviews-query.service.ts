@@ -6,6 +6,7 @@ import {
   type NameDisplayOrder,
 } from "@haihire/shared";
 import {
+  AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
@@ -68,9 +69,20 @@ export class InterviewsQueryService {
     };
 
     if (options?.startDate && options?.endDate) {
+      const parsedStart = new Date(options.startDate);
+      const parsedEnd = new Date(options.endDate);
+      if (
+        Number.isNaN(parsedStart.getTime()) ||
+        Number.isNaN(parsedEnd.getTime())
+      ) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid startDate or endDate filter.",
+        );
+      }
       interviewWhere.scheduledAt = {
-        gte: new Date(options.startDate),
-        lte: new Date(options.endDate),
+        gte: parsedStart,
+        lte: parsedEnd,
       };
     } else if (options?.tab === "UPCOMING") {
       const now = new Date();
@@ -231,7 +243,7 @@ export class InterviewsQueryService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
             "Access denied: interview belongs to another organization.",
-            { id, organizationId: otherOrg.organizationId || "" },
+            { id },
           );
         }
       }

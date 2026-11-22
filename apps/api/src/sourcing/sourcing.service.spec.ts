@@ -183,6 +183,7 @@ describe("SourcingService", () => {
     inMemoryApps.push(
       {
         id: "app-1",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-1",
         stage: "APPLIED",
@@ -192,6 +193,7 @@ describe("SourcingService", () => {
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-2",
         stage: "HIRED",
@@ -201,6 +203,7 @@ describe("SourcingService", () => {
       },
       {
         id: "app-3",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-3",
         stage: "APPLIED",
@@ -246,6 +249,7 @@ describe("SourcingService", () => {
     });
     inMemoryApps.push({
       id: "app-org1",
+      organizationId: "org-1",
       jobId: "job-org1",
       candidateId: "cand-org1",
       stage: "APPLIED",
@@ -267,6 +271,7 @@ describe("SourcingService", () => {
     });
     inMemoryApps.push({
       id: "app-org2",
+      organizationId: "org-2",
       jobId: "job-org2",
       candidateId: "cand-org2",
       stage: "APPLIED",

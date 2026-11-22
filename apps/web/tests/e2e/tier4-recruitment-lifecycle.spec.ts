@@ -58,6 +58,15 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     };
     if (applyData.candidateId) {
       createdCandidateId = applyData.candidateId;
+    } else {
+      const appDetailRes = await adminPage.request.get(
+        `/api/applications/${applyData.id}`,
+      );
+      if (appDetailRes.ok()) {
+        createdCandidateId =
+          ((await appDetailRes.json()) as { candidateId?: string })
+            .candidateId ?? null;
+      }
     }
 
     // 3. Recruiter accesses Kanban Pipeline for the created job
@@ -153,9 +162,18 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
       },
     });
     expect(apply1Res.ok()).toBe(true);
-    const initialCandidateId = (
-      (await apply1Res.json()) as { candidateId: string }
-    ).candidateId;
+    const apply1Data = (await apply1Res.json()) as {
+      id: string;
+      candidateId?: string;
+    };
+    const app1DetailRes = await adminPage.request.get(
+      `/api/applications/${apply1Data.id}`,
+    );
+    expect(app1DetailRes.ok()).toBe(true);
+    const initialCandidateId =
+      apply1Data.candidateId ??
+      ((await app1DetailRes.json()) as { candidateId: string }).candidateId;
+    expect(initialCandidateId).toBeDefined();
 
     // 3. Recruiter soft-deletes the initial candidate
     const deleteRes = await adminPage.request.delete(
@@ -173,8 +191,18 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
       },
     });
     expect(apply2Res.ok()).toBe(true);
-    const newCandidateId = ((await apply2Res.json()) as { candidateId: string })
-      .candidateId;
+    const apply2Data = (await apply2Res.json()) as {
+      id: string;
+      candidateId?: string;
+    };
+    const app2DetailRes = await adminPage.request.get(
+      `/api/applications/${apply2Data.id}`,
+    );
+    expect(app2DetailRes.ok()).toBe(true);
+    const newCandidateId =
+      apply2Data.candidateId ??
+      ((await app2DetailRes.json()) as { candidateId: string }).candidateId;
+    expect(newCandidateId).toBeDefined();
     createdCandidateId = newCandidateId;
 
     // 5. Verify in UI that active candidate list reflects new active profile without resurrecting old candidate ID

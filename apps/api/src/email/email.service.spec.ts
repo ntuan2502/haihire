@@ -8,7 +8,7 @@ import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 
 describe("EmailService", () => {
   let service: EmailService;
-  let mockPrismaService: unknown;
+  let mockPrismaService: ReturnType<typeof createMockPrismaService>;
   let mockActivitiesService: { createActivity: ReturnType<typeof vi.fn> };
   let encryptionService: EncryptionService;
 
@@ -27,6 +27,52 @@ describe("EmailService", () => {
       emailSetting: inMemorySettings,
       emailLog: inMemoryLogs,
       organization: [{ id: "org-1" }],
+      candidate: [
+        {
+          id: "cand-123",
+          organizationId: "org-test",
+          email: "c123@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-999",
+          organizationId: "org-test",
+          email: "c999@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-retry",
+          organizationId: "org-test",
+          email: "retry@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-filter-1",
+          organizationId: "org-test",
+          email: "john@example.com",
+          deletedAt: null,
+        },
+      ],
+      application: [
+        {
+          id: "app-456",
+          organizationId: "org-test",
+          candidateId: "cand-123",
+          jobId: "job-1",
+        },
+        {
+          id: "app-888",
+          organizationId: "org-test",
+          candidateId: "cand-999",
+          jobId: "job-1",
+        },
+        {
+          id: "app-retry",
+          organizationId: "org-test",
+          candidateId: "cand-retry",
+          jobId: "job-1",
+        },
+      ],
     });
 
     service = createTestEmailService(
@@ -1122,6 +1168,57 @@ describe("EmailService", () => {
       const logs = await service.getLogs("org-log");
       expect(logs.data[0]?.templateId).toBe(created.id);
       expect(logs.data[0]?.templateName).toBe("Technical Invite Template");
+    });
+
+    it("rejects cross-tenant candidateId or applicationId in sendEmail and executeSendEmail", async () => {
+      await service.updateSettings("org-sender", { provider: "SIMULATED" });
+      await mockPrismaService.candidate.create({
+        data: {
+          id: "cand-foreign",
+          organizationId: "org-victim",
+          email: "victim@example.com",
+          firstName: "Victim",
+          lastName: "User",
+          deletedAt: null,
+        },
+      });
+      await mockPrismaService.application.create({
+        data: {
+          id: "app-foreign",
+          organizationId: "org-victim",
+          candidateId: "cand-foreign",
+          jobId: "job-foreign",
+          stage: "APPLIED",
+        },
+      });
+
+      await expect(
+        service.sendEmail(
+          {
+            to: "victim@example.com",
+            recipientName: "Victim",
+            subject: "Hi",
+            body: "<p>Hi</p>",
+            candidateId: "cand-foreign",
+          },
+          "org-sender",
+        ),
+      ).rejects.toMatchObject({ code: "CANDIDATE_NOT_FOUND" });
+
+      await expect(
+        service.executeSendEmail(
+          {
+            to: "victim@example.com",
+            recipientName: "Victim",
+            subject: "Hi",
+            body: "<p>Hi</p>",
+            applicationId: "app-foreign",
+          },
+          "org-sender",
+        ),
+      ).rejects.toMatchObject({ code: "APPLICATION_NOT_FOUND" });
+
+      expect(mockActivitiesService.createActivity).not.toHaveBeenCalled();
     });
   });
 });

@@ -49,7 +49,10 @@ export class RolesGuard implements CanActivate {
 
     // Dynamic organization owner bypass (ADR-003):
     const isOwner = Boolean(
-      user.isOwner || user.organization?.ownerId === user.id,
+      user.isOwner ||
+      ((!user.organization?.id ||
+        user.organization.id === user.organizationId) &&
+        user.organization?.ownerId === user.id),
     );
     if (isOwner) {
       return true;

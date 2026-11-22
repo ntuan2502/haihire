@@ -50,7 +50,7 @@ export const test = base.extend<TestFixtures>({
     });
     const cookie = await loginAsAdmin(
       request,
-      "admin@beta.haihire.local",
+      "admin@beta.test",
       process.env.DEMO_SEED_PASSWORD ||
         process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
         "dev-seed-password-2026",

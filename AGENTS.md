@@ -14,12 +14,12 @@ All AI agents working in this repository MUST read and follow:
 
 1. **Architecture & Coding Rules:**
    - [Engineering Conventions](docs/architecture/conventions.md) — TypeScript discipline, centralized Zod env validation, `DtoPipe` coverage, 2-way i18n, multi-tenant `organizationId` scoping, Next.js 16 `src/proxy.ts` rules, and Shadcn `new-york` UI standards.
-   - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-017` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
+   - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-018` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
 2. **HaiHire Specialized Agent Skills (`.agents/skills/`):**
    - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`new-york` + `radix-ui` + standalone `cn`).
    - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `sonner`, 2-tier vi/en i18n.
    - [haihire-nestjs-backend](.agents/skills/haihire-nestjs-backend/SKILL.md) — NestJS `^12.4.0` ESM (`esbuild`), explicit `@Inject`, `DtoPipe`, 64 `APP_ERROR_CODES`, cookie JWT + `tokenVersion`, dynamic `ownerId` RBAC (`5` roles / `41` permissions), BullMQ DLQ queues, MinIO tenant isolation.
-   - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `AsyncLocalStorage` transaction propagation, `8` tenant-scoped backend modules, `deletedAt` soft-delete rules.
+   - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `AsyncLocalStorage` transaction propagation, `10` tenant-scoped backend modules, `deletedAt` soft-delete rules.
    - [haihire-testing-qa](.agents/skills/haihire-testing-qa/SKILL.md) — Vitest `5.1.0`, `createMockPrismaService`, RTL `jsdom`, Playwright `^1.65.0` E2E specs, `pnpm test:diff` gate.
    - [haihire-devops-release](.agents/skills/haihire-devops-release/SKILL.md) — `pnpm@12.18.0` catalog, Turborepo `^2.11.10`, Node 26 Alpine Dockerfiles, `18/18` CI architecture gates, GitHub Actions workflows.
 

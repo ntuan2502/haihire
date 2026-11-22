@@ -19,11 +19,20 @@ export class SourcingQueryService {
     });
   }
 
-  async getApplicationsForJobs(jobIds: string[]) {
+  async getApplicationsForJobs(
+    jobIds: string[],
+    options?: { minTimestamp?: number | null; organizationId?: string },
+  ) {
     if (jobIds.length === 0) return [];
     return this.prisma.application.findMany({
       where: {
         jobId: { in: jobIds },
+        ...(options?.organizationId
+          ? { organizationId: options.organizationId }
+          : {}),
+        ...(options?.minTimestamp != null
+          ? { createdAt: { gte: new Date(options.minTimestamp) } }
+          : {}),
         candidate: { deletedAt: null },
         job: { deletedAt: null },
       },
@@ -124,10 +133,21 @@ export class SourcingQueryService {
     });
   }
 
-  async getClicksForLinks(linkIds: string[]) {
+  async getClicksForLinks(
+    linkIds: string[],
+    options?: { minTimestamp?: number | null; organizationId?: string },
+  ) {
     if (linkIds.length === 0) return [];
     return this.prisma.trackingClick.findMany({
-      where: { trackingLinkId: { in: linkIds } },
+      where: {
+        trackingLinkId: { in: linkIds },
+        ...(options?.organizationId
+          ? { organizationId: options.organizationId }
+          : {}),
+        ...(options?.minTimestamp != null
+          ? { createdAt: { gte: new Date(options.minTimestamp) } }
+          : {}),
+      },
       select: {
         organizationId: true,
         trackingLinkId: true,
@@ -137,9 +157,12 @@ export class SourcingQueryService {
     });
   }
 
-  async getClicksForLink(linkId: string) {
+  async getClicksForLink(linkId: string, organizationId?: string) {
     return this.prisma.trackingClick.findMany({
-      where: { trackingLinkId: linkId },
+      where: {
+        trackingLinkId: linkId,
+        ...(organizationId ? { organizationId } : {}),
+      },
       select: {
         organizationId: true,
         id: true,
@@ -149,10 +172,14 @@ export class SourcingQueryService {
     });
   }
 
-  async getAttributedApplicationsForLink(linkId: string) {
+  async getAttributedApplicationsForLink(
+    linkId: string,
+    organizationId?: string,
+  ) {
     return this.prisma.application.findMany({
       where: {
         trackingLinkId: linkId,
+        ...(organizationId ? { organizationId } : {}),
         candidate: { deletedAt: null },
         job: { deletedAt: null },
       },

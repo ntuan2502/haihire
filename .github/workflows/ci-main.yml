@@ -288,9 +288,14 @@ jobs:
         with:
           context: .
           file: apps/api/Dockerfile
+          load: true
           push: false
           tags: test-backend:latest
           cache-from: type=gha
+
+      - name: Verify Backend Image Prisma Client & Bundle Import
+        run: |
+          docker run --rm test-backend:latest node -e "import('@prisma/client').then((m) => { if (typeof m.PrismaClient !== 'function') process.exit(1); console.log('PrismaClient verified'); })"
 
       - name: Verify Frontend Container Build
         uses: docker/build-push-action@v6

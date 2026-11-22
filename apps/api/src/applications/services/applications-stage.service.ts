@@ -12,12 +12,13 @@ import {
   AppBadRequestException,
   AppConflictException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { UpdateStageDto } from "../dto/update-stage.dto";
 import { EventsService } from "../../events/events.service";
+import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
 @Injectable()
@@ -37,6 +38,9 @@ export class ApplicationsStageService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -46,7 +50,12 @@ export class ApplicationsStageService {
     id: string,
     dto: UpdateStageDto,
     tenantOrgId?: string | null,
-    currentUser?: { id?: string; name?: string; role?: string } | null,
+    currentUser?: {
+      id?: string;
+      name?: string;
+      role?: string;
+      isOwner?: boolean;
+    } | null,
   ) {
     const existing = await this.query.findOne(id, tenantOrgId);
     const oldStage = existing.stage;
@@ -104,33 +113,95 @@ export class ApplicationsStageService {
         ? dto.rejectionReason.trim()
         : undefined;
 
-    const updateResult = await this.prisma.application.updateMany({
-      where: {
-        id,
-        stage: oldStage,
-        ...(dto.version !== undefined ? { version: dto.version } : {}),
-        ...(tenantOrgId && existing.organizationId
-          ? { organizationId: tenantOrgId }
-          : {}),
-      },
-      data: {
-        stage: nextStage,
-        ...(targetPipelineStage ? { stageId: targetPipelineStage.id } : {}),
-        version: { increment: 1 },
-        ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
-        ...(isRejecting
-          ? {
-              rejectionReason: trimmedReason || null,
-              rejectedAt: new Date(),
-            }
-          : {}),
-        ...(isReopeningFromRejected
-          ? {
-              rejectionReason: null,
-              rejectedAt: null,
-            }
-          : {}),
-      },
+    let resolvedPipelineStage = targetPipelineStage;
+    if (
+      !resolvedPipelineStage &&
+      typeof (
+        this.prisma as unknown as {
+          pipelineStage?: {
+            findFirst?: (
+              args: unknown,
+            ) => Promise<{ id: string; name?: string } | null>;
+          };
+        }
+      ).pipelineStage?.findFirst === "function"
+    ) {
+      resolvedPipelineStage = await this.prisma.pipelineStage.findFirst({
+        where: {
+          organizationId: effectiveOrgId,
+          jobId: existing.jobId,
+          category: nextStage,
+        },
+      });
+    }
+
+    const updateResult = await runInTransaction(this.prisma, async (tx) => {
+      const res = await tx.application.updateMany({
+        where: {
+          id,
+          stage: oldStage,
+          ...(dto.version !== undefined ? { version: dto.version } : {}),
+          ...(tenantOrgId && existing.organizationId
+            ? { organizationId: tenantOrgId }
+            : {}),
+        },
+        data: {
+          stage: nextStage,
+          ...(resolvedPipelineStage
+            ? { stageId: resolvedPipelineStage.id }
+            : {}),
+          version: { increment: 1 },
+          ...(dto.orderIndex !== undefined
+            ? { orderIndex: dto.orderIndex }
+            : {}),
+          ...(isRejecting
+            ? {
+                rejectionReason: trimmedReason || null,
+                rejectedAt: new Date(),
+              }
+            : {}),
+          ...(isReopeningFromRejected
+            ? {
+                rejectionReason: null,
+                rejectedAt: null,
+              }
+            : {}),
+        },
+      });
+
+      if (!res || res.count === 0) {
+        return res;
+      }
+
+      if (
+        effectiveOrgId &&
+        typeof (
+          tx as unknown as {
+            outboxEvent?: { create?: (args: unknown) => Promise<unknown> };
+          }
+        ).outboxEvent?.create === "function"
+      ) {
+        await (
+          tx as unknown as {
+            outboxEvent: { create: (args: unknown) => Promise<unknown> };
+          }
+        ).outboxEvent.create({
+          data: {
+            organizationId: effectiveOrgId,
+            eventType: "APPLICATION_STAGE_CHANGED",
+            aggregateType: "Application",
+            aggregateId: id,
+            payload: {
+              applicationId: id,
+              previousStage: oldStage,
+              nextStage,
+              stageId: resolvedPipelineStage?.id ?? null,
+            },
+          },
+        });
+      }
+
+      return res;
     });
 
     if (!updateResult || updateResult.count === 0) {
@@ -150,18 +221,25 @@ export class ApplicationsStageService {
     if (
       orgId &&
       updated.candidate &&
-      (oldStage !== nextStage || Boolean(targetPipelineStage))
+      (oldStage !== nextStage || Boolean(resolvedPipelineStage))
     ) {
       const callerCanSendEmail =
         !currentUser?.role ||
+        currentUser.isOwner ||
         currentUser.role === "ADMIN" ||
-        hasPermission(currentUser.role as Role, "email:send");
+        (this.permissionResolver
+          ? await this.permissionResolver.resolvePermission(
+              orgId,
+              currentUser.role as Role,
+              "email:send",
+            )
+          : hasPermission(currentUser.role as Role, "email:send"));
       const shouldSendRejectionEmail =
         callerCanSendEmail && isRejecting && dto.sendRejectionEmail === true;
       const shouldSendOfferEmail =
         callerCanSendEmail && isOffering && dto.sendOfferEmail === true;
       const descriptionParts = [
-        `Application moved from ${oldStage} to ${targetPipelineStage?.name || nextStage} for position ${updated.job?.title || ""}`,
+        `Application moved from ${oldStage} to ${resolvedPipelineStage?.name || nextStage} for position ${updated.job?.title || ""}`,
       ];
       if (isRejecting && trimmedReason) {
         descriptionParts.push(`Reason: ${trimmedReason}`);
@@ -172,7 +250,7 @@ export class ApplicationsStageService {
         candidateId: updated.candidate.id,
         applicationId: updated.id,
         type: "STAGE_CHANGED",
-        title: `Stage Changed: ${oldStage} → ${targetPipelineStage?.name || nextStage}`,
+        title: `Stage Changed: ${oldStage} → ${resolvedPipelineStage?.name || nextStage}`,
         description: descriptionParts.join(" — "),
         actorId: currentUser?.id,
         actorName: currentUser?.name || "HR Team",
@@ -180,8 +258,8 @@ export class ApplicationsStageService {
         metadata: {
           fromStage: oldStage,
           toStage: nextStage,
-          stageId: targetPipelineStage?.id,
-          stageName: targetPipelineStage?.name,
+          stageId: resolvedPipelineStage?.id,
+          stageName: resolvedPipelineStage?.name,
           reopened: isReopeningFromRejected || undefined,
           rejectionReason:
             isRejecting && trimmedReason ? trimmedReason : undefined,
@@ -240,23 +318,6 @@ export class ApplicationsStageService {
           data: {
             candidateId: updated.candidate?.id,
             applicationId: updated.id,
-          },
-        });
-      }
-
-      if (this.prisma.outboxEvent?.create) {
-        await this.prisma.outboxEvent.create({
-          data: {
-            organizationId: orgId,
-            eventType: "APPLICATION_STAGE_CHANGED",
-            aggregateType: "Application",
-            aggregateId: updated.id,
-            payload: {
-              applicationId: updated.id,
-              previousStage: oldStage,
-              nextStage: updated.stage,
-              stageId: updated.stageId ?? null,
-            },
           },
         });
       }

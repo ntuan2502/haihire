@@ -380,6 +380,17 @@ export class OrganizationsMembersService {
       );
     }
 
+    if (
+      !isCallerOwner &&
+      effectiveCallerRole !== "ADMIN" &&
+      (newRole === "ADMIN" || membership.role === "ADMIN")
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Only organization owners and administrators can assign or modify the ADMIN role.",
+      );
+    }
+
     await runInTransaction(this.prisma, async (tx) => {
       if (membership) {
         await tx.organizationMember.update({
@@ -538,6 +549,25 @@ export class OrganizationsMembersService {
           APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER,
           "Cannot remove the organization owner",
         );
+      }
+
+      if (!isCallerOwner && effectiveCallerRole !== "ADMIN") {
+        const targetMembership =
+          typeof tx.organizationMember?.findFirst === "function"
+            ? await tx.organizationMember.findFirst({
+                where: {
+                  organizationId: targetOrgId,
+                  userId: targetMemberId,
+                },
+                select: { role: true },
+              })
+            : null;
+        if (targetMembership?.role === "ADMIN") {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+            "Only organization owners and administrators can remove an administrator.",
+          );
+        }
       }
 
       // Remove from OrganizationMember

@@ -45,9 +45,14 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
       },
     });
     expect([200, 201]).toContain(createOrgRes.status());
-    const secondaryOrg = (await createOrgRes.json()) as {
-      id: string;
-      name: string;
+    const createOrgBody = (await createOrgRes.json()) as {
+      organization?: { id: string; name: string };
+      id?: string;
+      name?: string;
+    };
+    const secondaryOrg = createOrgBody.organization ?? {
+      id: createOrgBody.id ?? "",
+      name: createOrgBody.name ?? "",
     };
 
     // 2. Load dashboard as Admin in primary organization

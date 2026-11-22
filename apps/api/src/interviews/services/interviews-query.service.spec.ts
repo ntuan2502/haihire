@@ -174,4 +174,14 @@ describe("InterviewsQueryService", () => {
       }),
     );
   });
+
+  it("throws AppBadRequestException when startDate or endDate is invalid", async () => {
+    await expect(
+      service.findAll({
+        organizationId: "org-1",
+        startDate: "not-a-valid-date",
+        endDate: "2026-11-01T00:00:00.000Z",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
 });

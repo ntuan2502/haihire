@@ -85,8 +85,10 @@ export class SourcingMetricsService {
       return this.emptyStats();
     }
 
-    const rawApplications =
-      await this.queryService.getApplicationsForJobs(targetJobIds);
+    const rawApplications = await this.queryService.getApplicationsForJobs(
+      targetJobIds,
+      { minTimestamp, organizationId },
+    );
     const timeFilteredApps = rawApplications.filter((app) => {
       if (minTimestamp !== null && toTimestamp(app.createdAt) < minTimestamp)
         return false;
@@ -210,7 +212,10 @@ export class SourcingMetricsService {
       jobId ? l.jobId === jobId : true,
     );
     const targetLinkIds = filteredLinks.map((l) => l.id);
-    const clicks = await this.queryService.getClicksForLinks(targetLinkIds);
+    const clicks = await this.queryService.getClicksForLinks(targetLinkIds, {
+      minTimestamp,
+      organizationId,
+    });
     const linkClickCountMap = new Map<string, number>();
     for (const clk of clicks) {
       if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp)
@@ -362,7 +367,10 @@ export class SourcingMetricsService {
     const orgTimezone = await this.resolveOrgTimezone(organizationId);
     const minTimestamp = this.resolveMinTimestamp(now, timeRange, orgTimezone);
 
-    const allClicks = await this.queryService.getClicksForLink(link.id);
+    const allClicks = await this.queryService.getClicksForLink(
+      link.id,
+      organizationId,
+    );
     const filteredClicks = allClicks.filter((c) => {
       if (minTimestamp !== null)
         return toTimestamp(c.createdAt) >= minTimestamp;
@@ -375,7 +383,10 @@ export class SourcingMetricsService {
         : filteredClicks.length;
 
     const rawAttributedApps =
-      await this.queryService.getAttributedApplicationsForLink(link.id);
+      await this.queryService.getAttributedApplicationsForLink(
+        link.id,
+        organizationId,
+      );
     const rawCandidateIds = Array.from(
       new Set(rawAttributedApps.map((a) => a.candidateId)),
     );

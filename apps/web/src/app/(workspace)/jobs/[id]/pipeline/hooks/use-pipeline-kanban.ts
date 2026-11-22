@@ -22,6 +22,8 @@ import {
 } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/auth-context";
+import { queryKeys } from "@/hooks/query-keys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   collectPipelineCandidateDocuments,
@@ -59,6 +61,7 @@ function parseCandidateTabParam(value: string | null): string {
 export function usePipelineKanban(jobId: string) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const canEdit = useHasPermission("application:update_stage");
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -373,7 +376,7 @@ export function usePipelineKanban(jobId: string) {
           : {}),
       });
       queryClient.setQueriesData<Application[]>(
-        { queryKey: ["job-applications", jobId] },
+        { queryKey: queryKeys.applications(jobId, user?.organizationId) },
         (prev) =>
           Array.isArray(prev)
             ? prev.map((item) =>
@@ -396,7 +399,7 @@ export function usePipelineKanban(jobId: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["applications"] }),
         queryClient.invalidateQueries({
-          queryKey: ["job-applications", jobId],
+          queryKey: queryKeys.applications(jobId, user?.organizationId),
         }),
       ]);
       return true;
@@ -405,7 +408,9 @@ export function usePipelineKanban(jobId: string) {
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applications(jobId, user?.organizationId),
+      });
       return false;
     }
   };

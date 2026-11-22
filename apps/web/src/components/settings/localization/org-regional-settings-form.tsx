@@ -81,7 +81,7 @@ export function OrgRegionalSettingsForm({
       {/* 1. Organization Default Language */}
       <div className="space-y-1.5">
         <label
-          htmlFor="org-default-language"
+          htmlFor="org-default-language-trigger"
           className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.defaultLanguageLabel")}
@@ -104,7 +104,7 @@ export function OrgRegionalSettingsForm({
       {/* 2. Timezone */}
       <div className="space-y-1.5">
         <label
-          htmlFor="org-timezone"
+          htmlFor="org-timezone-trigger"
           className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.timezoneLabel")}
@@ -279,7 +279,7 @@ export function OrgRegionalSettingsForm({
       {/* 6. Default Salary Currency */}
       <div className="space-y-1.5">
         <label
-          htmlFor="org-default-currency"
+          htmlFor="org-default-currency-trigger"
           className="block text-xs font-medium text-foreground"
         >
           {t("settings.localization.currencyLabel")}

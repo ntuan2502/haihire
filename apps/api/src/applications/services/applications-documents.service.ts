@@ -227,7 +227,7 @@ export class ApplicationsDocumentsService {
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
-    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
+    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]|["\\;]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
     const resolvedMimeType = resolveDocumentMimeType(
       matchedDocMimeType,
@@ -419,10 +419,14 @@ export class ApplicationsDocumentsService {
 
   async getCandidateDocuments(
     candidateId: string,
+    organizationId?: string | null,
   ): Promise<CandidateDocument[]> {
     try {
       const queried = await this.prisma.candidateDocument.findMany({
-        where: { candidateId },
+        where: {
+          candidateId,
+          ...(organizationId ? { organizationId } : {}),
+        },
         select: {
           id: true,
           candidateId: true,

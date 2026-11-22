@@ -24,6 +24,9 @@ export function setActiveLocalization(
   orgSettings?: Partial<OrganizationLocalizationSettings> | null,
   uiLocale?: OrgLanguage | null,
 ): void {
+  if (typeof window === "undefined") {
+    return;
+  }
   activeOrgLocalization = orgSettings
     ? normalizeOrgLocalization(orgSettings)
     : null;
@@ -528,6 +531,25 @@ export function normalizeEmailAddress(email?: string | null): string {
     return "";
   }
   return trimmed;
+}
+
+/**
+ * Validates that a client redirect query parameter points strictly to an internal path.
+ */
+export function sanitizeRedirectPath(
+  redirectParam: string | null | undefined,
+  fallback = "/dashboard",
+): string {
+  if (
+    typeof redirectParam === "string" &&
+    redirectParam.startsWith("/") &&
+    !redirectParam.startsWith("//") &&
+    !redirectParam.startsWith("/\\") &&
+    !/[\r\n\\]/.test(redirectParam)
+  ) {
+    return redirectParam;
+  }
+  return fallback;
 }
 
 export * from "./candidate-formatters";

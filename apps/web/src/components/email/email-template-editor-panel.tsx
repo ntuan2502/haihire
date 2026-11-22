@@ -118,7 +118,7 @@ export function EmailTemplateEditorPanel({
 
         <div>
           <label
-            htmlFor="template-category-select"
+            htmlFor="template-category-select-trigger"
             className="block text-xs font-medium text-foreground mb-1.5"
           >
             {t("email.templateCategoryLabel")}

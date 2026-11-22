@@ -200,7 +200,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     );
     expect(candidateInDb?.deletedAt).toBeDefined();
 
-    const pagedAfterDelete = await candidatesService.findAll("org-1", {
+    const pagedAfterDelete = await candidatesService.findAll("org-test-1", {
       limit: 10,
     });
     expect(pagedAfterDelete.data.length).toBe(0);

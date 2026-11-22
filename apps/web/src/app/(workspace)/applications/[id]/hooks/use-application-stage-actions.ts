@@ -14,6 +14,7 @@ import {
   useDeleteApplicationMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
+import { queryKeys } from "@/hooks/query-keys";
 import type { Application, ApplicationStage } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
@@ -65,7 +66,9 @@ export function useApplicationStageActions({
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.application(appIdStr),
+      });
     }
   };
 
@@ -88,7 +91,9 @@ export function useApplicationStageActions({
       console.error("Failed to reject application:", err);
       toast.error(getApiErrorMessage(err, t));
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.application(appIdStr),
+      });
     }
   };
 
@@ -110,7 +115,9 @@ export function useApplicationStageActions({
       console.error("Failed to move application to offer:", err);
       toast.error(getApiErrorMessage(err, t));
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.application(appIdStr),
+      });
     }
   };
 

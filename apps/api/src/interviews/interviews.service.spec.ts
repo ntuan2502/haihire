@@ -580,5 +580,40 @@ describe("InterviewsService", () => {
       expect(list.data).toHaveLength(0);
       expect(list.total).toBe(0);
     });
+
+    it("increments application version on interview auto-advance and encodes context on cancelled interview notification", async () => {
+      const prismaAny = mockPrismaService as unknown as {
+        application: { update: ReturnType<typeof vi.fn> };
+        pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+      };
+      prismaAny.pipelineStage = {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "stage-intv", category: "INTERVIEW" }),
+      };
+      const updateSpy = vi.spyOn(prismaAny.application, "update");
+
+      mockApps[0].stage = "APPLIED";
+      await service.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-10-01T10:00:00Z",
+          type: "TECHNICAL",
+          interviewer: "Lead",
+        },
+        "org-1",
+      );
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: "app-1" }),
+          data: expect.objectContaining({
+            stage: "INTERVIEW",
+            stageId: "stage-intv",
+            version: { increment: 1 },
+          }),
+        }),
+      );
+    });
   });
 });

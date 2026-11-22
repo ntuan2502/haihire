@@ -502,7 +502,7 @@ export class ApplicationsQueryService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
             "Access denied: application belongs to another organization.",
-            { id, organizationId: otherOrg.organizationId },
+            { id },
           );
         }
       }

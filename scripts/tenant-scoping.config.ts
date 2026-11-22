@@ -22,6 +22,7 @@ export const NON_TENANT_SCOPED_FILES = [
   "apps/api/src/common/encryption.service.ts",
   "apps/api/src/common/webhook/webhook-notifier.service.ts",
   "apps/api/src/email/email.service.ts",
+  "apps/api/src/email/services/email-system.service.ts",
   "apps/api/src/events/events.service.ts",
   "apps/api/src/metrics/metrics.service.ts",
   "apps/api/src/minio/minio.service.ts",
@@ -30,7 +31,7 @@ export const NON_TENANT_SCOPED_FILES = [
   "apps/api/src/jobs/jobs.public.service.ts",
 ];
 
-// 3. The 8 tenant-scoped business modules subject to strict static analysis
+// 3. The tenant-scoped business modules subject to strict static analysis
 export const TENANT_SCOPED_MODULES = [
   "applications",
   "candidates",
@@ -40,6 +41,8 @@ export const TENANT_SCOPED_MODULES = [
   "activities",
   "organizations",
   "webhook-settings",
+  "email",
+  "notifications",
 ];
 
 // 4. Safe query patterns or method names permitted without explicit organizationId
@@ -50,4 +53,8 @@ export const SAFE_QUERY_PATTERNS: RegExp[] = [
   /healthCheck/,
   // Public tracking link click recording by token
   /recordClick/,
+  // Public/cross-org invite token resolution before org membership exists
+  /where:\s*\{\s*token\b/,
+  // User-scoped default membership lookup when no active organization is selected yet
+  /where:\s*\{\s*userId\s*\}/,
 ];

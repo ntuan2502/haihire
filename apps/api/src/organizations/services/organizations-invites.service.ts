@@ -217,14 +217,10 @@ export class OrganizationsInvitesService {
         : null;
 
     const isOwner = Boolean(org && org.ownerId === user.id);
-    const hasMockStore = Boolean(
-      (this.prisma.user as unknown as MockUserTableCompat)?.store,
-    );
     if (
       typeof prismaPartial.organizationMember?.findFirst === "function" &&
       !membership &&
       !isOwner &&
-      !hasMockStore &&
       legacyUserOrgId !== orgId
     ) {
       return null;

@@ -965,5 +965,43 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       const results = await service.findByJob("job-org1-b", "org-1");
       expect(results).toEqual([]);
     });
+
+    it("syncs stageId on updateStage when job has PipelineStage and writes outboxEvent inside transaction", async () => {
+      const txSpy = vi.spyOn(
+        mockPrismaService as unknown as {
+          transaction: (fn: unknown) => Promise<unknown>;
+        },
+        "transaction",
+      );
+      const outboxCreate = vi.fn().mockResolvedValue({ id: "outbox-1" });
+      (
+        mockPrismaService as unknown as {
+          outboxEvent: { create: typeof outboxCreate };
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).outboxEvent = { create: outboxCreate };
+      (
+        mockPrismaService as unknown as {
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).pipelineStage = {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "stage-screen-1",
+          category: "SCREENING",
+          name: "Screening",
+        }),
+      };
+
+      const updated = await service.updateStage(
+        "app-1",
+        { stage: ApplicationStage.SCREENING },
+        "org-1",
+        { id: "user-1", role: "ADMIN" },
+      );
+
+      expect(updated.stage).toBe("SCREENING");
+      expect(txSpy).toHaveBeenCalled();
+      expect(outboxCreate).toHaveBeenCalledTimes(1);
+    });
   });
 });

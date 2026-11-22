@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
@@ -334,6 +335,56 @@ describe("ApplicationsController", () => {
       expect(internalResult.candidateId).toBe(
         "00000000-0000-4000-8000-000000000002",
       );
+    });
+  });
+
+  describe("GET /applications/:id/documents/download stream safety & Content-Disposition sanitization", () => {
+    it("handles stream errors safely without crashing the process and strips quotes/semicolons from filename", async () => {
+      const realStream = new EventEmitter() as EventEmitter & {
+        pipe: ReturnType<typeof vi.fn>;
+        destroy: ReturnType<typeof vi.fn>;
+      };
+      realStream.pipe = vi.fn();
+      realStream.destroy = vi.fn();
+
+      const resEmitter = new EventEmitter() as EventEmitter & {
+        setHeader: ReturnType<typeof vi.fn>;
+        status: ReturnType<typeof vi.fn>;
+        end: ReturnType<typeof vi.fn>;
+        destroy: ReturnType<typeof vi.fn>;
+        headersSent: boolean;
+        writableEnded: boolean;
+      };
+      resEmitter.setHeader = vi.fn();
+      resEmitter.end = vi.fn();
+      resEmitter.status = vi.fn().mockReturnValue(resEmitter);
+      resEmitter.destroy = vi.fn();
+      resEmitter.headersSent = false;
+      resEmitter.writableEnded = false;
+
+      mockService.prepareDocumentDownload.mockResolvedValue({
+        asciiFallback: 'evil"; filename="hack.exe',
+        encodedFileName: "evil.pdf",
+        mimeType: "application/pdf",
+        stream: realStream,
+      });
+
+      await controller.downloadDocument(
+        "app-1",
+        "tenants/org-1/cv.pdf",
+        'evil"; filename="hack.exe',
+        resEmitter as unknown as Response,
+        recruiterReq,
+      );
+
+      expect(resEmitter.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        expect.not.stringContaining('filename="hack.exe'),
+      );
+      expect(() =>
+        realStream.emit("error", new Error("MinIO reset")),
+      ).not.toThrow();
+      expect(resEmitter.status).toHaveBeenCalledWith(502);
     });
   });
 });

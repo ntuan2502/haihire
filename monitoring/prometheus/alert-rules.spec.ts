@@ -187,12 +187,21 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(dlqNotEmpty?.labels.severity).toBe("warning");
     expect(dlqNotEmpty?.labels.team).toBe("sre");
 
-    // 2. BullMQDLQGrowing
+    // 2. BullMQDLQGrowing (gauge metric must use deriv, not rate)
     const dlqGrowing = ruleMap.get("BullMQDLQGrowing");
     expect(dlqGrowing).toBeDefined();
-    expect(dlqGrowing?.expr.trim()).toBe("rate(bullmq_dlq_size[15m]) > 0");
+    expect(dlqGrowing?.expr.trim()).toBe("deriv(bullmq_dlq_size[15m]) > 0");
     expect(dlqGrowing?.for).toBe("5m");
     expect(dlqGrowing?.labels.severity).toBe("critical");
     expect(dlqGrowing?.labels.team).toBe("sre");
+  });
+
+  it("Case 11: HaiHireHighHttp5xxErrorRate aggregates totals across all routes before dividing", () => {
+    const ruleMap = new Map(allRules.map((r) => [r.alert, r]));
+    const http5xx = ruleMap.get("HaiHireHighHttp5xxErrorRate");
+    expect(http5xx).toBeDefined();
+    expect(http5xx?.expr.trim()).toBe(
+      'sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9) * 100 > 5',
+    );
   });
 });

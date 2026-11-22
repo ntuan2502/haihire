@@ -24,11 +24,13 @@ import {
 } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { sanitizeRedirectPath } from "@/lib/utils";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
+  const rawRedirect = searchParams.get("redirect");
+  const redirectUrl = rawRedirect ? sanitizeRedirectPath(rawRedirect, "") : "";
   const { login, isAuthenticated, user, loading: authLoading } = useAuth();
   const { t } = useI18n();
 

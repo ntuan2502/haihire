@@ -343,7 +343,7 @@ export default function AccountPage() {
               <form onSubmit={handleSavePreferences} className="space-y-4">
                 <div className="space-y-1.5">
                   <label
-                    htmlFor="account-preferred-language"
+                    htmlFor="account-preferred-language-trigger"
                     className="block text-xs font-medium text-foreground"
                   >
                     {t("settings.accountPreferences.languageLabel")}
@@ -372,7 +372,7 @@ export default function AccountPage() {
 
                 <div className="space-y-1.5">
                   <label
-                    htmlFor="account-preferred-timezone"
+                    htmlFor="account-preferred-timezone-trigger"
                     className="block text-xs font-medium text-foreground"
                   >
                     {t("settings.accountPreferences.timezoneLabel")}

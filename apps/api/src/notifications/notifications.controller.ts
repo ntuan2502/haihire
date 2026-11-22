@@ -154,6 +154,8 @@ export class NotificationsController {
               where: {
                 id: { in: appIds },
                 organizationId: user.organizationId,
+                candidate: { deletedAt: null },
+                job: { deletedAt: null },
               },
               select: {
                 id: true,
@@ -174,6 +176,10 @@ export class NotificationsController {
               where: {
                 id: { in: interviewIds },
                 organizationId: user.organizationId,
+                application: {
+                  candidate: { deletedAt: null },
+                  job: { deletedAt: null },
+                },
               },
               select: {
                 id: true,
@@ -195,7 +201,43 @@ export class NotificationsController {
             })
           : [];
 
-      const appMap = new Map(appRows.map((row) => [row.id, row]));
+      const cancelledFallbackAppIds = rawItems
+        .filter(
+          (item) =>
+            item.kind === "interviewCancelled" && item.resourceId.includes("|"),
+        )
+        .map((item) => item.resourceId.split("|")[1])
+        .filter((appId): appId is string => Boolean(appId));
+
+      const extraAppIds = cancelledFallbackAppIds.filter(
+        (id) => !appIds.includes(id),
+      );
+      const extraAppRows =
+        extraAppIds.length > 0 && tx.application?.findMany
+          ? await tx.application.findMany({
+              where: {
+                id: { in: extraAppIds },
+                organizationId: user.organizationId,
+                candidate: { deletedAt: null },
+                job: { deletedAt: null },
+              },
+              select: {
+                id: true,
+                candidate: {
+                  select: {
+                    displayName: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                job: { select: { title: true } },
+              },
+            })
+          : [];
+
+      const appMap = new Map(
+        [...appRows, ...extraAppRows].map((row) => [row.id, row]),
+      );
       const interviewMap = new Map(interviewRows.map((row) => [row.id, row]));
 
       const enriched = rawItems.map((item) => {
@@ -210,21 +252,47 @@ export class NotificationsController {
           };
         }
         const intv = interviewMap.get(item.resourceId);
-        if (!intv) return item;
-        return {
-          ...item,
-          candidateName:
-            formatCandidateDisplayName(
-              intv.application?.candidate,
-              nameOrder,
-            ) || null,
-          jobTitle: intv.application?.job?.title ?? null,
-          scheduledAt:
-            (intv.scheduledAt as Date | string) instanceof Date
-              ? (intv.scheduledAt as Date).toISOString()
-              : String(intv.scheduledAt),
-          round: intv.round ?? null,
-        };
+        if (intv) {
+          return {
+            ...item,
+            candidateName:
+              formatCandidateDisplayName(
+                intv.application?.candidate,
+                nameOrder,
+              ) || null,
+            jobTitle: intv.application?.job?.title ?? null,
+            scheduledAt:
+              (intv.scheduledAt as Date | string) instanceof Date
+                ? (intv.scheduledAt as Date).toISOString()
+                : String(intv.scheduledAt),
+            round: intv.round ?? null,
+          };
+        }
+        if (
+          item.kind === "interviewCancelled" &&
+          item.resourceId.includes("|")
+        ) {
+          const [origId, fallbackAppId, fallbackScheduledAt, fallbackRound] =
+            item.resourceId.split("|");
+          const fallbackApp = fallbackAppId
+            ? appMap.get(fallbackAppId)
+            : undefined;
+          return {
+            ...item,
+            resourceId: origId || item.resourceId,
+            candidateName: fallbackApp
+              ? formatCandidateDisplayName(fallbackApp.candidate, nameOrder) ||
+                null
+              : null,
+            jobTitle: fallbackApp?.job?.title ?? null,
+            scheduledAt: fallbackScheduledAt || null,
+            round:
+              fallbackRound && !Number.isNaN(Number(fallbackRound))
+                ? Number(fallbackRound)
+                : null,
+          };
+        }
+        return item;
       });
 
       return {

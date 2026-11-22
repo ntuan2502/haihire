@@ -64,8 +64,8 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       ? `${activeOrg.id}:${localization.defaultLanguage}:${localization.timezone}:${localization.dateFormat}:${localization.timeFormat}:${localization.nameDisplayOrder}:${localization.defaultCurrency}:${locale}`
       : "none";
 
-  // Synchronously seed active regional formatting for SSR and frame-0 hydration
-  if (hasOrg && activeOrg) {
+  // Synchronously seed active regional formatting on client for frame-0 hydration (never mutate on SSR)
+  if (typeof window !== "undefined" && hasOrg && activeOrg) {
     setActiveLocalization(localization, locale);
   }
 

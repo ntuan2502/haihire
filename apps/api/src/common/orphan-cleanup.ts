@@ -76,8 +76,13 @@ export async function cleanupOrphans(
         args?: unknown,
       ): Promise<Array<{ logoObjectKey?: string | null }>>;
     };
+    withSystemRlsBypass?: <T>(
+      fn: (tx: DbQueryable) => Promise<T>,
+    ) => Promise<T>;
+    $disconnect?: () => Promise<void>;
   }
-  const activeDb: DbQueryable =
+  const createdOwnDbClient = !options.dbClient;
+  const rootDb: DbQueryable =
     options.dbClient ||
     new PrismaClient({
       adapter: new PrismaPg({
@@ -90,79 +95,96 @@ export async function cleanupOrphans(
   // 1. Gather all active DB references for resume files
   const activeReferencedObjectNames = new Set<string>();
 
-  try {
-    const candidateDocs = activeDb.candidateDocument
-      ? await activeDb.candidateDocument.findMany({ select: { url: true } })
-      : [];
-    for (const doc of candidateDocs) {
-      if (doc.url) {
-        const objName = extractObjectNameFromUrl(doc.url, bucketName);
-        if (objName) activeReferencedObjectNames.add(objName);
+  const collectReferences = async (activeDb: DbQueryable) => {
+    try {
+      const candidateDocs = activeDb.candidateDocument
+        ? await activeDb.candidateDocument.findMany({ select: { url: true } })
+        : [];
+      for (const doc of candidateDocs) {
+        if (doc.url) {
+          const objName = extractObjectNameFromUrl(doc.url, bucketName);
+          if (objName) activeReferencedObjectNames.add(objName);
+        }
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `MinIO Orphan Cleanup aborted: Failed to query CandidateDocument references: ${message}`,
+        { cause: err },
+      );
     }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `MinIO Orphan Cleanup aborted: Failed to query CandidateDocument references: ${message}`,
-      { cause: err },
-    );
-  }
+
+    try {
+      const apps = activeDb.application
+        ? await activeDb.application.findMany({ select: { resumeUrl: true } })
+        : [];
+      for (const app of apps) {
+        if (app.resumeUrl) {
+          const objName = extractObjectNameFromUrl(app.resumeUrl, bucketName);
+          if (objName) activeReferencedObjectNames.add(objName);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `MinIO Orphan Cleanup aborted: Failed to query Application references: ${message}`,
+        { cause: err },
+      );
+    }
+
+    try {
+      const candidates = activeDb.candidate
+        ? await activeDb.candidate.findMany({ select: { resumeUrl: true } })
+        : [];
+      for (const cand of candidates) {
+        if (cand.resumeUrl) {
+          const objName = extractObjectNameFromUrl(cand.resumeUrl, bucketName);
+          if (objName) activeReferencedObjectNames.add(objName);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `MinIO Orphan Cleanup aborted: Failed to query Candidate references: ${message}`,
+        { cause: err },
+      );
+    }
+
+    try {
+      const orgs = activeDb.organization
+        ? await activeDb.organization.findMany({
+            where: { logoObjectKey: { not: null } },
+            select: { logoObjectKey: true },
+          })
+        : [];
+      for (const org of orgs) {
+        if (org.logoObjectKey) {
+          const objName = extractObjectNameFromUrl(
+            org.logoObjectKey,
+            bucketName,
+          );
+          if (objName) activeReferencedObjectNames.add(objName);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `MinIO Orphan Cleanup aborted: Failed to query Organization references: ${message}`,
+        { cause: err },
+      );
+    }
+  };
 
   try {
-    const apps = activeDb.application
-      ? await activeDb.application.findMany({ select: { resumeUrl: true } })
-      : [];
-    for (const app of apps) {
-      if (app.resumeUrl) {
-        const objName = extractObjectNameFromUrl(app.resumeUrl, bucketName);
-        if (objName) activeReferencedObjectNames.add(objName);
-      }
+    if (typeof rootDb.withSystemRlsBypass === "function") {
+      await rootDb.withSystemRlsBypass((txDb) => collectReferences(txDb));
+    } else {
+      await collectReferences(rootDb);
     }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `MinIO Orphan Cleanup aborted: Failed to query Application references: ${message}`,
-      { cause: err },
-    );
-  }
-
-  try {
-    const candidates = activeDb.candidate
-      ? await activeDb.candidate.findMany({ select: { resumeUrl: true } })
-      : [];
-    for (const cand of candidates) {
-      if (cand.resumeUrl) {
-        const objName = extractObjectNameFromUrl(cand.resumeUrl, bucketName);
-        if (objName) activeReferencedObjectNames.add(objName);
-      }
+  } finally {
+    if (createdOwnDbClient && typeof rootDb.$disconnect === "function") {
+      await rootDb.$disconnect().catch(() => {});
     }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `MinIO Orphan Cleanup aborted: Failed to query Candidate references: ${message}`,
-      { cause: err },
-    );
-  }
-
-  try {
-    const orgs = activeDb.organization
-      ? await activeDb.organization.findMany({
-          where: { logoObjectKey: { not: null } },
-          select: { logoObjectKey: true },
-        })
-      : [];
-    for (const org of orgs) {
-      if (org.logoObjectKey) {
-        const objName = extractObjectNameFromUrl(org.logoObjectKey, bucketName);
-        if (objName) activeReferencedObjectNames.add(objName);
-      }
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `MinIO Orphan Cleanup aborted: Failed to query Organization references: ${message}`,
-      { cause: err },
-    );
   }
 
   // 2. Stream all objects from the bucket

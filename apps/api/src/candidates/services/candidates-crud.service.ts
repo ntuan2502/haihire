@@ -133,6 +133,7 @@ export class CandidatesCrudService {
               where: {
                 candidateId: { in: candidateIds },
                 organizationId: targetOrgId,
+                job: { deletedAt: null },
               },
               select: {
                 id: true,
@@ -159,8 +160,23 @@ export class CandidatesCrudService {
           ])
         : [[], []];
 
-    const appsByCandidate = new Map<string, typeof allApps>();
-    for (const app of allApps) {
+    let activeApps = allApps;
+    if (allApps.length > 0 && typeof this.prisma.job?.findMany === "function") {
+      const appJobIds = [...new Set(allApps.map((a) => a.jobId))];
+      const activeJobs = await this.prisma.job.findMany({
+        where: {
+          id: { in: appJobIds },
+          organizationId: targetOrgId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      const activeJobIds = new Set(activeJobs.map((j) => j.id));
+      activeApps = allApps.filter((a) => activeJobIds.has(a.jobId));
+    }
+
+    const appsByCandidate = new Map<string, typeof activeApps>();
+    for (const app of activeApps) {
       const list = appsByCandidate.get(app.candidateId) || [];
       list.push(app);
       appsByCandidate.set(app.candidateId, list);
@@ -328,12 +344,18 @@ export class CandidatesCrudService {
           updatedAt: toInstant(),
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       const cleanupKey = file ? uploadResult.fileName || uploadResult.url : "";
       if (cleanupKey) {
         await this.minioService
           .deleteFile?.(cleanupKey)
           ?.catch(() => undefined);
+      }
+      if ((err as { code?: string })?.code === "P2002") {
+        throw new AppConflictException(
+          APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+          "A candidate with this email already exists in your organization",
+        );
       }
       throw err;
     }

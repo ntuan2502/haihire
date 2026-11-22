@@ -141,6 +141,13 @@ function AddCandidatePageContent() {
         setErrorMsg(t("candidates.errors.validEmailRequired"));
         return;
       }
+      const firstIssuePath = validation.error.issues[0]?.path;
+      if (firstIssuePath?.includes("email")) {
+        setErrorMsg(t("candidates.errors.validEmailRequired"));
+      } else {
+        setErrorMsg(t("candidates.errors.validEmailRequired"));
+      }
+      return;
     }
 
     try {

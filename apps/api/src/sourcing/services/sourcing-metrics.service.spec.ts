@@ -149,24 +149,28 @@ describe("SourcingMetricsService", () => {
     trackingClickTable = createMockTable([
       {
         id: "click-1",
+        organizationId: "org-1",
         trackingLinkId: "link-1",
         referrerDomain: "linkedin.com",
         createdAt: new Date(NOW - 5 * ONE_DAY_MS).toISOString(),
       },
       {
         id: "click-2",
+        organizationId: "org-1",
         trackingLinkId: "link-1",
         referrerDomain: "google.com",
         createdAt: new Date(NOW - 2 * ONE_DAY_MS).toISOString(),
       },
       {
         id: "click-3",
+        organizationId: "org-1",
         trackingLinkId: "link-1",
         referrerDomain: "linkedin.com",
         createdAt: new Date(NOW - 80 * ONE_DAY_MS).toISOString(),
       },
       {
         id: "click-4",
+        organizationId: "org-1",
         trackingLinkId: "link-2",
         referrerDomain: "indeed.com",
         createdAt: new Date(NOW - 15 * ONE_DAY_MS).toISOString(),

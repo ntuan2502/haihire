@@ -22,6 +22,7 @@ export default defineConfig({
       "scripts/**/*.{test,spec}.ts",
       "../../monitoring/**/*.{test,spec}.ts",
       "../../scripts/**/*.{test,spec}.ts",
+      "../../packages/shared/src/**/*.{test,spec}.ts",
     ],
   },
 });

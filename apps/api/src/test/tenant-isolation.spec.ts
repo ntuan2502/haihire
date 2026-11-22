@@ -63,7 +63,11 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
     );
     expect(memberships).toHaveBeenCalledWith({
       where: { userId: "usr-alpha" },
-      select: { organizationId: true },
+      select: {
+        organizationId: true,
+        role: true,
+        organization: { select: { id: true, ownerId: true } },
+      },
     });
   });
 
@@ -91,7 +95,11 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
     expect(await guard.canActivate(context("org-beta"))).toBe(true);
     expect(prisma.organizationMember.findMany).toHaveBeenCalledWith({
       where: { userId: "usr-alpha" },
-      select: { organizationId: true },
+      select: {
+        organizationId: true,
+        role: true,
+        organization: { select: { id: true, ownerId: true } },
+      },
     });
   });
 

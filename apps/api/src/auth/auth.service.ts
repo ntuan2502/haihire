@@ -407,17 +407,27 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
     const id = crypto.randomUUID();
 
-    await this.prisma.user.create({
-      data: {
-        id,
-        email: normalizedEmail,
-        firstName,
-        lastName,
-        password: hashedPassword,
-        tokenVersion: 0,
-        updatedAt: toInstant(),
-      },
-    });
+    try {
+      await this.prisma.user.create({
+        data: {
+          id,
+          email: normalizedEmail,
+          firstName,
+          lastName,
+          password: hashedPassword,
+          tokenVersion: 0,
+          updatedAt: toInstant(),
+        },
+      });
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code === "P2002") {
+        throw new AppConflictException(
+          APP_ERROR_CODES.USER_EMAIL_EXISTS,
+          "An account with this email address already exists.",
+        );
+      }
+      throw err;
+    }
 
     const displayName = formatUserDisplayName({ firstName, lastName });
     const user = {
@@ -608,6 +618,22 @@ export class AuthService {
           data: { lastAccessedAt: now },
         });
       }
+    }
+  }
+
+  async logoutWithRefreshToken(refreshToken: string): Promise<void> {
+    if (!refreshToken) return;
+    try {
+      const decoded = this.jwtService.verify<{
+        sub?: string;
+        type?: string;
+        organizationId?: string | null;
+      }>(refreshToken);
+      if (decoded?.sub && decoded.type === "refresh") {
+        await this.logout(decoded.sub, decoded.organizationId);
+      }
+    } catch {
+      // Ignore expired or invalid refresh tokens during logout
     }
   }
 

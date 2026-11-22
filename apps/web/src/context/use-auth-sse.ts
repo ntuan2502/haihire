@@ -190,13 +190,33 @@ export function useAuthSse({
       }
     };
 
-    const handleFocus = () => {
+    const handleAuthExpired = () => {
+      disposed = true;
+      if (errorRefreshTimer) {
+        clearTimeout(errorRefreshTimer);
+        errorRefreshTimer = null;
+      }
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+    };
+
+    let lastWakeupRefreshAt = 0;
+    const throttledWakeupRefresh = () => {
+      const now = Date.now();
+      if (now - lastWakeupRefreshAt < 5000) return;
+      lastWakeupRefreshAt = now;
       refreshUser();
+    };
+
+    const handleFocus = () => {
+      throttledWakeupRefresh();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        refreshUser();
+        throttledWakeupRefresh();
       }
     };
 
@@ -207,6 +227,7 @@ export function useAuthSse({
     }, PROACTIVE_SSE_REFRESH_MS);
 
     window.addEventListener("haihire:auth-refreshed", handleAuthRefreshed);
+    window.addEventListener("haihire:auth-expired", handleAuthExpired);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -219,6 +240,7 @@ export function useAuthSse({
       clearInterval(proactiveRefreshInterval);
       eventSource?.close();
       window.removeEventListener("haihire:auth-refreshed", handleAuthRefreshed);
+      window.removeEventListener("haihire:auth-expired", handleAuthExpired);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

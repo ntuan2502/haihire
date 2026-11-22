@@ -349,4 +349,54 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
 
     window.removeEventListener("haihire:auth-refreshed", refreshedListener);
   });
+
+  it("preserves session on transient 503/network errors during refreshAuthSession, but dispatches haihire:auth-expired on 401", async () => {
+    localStorage.setItem("haihire_recruiter_user", '{"id":"u1"}');
+    const expiredListener = vi.fn();
+    window.addEventListener("haihire:auth-expired", expiredListener);
+
+    try {
+      const postSpy = vi
+        .spyOn(axios, "post")
+        .mockRejectedValueOnce({
+          response: { status: 503 },
+          message: "Service Unavailable",
+        })
+        .mockRejectedValueOnce({
+          code: "ERR_NETWORK",
+          message: "Network Error",
+        });
+
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        response: { status: 503 },
+      });
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        code: "ERR_NETWORK",
+      });
+
+      // Must NOT wipe session or call /auth/logout on transient errors
+      expect(localStorage.getItem("haihire_recruiter_user")).toBe(
+        '{"id":"u1"}',
+      );
+      expect(postSpy).toHaveBeenCalledTimes(2);
+      expect(expiredListener).not.toHaveBeenCalled();
+
+      // Now simulate definitive 401 refresh rejection
+      postSpy
+        .mockRejectedValueOnce({
+          response: { status: 401 },
+          message: "Refresh token expired",
+        })
+        .mockResolvedValueOnce({ data: { success: true } });
+
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        response: { status: 401 },
+      });
+
+      expect(localStorage.getItem("haihire_recruiter_user")).toBeNull();
+      expect(expiredListener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("haihire:auth-expired", expiredListener);
+    }
+  });
 });

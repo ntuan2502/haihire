@@ -19,12 +19,14 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { sanitizeRedirectPath } from "@/lib/utils";
 import { registerSchema } from "@haihire/shared";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
+  const rawRedirect = searchParams.get("redirect");
+  const redirectUrl = rawRedirect ? sanitizeRedirectPath(rawRedirect, "") : "";
   const { register, isAuthenticated, user, loading: authLoading } = useAuth();
   const { t, locale } = useI18n();
   const isLastFirst = locale === "vi";

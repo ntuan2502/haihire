@@ -4,9 +4,12 @@ import crypto from "node:crypto";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import {
+  APP_ERROR_CODES,
   type EmailTemplateType,
   interpolateEmail as interpolate,
+  interpolateEmailSubject,
 } from "@haihire/shared";
+import { AppNotFoundException } from "../../common/app-exception";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { EmailSettingsService } from "./email-settings.service";
@@ -33,6 +36,48 @@ export class EmailDispatchService {
     private readonly eventsService?: EventsService,
   ) {}
 
+  private async verifyTargetEntities(
+    dto: SendEmailDto,
+    organizationId: string,
+  ): Promise<void> {
+    if (
+      dto.candidateId &&
+      typeof this.prisma.candidate?.findFirst === "function"
+    ) {
+      const candidate = await this.prisma.candidate.findFirst({
+        where: { id: dto.candidateId, organizationId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!candidate) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+          "Candidate not found in organization",
+          { candidateId: dto.candidateId },
+        );
+      }
+    }
+    if (
+      dto.applicationId &&
+      typeof this.prisma.application?.findFirst === "function"
+    ) {
+      const application = await this.prisma.application.findFirst({
+        where: {
+          id: dto.applicationId,
+          organizationId,
+          ...(dto.candidateId ? { candidateId: dto.candidateId } : {}),
+        },
+        select: { id: true },
+      });
+      if (!application) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+          "Application not found in organization",
+          { applicationId: dto.applicationId },
+        );
+      }
+    }
+  }
+
   async sendEmail(
     dto: SendEmailDto,
     organizationId?: string,
@@ -44,6 +89,7 @@ export class EmailDispatchService {
       organizationId,
       true,
     )!;
+    await this.verifyTargetEntities(dto, targetOrgId);
     if (this.emailQueue) {
       await this.settingsService.requireDeliverySettings(targetOrgId);
       try {
@@ -107,11 +153,12 @@ export class EmailDispatchService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
+    await this.verifyTargetEntities(dto, organizationId);
     const settings =
       await this.settingsService.requireDeliverySettings(organizationId);
 
     const variables = dto.variables || {};
-    const renderedSubject = interpolate(dto.subject, variables);
+    const renderedSubject = interpolateEmailSubject(dto.subject, variables);
     const renderedBody = interpolate(dto.body, variables);
 
     const fromName = senderUser?.name || settings.fromName;

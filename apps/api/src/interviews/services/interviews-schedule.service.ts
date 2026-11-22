@@ -204,15 +204,39 @@ export class InterviewsScheduleService {
         },
       });
 
-      if (
-        app.stage !== "INTERVIEW" &&
-        app.stage !== "OFFER" &&
-        app.stage !== "HIRED"
-      ) {
+      if (app.stage === "APPLIED" || app.stage === "SCREENING") {
+        const interviewStage =
+          orgId &&
+          typeof (
+            tx as unknown as {
+              pipelineStage?: {
+                findFirst?: (args: unknown) => Promise<{ id: string } | null>;
+              };
+            }
+          ).pipelineStage?.findFirst === "function"
+            ? await (
+                tx as unknown as {
+                  pipelineStage: {
+                    findFirst: (
+                      args: unknown,
+                    ) => Promise<{ id: string } | null>;
+                  };
+                }
+              ).pipelineStage.findFirst({
+                where: {
+                  organizationId: orgId,
+                  jobId: app.jobId,
+                  category: "INTERVIEW",
+                },
+                select: { id: true },
+              })
+            : null;
         await tx.application.update({
           where: { id: app.id },
           data: {
             stage: "INTERVIEW",
+            ...(interviewStage ? { stageId: interviewStage.id } : {}),
+            version: { increment: 1 },
           },
         });
         stageUpdated = true;
@@ -554,11 +578,15 @@ export class InterviewsScheduleService {
     const orgId =
       existing.application?.candidate?.organizationId || tenantOrgId;
     if (orgId) {
+      const scheduledIso =
+        (existing.scheduledAt as unknown) instanceof Date
+          ? (existing.scheduledAt as unknown as Date).toISOString()
+          : String(existing.scheduledAt || "");
       await this.notifications?.publish(
         orgId,
         existing.interviewerId,
         "interviewCancelled",
-        id,
+        `${id}|${existing.applicationId}|${scheduledIso}|${existing.round ?? ""}`,
       );
 
       this.eventsService?.emit({

@@ -292,6 +292,28 @@ export function AuthProvider({
     queryClient,
   ]);
 
+  // Synchronize auth expiry from background Axios / SSE refresh rejections
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleAuthExpired = () => {
+      sessionEpochRef.current += 1;
+      userRef.current = null;
+      setToken(null);
+      setUser(null);
+      setSsrPermissions(null);
+      localStorage.removeItem(USER_KEY);
+      queryClient?.clear();
+      if (isSessionRequiredRoute(window.location.pathname)) {
+        routerRef.current.replace("/auth/login");
+        routerRef.current.refresh?.();
+      }
+    };
+    window.addEventListener("haihire:auth-expired", handleAuthExpired);
+    return () => {
+      window.removeEventListener("haihire:auth-expired", handleAuthExpired);
+    };
+  }, [queryClient]);
+
   // SSE Real-Time Sync, 15m JWT Reconnect & Background Visibility Wake-Up
   const currentUserId = user?.id;
   useAuthSse({

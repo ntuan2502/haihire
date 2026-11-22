@@ -82,6 +82,32 @@ export class AuthController {
     return result;
   }
 
+  private extractRefreshToken(
+    req?: {
+      cookies?: Record<string, string>;
+      headers?: { cookie?: string };
+    },
+    bodyToken?: string,
+  ): string | undefined {
+    let token = bodyToken;
+    if (!token && req?.cookies && req.cookies["haihire_refresh_token"]) {
+      token = req.cookies["haihire_refresh_token"];
+    }
+    if (!token && req?.headers?.cookie) {
+      const match = req.headers.cookie.match(
+        /(?:^|;\s*)haihire_refresh_token=([^;]+)/,
+      );
+      if (match) {
+        try {
+          token = decodeURIComponent(match[1]);
+        } catch {
+          return undefined;
+        }
+      }
+    }
+    return token;
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
@@ -94,18 +120,7 @@ export class AuthController {
     @Body(DtoPipe(RefreshTokenDto)) dto: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    let token = dto.refreshToken;
-    if (!token && req?.cookies && req.cookies["haihire_refresh_token"]) {
-      token = req.cookies["haihire_refresh_token"];
-    }
-    if (!token && req?.headers?.cookie) {
-      const match = req.headers.cookie.match(
-        /(?:^|;\s*)haihire_refresh_token=([^;]+)/,
-      );
-      if (match) {
-        token = decodeURIComponent(match[1]);
-      }
-    }
+    const token = this.extractRefreshToken(req, dto.refreshToken);
     if (!token) {
       clearAuthCookies(res);
       throw new AppUnauthorizedException(
@@ -134,11 +149,24 @@ export class AuthController {
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   async logout(
-    @Request() req: { user?: { id?: string; organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: { id?: string; organizationId?: string | null };
+      cookies?: Record<string, string>;
+      headers?: { cookie?: string };
+    },
     @Res({ passthrough: true }) res: Response,
   ) {
     if (req?.user?.id) {
       await this.authService.logout(req.user.id, req.user.organizationId);
+    } else {
+      const refreshToken = this.extractRefreshToken(req);
+      if (
+        refreshToken &&
+        typeof this.authService.logoutWithRefreshToken === "function"
+      ) {
+        await this.authService.logoutWithRefreshToken(refreshToken);
+      }
     }
     clearAuthCookies(res);
     return { success: true };

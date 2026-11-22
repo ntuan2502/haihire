@@ -15,8 +15,6 @@ services:
     container_name: haihire-prod-postgres
     restart: unless-stopped
     env_file:
-      - path: ./.env
-        required: false
       - path: ./.env.production
         required: false
     environment:
@@ -51,8 +49,6 @@ services:
     container_name: haihire-prod-redis
     restart: unless-stopped
     env_file:
-      - path: ./.env
-        required: false
       - path: ./.env.production
         required: false
     # maxmemory-policy noeviction ensures BullMQ jobs are never evicted.
@@ -101,8 +97,6 @@ services:
     container_name: haihire-prod-minio
     restart: unless-stopped
     env_file:
-      - path: ./.env
-        required: false
       - path: ./.env.production
         required: false
     command: server /data
@@ -138,6 +132,7 @@ services:
   api:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-api
+    init: true
     restart: unless-stopped
     env_file:
       - path: ./.env
@@ -147,6 +142,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      BACKEND_PORT: 3001
       # Docker network overrides (internal service discovery)
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       REDIS_HOST: redis
@@ -187,6 +183,7 @@ services:
   web:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-web:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-web
+    init: true
     restart: unless-stopped
     env_file:
       - path: ./.env
@@ -207,6 +204,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     logging: *prod-logging
     deploy:
       resources:
@@ -227,7 +230,7 @@ services:
     container_name: haihire-prod-pushgateway
     restart: unless-stopped
     ports:
-      - "${PUSHGATEWAY_PORT:-9091}:9091"
+      - "127.0.0.1:${PUSHGATEWAY_PORT:-9091}:9091"
     networks:
       - haihire-prod-network
     logging: *prod-logging

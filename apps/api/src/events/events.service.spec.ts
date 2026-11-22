@@ -435,5 +435,48 @@ describe("EventsService - SSE Streaming", () => {
       sub1.unsubscribe();
       sub2.unsubscribe();
     });
+
+    it("caches user tokenVersion & org memberships briefly across rapid SSE event bursts and evicts cache on MEMBERS_CHANGED", async () => {
+      const findUnique = vi
+        .fn()
+        .mockResolvedValue({ id: "user-1", tokenVersion: 0 });
+      const findMany = vi.fn().mockResolvedValue([{ organizationId: "org-1" }]);
+      const mockJwt = {
+        verify: vi
+          .fn()
+          .mockReturnValue({ sub: "user-1", type: "access", tokenVersion: 0 }),
+      };
+      const mockPrisma = {
+        user: { findUnique },
+        organizationMember: { findMany },
+      };
+
+      const s = new EventsService(mockJwt as never, mockPrisma as never);
+      const received: unknown[] = [];
+      const sub = s.subscribeWithToken("jwt-1").subscribe((msg) => {
+        received.push(msg.data);
+      });
+
+      await new Promise((r) => setTimeout(r, 10));
+      const initialFindUniqueCalls = findUnique.mock.calls.length;
+
+      s.emit({ type: "APPLICATIONS_CHANGED", organizationId: "org-1" });
+      s.emit({ type: "JOBS_CHANGED", organizationId: "org-1" });
+      s.emit({ type: "CANDIDATES_CHANGED", organizationId: "org-1" });
+
+      await new Promise((r) => setTimeout(r, 20));
+      // 3 rapid domain events should reuse cached validation (at most 1 fresh check, not 3 additional queries)
+      expect(
+        findUnique.mock.calls.length - initialFindUniqueCalls,
+      ).toBeLessThanOrEqual(1);
+
+      // Emitting MEMBERS_CHANGED must evict validation cache so DB is queried fresh
+      const beforeEvictCalls = findUnique.mock.calls.length;
+      s.emit({ type: "MEMBERS_CHANGED", organizationId: "org-1" });
+      await new Promise((r) => setTimeout(r, 15));
+      expect(findUnique.mock.calls.length).toBeGreaterThan(beforeEvictCalls);
+
+      sub.unsubscribe();
+    });
   });
 });

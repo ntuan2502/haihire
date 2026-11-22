@@ -657,5 +657,54 @@ describe("ApplicationsSagaService", () => {
       });
       expect(internalResult).toHaveProperty("candidate");
     });
+
+    it("honors PermissionResolverService override granting application:create to MEMBER and maps P2002 to AppConflictException", async () => {
+      const mockResolver = {
+        resolvePermission: vi.fn().mockResolvedValue(true),
+      };
+      const sagaWithResolver = new ApplicationsSagaService(
+        mockPrisma,
+        mockMinio as unknown as MinioService,
+        mockActivities as unknown as ActivitiesService,
+        mockEmail as unknown as EmailService,
+        mockQueue as unknown as Queue,
+        mockQuery as unknown as ApplicationsQueryService,
+        undefined,
+        undefined,
+        mockResolver as never,
+      );
+
+      const created = await sagaWithResolver.create(
+        {
+          jobId: "job-1",
+          candidateId: "cand-existing",
+        },
+        undefined,
+        { role: "MEMBER", organizationId: "org-1", isOwner: false },
+      );
+      expect(created).toBeDefined();
+      expect(mockResolver.resolvePermission).toHaveBeenCalledWith(
+        "org-1",
+        "MEMBER",
+        "application:create",
+      );
+
+      // P2002 unique violation inside transaction must map to AppConflictException
+      vi.spyOn(mockPrisma.application, "create").mockRejectedValueOnce({
+        code: "P2002",
+      });
+      await expect(
+        sagaWithResolver.create(
+          {
+            jobId: "job-1",
+            firstName: "Race",
+            lastName: "Applicant",
+            candidateEmail: "race@example.com",
+          },
+          undefined,
+          { role: "ADMIN", organizationId: "org-1", isOwner: true },
+        ),
+      ).rejects.toBeInstanceOf(AppConflictException);
+    });
   });
 });

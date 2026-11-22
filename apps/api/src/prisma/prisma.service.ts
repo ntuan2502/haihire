@@ -10,6 +10,40 @@ import { ensureDefaultDemoAccounts } from "./demo-seed.util";
 
 const connectionString = backendEnv.DATABASE_URL;
 
+const PROXIED_PRISMA_DELEGATES = new Set<string>([
+  "organization",
+  "user",
+  "organizationMember",
+  "organizationRolePermission",
+  "inviteLink",
+  "job",
+  "candidate",
+  "application",
+  "interview",
+  "emailTemplate",
+  "emailFlowConfig",
+  "emailSetting",
+  "emailLog",
+  "activityLog",
+  "candidateDocument",
+  "trackingLink",
+  "trackingClick",
+  "organizationWebhookSetting",
+  "organizationAuditLog",
+  "platformAuditLog",
+  "applicationNote",
+  "candidateNote",
+  "pipelineStage",
+  "storedFile",
+  "outboxEvent",
+  "notificationPreference",
+  "notification",
+  "$queryRaw",
+  "$executeRaw",
+  "$queryRawUnsafe",
+  "$executeRawUnsafe",
+]);
+
 export interface TenantRlsContext {
   tenantOrgId?: string | null;
   bypassRls?: boolean;
@@ -35,7 +69,20 @@ export class PrismaService
     const adapter = new PrismaPg(pool);
     super({ adapter });
     this.pool = pool;
-    this.self = this;
+    const proxied = new Proxy(this, {
+      get: (target, prop, receiver) => {
+        if (typeof prop === "string" && PROXIED_PRISMA_DELEGATES.has(prop)) {
+          const txClient = target.als.getStore();
+          if (txClient && txClient !== target && prop in txClient) {
+            const val = Reflect.get(txClient, prop, txClient);
+            return typeof val === "function" ? val.bind(txClient) : val;
+          }
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+    this.self = proxied;
+    return proxied;
   }
 
   /**

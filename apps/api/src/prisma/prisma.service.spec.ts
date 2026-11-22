@@ -97,4 +97,22 @@ describe("PrismaService transaction context", () => {
     expect(disconnectSpy).toHaveBeenCalledTimes(1);
     expect(endSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("forwards model delegate access on PrismaService to the active ALS transaction client", async () => {
+    const txJobFindMany = vi.fn().mockResolvedValue([{ id: "tx-job-1" }]);
+    const txWithDelegate = {
+      job: { findMany: txJobFindMany },
+    } as unknown as PrismaService;
+
+    vi.spyOn(prisma, "$transaction").mockImplementationOnce((async (
+      callback: (tx: PrismaService) => Promise<unknown>,
+    ) => callback(txWithDelegate)) as unknown as PrismaService["$transaction"]);
+
+    const rows = await prisma.transaction(async () => {
+      return prisma.job.findMany({ where: { organizationId: "org-1" } });
+    });
+
+    expect(txJobFindMany).toHaveBeenCalledTimes(1);
+    expect(rows).toEqual([{ id: "tx-job-1" }]);
+  });
 });

@@ -117,9 +117,11 @@ describe("CandidatesService (Characterization Tests)", () => {
     jobTable = createMockTable([
       {
         id: "job-1",
+        organizationId: "org-1",
         title: "Senior Full-Stack Engineer",
         department: "Engineering",
         location: "Ho Chi Minh City",
+        deletedAt: null,
       },
     ]);
 
@@ -720,6 +722,34 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(afterDelete.resumeUrl).toBe(
         "https://minio.local/resumes/org-1/resume-1.pdf",
       );
+    });
+
+    it("excludes applications belonging to soft-deleted jobs in findOne and findAll", async () => {
+      await jobTable.create({
+        id: "job-deleted",
+        organizationId: "org-1",
+        title: "Deleted Job",
+        deletedAt: new Date().toISOString(),
+      });
+      await applicationTable.create({
+        id: "app-deleted-job",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-deleted",
+        stage: "APPLIED",
+        orderIndex: 1,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const profile = await service.findOne("cand-1", "org-1");
+      expect(profile.applications.map((a: { id: string }) => a.id)).toEqual([
+        "app-1",
+      ]);
+
+      const list = await service.findAll("org-1", { page: 1, limit: 10 });
+      const cand1 = list.data.find((c: { id: string }) => c.id === "cand-1");
+      expect(cand1?.applicationsCount).toBe(1);
     });
   });
 });

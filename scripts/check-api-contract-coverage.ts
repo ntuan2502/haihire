@@ -15,15 +15,19 @@ interface EndpointDef {
   line: number;
 }
 
-function getAllFiles(dir: string, ext = ".ts"): string[] {
+function getAllFiles(dir: string, exts: string[] = [".ts"]): string[] {
   let results: string[] = [];
   const list = fs.readdirSync(dir);
   for (const file of list) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
     if (stat && stat.isDirectory()) {
-      results = results.concat(getAllFiles(fullPath, ext));
-    } else if (file.endsWith(ext) && !file.endsWith(".spec.ts")) {
+      results = results.concat(getAllFiles(fullPath, exts));
+    } else if (
+      exts.some((ext) => file.endsWith(ext)) &&
+      !file.includes(".spec.") &&
+      !file.includes(".test.")
+    ) {
       results.push(fullPath);
     }
   }
@@ -98,7 +102,7 @@ for (const file of controllerFiles) {
 }
 
 // Read frontend files for API calls and error handling
-const frontendFiles = getAllFiles(frontendDir);
+const frontendFiles = getAllFiles(frontendDir, [".ts", ".tsx"]);
 const frontendContent = frontendFiles
   .map((f) => fs.readFileSync(f, "utf8"))
   .join("\n");
@@ -169,7 +173,7 @@ for (const file of frontendFiles) {
   ) {
     rawStringifyErrors++;
   }
-  if (content.includes("alert(") && !file.includes(".spec.")) {
+  if (/\b(?:window\.)?alert\s*\(/.test(content) && !file.includes(".spec.")) {
     alertGenericErrors++;
   }
 }

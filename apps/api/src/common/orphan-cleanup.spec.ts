@@ -284,5 +284,27 @@ describe("orphan-cleanup", () => {
         "tenants/org-1/logos/replaced-old-logo.png",
       );
     });
+
+    it("wraps reference queries inside withSystemRlsBypass when provided on dbClient", async () => {
+      const txDb = {
+        candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },
+        application: { findMany: vi.fn().mockResolvedValue([]) },
+        candidate: { findMany: vi.fn().mockResolvedValue([]) },
+        organization: { findMany: vi.fn().mockResolvedValue([]) },
+      };
+      const withSystemRlsBypass = vi.fn(
+        async (fn: (tx: typeof txDb) => Promise<unknown>) => fn(txDb),
+      );
+      mockMinioClient.listObjects.mockReturnValue(createMockStream([]));
+
+      await cleanupOrphans({
+        dryRun: true,
+        dbClient: { withSystemRlsBypass } as never,
+        minioClient: mockMinioClient as unknown as Minio.Client,
+      });
+
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(1);
+      expect(txDb.candidateDocument.findMany).toHaveBeenCalledTimes(1);
+    });
   });
 });

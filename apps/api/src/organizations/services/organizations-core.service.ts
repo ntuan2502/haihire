@@ -499,15 +499,7 @@ export class OrganizationsCoreService {
         where: { organizationId: orgId, userId },
         select: { role: true },
       });
-      const isMockUser = Boolean(
-        (this.prisma.user as unknown as MockUserTableCompat)?.store,
-      );
-      if (
-        !isOwnerOfCurrentOrg &&
-        !activeMember &&
-        !isMockUser &&
-        !fallbackMemberRole
-      ) {
+      if (!isOwnerOfCurrentOrg && !activeMember && !fallbackMemberRole) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
           "You do not belong to this organization.",

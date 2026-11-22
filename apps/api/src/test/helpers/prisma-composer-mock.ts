@@ -413,6 +413,37 @@ export function createQueryBuilder<T = MockRecord>(
   };
 }
 
+const SCALAR_FILTER_KEYS = new Set([
+  "in",
+  "notIn",
+  "equals",
+  "not",
+  "contains",
+  "startsWith",
+  "endsWith",
+  "mode",
+  "gte",
+  "lte",
+  "gt",
+  "lt",
+]);
+
+function isCompositeUniqueWhereKey(
+  key: string,
+  val: Record<string, unknown>,
+): boolean {
+  const keys = Object.keys(val);
+  if (keys.length < 2 || !key.includes("_")) return false;
+  const parts = key.split("_");
+  return keys.every(
+    (k) =>
+      parts.includes(k) ||
+      key.startsWith(`${k}_`) ||
+      key.includes(`_${k}_`) ||
+      key.endsWith(`_${k}`),
+  );
+}
+
 export function matchPrismaWhere<T extends MockRecord>(
   item: T,
   where?: unknown,
@@ -440,6 +471,79 @@ export function matchPrismaWhere<T extends MockRecord>(
       continue;
     }
     if (typeof val === "object" && !(val instanceof Date)) {
+      if (!Array.isArray(val)) {
+        const objVal = val as Record<string, unknown>;
+        const objKeys = Object.keys(objVal);
+        const hasScalarOperator = objKeys.some((k) =>
+          SCALAR_FILTER_KEYS.has(k),
+        );
+        if (!hasScalarOperator && objKeys.length > 0) {
+          if (itemVal === undefined && isCompositeUniqueWhereKey(key, objVal)) {
+            if (!matchPrismaWhere(item, objVal)) return false;
+            continue;
+          }
+          if (Array.isArray(itemVal)) {
+            if (
+              "some" in objVal &&
+              !itemVal.some((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.some),
+              )
+            ) {
+              return false;
+            }
+            if (
+              "none" in objVal &&
+              itemVal.some((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.none),
+              )
+            ) {
+              return false;
+            }
+            if (
+              "every" in objVal &&
+              !itemVal.every((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.every),
+              )
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if ("is" in objVal) {
+            if (objVal.is === null) {
+              if (itemVal !== null && itemVal !== undefined) return false;
+            } else if (
+              itemVal !== undefined &&
+              (itemVal === null ||
+                !matchPrismaWhere(itemVal as MockRecord, objVal.is))
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if ("isNot" in objVal) {
+            if (objVal.isNot === null) {
+              if (itemVal === null) return false;
+            } else if (
+              itemVal &&
+              typeof itemVal === "object" &&
+              matchPrismaWhere(itemVal as MockRecord, objVal.isNot)
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if (itemVal === null) return false;
+          if (
+            itemVal &&
+            typeof itemVal === "object" &&
+            !(itemVal instanceof Date)
+          ) {
+            if (!matchPrismaWhere(itemVal as MockRecord, objVal)) return false;
+          }
+          continue;
+        }
+      }
       if ("in" in val && (!Array.isArray(val.in) || !val.in.includes(itemVal)))
         return false;
       if (
@@ -579,9 +683,22 @@ export function createMockTable<T = MockRecord>(
         let match: T | undefined;
         if (conflictCriteria) {
           match = store.find((item) =>
-            Object.entries(conflictCriteria).every(
-              ([k, v]) => (item as MockRecord)[k] === v,
-            ),
+            Object.entries(conflictCriteria).every(([k, v]) => {
+              const rec = item as MockRecord;
+              if (
+                rec[k] === undefined &&
+                v &&
+                typeof v === "object" &&
+                !Array.isArray(v) &&
+                !(v instanceof Date) &&
+                isCompositeUniqueWhereKey(k, v as Record<string, unknown>)
+              ) {
+                return Object.entries(v as Record<string, unknown>).every(
+                  ([ck, cv]) => rec[ck] === cv,
+                );
+              }
+              return rec[k] === v;
+            }),
           );
         }
         if (match) {

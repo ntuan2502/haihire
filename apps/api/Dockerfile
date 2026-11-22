@@ -3,8 +3,8 @@ FROM node:26-alpine AS builder
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm and clean npm cache
-RUN npm install -g pnpm && npm cache clean --force
+# Install pinned pnpm matching packageManager and clean npm cache
+RUN npm install -g pnpm@12.18.0 && npm cache clean --force
 
 WORKDIR /app
 
@@ -22,8 +22,12 @@ COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 COPY scripts ./scripts
 
-# Build shared and backend (esbuild produces dist/server.mjs)
-RUN pnpm --filter @haihire/shared run build && pnpm --filter api run build
+# Generate Prisma Client and build shared + backend (esbuild produces dist/server.mjs)
+RUN pnpm --filter api run db:generate && \
+    mkdir -p /app/.prisma-generated && \
+    cp -r /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma/* /app/.prisma-generated/ && \
+    pnpm --filter @haihire/shared run build && \
+    pnpm --filter api run build
 
 # Stage 2: Production lean runtime
 FROM node:26-alpine AS runner
@@ -36,8 +40,8 @@ LABEL org.opencontainers.image.title="HaiHire Backend Service" \
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm and clean npm cache
-RUN npm install -g pnpm && npm cache clean --force
+# Install pinned pnpm matching packageManager and clean npm cache
+RUN npm install -g pnpm@12.18.0 && npm cache clean --force
 
 WORKDIR /app
 
@@ -52,6 +56,12 @@ COPY --chown=node:node apps/api/package.json ./apps/api/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile
 
+# Copy pre-generated Prisma Client into the production @prisma/client virtual store entry
+COPY --from=builder /app/.prisma-generated /tmp/.prisma-generated
+RUN for dir in /app/node_modules/.pnpm/@prisma+client*/node_modules; do \
+      mkdir -p "$dir/.prisma" && cp -r /tmp/.prisma-generated/* "$dir/.prisma/"; \
+    done && rm -rf /tmp/.prisma-generated && chown -R node:node /app/node_modules
+
 # Copy compiled code and Prisma schema with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
 COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
@@ -64,6 +74,9 @@ WORKDIR /app/apps/api
 USER node
 
 EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
 
 # Run production server using native Node 26 runtime
 CMD ["node", "dist/server.mjs"]

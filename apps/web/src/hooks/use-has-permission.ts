@@ -1,3 +1,5 @@
+"use client";
+
 import { useAuth } from "@/context/auth-context";
 import { hasPermission, type Permission, type Role } from "@haihire/shared";
 import {

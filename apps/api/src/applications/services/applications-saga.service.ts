@@ -79,7 +79,11 @@ export class ApplicationsSagaService {
       isOwner?: boolean;
     } | null,
   ) {
-    if (currentUser?.role === "MEMBER") {
+    if (
+      !this.permissionResolver &&
+      currentUser?.role === "MEMBER" &&
+      !currentUser?.isOwner
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only Admins can perform this action.",
@@ -498,7 +502,33 @@ export class ApplicationsSagaService {
           sourceChannel = SourcingChannel.DIRECT;
         }
 
-        // 6. Save Application record
+        // 6. Resolve APPLIED pipeline stage if initialized and save Application record
+        const appliedPipelineStage =
+          typeof (
+            tx as unknown as {
+              pipelineStage?: {
+                findFirst?: (args: unknown) => Promise<{ id: string } | null>;
+              };
+            }
+          ).pipelineStage?.findFirst === "function"
+            ? await (
+                tx as unknown as {
+                  pipelineStage: {
+                    findFirst: (
+                      args: unknown,
+                    ) => Promise<{ id: string } | null>;
+                  };
+                }
+              ).pipelineStage.findFirst({
+                where: {
+                  organizationId: orgId,
+                  jobId: dto.jobId,
+                  category: "APPLIED",
+                },
+                select: { id: true },
+              })
+            : null;
+
         const savedApp = await tx.application.create({
           data: {
             id: crypto.randomUUID(),
@@ -506,6 +536,9 @@ export class ApplicationsSagaService {
             candidateId: candidateId as string,
             jobId: dto.jobId,
             stage: "APPLIED",
+            ...(appliedPipelineStage
+              ? { stageId: appliedPipelineStage.id }
+              : {}),
             resumeUrl: uploadResult.url || null,
             resumeFileName: uploadResult.originalName || null,
             resumeFileSize: uploadResult.size || null,
@@ -591,6 +624,12 @@ export class ApplicationsSagaService {
             }
           }
         }
+      }
+      if ((dbError as { code?: string })?.code === "P2002") {
+        throw new AppConflictException(
+          APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+          "This candidate has already applied to this job.",
+        );
       }
       throw dbError;
     }

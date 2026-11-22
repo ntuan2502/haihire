@@ -16,6 +16,7 @@ import {
   parseCandidateDocuments,
   resetActiveLocalization,
   resolveCandidateProfile,
+  sanitizeRedirectPath,
   setActiveLocalization,
 } from "./utils";
 import {
@@ -441,6 +442,17 @@ describe("Frontend utils", () => {
         "only@example.com",
       );
       expect(getUserDisplayName(null)).toBe("—");
+    });
+
+    it("sanitizes client redirect URLs to prevent open redirects", () => {
+      expect(sanitizeRedirectPath("/jobs/123?tab=pipeline")).toBe(
+        "/jobs/123?tab=pipeline",
+      );
+      expect(sanitizeRedirectPath("https://evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("//evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("/\\evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("javascript:alert(1)")).toBe("/dashboard");
+      expect(sanitizeRedirectPath(null, "/onboarding")).toBe("/onboarding");
     });
   });
 });

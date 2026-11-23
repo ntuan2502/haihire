@@ -23,7 +23,7 @@ COPY apps/api ./apps/api
 COPY scripts ./scripts
 
 # Generate Prisma Client and build shared + backend (esbuild produces dist/server.mjs)
-RUN pnpm --filter api run db:generate && \
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" pnpm --filter api run db:generate && \
     mkdir -p /app/.prisma-generated && \
     cp -r /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma/* /app/.prisma-generated/ && \
     pnpm --filter @haihire/shared run build && \
@@ -65,6 +65,7 @@ RUN for dir in /app/node_modules/.pnpm/@prisma+client*/node_modules; do \
 # Copy compiled code and Prisma schema with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
 COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --chown=node:node --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 COPY --chown=node:node --from=builder /app/apps/api/src/prisma ./apps/api/src/prisma
 COPY --chown=node:node --from=builder /app/apps/api/src/common ./apps/api/src/common
 COPY --chown=node:node --from=builder /app/scripts ./scripts

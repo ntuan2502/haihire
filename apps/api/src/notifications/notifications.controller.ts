@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Inject,
+  Optional,
   Put,
   Patch,
   Param,
@@ -25,6 +26,7 @@ import {
 import { resolveOrgNameDisplayOrder } from "../common/candidate-name.util";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { EventsService } from "../events/events.service";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -46,6 +48,9 @@ export class NotificationsController {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(PermissionResolverService)
     private readonly permissions: PermissionResolverService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly events?: EventsService,
   ) {}
 
   @Get()
@@ -306,9 +311,17 @@ export class NotificationsController {
     });
   }
 
+  private emitChanged(user: NotificationRequest["user"]) {
+    this.events?.emit({
+      type: "NOTIFICATIONS_CHANGED",
+      targetUserId: user.id,
+      organizationId: user.organizationId,
+    });
+  }
+
   @Patch("read")
   async readAll(@Request() { user }: NotificationRequest) {
-    await this.prisma.withTenantRls(user.organizationId, (tx) =>
+    const res = await this.prisma.withTenantRls(user.organizationId, (tx) =>
       tx.notification.updateMany({
         where: {
           organizationId: user.organizationId,
@@ -318,6 +331,9 @@ export class NotificationsController {
         data: { readAt: new Date() },
       }),
     );
+    if (res?.count !== 0) {
+      this.emitChanged(user);
+    }
   }
 
   @Patch(":id/read")
@@ -325,7 +341,7 @@ export class NotificationsController {
     @Request() { user }: NotificationRequest,
     @Param("id", ParseUUIDPipe) id: string,
   ) {
-    await this.prisma.withTenantRls(user.organizationId, (tx) =>
+    const res = await this.prisma.withTenantRls(user.organizationId, (tx) =>
       tx.notification.updateMany({
         where: {
           id,
@@ -336,6 +352,9 @@ export class NotificationsController {
         data: { readAt: new Date() },
       }),
     );
+    if (res?.count !== 0) {
+      this.emitChanged(user);
+    }
   }
 
   @Patch(":id/unread")
@@ -343,7 +362,7 @@ export class NotificationsController {
     @Request() { user }: NotificationRequest,
     @Param("id", ParseUUIDPipe) id: string,
   ) {
-    await this.prisma.withTenantRls(user.organizationId, (tx) =>
+    const res = await this.prisma.withTenantRls(user.organizationId, (tx) =>
       tx.notification.updateMany({
         where: {
           id,
@@ -354,6 +373,9 @@ export class NotificationsController {
         data: { readAt: null },
       }),
     );
+    if (res?.count !== 0) {
+      this.emitChanged(user);
+    }
   }
 
   @Get("preferences")
@@ -374,12 +396,12 @@ export class NotificationsController {
   }
 
   @Put("preferences")
-  updatePreferences(
+  async updatePreferences(
     @Request() { user }: NotificationRequest,
     @Body(DtoPipe(notificationPreferencesSchema)) body: NotificationPreferences,
   ) {
     const identity = { organizationId: user.organizationId, userId: user.id };
-    return this.prisma.withTenantRls(user.organizationId, (tx) =>
+    const updated = await this.prisma.withTenantRls(user.organizationId, (tx) =>
       tx.notificationPreference.upsert({
         where: { organizationId_userId: identity },
         create: { ...identity, ...body },
@@ -387,5 +409,7 @@ export class NotificationsController {
         select: preferencesSelect,
       }),
     );
+    this.emitChanged(user);
+    return updated;
   }
 }

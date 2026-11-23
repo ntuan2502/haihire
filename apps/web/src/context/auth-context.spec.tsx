@@ -732,4 +732,80 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
 
     window.removeEventListener("haihire:auth-refreshed", refreshListener);
   });
+
+  it("refreshes user silently on self USER_PREFERENCES_CHANGED and ignores other users", async () => {
+    window.history.pushState({}, "", "/dashboard");
+    const infoSpy = vi.spyOn(toast, "info");
+    const warnSpy = vi.spyOn(toast, "warning");
+    const queryClient = new QueryClient();
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-pref",
+        email: "pref@test.local",
+        name: "Pref User",
+        role: "MEMBER",
+        preferredLanguage: "vi",
+        preferredTimezone: "Asia/Ho_Chi_Minh",
+        organizationId: "org-1",
+      },
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.preferredLanguage).toBe("vi");
+      expect(latestSource).not.toBeNull();
+    });
+
+    const getCountBeforeOther = vi.mocked(api.get).mock.calls.length;
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "USER_PREFERENCES_CHANGED",
+            targetUserId: "u-other",
+          }),
+        }),
+      );
+    });
+    expect(vi.mocked(api.get).mock.calls.length).toBe(getCountBeforeOther);
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        id: "u-pref",
+        email: "pref@test.local",
+        name: "Pref User",
+        role: "MEMBER",
+        preferredLanguage: "en",
+        preferredTimezone: "Asia/Tokyo",
+        organizationId: "org-1",
+      },
+    });
+
+    await act(async () => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "USER_PREFERENCES_CHANGED",
+            targetUserId: "u-pref",
+          }),
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.user?.preferredLanguage).toBe("en");
+      expect(result.current.user?.preferredTimezone).toBe("Asia/Tokyo");
+    });
+
+    expect(infoSpy).not.toHaveBeenCalled();
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
 });

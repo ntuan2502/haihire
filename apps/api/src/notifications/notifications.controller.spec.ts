@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_NOTIFICATION_PREFERENCES, Role } from "@haihire/shared";
 import { NotificationsController } from "./notifications.controller";
 import type { PermissionResolverService } from "../auth/permission-resolver.service";
+import type { EventsService } from "../events/events.service";
 import type { PrismaService } from "../prisma/prisma.service";
 
 describe("NotificationsController preferences", () => {
@@ -309,5 +310,58 @@ describe("NotificationsController preferences", () => {
         round: 2,
       }),
     ]);
+  });
+
+  it("emits NOTIFICATIONS_CHANGED only when read/unread updates affect rows and on preference updates", async () => {
+    const updateMany = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 });
+    const upsert = vi.fn().mockResolvedValue(DEFAULT_NOTIFICATION_PREFERENCES);
+    const emit = vi.fn();
+    const transaction = {
+      notification: { updateMany },
+      notificationPreference: { upsert },
+    };
+    const controller = new NotificationsController(
+      {
+        withTenantRls: (
+          _organizationId: string,
+          execute: (tx: typeof transaction) => unknown,
+        ) => execute(transaction),
+      } as unknown as PrismaService,
+      {} as PermissionResolverService,
+      { emit } as unknown as EventsService,
+    );
+    const request = {
+      user: { id: "user-1", organizationId: "org-1", role: Role.RECRUITER },
+    };
+
+    await controller.readAll(request);
+    await controller.readOne(request, "notif-1");
+    await controller.unreadOne(request, "notif-1");
+    await controller.readAll(request);
+    await controller.readOne(request, "notif-1");
+    await controller.unreadOne(request, "notif-1");
+    await controller.updatePreferences(
+      request,
+      DEFAULT_NOTIFICATION_PREFERENCES,
+    );
+
+    expect(emit).toHaveBeenCalledTimes(4);
+    expect(emit).toHaveBeenNthCalledWith(1, {
+      type: "NOTIFICATIONS_CHANGED",
+      targetUserId: "user-1",
+      organizationId: "org-1",
+    });
+    expect(emit).toHaveBeenNthCalledWith(4, {
+      type: "NOTIFICATIONS_CHANGED",
+      targetUserId: "user-1",
+      organizationId: "org-1",
+    });
   });
 });

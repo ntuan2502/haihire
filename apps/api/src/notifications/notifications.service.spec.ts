@@ -3,11 +3,13 @@ import { Role } from "@haihire/shared";
 import { NotificationsService } from "./notifications.service";
 import type { PrismaService } from "../prisma/prisma.service";
 import type { PermissionResolverService } from "../auth/permission-resolver.service";
+import type { EventsService } from "../events/events.service";
 import type { Queue } from "bullmq";
 
 function setup(website: boolean, email: boolean, allowed = true) {
   const create = vi.fn();
   const add = vi.fn();
+  const emit = vi.fn();
   const tx = {
     organizationMember: {
       findUnique: vi.fn().mockResolvedValue({ role: Role.RECRUITER }),
@@ -30,8 +32,9 @@ function setup(website: boolean, email: boolean, allowed = true) {
     { withTenantRls } as unknown as PrismaService,
     { resolvePermission } as unknown as PermissionResolverService,
     { add } as unknown as Queue,
+    { emit } as unknown as EventsService,
   );
-  return { service, tx, create, add, withTenantRls, resolvePermission };
+  return { service, tx, create, add, emit, withTenantRls, resolvePermission };
 }
 
 describe("NotificationsService", () => {
@@ -43,8 +46,15 @@ describe("NotificationsService", () => {
   ])(
     "uses the website (%s) and email (%s) preferences independently",
     async (website, email) => {
-      const { service, tx, create, add, withTenantRls, resolvePermission } =
-        setup(website, email);
+      const {
+        service,
+        tx,
+        create,
+        add,
+        emit,
+        withTenantRls,
+        resolvePermission,
+      } = setup(website, email);
       await service.publish(
         "org-1",
         "user-1",
@@ -71,11 +81,19 @@ describe("NotificationsService", () => {
       );
       expect(create).toHaveBeenCalledTimes(website ? 1 : 0);
       expect(add).toHaveBeenCalledTimes(email ? 1 : 0);
+      expect(emit).toHaveBeenCalledTimes(website ? 1 : 0);
+      if (website) {
+        expect(emit).toHaveBeenCalledWith({
+          type: "NOTIFICATIONS_CHANGED",
+          targetUserId: "user-1",
+          organizationId: "org-1",
+        });
+      }
     },
   );
 
   it("skips both channels when the member lacks access", async () => {
-    const { service, create, add } = setup(true, true, false);
+    const { service, create, add, emit } = setup(true, true, false);
     await service.publish(
       "org-1",
       "user-1",
@@ -84,6 +102,7 @@ describe("NotificationsService", () => {
     );
     expect(create).not.toHaveBeenCalled();
     expect(add).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
   });
 
   it("uses the same queue job key when publishing the same email revision again", async () => {

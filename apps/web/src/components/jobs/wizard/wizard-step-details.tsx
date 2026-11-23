@@ -144,10 +144,7 @@ export function WizardStepDetails({
           {t("jobs.wizard.jobDetailsTitle")}
         </h1>
         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-          {t("jobs.wizard.jobDetailsDesc")}{" "}
-          <span className="underline decoration-border cursor-pointer">
-            {t("jobs.wizard.saveChangesLink")}
-          </span>
+          {t("jobs.wizard.jobDetailsDesc")}
         </p>
       </div>
 

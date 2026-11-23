@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "job-1" }),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/jobs/job-1/tracking",
+  usePathname: () => "/jobs/job-1/source-tracking",
 }));
 
 vi.mock("@/context/auth-context", () => ({

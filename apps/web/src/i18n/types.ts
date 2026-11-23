@@ -577,7 +577,6 @@ export interface TranslationSchema {
     draftStatus: string;
     closedStatus: string;
     archivedStatus: string;
-    moreOptions: string;
     defaultLocation: string;
     competitiveSalary: string;
     noDescription: string;
@@ -680,13 +679,11 @@ export interface TranslationSchema {
       autoSaved: string;
       candidatePreview: string;
       saving: string;
-      saveAndPublish: string;
       saveChanges: string;
       continueEditing: string;
       saveSuccess: string;
       jobDetailsTitle: string;
       jobDetailsDesc: string;
-      saveChangesLink: string;
       jobTitleLabel: string;
       departmentLabel: string;
       departmentHint: string;
@@ -839,7 +836,6 @@ export interface TranslationSchema {
       deletingAction: string;
       backAction: string;
       publishAndCopyLink: string;
-      saveAndUpdateJob: string;
       linkCopied: string;
       savedAndLinkCopied: string;
       continueToPublish: string;

@@ -14,7 +14,6 @@ import {
   Table,
   BarChart2,
   Settings,
-  MoreHorizontal,
   ExternalLink,
   ChevronDown,
   Check,
@@ -51,7 +50,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
     if (pathname.includes("/pipeline")) return "pipeline";
     if (pathname.includes("/promote")) return "promote";
     if (pathname.includes("/settings")) return "settings";
-    if (pathname.includes("/tracking")) return "tracking";
+    if (pathname.includes("/source-tracking")) return "source-tracking";
     return "pipeline";
   }, [pathname]);
 
@@ -74,8 +73,8 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
       router.push(`/jobs/${jobId}/table`);
     } else if (tabId === "settings") {
       router.push(`/jobs/${jobId}/settings`);
-    } else if (tabId === "tracking") {
-      router.push(`/jobs/${jobId}/tracking`);
+    } else if (tabId === "source-tracking") {
+      router.push(`/jobs/${jobId}/source-tracking`);
     } else {
       router.push(`/jobs/${jobId}/pipeline`);
     }
@@ -230,17 +229,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-
-            {activeNavTab !== "pipeline" && (
-              <button
-                type="button"
-                onClick={() => router.push(`/candidates?jobId=${job.id}`)}
-                className="h-7 w-7 flex items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
-                title={t("jobs.moreOptions")}
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-              </button>
-            )}
           </div>
         </div>
 
@@ -260,7 +248,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
             ...(canViewSourcing
               ? [
                   {
-                    id: "tracking",
+                    id: "source-tracking",
                     label: t("jobs.tabs.sourceTracking"),
                     icon: BarChart2,
                   },

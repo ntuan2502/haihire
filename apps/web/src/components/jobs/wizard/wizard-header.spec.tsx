@@ -12,8 +12,6 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.backToPipeline": "Quay lại Pipeline",
         "jobs.wizard.autoSaved": "Đã tự động lưu nháp",
         "jobs.wizard.candidatePreview": "Xem trước với tư cách ứng viên",
-        "jobs.wizard.saveAndPublish": "Lưu & Tiếp tục",
-        "jobs.wizard.saveDraft": "Lưu bản nháp",
         "jobs.wizard.saveChanges": "Lưu thay đổi",
         "jobs.wizard.saving": "Đang lưu...",
         "jobs.wizard.comingSoon": "Sắp ra mắt",
@@ -98,11 +96,31 @@ describe("WizardHeader Component Tests", () => {
     expect(onOpenPreview).toHaveBeenCalledTimes(1);
   });
 
-  it("triggers onSaveJob when clicking top-right save button", () => {
-    const onSaveJob = vi.fn();
+  it("hides header save button in create mode", () => {
     render(
       <WizardHeader
         mode="create"
+        currentStep={1}
+        steps={steps}
+        draftSavedAt={null}
+        isSaving={false}
+        isStep1Valid={true}
+        onStepClick={vi.fn()}
+        onOpenPreview={vi.fn()}
+        onSaveJob={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Lưu thay đổi" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("triggers onSaveJob when clicking top-right save button in edit mode", () => {
+    const onSaveJob = vi.fn();
+    render(
+      <WizardHeader
+        mode="edit"
         currentStep={1}
         steps={steps}
         draftSavedAt={null}
@@ -114,16 +132,16 @@ describe("WizardHeader Component Tests", () => {
       />,
     );
 
-    const saveBtn = screen.getByText("Lưu & Tiếp tục");
+    const saveBtn = screen.getByText("Lưu thay đổi");
     fireEvent.click(saveBtn);
 
     expect(onSaveJob).toHaveBeenCalledTimes(1);
   });
 
-  it("disables save button when step 1 is invalid", () => {
+  it("disables save button when step 1 is invalid in edit mode", () => {
     render(
       <WizardHeader
-        mode="create"
+        mode="edit"
         currentStep={1}
         steps={steps}
         draftSavedAt={null}
@@ -135,29 +153,11 @@ describe("WizardHeader Component Tests", () => {
       />,
     );
 
-    const saveBtn = screen.getByText("Lưu & Tiếp tục").closest("button");
+    const saveBtn = screen.getByText("Lưu thay đổi").closest("button");
     expect(saveBtn).toBeDisabled();
   });
 
-  it("BUG-11: renders saveDraft button label when publishMode is draft and parses JPY salary range", () => {
-    render(
-      <WizardHeader
-        mode="create"
-        publishMode="draft"
-        currentStep={4}
-        steps={steps}
-        draftSavedAt={null}
-        isSaving={false}
-        isStep1Valid={true}
-        onStepClick={vi.fn()}
-        onOpenPreview={vi.fn()}
-        onSaveJob={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Lưu bản nháp")).toBeInTheDocument();
-    expect(screen.queryByText("Lưu & Tiếp tục")).not.toBeInTheDocument();
-
+  it("parses JPY salary range correctly", () => {
     const parsedJpy = parseSalaryRange("JPY 500000 - 800000 / month");
     expect(parsedJpy).toEqual({
       min: "500000",

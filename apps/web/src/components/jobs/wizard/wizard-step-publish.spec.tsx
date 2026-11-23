@@ -35,7 +35,6 @@ vi.mock("@/i18n", () => ({
           "Thao tác này sẽ xóa toàn bộ đơn ứng tuyển liên quan.",
         "jobs.wizard.deleteJobAction": "Xóa tin",
         "jobs.wizard.backAction": "Quay lại",
-        "jobs.wizard.saveAndUpdateJob": "Lưu & Cập nhật tin",
         "jobs.wizard.saving": "Đang lưu...",
         "common.cancel": "Hủy bỏ",
         "jobs.workplace.remote": "Từ xa",
@@ -110,7 +109,7 @@ describe("WizardStepPublish Component Tests", () => {
     expect(setPublishMode).toHaveBeenCalledWith("draft");
   });
 
-  it("renders danger zone in edit mode and triggers onOpenDeleteConfirm", () => {
+  it("renders danger zone in edit mode without duplicate bottom save button and triggers onOpenDeleteConfirm", () => {
     const onOpenDeleteConfirm = vi.fn();
     render(
       <WizardStepPublish
@@ -131,6 +130,12 @@ describe("WizardStepPublish Component Tests", () => {
     );
 
     expect(screen.getByText("Vùng nguy hiểm")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Đăng tin ngay" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu bản nháp" }),
+    ).not.toBeInTheDocument();
     const deleteBtn = screen.getByText("Xóa tin");
     fireEvent.click(deleteBtn);
 

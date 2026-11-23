@@ -14,7 +14,6 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.jobDetailsTitle": "Chi tiết công việc",
         "jobs.wizard.jobDetailsDesc":
           "Điền các thông tin cơ bản cho vị trí tuyển dụng.",
-        "jobs.wizard.saveChangesLink": "Lưu thay đổi",
         "jobs.wizard.jobTitleLabel": "Tiêu đề công việc",
         "jobs.wizard.departmentLabel": "Phòng ban",
         "jobs.wizard.departmentHint": "Ví dụ: Kỹ thuật, Marketing",

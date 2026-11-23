@@ -76,7 +76,7 @@ jobs:
 
       - name: Inspect Outdated Packages
         run: |
-          pnpm outdated > outdated-report.txt || true
+          pnpm outdated -r > outdated-report.txt || true
           cat outdated-report.txt
 
       - name: Upload Outdated Dependencies Report

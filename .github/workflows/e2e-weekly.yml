@@ -63,7 +63,7 @@ jobs:
         run: pnpm test:e2e
 
       - name: Upload Playwright test report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: weekly-playwright-report

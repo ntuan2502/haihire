@@ -35,7 +35,7 @@ jobs:
           cat audit-report.json | head -n 30
 
       - name: Upload Audit Report Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: security-audit-report
           path: audit-report.json
@@ -80,7 +80,7 @@ jobs:
           cat outdated-report.txt
 
       - name: Upload Outdated Dependencies Report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: outdated-dependencies-report
           path: outdated-report.txt

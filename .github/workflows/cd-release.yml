@@ -235,7 +235,7 @@ jobs:
           docker buildx imagetools create ${WEB_TAGS} "${{ env.WEB_IMAGE }}:${SHA_TAG}"
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.publish-images.outputs.tag-name }}
           name: "HaiHire Enterprise ATS ${{ needs.publish-images.outputs.tag-name }}"

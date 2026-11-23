@@ -1,10 +1,12 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  extractPlainTextFromHtml,
   formatCandidateDisplayName,
   type NameDisplayOrder,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
+import { sanitizeRichTextHtml } from "../common/html-sanitizer";
 import {
   ApplicationStage,
   ExperienceLevel,
@@ -194,7 +196,9 @@ export class JobsService {
         workplace: true,
         type: true,
         description: true,
-        requirements: true,
+        applicationDeadline: true,
+        startDate: true,
+        openings: true,
         salaryRange: true,
         salaryMin: true,
         salaryMax: true,
@@ -346,7 +350,9 @@ export class JobsService {
         workplace: true,
         type: true,
         description: true,
-        requirements: true,
+        applicationDeadline: true,
+        startDate: true,
+        openings: true,
         salaryRange: true,
         salaryMin: true,
         salaryMax: true,
@@ -647,6 +653,48 @@ export class JobsService {
     return this.findOne(matchedJob.id, undefined, true);
   }
 
+  private parseDateOnly(
+    value: string | null | undefined,
+    fieldName: string,
+  ): Date | null {
+    if (value == null || value === "") {
+      return null;
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Invalid date format for ${fieldName}. Expected YYYY-MM-DD.`,
+      );
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (
+      parsed.getUTCFullYear() !== year ||
+      parsed.getUTCMonth() !== month - 1 ||
+      parsed.getUTCDate() !== day
+    ) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Invalid calendar date for ${fieldName}.`,
+      );
+    }
+    return parsed;
+  }
+
+  private sanitizeDescription(rawDescription: string): string {
+    const sanitized = sanitizeRichTextHtml(rawDescription).trim();
+    if (extractPlainTextFromHtml(sanitized).length === 0) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Job description is required",
+      );
+    }
+    return sanitized;
+  }
+
   async create(
     dto: CreateJobDto,
     tenantOrgId?: string | null,
@@ -672,6 +720,16 @@ export class JobsService {
       );
     }
 
+    const description = this.sanitizeDescription(dto.description);
+    const applicationDeadline =
+      dto.applicationDeadline !== undefined
+        ? this.parseDateOnly(dto.applicationDeadline, "applicationDeadline")
+        : null;
+    const startDate =
+      dto.startDate !== undefined
+        ? this.parseDateOnly(dto.startDate, "startDate")
+        : null;
+
     const created = await this.prisma.job.create({
       data: {
         id: crypto.randomUUID(),
@@ -682,8 +740,10 @@ export class JobsService {
         experienceLevel: dto.experienceLevel ?? null,
         workplace: dto.workplace ?? null,
         type: dto.type ?? "FULL_TIME",
-        description: dto.description,
-        requirements: dto.requirements ?? null,
+        description,
+        applicationDeadline,
+        startDate,
+        openings: dto.openings ?? 1,
         salaryRange: dto.salaryRange ?? null,
         salaryMin: dto.salaryMin ?? null,
         salaryMax: dto.salaryMax ?? null,
@@ -719,6 +779,19 @@ export class JobsService {
       );
     }
 
+    const sanitizedDescription =
+      dto.description !== undefined
+        ? this.sanitizeDescription(dto.description)
+        : undefined;
+    const applicationDeadline =
+      dto.applicationDeadline !== undefined
+        ? this.parseDateOnly(dto.applicationDeadline, "applicationDeadline")
+        : undefined;
+    const startDate =
+      dto.startDate !== undefined
+        ? this.parseDateOnly(dto.startDate, "startDate")
+        : undefined;
+
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
@@ -731,12 +804,12 @@ export class JobsService {
           : {}),
         ...(dto.workplace !== undefined ? { workplace: dto.workplace } : {}),
         ...(dto.type !== undefined ? { type: dto.type } : {}),
-        ...(dto.description !== undefined
-          ? { description: dto.description }
+        ...(sanitizedDescription !== undefined
+          ? { description: sanitizedDescription }
           : {}),
-        ...(dto.requirements !== undefined
-          ? { requirements: dto.requirements }
-          : {}),
+        ...(applicationDeadline !== undefined ? { applicationDeadline } : {}),
+        ...(startDate !== undefined ? { startDate } : {}),
+        ...(dto.openings !== undefined ? { openings: dto.openings } : {}),
         ...(dto.salaryRange !== undefined
           ? { salaryRange: dto.salaryRange }
           : {}),

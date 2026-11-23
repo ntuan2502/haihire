@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
 import { getActiveDefaultCurrency } from "@/lib/utils";
+import { formatDateOnlyForInput } from "@/lib/jobs";
 import {
   type ScreeningQuestion,
   type ScoringCriterion,
@@ -24,6 +25,22 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     (initialJob?.workplace as WorkplaceType) || "",
   );
 
+  // Schedule & Headcount
+  const [scheduleOpen, setScheduleOpen] = useState(
+    Boolean(
+      initialJob?.applicationDeadline ||
+      initialJob?.startDate ||
+      (initialJob?.openings && initialJob.openings > 1),
+    ),
+  );
+  const [applicationDeadline, setApplicationDeadline] = useState(
+    formatDateOnlyForInput(initialJob?.applicationDeadline),
+  );
+  const [startDate, setStartDate] = useState(
+    formatDateOnlyForInput(initialJob?.startDate),
+  );
+  const [openings, setOpenings] = useState(String(initialJob?.openings ?? 1));
+
   // Compensation state
   const initialSalary = parseSalaryRange(initialJob?.salaryRange);
   const [compensationOpen, setCompensationOpen] = useState(
@@ -41,11 +58,8 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   );
   const [salaryPer, setSalaryPer] = useState<string | null>(initialSalary.per);
 
-  // Description & Requirements
+  // Description
   const [description, setDescription] = useState(initialJob?.description || "");
-  const [requirements, setRequirements] = useState(
-    initialJob?.requirements || "",
-  );
   const [formError, setFormError] = useState<string | null>(null);
 
   // STEP 2: Application Form State
@@ -103,8 +117,19 @@ export function useJobWizardFormState(initialJob?: Job | null) {
       setEmploymentType((initialJob.type as JobType) || "");
       setExperienceLevel((initialJob.experienceLevel as ExperienceLevel) || "");
       setWorkplace((initialJob.workplace as WorkplaceType) || "");
+      setScheduleOpen(
+        Boolean(
+          initialJob.applicationDeadline ||
+          initialJob.startDate ||
+          (initialJob.openings && initialJob.openings > 1),
+        ),
+      );
+      setApplicationDeadline(
+        formatDateOnlyForInput(initialJob.applicationDeadline),
+      );
+      setStartDate(formatDateOnlyForInput(initialJob.startDate));
+      setOpenings(String(initialJob.openings ?? 1));
       setDescription(initialJob.description || "");
-      setRequirements(initialJob.requirements || "");
 
       if (initialJob.status === "PUBLISHED") {
         setPublishMode("publish");
@@ -201,8 +226,11 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setEmploymentType("");
     setExperienceLevel("");
     setWorkplace("");
+    setScheduleOpen(false);
+    setApplicationDeadline("");
+    setStartDate("");
+    setOpenings("1");
     setDescription("");
-    setRequirements("");
     setCompensationOpen(false);
     setPayNegotiable(false);
     setMinSalary("");
@@ -226,6 +254,14 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setExperienceLevel,
     workplace,
     setWorkplace,
+    scheduleOpen,
+    setScheduleOpen,
+    applicationDeadline,
+    setApplicationDeadline,
+    startDate,
+    setStartDate,
+    openings,
+    setOpenings,
     compensationOpen,
     setCompensationOpen,
     payNegotiable,
@@ -240,8 +276,6 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setSalaryPer,
     description,
     setDescription,
-    requirements,
-    setRequirements,
     formError,
     setFormError,
     phoneSetting,

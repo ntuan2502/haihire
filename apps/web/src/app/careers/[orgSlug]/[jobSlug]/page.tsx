@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { extractPlainTextFromHtml, toDateOnlyString } from "@haihire/shared";
 import { JobDetailsClient } from "@/components/careers/job-details-client";
 import { JobClosed } from "./job-closed";
 import type { Job, Organization } from "@/types";
@@ -68,10 +69,9 @@ export async function generateMetadata({
   const title = isClosed
     ? `[Closed] ${job.title} at ${orgName} | HaiHire Careers`
     : `${job.title} at ${orgName} | HaiHire Careers`;
-  const cleanDescription = (job.description || "")
-    .slice(0, 160)
-    .replace(/\s+/g, " ")
-    .trim();
+  const cleanDescription = extractPlainTextFromHtml(
+    job.description || "",
+  ).slice(0, 160);
 
   return {
     title,
@@ -119,6 +119,8 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
       : `/api${org.logoUrl.startsWith("/") ? org.logoUrl : `/${org.logoUrl}`}`
     : null;
 
+  const validThrough = toDateOnlyString(job.applicationDeadline);
+
   // Structured Data (JSON-LD) for Google Jobs Indexing
   const jsonLd = {
     "@context": "https://schema.org",
@@ -128,6 +130,7 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
     datePosted: job.createdAt
       ? new Date(job.createdAt).toISOString()
       : new Date().toISOString(),
+    ...(validThrough ? { validThrough } : {}),
     employmentType: job.type,
     hiringOrganization: {
       "@type": "Organization",
@@ -169,14 +172,8 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
         <p>{`Department: ${job.department} | Location: ${job.location} | Type: ${job.type}`}</p>
         <div>
           <h2>Job Description</h2>
-          <p>{job.description}</p>
+          <p>{extractPlainTextFromHtml(job.description || "")}</p>
         </div>
-        {job.requirements && (
-          <div>
-            <h2>Requirements</h2>
-            <p>{job.requirements}</p>
-          </div>
-        )}
       </div>
 
       {/* Interactive client application & apply modal */}

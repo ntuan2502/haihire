@@ -190,8 +190,7 @@ describe("Career Pages React Server Components (RSC) Audit (Phase 16A)", () => {
               location: "San Francisco, CA",
               type: "FULL_TIME",
               description:
-                "Build robust cloud infrastructure across multiple cloud providers.",
-              requirements: "5+ years of distributed systems experience",
+                "Build robust cloud infrastructure across multiple cloud providers.\n\n5+ years of distributed systems experience",
               benefits: "Comprehensive health coverage, 401(k) matching",
               organization: { name: "TechCorp Global" },
             }),

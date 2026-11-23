@@ -18,7 +18,13 @@ enum JobType {
   FULL_TIME
   PART_TIME
   CONTRACT
+  TEMPORARY
+  SEASONAL
+  FREELANCE
   INTERNSHIP
+  APPRENTICESHIP
+  PER_DIEM
+  VOLUNTEER
 }
 
 enum JobStatus {
@@ -56,13 +62,18 @@ enum WorkplaceType {
   ON_SITE
   HYBRID
   REMOTE
+  FIELD
 }
 
 enum ExperienceLevel {
+  INTERN
   ENTRY_LEVEL
+  JUNIOR
   MID_LEVEL
   SENIOR_LEVEL
   LEAD
+  MANAGER
+  DIRECTOR
   EXECUTIVE
 }
 
@@ -275,12 +286,14 @@ model Job {
   department      String
   location        String
   postalCode      String?
-  experienceLevel ExperienceLevel?
-  workplace       WorkplaceType?
-  type            JobType          @default(FULL_TIME)
-  description     String
-  requirements    String?
-  salaryRange     String?
+  experienceLevel     ExperienceLevel?
+  workplace           WorkplaceType?
+  type                JobType          @default(FULL_TIME)
+  description         String
+  applicationDeadline DateTime?        @db.Date
+  startDate           DateTime?        @db.Date
+  openings            Int              @default(1)
+  salaryRange         String?
   salaryMin       Int?
   salaryMax       Int?
   salaryCurrency  String?          @db.VarChar(10)

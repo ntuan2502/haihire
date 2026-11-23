@@ -66,8 +66,10 @@ const mockInitialJob: Job = {
   workplace: "HYBRID",
   status: "PUBLISHED",
   description:
-    "Join our frontend core team building modern ATS web applications.",
-  requirements: "React 19, TypeScript, Next.js, Tailwind CSS v4",
+    "<p>Join our frontend core team building modern ATS web applications.</p><p>React 19, TypeScript, Next.js, Tailwind CSS v4</p>",
+  applicationDeadline: "2026-12-31",
+  startDate: "2027-01-15",
+  openings: 3,
   salaryRange: "USD 2000 - 4000 / month",
   organizationId: "org-test-1",
   createdAt: "2026-02-01T00:00:00.000Z",
@@ -112,10 +114,13 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
       // Step 1 Details form labels
       expect(screen.getByText("Chức danh công việc")).toBeInTheDocument();
       expect(screen.getByText("Địa điểm làm việc")).toBeInTheDocument();
-      expect(screen.getByText("Mô tả công việc")).toBeInTheDocument();
+      expect(screen.getByText("Mô tả")).toBeInTheDocument();
       expect(screen.getByText("Hình thức làm việc")).toBeInTheDocument();
       expect(screen.getByText("Cấp bậc kinh nghiệm")).toBeInTheDocument();
       expect(screen.getByText("Mô hình làm việc")).toBeInTheDocument();
+      expect(
+        screen.getByText("Hạn nộp hồ sơ, ngày bắt đầu & số lượng"),
+      ).toBeInTheDocument();
     });
 
     it("shows mobile sticky action bar with action buttons", () => {
@@ -212,11 +217,12 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
   // A.1.3: Draft Restoration
   describe("A.1.3: Draft Restoration", () => {
-    it("restores draft data from localStorage on mount in create mode", () => {
+    it("restores draft data from localStorage on mount in create mode", async () => {
       const savedDraft = {
         jobTitle: "Draft Cloud Architect",
         location: "Singapore",
         description: "Draft architecture overview",
+        requirements: "Legacy requirement section",
         department: "Infrastructure",
         currentStep: 1,
         savedAt: Date.now() - 60000,
@@ -232,14 +238,19 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
       expect(
         screen.getByText(/Đã khôi phục bản nháp tự động lưu/i),
       ).toBeInTheDocument();
-      // Fields are populated from draft
+      // Fields are populated from draft (including TipTap merged description)
       expect(
         screen.getByDisplayValue("Draft Cloud Architect"),
       ).toBeInTheDocument();
       expect(screen.getByDisplayValue("Singapore")).toBeInTheDocument();
-      expect(
-        screen.getByDisplayValue("Draft architecture overview"),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Draft architecture overview/i),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText(/Legacy requirement section/i),
+        ).toBeInTheDocument();
+      });
     });
 
     it("clears draft from localStorage and resets form when discard is clicked", () => {
@@ -424,6 +435,9 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
             location: "Da Nang, Vietnam",
             status: "PUBLISHED",
             type: "FULL_TIME",
+            applicationDeadline: "2026-12-31",
+            startDate: "2027-01-15",
+            openings: 3,
             organizationId: "org-test-1",
           }),
         );

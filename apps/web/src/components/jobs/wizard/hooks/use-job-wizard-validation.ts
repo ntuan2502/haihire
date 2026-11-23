@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import type { JobType, WorkplaceType, ExperienceLevel } from "@/types";
 import type { Step1TouchedState } from "../wizard-step-details";
 
@@ -14,6 +15,7 @@ interface UseJobWizardValidationProps {
   maxSalary: string;
   currency: string | null;
   salaryPer: string | null;
+  openings?: string;
 }
 
 export function useJobWizardValidation({
@@ -28,6 +30,7 @@ export function useJobWizardValidation({
   maxSalary,
   currency,
   salaryPer,
+  openings = "1",
 }: UseJobWizardValidationProps) {
   const [touched, setTouched] = useState<Step1TouchedState>({
     title: false,
@@ -38,14 +41,22 @@ export function useJobWizardValidation({
     workplace: false,
     currency: false,
     salaryPer: false,
+    openings: false,
   });
 
   const isTitleValid = jobTitle.trim().length > 0;
   const isLocationValid = location.trim().length > 0;
-  const isDescriptionValid = description.trim().length > 0;
+  const isDescriptionValid = extractPlainTextFromHtml(description).length > 0;
   const isEmploymentTypeValid = Boolean(employmentType);
   const isExperienceLevelValid = Boolean(experienceLevel);
   const isWorkplaceValid = Boolean(workplace);
+
+  const trimmedOpenings = openings.trim();
+  const isOpeningsValid =
+    trimmedOpenings === "" ||
+    (/^\d+$/.test(trimmedOpenings) &&
+      Number(trimmedOpenings) >= 1 &&
+      Number(trimmedOpenings) <= 10000);
 
   const hasSalaryData =
     !payNegotiable &&
@@ -63,7 +74,8 @@ export function useJobWizardValidation({
     isExperienceLevelValid &&
     isWorkplaceValid &&
     isCurrencyValid &&
-    isSalaryPerValid;
+    isSalaryPerValid &&
+    isOpeningsValid;
 
   const showTitleError = touched.title && !isTitleValid;
   const showLocationError = touched.location && !isLocationValid;
@@ -77,6 +89,7 @@ export function useJobWizardValidation({
     hasSalaryData && touched.currency && !isCurrencyValid;
   const showSalaryPerError =
     hasSalaryData && touched.salaryPer && !isSalaryPerValid;
+  const showOpeningsError = touched.openings && !isOpeningsValid;
 
   const touchAllStep1 = () => {
     setTouched({
@@ -88,6 +101,7 @@ export function useJobWizardValidation({
       workplace: true,
       currency: true,
       salaryPer: true,
+      openings: true,
     });
   };
 
@@ -101,6 +115,7 @@ export function useJobWizardValidation({
       workplace: false,
       currency: false,
       salaryPer: false,
+      openings: false,
     });
   };
 
@@ -115,6 +130,7 @@ export function useJobWizardValidation({
     isEmploymentTypeValid,
     isExperienceLevelValid,
     isWorkplaceValid,
+    isOpeningsValid,
     hasSalaryData,
     isCurrencyValid,
     isSalaryPerValid,
@@ -127,6 +143,7 @@ export function useJobWizardValidation({
     showWorkplaceError,
     showCurrencyError,
     showSalaryPerError,
+    showOpeningsError,
   };
 }
 

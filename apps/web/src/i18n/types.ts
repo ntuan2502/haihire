@@ -567,6 +567,11 @@ export interface TranslationSchema {
     contract: string;
     internship: string;
     temporary: string;
+    seasonal: string;
+    freelance: string;
+    apprenticeship: string;
+    perDiem: string;
+    volunteer: string;
     allJobs: string;
     openStatus: string;
     draftStatus: string;
@@ -636,16 +641,21 @@ export interface TranslationSchema {
       applicants: string;
     };
     experience: {
+      intern: string;
+      entry: string;
       junior: string;
       mid: string;
       senior: string;
       lead: string;
+      manager: string;
+      director: string;
       executive: string;
     };
     workplace: {
       remote: string;
       hybrid: string;
       onsite: string;
+      field: string;
       notSpecified: string;
     };
     wizard: {
@@ -715,6 +725,27 @@ export interface TranslationSchema {
       };
       descriptionTitle: string;
       descriptionHelpText: string;
+      scheduleHeadcountTitle: string;
+      scheduleHeadcountHintClosed: string;
+      applicationDeadlineLabel: string;
+      applicationDeadlineHint: string;
+      startDateLabel: string;
+      startDateHint: string;
+      openingsLabel: string;
+      openingsHint: string;
+      openingsError: string;
+      editor: {
+        bold: string;
+        italic: string;
+        heading2: string;
+        heading3: string;
+        bulletList: string;
+        orderedList: string;
+        link: string;
+        linkPrompt: string;
+        undo: string;
+        redo: string;
+      };
       requirementsTitle: string;
       requirementsNotice: string;
       charsCount: string;
@@ -2003,6 +2034,14 @@ export interface TranslationSchema {
       description: string;
       viewOtherJobs: string;
     };
+    jobExpired: {
+      title: string;
+      description: string;
+    };
+    applicationDeadline: string;
+    startDate: string;
+    startAsap: string;
+    openingsCount: string;
   };
   email: {
     templatesTitle: string;

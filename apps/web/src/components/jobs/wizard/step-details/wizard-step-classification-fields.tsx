@@ -2,6 +2,11 @@
 
 import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
+import {
+  getExperienceLevelOptions,
+  getJobTypeOptions,
+  getWorkplaceOptions,
+} from "@/lib/jobs";
 import { cn } from "cn";
 import type { JobType, ExperienceLevel, WorkplaceType } from "@/types";
 import type { Step1TouchedState } from "../wizard-step-details";
@@ -47,12 +52,7 @@ export function WizardStepClassificationFields({
             setTouched((prev) => ({ ...prev, employmentType: true }));
           }}
           placeholder={t("jobs.wizard.selectEmploymentType")}
-          options={[
-            { value: "FULL_TIME", label: t("jobs.fullTime") },
-            { value: "PART_TIME", label: t("jobs.partTime") },
-            { value: "CONTRACT", label: t("jobs.contract") },
-            { value: "INTERNSHIP", label: t("jobs.internship") },
-          ]}
+          options={getJobTypeOptions(t)}
           className="w-full"
           triggerClassName={cn(
             "w-full h-10 text-xs font-normal",
@@ -79,13 +79,7 @@ export function WizardStepClassificationFields({
             setTouched((prev) => ({ ...prev, experienceLevel: true }));
           }}
           placeholder={t("jobs.wizard.selectExperienceLevel")}
-          options={[
-            { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
-            { value: "MID_LEVEL", label: t("jobs.experience.mid") },
-            { value: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
-            { value: "LEAD", label: t("jobs.experience.lead") },
-            { value: "EXECUTIVE", label: t("jobs.experience.executive") },
-          ]}
+          options={getExperienceLevelOptions(t)}
           className="w-full"
           triggerClassName={cn(
             "w-full h-10 text-xs font-normal",
@@ -112,11 +106,7 @@ export function WizardStepClassificationFields({
             setTouched((prev) => ({ ...prev, workplace: true }));
           }}
           placeholder={t("jobs.wizard.selectWorkplace")}
-          options={[
-            { value: "ON_SITE", label: t("jobs.workplace.onsite") },
-            { value: "HYBRID", label: t("jobs.workplace.hybrid") },
-            { value: "REMOTE", label: t("jobs.workplace.remote") },
-          ]}
+          options={getWorkplaceOptions(t)}
           className="w-full"
           triggerClassName={cn(
             "w-full h-10 text-xs font-normal",

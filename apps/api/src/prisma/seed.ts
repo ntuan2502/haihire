@@ -1933,8 +1933,9 @@ export async function runSeed(): Promise<void> {
         type,
         experienceLevel,
         salaryRange,
-        description: baseConfig.description,
-        requirements: baseConfig.requirements,
+        description: [baseConfig.description, baseConfig.requirements]
+          .filter(Boolean)
+          .join("\n\n"),
         status,
         organizationId: bp.id,
         createdById: creatorId,

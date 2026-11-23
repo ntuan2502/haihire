@@ -11,9 +11,7 @@ export const DEFAULT_MOCK_JOB: Job = {
   workplace: "HYBRID",
   status: "PUBLISHED",
   description:
-    "Phát triển và mở rộng hệ thống tuyển dụng thông minh HaiHire ATS.",
-  requirements:
-    "Ít nhất 4 năm kinh nghiệm với React, Node.js, TypeScript, PostgreSQL.",
+    "Phát triển và mở rộng hệ thống tuyển dụng thông minh HaiHire ATS.\n\nÍt nhất 4 năm kinh nghiệm với React, Node.js, TypeScript, PostgreSQL.",
   salaryRange: "2,500 - 3,500 USD",
   createdAt: "2026-09-01T08:00:00Z",
   updatedAt: "2026-09-24T10:00:00Z",

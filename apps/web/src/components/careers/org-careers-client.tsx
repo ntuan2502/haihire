@@ -22,9 +22,11 @@ import {
   Globe2,
   ChevronRight,
 } from "lucide-react";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import { useI18n } from "@/i18n";
 import {
   getJobTypeLabel,
+  getJobTypeOptions,
   getWorkplaceLabel,
   getExperienceLevelLabel,
 } from "@/lib/jobs";
@@ -244,10 +246,7 @@ export function OrgCareersClient({
               onChange={(val) => setSelectedType(val)}
               options={[
                 { value: "all", label: t("careers.allTypesOption") },
-                { value: "FULL_TIME", label: t("jobs.fullTime") },
-                { value: "PART_TIME", label: t("jobs.partTime") },
-                { value: "CONTRACT", label: t("jobs.contract") },
-                { value: "INTERNSHIP", label: t("jobs.internship") },
+                ...getJobTypeOptions(t),
               ]}
               className="w-full md:w-44"
               triggerClassName="h-10 text-xs font-semibold"
@@ -353,7 +352,7 @@ export function OrgCareersClient({
                     </div>
 
                     <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed pt-1">
-                      {job.description}
+                      {extractPlainTextFromHtml(job.description)}
                     </p>
                   </div>
 

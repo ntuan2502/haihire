@@ -58,6 +58,24 @@ describe("ApplicationsSagaService", () => {
         status: "PUBLISHED",
         organizationId: null,
       },
+      {
+        id: "job-expired",
+        title: "Expired Job",
+        status: "PUBLISHED",
+        applicationDeadline: new Date("2020-01-01T00:00:00.000Z"),
+        organizationId: "org-1",
+        department: "Engineering",
+        location: "Remote",
+      },
+      {
+        id: "job-future-deadline",
+        title: "Future Deadline Job",
+        status: "PUBLISHED",
+        applicationDeadline: new Date("2099-12-31T00:00:00.000Z"),
+        organizationId: "org-1",
+        department: "Engineering",
+        location: "Remote",
+      },
     ]);
 
     candidateTable = createMockTable([
@@ -296,6 +314,28 @@ describe("ApplicationsSagaService", () => {
       ).rejects.toMatchObject({
         code: APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
       });
+    });
+
+    it("throws JOB_NOT_ACCEPTING_APPLICATIONS when applicationDeadline has passed and allows future deadlines", async () => {
+      await expect(
+        service.create({
+          jobId: "job-expired",
+          firstName: "Late",
+          lastName: "Applicant",
+          candidateEmail: "late@example.com",
+        }),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.JOB_NOT_ACCEPTING_APPLICATIONS,
+      });
+
+      const created = await service.create({
+        jobId: "job-future-deadline",
+        firstName: "Timely",
+        lastName: "Applicant",
+        candidateEmail: "timely@example.com",
+        resumeUrl: "https://external.s3.com/timely.pdf",
+      });
+      expect(created).toBeDefined();
     });
   });
 

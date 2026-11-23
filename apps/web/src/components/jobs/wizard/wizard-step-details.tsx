@@ -2,13 +2,15 @@
 
 import React from "react";
 import { Search } from "lucide-react";
+import { extractPlainTextFromHtml } from "@haihire/shared";
+import { RichTextEditor } from "@/components/shared";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
 import { useI18n } from "@/i18n";
 import type { JobType, ExperienceLevel, WorkplaceType } from "@/types";
 import { WizardStepClassificationFields } from "./step-details/wizard-step-classification-fields";
+import { WizardStepScheduleHeadcountAccordion } from "./step-details/wizard-step-schedule-headcount-accordion";
 import { WizardStepCompensationAccordion } from "./step-details/wizard-step-compensation-accordion";
 
 export type Step1Field =
@@ -19,7 +21,8 @@ export type Step1Field =
   | "experienceLevel"
   | "workplace"
   | "currency"
-  | "salaryPer";
+  | "salaryPer"
+  | "openings";
 
 export type Step1TouchedState = Record<Step1Field, boolean>;
 
@@ -38,6 +41,15 @@ export interface WizardStepDetailsProps {
   setExperienceLevel: (val: ExperienceLevel) => void;
   workplace: WorkplaceType | "";
   setWorkplace: (val: WorkplaceType) => void;
+  scheduleOpen: boolean;
+  setScheduleOpen: (val: boolean) => void;
+  applicationDeadline: string;
+  setApplicationDeadline: (val: string) => void;
+  startDate: string;
+  setStartDate: (val: string) => void;
+  openings: string;
+  setOpenings: (val: string) => void;
+  showOpeningsError: boolean;
   compensationOpen: boolean;
   setCompensationOpen: (val: boolean) => void;
   payNegotiable: boolean;
@@ -52,8 +64,6 @@ export interface WizardStepDetailsProps {
   setSalaryPer: (val: string) => void;
   description: string;
   setDescription: (val: string) => void;
-  requirements: string;
-  setRequirements: (val: string) => void;
   touched: Step1TouchedState;
   setTouched: React.Dispatch<React.SetStateAction<Step1TouchedState>>;
   showTitleError: boolean;
@@ -86,6 +96,15 @@ export function WizardStepDetails({
   setExperienceLevel,
   workplace,
   setWorkplace,
+  scheduleOpen,
+  setScheduleOpen,
+  applicationDeadline,
+  setApplicationDeadline,
+  startDate,
+  setStartDate,
+  openings,
+  setOpenings,
+  showOpeningsError,
   compensationOpen,
   setCompensationOpen,
   payNegotiable,
@@ -100,8 +119,6 @@ export function WizardStepDetails({
   setSalaryPer,
   description,
   setDescription,
-  requirements,
-  setRequirements,
   setTouched,
   showTitleError,
   showLocationError,
@@ -118,6 +135,7 @@ export function WizardStepDetails({
   onCancel,
 }: WizardStepDetailsProps) {
   const { t } = useI18n();
+  const descriptionCharCount = extractPlainTextFromHtml(description).length;
 
   return (
     <div className="space-y-6">
@@ -248,6 +266,20 @@ export function WizardStepDetails({
           setTouched={setTouched}
         />
 
+        {/* Field 6.5: Deadline, Start Date & Headcount Accordion */}
+        <WizardStepScheduleHeadcountAccordion
+          scheduleOpen={scheduleOpen}
+          setScheduleOpen={setScheduleOpen}
+          applicationDeadline={applicationDeadline}
+          setApplicationDeadline={setApplicationDeadline}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          openings={openings}
+          setOpenings={setOpenings}
+          showOpeningsError={showOpeningsError}
+          setTouched={setTouched}
+        />
+
         {/* Field 7: Compensation Accordion Card */}
         <WizardStepCompensationAccordion
           compensationOpen={compensationOpen}
@@ -268,25 +300,21 @@ export function WizardStepDetails({
           setTouched={setTouched}
         />
 
-        {/* Field 8: Description */}
+        {/* Field 8: Unified Description (WYSIWYG) */}
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("jobs.wizard.descriptionTitle")}{" "}
             <span className="text-destructive">*</span>
           </label>
-          <Textarea
-            placeholder={t("jobs.wizard.placeholders.description")}
+          <RichTextEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={setDescription}
             onBlur={() =>
               setTouched((prev) => ({ ...prev, description: true }))
             }
-            className={cn(
-              "h-40 text-xs resize-none overflow-y-auto transition-colors",
-              showDescriptionError &&
-                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
-            )}
-            required
+            placeholder={t("jobs.wizard.placeholders.description")}
+            ariaLabel={t("jobs.wizard.descriptionTitle")}
+            hasError={showDescriptionError}
           />
           <div className="flex items-center justify-between text-[11px] mt-1">
             {showDescriptionError ? (
@@ -307,27 +335,11 @@ export function WizardStepDetails({
                     : "text-muted-foreground font-medium shrink-0 ml-2"
               }
             >
-              {description.trim().length > 0
-                ? `${description.trim().length} ${t("jobs.wizard.charsCount")}`
+              {descriptionCharCount > 0
+                ? `${descriptionCharCount} ${t("jobs.wizard.charsCount")}`
                 : t("common.required")}
             </span>
           </div>
-        </div>
-
-        {/* Field 9: Requirements */}
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
-            {t("jobs.wizard.requirementsTitle")}
-          </label>
-          <Textarea
-            placeholder={t("jobs.wizard.placeholders.requirements")}
-            value={requirements}
-            onChange={(e) => setRequirements(e.target.value)}
-            className="h-32 text-xs resize-none overflow-y-auto transition-colors"
-          />
-          <p className="text-[11px] text-muted-foreground mt-1">
-            {t("jobs.wizard.requirementsNotice")}
-          </p>
         </div>
       </div>
 

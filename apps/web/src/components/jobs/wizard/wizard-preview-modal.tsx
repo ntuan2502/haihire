@@ -8,21 +8,24 @@ import {
   PreviewModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
+  RichTextContent,
 } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { cn } from "cn";
 import {
   Briefcase,
-  Building2,
+  Calendar,
   Clock,
   DollarSign,
   FileUp,
   Globe2,
   MapPin,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import {
+  formatDateOnlyDisplay,
   getJobTypeLabel,
   getWorkplaceLabel,
   getExperienceLevelLabel,
@@ -44,8 +47,10 @@ interface WizardPreviewModalProps {
   workplace: WorkplaceType | null;
   experienceLevel: ExperienceLevel | null;
   salaryRange?: string;
+  applicationDeadline?: string;
+  startDate?: string;
+  openings?: number;
   description: string;
-  requirements: string;
   phoneSetting: "hidden" | "optional" | "required";
   resumeSetting: "required" | "off";
   coverLetterSetting: "required" | "off";
@@ -68,8 +73,10 @@ export function WizardPreviewModal({
   workplace,
   experienceLevel,
   salaryRange,
+  applicationDeadline,
+  startDate,
+  openings,
   description,
-  requirements,
   phoneSetting,
   resumeSetting,
   coverLetterSetting,
@@ -77,7 +84,7 @@ export function WizardPreviewModal({
   orgName,
   orgLogoUrl,
 }: WizardPreviewModalProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { localization } = useLocalization();
   const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
 
@@ -181,6 +188,45 @@ export function WizardPreviewModal({
                     <span>{salaryRange}</span>
                   </div>
                 )}
+
+                {applicationDeadline && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>
+                      {t("careers.applicationDeadline", {
+                        date: formatDateOnlyDisplay(
+                          applicationDeadline,
+                          localization,
+                          locale,
+                        ),
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {startDate && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>
+                      {t("careers.startDate", {
+                        date: formatDateOnlyDisplay(
+                          startDate,
+                          localization,
+                          locale,
+                        ),
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {openings && openings > 0 && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border shadow-2xs">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>
+                      {t("careers.openingsCount", { count: openings })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -191,7 +237,7 @@ export function WizardPreviewModal({
                 previewDevice === "desktop" ? "grid-cols-12" : "grid-cols-1",
               )}
             >
-              {/* Left Column in Preview: JD & Requirements */}
+              {/* Left Column in Preview: Unified Description */}
               <div
                 className={cn(
                   "space-y-6",
@@ -204,20 +250,11 @@ export function WizardPreviewModal({
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     {t("careers.jobDescription")}
                   </h2>
-                  <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                    {description.trim() || t("jobs.wizard.noDescEntered")}
-                  </div>
-                </div>
-
-                {/* Requirements */}
-                <div className="space-y-3 pt-2">
-                  <h2 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    {t("careers.requirements")}
-                  </h2>
-                  <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                    {requirements.trim() || t("jobs.wizard.noReqEntered")}
-                  </div>
+                  <RichTextContent
+                    content={description}
+                    emptyFallback={t("jobs.wizard.noDescEntered")}
+                    className="text-xs sm:text-sm"
+                  />
                 </div>
 
                 {/* Assurance Card */}

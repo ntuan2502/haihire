@@ -6,6 +6,11 @@ import {
   CustomSelect,
 } from "@/components/shared";
 import { useI18n } from "@/i18n";
+import {
+  getExperienceLevelOptions,
+  getJobTypeOptions,
+  getWorkplaceOptions,
+} from "@/lib/jobs";
 import type { JobFilterCriteria } from "../types";
 
 export interface JobFilterDrawerProps {
@@ -75,12 +80,7 @@ export function JobFilterDrawer({
       {/* 2. EMPLOYMENT TYPE */}
       <FilterPillGroup
         label={t("jobs.employmentTypeUpper")}
-        options={[
-          { value: "FULL_TIME", label: t("jobs.fullTime") },
-          { value: "PART_TIME", label: t("jobs.partTime") },
-          { value: "CONTRACT", label: t("jobs.contract") },
-          { value: "INTERNSHIP", label: t("jobs.internship") },
-        ]}
+        options={getJobTypeOptions(t)}
         selected={typeFilters}
         onToggle={(val) => onToggleFilter("type", typeFilters, val)}
       />
@@ -88,13 +88,7 @@ export function JobFilterDrawer({
       {/* 3. EXPERIENCE LEVEL */}
       <FilterPillGroup
         label={t("jobs.experienceLevelUpper")}
-        options={[
-          { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
-          { value: "MID_LEVEL", label: t("jobs.experience.mid") },
-          { value: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
-          { value: "LEAD", label: t("jobs.experience.lead") },
-          { value: "EXECUTIVE", label: t("jobs.experience.executive") },
-        ]}
+        options={getExperienceLevelOptions(t)}
         selected={expFilters}
         onToggle={(val) => onToggleFilter("exp", expFilters, val)}
       />
@@ -102,11 +96,7 @@ export function JobFilterDrawer({
       {/* 4. WORK ARRANGEMENT */}
       <FilterPillGroup
         label={t("jobs.workArrangementUpper")}
-        options={[
-          { value: "REMOTE", label: t("jobs.workplace.remote") },
-          { value: "HYBRID", label: t("jobs.workplace.hybrid") },
-          { value: "ON_SITE", label: t("jobs.workplace.onsite") },
-        ]}
+        options={getWorkplaceOptions(t)}
         selected={workplaceFilters}
         onToggle={(val) => onToggleFilter("workplace", workplaceFilters, val)}
       />

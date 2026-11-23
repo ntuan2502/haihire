@@ -36,15 +36,15 @@ export class CreateJobDto {
 
   @IsString()
   @IsOptional()
-  postalCode?: string;
+  postalCode?: string | null;
 
   @IsEnum(ExperienceLevel)
   @IsOptional()
-  experienceLevel?: ExperienceLevel;
+  experienceLevel?: ExperienceLevel | null;
 
   @IsEnum(WorkplaceType)
   @IsOptional()
-  workplace?: WorkplaceType;
+  workplace?: WorkplaceType | null;
 
   @IsEnum(JobType)
   @IsOptional()
@@ -76,7 +76,7 @@ export class CreateJobDto {
 
   @IsString()
   @IsOptional()
-  salaryRange?: string;
+  salaryRange?: string | null;
 
   @IsInt()
   @Min(0)

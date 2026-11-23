@@ -32,7 +32,7 @@ export class UpdateJobDto {
 
   @IsString()
   @IsOptional()
-  postalCode?: string;
+  postalCode?: string | null;
 
   @IsEnum(ExperienceLevel)
   @IsOptional()
@@ -72,7 +72,7 @@ export class UpdateJobDto {
 
   @IsString()
   @IsOptional()
-  salaryRange?: string;
+  salaryRange?: string | null;
 
   @IsInt()
   @Min(0)

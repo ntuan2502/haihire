@@ -12,6 +12,7 @@ import {
   ExperienceLevel,
   WorkplaceType,
 } from "./dto/create-job.dto";
+import { updateJobSchema } from "@haihire/shared";
 
 describe("JobsService - Multi-Tenant Job Management", () => {
   let service: JobsService;
@@ -616,6 +617,26 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           "org-1",
         ),
       ).rejects.toThrow("Invalid calendar date");
+    });
+
+    it("accepts null optional fields in updateJobSchema when editing and clearing values", () => {
+      const parsed = updateJobSchema.safeParse({
+        title: "Senior Full-Stack Engineer",
+        department: "Engineering",
+        location: "Ho Chi Minh City",
+        postalCode: null,
+        experienceLevel: null,
+        workplace: null,
+        type: JobType.FULL_TIME,
+        applicationDeadline: null,
+        startDate: null,
+        openings: 1,
+        description: "<p>Updated description</p>",
+        salaryRange: null,
+        status: JobStatus.PUBLISHED,
+      });
+
+      expect(parsed.success).toBe(true);
     });
   });
 });

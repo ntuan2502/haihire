@@ -14,9 +14,9 @@ export const createJobSchema = z.object({
   title: z.string().min(1, "Job title is required"),
   department: z.string().min(1, "Department is required"),
   location: z.string().min(1, "Location is required"),
-  postalCode: z.string().optional(),
-  experienceLevel: z.nativeEnum(ExperienceLevel).optional(),
-  workplace: z.nativeEnum(WorkplaceType).optional(),
+  postalCode: z.string().nullable().optional(),
+  experienceLevel: z.nativeEnum(ExperienceLevel).nullable().optional(),
+  workplace: z.nativeEnum(WorkplaceType).nullable().optional(),
   type: z.nativeEnum(JobType).optional(),
   description: z
     .string()
@@ -35,7 +35,7 @@ export const createJobSchema = z.object({
     .nullable()
     .optional(),
   openings: z.number().int().min(1).max(10000).optional(),
-  salaryRange: z.string().optional(),
+  salaryRange: z.string().nullable().optional(),
   salaryMin: z.number().int().min(0).nullable().optional(),
   salaryMax: z.number().int().min(0).nullable().optional(),
   salaryCurrency: z.string().trim().max(10).nullable().optional(),

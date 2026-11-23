@@ -9,7 +9,7 @@ Stack baselines verified in `apps/web/package.json` and `apps/web/src/lib/`:
 - **Server State**: `@tanstack/react-query@^5.107.1` with centralized `queryKeys` (`apps/web/src/hooks/query-keys.ts`)
 - **HTTP Client**: `axios@^1.21.0` (`apps/web/src/lib/api/client.ts`)
 - **Real-Time Sync**: SSE (`apps/api/src/events/`) + `createRealtimeInvalidator` (`apps/web/src/lib/realtime-sync.ts`) consuming 17 `AppEventType`s from `@haihire/shared`
-- **Toasts**: `react-toastify@11.2.0` wrapped strictly via `apps/web/src/lib/toast.ts` (`@/lib/toast`)
+- **Toasts**: Shadcn `sonner` (`apps/web/src/components/ui/sonner.tsx`) wrapped strictly via `apps/web/src/lib/toast.ts` (`@/lib/toast`)
 - **Localization**: 2-tier 2-way i18n (`I18nProvider` in `apps/web/src/i18n/index.tsx` + `LocalizationProvider` in `apps/web/src/components/providers/localization-provider.tsx`)
 
 ---
@@ -29,8 +29,8 @@ Per TanStack Query v5 official guidelines:
 - **Base URL Routing:** Browser requests route through relative `/api` (proxied by Next.js `next.config.ts` rewrites to backend) unless an external non-localhost `NEXT_PUBLIC_API_URL` is configured; SSR/server actions talk directly to `env.INTERNAL_API_URL`.
 - **URL Gatekeeper:** Request interceptor rejects any URL containing `[object` or `%5Bobject` (`[HaiHire API Gatekeeper]`) so accidentally stringified objects never reach the backend.
 - **401 Silent Refresh Queue:**
-  - Response interceptor catches HTTP `401` (excluding `/auth/login`, etc. and already-retried requests), queues concurrent failing requests in `failedQueue`, exchanges `haihire_recruiter_refresh_token` at `POST /auth/refresh`, updates cookies (`haihire_token`, `haihire_has_org`) + `localStorage` + `Authorization` header, and replays queued requests.
-  - On missing or expired refresh token, `clearServerAndClientSession()` clears client tokens/cookies and calls `POST /auth/logout` best-effort.
+  - For eligible HTTP `401` responses, the interceptor queues concurrent retries behind a single `POST /auth/refresh` with an empty body and `withCredentials: true`. The server manages the HttpOnly JWT cookies. The client updates the workspace hint when returned and releases the queued requests.
+  - If refresh fails, the interceptor rejects the pending queue and follows the existing session cleanup flow. Keep authentication tokens in the server-managed cookies.
 - **Private MinIO Document Proxy:**
   - Never render raw `/haihire-resumes/` URLs directly (the MinIO bucket is private).
   - Always use `buildDocumentDownloadPath()` / `getDocumentUrl()` which route through tenant-guarded `/applications/:id/documents/download` or `/candidates/:id/documents/download` endpoints.
@@ -46,7 +46,7 @@ Per TanStack Query v5 official guidelines:
 
 ## 4. Notifications & 2-Way / 2-Tier i18n
 
-- **Notifications:** Always import `{ toast } from "@/lib/toast"`, never `react-toastify` directly.
+- **Notifications:** Always import `{ toast } from "@/lib/toast"`, never `sonner` directly.
 - **API Error Localization (`apps/web/src/lib/api-error.ts`):**
   - Use `getApiErrorMessage(error, t)` everywhere errors are shown to users.
   - It maps backend `payload.code` (`64` `APP_ERROR_CODES` in `@haihire/shared`) -> `t("errors.<CODE>", payload.params)`, falling back cleanly to `payload.message`, status-code fallback (`401`, `403`, `404`, `429`, `500`), or `errors.generic`.

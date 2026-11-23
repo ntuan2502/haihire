@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useMemo,
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { useI18n } from "@/i18n";
@@ -22,10 +16,6 @@ import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
-import {
-  DEFAULT_OVERVIEW_SECTIONS,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
 import type { RejectApplicationConfirmPayload } from "@/components/applications/reject-application-modal";
 import type { OfferApplicationConfirmPayload } from "@/components/applications/offer-application-modal";
 import type {
@@ -35,11 +25,15 @@ import type {
   CandidateDocument,
 } from "@/types";
 
+import type { DrawerTabId } from "../types";
+
 interface UseCandidateDrawerProps {
   initialApplications: Application[];
   selectedApp: Application | null;
   setSelectedApp: Dispatch<SetStateAction<Application | null>>;
   jobMap: Map<string, Job>;
+  drawerTab?: DrawerTabId;
+  onDrawerTabChange?: (tab: DrawerTabId) => void;
 }
 
 export function useCandidateDrawer({
@@ -47,6 +41,8 @@ export function useCandidateDrawer({
   selectedApp,
   setSelectedApp,
   jobMap,
+  drawerTab: propDrawerTab,
+  onDrawerTabChange,
 }: UseCandidateDrawerProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -54,14 +50,16 @@ export function useCandidateDrawer({
   const updateStageMutation = useUpdateStageMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
-  const [drawerTab, setDrawerTab] = useState<string>("overview");
+  const [localDrawerTab, setLocalDrawerTab] = useState<string>("overview");
+  const drawerTab = propDrawerTab ?? localDrawerTab;
+  const setDrawerTab = (tab: string) => {
+    if (onDrawerTabChange) {
+      onDrawerTabChange(tab as DrawerTabId);
+    } else {
+      setLocalDrawerTab(tab);
+    }
+  };
 
-  // Drawer Overview sections visibility state
-  const [drawerOverviewSections, setDrawerOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isDrawerOverviewPopoverOpen, setIsDrawerOverviewPopoverOpen] =
-    useState(false);
-  const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
   const [pendingRejectApp, setPendingRejectApp] = useState<Application | null>(
@@ -111,6 +109,8 @@ export function useCandidateDrawer({
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
+      throw err;
     }
   };
 
@@ -120,7 +120,7 @@ export function useCandidateDrawer({
     options?: Partial<
       RejectApplicationConfirmPayload & OfferApplicationConfirmPayload
     >,
-  ) => {
+  ): Promise<boolean> => {
     try {
       const updated = await updateStageMutation.mutateAsync({
         id: targetApp.id,
@@ -151,11 +151,13 @@ export function useCandidateDrawer({
             }
           : null,
       );
+      return true;
     } catch (err) {
       console.error("Failed to update stage:", err);
       const errorMsg = getApiErrorMessage(err, t);
       toast.error(errorMsg);
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      return false;
     }
   };
 
@@ -181,18 +183,20 @@ export function useCandidateDrawer({
     payload: RejectApplicationConfirmPayload,
   ) => {
     if (!pendingRejectApp) return;
-    const target = pendingRejectApp;
-    await executeStageChange(target, "REJECTED", payload);
-    setPendingRejectApp(null);
+    const ok = await executeStageChange(pendingRejectApp, "REJECTED", payload);
+    if (ok) {
+      setPendingRejectApp(null);
+    }
   };
 
   const handleConfirmOffer = async (
     payload: OfferApplicationConfirmPayload,
   ) => {
     if (!pendingOfferApp) return;
-    const target = pendingOfferApp;
-    await executeStageChange(target, "OFFER", payload);
-    setPendingOfferApp(null);
+    const ok = await executeStageChange(pendingOfferApp, "OFFER", payload);
+    if (ok) {
+      setPendingOfferApp(null);
+    }
   };
 
   const handleDownloadDoc = async (
@@ -277,11 +281,6 @@ export function useCandidateDrawer({
     setPendingOfferApp,
     handleConfirmOffer,
     handleDownloadDoc,
-    drawerOverviewSections,
-    setDrawerOverviewSections,
-    isDrawerOverviewPopoverOpen,
-    setIsDrawerOverviewPopoverOpen,
-    drawerOverviewBtnRef,
     drawerPreviewDoc,
     setDrawerPreviewDoc,
     allScheduledInterviews,

@@ -1,5 +1,9 @@
 import { api, getApiBaseUrl } from "./client";
 import type {
+  CandidateDuplicateCheckResult,
+  CheckCandidateDuplicateSchema,
+} from "@haihire/shared";
+import type {
   Candidate,
   CandidateNote,
   UpdateCandidateInput,
@@ -21,6 +25,21 @@ export const candidatesApi = {
 
   getById: async (id: string): Promise<Candidate> => {
     const response = await api.get<Candidate>(`/candidates/${id}`);
+    return response.data;
+  },
+
+  checkDuplicates: async (
+    params: CheckCandidateDuplicateSchema,
+  ): Promise<CandidateDuplicateCheckResult> => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(
+        ([, v]) => typeof v === "string" && v.trim() !== "",
+      ),
+    );
+    const response = await api.get<CandidateDuplicateCheckResult>(
+      "/candidates/check-duplicate",
+      { params: cleanParams },
+    );
     return response.data;
   },
 

@@ -16,16 +16,16 @@ export async function resolveOrgNameDisplayOrder(
   organizationId?: string | null,
 ): Promise<NameDisplayOrder> {
   if (!organizationId || !prisma?.organization?.findFirst) {
-    return "FIRST_LAST";
+    return "LAST_FIRST";
   }
   try {
     const org = await prisma.organization.findFirst({
       where: { id: organizationId },
       select: { nameDisplayOrder: true },
     });
-    return org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+    return org?.nameDisplayOrder === "FIRST_LAST" ? "FIRST_LAST" : "LAST_FIRST";
   } catch {
-    return "FIRST_LAST";
+    return "LAST_FIRST";
   }
 }
 
@@ -36,7 +36,7 @@ export function buildCandidateDisplayName(
     lastName?: string | null;
     name?: string | null;
   },
-  order: NameDisplayOrder = "FIRST_LAST",
+  order: NameDisplayOrder = "LAST_FIRST",
 ): string {
   return formatCandidateDisplayName(candidate, order);
 }
@@ -51,7 +51,7 @@ export function resolveUserDisplayName(
       }
     | null
     | undefined,
-  order: NameDisplayOrder = "FIRST_LAST",
+  order: NameDisplayOrder = "LAST_FIRST",
 ): string {
   return formatUserDisplayName(user, order);
 }

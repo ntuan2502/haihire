@@ -78,4 +78,72 @@ describe("OrganizationsMembersService concurrency", () => {
     expect([...members.keys()].sort()).toEqual(["org:owner", "org:user"]);
     expect(prisma.organizationMember.upsert).toHaveBeenCalledTimes(4);
   });
+
+  it("blocks non-ADMIN with custom org:manage_members from promoting a member to ADMIN or removing an ADMIN", async () => {
+    const deleteMany = vi.fn();
+    const update = vi.fn();
+    const prisma = {
+      user: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "recruiter-1",
+          role: "RECRUITER",
+          organizationId: "org",
+        }),
+      },
+      organization: {
+        findFirst: vi.fn().mockResolvedValue({ id: "org", ownerId: "owner-1" }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      organizationRolePermission: {
+        findFirst: vi.fn().mockResolvedValue({ granted: true }),
+      },
+      organizationMember: {
+        findFirst: vi
+          .fn()
+          .mockImplementation(async (args: { where?: { userId?: string } }) => {
+            if (args?.where?.userId === "recruiter-1") {
+              return { id: "m-rec", role: "RECRUITER" };
+            }
+            if (args?.where?.userId === "target-admin") {
+              return { id: "m-adm", role: "ADMIN" };
+            }
+            return { id: "m-mem", role: "MEMBER" };
+          }),
+        findMany: vi.fn().mockResolvedValue([
+          { id: "m-mem", userId: "target-member", role: "MEMBER" },
+          { id: "m-adm", userId: "target-admin", role: "ADMIN" },
+        ]),
+        update,
+        deleteMany,
+      },
+    };
+    const service = new OrganizationsMembersService(
+      prisma as unknown as PrismaService,
+    );
+
+    await expect(
+      service.updateMemberRole(
+        "recruiter-1",
+        "target-member",
+        "ADMIN" as never,
+        "org",
+      ),
+    ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION });
+    expect(update).not.toHaveBeenCalled();
+
+    await expect(
+      service.updateMemberRole(
+        "recruiter-1",
+        "target-admin",
+        "MEMBER" as never,
+        "org",
+      ),
+    ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION });
+    expect(update).not.toHaveBeenCalled();
+
+    await expect(
+      service.removeMember("recruiter-1", "target-admin", "org"),
+    ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION });
+    expect(deleteMany).not.toHaveBeenCalled();
+  });
 });

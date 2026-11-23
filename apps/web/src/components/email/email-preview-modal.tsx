@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n";
 import { formatDateTime } from "@/lib/utils";
 import type { EmailDeliveryStatus } from "@/lib/email-templates";
 import {
-  CustomModal,
+  PreviewModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
   type PreviewDeviceType,
@@ -50,13 +50,18 @@ export function EmailPreviewModal({
   const { t } = useI18n();
   const [previewDevice, setPreviewDevice] =
     useState<PreviewDeviceType>("desktop");
+  const [fallbackDate] = useState(() => new Date());
+
+  const handleClose = () => {
+    setPreviewDevice("desktop");
+    onClose();
+  };
 
   const displaySenderName = senderName || t("email.defaultSenderName");
-  const displaySenderEmail = senderEmail || "careers@nexus.com";
+  const displaySenderEmail = senderEmail || "careers@haihire.vn";
   const displayCandidateName = candidateName || t("email.sampleCandidateName");
   const displayCandidateEmail = candidateEmail || "an.nguyen@example.com";
 
-  // Initials for sender avatar
   const senderInitials =
     displaySenderName
       .split(" ")
@@ -65,11 +70,10 @@ export function EmailPreviewModal({
       .map((w) => w[0]?.toUpperCase())
       .join("") || "E";
 
-  const displayDate = formatDateTime(date ?? new Date());
+  const displayDate = formatDateTime(date ?? fallbackDate);
 
   const modalTitle = title || templateName || subject || t("email.livePreview");
 
-  // Prominent status badge with icon and matching colors
   const statusBadge = status ? (
     <span
       className={cn(
@@ -77,13 +81,17 @@ export function EmailPreviewModal({
         status === "SENT" &&
           "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800",
         status === "SIMULATED" &&
-          "bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800",
+          "bg-secondary text-secondary-foreground border border-border",
         status === "FAILED" &&
           "bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800",
       )}
     >
-      {status === "SENT" && <CheckCircle2 className="h-3.5 w-3.5" />}
-      {status === "FAILED" && <AlertCircle className="h-3.5 w-3.5" />}
+      {status === "SENT" && (
+        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+      {status === "FAILED" && (
+        <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
       <span>
         {status === "SENT"
           ? t("email.statusSent")
@@ -94,22 +102,22 @@ export function EmailPreviewModal({
     </span>
   ) : (
     badge || (
-      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600/10 text-blue-600 dark:text-blue-400">
+      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-secondary text-secondary-foreground border border-border">
         {t("email.livePreview")}
       </span>
     )
   );
 
   return (
-    <CustomModal
+    <PreviewModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={modalTitle}
       badge={statusBadge}
-      maxWidth="max-w-6xl"
-      height="h-[90vh]"
+      size="xl"
+      height="h-[90dvh]"
       allowMaximize={true}
-      headerRight={
+      headerActions={
         <DevicePreviewSelector
           device={previewDevice}
           onChange={setPreviewDevice}
@@ -117,45 +125,41 @@ export function EmailPreviewModal({
       }
     >
       {({ isMaximized }) => (
-        <DevicePreviewFrame
-          device={previewDevice}
-          isMaximized={isMaximized}
-          url={`mail.nexus.com/messages/${templateName ? encodeURIComponent(templateName.toLowerCase().replace(/\s+/g, "-")) : "inbox"}`}
-        >
+        <DevicePreviewFrame device={previewDevice} isMaximized={isMaximized}>
           {previewDevice === "mobile" ? (
-            /* iOS Mail Layout */
+            /* Mobile Mail Layout */
             <div
               key="email-preview-mobile"
-              className="flex-1 flex flex-col bg-white dark:bg-[#1c1c1e]"
+              className="flex-1 flex flex-col bg-card text-card-foreground"
             >
-              <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between mt-1">
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+              <div className="px-4 py-2 border-b border-border flex items-center justify-between mt-1">
+                <span className="text-xs font-semibold text-foreground">
                   {t("email.mobileBackToInbox")}
                 </span>
-                <div className="flex items-center gap-2">
-                  {status && statusBadge}
-                  <span className="text-[10px] text-slate-400">
-                    {displayDate.split(",")[0]}
-                  </span>
-                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {displayDate.split(",")[0]}
+                </span>
               </div>
 
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-1">
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+              <div className="p-4 border-b border-border space-y-1">
+                <h2 className="text-sm font-semibold text-foreground leading-tight">
                   {subject}
                 </h2>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] text-muted-foreground">
                   <strong>{displaySenderName}</strong>
                 </div>
-                <div className="text-[10px] text-slate-400">
+                <div className="text-[10px] text-muted-foreground">
                   {t("email.toLabel")}: {displayCandidateName}
                 </div>
               </div>
 
               {/* Error banner if delivery failed */}
               {(status === "FAILED" || errorMessage) && (
-                <div className="mx-4 mt-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-2.5 shrink-0 shadow-2xs">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                <div className="mx-4 mt-3 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-2.5 shrink-0 shadow-xs">
+                  <AlertCircle
+                    className="h-4 w-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="font-bold text-xs text-rose-700 dark:text-rose-300">
                       {t("email.statusFailed")}
@@ -171,55 +175,54 @@ export function EmailPreviewModal({
                 <EmailHtmlPreview
                   title={subject}
                   body={body}
-                  className="text-xs leading-relaxed text-slate-800 dark:text-slate-200 space-y-3"
+                  className="text-xs leading-relaxed text-foreground"
                 />
               </div>
             </div>
           ) : (
-            /* Desktop / Tablet Apple Mail Layout */
+            /* Desktop / Tablet Mail Layout */
             <div
               key={`email-preview-${previewDevice}`}
-              className="flex-1 overflow-y-auto flex flex-col bg-white dark:bg-[#1e1e1e]"
+              className="flex-1 overflow-y-auto flex flex-col bg-card text-card-foreground"
             >
-              <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-slate-100 dark:border-slate-800/90">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+              <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-border">
+                <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight leading-snug">
                   {subject}
                 </h1>
 
                 <div className="flex items-start justify-between gap-4 mt-4">
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm shadow-xs shrink-0">
                       {senderInitials}
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        <span className="text-sm font-semibold text-foreground truncate">
                           {displaySenderName}
                         </span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500 truncate hidden sm:inline">
-                          &lt;{displaySenderEmail}&gt;
+                        <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                          {`<${displaySenderEmail}>`}
                         </span>
                       </div>
 
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        <span className="text-slate-400 dark:text-slate-500">
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
+                        <span className="text-muted-foreground">
                           {t("email.toLabel")}:
                         </span>{" "}
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                        <span className="font-medium text-foreground">
                           {displayCandidateName}
                         </span>{" "}
-                        <span className="text-slate-400 dark:text-slate-500 text-[11px]">
-                          &lt;{displayCandidateEmail}&gt;
+                        <span className="text-muted-foreground text-[11px]">
+                          {`<${displayCandidateEmail}>`}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Top-Right Meta: Status Badge & Timestamp */}
+                  {/* Top-Right Meta: Timestamp */}
                   <div className="flex flex-col items-end shrink-0 whitespace-nowrap">
-                    {status && <div className="mb-1.5">{statusBadge}</div>}
-                    <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <div className="text-[11px] text-muted-foreground">
                       {displayDate}
                     </div>
                   </div>
@@ -228,8 +231,11 @@ export function EmailPreviewModal({
 
               {/* Error banner if delivery failed */}
               {(status === "FAILED" || errorMessage) && (
-                <div className="mx-6 sm:mx-8 mt-4 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-3 shrink-0 shadow-2xs">
-                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                <div className="mx-6 sm:mx-8 mt-4 p-4 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-3 shrink-0 shadow-xs">
+                  <AlertCircle
+                    className="h-5 w-5 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400"
+                    aria-hidden="true"
+                  />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="font-bold text-sm text-rose-700 dark:text-rose-300">
                       {t("email.statusFailed")}
@@ -250,17 +256,13 @@ export function EmailPreviewModal({
                 <EmailHtmlPreview
                   title={subject}
                   body={body}
-                  className={cn(
-                    "text-[13px] leading-relaxed text-slate-800 dark:text-slate-200 space-y-4 font-sans",
-                    previewDevice === "desktop" &&
-                      "[&>div]:!max-w-none [&>div]:!w-full",
-                  )}
+                  className="text-[13px] leading-relaxed text-foreground font-sans"
                 />
               </div>
             </div>
           )}
         </DevicePreviewFrame>
       )}
-    </CustomModal>
+    </PreviewModal>
   );
 }

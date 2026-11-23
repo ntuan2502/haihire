@@ -20,6 +20,7 @@ export interface CalendarWeekDayInfo {
   dateStr: string;
   dayNumber: number;
   monthName: string;
+  displayDate: string;
   isToday: boolean;
 }
 
@@ -37,12 +38,26 @@ export interface DayDetailsInfo {
   dayNumber: number;
 }
 
+export interface CalendarStateUpdate {
+  calendarMode: CalendarViewMode;
+  month: string | null;
+  date: string | null;
+}
+
 export interface InterviewsCalendarViewProps {
   applications: Application[];
   jobs: Job[];
+  calendarMode?: CalendarViewMode;
+  activeMonth?: string;
+  activeDate?: string;
+  onCalendarStateChange?: (next: CalendarStateUpdate) => void;
   onScheduleDate: (dateStr: string) => void;
   onEditSchedule: (app: Application, interview: ScheduledInterviewInfo) => void;
   onOpenScorecard: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
+  onCancelInterview?: (
     app: Application,
     interview: ScheduledInterviewInfo,
   ) => void;

@@ -109,14 +109,6 @@ const nextConfig: NextConfig = {
         destination: `${backendUrl}/organizations/:path*`,
       },
       {
-        source: "/jobs/:path*",
-        destination: `${backendUrl}/jobs/:path*`,
-      },
-      {
-        source: "/applications/:path*",
-        destination: `${backendUrl}/applications/:path*`,
-      },
-      {
         source: "/events/:path*",
         destination: `${backendUrl}/events/:path*`,
       },

@@ -413,6 +413,37 @@ export function createQueryBuilder<T = MockRecord>(
   };
 }
 
+const SCALAR_FILTER_KEYS = new Set([
+  "in",
+  "notIn",
+  "equals",
+  "not",
+  "contains",
+  "startsWith",
+  "endsWith",
+  "mode",
+  "gte",
+  "lte",
+  "gt",
+  "lt",
+]);
+
+function isCompositeUniqueWhereKey(
+  key: string,
+  val: Record<string, unknown>,
+): boolean {
+  const keys = Object.keys(val);
+  if (keys.length < 2 || !key.includes("_")) return false;
+  const parts = key.split("_");
+  return keys.every(
+    (k) =>
+      parts.includes(k) ||
+      key.startsWith(`${k}_`) ||
+      key.includes(`_${k}_`) ||
+      key.endsWith(`_${k}`),
+  );
+}
+
 export function matchPrismaWhere<T extends MockRecord>(
   item: T,
   where?: unknown,
@@ -440,6 +471,79 @@ export function matchPrismaWhere<T extends MockRecord>(
       continue;
     }
     if (typeof val === "object" && !(val instanceof Date)) {
+      if (!Array.isArray(val)) {
+        const objVal = val as Record<string, unknown>;
+        const objKeys = Object.keys(objVal);
+        const hasScalarOperator = objKeys.some((k) =>
+          SCALAR_FILTER_KEYS.has(k),
+        );
+        if (!hasScalarOperator && objKeys.length > 0) {
+          if (itemVal === undefined && isCompositeUniqueWhereKey(key, objVal)) {
+            if (!matchPrismaWhere(item, objVal)) return false;
+            continue;
+          }
+          if (Array.isArray(itemVal)) {
+            if (
+              "some" in objVal &&
+              !itemVal.some((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.some),
+              )
+            ) {
+              return false;
+            }
+            if (
+              "none" in objVal &&
+              itemVal.some((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.none),
+              )
+            ) {
+              return false;
+            }
+            if (
+              "every" in objVal &&
+              !itemVal.every((child) =>
+                matchPrismaWhere(child as MockRecord, objVal.every),
+              )
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if ("is" in objVal) {
+            if (objVal.is === null) {
+              if (itemVal !== null && itemVal !== undefined) return false;
+            } else if (
+              itemVal !== undefined &&
+              (itemVal === null ||
+                !matchPrismaWhere(itemVal as MockRecord, objVal.is))
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if ("isNot" in objVal) {
+            if (objVal.isNot === null) {
+              if (itemVal === null) return false;
+            } else if (
+              itemVal &&
+              typeof itemVal === "object" &&
+              matchPrismaWhere(itemVal as MockRecord, objVal.isNot)
+            ) {
+              return false;
+            }
+            continue;
+          }
+          if (itemVal === null) return false;
+          if (
+            itemVal &&
+            typeof itemVal === "object" &&
+            !(itemVal instanceof Date)
+          ) {
+            if (!matchPrismaWhere(itemVal as MockRecord, objVal)) return false;
+          }
+          continue;
+        }
+      }
       if ("in" in val && (!Array.isArray(val.in) || !val.in.includes(itemVal)))
         return false;
       if (
@@ -460,10 +564,19 @@ export function matchPrismaWhere<T extends MockRecord>(
           if (!str.includes(target)) return false;
         }
       }
-      if ("gte" in v && !(Number(itemVal) >= Number(v.gte))) return false;
-      if ("lte" in v && !(Number(itemVal) <= Number(v.lte))) return false;
-      if ("gt" in v && !(Number(itemVal) > Number(v.gt))) return false;
-      if ("lt" in v && !(Number(itemVal) < Number(v.lt))) return false;
+      const toNumeric = (raw: unknown, ref: unknown) => {
+        if (ref instanceof Date && typeof raw === "string") {
+          const parsed = Date.parse(raw);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+        return Number(raw);
+      };
+      if ("gte" in v && !(toNumeric(itemVal, v.gte) >= Number(v.gte)))
+        return false;
+      if ("lte" in v && !(toNumeric(itemVal, v.lte) <= Number(v.lte)))
+        return false;
+      if ("gt" in v && !(toNumeric(itemVal, v.gt) > Number(v.gt))) return false;
+      if ("lt" in v && !(toNumeric(itemVal, v.lt) < Number(v.lt))) return false;
       continue;
     }
     if (itemVal !== val) return false;
@@ -570,9 +683,22 @@ export function createMockTable<T = MockRecord>(
         let match: T | undefined;
         if (conflictCriteria) {
           match = store.find((item) =>
-            Object.entries(conflictCriteria).every(
-              ([k, v]) => (item as MockRecord)[k] === v,
-            ),
+            Object.entries(conflictCriteria).every(([k, v]) => {
+              const rec = item as MockRecord;
+              if (
+                rec[k] === undefined &&
+                v &&
+                typeof v === "object" &&
+                !Array.isArray(v) &&
+                !(v instanceof Date) &&
+                isCompositeUniqueWhereKey(k, v as Record<string, unknown>)
+              ) {
+                return Object.entries(v as Record<string, unknown>).every(
+                  ([ck, cv]) => rec[ck] === cv,
+                );
+              }
+              return rec[k] === v;
+            }),
           );
         }
         if (match) {
@@ -636,19 +762,35 @@ export function createMockTable<T = MockRecord>(
           matchPrismaWhere(item as MockRecord, args?.where),
         );
         if (args?.orderBy) {
-          const orderClauses: Array<[string, string]> = Array.isArray(
+          type OrderSpec = string | { sort: string; nulls?: "first" | "last" };
+          const orderClauses: Array<[string, OrderSpec]> = Array.isArray(
             args.orderBy,
           )
-            ? args.orderBy.flatMap((o: Record<string, string>) =>
+            ? args.orderBy.flatMap((o: Record<string, OrderSpec>) =>
                 Object.entries(o),
               )
-            : Object.entries(args.orderBy as Record<string, string>);
+            : Object.entries(args.orderBy as Record<string, OrderSpec>);
 
           if (orderClauses.length > 0) {
             filtered.sort((a, b) => {
-              for (const [sortKey, sortDir] of orderClauses) {
+              for (const [sortKey, rawSpec] of orderClauses) {
+                const sortDir =
+                  typeof rawSpec === "string"
+                    ? rawSpec
+                    : (rawSpec?.sort ?? "asc");
+                const nullsOrder =
+                  typeof rawSpec === "object" && rawSpec !== null
+                    ? rawSpec.nulls
+                    : undefined;
                 const va = (a as MockRecord)[sortKey];
                 const vb = (b as MockRecord)[sortKey];
+                const aIsNull = va === null || va === undefined;
+                const bIsNull = vb === null || vb === undefined;
+                if (nullsOrder && (aIsNull || bIsNull)) {
+                  if (aIsNull && bIsNull) continue;
+                  if (nullsOrder === "first") return aIsNull ? -1 : 1;
+                  return aIsNull ? 1 : -1;
+                }
                 let cmp = 0;
                 if (typeof va === "number" && typeof vb === "number") {
                   cmp = va - vb;

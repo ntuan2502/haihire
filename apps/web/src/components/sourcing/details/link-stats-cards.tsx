@@ -3,6 +3,7 @@
 import { useI18n } from "@/i18n";
 import type { TrackingLinkDetail } from "@haihire/shared";
 import { MetricCard } from "@/components/shared/metric-card";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   MousePointerClick,
   Users,
@@ -20,16 +21,7 @@ export function LinkStatsCards({ stats, isLoading }: LinkStatsCardsProps) {
   const { t } = useI18n();
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse border border-slate-200/60 dark:border-slate-800/60"
-          />
-        ))}
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

@@ -96,4 +96,75 @@ describe("ConfirmDestructiveModal component", () => {
     fireEvent.click(confirmButton);
     expect(handleConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it("prevents closing via cancel button or Escape while isLoading is true", () => {
+    const handleClose = vi.fn();
+    render(
+      <ConfirmDestructiveModal
+        isOpen={true}
+        onClose={handleClose}
+        onConfirm={vi.fn()}
+        title="Delete Item"
+        description="Cannot cancel in flight"
+        isLoading={true}
+      />,
+    );
+
+    const cancelBtn = screen.getByRole("button", { name: "common.cancel" });
+    expect(cancelBtn).toBeDisabled();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(handleClose).not.toHaveBeenCalled();
+  });
+
+  it("resets typed confirmation text when confirmMatchText target changes", () => {
+    const { rerender } = render(
+      <ConfirmDestructiveModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        title="Delete Candidate"
+        description="Confirm target"
+        confirmMatchText="Alice"
+      />,
+    );
+
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "Alice" } });
+    expect(input).toHaveValue("Alice");
+
+    rerender(
+      <ConfirmDestructiveModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        title="Delete Candidate"
+        description="Confirm target"
+        confirmMatchText="Bob"
+      />,
+    );
+
+    expect(screen.getByRole("textbox")).toHaveValue("");
+  });
+
+  it("renders accessible warning contrast button and preserves DialogFooter padding", () => {
+    render(
+      <ConfirmDestructiveModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        title="Close Job"
+        description="Mark job closed"
+        variant="warning"
+        confirmButtonLabel="Confirm Close"
+      />,
+    );
+
+    const confirmBtn = screen.getByRole("button", { name: "Confirm Close" });
+    expect(confirmBtn).toHaveClass("bg-amber-700");
+
+    const footer = document.querySelector('[data-slot="dialog-footer"]');
+    expect(footer).toHaveClass("pt-4");
+    expect(footer).not.toHaveClass("p-0");
+  });
 });

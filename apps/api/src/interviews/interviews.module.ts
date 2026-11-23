@@ -1,3 +1,4 @@
+import { NotificationsModule } from "../notifications/notifications.module";
 import { Module } from "@nestjs/common";
 
 import { InterviewsController } from "./interviews.controller";
@@ -11,7 +12,7 @@ import { ActivitiesModule } from "../activities/activities.module";
 import { EmailModule } from "../email/email.module";
 
 @Module({
-  imports: [ActivitiesModule, EmailModule],
+  imports: [NotificationsModule, ActivitiesModule, EmailModule],
   controllers: [InterviewsController],
   providers: [
     InterviewsService,

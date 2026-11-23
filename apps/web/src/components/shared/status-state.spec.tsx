@@ -11,7 +11,7 @@ describe("StatusState component", () => {
         variant="card"
         description="Permission denied for settings"
         actionLabel="Back to Settings"
-        actionHref="/dashboard/settings"
+        actionHref="/settings"
       />,
     );
 
@@ -23,7 +23,7 @@ describe("StatusState component", () => {
     expect(heading).toHaveTextContent("Access Denied");
 
     const link = screen.getByRole("link", { name: "Back to Settings" });
-    expect(link).toHaveAttribute("href", "/dashboard/settings");
+    expect(link).toHaveAttribute("href", "/settings");
   });
 
   it("uses unified default forbidden title and description when omitted", () => {

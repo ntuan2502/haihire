@@ -3,8 +3,8 @@ FROM node:26-alpine AS builder
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm and clean npm cache
-RUN npm install -g pnpm && npm cache clean --force
+# Install pinned pnpm matching packageManager and clean npm cache
+RUN npm install -g pnpm@12.18.0 && npm cache clean --force
 
 # Disable Next.js telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -67,6 +67,9 @@ USER node
 WORKDIR /app/apps/web
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/ || exit 1
 
 # Start Next.js standalone production server directly via Node 26
 CMD ["node", "server.js"]

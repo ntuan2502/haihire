@@ -71,7 +71,7 @@ export class CandidatesProfileService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
             "Access denied: candidate belongs to another organization.",
-            { id, organizationId: otherOrg.organizationId },
+            { id },
           );
         }
       }
@@ -82,11 +82,12 @@ export class CandidatesProfileService {
       );
     }
 
-    // Fetch all applications for this candidate
-    const applications = await this.prisma.application.findMany({
+    // Fetch all applications for this candidate (excluding soft-deleted jobs)
+    const rawApplications = await this.prisma.application.findMany({
       where: {
         candidateId: id,
         ...(tenantOrgId ? { organizationId: tenantOrgId } : {}),
+        job: { deletedAt: null },
       },
       select: {
         id: true,
@@ -103,13 +104,15 @@ export class CandidatesProfileService {
       },
     });
 
-    // Fetch jobs for each application
-    const jobIds = [...new Set(applications.map((a) => a.jobId))];
+    // Fetch active jobs for each application
+    const jobIds = [...new Set(rawApplications.map((a) => a.jobId))];
     const jobs =
       jobIds.length > 0
         ? await this.prisma.job.findMany({
             where: {
               id: { in: jobIds },
+              organizationId: candidate.organizationId,
+              deletedAt: null,
             },
             select: {
               id: true,
@@ -120,6 +123,7 @@ export class CandidatesProfileService {
           })
         : [];
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
+    const applications = rawApplications.filter((a) => jobMap.has(a.jobId));
 
     // Fetch interviews for each application
     const appIds = [...new Set(applications.map((a) => a.id))];
@@ -193,24 +197,23 @@ export class CandidatesProfileService {
       dbDocs = [];
     }
 
-    const candidateDirectDocs: CandidateDocument[] =
-      dbDocs.length > 0
-        ? dbDocs
-        : candidate.resumeUrl
-          ? [
-              {
-                id: `doc-${candidate.id}`,
-                name: fixUtf8String(candidate.resumeFileName || "Resume.pdf"),
-                url: candidate.resumeUrl,
-                size: candidate.resumeFileSize ?? null,
-                mimeType: candidate.resumeMimeType ?? "application/pdf",
-                type: "Resume",
-                createdAt: candidate.createdAt
-                  ? new Date(toTimestamp(candidate.createdAt)).toISOString()
-                  : new Date().toISOString(),
-              },
-            ]
-          : [];
+    const candidateDirectDocs: CandidateDocument[] = [...dbDocs];
+    if (
+      candidate.resumeUrl &&
+      !candidateDirectDocs.some((d) => d.url === candidate.resumeUrl)
+    ) {
+      candidateDirectDocs.push({
+        id: `doc-${candidate.id}`,
+        name: fixUtf8String(candidate.resumeFileName || "Resume.pdf"),
+        url: candidate.resumeUrl,
+        size: candidate.resumeFileSize ?? null,
+        mimeType: candidate.resumeMimeType ?? "application/pdf",
+        type: "Resume",
+        createdAt: candidate.createdAt
+          ? new Date(toTimestamp(candidate.createdAt)).toISOString()
+          : new Date().toISOString(),
+      });
+    }
 
     const allDocuments: CandidateDocument[] = [...candidateDirectDocs];
     const seenUrls = new Set(allDocuments.map((d) => d.url).filter(Boolean));

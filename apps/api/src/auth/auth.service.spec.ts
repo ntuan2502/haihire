@@ -304,7 +304,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
       expect(result.user.firstName).toBe("Member");
       expect(result.user.lastName).toBe("New");
-      expect(result.user.name).toBe("Member New");
+      expect(result.user.name).toBe("New Member");
       expect(result.user.email).toBe("newmember@company.com");
       expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();
@@ -496,6 +496,267 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
           lastName: "Nguyễn",
         }),
       ).rejects.toThrow();
+    });
+
+    it("18. Should never select dropped role/organizationId columns on User in refreshToken and should preserve decoded org in multi-org setups", async () => {
+      const multiOrgPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(
+              async (args: { select?: Record<string, unknown> }) => {
+                if (
+                  args.select &&
+                  ("role" in args.select || "organizationId" in args.select)
+                ) {
+                  throw new Error(
+                    "PrismaClientValidationError: Unknown field on model User",
+                  );
+                }
+                return {
+                  id: "usr-multi",
+                  email: "multi@example.com",
+                  firstName: "Multi",
+                  lastName: "Org",
+                  preferredLanguage: null,
+                  preferredTimezone: null,
+                  tokenVersion: 0,
+                };
+              },
+            ),
+        },
+        organization: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(
+              async ({ where }: { where: { id: string } }) => ({
+                id: where.id,
+                name: where.id === "org-2" ? "Org Two" : "Org One",
+                slug: where.id,
+                ownerId: where.id === "org-1" ? "usr-multi" : "other-owner",
+              }),
+            ),
+        },
+        organizationMember: {
+          findFirst: vi
+            .fn()
+            .mockImplementation(
+              async ({ where }: { where: { organizationId?: string } }) => {
+                if (where.organizationId === "org-2")
+                  return { role: "RECRUITER" };
+                return { organizationId: "org-1", role: "ADMIN" };
+              },
+            ),
+        },
+      };
+      const jwtMock = {
+        verify: vi.fn().mockReturnValue({
+          sub: "usr-multi",
+          type: "refresh",
+          organizationId: "org-2",
+          tokenVersion: 0,
+        }),
+        sign: vi.fn().mockReturnValue("signed-token"),
+      };
+      const multiAuth = new AuthService(
+        multiOrgPrisma as never,
+        jwtMock as never,
+      );
+
+      const refreshed = await multiAuth.refreshToken({
+        refreshToken: "multi-org-rt",
+      });
+      expect(refreshed.hasOrg).toBe(true);
+      expect(jwtMock.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: "usr-multi",
+          role: "RECRUITER",
+          organizationId: "org-2",
+        }),
+      );
+
+      const profile = await multiAuth.getProfile("usr-multi", "org-2");
+      expect(profile.organizationId).toBe("org-2");
+      expect(profile.role).toBe("RECRUITER");
+      expect(profile.isOwner).toBe(false);
+    });
+
+    it("19. Should attach logoUrl (and strip internal logoObjectKey/logoUpdatedAt) in getProfile and sanitize timezone", async () => {
+      const logoPrisma = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "usr-logo",
+            email: "logo@example.com",
+            firstName: "Logo",
+            lastName: "Tester",
+            avatarUrl: null,
+            preferredLanguage: null,
+            preferredTimezone: null,
+            createdAt: new Date(),
+          }),
+        },
+        organization: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "org-1",
+            name: "Demo 1",
+            slug: "demo-1",
+            ownerId: "usr-logo",
+            logoObjectKey: "tenants/org-1/logos/brand.png",
+            logoUpdatedAt: new Date("2026-11-20T09:33:06.420Z"),
+            timezone: "Asia/Saigon",
+            nameDisplayOrder: "FIRST_LAST",
+          }),
+        },
+        organizationMember: {
+          findFirst: vi.fn().mockResolvedValue({ role: "ADMIN" }),
+        },
+      };
+      const logoAuth = new AuthService(
+        logoPrisma as never,
+        mockJwtService as never,
+      );
+
+      const profile = await logoAuth.getProfile("usr-logo", "org-1");
+
+      expect(profile.organization).toEqual(
+        expect.objectContaining({
+          id: "org-1",
+          logoUrl: `/organizations/public/org-1/logo?v=${new Date("2026-11-20T09:33:06.420Z").getTime()}`,
+          timezone: "Asia/Ho_Chi_Minh",
+        }),
+      );
+      expect(
+        "logoObjectKey" in (profile.organization as Record<string, unknown>),
+      ).toBe(false);
+      expect(
+        "logoUpdatedAt" in (profile.organization as Record<string, unknown>),
+      ).toBe(false);
+    });
+
+    it("20. Should remember last accessed org across logout/login via OrganizationMember.lastAccessedAt and fall back deterministically", async () => {
+      const { createMockPrismaService, createMockTable } =
+        await import("../test/helpers/prisma-composer-mock");
+      const seededAt = new Date("2026-10-29T23:00:00.000Z");
+      const userTable = createMockTable([
+        {
+          id: "usr-multi",
+          email: "multi-org@example.com",
+          firstName: "Multi",
+          lastName: "Org",
+          password: hashedPassword,
+          avatarUrl: null,
+          preferredLanguage: null,
+          preferredTimezone: null,
+          tokenVersion: 0,
+          createdAt: seededAt,
+        },
+      ]);
+      const orgTable = createMockTable([
+        {
+          id: "00000000-0000-4000-8000-000000000010",
+          name: "Demo 1",
+          slug: "demo-1",
+          ownerId: "owner-1",
+          timezone: "Asia/Ho_Chi_Minh",
+          nameDisplayOrder: "LAST_FIRST",
+          createdAt: seededAt,
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000030",
+          name: "Demo 3",
+          slug: "demo-3",
+          ownerId: "owner-3",
+          timezone: "Asia/Ho_Chi_Minh",
+          nameDisplayOrder: "LAST_FIRST",
+          createdAt: seededAt,
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000040",
+          name: "Demo 4",
+          slug: "demo-4",
+          ownerId: "owner-4",
+          timezone: "Asia/Ho_Chi_Minh",
+          nameDisplayOrder: "LAST_FIRST",
+          createdAt: seededAt,
+        },
+      ]);
+      // Intentionally insert Demo 3 before Demo 1 with identical createdAt & null lastAccessedAt
+      const memberTable = createMockTable<{
+        id: string;
+        userId: string;
+        organizationId: string;
+        role: string;
+        lastAccessedAt: Date | null;
+        createdAt: Date;
+      }>([
+        {
+          id: "mem-3",
+          userId: "usr-multi",
+          organizationId: "00000000-0000-4000-8000-000000000030",
+          role: "ADMIN",
+          lastAccessedAt: null,
+          createdAt: seededAt,
+        },
+        {
+          id: "mem-1",
+          userId: "usr-multi",
+          organizationId: "00000000-0000-4000-8000-000000000010",
+          role: "ADMIN",
+          lastAccessedAt: null,
+          createdAt: seededAt,
+        },
+        {
+          id: "mem-4",
+          userId: "usr-multi",
+          organizationId: "00000000-0000-4000-8000-000000000040",
+          role: "RECRUITER",
+          lastAccessedAt: null,
+          createdAt: seededAt,
+        },
+      ]);
+
+      const mockDb = createMockPrismaService({
+        user: userTable,
+        organization: orgTable,
+        organizationMember: memberTable,
+      });
+      const mruAuth = new AuthService(mockDb as never, mockJwtService as never);
+
+      // With all lastAccessedAt=null & identical createdAt, deterministic tie-breaker picks Demo 1 (0010) instead of Demo 3 (0030)
+      const firstLogin = await mruAuth.login({
+        email: "multi-org@example.com",
+        password: validPassword,
+      });
+      expect(firstLogin.user.organizationId).toBe(
+        "00000000-0000-4000-8000-000000000010",
+      );
+
+      // Simulate user earlier switching to Demo 1, then actively working in Demo 4 and logging out
+      memberTable.store.find((m) => m.id === "mem-1")!.lastAccessedAt =
+        new Date("2026-11-20T09:00:00.000Z");
+      await mruAuth.logout("usr-multi", "00000000-0000-4000-8000-000000000040");
+
+      const loginAfterLogout = await mruAuth.login({
+        email: "multi-org@example.com",
+        password: validPassword,
+      });
+      expect(loginAfterLogout.user.organizationId).toBe(
+        "00000000-0000-4000-8000-000000000040",
+      );
+      expect(loginAfterLogout.user.role).toBe("RECRUITER");
+
+      // If user is removed from Demo 4, next login cleanly falls back to previous MRU org (Demo 1)
+      const mem4Idx = memberTable.store.findIndex((m) => m.id === "mem-4");
+      memberTable.store.splice(mem4Idx, 1);
+
+      const loginAfterRemoval = await mruAuth.login({
+        email: "multi-org@example.com",
+        password: validPassword,
+      });
+      expect(loginAfterRemoval.user.organizationId).toBe(
+        "00000000-0000-4000-8000-000000000010",
+      );
+      expect(loginAfterRemoval.user.role).toBe("ADMIN");
     });
   });
 });

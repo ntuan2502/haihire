@@ -5,6 +5,7 @@ import { AppModule } from "../../app.module";
 import { GlobalExceptionFilter } from "../../common/http-exception.filter";
 import { validationExceptionFactory } from "../../common/dto-validation.pipe";
 import { PrismaService } from "../../prisma/prisma.service";
+import { restoreDatabaseSnapshot } from "./test-db";
 
 export interface TestAgent {
   get(path: string, headers?: Record<string, string>): Promise<Response>;
@@ -199,7 +200,11 @@ export async function createTestApp(): Promise<TestAppContext> {
     fetch: fetchWrapper,
     createAgent,
     close: async () => {
-      await app.close();
+      try {
+        await restoreDatabaseSnapshot(prisma);
+      } finally {
+        await app.close();
+      }
     },
   };
 }

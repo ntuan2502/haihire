@@ -1,9 +1,10 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState } from "react";
-import { Lock, KeyRound, Loader2 } from "lucide-react";
+import { Lock, KeyRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -25,8 +26,13 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const hasPasswordInput = Boolean(
+    currentPassword && newPassword && confirmPassword,
+  );
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (!currentPassword) {
       toast.error(t("settings.currentPasswordRequiredError"));
@@ -64,16 +70,16 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
   };
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
-      <div className="flex items-start gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+    <SettingsCard className="space-y-5">
+      <div className="flex items-start gap-3 pb-4 border-b border-border">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
           <KeyRound className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h2 className="text-sm font-semibold text-foreground">
             {t("settings.changePasswordTitle")}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("settings.changePasswordSub")}
           </p>
         </div>
@@ -81,7 +87,7 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
 
       <form onSubmit={handleChangePassword} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("settings.currentPassword")}
           </label>
           <Input
@@ -89,13 +95,13 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
             placeholder={t("settings.currentPasswordPlaceholder")}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="h-10 text-xs w-full"
+            className="text-xs w-full"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("settings.newPassword")}
             </label>
             <Input
@@ -103,11 +109,11 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
               placeholder={t("settings.newPasswordPlaceholder")}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="h-10 text-xs w-full"
+              className="text-xs w-full"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("settings.confirmNewPassword")}
             </label>
             <Input
@@ -115,31 +121,24 @@ export function AccountPasswordCard({ setSession }: AccountPasswordCardProps) {
               placeholder={t("settings.confirmNewPasswordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-10 text-xs w-full"
+              className="text-xs w-full"
             />
           </div>
         </div>
 
         <div className="pt-2">
-          <Button
+          <SettingsButton
             type="submit"
-            disabled={isSubmitting}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+            icon={Lock}
+            pending={isSubmitting}
+            disabled={!hasPasswordInput || isSubmitting}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>{t("settings.updatingPassword")}</span>
-              </>
-            ) : (
-              <>
-                <Lock className="h-3.5 w-3.5" />
-                <span>{t("settings.updatePasswordBtn")}</span>
-              </>
-            )}
-          </Button>
+            {isSubmitting
+              ? t("settings.updatingPassword")
+              : t("settings.updatePasswordBtn")}
+          </SettingsButton>
         </div>
       </form>
-    </div>
+    </SettingsCard>
   );
 }

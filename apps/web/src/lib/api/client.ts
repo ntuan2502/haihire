@@ -1,19 +1,24 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { env } from "../env";
+import { isWorkspaceRoute } from "../workspace-routes";
+
+export const getBrowserApiBaseUrl = () => {
+  // Always resolve a browser-reachable API base URL (never INTERNAL_API_URL),
+  // so <img src> links remain consistent across SSR hydration and client renders.
+  const customUrl = env.NEXT_PUBLIC_API_URL;
+  if (
+    customUrl &&
+    !customUrl.includes("localhost") &&
+    !customUrl.includes("127.0.0.1")
+  ) {
+    return customUrl;
+  }
+  return "/api";
+};
 
 export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
-    // In browser, if an external non-localhost URL is explicitly provided, use it.
-    // Otherwise, always use relative "/api" so requests proxy through Next.js rewrites.
-    const customUrl = env.NEXT_PUBLIC_API_URL;
-    if (
-      customUrl &&
-      !customUrl.includes("localhost") &&
-      !customUrl.includes("127.0.0.1")
-    ) {
-      return customUrl;
-    }
-    return "/api";
+    return getBrowserApiBaseUrl();
   }
   // Server-side (SSR / Server Actions) communicates directly with backend via validated internal URL
   return env.INTERNAL_API_URL;
@@ -189,6 +194,25 @@ export const getDocumentUrl = (
   return `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
+export const resolveOrganizationLogoUrl = (
+  logoUrl?: string | null,
+): string | null => {
+  if (!logoUrl) return null;
+  const trimmed = logoUrl.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("blob:") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("/api/")
+  ) {
+    return trimmed;
+  }
+  const apiUrl = getBrowserApiBaseUrl().replace(/\/+$/, "");
+  return `${apiUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+};
+
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
   withCredentials: true,
@@ -225,10 +249,7 @@ function clearClientAuthCookies() {
 function hasClientSessionState(): boolean {
   if (typeof window === "undefined") return false;
   const pathname = window.location.pathname || "";
-  if (
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/auth/onboarding")
-  ) {
+  if (isWorkspaceRoute(pathname) || pathname.startsWith("/auth/onboarding")) {
     return true;
   }
   return Boolean(
@@ -268,12 +289,76 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
+    } else {
+      prom.resolve(token ?? "");
     }
   });
   failedQueue = [];
 };
+
+function isTransientRefreshError(err: unknown): boolean {
+  const e = err as {
+    response?: { status?: number };
+    code?: string;
+  };
+  const status = e?.response?.status;
+  if (typeof status === "number") {
+    return status >= 500 || status === 429;
+  }
+  const code = e?.code;
+  return (
+    code === "ERR_NETWORK" ||
+    code === "ECONNABORTED" ||
+    code === "ETIMEDOUT" ||
+    code === "ERR_CANCELED"
+  );
+}
+
+export async function refreshAuthSession(): Promise<string> {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const refreshRes = await axios.post<{
+      accessToken: string;
+      refreshToken?: string;
+      hasOrg?: boolean;
+    }>(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
+
+    const maxAge = 60 * 60 * 24 * 7;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    if (typeof refreshRes.data?.hasOrg === "boolean") {
+      document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+    }
+
+    const nextToken = refreshRes.data?.accessToken ?? "";
+    processQueue(null, nextToken);
+    window.dispatchEvent(new CustomEvent("haihire:auth-refreshed"));
+    return nextToken;
+  } catch (refreshErr) {
+    processQueue(refreshErr, null);
+    if (!isTransientRefreshError(refreshErr)) {
+      if (hasClientSessionState()) {
+        await clearServerAndClientSession();
+      } else {
+        clearClientAuthCookies();
+      }
+      window.dispatchEvent(new CustomEvent("haihire:auth-expired"));
+    }
+    throw refreshErr;
+  } finally {
+    isRefreshing = false;
+  }
+}
 
 // Response Interceptor for 401 Silent Refresh
 api.interceptors.response.use(
@@ -302,46 +387,9 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: () => {
-              resolve(api.request(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const refreshRes = await axios.post<{
-          accessToken: string;
-          refreshToken?: string;
-          hasOrg?: boolean;
-        }>(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
-
-        const maxAge = 60 * 60 * 24 * 7;
-        const secure = window.location.protocol === "https:" ? "; Secure" : "";
-        if (typeof refreshRes.data?.hasOrg === "boolean") {
-          document.cookie = `haihire_has_org=${refreshRes.data.hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
-        }
-
-        processQueue(null, refreshRes.data?.accessToken);
-        return api.request(originalRequest);
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        if (hasClientSessionState()) {
-          await clearServerAndClientSession();
-        } else {
-          clearClientAuthCookies();
-        }
-        return Promise.reject(refreshErr);
-      } finally {
-        isRefreshing = false;
-      }
+      await refreshAuthSession();
+      return api.request(originalRequest);
     }
 
     return Promise.reject(error);

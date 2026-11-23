@@ -2,6 +2,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import {
   useCreateJobMutation,
   useUpdateJobMutation,
@@ -107,7 +108,7 @@ export function useJobWizardSubmit({
         });
 
         clearStorageDraft();
-        router.push("/dashboard/jobs");
+        router.push("/jobs");
       } else if (mode === "edit" && initialJob) {
         await updateJobMutation.mutateAsync({
           id: initialJob.id,
@@ -140,18 +141,20 @@ export function useJobWizardSubmit({
     if (!initialJob) return;
     try {
       await deleteJobMutation.mutateAsync(initialJob.id);
-      router.push("/dashboard/jobs");
+      router.push("/jobs");
     } catch (err) {
       console.error("Failed to delete job:", err);
-      form.setFormError(t("jobs.wizard.errors.deleteFailed"));
+      const message = getApiErrorMessage(err, t);
+      toast.error(message);
+      form.setFormError(message);
     }
   };
 
   const handleCancel = () => {
     if (mode === "create") {
-      router.push("/dashboard/jobs");
+      router.push("/jobs");
     } else {
-      router.push(`/dashboard/jobs/${initialJob?.id}/pipeline`);
+      router.push(`/jobs/${initialJob?.id}/pipeline`);
     }
   };
 

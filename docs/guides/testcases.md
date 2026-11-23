@@ -6,11 +6,11 @@ HaiHire verifies application correctness across **unit**, **integration**, **sta
 
 ## 1. Unit & Integration Suites (`Vitest 5.1.0`)
 
-| Workspace Command | Included Test Roots                                                           |        Verified Scope         | Coverage Thresholds (`L / F / B / S`) |
-| :---------------- | :---------------------------------------------------------------------------- | :---------------------------: | :------------------------------------ |
-| `pnpm test:api`   | `apps/api/src`, `apps/api/test`, `scripts/__tests__`, `monitoring/prometheus` |   `85` files / `936` tests    | `83%` / `82%` / `66%` / `83%`         |
-| `pnpm test:web`   | `apps/web/src` (RTL + `jsdom` on `vmThreads`)                                 |   `86` files / `591` tests    | `65%` / `56%` / `59%` / `65%`         |
-| `pnpm test`       | Both workspaces via Turborepo                                                 | `1527` unit/integration tests | Enforced via `pnpm test:coverage`     |
+| Workspace Command | Included Test Roots                                                           |       Verified Scope       | Coverage Thresholds (`L / F / B / S`) |
+| :---------------- | :---------------------------------------------------------------------------- | :------------------------: | :------------------------------------ |
+| `pnpm test:api`   | `apps/api/src`, `apps/api/test`, `scripts/__tests__`, `monitoring/prometheus` | `93` files / `1,084` tests | `83%` / `82%` / `66%` / `83%`         |
+| `pnpm test:web`   | `apps/web/src` (RTL + `jsdom` on `vmThreads`)                                 | `105` files / `699` tests  | `65%` / `56%` / `59%` / `65%`         |
+| `pnpm test`       | Both workspaces via Turborepo                                                 | Unit and integration tests | Enforced via `pnpm test:coverage`     |
 
 ### Key Backend Test Harnesses
 
@@ -20,21 +20,25 @@ HaiHire verifies application correctness across **unit**, **integration**, **sta
 
 ---
 
-## 2. Playwright E2E Suite (`apps/web/tests/e2e/` — `9` Files / `34` Tests)
+## 2. Playwright E2E Suite (`apps/web/tests/e2e/` — `13` Files / `67` Tests)
 
 Configured in [playwright.config.ts](../../playwright.config.ts) (`baseURL`: `http://localhost:13000`, Chromium Desktop, `trace: "on-first-retry"`, `retries: 2` on CI, `workers: 1` on CI):
 
-| Spec File                                                                         | Covered End-to-End Flow                                        |
-| :-------------------------------------------------------------------------------- | :------------------------------------------------------------- |
-| [apply-form.spec.ts](../../apps/web/tests/e2e/apply-form.spec.ts)                 | Public candidate job application & resume upload submission    |
-| [careers-job-closed.spec.ts](../../apps/web/tests/e2e/careers-job-closed.spec.ts) | Closed requisition handling on public careers portal           |
-| [careers-page.spec.ts](../../apps/web/tests/e2e/careers-page.spec.ts)             | Branded public careers listing & job detail rendering          |
-| [kanban-drag-drop.spec.ts](../../apps/web/tests/e2e/kanban-drag-drop.spec.ts)     | Pipeline Kanban drag-and-drop stage transition persistence     |
-| [login-flow.spec.ts](../../apps/web/tests/e2e/login-flow.spec.ts)                 | Sign-in, cookie session persistence, proxy protection, logout  |
-| [ownership-transfer.spec.ts](../../apps/web/tests/e2e/ownership-transfer.spec.ts) | Dynamic organization ownership transfer & privilege update     |
-| [tenant-security.spec.ts](../../apps/web/tests/e2e/tenant-security.spec.ts)       | Browser cross-tenant access denial and workspace isolation     |
-| [theme-toggle.spec.ts](../../apps/web/tests/e2e/theme-toggle.spec.ts)             | Light/dark theme switching (`oklch` `.dark` class persistence) |
-| [webhook-settings.spec.ts](../../apps/web/tests/e2e/webhook-settings.spec.ts)     | Webhook provider configuration & test alert dispatch           |
+| Spec File                                                                                           | Covered End-to-End Flow                                        |
+| :-------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| [apply-form.spec.ts](../../apps/web/tests/e2e/apply-form.spec.ts)                                   | Public candidate job application & resume upload submission    |
+| [careers-job-closed.spec.ts](../../apps/web/tests/e2e/careers-job-closed.spec.ts)                   | Closed requisition handling on public careers portal           |
+| [careers-page.spec.ts](../../apps/web/tests/e2e/careers-page.spec.ts)                               | Branded public careers listing & job detail rendering          |
+| [kanban-drag-drop.spec.ts](../../apps/web/tests/e2e/kanban-drag-drop.spec.ts)                       | Pipeline Kanban drag-and-drop stage transition persistence     |
+| [login-flow.spec.ts](../../apps/web/tests/e2e/login-flow.spec.ts)                                   | Sign-in, cookie session persistence, proxy protection, logout  |
+| [ownership-transfer.spec.ts](../../apps/web/tests/e2e/ownership-transfer.spec.ts)                   | Dynamic organization ownership transfer & privilege update     |
+| [tenant-security.spec.ts](../../apps/web/tests/e2e/tenant-security.spec.ts)                         | Browser cross-tenant access denial and workspace isolation     |
+| [theme-toggle.spec.ts](../../apps/web/tests/e2e/theme-toggle.spec.ts)                               | Light/dark theme switching (`oklch` `.dark` class persistence) |
+| [tier1-feature-coverage.spec.ts](../../apps/web/tests/e2e/tier1-feature-coverage.spec.ts)           | Core feature E2E suite across dashboard and workspaces         |
+| [tier2-boundary-corners.spec.ts](../../apps/web/tests/e2e/tier2-boundary-corners.spec.ts)           | Edge cases, authorization guards, and form validation          |
+| [tier3-pairwise-combinations.spec.ts](../../apps/web/tests/e2e/tier3-pairwise-combinations.spec.ts) | Cross-feature pairwise workflows and state transitions         |
+| [tier4-recruitment-lifecycle.spec.ts](../../apps/web/tests/e2e/tier4-recruitment-lifecycle.spec.ts) | End-to-end hiring lifecycle from job publish to hire           |
+| [webhook-settings.spec.ts](../../apps/web/tests/e2e/webhook-settings.spec.ts)                       | Webhook provider configuration & test alert dispatch           |
 
 ---
 

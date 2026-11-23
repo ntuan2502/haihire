@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { Readable } from "node:stream";
+import { APP_ERROR_CODES, normalizeCandidatePhone } from "@haihire/shared";
 import { CandidatesService } from "./candidates.service";
 import {
   CandidatesCrudService,
@@ -117,9 +118,11 @@ describe("CandidatesService (Characterization Tests)", () => {
     jobTable = createMockTable([
       {
         id: "job-1",
+        organizationId: "org-1",
         title: "Senior Full-Stack Engineer",
         department: "Engineering",
         location: "Ho Chi Minh City",
+        deletedAt: null,
       },
     ]);
 
@@ -368,7 +371,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
 
       expect(created).toBeDefined();
-      expect(created.name).toBe("Minh Tran Van");
+      expect(created.name).toBe("Tran Van Minh");
       expect(created.firstName).toBe("Minh");
       expect(created.lastName).toBe("Tran Van");
       expect(created.displayName).toBeNull();
@@ -501,9 +504,12 @@ describe("CandidatesService (Characterization Tests)", () => {
 
       expect(updated).toBeDefined();
       expect(updated.firstName).toBe("A Updated");
-      expect(updated.name).toBe("A Updated Nguyen Van");
+      expect(updated.name).toBe("Nguyen Van A Updated");
       expect(updated.phone).toBe("0999888777");
       expect(updated.dateOfBirth).toBeDefined();
+      expect(new Date(updated.dateOfBirth!).toISOString()).toBe(
+        "1992-08-15T12:00:00.000Z",
+      );
     });
 
     it("uploads a document with validated file and updates candidate resume fields", async () => {
@@ -662,6 +668,231 @@ describe("CandidatesService (Characterization Tests)", () => {
 
       const list = await diService.findAll("org-1");
       expect(list.data).toBeDefined();
+    });
+
+    it("BUG-09: allows re-creating candidate with soft-deleted email and rejects update to active duplicate email", async () => {
+      const recreated = await service.create(
+        {
+          firstName: "C",
+          lastName: "Reborn",
+          email: "levanc@example.com",
+          organizationId: "org-1",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(recreated.email).toBe("levanc@example.com");
+
+      await expect(
+        service.update("cand-1", { email: "tranthib@example.com" }, "org-1"),
+      ).rejects.toThrow(AppConflictException);
+    });
+
+    it("BUG-08: normalizes All->Resume on upload, keeps primary resumeUrl in allDocuments, and preserves it when deleting secondary doc", async () => {
+      const pdfFile = {
+        originalname: "certificate.pdf",
+        mimetype: "application/pdf",
+        size: 1024,
+        buffer: Buffer.from("%PDF-1.4\ncertificate content\n%%EOF"),
+      } as Express.Multer.File;
+
+      const afterUpload = await service.uploadDocument(
+        "cand-1",
+        pdfFile,
+        "All",
+        "org-1",
+      );
+
+      const uploaded = afterUpload.allDocuments.find(
+        (d: { url: string }) =>
+          d.url === "https://minio.local/resumes/org-1/uploaded-file.pdf",
+      );
+      expect(uploaded?.type).toBe("Resume");
+      expect(
+        afterUpload.allDocuments.some(
+          (d: { url: string }) =>
+            d.url === "https://minio.local/resumes/org-1/resume-1.pdf",
+        ),
+      ).toBe(true);
+
+      const afterDelete = await service.deleteDocument(
+        "cand-1",
+        { documentId: uploaded!.id },
+        "org-1",
+      );
+      expect(afterDelete.resumeUrl).toBe(
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+      );
+    });
+
+    it("excludes applications belonging to soft-deleted jobs in findOne and findAll", async () => {
+      await jobTable.create({
+        id: "job-deleted",
+        organizationId: "org-1",
+        title: "Deleted Job",
+        deletedAt: new Date().toISOString(),
+      });
+      await applicationTable.create({
+        id: "app-deleted-job",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-deleted",
+        stage: "APPLIED",
+        orderIndex: 1,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const profile = await service.findOne("cand-1", "org-1");
+      expect(profile.applications.map((a: { id: string }) => a.id)).toEqual([
+        "app-1",
+      ]);
+
+      const list = await service.findAll("org-1", { page: 1, limit: 10 });
+      const cand1 = list.data.find((c: { id: string }) => c.id === "cand-1");
+      expect(cand1?.applicationsCount).toBe(1);
+    });
+  });
+
+  describe("Duplicate detection & conflict handling", () => {
+    it("normalizes Vietnamese and international phone formats consistently", () => {
+      expect(normalizeCandidatePhone("+84 901-234-567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("84901234567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("0901 234 567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("+1 (555) 123-4567")).toBe("15551234567");
+      expect(normalizeCandidatePhone("12345")).toBeNull();
+      expect(normalizeCandidatePhone("")).toBeNull();
+      expect(normalizeCandidatePhone(null)).toBeNull();
+    });
+
+    it("includes { email } params in CANDIDATE_EMAIL_EXISTS exception on create and update", async () => {
+      let createErr: unknown;
+      try {
+        await service.create(
+          {
+            organizationId: "org-1",
+            firstName: "Another",
+            lastName: "Person",
+            email: "  NguyenVanA@Example.com ",
+          },
+          undefined,
+          "org-1",
+        );
+      } catch (err) {
+        createErr = err;
+      }
+      expect(createErr).toBeInstanceOf(AppConflictException);
+      expect((createErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((createErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      let updatePrecheckErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "nguyenvana@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updatePrecheckErr = err;
+      }
+      expect(updatePrecheckErr).toBeInstanceOf(AppConflictException);
+      expect((updatePrecheckErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      vi.spyOn(mockPrisma.candidate, "update").mockRejectedValueOnce({
+        code: "P2002",
+      });
+      let updateRaceErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "race-condition@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updateRaceErr = err;
+      }
+      expect(updateRaceErr).toBeInstanceOf(AppConflictException);
+      expect((updateRaceErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((updateRaceErr as AppConflictException).params).toEqual({
+        email: "race-condition@example.com",
+      });
+    });
+
+    it("detects BLOCKING email matches and WARNING phone / name+DOB matches within tenant", async () => {
+      const cand1Dob = (candidateTable.store[0].dateOfBirth as Date)
+        .toISOString()
+        .slice(0, 10);
+
+      const emailAndPhoneResult = await service.checkDuplicates(
+        {
+          email: "NGUYENVANA@EXAMPLE.COM",
+          phone: "+84 912-345-678",
+        },
+        "org-1",
+      );
+      expect(emailAndPhoneResult.hasBlockingDuplicate).toBe(true);
+      expect(emailAndPhoneResult.hasWarningDuplicate).toBe(true);
+      expect(emailAndPhoneResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        severity: "BLOCKING",
+        matchReasons: ["EMAIL"],
+      });
+      expect(emailAndPhoneResult.matches[1]).toMatchObject({
+        id: "cand-2",
+        severity: "WARNING",
+        matchReasons: ["PHONE"],
+      });
+
+      const nameDobResult = await service.checkDuplicates(
+        {
+          firstName: " a ",
+          lastName: " nguyen   van ",
+          dateOfBirth: cand1Dob,
+        },
+        "org-1",
+      );
+      expect(nameDobResult.hasBlockingDuplicate).toBe(false);
+      expect(nameDobResult.hasWarningDuplicate).toBe(true);
+      expect(nameDobResult.matches).toHaveLength(1);
+      expect(nameDobResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        matchReasons: ["NAME_DOB"],
+        severity: "WARNING",
+      });
+
+      const excludedResult = await service.checkDuplicates(
+        {
+          email: "nguyenvana@example.com",
+          phone: "0901234567",
+          excludeId: "cand-1",
+        },
+        "org-1",
+      );
+      expect(excludedResult.matches).toEqual([]);
+
+      const deletedAndOtherTenant = await service.checkDuplicates(
+        {
+          email: "levanc@example.com",
+        },
+        "org-1",
+      );
+      expect(deletedAndOtherTenant.matches).toEqual([]);
+
+      const otherTenantEmail = await service.checkDuplicates(
+        {
+          email: "phamvand@example.com",
+        },
+        "org-1",
+      );
+      expect(otherTenantEmail.matches).toEqual([]);
     });
   });
 });

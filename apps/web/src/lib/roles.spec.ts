@@ -45,10 +45,10 @@ describe("roles and document localization helpers", () => {
   it("returns distinct badge classes for roles and safe default", () => {
     expect(getOrgRoleBadgeClass("OWNER")).toContain("amber");
     expect(getOrgRoleBadgeClass(Role.ADMIN)).toContain("rose");
-    expect(getOrgRoleBadgeClass(Role.RECRUITER)).toContain("blue");
+    expect(getOrgRoleBadgeClass(Role.RECRUITER)).toContain("sky");
     expect(getOrgRoleBadgeClass(Role.HIRING_MANAGER)).toContain("emerald");
     expect(getOrgRoleBadgeClass(Role.INTERVIEWER)).toContain("amber");
-    expect(getOrgRoleBadgeClass("UNKNOWN")).toContain("slate");
+    expect(getOrgRoleBadgeClass("UNKNOWN")).toContain("bg-secondary");
   });
 
   it("resolves localized labels for all 41 permissions without raw keys", () => {

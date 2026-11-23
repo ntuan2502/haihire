@@ -223,13 +223,34 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+function interpolateTemplateTokens(
+  template: string,
+  variables: Record<string, string | number | undefined | null>,
+  formatValue: (raw: string) => string,
+): string {
+  return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, key) => {
+    return variables[key] !== undefined && variables[key] !== null
+      ? formatValue(String(variables[key]))
+      : `{{${key}}}`;
+  });
+}
+
 export function interpolateEmail(
   template: string,
   variables: Record<string, string | number | undefined | null>,
 ): string {
-  return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, key) => {
-    return variables[key] !== undefined && variables[key] !== null
-      ? escapeHtml(String(variables[key]))
-      : `{{${key}}}`;
-  });
+  return interpolateTemplateTokens(template, variables, escapeHtml);
+}
+
+/**
+ * Interpolates plain-text email subjects without HTML entity escaping while stripping CR/LF
+ * sequences to prevent email header injection.
+ */
+export function interpolateEmailSubject(
+  template: string,
+  variables: Record<string, string | number | undefined | null>,
+): string {
+  return interpolateTemplateTokens(template, variables, (raw) => raw)
+    .replace(/[\r\n]+/g, " ")
+    .trim();
 }

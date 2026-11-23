@@ -1,9 +1,15 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   formatCandidateDisplayName,
+  normalizeCandidatePhone,
   normalizeNameInput,
+  type CandidateDuplicateCheckResult,
+  type CandidateDuplicateMatch,
+  type CandidateDuplicateReason,
+  type CheckCandidateDuplicateSchema,
 } from "@haihire/shared";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { findMatchingCandidateIds } from "../../common/person-search.util";
@@ -20,6 +26,25 @@ import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { validateUploadedFile } from "../../common/upload-utils";
 import { toInstant, toTimestamp } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
+
+function parseCalendarDate(raw?: string | null): Date | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "—") return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const noonUtc = new Date(`${trimmed}T12:00:00.000Z`);
+    return !isNaN(noonUtc.getTime()) ? noonUtc : null;
+  }
+  const parsed = new Date(trimmed);
+  return !isNaN(parsed.getTime()) ? parsed : null;
+}
+
+function toIsoDateKey(raw?: Date | string | null): string | null {
+  if (!raw) return null;
+  const d = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
 
 @Injectable()
 export class CandidatesCrudService {
@@ -121,6 +146,7 @@ export class CandidatesCrudService {
               where: {
                 candidateId: { in: candidateIds },
                 organizationId: targetOrgId,
+                job: { deletedAt: null },
               },
               select: {
                 id: true,
@@ -147,8 +173,23 @@ export class CandidatesCrudService {
           ])
         : [[], []];
 
-    const appsByCandidate = new Map<string, typeof allApps>();
-    for (const app of allApps) {
+    let activeApps = allApps;
+    if (allApps.length > 0 && typeof this.prisma.job?.findMany === "function") {
+      const appJobIds = [...new Set(allApps.map((a) => a.jobId))];
+      const activeJobs = await this.prisma.job.findMany({
+        where: {
+          id: { in: appJobIds },
+          organizationId: targetOrgId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      const activeJobIds = new Set(activeJobs.map((j) => j.id));
+      activeApps = allApps.filter((a) => activeJobIds.has(a.jobId));
+    }
+
+    const appsByCandidate = new Map<string, typeof activeApps>();
+    for (const app of activeApps) {
       const list = appsByCandidate.get(app.candidateId) || [];
       list.push(app);
       appsByCandidate.set(app.candidateId, list);
@@ -239,24 +280,38 @@ export class CandidatesCrudService {
 
     const email = dto.email.trim().toLowerCase();
 
-    // Check unique email per organization
+    // Check unique email per organization (ignoring soft-deleted records)
     const existing = await this.prisma.candidate.findFirst({
       where: {
         organizationId: orgId,
         email,
+        deletedAt: null,
       },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
 
-    if (existing) {
+    if (existing && !existing.deletedAt) {
       throw new AppConflictException(
         APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
         "A candidate with this email already exists in your organization",
+        { email },
+      );
+    }
+
+    const dateOfBirth = parseCalendarDate(dto.dateOfBirth);
+
+    const firstName = normalizeNameInput(dto.firstName);
+    const lastName = normalizeNameInput(dto.lastName);
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+        "First name and last name are required.",
       );
     }
 
     let uploadResult: {
       url: string;
+      fileName?: string;
       originalName: string;
       size: number;
       mimeType: string;
@@ -280,43 +335,45 @@ export class CandidatesCrudService {
       };
     }
 
-    let dateOfBirth: Date | null = null;
-    if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
-      const parsed = new Date(dto.dateOfBirth.trim());
-      if (!isNaN(parsed.getTime())) {
-        dateOfBirth = parsed;
-      }
-    }
-
-    const firstName = normalizeNameInput(dto.firstName);
-    const lastName = normalizeNameInput(dto.lastName);
-    if (!firstName || !lastName) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-        "First name and last name are required.",
-      );
-    }
     const displayName = dto.displayName?.trim() || null;
     const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
 
-    const created = await this.prisma.candidate.create({
-      data: {
-        id: crypto.randomUUID(),
-        organizationId: orgId,
-        firstName,
-        lastName,
-        displayName,
-        gender: dto.gender ? dto.gender : null,
-        dateOfBirth,
-        email,
-        phone: dto.phone?.trim() || null,
-        resumeUrl: uploadResult.url || null,
-        resumeFileName: uploadResult.originalName || null,
-        resumeFileSize: uploadResult.size || null,
-        resumeMimeType: uploadResult.mimeType || "application/pdf",
-        updatedAt: toInstant(),
-      },
-    });
+    let created;
+    try {
+      created = await this.prisma.candidate.create({
+        data: {
+          id: crypto.randomUUID(),
+          organizationId: orgId,
+          firstName,
+          lastName,
+          displayName,
+          gender: dto.gender ? dto.gender : null,
+          dateOfBirth,
+          email,
+          phone: dto.phone?.trim() || null,
+          resumeUrl: uploadResult.url || null,
+          resumeFileName: uploadResult.originalName || null,
+          resumeFileSize: uploadResult.size || null,
+          resumeMimeType: uploadResult.mimeType || "application/pdf",
+          updatedAt: toInstant(),
+        },
+      });
+    } catch (err: unknown) {
+      const cleanupKey = file ? uploadResult.fileName || uploadResult.url : "";
+      if (cleanupKey) {
+        await this.minioService
+          .deleteFile?.(cleanupKey)
+          ?.catch(() => undefined);
+      }
+      if ((err as { code?: string })?.code === "P2002") {
+        throw new AppConflictException(
+          APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+          "A candidate with this email already exists in your organization",
+          { email },
+        );
+      }
+      throw err;
+    }
 
     this.eventsService?.emit({
       type: "CANDIDATES_CHANGED",
@@ -365,19 +422,33 @@ export class CandidatesCrudService {
       updatePayload.gender = dto.gender ? dto.gender : null;
     }
     if (dto.dateOfBirth !== undefined) {
-      if (
-        dto.dateOfBirth &&
-        dto.dateOfBirth.trim() &&
-        dto.dateOfBirth !== "—"
-      ) {
-        const parsed = new Date(dto.dateOfBirth.trim());
-        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
-      } else {
-        updatePayload.dateOfBirth = null;
-      }
+      updatePayload.dateOfBirth = parseCalendarDate(dto.dateOfBirth);
     }
-    if (dto.email !== undefined)
-      updatePayload.email = dto.email.trim().toLowerCase();
+    if (dto.email !== undefined) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      if (normalizedEmail !== (existing.email || "").toLowerCase()) {
+        const orgIdForEmail = (existing.organizationId || tenantOrgId) as
+          string | undefined;
+        const dup = orgIdForEmail
+          ? await this.prisma.candidate.findFirst({
+              where: {
+                organizationId: orgIdForEmail,
+                email: normalizedEmail,
+                deletedAt: null,
+              },
+              select: { id: true, deletedAt: true },
+            })
+          : null;
+        if (dup && dup.id !== id && !dup.deletedAt) {
+          throw new AppConflictException(
+            APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+            "A candidate with this email already exists in your organization",
+            { email: normalizedEmail },
+          );
+        }
+      }
+      updatePayload.email = normalizedEmail;
+    }
     if (dto.phone !== undefined)
       updatePayload.phone = dto.phone?.trim() || null;
     if (dto.resumeUrl !== undefined) {
@@ -389,10 +460,23 @@ export class CandidatesCrudService {
     if (dto.resumeFileName !== undefined)
       updatePayload.resumeFileName = dto.resumeFileName;
 
-    await this.prisma.candidate.update({
-      where: { id },
-      data: updatePayload,
-    });
+    try {
+      await this.prisma.candidate.update({
+        where: { id },
+        data: updatePayload,
+      });
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code === "P2002") {
+        const conflictEmail =
+          (updatePayload.email as string | undefined) || existing.email || "";
+        throw new AppConflictException(
+          APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+          "A candidate with this email already exists in your organization",
+          { email: conflictEmail },
+        );
+      }
+      throw err;
+    }
 
     const orgId = existing.organizationId || tenantOrgId;
     if (orgId) {
@@ -438,6 +522,11 @@ export class CandidatesCrudService {
         data: { candidateId: id },
       });
       this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { candidateId: id },
+      });
+      this.eventsService?.emit({
         type: "SOURCING_CHANGED",
         organizationId: orgId,
         data: { candidateId: id },
@@ -445,5 +534,133 @@ export class CandidatesCrudService {
     }
 
     return { success: true, message: `Candidate ${id} deleted successfully` };
+  }
+
+  /**
+   * Check for potential duplicate candidates within the active tenant
+   * matching email (blocking) or normalized phone / name+DOB (warning).
+   */
+  async checkDuplicates(
+    query: CheckCandidateDuplicateSchema,
+    tenantOrgId?: string | null,
+  ): Promise<CandidateDuplicateCheckResult> {
+    const orgId = tenantOrgId;
+    if (!orgId) {
+      return {
+        hasBlockingDuplicate: false,
+        hasWarningDuplicate: false,
+        matches: [],
+      };
+    }
+
+    const rawEmail = query.email?.trim().toLowerCase() || "";
+    const normalizedEmail = rawEmail.includes("@") ? rawEmail : null;
+    const normalizedPhone = normalizeCandidatePhone(query.phone);
+    const normFirst =
+      normalizeNameInput(query.firstName)?.toLowerCase() || null;
+    const normLast = normalizeNameInput(query.lastName)?.toLowerCase() || null;
+    const parsedDob = query.dateOfBirth
+      ? parseCalendarDate(query.dateOfBirth)
+      : null;
+    const dobIsoDay = parsedDob ? parsedDob.toISOString().slice(0, 10) : null;
+    const hasNameDob = Boolean(normFirst && normLast && dobIsoDay);
+
+    const orClauses: Prisma.CandidateWhereInput[] = [];
+    if (normalizedEmail) {
+      orClauses.push({ email: normalizedEmail });
+    }
+    if (normalizedPhone) {
+      orClauses.push({ phone: { endsWith: normalizedPhone.slice(-3) } });
+      if (query.phone?.trim()) {
+        orClauses.push({ phone: query.phone.trim() });
+      }
+      orClauses.push({ phone: normalizedPhone });
+    }
+    if (hasNameDob && dobIsoDay) {
+      orClauses.push({
+        dateOfBirth: {
+          gte: new Date(`${dobIsoDay}T00:00:00.000Z`),
+          lte: new Date(`${dobIsoDay}T23:59:59.999Z`),
+        },
+      });
+    }
+
+    if (orClauses.length === 0) {
+      return {
+        hasBlockingDuplicate: false,
+        hasWarningDuplicate: false,
+        matches: [],
+      };
+    }
+
+    const rows = await this.prisma.candidate.findMany({
+      where: {
+        organizationId: orgId,
+        deletedAt: null,
+        ...(query.excludeId ? { id: { not: query.excludeId } } : {}),
+        OR: orClauses,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        email: true,
+        phone: true,
+        dateOfBirth: true,
+      },
+      take: 25,
+    });
+
+    const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
+    const matches: CandidateDuplicateMatch[] = [];
+
+    for (const row of rows) {
+      const matchReasons: CandidateDuplicateReason[] = [];
+      if (
+        normalizedEmail &&
+        row.email.trim().toLowerCase() === normalizedEmail
+      ) {
+        matchReasons.push("EMAIL");
+      }
+      if (
+        normalizedPhone &&
+        normalizeCandidatePhone(row.phone) === normalizedPhone
+      ) {
+        matchReasons.push("PHONE");
+      }
+      const rowDobKey = toIsoDateKey(row.dateOfBirth);
+      if (
+        hasNameDob &&
+        dobIsoDay &&
+        rowDobKey === dobIsoDay &&
+        normalizeNameInput(row.firstName)?.toLowerCase() === normFirst &&
+        normalizeNameInput(row.lastName)?.toLowerCase() === normLast
+      ) {
+        matchReasons.push("NAME_DOB");
+      }
+
+      if (matchReasons.length === 0) continue;
+
+      matches.push({
+        id: row.id,
+        name: formatCandidateDisplayName(row, nameOrder),
+        email: row.email,
+        phone: row.phone ?? null,
+        dateOfBirth: rowDobKey,
+        matchReasons,
+        severity: matchReasons.includes("EMAIL") ? "BLOCKING" : "WARNING",
+      });
+    }
+
+    matches.sort((a, b) =>
+      a.severity === b.severity ? 0 : a.severity === "BLOCKING" ? -1 : 1,
+    );
+
+    return {
+      hasBlockingDuplicate: matches.some((m) => m.severity === "BLOCKING"),
+      hasWarningDuplicate: matches.some((m) => m.severity === "WARNING"),
+      matches,
+    };
   }
 }

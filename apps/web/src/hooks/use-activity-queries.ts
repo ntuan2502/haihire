@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { activitiesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "./use-has-permission";
 import type { ActivityEvent } from "@/lib/email-templates";
 import { queryKeys } from "./query-keys";
 
@@ -23,6 +24,7 @@ export function useCandidateActivities(
   },
 ) {
   const { user } = useAuth();
+  const canViewCandidate = useHasPermission("candidate:view");
   const effectiveOrgId =
     params?.organizationId !== undefined
       ? params.organizationId
@@ -45,7 +47,7 @@ export function useCandidateActivities(
         limit: params?.limit,
       });
     },
-    enabled: Boolean(candidateId),
+    enabled: Boolean(candidateId) && canViewCandidate,
   });
 }
 
@@ -58,6 +60,7 @@ export function useApplicationActivities(
   },
 ) {
   const { user } = useAuth();
+  const canViewApplication = useHasPermission("application:view");
   const effectiveOrgId =
     params?.organizationId !== undefined
       ? params.organizationId
@@ -80,6 +83,6 @@ export function useApplicationActivities(
         limit: params?.limit,
       });
     },
-    enabled: Boolean(applicationId),
+    enabled: Boolean(applicationId) && canViewApplication,
   });
 }

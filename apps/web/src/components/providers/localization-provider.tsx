@@ -94,7 +94,14 @@ export function LocalizationProvider({ children }: { children: ReactNode }) {
       !hasCookie &&
       localization.defaultLanguage !== locale
     ) {
-      setLocale(localization.defaultLanguage);
+      void Promise.resolve(setLocale(localization.defaultLanguage)).then(() => {
+        try {
+          window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+          document.cookie = `${LOCALE_COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+        } catch {
+          // Best-effort cleanup so org default seeding stays non-sticky
+        }
+      });
     }
   }, [
     user?.id,

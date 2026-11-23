@@ -104,4 +104,55 @@ describe("Scorecard endpoint field isolation", () => {
       ),
     ).rejects.toThrow();
   });
+
+  it("BUG-21: rejects out-of-range scorecard scores (< 1 or > 5) and invalid recommendation enums", async () => {
+    await expect(
+      DtoPipe(SubmitScorecardDto).transform(
+        { scorecard: { overallRating: 6, recommendation: "YES" } },
+        { type: "body", metatype: SubmitScorecardDto },
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      DtoPipe(SubmitScorecardDto).transform(
+        { scorecard: { overallRating: 3, recommendation: "STRONG_NO_FAKE" } },
+        { type: "body", metatype: SubmitScorecardDto },
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    const valid = await DtoPipe(SubmitScorecardDto).transform(
+      { scorecard: { overallRating: 2, recommendation: "STRONG_NO" } },
+      { type: "body", metatype: SubmitScorecardDto },
+    );
+    expect(valid).toEqual({
+      scorecard: { overallRating: 2, recommendation: "STRONG_NO" },
+    });
+  });
+
+  it("BUG-27: submitScorecard forwards acting user details for activity attribution", async () => {
+    const update = vi.fn();
+    const controller = new InterviewsController({
+      update,
+    } as unknown as InterviewsService);
+    const dto = await DtoPipe(SubmitScorecardDto).transform(
+      { scorecard: { overallRating: 5, recommendation: "STRONG_YES" } },
+      { type: "body", metatype: SubmitScorecardDto },
+    );
+
+    controller.submitScorecard("interview-1", dto, {
+      user: {
+        id: "user-admin",
+        name: "Admin Reviewer",
+        role: "ADMIN",
+        organizationId: "org-1",
+      },
+    } as never);
+
+    expect(update).toHaveBeenCalledWith(
+      "interview-1",
+      { scorecard: { overallRating: 5, recommendation: "STRONG_YES" } },
+      "org-1",
+      { id: "user-admin", name: "Admin Reviewer", role: "ADMIN" },
+    );
+  });
 });

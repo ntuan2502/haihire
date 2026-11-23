@@ -1,12 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
+import { env } from "../env";
 import {
   buildDocumentDownloadPath,
   downloadAuthenticatedFile,
   fetchAuthenticatedDocumentPreview,
+  getApiBaseUrl,
+  getBrowserApiBaseUrl,
   getDocumentUrl,
+  refreshAuthSession,
+  resolveOrganizationLogoUrl,
   api,
 } from "./client";
+
+describe("resolveOrganizationLogoUrl (client.ts)", () => {
+  it("resolves browser-reachable /api prefix for default/localhost settings and never leaks INTERNAL_API_URL", () => {
+    const prevInternal = env.INTERNAL_API_URL;
+    const prevPublic = env.NEXT_PUBLIC_API_URL;
+    try {
+      env.INTERNAL_API_URL = "http://internal-api:3001";
+      env.NEXT_PUBLIC_API_URL = "http://localhost:13001";
+
+      expect(getApiBaseUrl()).toBe("/api");
+      expect(getBrowserApiBaseUrl()).toBe("/api");
+      expect(
+        resolveOrganizationLogoUrl("/organizations/public/org-1/logo?v=123"),
+      ).toBe("/api/organizations/public/org-1/logo?v=123");
+    } finally {
+      env.INTERNAL_API_URL = prevInternal;
+      env.NEXT_PUBLIC_API_URL = prevPublic;
+    }
+  });
+
+  it("uses external NEXT_PUBLIC_API_URL when configured and handles passthrough or blank values", () => {
+    const prevPublic = env.NEXT_PUBLIC_API_URL;
+    try {
+      env.NEXT_PUBLIC_API_URL = "https://api.example.com/";
+      expect(
+        resolveOrganizationLogoUrl("/organizations/public/org-1/logo?v=456"),
+      ).toBe("https://api.example.com/organizations/public/org-1/logo?v=456");
+
+      expect(
+        resolveOrganizationLogoUrl("/api/organizations/public/org-1/logo?v=1"),
+      ).toBe("/api/organizations/public/org-1/logo?v=1");
+      expect(
+        resolveOrganizationLogoUrl("https://cdn.example.com/logo.png"),
+      ).toBe("https://cdn.example.com/logo.png");
+      expect(resolveOrganizationLogoUrl("blob:http://localhost/1")).toBe(
+        "blob:http://localhost/1",
+      );
+      expect(resolveOrganizationLogoUrl("data:image/png;base64,AAA")).toBe(
+        "data:image/png;base64,AAA",
+      );
+      expect(resolveOrganizationLogoUrl(null)).toBeNull();
+      expect(resolveOrganizationLogoUrl("   ")).toBeNull();
+    } finally {
+      env.NEXT_PUBLIC_API_URL = prevPublic;
+    }
+  });
+});
 
 describe("getDocumentUrl & buildDocumentDownloadPath (client.ts)", () => {
   beforeEach(() => {
@@ -275,6 +327,76 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
         {},
         { withCredentials: true },
       );
+    }
+  });
+
+  it("deduplicates concurrent refreshAuthSession calls, resolves empty accessToken without hanging, and notifies SSE listeners", async () => {
+    const postSpy = vi.spyOn(axios, "post").mockResolvedValueOnce({
+      data: { hasOrg: true },
+    });
+    const refreshedListener = vi.fn();
+    window.addEventListener("haihire:auth-refreshed", refreshedListener);
+
+    const [first, second] = await Promise.all([
+      refreshAuthSession(),
+      refreshAuthSession(),
+    ]);
+
+    expect(postSpy).toHaveBeenCalledTimes(1);
+    expect(first).toBe("");
+    expect(second).toBe("");
+    expect(refreshedListener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener("haihire:auth-refreshed", refreshedListener);
+  });
+
+  it("preserves session on transient 503/network errors during refreshAuthSession, but dispatches haihire:auth-expired on 401", async () => {
+    localStorage.setItem("haihire_recruiter_user", '{"id":"u1"}');
+    const expiredListener = vi.fn();
+    window.addEventListener("haihire:auth-expired", expiredListener);
+
+    try {
+      const postSpy = vi
+        .spyOn(axios, "post")
+        .mockRejectedValueOnce({
+          response: { status: 503 },
+          message: "Service Unavailable",
+        })
+        .mockRejectedValueOnce({
+          code: "ERR_NETWORK",
+          message: "Network Error",
+        });
+
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        response: { status: 503 },
+      });
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        code: "ERR_NETWORK",
+      });
+
+      // Must NOT wipe session or call /auth/logout on transient errors
+      expect(localStorage.getItem("haihire_recruiter_user")).toBe(
+        '{"id":"u1"}',
+      );
+      expect(postSpy).toHaveBeenCalledTimes(2);
+      expect(expiredListener).not.toHaveBeenCalled();
+
+      // Now simulate definitive 401 refresh rejection
+      postSpy
+        .mockRejectedValueOnce({
+          response: { status: 401 },
+          message: "Refresh token expired",
+        })
+        .mockResolvedValueOnce({ data: { success: true } });
+
+      await expect(refreshAuthSession()).rejects.toMatchObject({
+        response: { status: 401 },
+      });
+
+      expect(localStorage.getItem("haihire_recruiter_user")).toBeNull();
+      expect(expiredListener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("haihire:auth-expired", expiredListener);
     }
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import { SourcingService } from "./sourcing.service";
-import { SourcingChannel } from "@haihire/shared";
+import { SourcingChannel, updateTrackingLinkSchema } from "@haihire/shared";
 
 describe("SourcingService", () => {
   let service: SourcingService;
@@ -183,6 +183,7 @@ describe("SourcingService", () => {
     inMemoryApps.push(
       {
         id: "app-1",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-1",
         stage: "APPLIED",
@@ -192,6 +193,7 @@ describe("SourcingService", () => {
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-2",
         stage: "HIRED",
@@ -201,6 +203,7 @@ describe("SourcingService", () => {
       },
       {
         id: "app-3",
+        organizationId: "org-1",
         jobId: "job-1",
         candidateId: "cand-3",
         stage: "APPLIED",
@@ -246,6 +249,7 @@ describe("SourcingService", () => {
     });
     inMemoryApps.push({
       id: "app-org1",
+      organizationId: "org-1",
       jobId: "job-org1",
       candidateId: "cand-org1",
       stage: "APPLIED",
@@ -267,6 +271,7 @@ describe("SourcingService", () => {
     });
     inMemoryApps.push({
       id: "app-org2",
+      organizationId: "org-2",
       jobId: "job-org2",
       candidateId: "cand-org2",
       stage: "APPLIED",
@@ -550,5 +555,76 @@ describe("SourcingService", () => {
     await expect(
       service.updateLink("org-1", "link-org1", { jobId: "job-org2" }),
     ).rejects.toThrow("Job not found");
+  });
+
+  it("BUG-06: updateTrackingLinkSchema accepts nullable customSource and cleared UTM fields", () => {
+    const parsed = updateTrackingLinkSchema.safeParse({
+      name: "LinkedIn Post",
+      source: SourcingChannel.LINKEDIN,
+      customSource: null,
+      jobId: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("BUG-07: getStats and getAttributionLog exclude soft-deleted candidates", async () => {
+    inMemoryJobs.push({
+      id: "job-sd-1",
+      title: "Backend Role",
+      organizationId: "org-1",
+      deletedAt: null,
+    });
+    inMemoryCandidates.push(
+      {
+        id: "cand-active-1",
+        firstName: "Active",
+        lastName: "Applicant",
+        email: "active@org1.com",
+        organizationId: "org-1",
+        deletedAt: null,
+      },
+      {
+        id: "cand-deleted-1",
+        firstName: "Ghost",
+        lastName: "Deleted",
+        email: "ghost@org1.com",
+        organizationId: "org-1",
+        deletedAt: new Date(),
+      },
+    );
+    inMemoryApps.push(
+      {
+        id: "app-active-1",
+        organizationId: "org-1",
+        jobId: "job-sd-1",
+        candidateId: "cand-active-1",
+        stage: "APPLIED",
+        sourceChannel: SourcingChannel.LINKEDIN,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: "app-deleted-1",
+        organizationId: "org-1",
+        jobId: "job-sd-1",
+        candidateId: "cand-deleted-1",
+        stage: "APPLIED",
+        sourceChannel: SourcingChannel.INDEED,
+        createdAt: new Date().toISOString(),
+      },
+    );
+
+    const stats = await service.getStats("org-1", "all");
+    expect(stats.totalApplications).toBe(1);
+    expect(stats.recentAttributed).toHaveLength(1);
+    expect(stats.recentAttributed[0]?.candidateId).toBe("cand-active-1");
+
+    const log = await service.getAttributionLog("org-1", {});
+    expect(log.data).toHaveLength(1);
+    expect(log.data[0]?.candidateId).toBe("cand-active-1");
   });
 });

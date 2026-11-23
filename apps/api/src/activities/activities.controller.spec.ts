@@ -87,4 +87,49 @@ describe("ActivitiesController RBAC & Guard Authorization", () => {
     );
     expect(rolesGuard.canActivate(context)).toBe(true);
   });
+
+  it("BUG-13: GET /activities/application/:applicationId requires application:view and allows INTERVIEWER and MEMBER", () => {
+    const requiredPermission = Reflect.getMetadata(
+      PERMISSION_KEY,
+      ActivitiesController.prototype.findByApplication,
+    );
+    expect(requiredPermission).toBe("application:view");
+
+    const interviewerCtx = createMockContext(
+      { id: "intv-1", role: Role.INTERVIEWER, organizationId: "org-1" },
+      ActivitiesController.prototype.findByApplication,
+    );
+    const memberCtx = createMockContext(
+      { id: "member-1", role: Role.MEMBER, organizationId: "org-1" },
+      ActivitiesController.prototype.findByApplication,
+    );
+    expect(rolesGuard.canActivate(interviewerCtx)).toBe(true);
+    expect(rolesGuard.canActivate(memberCtx)).toBe(true);
+  });
+
+  it("POST /activities validates candidateId ownership when verifyTargets is enabled", async () => {
+    const { ActivitiesService } = await import("./activities.service");
+    const { AppNotFoundException } = await import("../common/app-exception");
+    const mockPrisma = {
+      candidate: { findFirst: vi.fn().mockResolvedValue(null) },
+      application: { findFirst: vi.fn() },
+      activityLog: { create: vi.fn() },
+    };
+    const svc = new ActivitiesService(mockPrisma as never);
+
+    await expect(
+      svc.createActivity(
+        {
+          organizationId: "org-1",
+          candidateId: "cand-other-org",
+          type: "NOTE_ADDED",
+          title: "Note",
+          description: "Cross-tenant attempt",
+          actorName: "User",
+        },
+        { verifyTargets: true },
+      ),
+    ).rejects.toThrow(AppNotFoundException);
+    expect(mockPrisma.activityLog.create).not.toHaveBeenCalled();
+  });
 });

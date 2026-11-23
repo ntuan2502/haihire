@@ -1,17 +1,21 @@
 #!/usr/bin/env tsx
-import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { parseEnvKeys } from "./check-env-sync.ts";
 
+export const statsDocument = "docs/PROJECT_METRICS.md";
+export const statsBlockPattern =
+  /<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/;
+
 export interface RepoStats {
-  commitHash: string;
-  commitDate: string;
-  author: string;
-  backendTests: number;
-  frontendTests: number;
-  totalUnitTests: number;
-  e2eSpecs: number;
+  models: number;
+  enums: number;
+  modules: number;
+  controllers: number;
+  restRoutes: number;
+  sseRoutes: number;
+  e2eFiles: number;
+  e2eTests: number;
   ciGatesCount: number;
   envKeysCount: number;
   preReleasePackages: string[];
@@ -62,132 +66,96 @@ export function detectPreReleasePackages(): string[] {
   return Array.from(packages).sort();
 }
 
-export function countCiGates(): number {
-  const checkAllPath = resolve(process.cwd(), "scripts", "check-all.ts");
-  if (!existsSync(checkAllPath)) return 18;
-  const content = readFileSync(checkAllPath, "utf-8");
-  const stepMatches = content.match(/id:\s*["'][^"']+["']/g);
-  return stepMatches ? stepMatches.length : 18;
-}
-
-export function countE2eSpecs(): number {
-  const e2eDir = resolve(process.cwd(), "apps", "web", "tests", "e2e");
-  if (!existsSync(e2eDir)) return 34;
-  let total = 0;
-  for (const entry of readdirSync(e2eDir)) {
-    if (!entry.endsWith(".spec.ts")) continue;
-    const content = readFileSync(join(e2eDir, entry), "utf-8");
-    const matches = content.match(/^\s*(?:it|test)\s*\(/gm);
-    if (matches) total += matches.length;
-  }
-  return total || 34;
-}
-
 export function collectRepoStats(): RepoStats {
-  let commitHash = "unknown";
-  let commitDate = new Date().toISOString().split("T")[0];
-  let author = "Antigravity";
+  const api = "apps/api/src";
+  const schema = readFileSync(join(api, "prisma/schema.prisma"), "utf-8");
+  const appModule = readFileSync(join(api, "app.module.ts"), "utf-8");
+  const imports = appModule.match(/^  imports: \[([\s\S]*?)^  \],/m)?.[1];
+  if (!imports) throw new Error("Cannot locate AppModule imports");
 
-  try {
-    commitHash = execSync("git rev-parse --short HEAD", {
-      encoding: "utf-8",
-    }).trim();
-    commitDate = execSync("git log -1 --format=%cd --date=short", {
-      encoding: "utf-8",
-    }).trim();
-    author = execSync("git log -1 --format=%an", { encoding: "utf-8" }).trim();
-  } catch {
-    // fallback if git command fails in runner
-  }
+  const controllers = readdirSync(api, { recursive: true, encoding: "utf-8" })
+    .filter((path) => path.endsWith(".controller.ts"))
+    .map((path) => readFileSync(join(api, path), "utf-8"))
+    .filter((source) => /^@Controller\(/m.test(source));
 
-  // Verified Vitest totals across api (+ scripts/__tests__ & monitoring) and web workspaces
-  const backendTests = 1024;
-  const frontendTests = 591;
-  const totalUnitTests = backendTests + frontendTests;
-  const e2eSpecs = countE2eSpecs();
+  const e2eDir = "apps/web/tests/e2e";
+  const e2eFiles = readdirSync(e2eDir).filter((name) =>
+    name.endsWith(".spec.ts"),
+  );
+  const e2eTests = e2eFiles.reduce((total, name) => {
+    const source = readFileSync(join(e2eDir, name), "utf-8");
+    return total + [...source.matchAll(/^\s*(?:it|test)\s*\(/gm)].length;
+  }, 0);
 
-  const preReleasePackages = detectPreReleasePackages();
-  const ciGatesCount = countCiGates();
-
-  const envPath = resolve(process.cwd(), ".env.example");
-  const envKeys = parseEnvKeys(envPath);
-  const envKeysCount = envKeys ? envKeys.size : 55;
+  const envKeys = parseEnvKeys(resolve(".env.example"));
+  if (!envKeys) throw new Error("Cannot read .env.example");
 
   return {
-    commitHash,
-    commitDate,
-    author,
-    backendTests,
-    frontendTests,
-    totalUnitTests,
-    e2eSpecs,
-    ciGatesCount,
-    envKeysCount,
-    preReleasePackages,
+    models: [...schema.matchAll(/^model\s+/gm)].length,
+    enums: [...schema.matchAll(/^enum\s+/gm)].length,
+    modules: [...imports.matchAll(/^    \w+Module,\s*$/gm)].length,
+    controllers: controllers.length,
+    restRoutes: controllers.reduce(
+      (total, source) =>
+        total +
+        [
+          ...source.matchAll(
+            /^\s+@(?:Get|Post|Put|Patch|Delete|Head|Options|All)\(/gm,
+          ),
+        ].length,
+      0,
+    ),
+    sseRoutes: controllers.reduce(
+      (total, source) => total + [...source.matchAll(/^\s+@Sse\(/gm)].length,
+      0,
+    ),
+    e2eFiles: e2eFiles.length,
+    e2eTests,
+    ciGatesCount: [
+      ...readFileSync("scripts/check-all.ts", "utf-8").matchAll(
+        /^\s+name: "CI Gate \d+:/gm,
+      ),
+    ].length,
+    envKeysCount: envKeys.size,
+    preReleasePackages: detectPreReleasePackages(),
   };
 }
 
 export function generateStatsMarkdown(stats: RepoStats): string {
-  const preReleaseSummary =
-    stats.preReleasePackages.length > 0
-      ? `${stats.preReleasePackages.length} packages (covered by ADR-001)`
-      : "0 (GA only)";
-
   return `<!-- STATS:START -->
-| Metric | Value | Reference / Notes |
-| :--- | :--- | :--- |
-| **Release Target** | \`Unreleased\` | Fresh baseline (post-reset) |
-| **Commit Baseline** | \`${stats.commitHash}\` (${stats.commitDate}) | Author: ${stats.author} |
-| **Workspace Unit Tests** | \`${stats.totalUnitTests} passed\` | Backend: ${stats.backendTests}, Frontend: ${stats.frontendTests} |
-| **E2E Playwright Specs** | \`${stats.e2eSpecs} specs\` | End-to-end recruitment lifecycle |
-| **CI Architecture Gates** | \`${stats.ciGatesCount}/${stats.ciGatesCount} gates\` | \`pnpm check:all\` mandatory gates |
-| **Environment Configuration** | \`${stats.envKeysCount} keys\` | 100% key parity & codebase sync |
-| **Pre-Release Dependencies** | \`${preReleaseSummary}\` | Prisma 7.10.1 Stable GA |
-| **Documentation Link Integrity**| \`100% valid\` | Audited via \`pnpm lint:doc-links\` |
+| Metric | Count |
+| --- | ---: |
+| Prisma models | ${stats.models} |
+| Prisma enums | ${stats.enums} |
+| Project modules registered directly in AppModule | ${stats.modules} |
+| Backend controllers | ${stats.controllers} |
+| API endpoints | ${stats.restRoutes + stats.sseRoutes} (${stats.restRoutes} REST + ${stats.sseRoutes} SSE) |
+| Playwright spec files | ${stats.e2eFiles} |
+| Playwright test declarations | ${stats.e2eTests} |
+| CI gates defined in check-all | ${stats.ciGatesCount} |
+| Keys in the local environment template | ${stats.envKeysCount} |
+| Pre-release dependency declarations | ${stats.preReleasePackages.length} |
 <!-- STATS:END -->`;
 }
 
-export function writeStatsToDoc(
-  filePath: string,
-  statsMarkdown: string,
-): boolean {
-  if (!existsSync(filePath)) return false;
-  const content = readFileSync(filePath, "utf-8");
-  const statsRegex = /<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/;
-  if (statsRegex.test(content)) {
-    const updated = content.replace(statsRegex, statsMarkdown);
-    writeFileSync(filePath, updated, "utf-8");
-    return true;
-  }
-  return false;
-}
-
 export function runStatsCli(): void {
-  const args = process.argv.slice(2);
-  const writeMode = args.includes("--write");
   const stats = collectRepoStats();
-  const md = generateStatsMarkdown(stats);
+  const block = generateStatsMarkdown(stats);
 
-  if (writeMode) {
-    const targetFiles = [
-      resolve(process.cwd(), "README.md"),
-      resolve(process.cwd(), "AGENTS.md"),
-    ];
-
-    console.log("Writing stats block to documentation files...");
-    for (const f of targetFiles) {
-      if (writeStatsToDoc(f, md)) {
-        console.log(`✅ Updated stats in ${f}`);
-      } else {
-        console.log(
-          `ℹ️ Marker <!-- STATS:START --> not found in ${f} (skipped)`,
-        );
-      }
+  if (process.argv.includes("--write")) {
+    const content = readFileSync(statsDocument, "utf-8");
+    if (!statsBlockPattern.test(content)) {
+      throw new Error(`Missing stats block in ${statsDocument}`);
     }
+    writeFileSync(
+      statsDocument,
+      content.replace(statsBlockPattern, block),
+      "utf-8",
+    );
+    console.log(`Updated metrics in ${statsDocument}`);
   } else {
     console.log(JSON.stringify(stats, null, 2));
-    console.log("\nGenerated Markdown Block:\n");
-    console.log(md);
+    console.log(block);
   }
 }
 

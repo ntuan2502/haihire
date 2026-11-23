@@ -683,11 +683,24 @@ describe("InterviewsCalendarView Component Tests", () => {
       expect(handleScheduleDate).toHaveBeenCalledWith(todayDateStr);
     });
 
-    it("invokes onOpenScorecard from week view card", () => {
+    it("opens event details modal from week view card and invokes onOpenScorecard", () => {
       const handleOpenScorecard = vi.fn();
+      const ratedApp: Application = {
+        ...mockApp,
+        interviews: [
+          {
+            ...mockApp.interviews![0],
+            scorecard: {
+              overallRating: 5,
+              recommendation: "STRONG_YES",
+            },
+          },
+        ],
+      };
+
       render(
         <InterviewsCalendarView
-          applications={[mockApp]}
+          applications={[ratedApp]}
           jobs={[mockJob]}
           onScheduleDate={vi.fn()}
           onEditSchedule={vi.fn()}
@@ -700,15 +713,206 @@ describe("InterviewsCalendarView Component Tests", () => {
       });
       fireEvent.click(weekBtn);
 
+      // Week card shows round + score consistently and displays full job title without truncation
+      expect(
+        screen.queryByText("interviews.joinMeetingShort"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/5 ⭐/)).not.toBeInTheDocument();
+      expect(screen.getByText("interviews.roundShort")).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
+      expect(
+        screen.getByText("Senior Backend Developer").className,
+      ).not.toContain("truncate");
+
+      const weekCard = screen.getByRole("button", {
+        name: "Interview with Nguyen Van A at 14:00",
+      });
+      fireEvent.click(weekCard);
+
       const scorecardBtn = screen.getByRole("button", {
-        name: "interviews.scorecardAction",
+        name: "interviews.viewEvaluation",
       });
       fireEvent.click(scorecardBtn);
 
       expect(handleOpenScorecard).toHaveBeenCalledWith(
+        ratedApp,
+        ratedApp.interviews![0],
+      );
+    });
+
+    it("omits initials badge in EventDetailsModal header and provides application link and cancel callback", () => {
+      const handleCancel = vi.fn();
+      render(
+        <InterviewsCalendarView
+          applications={[mockApp]}
+          jobs={[mockJob]}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={vi.fn()}
+          onCancelInterview={handleCancel}
+        />,
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Interview with Nguyen Van A at 14:00",
+        }),
+      );
+
+      expect(screen.queryByText("NA")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "applications.viewApplication" }),
+      ).toHaveAttribute("href", "/applications/app-1");
+
+      const cancelBtn = screen.getByRole("button", {
+        name: "interviews.cancelThisSchedule",
+      });
+      fireEvent.click(cancelBtn);
+      expect(handleCancel).toHaveBeenCalledWith(
         mockApp,
         mockApp.interviews![0],
       );
+    });
+
+    it("displays round, interviewer, and full address/URL in DayDetailsModal (+N)", () => {
+      const longAddress =
+        "Tang 12, Toa nha Bitexco Financial Tower, So 2 Hai Trieu, Phuong Ben Nghe, Quan 1, TP Ho Chi Minh";
+      const busyApp: Application = {
+        ...mockApp,
+        interviews: [
+          {
+            id: "i1",
+            applicationId: "app-1",
+            round: 1,
+            type: "HR_SCREENING",
+            format: "OFFICE",
+            linkOrLocation: longAddress,
+            interviewer: "Tran Thi Minh",
+            scheduledAt: new Date(
+              year,
+              today.getMonth(),
+              today.getDate(),
+              9,
+              0,
+              0,
+            ).toISOString(),
+          },
+          {
+            id: "i2",
+            applicationId: "app-1",
+            scheduledAt: new Date(
+              year,
+              today.getMonth(),
+              today.getDate(),
+              10,
+              0,
+              0,
+            ).toISOString(),
+          },
+          {
+            id: "i3",
+            applicationId: "app-1",
+            scheduledAt: new Date(
+              year,
+              today.getMonth(),
+              today.getDate(),
+              11,
+              0,
+              0,
+            ).toISOString(),
+          },
+          {
+            id: "i4",
+            applicationId: "app-1",
+            scheduledAt: new Date(
+              year,
+              today.getMonth(),
+              today.getDate(),
+              13,
+              0,
+              0,
+            ).toISOString(),
+          },
+          {
+            id: "i5",
+            applicationId: "app-1",
+            round: 2,
+            type: "TECHNICAL",
+            format: "MEET",
+            linkOrLocation: "https://meet.google.com/long-room-abc",
+            interviewer: "Le Van Cuong",
+            scheduledAt: new Date(
+              year,
+              today.getMonth(),
+              today.getDate(),
+              15,
+              0,
+              0,
+            ).toISOString(),
+          },
+        ],
+      };
+
+      render(
+        <InterviewsCalendarView
+          applications={[busyApp]}
+          jobs={[mockJob]}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "+1" }));
+
+      expect(screen.getByText("Tran Thi Minh")).toBeInTheDocument();
+      expect(screen.getByText("Le Van Cuong")).toBeInTheDocument();
+      expect(screen.getByText(longAddress)).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", {
+          name: "https://meet.google.com/long-room-abc",
+        }),
+      ).toHaveAttribute("href", "https://meet.google.com/long-room-abc");
+    });
+
+    it("emits onCalendarStateChange when changing month/year or switching between month and week tabs", () => {
+      const handleStateChange = vi.fn();
+      render(
+        <InterviewsCalendarView
+          applications={[mockApp]}
+          jobs={[mockJob]}
+          calendarMode="month"
+          activeMonth="2026-10"
+          onCalendarStateChange={handleStateChange}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByTitle("interviews.nextPeriod"));
+      expect(handleStateChange).toHaveBeenCalledWith({
+        calendarMode: "month",
+        month: "2026-11",
+        date: null,
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "interviews.week" }));
+      expect(handleStateChange).toHaveBeenCalledWith({
+        calendarMode: "week",
+        month: null,
+        date: "2026-09-28",
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "interviews.selectMonth" }),
+      );
+      fireEvent.click(screen.getByRole("option", { name: "December" }));
+      expect(handleStateChange).toHaveBeenCalledWith({
+        calendarMode: "month",
+        month: "2026-12",
+        date: null,
+      });
     });
   });
 });

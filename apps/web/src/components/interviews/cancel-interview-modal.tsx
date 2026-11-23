@@ -31,7 +31,7 @@ export function CancelInterviewModal({
         candidateName ? (
           <span>
             {t("interviews.cancelInterviewWarning")}{" "}
-            <strong className="font-semibold text-slate-900 dark:text-white">
+            <strong className="font-semibold text-foreground">
               ({candidateName})
             </strong>
           </span>

@@ -26,6 +26,7 @@ import { toInstant } from "../common/date.util";
 import { formatInterviewRecord } from "../interviews/constants";
 
 import { EventsService } from "../events/events.service";
+import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
 
 @Injectable()
 export class JobsService {
@@ -72,12 +73,24 @@ export class JobsService {
     }
 
     let targetOrgId = filter?.organizationId || userOrgId || undefined;
-    let targetOrg: { id: string; name: string; slug: string } | null = null;
+    let targetOrg: {
+      id: string;
+      name: string;
+      slug: string;
+      logoObjectKey?: string | null;
+      logoUpdatedAt?: Date | string | null;
+    } | null = null;
 
     if (filter?.organizationSlug) {
       targetOrg = await this.prisma.organization.findFirst({
         where: { slug: filter.organizationSlug as string },
-        select: { id: true, name: true, slug: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
+        },
       });
       if (!targetOrg) {
         return { data: [], total: 0, page, limit, totalPages: 0 };
@@ -86,7 +99,13 @@ export class JobsService {
     } else if (targetOrgId) {
       targetOrg = await this.prisma.organization.findFirst({
         where: { id: targetOrgId as string },
-        select: { id: true, name: true, slug: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
+        },
       });
     }
 
@@ -151,6 +170,7 @@ export class JobsService {
         : {}),
     };
     const sortOrder = filter?.sortOrder === "asc" ? "asc" : "desc";
+    const sortByApplicants = filter?.sortBy === "applicants" && !isPublic;
     const orderBy: Prisma.JobOrderByWithRelationInput[] = [
       filter?.sortBy === "title"
         ? { title: sortOrder }
@@ -162,8 +182,8 @@ export class JobsService {
     const pagedJobs = await this.prisma.job.findMany({
       where,
       orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: sortByApplicants ? undefined : (page - 1) * limit,
+      take: sortByApplicants ? undefined : limit,
       select: {
         id: true,
         title: true,
@@ -199,14 +219,35 @@ export class JobsService {
     const allApps =
       !isPublic && jobIds.length > 0
         ? await this.prisma.application.findMany({
-            where: { jobId: { in: jobIds } },
+            where: {
+              jobId: { in: jobIds },
+              candidate: { deletedAt: null },
+            },
             select: {
               id: true,
               jobId: true,
               stage: true,
+              candidateId: true,
             },
           })
         : [];
+
+    const appCandidateIds = [
+      ...new Set(allApps.map((a) => a.candidateId).filter(Boolean)),
+    ];
+    const cands =
+      appCandidateIds.length > 0
+        ? await this.prisma.candidate.findMany({
+            where: {
+              id: { in: appCandidateIds },
+              ...(targetOrg ? { organizationId: targetOrg.id } : {}),
+            },
+            select: { id: true, deletedAt: true },
+          })
+        : [];
+    const deletedCandidateIds = new Set(
+      cands.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
 
     const appCountMap = new Map<
       string,
@@ -214,6 +255,7 @@ export class JobsService {
     >();
     for (const app of allApps) {
       if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
+      if (app.candidateId && deletedCandidateIds.has(app.candidateId)) continue;
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
       }
@@ -222,19 +264,33 @@ export class JobsService {
       item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
     }
 
+    const orderedPagedJobs = sortByApplicants
+      ? [...pagedJobs]
+          .sort((a, b) => {
+            const countA = appCountMap.get(a.id)?.total ?? 0;
+            const countB = appCountMap.get(b.id)?.total ?? 0;
+            const diff = countA - countB;
+            if (diff !== 0) {
+              return sortOrder === "asc" ? diff : -diff;
+            }
+            return a.id.localeCompare(b.id);
+          })
+          .slice((page - 1) * limit, page * limit)
+      : pagedJobs;
+
     const orgMap = new Map<
       string,
-      { id: string; name: string; slug: string }
+      { id: string; name: string; slug: string; logoUrl: string | null }
     >();
     if (targetOrg) {
-      orgMap.set(targetOrg.id, targetOrg);
+      orgMap.set(targetOrg.id, attachOrganizationLogoUrl(targetOrg));
     } else {
       const allOrgs = await this.prisma.organization.findMany({
         where: {
           id: {
             in: [
               ...new Set(
-                pagedJobs.flatMap((job) =>
+                orderedPagedJobs.flatMap((job) =>
                   job.organizationId ? [job.organizationId] : [],
                 ),
               ),
@@ -245,15 +301,17 @@ export class JobsService {
           id: true,
           name: true,
           slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
         },
       });
       for (const o of allOrgs) {
-        orgMap.set(o.id, o);
+        orgMap.set(o.id, attachOrganizationLogoUrl(o));
       }
     }
 
     return {
-      data: pagedJobs.map((job) => ({
+      data: orderedPagedJobs.map((job) => ({
         ...job,
         organization: job.organizationId
           ? (orgMap.get(job.organizationId) ?? null)
@@ -304,7 +362,7 @@ export class JobsService {
     if (!job || job.deletedAt) {
       if (!isPublic && tenantOrgId) {
         const otherOrgJob = await this.prisma.job.findFirst({
-          where: { id },
+          where: { id, deletedAt: null },
           select: { id: true, organizationId: true },
         });
         if (
@@ -315,7 +373,7 @@ export class JobsService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
             "Access denied: job belongs to another organization.",
-            { id, organizationId: otherOrgJob.organizationId },
+            { id },
           );
         }
       }
@@ -334,14 +392,21 @@ export class JobsService {
       );
     }
 
-    let organization: { id: string; name: string; slug: string } | null = null;
+    let organization: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl?: string | null;
+    } | null = null;
     if (job.organizationId) {
-      organization = await this.prisma.organization.findFirst({
+      const orgRow = await this.prisma.organization.findFirst({
         where: { id: job.organizationId as string },
         select: {
           id: true,
           name: true,
           slug: true,
+          logoObjectKey: true,
+          logoUpdatedAt: true,
           defaultLanguage: true,
           timezone: true,
           dateFormat: true,
@@ -350,6 +415,7 @@ export class JobsService {
           defaultCurrency: true,
         },
       });
+      organization = orgRow ? attachOrganizationLogoUrl(orgRow) : null;
     }
 
     if (isPublic) {
@@ -362,7 +428,10 @@ export class JobsService {
     }
 
     const applications = await this.prisma.application.findMany({
-      where: { jobId: id },
+      where: {
+        jobId: id,
+        candidate: { deletedAt: null },
+      },
       select: {
         id: true,
         candidateId: true,
@@ -395,13 +464,20 @@ export class JobsService {
               phone: true,
               resumeUrl: true,
               resumeFileName: true,
+              deletedAt: true,
             },
           })
         : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const deletedCandIds = new Set(
+      candidates.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
+    );
+    const activeApplications = applications.filter(
+      (a) => !deletedCandIds.has(a.candidateId),
+    );
 
     // Fetch interviews for each application
-    const appIds = [...new Set(applications.map((a) => a.id))];
+    const appIds = [...new Set(activeApplications.map((a) => a.id))];
     const jobInterviews =
       appIds.length > 0
         ? await this.prisma.interview.findMany({
@@ -421,7 +497,7 @@ export class JobsService {
         ? "LAST_FIRST"
         : "FIRST_LAST";
 
-    const populatedApps = applications.map((a) => {
+    const populatedApps = activeApplications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
       const resolvedCandidateName = candidate
         ? formatCandidateDisplayName(candidate, orgOrder) || "Unknown"
@@ -517,6 +593,8 @@ export class JobsService {
         select: {
           id: true,
           title: true,
+          status: true,
+          createdAt: true,
         },
       });
 
@@ -530,14 +608,28 @@ export class JobsService {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
 
-      const found = activeJobs.find((j) => {
-        if (j.id.startsWith(jobSlug)) return true;
-        const titleSlug = slugify(j.title);
-        if (titleSlug === jobSlug) return true;
-        if (`${titleSlug}-${j.id.slice(0, 8)}` === jobSlug) return true;
-        if (jobSlug.endsWith(j.id)) return true;
-        return false;
+      const statusRank = (status?: string) => (status === "PUBLISHED" ? 0 : 1);
+      const sortedJobs = [...activeJobs].sort((a, b) => {
+        const rankDiff = statusRank(a.status) - statusRank(b.status);
+        if (rankDiff !== 0) return rankDiff;
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
       });
+
+      const found =
+        sortedJobs.find((j) => {
+          const titleSlug = slugify(j.title);
+          const fullSlug = titleSlug
+            ? `${titleSlug}-${j.id.slice(0, 8)}`
+            : j.id;
+          return fullSlug === jobSlug || jobSlug.endsWith(j.id);
+        }) ??
+        sortedJobs.find((j) => {
+          const titleSlug = slugify(j.title);
+          return Boolean(titleSlug && titleSlug === jobSlug);
+        }) ??
+        sortedJobs.find((j) => jobSlug.length >= 8 && j.id.startsWith(jobSlug));
 
       if (found) {
         matchedJob = found;
@@ -701,6 +793,21 @@ export class JobsService {
         organizationId: orgId,
         data: { jobId: id },
       });
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
+      this.eventsService?.emit({
+        type: "SOURCING_CHANGED",
+        organizationId: orgId,
+        data: { jobId: id },
+      });
     }
 
     return { success: true, message: `Job ${id} deleted successfully` };
@@ -829,11 +936,14 @@ export class JobsService {
         });
       }
 
+      const existingMap = new Map(existingStages.map((e) => [e.id, e]));
+      let syncedApplicationStages = false;
+
       for (const stageInput of dto.stages) {
-        if (
-          stageInput.id &&
-          existingStages.some((e) => e.id === stageInput.id)
-        ) {
+        const existingStage = stageInput.id
+          ? existingMap.get(stageInput.id)
+          : undefined;
+        if (stageInput.id && existingStage) {
           await tx.pipelineStage.updateMany({
             where: {
               id: stageInput.id,
@@ -849,7 +959,34 @@ export class JobsService {
               version: { increment: 1 },
             },
           });
+          if (existingStage.category !== stageInput.category) {
+            await tx.application.updateMany({
+              where: {
+                organizationId: orgId,
+                jobId,
+                stageId: stageInput.id,
+              },
+              data: {
+                stage: stageInput.category,
+                updatedAt: toInstant(),
+              },
+            });
+            syncedApplicationStages = true;
+          }
         } else {
+          if (stageInput.id) {
+            const conflicting = await tx.pipelineStage.findFirst({
+              where: { id: stageInput.id },
+              select: { id: true },
+            });
+            if (conflicting) {
+              throw new AppBadRequestException(
+                APP_ERROR_CODES.VALIDATION_ERROR,
+                "Pipeline stage ID belongs to another job or organization.",
+                { jobId, stageId: stageInput.id },
+              );
+            }
+          }
           await tx.pipelineStage.create({
             data: {
               id: stageInput.id || crypto.randomUUID(),
@@ -865,10 +1002,12 @@ export class JobsService {
         }
       }
 
-      return tx.pipelineStage.findMany({
+      const nextStages = await tx.pipelineStage.findMany({
         where: { organizationId: orgId, jobId },
         orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
       });
+
+      return { nextStages, syncedApplicationStages };
     });
 
     this.eventsService?.emit({
@@ -876,7 +1015,14 @@ export class JobsService {
       organizationId: orgId,
       data: { jobId },
     });
+    if (stages.syncedApplicationStages) {
+      this.eventsService?.emit({
+        type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { jobId },
+      });
+    }
 
-    return stages;
+    return stages.nextStages;
   }
 }

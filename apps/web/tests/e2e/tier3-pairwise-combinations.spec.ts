@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures/auth-fixtures";
 import { PublicCareerPage } from "./pages/PublicCareerPage";
+import { createIsolatedTenant } from "./fixtures/seed-helpers";
 import { randomUUID } from "node:crypto";
 
 test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
@@ -34,99 +35,133 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   });
 
   test("T3-E2E-02 [F09 x F16]: Switching organization isolates TanStack Query cache without data leakage", async ({
-    adminPage,
+    browser,
+    playwright,
+    baseURL,
   }) => {
-    // 1. Ensure secondary organization exists for admin user to switch into
-    const secondaryOrgSlug = `e2e-sub-org-${Date.now()}`;
-    const createOrgRes = await adminPage.request.post("/api/organizations", {
+    const resolvedBase = baseURL || "http://localhost:13000";
+    const apiCtx = await playwright.request.newContext({
+      baseURL: resolvedBase,
+    });
+
+    // Use a dedicated isolated multi-org user so shared Demo 1 accounts are never mutated
+    const primarySession = await createIsolatedTenant(
+      apiCtx,
+      "org-switch",
+      resolvedBase,
+    );
+    const authHeaders = {
+      Cookie: primarySession.cookieHeader,
+      Authorization: `Bearer ${primarySession.accessToken}`,
+    };
+
+    const candRes = await apiCtx.post("/api/candidates", {
+      headers: authHeaders,
+      data: {
+        firstName: "Primary",
+        lastName: "SecretCandidate",
+        email: `primary-only-${randomUUID().slice(0, 6)}@example.com`,
+      },
+    });
+    expect(candRes.status()).toBe(201);
+
+    const secondaryOrgSlug = `e2e-sub-org-${randomUUID().slice(0, 8)}`;
+    const createOrgRes = await apiCtx.post("/api/organizations", {
+      headers: authHeaders,
       data: {
         name: "Secondary Workspace Org",
         slug: secondaryOrgSlug,
       },
     });
     expect([200, 201]).toContain(createOrgRes.status());
-    const secondaryOrg = (await createOrgRes.json()) as {
-      id: string;
-      name: string;
+    const createOrgBody = (await createOrgRes.json()) as {
+      organization?: { id: string; name: string };
+      id?: string;
+      name?: string;
+    };
+    const secondaryOrg = createOrgBody.organization ?? {
+      id: createOrgBody.id ?? "",
+      name: createOrgBody.name ?? "Secondary Workspace Org",
     };
 
-    // 2. Load dashboard as Admin in primary organization
-    await adminPage.goto("/dashboard");
-    const navHeader = adminPage.locator("header, nav").first();
-    await expect(navHeader).toBeVisible({ timeout: 10000 });
-
-    // 3. Open user profile menu in navbar
-    const userMenuTrigger = adminPage
-      .locator(
-        'button[aria-label="User profile"], button[aria-label="Hồ sơ người dùng"], [data-testid="user-menu-trigger"]',
-      )
-      .first();
-    await expect(userMenuTrigger).toBeVisible({ timeout: 6000 });
-    await userMenuTrigger.click();
-
-    // 4. Click organization switcher box inside user menu
-    const orgBoxButton = adminPage
-      .locator(
-        "button[aria-expanded][aria-label], button:has(svg.lucide-building-2)",
-      )
-      .first();
-    await expect(orgBoxButton).toBeVisible({ timeout: 5000 });
-    await orgBoxButton.click();
-
-    // 5. Select the secondary organization from the list
-    const secondaryOrgItem = adminPage
-      .locator(
-        `button[role="menuitem"]:has-text("${secondaryOrg.name}"), button[role="menuitem"]:has-text("Secondary Workspace")`,
-      )
-      .first();
-    await expect(secondaryOrgItem).toBeVisible({ timeout: 5000 });
-    await secondaryOrgItem.click();
-
-    // 6. Verify URL remains on dashboard and TanStack Query cache is isolated
-    await expect(adminPage).toHaveURL(/\/dashboard/, { timeout: 10000 });
-
-    // 7. Verify TanStack Query cache reflects new organization context via page.evaluate
-    const activeCacheKeys = await adminPage.evaluate(() => {
-      const qc = (
-        window as unknown as {
-          __REACT_QUERY_CLIENT__?: {
-            getQueryCache: () => {
-              getAll: () => Array<{ queryKey: unknown[] }>;
-            };
-          };
-        }
-      ).__REACT_QUERY_CLIENT__;
-      if (!qc) return [];
-      return qc
-        .getQueryCache()
-        .getAll()
-        .map((q) => q.queryKey);
+    // Restore active org to Primary via API before launching browser UI
+    const switchBackRes = await apiCtx.post("/api/organizations/switch", {
+      headers: authHeaders,
+      data: { organizationId: primarySession.orgId },
     });
+    expect(switchBackRes.ok()).toBe(true);
+    await apiCtx.dispose();
 
-    // Check that queries were dispatched or scoped to the new tenant ID
-    expect(activeCacheKeys.length).toBeGreaterThan(0);
-    expect(
-      activeCacheKeys.some((key) =>
-        JSON.stringify(key).includes(secondaryOrg.id),
-      ),
-    ).toBe(true);
+    const context = await browser.newContext({ baseURL: resolvedBase });
+    await context.addCookies(primarySession.cookies);
+    const isolatedPage = await context.newPage();
 
-    // 8. Navigate to candidates view under new organization: primary candidates must not leak
-    await adminPage.goto("/dashboard/candidates");
-    const candidatesContainer = adminPage
-      .locator("main, [data-testid='candidate-list']")
-      .first();
-    await expect(candidatesContainer).toBeVisible({ timeout: 10000 });
+    try {
+      await isolatedPage.goto("/dashboard");
+      const navHeader = isolatedPage.locator("header, nav").first();
+      await expect(navHeader).toBeVisible({ timeout: 10000 });
 
-    const newOrgPageText = await adminPage.locator("body").textContent();
-    expect(newOrgPageText).not.toContain("Test Applicant");
+      // Open TeamSwitcher in sidebar header and select Secondary Workspace Org
+      const orgSwitcher = isolatedPage
+        .locator('[data-testid="org-switcher-trigger"]')
+        .first();
+      await expect(orgSwitcher).toBeVisible({ timeout: 8000 });
+      await orgSwitcher.click();
+
+      const secondaryOrgItem = isolatedPage
+        .locator('[role="menuitem"]')
+        .filter({ hasText: secondaryOrg.name })
+        .first();
+      await expect(secondaryOrgItem).toBeVisible({ timeout: 5000 });
+      await secondaryOrgItem.click();
+
+      await expect(isolatedPage).toHaveURL(/\/dashboard/, { timeout: 10000 });
+
+      // Verify TanStack Query cache reflects new organization context
+      await expect(async () => {
+        const activeCacheKeys = await isolatedPage.evaluate(() => {
+          const qc = (
+            window as unknown as {
+              __REACT_QUERY_CLIENT__?: {
+                getQueryCache: () => {
+                  getAll: () => Array<{ queryKey: unknown[] }>;
+                };
+              };
+            }
+          ).__REACT_QUERY_CLIENT__;
+          if (!qc) return [];
+          return qc
+            .getQueryCache()
+            .getAll()
+            .map((q) => q.queryKey);
+        });
+        expect(activeCacheKeys.length).toBeGreaterThan(0);
+        expect(
+          activeCacheKeys.some((key) =>
+            JSON.stringify(key).includes(secondaryOrg.id),
+          ),
+        ).toBe(true);
+      }).toPass({ timeout: 8000 });
+
+      // Navigate to candidates view under new organization: primary candidates must not leak
+      await isolatedPage.goto("/candidates");
+      const candidatesContainer = isolatedPage
+        .locator("main, [data-testid='candidate-list']")
+        .first();
+      await expect(candidatesContainer).toBeVisible({ timeout: 10000 });
+
+      const newOrgPageText = await isolatedPage.locator("body").textContent();
+      expect(newOrgPageText).not.toContain("SecretCandidate");
+    } finally {
+      await context.close();
+    }
   });
 
   test("T3-E2E-03 [F05 x F11]: Protected route enforces authentication cookie and redirects guest", async ({
     page,
   }) => {
-    // Unauthenticated guest attempts to access /dashboard/settings
-    await page.goto("/dashboard/settings");
+    // Unauthenticated guest attempts to access /settings
+    await page.goto("/settings");
     await page.waitForURL(/\/auth\/login/, { timeout: 10000 });
 
     expect(page.url()).toContain("/auth/login");
@@ -137,7 +172,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   test("T3-E2E-04 [F14 x F16]: Candidate table pagination queries database with clean slice", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
 
     // 1. Unconditionally wait for candidate table and rows on Page 1
     const candidateRows = adminPage.locator("table tbody tr");
@@ -167,13 +202,15 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     // 4. Assert URL query is strictly updated to page=2
     await expect(adminPage).toHaveURL(/page=2/, { timeout: 8000 });
 
-    // 5. Assert page 2 renders a distinct candidate slice
-    await expect(candidateRows.first()).toBeVisible({ timeout: 8000 });
-    const firstCandidatePage2 = await candidateRows
-      .first()
-      .locator("td")
-      .first()
-      .textContent();
+    // 5. Assert page 2 renders a distinct candidate slice once placeholderData resolves
+    const firstRowCell = candidateRows.first().locator("td").first();
+    await expect(firstRowCell).not.toHaveText(
+      (firstCandidatePage1 ?? "").trim(),
+      {
+        timeout: 8000,
+      },
+    );
+    const firstCandidatePage2 = await firstRowCell.textContent();
     expect(firstCandidatePage2).not.toEqual(firstCandidatePage1);
 
     // 6. Assert pagination counter displays Page 2
@@ -184,12 +221,12 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
   test("T3-E2E-05 [F01 x F16]: Navigating between modules maintains active organization context", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/jobs");
+    await adminPage.goto("/jobs");
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
 
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list'], h1").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -197,22 +234,21 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     // Header remains visible with consistent context
     const header = adminPage.locator("header, nav").first();
     await expect(header).toBeVisible();
-    expect(adminPage.url()).toContain("/dashboard/candidates");
+    expect(adminPage.url()).toContain("/candidates");
   });
 
   test("T3-E2E-06 [F11 x F16]: Authenticated browser context shares session across multiple pages", async ({
     adminPage,
-    context,
   }) => {
     await adminPage.goto("/dashboard");
     await expect(adminPage.locator("header, nav").first()).toBeVisible({
       timeout: 10000,
     });
 
-    // Open a second tab in same browser context
-    const newPage = await context.newPage();
-    await newPage.goto("/dashboard/jobs");
-    await expect(newPage).toHaveURL(/\/dashboard\/jobs/, { timeout: 10000 });
+    // Open a second tab in the same authenticated browser context
+    const newPage = await adminPage.context().newPage();
+    await newPage.goto("/jobs");
+    await expect(newPage).toHaveURL(/\/jobs/, { timeout: 10000 });
     expect(newPage.url()).not.toContain("/auth/login");
     await newPage.close();
   });
@@ -221,7 +257,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     memberPage,
   }) => {
     const seededJobId = "00000000-0000-4000-8000-000000000101";
-    await memberPage.goto(`/dashboard/jobs/${seededJobId}/pipeline`);
+    await memberPage.goto(`/jobs/${seededJobId}/pipeline`);
     await expect(
       memberPage.locator("main, [data-testid^='stage-pill-']").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -234,19 +270,13 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     adminPage,
   }) => {
     await adminPage.goto("/dashboard");
-    const userMenuTrigger = adminPage
-      .locator(
-        'button[aria-label="User profile"], button[aria-label="Hồ sơ người dùng"], [data-testid="user-menu-trigger"]',
-      )
-      .first();
-    await expect(userMenuTrigger).toBeVisible({ timeout: 8000 });
-    await userMenuTrigger.click();
-
     const orgSwitcher = adminPage
-      .locator(
-        "button[aria-expanded][aria-label], button:has(svg.lucide-building-2)",
-      )
+      .locator('[data-testid="org-switcher-trigger"]')
       .first();
-    await expect(orgSwitcher).toBeVisible({ timeout: 5000 });
+    await expect(orgSwitcher).toBeVisible({ timeout: 8000 });
+    await orgSwitcher.click();
+
+    const menuItems = adminPage.locator('[role="menuitem"]');
+    await expect(menuItems.first()).toBeVisible({ timeout: 5000 });
   });
 });

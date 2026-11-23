@@ -68,7 +68,7 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
       },
     });
     expect(applyResponse.ok()).toBe(true);
-    await page.goto(`/dashboard/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
+    await page.goto(`/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
 
     // Ensure stage pill for APPLIED and SCREENING are visible
     const appliedPill = page.locator('[data-testid="stage-pill-APPLIED"]');
@@ -221,7 +221,7 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
 
     // 6. Verify toast error appears
     const toastLocator = page.locator(
-      ".Toastify__toast, [role='alert'], [role='status']",
+      "[data-sonner-toast], [role='alert'], [role='status']",
     );
     await expect(toastLocator.first()).toBeVisible({ timeout: 5000 });
     const toastText = await toastLocator.first().textContent();

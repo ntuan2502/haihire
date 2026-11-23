@@ -82,6 +82,7 @@ export const sourcingApi = {
     search?: string;
     jobId?: string;
     source?: SourcingChannel;
+    timeRange?: TimeRangeFilter;
   }): Promise<PaginatedResult<AttributionLogItem>> => {
     const response = await api.get<PaginatedResult<AttributionLogItem>>(
       "/sourcing/attribution-log",

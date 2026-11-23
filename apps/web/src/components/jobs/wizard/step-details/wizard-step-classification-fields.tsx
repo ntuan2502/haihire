@@ -36,9 +36,9 @@ export function WizardStepClassificationFields({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
       <div>
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+        <label className="block text-xs font-medium text-foreground mb-1.5">
           {t("jobs.wizard.employmentTypeLabel")}{" "}
-          <span className="text-rose-500">*</span>
+          <span className="text-destructive">*</span>
         </label>
         <CustomSelect
           value={employmentType || ""}
@@ -55,21 +55,22 @@ export function WizardStepClassificationFields({
           ]}
           className="w-full"
           triggerClassName={cn(
-            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-            showEmploymentTypeError && "border-rose-500 ring-1 ring-rose-500",
+            "w-full h-10 text-xs font-normal",
+            showEmploymentTypeError &&
+              "border-destructive ring-1 ring-destructive/30",
           )}
         />
         {showEmploymentTypeError && (
-          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+          <p className="text-[11px] text-destructive mt-1 font-medium">
             {t("jobs.wizard.employmentTypeError")}
           </p>
         )}
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+        <label className="block text-xs font-medium text-foreground mb-1.5">
           {t("jobs.wizard.experienceLevelLabel")}{" "}
-          <span className="text-rose-500">*</span>
+          <span className="text-destructive">*</span>
         </label>
         <CustomSelect
           value={experienceLevel || ""}
@@ -87,21 +88,22 @@ export function WizardStepClassificationFields({
           ]}
           className="w-full"
           triggerClassName={cn(
-            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-            showExperienceLevelError && "border-rose-500 ring-1 ring-rose-500",
+            "w-full h-10 text-xs font-normal",
+            showExperienceLevelError &&
+              "border-destructive ring-1 ring-destructive/30",
           )}
         />
         {showExperienceLevelError && (
-          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+          <p className="text-[11px] text-destructive mt-1 font-medium">
             {t("jobs.wizard.experienceLevelError")}
           </p>
         )}
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+        <label className="block text-xs font-medium text-foreground mb-1.5">
           {t("jobs.wizard.workplaceLabel")}{" "}
-          <span className="text-rose-500">*</span>
+          <span className="text-destructive">*</span>
         </label>
         <CustomSelect
           value={workplace || ""}
@@ -117,12 +119,13 @@ export function WizardStepClassificationFields({
           ]}
           className="w-full"
           triggerClassName={cn(
-            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-            showWorkplaceError && "border-rose-500 ring-1 ring-rose-500",
+            "w-full h-10 text-xs font-normal",
+            showWorkplaceError &&
+              "border-destructive ring-1 ring-destructive/30",
           )}
         />
         {showWorkplaceError && (
-          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+          <p className="text-[11px] text-destructive mt-1 font-medium">
             {t("jobs.wizard.workplaceError")}
           </p>
         )}

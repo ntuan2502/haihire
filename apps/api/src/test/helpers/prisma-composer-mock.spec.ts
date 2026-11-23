@@ -202,6 +202,51 @@ describe("prisma-composer-mock helper", () => {
       expect(byDateDesc.map((r) => r.id)).toEqual(["c1", "c3", "c2"]);
     });
 
+    it("supports Prisma array orderBy with { sort, nulls: 'last' | 'first' } and tie-breakers", async () => {
+      const mock = createMockPrismaService({
+        organizationMember: [
+          {
+            id: "m-null-1",
+            organizationId: "org-3",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-null-2",
+            organizationId: "org-1",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-recent",
+            organizationId: "org-2",
+            lastAccessedAt: new Date("2026-11-20T10:00:00Z"),
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+        ],
+      });
+
+      const rows = await (
+        mock.organizationMember as unknown as {
+          findMany: (
+            args: unknown,
+          ) => Promise<Array<{ organizationId: string }>>;
+        }
+      ).findMany({
+        orderBy: [
+          { lastAccessedAt: { sort: "desc", nulls: "last" } },
+          { createdAt: "asc" },
+          { organizationId: "asc" },
+        ],
+      });
+
+      expect(rows.map((r) => r.organizationId)).toEqual([
+        "org-2",
+        "org-1",
+        "org-3",
+      ]);
+    });
+
     it("rolls back store mutations when a $transaction callback throws", async () => {
       const mock = createMockPrismaService({
         job: [{ id: "j1", title: "Original Title" }],
@@ -241,6 +286,124 @@ describe("prisma-composer-mock helper", () => {
         }
       ).findMany();
       expect(logs).toHaveLength(0);
+    });
+
+    it("supports composite unique key lookup in upsert and findUnique", async () => {
+      const mock = createMockPrismaService({
+        organizationMember: [
+          {
+            id: "mem-1",
+            organizationId: "org-1",
+            userId: "user-1",
+            role: "MEMBER",
+          },
+        ],
+      });
+
+      const table = mock.organizationMember as unknown as {
+        upsert: (args: unknown) => Promise<Record<string, unknown>>;
+        findUnique: (args: unknown) => Promise<Record<string, unknown> | null>;
+        findMany: () => Promise<Array<Record<string, unknown>>>;
+      };
+
+      const updated = await table.upsert({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-1" },
+        },
+        update: { role: "RECRUITER" },
+        create: {
+          id: "mem-dup",
+          organizationId: "org-1",
+          userId: "user-1",
+          role: "ADMIN",
+        },
+      });
+
+      expect(updated.role).toBe("RECRUITER");
+      expect(await table.findMany()).toHaveLength(1);
+
+      const found = await table.findUnique({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-1" },
+        },
+      });
+      expect(found?.id).toBe("mem-1");
+
+      const inserted = await table.upsert({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-2" },
+        },
+        update: { role: "RECRUITER" },
+        create: {
+          id: "mem-2",
+          organizationId: "org-1",
+          userId: "user-2",
+          role: "INTERVIEWER",
+        },
+      });
+      expect(inserted.id).toBe("mem-2");
+      expect(await table.findMany()).toHaveLength(2);
+    });
+
+    it("matches populated nested relation filters and relation array predicates while allowing unpopulated flat mocks", async () => {
+      const mock = createMockPrismaService({
+        application: [
+          {
+            id: "app-active",
+            organizationId: "org-1",
+            candidate: { id: "c-1", deletedAt: null },
+          },
+          {
+            id: "app-deleted-candidate",
+            organizationId: "org-1",
+            candidate: {
+              id: "c-2",
+              deletedAt: new Date("2026-11-01T00:00:00Z"),
+            },
+          },
+          {
+            id: "app-flat-unpopulated",
+            organizationId: "org-1",
+          },
+        ],
+        user: [
+          {
+            id: "u-1",
+            memberships: [{ organizationId: "org-1", role: "ADMIN" }],
+          },
+          {
+            id: "u-2",
+            memberships: [{ organizationId: "org-2", role: "MEMBER" }],
+          },
+        ],
+      });
+
+      const appTable = mock.application as unknown as {
+        findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+      };
+      const matchedApps = await appTable.findMany({
+        where: {
+          organizationId: "org-1",
+          candidate: { deletedAt: null },
+        },
+      });
+      expect(matchedApps.map((a) => a.id)).toEqual([
+        "app-active",
+        "app-flat-unpopulated",
+      ]);
+
+      const userTable = mock.user as unknown as {
+        findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+      };
+      const org1Users = await userTable.findMany({
+        where: { memberships: { some: { organizationId: "org-1" } } },
+      });
+      expect(org1Users.map((u) => u.id)).toEqual(["u-1"]);
+
+      const nonOrg1Users = await userTable.findMany({
+        where: { memberships: { none: { organizationId: "org-1" } } },
+      });
+      expect(nonOrg1Users.map((u) => u.id)).toEqual(["u-2"]);
     });
   });
 });

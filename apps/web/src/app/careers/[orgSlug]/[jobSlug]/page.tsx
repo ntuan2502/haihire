@@ -113,6 +113,11 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
   }
 
   const orgName = org?.name || orgSlug;
+  const jsonLdLogoUrl = org?.logoUrl
+    ? org.logoUrl.startsWith("http")
+      ? org.logoUrl
+      : `/api${org.logoUrl.startsWith("/") ? org.logoUrl : `/${org.logoUrl}`}`
+    : null;
 
   // Structured Data (JSON-LD) for Google Jobs Indexing
   const jsonLd = {
@@ -128,6 +133,7 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
       "@type": "Organization",
       name: orgName,
       sameAs: `/careers/${orgSlug}`,
+      ...(jsonLdLogoUrl ? { logo: jsonLdLogoUrl } : {}),
     },
     jobLocation: {
       "@type": "Place",

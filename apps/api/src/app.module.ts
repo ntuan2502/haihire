@@ -13,6 +13,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
 import { CandidatesModule } from "./candidates/candidates.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { InterviewsModule } from "./interviews/interviews.module";
 import { AuthModule } from "./auth/auth.module";
 import { EventsModule } from "./events/events.module";
@@ -74,6 +75,7 @@ import { MetricsModule } from "./metrics/metrics.module";
     ApplicationsModule,
     CandidatesModule,
     InterviewsModule,
+    NotificationsModule,
     ActivitiesModule,
     EmailModule,
     SourcingModule,

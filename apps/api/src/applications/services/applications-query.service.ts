@@ -10,6 +10,7 @@ import {
 } from "@haihire/shared";
 import {
   AppBadRequestException,
+  AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
@@ -31,6 +32,57 @@ function createEmptyStageCounts(): Record<ApplicationStage, number> {
   );
 }
 
+/**
+ * Redacts personal identifying information and resume metadata when the caller
+ * lacks `candidate:view` permission.
+ */
+function maskCandidateRecord<T extends Record<string, unknown>>(
+  candidate: T,
+): T & { name: string } {
+  return {
+    ...candidate,
+    name: "[Masked]",
+    firstName: "[Masked]",
+    lastName: "[Masked]",
+    displayName: "[Masked]",
+    gender: null,
+    dateOfBirth: null,
+    email: "",
+    phone: null,
+    resumeUrl: null,
+    resumeFileName: null,
+    resumeFileSize: null,
+    resumeMimeType: null,
+    resumeFileId: null,
+  };
+}
+
+function maskApplicationFields<
+  TCandidate extends Record<string, unknown>,
+  TApp extends Record<string, unknown>,
+  TEmpty extends null | undefined,
+>(
+  app: TApp,
+  candidate: TCandidate | null | undefined,
+  emptyCandidateFallback: TEmpty,
+) {
+  return {
+    ...app,
+    candidate: candidate
+      ? maskCandidateRecord(candidate)
+      : emptyCandidateFallback,
+    candidateName: "[Masked]",
+    candidateEmail: "",
+    candidatePhone: null as string | null,
+    resumeUrl: "",
+    resumeFileName: "",
+    resumeFileSize: null as number | null,
+    resumeMimeType: null as string | null,
+    resumeFileId: null as string | null,
+    interviews: [] as Array<Record<string, unknown>>,
+  };
+}
+
 @Injectable()
 export class ApplicationsQueryService {
   constructor(
@@ -48,6 +100,7 @@ export class ApplicationsQueryService {
     jobId: string,
     organizationId?: string,
     options?: { limit?: number; offset?: number },
+    fullCandidateAccess = true,
   ) {
     const job = await this.prisma.job.findFirst({
       where: { id: jobId, deletedAt: null },
@@ -96,24 +149,14 @@ export class ApplicationsQueryService {
       include: {
         candidate: true,
         interviews: true,
+        applicationNotes: true,
       },
       orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
       skip,
       take,
     });
 
-    if (applications.length === 0) {
-      applications = await this.prisma.application.findMany({
-        where: { jobId },
-        include: {
-          candidate: true,
-          interviews: true,
-        },
-        orderBy: [{ orderIndex: "asc" }, { id: "asc" }],
-        skip,
-        take,
-      });
-    }
+    applications = applications.filter((app) => !app.candidate?.deletedAt);
 
     if (applications.length === 0) {
       return [];
@@ -153,6 +196,17 @@ export class ApplicationsQueryService {
       applications = applications.filter((app) => {
         const c = candidateMap!.get(app.candidateId);
         return !c?.deletedAt;
+      });
+    }
+
+    if (!fullCandidateAccess) {
+      return applications.map((app) => {
+        const candidate =
+          app.candidate ||
+          (candidateMap?.get(
+            app.candidateId,
+          ) as unknown as typeof app.candidate);
+        return maskApplicationFields(app, candidate, undefined);
       });
     }
 
@@ -220,6 +274,7 @@ export class ApplicationsQueryService {
       stage?: string;
     },
     tenantOrgId?: string | null,
+    fullCandidateAccess = true,
   ) {
     if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
       throw new AppForbiddenException(
@@ -299,10 +354,13 @@ export class ApplicationsQueryService {
 
     if (options?.search && options.search.trim() !== "") {
       const q = foldVietnameseAccents(options.search);
-      const matchedCandidateIds = await findMatchingCandidateIds(this.prisma, {
-        organizationId: targetOrgId,
-        rawSearch: options.search,
-      });
+      // Do not oracle-match candidate PII when the caller lacks candidate:view
+      const matchedCandidateIds = fullCandidateAccess
+        ? await findMatchingCandidateIds(this.prisma, {
+            organizationId: targetOrgId,
+            rawSearch: options.search,
+          })
+        : [];
       const matchingJobIds = jobs
         .filter((j) => foldVietnameseAccents(j.title).includes(q))
         .map((j) => j.id);
@@ -353,7 +411,7 @@ export class ApplicationsQueryService {
 
     const appIds = pagedApps.map((a) => a.id);
     const allInterviews =
-      appIds.length > 0
+      fullCandidateAccess && appIds.length > 0
         ? await this.prisma.interview.findMany({
             where: { applicationId: { in: appIds } },
           })
@@ -363,6 +421,24 @@ export class ApplicationsQueryService {
       const list = interviewsByApp.get(intv.applicationId) || [];
       list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
+    }
+
+    if (!fullCandidateAccess) {
+      const data = pagedApps.map((app) => {
+        const candidate = candidateMap.get(app.candidateId);
+        const job = jobMap.get(app.jobId);
+        return {
+          ...maskApplicationFields(app, candidate, undefined),
+          job,
+        };
+      });
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
     }
 
     const nameOrder = await resolveOrgNameDisplayOrder(
@@ -487,7 +563,11 @@ export class ApplicationsQueryService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null) {
+  async findOne(
+    id: string,
+    tenantOrgId?: string | null,
+    fullCandidateAccess = true,
+  ) {
     const where: { id: string; organizationId?: string } = { id };
     if (tenantOrgId) {
       where.organizationId = tenantOrgId;
@@ -511,7 +591,7 @@ export class ApplicationsQueryService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
             "Access denied: application belongs to another organization.",
-            { id, organizationId: otherOrg.organizationId },
+            { id },
           );
         }
       }
@@ -575,6 +655,13 @@ export class ApplicationsQueryService {
       );
     }
 
+    if (!fullCandidateAccess) {
+      return {
+        ...maskApplicationFields(app, candidate, null),
+        job: job || null,
+      };
+    }
+
     const appInterviews = (
       await this.prisma.interview.findMany({
         where: { applicationId: id },
@@ -602,12 +689,24 @@ export class ApplicationsQueryService {
       candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
-      resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+      resumeUrl:
+        app.resumeUrl !== undefined
+          ? app.resumeUrl || ""
+          : candidate?.resumeUrl || "",
       resumeFileName:
-        app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
-      resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+        app.resumeUrl === null
+          ? ""
+          : app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      resumeFileSize:
+        app.resumeUrl === null
+          ? null
+          : (app.resumeFileSize ?? candidate?.resumeFileSize ?? null),
       resumeMimeType:
-        app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        app.resumeUrl === null
+          ? null
+          : (app.resumeMimeType ??
+            candidate?.resumeMimeType ??
+            "application/pdf"),
       interviews: appInterviews,
     };
   }
@@ -621,6 +720,10 @@ export class ApplicationsQueryService {
 
     // Update candidate profile directly
     if (existing.candidateId) {
+      const targetOrgId =
+        existing.job?.organizationId ||
+        existing.candidate?.organizationId ||
+        tenantOrgId;
       const candidateUpdate: Record<string, unknown> = {};
       if (dto.firstName !== undefined) {
         const trimmed = normalizeNameInput(dto.firstName);
@@ -645,12 +748,59 @@ export class ApplicationsQueryService {
       if (dto.displayName !== undefined) {
         candidateUpdate.displayName = dto.displayName?.trim() || null;
       }
-      if (dto.candidateEmail !== undefined)
-        candidateUpdate.email = dto.candidateEmail.toLowerCase();
+      if (dto.candidateEmail !== undefined) {
+        const normalizedEmail = dto.candidateEmail.trim().toLowerCase();
+        if (targetOrgId && this.prisma.candidate?.findFirst) {
+          const dup = await this.prisma.candidate.findFirst({
+            where: {
+              organizationId: targetOrgId,
+              email: normalizedEmail,
+              id: { not: existing.candidateId },
+              deletedAt: null,
+            },
+            select: { id: true, organizationId: true },
+          });
+          if (dup) {
+            throw new AppConflictException(
+              APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+              "A candidate with this email already exists in your organization.",
+            );
+          }
+        }
+        candidateUpdate.email = normalizedEmail;
+      }
       if (dto.candidatePhone !== undefined)
         candidateUpdate.phone = dto.candidatePhone;
-      if (dto.resumeUrl !== undefined)
+      if (dto.resumeUrl !== undefined) {
+        if (dto.resumeUrl && targetOrgId) {
+          const safeTenant = targetOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+          let cleanPath = dto.resumeUrl.trim();
+          try {
+            if (
+              cleanPath.startsWith("http://") ||
+              cleanPath.startsWith("https://")
+            ) {
+              cleanPath = new URL(cleanPath).pathname;
+            }
+          } catch {
+            // keep raw path
+          }
+          cleanPath = cleanPath.replace(/\\/g, "/").replace(/^\/+/, "");
+          if (cleanPath.startsWith("haihire-resumes/")) {
+            cleanPath = cleanPath.slice("haihire-resumes/".length);
+          }
+          if (
+            cleanPath.startsWith("tenants/") &&
+            !cleanPath.startsWith(`tenants/${safeTenant}/`)
+          ) {
+            throw new AppForbiddenException(
+              APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+              "Cross-tenant resume URL is not allowed.",
+            );
+          }
+        }
         candidateUpdate.resumeUrl = dto.resumeUrl;
+      }
       if (dto.resumeFileName !== undefined)
         candidateUpdate.resumeFileName = dto.resumeFileName;
 
@@ -750,6 +900,11 @@ export class ApplicationsQueryService {
     if (orgId) {
       this.eventsService?.emit({
         type: "APPLICATIONS_CHANGED",
+        organizationId: orgId,
+        data: { applicationId: id },
+      });
+      this.eventsService?.emit({
+        type: "INTERVIEWS_CHANGED",
         organizationId: orgId,
         data: { applicationId: id },
       });

@@ -82,6 +82,32 @@ export class AuthController {
     return result;
   }
 
+  private extractRefreshToken(
+    req?: {
+      cookies?: Record<string, string>;
+      headers?: { cookie?: string };
+    },
+    bodyToken?: string,
+  ): string | undefined {
+    let token = bodyToken;
+    if (!token && req?.cookies && req.cookies["haihire_refresh_token"]) {
+      token = req.cookies["haihire_refresh_token"];
+    }
+    if (!token && req?.headers?.cookie) {
+      const match = req.headers.cookie.match(
+        /(?:^|;\s*)haihire_refresh_token=([^;]+)/,
+      );
+      if (match) {
+        try {
+          token = decodeURIComponent(match[1]);
+        } catch {
+          return undefined;
+        }
+      }
+    }
+    return token;
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
@@ -94,18 +120,7 @@ export class AuthController {
     @Body(DtoPipe(RefreshTokenDto)) dto: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    let token = dto.refreshToken;
-    if (!token && req?.cookies && req.cookies["haihire_refresh_token"]) {
-      token = req.cookies["haihire_refresh_token"];
-    }
-    if (!token && req?.headers?.cookie) {
-      const match = req.headers.cookie.match(
-        /(?:^|;\s*)haihire_refresh_token=([^;]+)/,
-      );
-      if (match) {
-        token = decodeURIComponent(match[1]);
-      }
-    }
+    const token = this.extractRefreshToken(req, dto.refreshToken);
     if (!token) {
       clearAuthCookies(res);
       throw new AppUnauthorizedException(
@@ -134,11 +149,24 @@ export class AuthController {
   @Post("logout")
   @HttpCode(HttpStatus.OK)
   async logout(
-    @Request() req: { user?: { id?: string } },
+    @Request()
+    req: {
+      user?: { id?: string; organizationId?: string | null };
+      cookies?: Record<string, string>;
+      headers?: { cookie?: string };
+    },
     @Res({ passthrough: true }) res: Response,
   ) {
     if (req?.user?.id) {
-      await this.authService.logout(req.user.id);
+      await this.authService.logout(req.user.id, req.user.organizationId);
+    } else {
+      const refreshToken = this.extractRefreshToken(req);
+      if (
+        refreshToken &&
+        typeof this.authService.logoutWithRefreshToken === "function"
+      ) {
+        await this.authService.logoutWithRefreshToken(refreshToken);
+      }
     }
     clearAuthCookies(res);
     return { success: true };
@@ -148,7 +176,7 @@ export class AuthController {
   @Post("change-password")
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(ChangePasswordDto)) dto: ChangePasswordDto,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -156,6 +184,7 @@ export class AuthController {
       req.user.id,
       dto.currentPassword,
       dto.newPassword,
+      req.user.organizationId,
     );
     setAuthCookies(
       res,
@@ -170,10 +199,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get("me")
   async getProfile(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Res({ passthrough: true }) res?: Response,
   ) {
-    const user = await this.authService.getProfile(req.user.id);
+    const user = await this.authService.getProfile(
+      req.user.id,
+      req.user.organizationId,
+    );
     setHasOrgCookie(res, Boolean(user?.organizationId));
     return user;
   }
@@ -181,19 +213,27 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch("me/profile")
   async updateProfile(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(updateUserProfileSchema)) dto: UpdateUserProfileSchema,
   ) {
-    return this.authService.updateProfile(req.user.id, dto);
+    return this.authService.updateProfile(
+      req.user.id,
+      dto,
+      req.user.organizationId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch("me/preferences")
   async updatePreferences(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(UpdateUserPreferencesDto)) dto: UpdateUserPreferencesDto,
   ) {
-    return this.authService.updatePreferences(req.user.id, dto);
+    return this.authService.updatePreferences(
+      req.user.id,
+      dto,
+      req.user.organizationId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

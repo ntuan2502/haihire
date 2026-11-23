@@ -93,6 +93,7 @@ jobs:
           sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
           sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |

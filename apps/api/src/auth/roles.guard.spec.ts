@@ -80,6 +80,23 @@ describe("RolesGuard", () => {
 
       expect(guard.canActivate(context)).toBe(true);
     });
+
+    it("should NOT allow owner bypass when user.organization.id differs from active user.organizationId", () => {
+      vi.spyOn(reflector, "getAllAndOverride").mockImplementation((key) => {
+        if (key === PERMISSION_KEY) return "candidate:delete";
+        return undefined;
+      });
+
+      const context = createMockContext({
+        id: "owner-of-org-a",
+        role: Role.MEMBER,
+        isOwner: false,
+        organizationId: "org-b",
+        organization: { id: "org-a", ownerId: "owner-of-org-a" },
+      } as never);
+
+      expect(() => guard.canActivate(context)).toThrow(AppForbiddenException);
+    });
   });
 
   describe("Role & Permission evaluation", () => {

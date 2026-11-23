@@ -110,12 +110,24 @@ describe("realtime-sync", () => {
 
     vi.advanceTimersByTime(100);
 
-    expect(invalidateSpy).toHaveBeenCalledTimes(3);
+    expect(invalidateSpy).toHaveBeenCalledTimes(7);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["notifications"],
+    });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["applications"],
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["job-applications"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["jobs"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["interviews"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["sourcing"],
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["candidates"],

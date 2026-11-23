@@ -20,7 +20,8 @@ export function DeleteDocumentModal({
 }: DeleteDocumentModalProps) {
   const { t } = useI18n();
 
-  const targetMatch = documentName?.trim() || t("common.deleteConfirmWord");
+  const trimmedName = documentName?.trim();
+  const targetMatch = trimmedName || t("common.deleteConfirmWord");
 
   return (
     <ConfirmDestructiveModal
@@ -29,6 +30,13 @@ export function DeleteDocumentModal({
       onConfirm={onConfirm}
       title={t("applications.deleteDocumentHeading")}
       description={t("applications.deleteDocumentWarning")}
+      notice={
+        trimmedName ? (
+          <span className="font-medium text-foreground break-all">
+            {trimmedName}
+          </span>
+        ) : undefined
+      }
       confirmMatchText={targetMatch}
       confirmButtonLabel={t("common.delete")}
       cancelButtonLabel={t("common.cancel")}

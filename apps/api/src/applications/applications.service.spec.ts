@@ -715,6 +715,15 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   });
 
   describe("Rejection, Reopening, Soft-Delete & Stats Integrity", () => {
+    it("suppresses automated rejection email by default when sendRejectionEmail is omitted", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
     it("saves rejectionReason & rejectedAt and suppresses automated email when sendRejectionEmail=false", async () => {
       const updated = await service.updateStage("app-1", {
         stage: "REJECTED",
@@ -873,6 +882,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("returns more than 100 applications from findByJob without silent 100-item truncation", async () => {
       const manyApps = Array.from({ length: 120 }, (_, i) => ({
         id: `bulk-app-${i}`,
+        organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-org1-a",
         stage: "APPLIED",
@@ -890,6 +900,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       const collidingApps = [
         {
           id: "app-tie-b",
+          organizationId: "org-1",
           candidateId: "cand-1",
           jobId: "job-org1-a",
           stage: "APPLIED",
@@ -899,6 +910,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         },
         {
           id: "app-tie-a",
+          organizationId: "org-1",
           candidateId: "cand-1",
           jobId: "job-org1-a",
           stage: "APPLIED",
@@ -946,6 +958,121 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(stats.byJob["job-org1-a"]?.byStage.APPLIED).toBe(2);
       expect(stats.byJob["job-org1-a"]?.byStage.SCREENING).toBe(1);
       expect(stats.byJob["job-org1-b"]?.total).toBe(1);
+    });
+
+    it("BUG-07: findByJob returns [] when the job's only candidate is soft-deleted (no resurrection)", async () => {
+      mockCandidates[1].deletedAt = new Date();
+      const results = await service.findByJob("job-org1-b", "org-1");
+      expect(results).toEqual([]);
+    });
+
+    it("syncs stageId on updateStage when job has PipelineStage and writes outboxEvent inside transaction", async () => {
+      const txSpy = vi.spyOn(
+        mockPrismaService as unknown as {
+          transaction: (fn: unknown) => Promise<unknown>;
+        },
+        "transaction",
+      );
+      const outboxCreate = vi.fn().mockResolvedValue({ id: "outbox-1" });
+      (
+        mockPrismaService as unknown as {
+          outboxEvent: { create: typeof outboxCreate };
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).outboxEvent = { create: outboxCreate };
+      (
+        mockPrismaService as unknown as {
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).pipelineStage = {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "stage-screen-1",
+          category: "SCREENING",
+          name: "Screening",
+        }),
+      };
+
+      const updated = await service.updateStage(
+        "app-1",
+        { stage: ApplicationStage.SCREENING },
+        "org-1",
+        { id: "user-1", role: "ADMIN" },
+      );
+
+      expect(updated.stage).toBe("SCREENING");
+      expect(txSpy).toHaveBeenCalled();
+      expect(outboxCreate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Candidate PII Masking without candidate:view", () => {
+    it("masks candidate PII, resume metadata, and interviews in findByJob, findAll, and findOne when fullCandidateAccess is false", async () => {
+      const byJob = await service.findByJob(
+        "job-org1-a",
+        "org-1",
+        undefined,
+        false,
+      );
+      expect(byJob.length).toBeGreaterThan(0);
+      expect(byJob[0].candidateName).toBe("[Masked]");
+      expect(byJob[0].candidateEmail).toBe("");
+      expect(byJob[0].candidatePhone).toBeNull();
+      expect(byJob[0].resumeUrl).toBe("");
+      expect(byJob[0].resumeFileName).toBe("");
+      expect(byJob[0].interviews).toEqual([]);
+      expect(byJob[0].candidate?.email).toBe("");
+      expect(byJob[0].candidate?.phone).toBeNull();
+      expect(byJob[0].candidate?.name).toBe("[Masked]");
+
+      const all = await service.findAll("org-1", undefined, "org-1", false);
+      expect(all.data.length).toBeGreaterThan(0);
+      for (const row of all.data) {
+        expect(row.candidateName).toBe("[Masked]");
+        expect(row.candidateEmail).toBe("");
+        expect(row.candidatePhone).toBeNull();
+        expect(row.resumeUrl).toBe("");
+        expect(row.resumeFileName).toBe("");
+        expect(row.interviews).toEqual([]);
+        expect(row.candidate?.email).toBe("");
+        expect(row.candidate?.phone).toBeNull();
+      }
+
+      // Oracle search against candidate PII must not return hits when !fullCandidateAccess
+      const emailSearch = await service.findAll(
+        "org-1",
+        { search: "alice@gmail.com" },
+        "org-1",
+        false,
+      );
+      expect(emailSearch.total).toBe(0);
+
+      const jobSearch = await service.findAll(
+        "org-1",
+        { search: "Frontend" },
+        "org-1",
+        false,
+      );
+      expect(jobSearch.total).toBe(1);
+      expect(jobSearch.data[0].candidateName).toBe("[Masked]");
+
+      const single = await service.findOne("app-1", "org-1", false);
+      expect(single.candidateName).toBe("[Masked]");
+      expect(single.candidateEmail).toBe("");
+      expect(single.candidatePhone).toBeNull();
+      expect(single.resumeUrl).toBe("");
+      expect(single.resumeFileName).toBe("");
+      expect(single.interviews).toEqual([]);
+      expect(single.candidate?.name).toBe("[Masked]");
+      expect(single.candidate?.email).toBe("");
+      expect(single.candidate?.phone).toBeNull();
+    });
+
+    it("preserves full candidate details by default when fullCandidateAccess is true", async () => {
+      const single = await service.findOne("app-1", "org-1", true);
+      expect(single.candidateName).toBe("Alice Nguyen");
+      expect(single.candidateEmail).toBe("alice@gmail.com");
+      expect(single.candidatePhone).toBe("0901234567");
+      expect(single.resumeUrl).toBe("https://s3.local/resumes/alice.pdf");
     });
   });
 });

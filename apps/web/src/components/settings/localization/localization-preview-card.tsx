@@ -49,16 +49,16 @@ export function LocalizationPreviewCard({
   const { t } = useI18n();
 
   return (
-    <aside className="xl:col-span-5 xl:sticky xl:top-6 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
+    <aside className="xl:col-span-5 xl:sticky xl:top-6 rounded-xl border border-border bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-5">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-950/60 dark:border-amber-900/50 text-amber-600 dark:text-amber-400 shrink-0">
-          <Eye className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+          <Eye className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-foreground">
             {t("settings.localization.previewTitle")}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t("settings.localization.previewSub")}
           </p>
         </div>
@@ -66,17 +66,17 @@ export function LocalizationPreviewCard({
 
       <div
         data-testid="localization-live-preview"
-        className="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60"
+        className="divide-y divide-border rounded-lg border border-border bg-muted/40"
       >
         {/* Preview: Candidate Name */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <UserCheck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <UserCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewCandidateName")}</span>
           </div>
           <span
             data-testid="preview-candidate-name"
-            className="text-xs font-bold text-slate-900 dark:text-white"
+            className="text-xs font-semibold text-foreground"
           >
             {getCandidateDisplayName(PREVIEW_CANDIDATE, draft)}
           </span>
@@ -84,13 +84,13 @@ export function LocalizationPreviewCard({
 
         {/* Preview: Date */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Calendar className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewDate")}</span>
           </div>
           <span
             data-testid="preview-date"
-            className="text-xs font-bold font-mono text-slate-900 dark:text-white"
+            className="text-xs font-semibold font-mono text-foreground"
           >
             {formatDate(PREVIEW_DATE_ISO, "numeric", draft)}
           </span>
@@ -98,13 +98,13 @@ export function LocalizationPreviewCard({
 
         {/* Preview: Time */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewTime")}</span>
           </div>
           <span
             data-testid="preview-time"
-            className="text-xs font-bold font-mono text-slate-900 dark:text-white"
+            className="text-xs font-semibold font-mono text-foreground"
           >
             {formatTime(PREVIEW_TIME, draft)}
           </span>
@@ -112,13 +112,13 @@ export function LocalizationPreviewCard({
 
         {/* Preview: Relative Time */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Languages className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Languages className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewRelativeTime")}</span>
           </div>
           <span
             data-testid="preview-relative-time"
-            className="text-xs font-bold text-slate-900 dark:text-white"
+            className="text-xs font-semibold text-foreground"
           >
             {formatRelativeTime(previewRelativeDate, draft)}
           </span>
@@ -126,13 +126,13 @@ export function LocalizationPreviewCard({
 
         {/* Preview: Salary */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Banknote className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewSalary")}</span>
           </div>
           <span
             data-testid="preview-salary"
-            className="text-xs font-bold text-slate-900 dark:text-white"
+            className="text-xs font-semibold text-foreground"
           >
             {formatCurrency(
               PREVIEW_SALARY_AMOUNTS[draft.defaultCurrency],
@@ -144,13 +144,13 @@ export function LocalizationPreviewCard({
 
         {/* Preview: Timezone */}
         <div className="p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Globe className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{t("settings.localization.previewTimezone")}</span>
           </div>
           <span
             data-testid="preview-timezone"
-            className="text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[180px]"
+            className="text-[11px] font-mono font-semibold text-foreground truncate max-w-[180px]"
           >
             {draft.timezone}
           </span>

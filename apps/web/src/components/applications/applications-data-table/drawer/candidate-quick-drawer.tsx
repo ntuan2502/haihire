@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
+import { getCandidateDisplayName } from "@/lib/utils";
 import {
-  OverviewSectionsPopover,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
-import { CandidateDrawerHeader } from "./candidate-drawer-header";
+  CandidateDrawerHeader,
+  CandidateDrawerSummary,
+} from "./candidate-drawer-header";
 import { CandidateOverviewTab } from "./candidate-overview-tab";
 import { CandidateNotesTab } from "./candidate-notes-tab";
 import { CandidateInterviewsTab } from "./candidate-interviews-tab";
@@ -20,7 +19,6 @@ import {
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 import { useI18n } from "@/i18n";
-import { type RefObject } from "react";
 
 interface CandidateQuickDrawerProps {
   selectedApp: Application | null;
@@ -30,12 +28,6 @@ interface CandidateQuickDrawerProps {
   selectedJobTitle: string;
   drawerTab: string;
   onTabChange: (tab: string) => void;
-  drawerOverviewSections: OverviewSectionsState;
-  onToggleOverviewSection: (key: keyof OverviewSectionsState) => void;
-  isDrawerOverviewPopoverOpen: boolean;
-  onToggleDrawerOverviewPopover: () => void;
-  onCloseDrawerOverviewPopover: () => void;
-  drawerOverviewBtnRef: RefObject<HTMLButtonElement | null>;
   allScheduledInterviews: ScheduledInterviewInfo[];
   drawerCandidateDocuments: CandidateDocument[];
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
@@ -62,12 +54,6 @@ export function CandidateQuickDrawer({
   selectedJobTitle,
   drawerTab,
   onTabChange,
-  drawerOverviewSections,
-  onToggleOverviewSection,
-  isDrawerOverviewPopoverOpen,
-  onToggleDrawerOverviewPopover,
-  onCloseDrawerOverviewPopover,
-  drawerOverviewBtnRef,
   allScheduledInterviews,
   drawerCandidateDocuments,
   onScheduleInterview,
@@ -89,75 +75,31 @@ export function CandidateQuickDrawer({
     <SlideOver
       isOpen={Boolean(selectedApp && currentApp)}
       onClose={onClose}
-      maxWidth="max-w-2xl"
+      size="2xl"
+      ariaLabel={getCandidateDisplayName(currentApp)}
     >
-      {/* Drawer Top Navigation Bar & Candidate Header */}
+      {/* Drawer Top Navigation Bar (Pinned) */}
       <CandidateDrawerHeader
         currentApp={currentApp}
         onClose={onClose}
         onViewInPipeline={onViewInPipeline}
-        selectedJobTitle={selectedJobTitle}
-        onStageChange={onStageChange}
-        isStageUpdatePending={isStageUpdatePending}
-        onOpenScheduleModal={onOpenScheduleModal}
-        onOpenDeleteModal={onOpenDeleteModal}
-        isDeleting={isDeleting}
       />
 
-      {/* Drawer Content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* Drawer Content (Summary + Tabs Scroll Naturally) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
+        <CandidateDrawerSummary
+          currentApp={currentApp}
+          selectedJobTitle={selectedJobTitle}
+          onStageChange={onStageChange}
+          isStageUpdatePending={isStageUpdatePending}
+          onOpenScheduleModal={onOpenScheduleModal}
+          onOpenDeleteModal={onOpenDeleteModal}
+          isDeleting={isDeleting}
+        />
         {/* Sub-Navigation Tabs */}
-        <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
-          <div
-            className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
-              drawerTab === "overview"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onTabChange("overview");
-                onCloseDrawerOverviewPopover();
-              }}
-              className={`py-2 cursor-pointer whitespace-nowrap ${
-                drawerTab === "overview" ? "pl-3 pr-1" : "px-3"
-              }`}
-            >
-              {t("applications.tabs.overview")}
-            </button>
-
-            {drawerTab === "overview" && (
-              <button
-                ref={drawerOverviewBtnRef}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleDrawerOverviewPopover();
-                }}
-                className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                aria-label={t("applications.toggleSections")}
-                title={t("applications.toggleSections")}
-              >
-                <ChevronDown
-                  className={`h-3 w-3 transition-transform duration-200 ${
-                    isDrawerOverviewPopoverOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-            )}
-
-            <OverviewSectionsPopover
-              isOpen={isDrawerOverviewPopoverOpen}
-              onClose={onCloseDrawerOverviewPopover}
-              sections={drawerOverviewSections}
-              onToggleSection={onToggleOverviewSection}
-              triggerRef={drawerOverviewBtnRef}
-            />
-          </div>
-
+        <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
           {[
+            { id: "overview", label: t("applications.tabs.overview") },
             { id: "inbox", label: t("applications.tabs.inbox") },
             { id: "ai", label: t("applications.tabs.ai") },
             {
@@ -178,14 +120,11 @@ export function CandidateQuickDrawer({
             <button
               key={tab.id}
               type="button"
-              onClick={() => {
-                onTabChange(tab.id);
-                onCloseDrawerOverviewPopover();
-              }}
+              onClick={() => onTabChange(tab.id)}
               className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                 drawerTab === tab.id
-                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{tab.label}</span>
@@ -198,7 +137,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "overview" && (
             <CandidateOverviewTab
               currentApp={currentApp}
-              drawerOverviewSections={drawerOverviewSections}
               drawerCandidateDocuments={drawerCandidateDocuments}
               onScheduleInterview={onScheduleInterview}
               onCancelInterview={onCancelInterview}

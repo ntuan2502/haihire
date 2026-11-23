@@ -18,10 +18,12 @@ export class UpdateEmailTemplateDto {
   type?: EmailTemplateType;
 
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   subject?: string;
 
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   body?: string;
 

@@ -34,8 +34,9 @@ interface StepResult {
 // Parse command line arguments
 const args = process.argv.slice(2);
 const withE2e = args.includes("--e2e") || args.includes("--with-e2e");
-const withBuild = args.includes("--build");
 const fastOnly = args.includes("--fast") || args.includes("--quick");
+const withBuild =
+  args.includes("--build") || (!fastOnly && !args.includes("--no-build"));
 
 // Core check pipeline
 const steps: Step[] = [

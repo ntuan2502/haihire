@@ -27,9 +27,8 @@ describe("SourcingStatsCards", () => {
     expect(screen.getByText("0")).toBeDefined();
   });
 
-  it("renders loading skeletons when isLoading is true", () => {
+  it("renders loading spinner when isLoading is true", () => {
     const { container } = render(<SourcingStatsCards isLoading={true} />);
-    const pulses = container.querySelectorAll(".animate-pulse");
-    expect(pulses.length).toBe(4);
+    expect(container.querySelector(".animate-spin")).not.toBeNull();
   });
 });

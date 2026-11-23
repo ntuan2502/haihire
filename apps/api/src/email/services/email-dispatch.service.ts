@@ -4,9 +4,12 @@ import crypto from "node:crypto";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import {
+  APP_ERROR_CODES,
   type EmailTemplateType,
   interpolateEmail as interpolate,
+  interpolateEmailSubject,
 } from "@haihire/shared";
+import { AppNotFoundException } from "../../common/app-exception";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { EmailSettingsService } from "./email-settings.service";
@@ -33,6 +36,48 @@ export class EmailDispatchService {
     private readonly eventsService?: EventsService,
   ) {}
 
+  private async verifyTargetEntities(
+    dto: SendEmailDto,
+    organizationId: string,
+  ): Promise<void> {
+    if (
+      dto.candidateId &&
+      typeof this.prisma.candidate?.findFirst === "function"
+    ) {
+      const candidate = await this.prisma.candidate.findFirst({
+        where: { id: dto.candidateId, organizationId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!candidate) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+          "Candidate not found in organization",
+          { candidateId: dto.candidateId },
+        );
+      }
+    }
+    if (
+      dto.applicationId &&
+      typeof this.prisma.application?.findFirst === "function"
+    ) {
+      const application = await this.prisma.application.findFirst({
+        where: {
+          id: dto.applicationId,
+          organizationId,
+          ...(dto.candidateId ? { candidateId: dto.candidateId } : {}),
+        },
+        select: { id: true },
+      });
+      if (!application) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+          "Application not found in organization",
+          { applicationId: dto.applicationId },
+        );
+      }
+    }
+  }
+
   async sendEmail(
     dto: SendEmailDto,
     organizationId?: string,
@@ -44,6 +89,7 @@ export class EmailDispatchService {
       organizationId,
       true,
     )!;
+    await this.verifyTargetEntities(dto, targetOrgId);
     if (this.emailQueue) {
       await this.settingsService.requireDeliverySettings(targetOrgId);
       try {
@@ -59,6 +105,9 @@ export class EmailDispatchService {
               templateKey,
               candidateKey,
               appKey,
+              dto.subject,
+              dto.body,
+              dto.variables || null,
               timeBucket,
             ]),
           )
@@ -75,6 +124,7 @@ export class EmailDispatchService {
               delay: 1000,
             },
             removeOnComplete: true,
+            removeOnFail: true,
           },
         );
         return {
@@ -103,11 +153,12 @@ export class EmailDispatchService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
+    await this.verifyTargetEntities(dto, organizationId);
     const settings =
       await this.settingsService.requireDeliverySettings(organizationId);
 
     const variables = dto.variables || {};
-    const renderedSubject = interpolate(dto.subject, variables);
+    const renderedSubject = interpolateEmailSubject(dto.subject, variables);
     const renderedBody = interpolate(dto.body, variables);
 
     const fromName = senderUser?.name || settings.fromName;
@@ -132,32 +183,67 @@ export class EmailDispatchService {
       html: renderedBody,
     });
 
-    const logId = crypto.randomUUID();
-    const log = await this.prisma.emailLog.create({
-      data: {
-        id: logId,
-        scope: "ORGANIZATION",
-        organizationId,
-        candidateId: dto.candidateId || null,
-        applicationId: dto.applicationId || null,
-        senderId: senderUser?.id || null,
-        senderName: fromName,
-        senderEmail: fromEmail,
-        recipientEmail: dto.to,
-        recipientName: dto.recipientName,
-        templateId: dto.templateId || null,
-        templateName: dto.templateName || null,
-        templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-        subject: renderedSubject,
-        body: renderedBody,
-        status: sendResult.status,
-        errorMessage: sendResult.error || null,
-        updatedAt: toInstant(),
-      },
-    });
+    const logScope =
+      (dto as { scope?: "ORGANIZATION" | "SYSTEM" }).scope === "SYSTEM"
+        ? "SYSTEM"
+        : "ORGANIZATION";
 
-    // Record candidate activity timeline event
-    if (dto.candidateId) {
+    const existingFailedLog =
+      typeof this.prisma.emailLog.findFirst === "function"
+        ? await this.prisma.emailLog.findFirst({
+            where: {
+              organizationId,
+              scope: logScope,
+              recipientEmail: dto.to,
+              subject: renderedSubject,
+              candidateId: dto.candidateId || null,
+              applicationId: dto.applicationId || null,
+              status: "FAILED",
+              sentAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+            },
+            orderBy: { sentAt: "desc" },
+          })
+        : null;
+
+    const now = toInstant();
+    const log =
+      existingFailedLog && typeof this.prisma.emailLog.update === "function"
+        ? await this.prisma.emailLog.update({
+            where: { id: existingFailedLog.id },
+            data: {
+              status: sendResult.status,
+              errorMessage: sendResult.error || null,
+              sentAt: now,
+              updatedAt: now,
+            },
+          })
+        : await this.prisma.emailLog.create({
+            data: {
+              id: crypto.randomUUID(),
+              scope: logScope,
+              organizationId,
+              candidateId: dto.candidateId || null,
+              applicationId: dto.applicationId || null,
+              senderId: senderUser?.id || null,
+              senderName: fromName,
+              senderEmail: fromEmail,
+              recipientEmail: dto.to,
+              recipientName: dto.recipientName,
+              templateId: dto.templateId || null,
+              templateName: dto.templateName || null,
+              templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
+              subject: renderedSubject,
+              body: renderedBody,
+              status: sendResult.status,
+              errorMessage: sendResult.error || null,
+              sentAt: now,
+              updatedAt: now,
+            },
+          });
+    const logId = log?.id || existingFailedLog?.id || "";
+
+    // Record candidate activity timeline event once per send attempt chain
+    if (dto.candidateId && !existingFailedLog) {
       await this.activitiesService.createActivity({
         organizationId,
         candidateId: dto.candidateId,

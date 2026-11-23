@@ -107,20 +107,20 @@ export function ErrorFallback({
         className="w-full p-4 sm:p-6 flex justify-center"
         data-testid="error-fallback-compact"
       >
-        <div className="w-full max-w-xl p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
+        <div className="w-full max-w-xl p-5 sm:p-6 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
           <div className="h-11 w-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
             <AlertTriangle className="h-5 w-5" />
           </div>
 
           <div className="flex-1 space-y-1.5 min-w-0">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-base font-bold text-foreground tracking-tight">
               {title}
             </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {description}
             </p>
             {error.digest && (
-              <p className="text-[11px] font-mono text-slate-400 select-all">
+              <p className="text-[11px] font-mono text-muted-foreground select-all">
                 Digest: {error.digest}
               </p>
             )}
@@ -128,7 +128,7 @@ export function ErrorFallback({
             <div className="flex flex-wrap items-center gap-2 pt-2 justify-center sm:justify-start">
               <Button
                 onClick={() => reset()}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer inline-flex items-center gap-1.5"
+                className="h-8 px-3 rounded-md text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer inline-flex items-center gap-1.5"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>{tryAgainText}</span>
@@ -136,7 +136,7 @@ export function ErrorFallback({
 
               <Link
                 href={homeHref}
-                className="h-8 px-3 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 inline-flex items-center gap-1.5 transition-colors"
+                className="h-8 px-3 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border inline-flex items-center gap-1.5 transition-colors"
               >
                 <Home className="h-3.5 w-3.5" />
                 <span>{goHomeText}</span>
@@ -150,27 +150,27 @@ export function ErrorFallback({
 
   const containerClasses =
     variant === "fullscreen"
-      ? "min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased"
+      ? "min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-background text-foreground font-sans antialiased"
       : "min-h-[60vh] w-full flex flex-col items-center justify-center p-4 sm:p-6";
 
   return (
     <div className={containerClasses} data-testid={`error-fallback-${variant}`}>
-      <div className="w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col items-center text-center space-y-4">
-        <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-xs">
+      <div className="w-full max-w-lg p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border shadow-2xs flex flex-col items-center text-center space-y-4">
+        <div className="h-13 w-13 sm:h-14 sm:w-14 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-xs">
           <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7" />
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
             {title}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md">
             {description}
           </p>
         </div>
 
         {error.digest && (
-          <div className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-500 dark:text-slate-400 select-all">
+          <div className="px-3 py-1.5 rounded-md bg-muted text-[11px] font-mono text-muted-foreground select-all">
             Digest: {error.digest}
           </div>
         )}
@@ -178,7 +178,7 @@ export function ErrorFallback({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 w-full sm:w-auto">
           <Button
             onClick={() => reset()}
-            className="h-10 px-5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-all"
+            className="h-10 px-5 rounded-md text-xs sm:text-sm font-semibold bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             <span>{tryAgainText}</span>
@@ -186,7 +186,7 @@ export function ErrorFallback({
 
           <Link
             href={homeHref}
-            className="h-10 px-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 inline-flex items-center justify-center gap-2 select-none transition-all"
+            className="h-10 px-4 rounded-md text-xs sm:text-sm font-medium bg-secondary hover:bg-secondary/80 active:scale-[0.98] text-secondary-foreground border border-border inline-flex items-center justify-center gap-2 select-none transition-colors"
           >
             <Home className="h-4 w-4" />
             <span>{goHomeText}</span>

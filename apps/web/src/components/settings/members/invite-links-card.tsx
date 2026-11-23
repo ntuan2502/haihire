@@ -1,22 +1,15 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState } from "react";
 import { Role } from "@haihire/shared";
-import { Button } from "@/components/ui/button";
 import {
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared/custom-select";
-import {
-  Link2,
-  Plus,
-  X,
-  Shield,
-  Copy,
-  Check,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { Link2, Plus, X, Shield, Copy, Check, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -29,6 +22,7 @@ interface InviteLinksCardProps {
   roleOptions?: CustomSelectOption<Role>[];
   getRoleLabel?: (role: string) => string;
   serverInviteLinks: InviteLink[];
+  isLoading?: boolean;
   refetchLinks: () => void;
   onRevokeClick: (linkId: string) => void;
   revokingId: string | null;
@@ -42,6 +36,7 @@ export function InviteLinksCard({
   roleOptions,
   getRoleLabel,
   serverInviteLinks,
+  isLoading = false,
   refetchLinks,
   onRevokeClick,
   revokingId,
@@ -102,53 +97,54 @@ export function InviteLinksCard({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+    <SettingsCard className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
-            <Link2 className="h-4 w-4" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+            <Link2 className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+            <h3 className="text-xs font-semibold text-foreground">
               {t("members.createLinkTitle")}
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] text-muted-foreground">
               {t("members.pendingInvites")}
             </p>
           </div>
         </div>
 
         {!isCreateLinkOpen && (
-          <Button
+          <SettingsButton
             type="button"
             onClick={() => setIsCreateLinkOpen(true)}
-            className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            icon={Plus}
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("members.createLinkButton")}</span>
-          </Button>
+            {t("members.createLinkButton")}
+          </SettingsButton>
         )}
       </div>
 
       {/* Section: New invite link (When Create link is clicked) */}
       {isCreateLinkOpen && (
-        <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
+        <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-3 animate-in fade-in duration-150">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            <span className="text-xs font-semibold text-foreground">
               {t("members.createLinkTitle")}
             </span>
-            <button
+            <SettingsButton
+              variant="ghost"
+              size="icon-sm"
               type="button"
               onClick={() => setIsCreateLinkOpen(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
+              aria-label={t("common.close")}
             >
               <X className="h-4 w-4" />
-            </button>
+            </SettingsButton>
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                 {t("members.roleLabel")}
               </label>
               <CustomSelect
@@ -156,12 +152,12 @@ export function InviteLinksCard({
                 onChange={(val) => setLinkRole(val)}
                 options={resolvedRoleOptions}
                 className="w-48"
-                triggerClassName="h-9 text-xs font-semibold"
+                triggerClassName="h-9 text-xs font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                 {t("members.expiresInLabel")}
               </label>
               <CustomSelect
@@ -174,12 +170,12 @@ export function InviteLinksCard({
                   { value: "Never", label: t("members.expiresNever") },
                 ]}
                 className="w-36"
-                triggerClassName="h-9 text-xs font-semibold"
+                triggerClassName="h-9 text-xs font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                 {t("members.maxUsesLabel")} ({t("common.optional")})
               </label>
               <CustomSelect
@@ -192,43 +188,48 @@ export function InviteLinksCard({
                   { value: "Unlimited", label: t("members.usesUnlimited") },
                 ]}
                 className="w-36"
-                triggerClassName="h-9 text-xs font-semibold"
+                triggerClassName="h-9 text-xs font-medium"
               />
             </div>
 
             <div>
-              <Button
+              <SettingsButton
                 type="button"
+                pending={createInviteMutation.isPending}
                 disabled={createInviteMutation.isPending}
                 onClick={handleCreateLink}
-                className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
               >
                 {createInviteMutation.isPending
                   ? t("common.saving")
                   : t("members.createLinkButton")}
-              </Button>
+              </SettingsButton>
             </div>
           </div>
         </div>
       )}
 
-      {/* Invite links list / empty state */}
-      {!isCreateLinkOpen && serverInviteLinks.length === 0 && (
-        <div className="py-8 text-center space-y-2">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-            <Link2 className="h-5 w-5" />
+      {/* Invite links loading / list / empty state */}
+      {!isCreateLinkOpen && isLoading && serverInviteLinks.length === 0 ? (
+        <LoadingSpinner />
+      ) : (
+        !isCreateLinkOpen &&
+        serverInviteLinks.length === 0 && (
+          <div className="py-8 text-center space-y-2">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Link2 className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">
+              {t("members.noActiveInviteLinks")}
+            </p>
+            <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+              {t("members.noActiveInviteLinksDesc")}
+            </p>
           </div>
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            {t("members.noActiveInviteLinks")}
-          </p>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
-            {t("members.noActiveInviteLinksDesc")}
-          </p>
-        </div>
+        )
       )}
 
       {serverInviteLinks.length > 0 && (
-        <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1">
+        <div className="divide-y divide-border pt-1">
           {serverInviteLinks.map((link) => {
             const isCopied = copiedLinkId === link.id;
             const isFull =
@@ -247,28 +248,31 @@ export function InviteLinksCard({
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${
                       isFull
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                        : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-secondary text-foreground"
                     } shrink-0`}
                   >
-                    <Link2 className="h-3.5 w-3.5" />
+                    <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </div>
 
                   <div className="min-w-0 space-y-0.5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <Shield className="h-3 w-3 text-slate-400" />
+                      <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                        <Shield
+                          className="h-3 w-3 text-muted-foreground"
+                          aria-hidden="true"
+                        />
                         <span>{resolveRoleLabel(link.role)}</span>
                       </span>
 
                       {isInactive && (
-                        <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                           {t("common.inactive")}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    <p className="text-[11px] text-muted-foreground">
                       {link.usesCount}/
                       {link.maxUses !== null ? link.maxUses : "∞"}{" "}
                       {t("candidates.columns.applications").toLowerCase()}
@@ -283,16 +287,16 @@ export function InviteLinksCard({
 
                 <div className="flex items-center gap-2 shrink-0">
                   {!isFull && (
-                    <Button
+                    <SettingsButton
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => handleCopyLink(link)}
-                      className="h-8 text-xs font-semibold gap-1 rounded-lg cursor-pointer"
+                      className="text-xs font-medium gap-1 cursor-pointer"
                     >
                       {isCopied ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>{t("members.copied")}</span>
                         </>
                       ) : (
@@ -301,30 +305,27 @@ export function InviteLinksCard({
                           <span>{t("members.copyLink")}</span>
                         </>
                       )}
-                    </Button>
+                    </SettingsButton>
                   )}
 
-                  <Button
+                  <SettingsButton
                     type="button"
                     variant="outline"
                     size="sm"
+                    icon={Trash2}
+                    pending={revokingId === link.id}
                     disabled={revokingId === link.id}
                     onClick={() => onRevokeClick(link.id)}
-                    className="h-8 text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer flex items-center gap-1"
+                    className="text-xs font-medium border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                   >
-                    {revokingId === link.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
                     <span>{t("members.revokeLink")}</span>
-                  </Button>
+                  </SettingsButton>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </SettingsCard>
   );
 }

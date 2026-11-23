@@ -48,7 +48,7 @@ export class ActivitiesController {
   }
 
   @Get("application/:applicationId")
-  @RequirePermission("candidate:view")
+  @RequirePermission("application:view")
   findByApplication(
     @Param("applicationId", new ParseUUIDPipe()) applicationId: string,
     @Request() req: { user?: { organizationId?: string | null } },
@@ -81,12 +81,15 @@ export class ActivitiesController {
       };
     },
   ) {
-    return this.activitiesService.createActivity({
-      ...dto,
-      organizationId: req.user.organizationId || "",
-      actorId: req.user.id,
-      actorName: req.user.name || "System User",
-      actorRole: req.user.role || "MEMBER",
-    });
+    return this.activitiesService.createActivity(
+      {
+        ...dto,
+        organizationId: req.user.organizationId || "",
+        actorId: req.user.id,
+        actorName: req.user.name || "System User",
+        actorRole: req.user.role || "MEMBER",
+      },
+      { verifyTargets: true },
+    );
   }
 }

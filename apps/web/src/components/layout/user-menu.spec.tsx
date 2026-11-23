@@ -25,6 +25,7 @@ const mockUser: User = {
     id: "org-1",
     name: "HaiHire Corp",
     slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -37,6 +38,7 @@ const mockOrgs: Organization[] = [
     id: "org-1",
     name: "HaiHire Corp",
     slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -85,7 +87,7 @@ describe("UserMenu Accessibility", () => {
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
     expect(trigger).toBeInTheDocument();
 
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
       expect(screen.getByText("nav.signOut")).toBeInTheDocument();
@@ -103,11 +105,17 @@ describe("UserMenu Accessibility", () => {
     render(<UserMenu />);
 
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
       expect(screen.getByText("HaiHire Corp")).toBeInTheDocument();
     });
+
+    expect(
+      document.body.querySelector(
+        'img[src="/api/organizations/public/org-1/logo?v=1"]',
+      ),
+    ).toBeInTheDocument();
 
     const orgSwitcherBtn = screen.getByRole("button", {
       name: "HaiHire Corp",
@@ -118,6 +126,7 @@ describe("UserMenu Accessibility", () => {
     fireEvent.click(orgSwitcherBtn);
     expect(orgSwitcherBtn).toHaveAttribute("aria-expanded", "true");
 
+    expect(screen.getByText("P")).toBeInTheDocument();
     const partnerOrgBtn = screen.getByRole("menuitem", {
       name: "Partner Org",
     });
@@ -130,24 +139,42 @@ describe("UserMenu Accessibility", () => {
     });
   });
 
-  it("has keyboard-accessible settings button", async () => {
+  it("has keyboard-accessible account and settings buttons", async () => {
     render(<UserMenu />);
 
     const trigger = screen.getByRole("button", { name: "common.userProfile" });
-    fireEvent.click(trigger);
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 
     await waitFor(() => {
+      expect(screen.getByText("settings.tabs.account")).toBeInTheDocument();
+      expect(screen.getByText("settings.notifications")).toBeInTheDocument();
       expect(screen.getByText("nav.settings")).toBeInTheDocument();
     });
 
-    const settingsBtn = screen.getByRole("menuitem", {
+    const accountBtn = screen.getByRole("menuitem", {
+      name: /settings\.tabs\.account/i,
+    });
+    expect(accountBtn).toBeInTheDocument();
+    fireEvent.click(accountBtn);
+    expect(mockPush).toHaveBeenCalledWith("/account");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const notificationsBtn = await screen.findByRole("menuitem", {
+      name: /settings\.notifications/i,
+    });
+    expect(notificationsBtn).toBeInTheDocument();
+    fireEvent.click(notificationsBtn);
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const settingsBtn = await screen.findByRole("menuitem", {
       name: /nav\.settings/i,
     });
     expect(settingsBtn).toBeInTheDocument();
     expect(settingsBtn.tagName).toBe("BUTTON");
 
     fireEvent.click(settingsBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/settings");
+    expect(mockPush).toHaveBeenCalledWith("/settings");
     expect(screen.queryByText("Updates & changelog")).not.toBeInTheDocument();
     expect(screen.queryByText("Report issue")).not.toBeInTheDocument();
   });

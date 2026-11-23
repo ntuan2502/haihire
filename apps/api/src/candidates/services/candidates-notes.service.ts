@@ -43,7 +43,7 @@ export class CandidatesNotesService {
         : tenantOrgOrUser;
 
     const candidate = await this.prisma.candidate.findFirst({
-      where: { id: candidateId },
+      where: { id: candidateId, deletedAt: null },
       select: { id: true, organizationId: true },
     });
 
@@ -89,7 +89,7 @@ export class CandidatesNotesService {
     },
   ) {
     const candidate = await this.prisma.candidate.findFirst({
-      where: { id: candidateId },
+      where: { id: candidateId, deletedAt: null },
       select: { id: true, organizationId: true },
     });
 

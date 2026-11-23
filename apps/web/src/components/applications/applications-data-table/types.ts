@@ -16,12 +16,21 @@ export interface ApplicationsDataTableProps {
   rowsPerPage?: number;
   search?: string;
   stageFilter?: string;
+  scoreFilter?: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  selectedAppId?: string | null;
+  drawerTab?: DrawerTabId;
   stageCounts?: Record<string, number>;
   jobFilter?: string;
   onPageChange?: (page: number) => void;
   onLimitChange?: (limit: number) => void;
   onSearchChange?: (search: string) => void;
   onStageFilterChange?: (stage?: string) => void;
+  onScoreFilterChange?: (score?: string) => void;
+  onSortChange?: (field: SortField, direction: SortDirection) => void;
+  onSelectedAppIdChange?: (appId: string | null) => void;
+  onDrawerTabChange?: (tab: DrawerTabId) => void;
   onJobFilterChange?: (jobId?: string) => void;
 }
 

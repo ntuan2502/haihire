@@ -1,6 +1,7 @@
 "use client";
 
 import type { SourcingStats } from "@haihire/shared";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplicationsBySource } from "../overview/applications-by-source";
 import { TopLinksCard } from "../overview/top-links-card";
 import { TopReferrersCard } from "../overview/top-referrers-card";
@@ -21,19 +22,7 @@ export function OverviewTab({
   onNavigateToAttribution,
 }: OverviewTabProps) {
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-pulse">
-        <div className="lg:col-span-7 space-y-6">
-          <div className="h-96 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60" />
-          <div className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60" />
-        </div>
-        <div className="lg:col-span-5 space-y-6">
-          <div className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60" />
-          <div className="h-48 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60" />
-          <div className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60" />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const channelBreakdown = stats?.channelBreakdown ?? [];

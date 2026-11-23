@@ -4,7 +4,7 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import { FileQuestion, ShieldAlert } from "lucide-react";
 import { cn } from "cn";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useOptionalI18n } from "@/i18n/optional";
 
 export type StatusStateCode = "403" | "404";
@@ -52,24 +52,16 @@ const STATUS_STYLE_MAP: Record<
   },
   "404": {
     icon: FileQuestion,
-    iconBoxClass:
-      "bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900/60 text-blue-600 dark:text-blue-400",
+    iconBoxClass: "bg-muted border border-border text-muted-foreground",
   },
-};
-
-const ACTION_VARIANT_CLASS: Record<StatusStateActionVariant, string> = {
-  primary:
-    "bg-blue-600 hover:bg-blue-700 text-white border border-transparent shadow-xs",
-  outline:
-    "bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs",
 };
 
 function renderStatusAction(action: StatusStateAction) {
   const Icon = action.icon;
-  const toneClass = ACTION_VARIANT_CLASS[action.variant ?? "primary"];
+  const variant = action.variant === "outline" ? "outline" : "default";
   const baseClass = cn(
-    "inline-flex items-center justify-center gap-2 rounded-xl px-4 h-9 text-xs font-semibold transition-colors cursor-pointer",
-    toneClass,
+    buttonVariants({ variant, size: "sm" }),
+    "h-9 px-4 text-xs font-semibold cursor-pointer",
   );
 
   const content = (
@@ -83,7 +75,7 @@ function renderStatusAction(action: StatusStateAction) {
     return (
       <Button
         type="button"
-        variant={action.variant === "outline" ? "outline" : "default"}
+        variant={variant}
         onClick={action.onClick}
         className={baseClass}
       >
@@ -159,7 +151,7 @@ export function StatusState({
     <>
       <div
         className={cn(
-          "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-2xs",
+          "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl shadow-xs",
           config.iconBoxClass,
         )}
       >
@@ -167,7 +159,7 @@ export function StatusState({
       </div>
 
       {shouldShowCodeBadge && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold tracking-wider bg-secondary text-secondary-foreground border border-border">
           {status}
         </span>
       )}
@@ -175,13 +167,13 @@ export function StatusState({
       <div className="space-y-1.5 max-w-md mx-auto">
         <Heading
           className={cn(
-            "font-bold tracking-tight text-slate-900 dark:text-white",
+            "font-semibold tracking-tight text-foreground",
             variant === "page" ? "text-xl sm:text-2xl" : "text-base sm:text-lg",
           )}
         >
           {resolvedTitle}
         </Heading>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
           {resolvedDescription}
         </p>
       </div>
@@ -205,7 +197,7 @@ export function StatusState({
           className,
         )}
       >
-        <div className="w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col items-center text-center space-y-5">
+        <div className="w-full max-w-lg p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border shadow-xs flex flex-col items-center text-center space-y-5">
           {cardBody}
         </div>
       </div>
@@ -217,7 +209,7 @@ export function StatusState({
       role={config.role}
       data-testid={testId}
       className={cn(
-        "rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs p-8 sm:p-10 flex flex-col items-center justify-center text-center space-y-4",
+        "rounded-xl border border-border bg-card text-card-foreground shadow-xs p-8 sm:p-10 flex flex-col items-center justify-center text-center space-y-4",
         className,
       )}
     >

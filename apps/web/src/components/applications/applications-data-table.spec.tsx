@@ -333,7 +333,7 @@ describe("ApplicationsDataTable Component", () => {
       });
       expect(viewJobsBtn).toBeInTheDocument();
       fireEvent.click(viewJobsBtn);
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+      expect(mockPush).toHaveBeenCalledWith("/jobs");
     });
   });
 
@@ -394,28 +394,37 @@ describe("ApplicationsDataTable Component", () => {
 
   // B.3.3: Column Visibility (2 tests)
   describe("3. Column Visibility Dropdown", () => {
-    it("opens columns dropdown and allows toggling column visibility", () => {
+    it("opens columns dropdown and allows toggling column visibility", async () => {
       renderTable();
       const columnsBtn = screen.getByRole("button", { name: /columns/i });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      expect(screen.getByText("TOGGLE COLUMNS")).toBeInTheDocument();
-      const emailCheckbox = screen.getByLabelText("Email");
-      expect(emailCheckbox).toBeChecked();
+      expect(await screen.findByText("TOGGLE COLUMNS")).toBeInTheDocument();
+      const emailItem = screen.getByRole("menuitemcheckbox", {
+        name: "Email",
+      });
+      expect(emailItem).toHaveAttribute("aria-checked", "true");
 
-      // Toggle email off
-      fireEvent.click(emailCheckbox);
+      // Toggle email off and dismiss menu before inspecting table
+      fireEvent.click(emailItem);
+      expect(emailItem).toHaveAttribute("aria-checked", "false");
+      fireEvent.keyDown(document, { key: "Escape" });
+
       const table = screen.getByRole("table");
       expect(within(table).queryByText("Email")).not.toBeInTheDocument();
     });
 
-    it("prevents unchecking locked candidate column", () => {
+    it("prevents unchecking locked candidate column", async () => {
       renderTable();
       const columnsBtn = screen.getByRole("button", { name: /columns/i });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      const candidateCheckbox = screen.getByLabelText("Candidate");
-      expect(candidateCheckbox).toBeDisabled();
+      const candidateItem = await screen.findByRole("menuitemcheckbox", {
+        name: "Candidate",
+      });
+      expect(candidateItem).toHaveAttribute("aria-disabled", "true");
     });
   });
 
@@ -457,7 +466,7 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(filterBtn);
 
       expect(
-        screen.getByRole("heading", { level: 3, name: "Filters" }),
+        screen.getByRole("heading", { name: "Filters" }),
       ).toBeInTheDocument();
       expect(screen.getByText("Filter by job")).toBeInTheDocument();
     });
@@ -545,11 +554,11 @@ describe("ApplicationsDataTable Component", () => {
 
       const drawer = screen.getByRole("dialog");
       expect(
-        within(drawer).getByRole("heading", {
+        within(drawer).getAllByRole("heading", {
           level: 2,
           name: "Nguyen Van An",
-        }),
-      ).toBeInTheDocument();
+        }).length,
+      ).toBeGreaterThanOrEqual(1);
       expect(
         within(drawer).getAllByText("+84901234567").length,
       ).toBeGreaterThan(0);
@@ -801,7 +810,7 @@ describe("ApplicationsDataTable Component", () => {
       const viewButtons = screen.getAllByTitle("View");
       fireEvent.click(viewButtons[0]);
 
-      expect(mockPush).toHaveBeenCalledWith("/dashboard/applications/app-3");
+      expect(mockPush).toHaveBeenCalledWith("/applications/app-3");
     });
   });
 });

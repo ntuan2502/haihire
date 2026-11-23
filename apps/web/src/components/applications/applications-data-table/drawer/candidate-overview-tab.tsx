@@ -1,10 +1,8 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
-import type { OverviewSectionsState } from "@/components/applications/overview-sections-popover";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, CandidateDocument } from "@/types";
 import { getCandidateDisplayName } from "@/lib/utils";
@@ -12,7 +10,6 @@ import { useI18n } from "@/i18n";
 
 interface CandidateOverviewTabProps {
   currentApp: Application;
-  drawerOverviewSections: OverviewSectionsState;
   drawerCandidateDocuments: CandidateDocument[];
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
@@ -27,7 +24,6 @@ interface CandidateOverviewTabProps {
 
 export function CandidateOverviewTab({
   currentApp,
-  drawerOverviewSections,
   drawerCandidateDocuments,
   onScheduleInterview,
   onCancelInterview,
@@ -40,98 +36,91 @@ export function CandidateOverviewTab({
   return (
     <div className="space-y-4">
       {/* Match Score Card */}
-      {drawerOverviewSections.ai && (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200/90 dark:bg-slate-900 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">
-              {t("applications.matchScore")}:
-            </span>
-            <span className="font-bold text-sm text-slate-900 dark:text-white">
-              {currentApp.matchScore !== null &&
-              currentApp.matchScore !== undefined
-                ? `${currentApp.matchScore}%`
-                : t("applications.matchScoreUnrated")}
-            </span>
-          </div>
-          <button
-            type="button"
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
-          >
-            <Sparkles className="h-3 w-3" />
-            <span>{t("applications.runAnalysis")}</span>
-          </button>
+      <div className="flex items-center justify-between p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("applications.matchScore")}:
+          </span>
+          <span className="font-semibold font-mono tabular-nums text-sm text-foreground">
+            {currentApp.matchScore !== null &&
+            currentApp.matchScore !== undefined
+              ? `${currentApp.matchScore}%`
+              : t("applications.matchScoreUnrated")}
+          </span>
         </div>
-      )}
+        <button
+          type="button"
+          disabled
+          title={t("applications.comingSoonTooltip", {
+            action: t("applications.runAnalysis"),
+          })}
+          className="text-xs text-muted-foreground opacity-60 cursor-not-allowed font-medium"
+        >
+          <span>{t("applications.runAnalysis")}</span>
+        </button>
+      </div>
 
       {/* Interviews Card */}
-      {drawerOverviewSections.interviews && (
-        <CandidateInterviewsList
-          application={currentApp}
-          onSchedule={onScheduleInterview}
-          onCancelInterview={onCancelInterview}
-          canEdit={canEdit}
-          title={t("applications.sections.interviews")}
-          showSectionHeader={true}
-        />
-      )}
+      <CandidateInterviewsList
+        application={currentApp}
+        onSchedule={onScheduleInterview}
+        onCancelInterview={onCancelInterview}
+        canEdit={canEdit}
+        title={t("applications.sections.interviews")}
+        showSectionHeader={true}
+      />
 
       {/* Documents Card */}
-      {drawerOverviewSections.documents && (
-        <ApplicationDocumentsSection
-          documents={drawerCandidateDocuments}
-          appId={currentApp.id}
-          onPreview={onPreviewDoc}
-          onDownload={onDownloadDoc}
-        />
-      )}
+      <ApplicationDocumentsSection
+        documents={drawerCandidateDocuments}
+        appId={currentApp.id}
+        onPreview={onPreviewDoc}
+        onDownload={onDownloadDoc}
+      />
 
       {/* Responses Card */}
-      {drawerOverviewSections.responses && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-            {t("applications.sections.responses")}
-          </h3>
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
-            <div>
-              <p className="text-[11px] text-slate-400">
-                {t("candidates.displayName")}
-              </p>
-              <p className="font-semibold text-slate-900 dark:text-white">
-                {getCandidateDisplayName(currentApp)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-400">
-                {t("candidates.email")}
-              </p>
-              <p className="font-semibold text-slate-900 dark:text-white">
-                {currentApp.candidateEmail}
-              </p>
-            </div>
-            {currentApp.candidatePhone && (
-              <div>
-                <p className="text-[11px] text-slate-400">
-                  {t("candidates.phone")}
-                </p>
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {currentApp.candidatePhone}
-                </p>
-              </div>
-            )}
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
+        <h3 className="text-xs font-medium text-foreground">
+          {t("applications.sections.responses")}
+        </h3>
+        <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2 text-muted-foreground">
+          <div>
+            <p className="text-[11px] text-muted-foreground">
+              {t("candidates.displayName")}
+            </p>
+            <p className="font-semibold text-foreground">
+              {getCandidateDisplayName(currentApp)}
+            </p>
           </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground">
+              {t("candidates.email")}
+            </p>
+            <p className="font-semibold text-foreground">
+              {currentApp.candidateEmail}
+            </p>
+          </div>
+          {currentApp.candidatePhone && (
+            <div>
+              <p className="text-[11px] text-muted-foreground">
+                {t("candidates.phone")}
+              </p>
+              <p className="font-semibold text-foreground">
+                {currentApp.candidatePhone}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Notes Card */}
-      {drawerOverviewSections.notes && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <ApplicationNotesStream
-            applicationId={currentApp.id}
-            compact
-            maxHeight="max-h-72"
-          />
-        </div>
-      )}
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs">
+        <ApplicationNotesStream
+          applicationId={currentApp.id}
+          compact
+          maxHeight="max-h-72"
+        />
+      </div>
     </div>
   );
 }

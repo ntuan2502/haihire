@@ -12,10 +12,16 @@ import type {
 import { queryKeys } from "./query-keys";
 
 export function useMyOrg(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<Organization | null>({
-    queryKey: queryKeys.myOrg(),
+    queryKey: queryKeys.myOrg(user?.organizationId),
     queryFn: () => organizationsApi.getMyOrg(),
     enabled: options?.enabled ?? true,
+    initialData: () =>
+      user?.organization &&
+      (!user.organizationId || user.organization.id === user.organizationId)
+        ? user.organization
+        : undefined,
   });
 }
 
@@ -36,12 +42,11 @@ export function useSwitchOrgMutation() {
       organizationsApi.switchOrg(organizationId),
     onSuccess: (data) => {
       updateUserOrg(data.organization, data.user?.role);
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
     },
     onError: () => {
-      // Defense-in-depth: sync queries on switch failure.
-      // Verified: no infinite loop risk because mutations are strictly user-triggered
-      queryClient.invalidateQueries();
+      // Defense-in-depth: sync org list cleanly on switch failure without refetching stale-scoped caches
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
     },
   });
 }
@@ -60,7 +65,10 @@ export function useUpdateMyOrgMutation() {
     onSuccess: (updatedOrg) => {
       if (updatedOrg) {
         updateUserOrg(updatedOrg);
-        queryClient.setQueryData(queryKeys.myOrg(), updatedOrg);
+        queryClient.setQueryData(queryKeys.myOrg(updatedOrg.id), updatedOrg);
+        queryClient.setQueryData<Organization[]>(queryKeys.myOrgs(), (prev) =>
+          prev?.map((org) => (org.id === updatedOrg.id ? updatedOrg : org)),
+        );
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },
@@ -68,6 +76,38 @@ export function useUpdateMyOrgMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },
   });
+}
+
+function useOrgProfileMutation<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<Organization>,
+) {
+  const queryClient = useQueryClient();
+  const { updateUserOrg } = useAuth();
+
+  return useMutation({
+    mutationFn,
+    onSuccess: (updatedOrg) => {
+      if (updatedOrg) {
+        updateUserOrg(updatedOrg);
+        queryClient.setQueryData(queryKeys.myOrg(updatedOrg.id), updatedOrg);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
+  });
+}
+
+export function useUploadOrgLogoMutation() {
+  return useOrgProfileMutation((file: File) =>
+    organizationsApi.uploadMyOrgLogo(file),
+  );
+}
+
+export function useDeleteOrgLogoMutation() {
+  return useOrgProfileMutation(() => organizationsApi.deleteMyOrgLogo());
 }
 
 export function useTransferOwnershipMutation() {
@@ -102,24 +142,27 @@ export function useDeleteMyOrgMutation() {
 }
 
 export function useOrgMembers(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<User[]>({
-    queryKey: queryKeys.orgMembers(),
+    queryKey: queryKeys.orgMembers(user?.organizationId),
     queryFn: () => organizationsApi.getMembers(),
     enabled: options?.enabled ?? true,
   });
 }
 
 export function useOrgInterviewers(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<Pick<User, "id" | "name" | "email" | "role">[]>({
-    queryKey: queryKeys.orgInterviewers(),
+    queryKey: queryKeys.orgInterviewers(user?.organizationId),
     queryFn: () => organizationsApi.getInterviewers(),
     enabled: options?.enabled ?? true,
   });
 }
 
 export function useInviteLinks(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<InviteLink[]>({
-    queryKey: queryKeys.inviteLinks(),
+    queryKey: queryKeys.inviteLinks(user?.organizationId),
     queryFn: () => organizationsApi.getInviteLinks(),
     enabled: options?.enabled ?? true,
   });
@@ -130,6 +173,7 @@ export function useCreateInviteLinkMutation() {
 
   return useMutation({
     mutationFn: (data: {
+      email?: string;
       role?: string;
       expiresIn?: string;
       maxUses?: string;
@@ -187,16 +231,18 @@ export function useRemoveMemberMutation() {
 }
 
 export function useRolePermissionsMatrix(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<Record<Role, Record<Permission, boolean>>>({
-    queryKey: queryKeys.rolePermissionsMatrix(),
+    queryKey: queryKeys.rolePermissionsMatrix(user?.organizationId),
     queryFn: () => organizationsApi.getRolePermissionsMatrix(),
     enabled: options?.enabled ?? true,
   });
 }
 
 export function useMyPermissions(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
   return useQuery<{ permissions: Permission[] }>({
-    queryKey: queryKeys.myPermissions(),
+    queryKey: queryKeys.myPermissions(user?.organizationId, user?.role),
     queryFn: () =>
       authApi.getMyPermissions() as Promise<{ permissions: Permission[] }>,
     enabled: options?.enabled ?? true,
@@ -250,8 +296,13 @@ export function useAuditLogsQuery(
   },
   options?: { enabled?: boolean },
 ) {
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
   return useQuery({
-    queryKey: queryKeys.auditLogs(params),
+    queryKey: queryKeys.auditLogs({
+      ...params,
+      ...(orgId !== undefined ? { orgId } : {}),
+    }),
     queryFn: () => organizationsApi.getAuditLogs(params),
     enabled: options?.enabled ?? true,
   });

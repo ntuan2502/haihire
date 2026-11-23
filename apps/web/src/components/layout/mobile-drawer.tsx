@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { Globe } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
-
-import { Globe } from "lucide-react";
 
 export interface MobileDrawerProps {
   isOpen: boolean;
@@ -14,7 +19,6 @@ export interface MobileDrawerProps {
   children?: ReactNode;
   footer?: ReactNode;
   breakpoint?: "md" | "lg";
-  variant?: "landing" | "default";
   className?: string;
 }
 
@@ -29,79 +33,90 @@ export function MobileDrawer({
   const { t } = useI18n();
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+    if (
+      !isOpen ||
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return;
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
 
-  if (!isOpen) return null;
+    const query =
+      breakpoint === "lg" ? "(min-width: 1024px)" : "(min-width: 768px)";
+    const mql = window.matchMedia(query);
+
+    if (mql.matches) {
+      onClose();
+      return;
+    }
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        onClose();
+      }
+    };
+
+    mql.addEventListener("change", handleChange);
+    return () => {
+      mql.removeEventListener("change", handleChange);
+    };
+  }, [isOpen, breakpoint, onClose]);
 
   return (
-    <div
-      className={cn(
-        "fixed inset-x-0 top-16 bottom-0 z-40",
-        breakpoint === "lg" ? "lg:hidden" : "md:hidden",
-      )}
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      {/* Backdrop Overlay */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={t("common.close")}
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClose();
-          }
-        }}
-        className="absolute inset-0 bg-black/25 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
-      />
-
-      {/* Top-Down Dropdown Menu Container */}
-      <div
+      <SheetContent
+        side="right"
+        showCloseButton={true}
+        aria-describedby={undefined}
         className={cn(
-          "relative w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in duration-150 z-10 flex flex-col justify-between",
+          "w-[min(85vw,20rem)] h-dvh p-0 flex flex-col",
+          breakpoint === "lg" ? "lg:hidden" : "md:hidden",
           className,
         )}
       >
-        {/* Navigation List Items */}
-        {children && <div className="px-3 py-2 space-y-1">{children}</div>}
+        <SheetHeader className="sr-only">
+          <SheetTitle>{t("common.toggleNavigationMenu")}</SheetTitle>
+        </SheetHeader>
 
-        {/* Unified Mobile Theme & Language Section - Symmetrically centered between two full-width border lines */}
-        <div
-          className={cn(
-            children && "border-t border-slate-200/80 dark:border-slate-800/80",
-            "px-3 py-2",
-            !footer && "border-b border-slate-200/80 dark:border-slate-800/80",
-          )}
-        >
-          <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
-            <div className="flex items-center gap-3">
-              <Globe className="h-4 w-4 text-slate-500 shrink-0" />
-              <span>
-                {t("nav.theme")} / {t("nav.language")}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <ThemeToggle size="sm" />
-              <LanguageDropdown size="sm" />
+        <div className="flex-1 min-h-0 overflow-y-auto pt-12">
+          {/* Navigation List Items */}
+          {children && <div className="px-3 py-2 space-y-1">{children}</div>}
+
+          {/* Unified Mobile Theme & Language Section */}
+          <div
+            className={cn(
+              children && "border-t border-border",
+              "px-3 py-2",
+              !footer && "border-b border-border",
+            )}
+          >
+            <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-foreground">
+              <div className="flex items-center gap-3">
+                <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span>
+                  {t("nav.theme")} / {t("nav.language")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <ThemeToggle size="sm" />
+                <LanguageDropdown size="sm" />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Unified Bottom Actions Footer Bar */}
         {footer && (
-          <div className="px-3 py-2 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="shrink-0 px-3 py-3 border-t border-border bg-muted/40">
             {footer}
           </div>
         )}
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

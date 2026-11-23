@@ -46,14 +46,7 @@ const mockEditLink: TrackingLinkItem = {
 
 describe("TrackingLinkModal (Unified Component)", () => {
   it("renders in create mode with blank/default fields and aligned buttons", () => {
-    render(
-      <CreateLinkModal
-        isOpen={true}
-        onClose={vi.fn()}
-        jobs={mockJobs}
-        orgSlug="acme-corp"
-      />,
-    );
+    render(<CreateLinkModal isOpen={true} onClose={vi.fn()} jobs={mockJobs} />);
 
     // Modal title & submit button
     expect(screen.getByText("Tạo liên kết theo dõi mới")).toBeDefined();
@@ -75,7 +68,6 @@ describe("TrackingLinkModal (Unified Component)", () => {
         onClose={vi.fn()}
         link={mockEditLink}
         jobs={mockJobs}
-        orgSlug="acme-corp"
       />,
     );
 
@@ -99,7 +91,6 @@ describe("TrackingLinkModal (Unified Component)", () => {
         isOpen={true}
         onClose={vi.fn()}
         jobs={mockJobs}
-        orgSlug="acme-corp"
         defaultJobId="job-1"
         lockJob={true}
       />,

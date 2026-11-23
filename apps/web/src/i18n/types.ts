@@ -80,6 +80,8 @@ export interface TranslationSchema {
     organizationFallback: string;
     systemNotifications: string;
     closeModal: string;
+    workspace: string;
+    current: string;
     docTypes: {
       resume: string;
       coverLetter: string;
@@ -198,6 +200,8 @@ export interface TranslationSchema {
     reportIssue: string;
     organizationSetup: string;
     createOrganization: string;
+    organizationFallback: string;
+    navigationGroup: string;
     features: {
       analyticsReports: string;
       talentPools: string;
@@ -567,6 +571,7 @@ export interface TranslationSchema {
     openStatus: string;
     draftStatus: string;
     closedStatus: string;
+    archivedStatus: string;
     moreOptions: string;
     defaultLocation: string;
     competitiveSalary: string;
@@ -942,6 +947,18 @@ export interface TranslationSchema {
     invalidCandidateId: string;
     candidateNotFound: string;
     notesTitle: string;
+    duplicate: {
+      blockingTitle: string;
+      blockingDesc: string;
+      warningTitle: string;
+      warningDesc: string;
+      detailWarningTitle: string;
+      detailWarningDesc: string;
+      reasonEmail: string;
+      reasonPhone: string;
+      reasonNameDob: string;
+      viewProfile: string;
+    };
   };
   applications: {
     title: string;
@@ -1151,6 +1168,7 @@ export interface TranslationSchema {
       no: string;
       noDesc: string;
       strongNo: string;
+      strongNoDesc: string;
     };
     ratings: {
       poor: string;
@@ -1279,9 +1297,12 @@ export interface TranslationSchema {
     pipelineReviewTooltip: string;
     viewCandidateInPipeline: string;
     roundInterview: string;
+    roundShort: string;
     pvPrefix: string;
     prevPeriod: string;
     nextPeriod: string;
+    selectMonth: string;
+    selectYear: string;
     noScheduleForDay: string;
     candidateInterviewsTitle: string;
     candidateInterviewsMultiple: string;
@@ -1302,6 +1323,7 @@ export interface TranslationSchema {
     modalSubtitle: string;
     targetJobAndCandidate: string;
     officeAddressLabel: string;
+    addressLabel: string;
     meetingUrlLabel: string;
     requiredLabel: string;
     overallRatingTitle: string;
@@ -1339,6 +1361,8 @@ export interface TranslationSchema {
     maxUsesLabel: string;
     createLinkButton: string;
     activeMembers: string;
+    memberCountOne: string;
+    memberCountOther: string;
     pendingInvites: string;
     copyLink: string;
     copied: string;
@@ -1404,6 +1428,8 @@ export interface TranslationSchema {
     inviteLinkHint: string;
     createOrgInstead: string;
     joinOrgInstead: string;
+    orgCreatedToast: string;
+    orgJoinedToast: string;
   };
   join: {
     title: string;
@@ -1420,6 +1446,48 @@ export interface TranslationSchema {
     goToDashboard: string;
     joinOrgButton: string;
     joiningButton: string;
+  };
+  notificationInbox: {
+    all: string;
+    unread: string;
+    read: string;
+    readAll: string;
+    viewAll: string;
+    pageSubtitle: string;
+    pageSubtitleWorkspace: string;
+    filterKindAll: string;
+    clearFilters: string;
+    empty: string;
+    emptyUnread: string;
+    emptyFiltered: string;
+    emptyHint: string;
+    loadError: string;
+    retry: string;
+    readError: string;
+    unreadError: string;
+    markAsRead: string;
+    markAsUnread: string;
+    groupToday: string;
+    groupYesterday: string;
+    groupEarlier: string;
+    itemLabel: string;
+    settings: string;
+    roundBadge: string;
+    appliedForJob: string;
+    applicationReceived: string;
+    interviewScheduled: string;
+    interviewChanged: string;
+    interviewCancelled: string;
+  };
+  notificationSettings: {
+    website: string;
+    email: string;
+    application: string;
+    interview: string;
+    saved: string;
+    saveError: string;
+    loadError: string;
+    save: string;
   };
   settings: {
     title: string;
@@ -1479,6 +1547,25 @@ export interface TranslationSchema {
     currentPasswordRequiredError: string;
     backToSettings: string;
     generalProfileDesc: string;
+    logo: {
+      title: string;
+      description: string;
+      uploadButton: string;
+      changeButton: string;
+      removeButton: string;
+      uploading: string;
+      removing: string;
+      hint: string;
+      invalidTypeError: string;
+      fileTooLargeError: string;
+      uploadSuccess: string;
+      removeSuccess: string;
+      removeConfirmTitle: string;
+      removeConfirmDesc: string;
+      removeConfirmAction: string;
+    };
+    orgNameRequiredError: string;
+    orgSlugRequiredError: string;
     accountProfileDesc: string;
     accountInfoSub: string;
     accountProfile: {
@@ -1502,6 +1589,9 @@ export interface TranslationSchema {
       timezoneLabel: string;
       timezoneHint: string;
       followOrgDefault: string;
+      currentLanguage: string;
+      currentTimezone: string;
+      personalSource: string;
       saveBtn: string;
       savingBtn: string;
       saveSuccess: string;
@@ -1514,6 +1604,9 @@ export interface TranslationSchema {
       localizationSub: string;
       notifications: string;
       notificationsSub: string;
+      notificationsScope: string;
+      organizationGroup: string;
+      personalGroup: string;
       careerPage: string;
       careerPageSub: string;
       members: string;
@@ -1532,6 +1625,7 @@ export interface TranslationSchema {
       accountSub: string;
       emailTemplates: string;
       emailTemplatesSub: string;
+      emailTemplatesScope: string;
       roles: string;
       rolesSub: string;
       auditLog: string;
@@ -1753,9 +1847,12 @@ export interface TranslationSchema {
       actionRolePermissionsUpdated: string;
       actionRolePermissionsReset: string;
       actionMemberRoleChanged: string;
+      actionMemberRemoved: string;
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
       actionOrgLocalizationUpdated: string;
+      actionOrgLogoUpdated: string;
+      actionOrgLogoRemoved: string;
       resources: {
         ORGANIZATION: string;
         MEMBER: string;
@@ -1770,6 +1867,8 @@ export interface TranslationSchema {
         permissionsUpdated: string;
         ownershipTransferred: string;
         localizationUpdated: string;
+        logoUpdated: string;
+        logoRemoved: string;
         localizationFields: {
           timezone: string;
           defaultLocale: string;

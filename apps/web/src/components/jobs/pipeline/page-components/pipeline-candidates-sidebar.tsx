@@ -8,7 +8,6 @@ import { PipelineCandidateCard } from "@/components/jobs/pipeline/pipeline-candi
 import type { Application } from "@/types";
 
 export interface PipelineCandidatesSidebarProps {
-  isListCollapsed: boolean;
   mobileDetailOpen: boolean;
   searchQuery: string;
   onSearchChange: (q: string) => void;
@@ -22,7 +21,6 @@ export interface PipelineCandidatesSidebarProps {
 }
 
 export function PipelineCandidatesSidebar({
-  isListCollapsed,
   mobileDetailOpen,
   searchQuery,
   onSearchChange,
@@ -38,15 +36,15 @@ export function PipelineCandidatesSidebar({
 
   return (
     <aside
-      className={`w-full ${isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-84"} shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200 ${
+      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-border bg-card text-card-foreground overflow-hidden transition-colors duration-200 ${
         mobileDetailOpen ? "hidden md:flex" : "flex"
       }`}
     >
       {/* Search box & Toolbar */}
-      <div className="shrink-0 p-3 border-b border-slate-200/80 dark:border-slate-800 space-y-2">
+      <div className="shrink-0 p-3 border-b border-border space-y-2">
         <div className="relative">
           <Search
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
@@ -56,12 +54,12 @@ export function PipelineCandidatesSidebar({
             aria-label={t("candidates.searchCandidates")}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 pl-8 pr-3 text-xs bg-slate-50/70 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+            className="h-8 pl-8 pr-3 text-xs bg-background border-input rounded-md"
           />
         </div>
 
         {/* Sort toolbar */}
-        <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
           <CustomSelect
             value={sortBy}
             onChange={(val) =>
@@ -82,30 +80,30 @@ export function PipelineCandidatesSidebar({
           <button
             type="button"
             disabled
-            className="h-6 w-6 rounded-md flex items-center justify-center text-slate-400 opacity-40 cursor-not-allowed transition-colors"
+            className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground opacity-40 cursor-not-allowed transition-colors"
             title={t("pipeline.filterOptions")}
           >
             <Menu className="h-3 w-3" />
           </button>
         </div>
 
-        <p className="text-[10px] text-slate-400 font-medium pt-0.5">
+        <p className="text-[10px] text-muted-foreground font-medium pt-0.5">
           {candidateCountText}
         </p>
       </div>
 
       {/* Candidates List Container */}
-      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 scrollbar-thin">
+      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border scrollbar-thin">
         {filteredCandidates.length === 0 ? (
-          <div className="pt-8 pb-6 px-4 flex flex-col items-center text-center space-y-2 text-slate-400">
-            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+          <div className="pt-8 pb-6 px-4 flex flex-col items-center text-center space-y-2 text-muted-foreground">
+            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
               <User className="h-5 w-5" />
             </div>
             <div className="space-y-0.5">
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <h4 className="text-xs font-semibold text-foreground">
                 {t("candidates.noCandidatesYet")}
               </h4>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 {t("candidates.noApplicationsMatchingStage")}
               </p>
             </div>

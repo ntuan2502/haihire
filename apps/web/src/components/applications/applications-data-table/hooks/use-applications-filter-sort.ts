@@ -22,6 +22,9 @@ interface UseApplicationsFilterSortProps {
   setJobFilter: (val: string) => void;
   setScoreFilter: (val: string) => void;
   handleClearStages: () => void;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  onSortChange?: (field: SortField, direction: SortDirection) => void;
 }
 
 export function useApplicationsFilterSort({
@@ -40,9 +43,35 @@ export function useApplicationsFilterSort({
   setJobFilter,
   setScoreFilter,
   handleClearStages,
+  sortField: propSortField,
+  sortDirection: propSortDirection,
+  onSortChange,
 }: UseApplicationsFilterSortProps) {
-  const [sortField, setSortField] = useState<SortField>("applied");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [localSortField, setLocalSortField] = useState<SortField>("applied");
+  const [localSortDirection, setLocalSortDirection] =
+    useState<SortDirection>("desc");
+
+  const sortField = propSortField ?? localSortField;
+  const sortDirection = propSortDirection ?? localSortDirection;
+
+  const setSortField = (field: SortField) => {
+    if (onSortChange) {
+      onSortChange(field, sortDirection);
+    } else {
+      setLocalSortField(field);
+    }
+  };
+
+  const setSortDirection = (
+    dir: SortDirection | ((prev: SortDirection) => SortDirection),
+  ) => {
+    const next = typeof dir === "function" ? dir(sortDirection) : dir;
+    if (onSortChange) {
+      onSortChange(sortField, next);
+    } else {
+      setLocalSortDirection(next);
+    }
+  };
 
   const filteredApps = useMemo(() => {
     let list = baseApplications;
@@ -140,8 +169,12 @@ export function useApplicationsFilterSort({
     setJobFilter("ALL");
     setScoreFilter("ALL");
     handleClearStages();
-    setSortField("applied");
-    setSortDirection("desc");
+    if (onSortChange) {
+      onSortChange("applied", "desc");
+    } else {
+      setLocalSortField("applied");
+      setLocalSortDirection("desc");
+    }
   };
 
   const totalCount =
@@ -159,15 +192,24 @@ export function useApplicationsFilterSort({
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedApps =
     isServerPaginated && scoreFilter === "ALL"
-      ? baseApplications
+      ? filteredApps
       : filteredApps.slice(startIndex, startIndex + rowsPerPage);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      const nextDir: SortDirection = sortDirection === "asc" ? "desc" : "asc";
+      if (onSortChange) {
+        onSortChange(field, nextDir);
+      } else {
+        setLocalSortDirection(nextDir);
+      }
     } else {
-      setSortField(field);
-      setSortDirection("asc");
+      if (onSortChange) {
+        onSortChange(field, "asc");
+      } else {
+        setLocalSortField(field);
+        setLocalSortDirection("asc");
+      }
     }
   };
 

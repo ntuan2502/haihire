@@ -47,20 +47,19 @@ export const STAGE_CONFIG_MAP: Record<ApplicationStage, StageConfig> = {
     label: "New",
     actionLabel: "New",
     stepNumber: 1,
-    dotColor: "bg-blue-500",
-    barColor: "bg-blue-500",
+    dotColor: "bg-sky-500",
+    barColor: "bg-sky-500",
     badgeBg:
-      "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-900/60",
-    textColor: "text-blue-600 dark:text-blue-400",
-    cardBg: "bg-blue-50/70 dark:bg-blue-950/40",
-    cardHover: "hover:bg-blue-100/70",
-    cardBorder: "border-blue-100 dark:border-blue-900/40",
+      "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/60 dark:text-sky-400 dark:border-sky-900/60",
+    textColor: "text-sky-600 dark:text-sky-400",
+    cardBg: "bg-sky-50/70 dark:bg-sky-950/40",
+    cardHover: "hover:bg-sky-100/70",
+    cardBorder: "border-sky-100 dark:border-sky-900/40",
     activePill:
-      "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
-    pillBadge:
-      "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300",
-    btnBg: "bg-blue-600",
-    btnHover: "hover:bg-blue-700",
+      "bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800",
+    pillBadge: "bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-300",
+    btnBg: "bg-sky-600",
+    btnHover: "hover:bg-sky-700",
   },
   SCREENING: {
     id: "SCREENING",
@@ -182,20 +181,17 @@ export function getStageInfo(
     label: stage || "New",
     actionLabel: stage || "New",
     stepNumber: 1,
-    dotColor: "bg-slate-400",
-    barColor: "bg-slate-400",
-    badgeBg:
-      "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    textColor: "text-slate-600 dark:text-slate-300",
-    cardBg: "bg-slate-50/70 dark:bg-slate-800/60",
-    cardHover: "hover:bg-slate-100/70",
-    cardBorder: "border-slate-200/60 dark:border-slate-700/60",
-    activePill:
-      "bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-    pillBadge:
-      "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-    btnBg: "bg-slate-600",
-    btnHover: "hover:bg-slate-700",
+    dotColor: "bg-muted-foreground",
+    barColor: "bg-muted-foreground",
+    badgeBg: "bg-secondary text-secondary-foreground border-border",
+    textColor: "text-muted-foreground",
+    cardBg: "bg-muted/60",
+    cardHover: "hover:bg-muted",
+    cardBorder: "border-border",
+    activePill: "bg-secondary text-secondary-foreground border-border",
+    pillBadge: "bg-muted text-foreground",
+    btnBg: "bg-primary",
+    btnHover: "hover:bg-primary/90",
   };
 }
 

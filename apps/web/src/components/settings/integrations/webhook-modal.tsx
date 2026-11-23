@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { SettingsButton } from "@/components/settings/settings-button";
+import { useState, useEffect, useId, type FormEvent } from "react";
 import { useI18n } from "@/i18n";
 import type {
   WebhookSettingResponse,
   WebhookEventType,
   WebhookProviderType,
 } from "@haihire/shared";
-import { Send, HelpCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Send, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-  CustomModal,
+  FormModal,
   CustomSelect,
   type CustomSelectOption,
 } from "@/components/shared";
@@ -52,6 +52,13 @@ export function WebhookModal({
   isTesting,
 }: WebhookModalProps) {
   const { t } = useI18n();
+  const baseId = useId();
+  const eventTypeSelectId = `${baseId}-event`;
+  const providerSelectId = `${baseId}-provider`;
+  const urlInputId = `${baseId}-url`;
+  const chatIdInputId = `${baseId}-chat`;
+  const secretInputId = `${baseId}-secret`;
+  const enabledCheckboxId = `${baseId}-enabled`;
 
   const [eventType, setEventType] = useState<WebhookEventType>("DLQ_ALERT");
   const [provider, setProvider] = useState<WebhookProviderType>("TELEGRAM");
@@ -59,8 +66,10 @@ export function WebhookModal({
   const [secretToken, setSecretToken] = useState("");
   const [chatId, setChatId] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
+    setFormError(null);
     if (editingSetting) {
       setEventType(editingSetting.eventType);
       setProvider(editingSetting.provider);
@@ -119,9 +128,16 @@ export function WebhookModal({
     }
   };
 
-  const handleSave = async () => {
+  const isBusy = isSaving || isTesting;
+
+  const handleSave = async (e: FormEvent) => {
+    e.preventDefault();
+    if (isBusy) return;
+    setFormError(null);
     if (!webhookUrl.trim()) {
-      toast.error(t("errors.VALIDATION_ERROR"));
+      const msg = t("errors.VALIDATION_ERROR");
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -129,7 +145,7 @@ export function WebhookModal({
       id: editingSetting?.id,
       eventType,
       provider,
-      webhookUrl,
+      webhookUrl: webhookUrl.trim(),
       secretToken: provider === "GENERIC" ? secretToken : undefined,
       chatId: provider === "TELEGRAM" ? chatId : undefined,
       isEnabled,
@@ -137,188 +153,211 @@ export function WebhookModal({
   };
 
   const handleTest = async () => {
+    if (isBusy) return;
+    setFormError(null);
+    if (!webhookUrl.trim()) {
+      const msg = t("errors.VALIDATION_ERROR");
+      setFormError(msg);
+      toast.error(msg);
+      return;
+    }
+
     await onTest({
       id: editingSetting?.id,
       eventType,
       provider,
-      webhookUrl,
+      webhookUrl: webhookUrl.trim(),
       secretToken: provider === "GENERIC" ? secretToken : undefined,
       chatId: provider === "TELEGRAM" ? chatId : undefined,
     });
   };
 
   return (
-    <CustomModal
+    <FormModal
       isOpen={isOpen}
       onClose={onClose}
+      onSubmit={handleSave}
       title={
         editingSetting
           ? t("settings.integrations.webhooks.modal.editTitle")
           : t("settings.integrations.webhooks.modal.addTitle")
       }
       size="md"
-    >
-      <div className="flex flex-col">
-        <div className="p-6 space-y-4">
-          {/* Event Type Select */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("settings.integrations.webhooks.modal.eventType")}
-            </label>
-            <CustomSelect<WebhookEventType>
-              value={eventType}
-              onChange={(val) => setEventType(val)}
-              options={eventTypeOptions}
-              className="w-full"
-            />
-          </div>
-
-          {/* Provider Select */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("settings.integrations.webhooks.modal.provider")}
-            </label>
-            <CustomSelect<WebhookProviderType>
-              value={provider}
-              onChange={(val) => setProvider(val)}
-              options={providerOptions}
-              className="w-full"
-            />
-          </div>
-
-          {/* Webhook URL Input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("settings.integrations.webhooks.modal.webhookUrl")}
-            </label>
-            <Input
-              type="text"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder={getDynamicPlaceholder(provider)}
-            />
-            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-              <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-              {provider === "TELEGRAM" &&
-                t(
-                  "settings.integrations.webhooks.modal.webhookUrlHint.telegram",
-                )}
-              {provider === "DISCORD" &&
-                t(
-                  "settings.integrations.webhooks.modal.webhookUrlHint.discord",
-                )}
-              {provider === "GENERIC" &&
-                t(
-                  "settings.integrations.webhooks.modal.webhookUrlHint.generic",
-                )}
-            </p>
-          </div>
-
-          {/* Telegram Chat ID (Conditional) */}
-          {provider === "TELEGRAM" && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {t("settings.integrations.webhooks.modal.chatId")}
-              </label>
-              <Input
-                type="text"
-                value={chatId}
-                onChange={(e) => setChatId(e.target.value)}
-                placeholder="-100123456789"
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {t("settings.integrations.webhooks.modal.chatIdHint")}
-              </p>
-            </div>
-          )}
-
-          {/* Generic Secret Token (Conditional) */}
-          {provider === "GENERIC" && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                {t("settings.integrations.webhooks.modal.secretToken")}
-              </label>
-              <Input
-                type="password"
-                value={secretToken}
-                onChange={(e) => setSecretToken(e.target.value)}
-                placeholder="••••••••••••••••"
-              />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {t("settings.integrations.webhooks.modal.secretTokenHint")}
-              </p>
-            </div>
-          )}
-
-          {/* Is Enabled Toggle */}
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              id="webhook-is-enabled"
-              type="checkbox"
-              checked={isEnabled}
-              onChange={(e) => setIsEnabled(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-            />
-            <label
-              htmlFor="webhook-is-enabled"
-              className="text-xs font-medium text-slate-700 dark:text-slate-300 select-none cursor-pointer"
-            >
-              {t("settings.integrations.webhooks.modal.isEnabled")}
-            </label>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
-          <Button
+      isSubmitting={isBusy}
+      error={formError}
+      bodyClassName="space-y-4"
+      footer={
+        <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2">
+          <SettingsButton
             type="button"
             variant="outline"
             size="sm"
+            icon={Send}
+            pending={isTesting}
             onClick={handleTest}
-            disabled={isTesting}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
+            disabled={isBusy}
+            className="w-full sm:w-auto"
           >
-            {isTesting ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>
-                  {t("settings.integrations.webhooks.modal.testingButton")}
-                </span>
-              </>
-            ) : (
-              <>
-                <Send className="h-3.5 w-3.5" />
-                <span>
-                  {t("settings.integrations.webhooks.modal.testButton")}
-                </span>
-              </>
-            )}
-          </Button>
+            {isTesting
+              ? t("settings.integrations.webhooks.modal.testingButton")
+              : t("settings.integrations.webhooks.modal.testButton")}
+          </SettingsButton>
 
           <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-            <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-              {t("settings.integrations.webhooks.modal.cancel")}
-            </Button>
-            <Button
+            <SettingsButton
               type="button"
+              variant="ghost"
               size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
+              disabled={isBusy}
+              onClick={onClose}
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                  <span>
-                    {t("settings.integrations.webhooks.modal.saving")}
-                  </span>
-                </>
-              ) : (
-                <span>{t("settings.integrations.webhooks.modal.save")}</span>
-              )}
-            </Button>
+              {t("settings.integrations.webhooks.modal.cancel")}
+            </SettingsButton>
+            <SettingsButton
+              type="submit"
+              size="sm"
+              pending={isSaving}
+              disabled={isBusy}
+            >
+              {isSaving
+                ? t("settings.integrations.webhooks.modal.saving")
+                : t("settings.integrations.webhooks.modal.save")}
+            </SettingsButton>
           </div>
         </div>
+      }
+    >
+      {/* Event Type Select */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor={`${eventTypeSelectId}-trigger`}
+          className="text-xs font-medium text-foreground block"
+        >
+          {t("settings.integrations.webhooks.modal.eventType")}
+        </label>
+        <CustomSelect<WebhookEventType>
+          id={eventTypeSelectId}
+          value={eventType}
+          onChange={(val) => setEventType(val)}
+          options={eventTypeOptions}
+          disabled={isBusy}
+          className="w-full"
+        />
       </div>
-    </CustomModal>
+
+      {/* Provider Select */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor={`${providerSelectId}-trigger`}
+          className="text-xs font-medium text-foreground block"
+        >
+          {t("settings.integrations.webhooks.modal.provider")}
+        </label>
+        <CustomSelect<WebhookProviderType>
+          id={providerSelectId}
+          value={provider}
+          onChange={(val) => setProvider(val)}
+          options={providerOptions}
+          disabled={isBusy}
+          className="w-full"
+        />
+      </div>
+
+      {/* Webhook URL Input */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor={urlInputId}
+          className="text-xs font-medium text-foreground block"
+        >
+          {t("settings.integrations.webhooks.modal.webhookUrl")}
+        </label>
+        <Input
+          id={urlInputId}
+          type="text"
+          value={webhookUrl}
+          disabled={isBusy}
+          onChange={(e) => {
+            setWebhookUrl(e.target.value);
+            if (formError) setFormError(null);
+          }}
+          placeholder={getDynamicPlaceholder(provider)}
+        />
+        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+          <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            {provider === "TELEGRAM" &&
+              t("settings.integrations.webhooks.modal.webhookUrlHint.telegram")}
+            {provider === "DISCORD" &&
+              t("settings.integrations.webhooks.modal.webhookUrlHint.discord")}
+            {provider === "GENERIC" &&
+              t("settings.integrations.webhooks.modal.webhookUrlHint.generic")}
+          </span>
+        </p>
+      </div>
+
+      {/* Telegram Chat ID (Conditional) */}
+      {provider === "TELEGRAM" && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor={chatIdInputId}
+            className="text-xs font-medium text-foreground block"
+          >
+            {t("settings.integrations.webhooks.modal.chatId")}
+          </label>
+          <Input
+            id={chatIdInputId}
+            type="text"
+            value={chatId}
+            disabled={isBusy}
+            onChange={(e) => setChatId(e.target.value)}
+            placeholder="-100123456789"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {t("settings.integrations.webhooks.modal.chatIdHint")}
+          </p>
+        </div>
+      )}
+
+      {/* Generic Secret Token (Conditional) */}
+      {provider === "GENERIC" && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor={secretInputId}
+            className="text-xs font-medium text-foreground block"
+          >
+            {t("settings.integrations.webhooks.modal.secretToken")}
+          </label>
+          <Input
+            id={secretInputId}
+            type="password"
+            value={secretToken}
+            disabled={isBusy}
+            onChange={(e) => setSecretToken(e.target.value)}
+            placeholder="••••••••••••••••"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {t("settings.integrations.webhooks.modal.secretTokenHint")}
+          </p>
+        </div>
+      )}
+
+      {/* Is Enabled Toggle */}
+      <div className="flex items-center gap-2 pt-2">
+        <input
+          id={enabledCheckboxId}
+          type="checkbox"
+          checked={isEnabled}
+          disabled={isBusy}
+          onChange={(e) => setIsEnabled(e.target.checked)}
+          className="h-4 w-4 rounded border-input accent-primary focus-visible:ring-ring cursor-pointer disabled:opacity-50"
+        />
+        <label
+          htmlFor={enabledCheckboxId}
+          className="text-xs font-medium text-foreground select-none cursor-pointer"
+        >
+          {t("settings.integrations.webhooks.modal.isEnabled")}
+        </label>
+      </div>
+    </FormModal>
   );
 }

@@ -38,7 +38,13 @@ export class CreateInterviewDto {
 
   @IsString()
   @IsNotEmpty()
-  interviewer!: string;
+  @IsOptional()
+  interviewer?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  interviewerId?: string;
 
   @IsNumber()
   @IsOptional()

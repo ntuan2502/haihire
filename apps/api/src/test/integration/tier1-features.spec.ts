@@ -503,7 +503,7 @@ describe("Vitest Integration: Tier 1 Feature Coverage (16 Core Features)", () =>
     expect(app.candidate?.email).toBe("unmasked-candidate@example.com");
   });
 
-  it("T1-INT-F04-B [F04]: Resume Storage - accepts image MIME types (png) for document upload", async () => {
+  it("T1-INT-F04-B [F04]: Resume Storage - rejects non-pdf MIME types (png) for resume upload", async () => {
     const user = await createTestUser(ctx.prisma);
     const org = await createTestOrg(ctx.prisma, user.id);
     const job = await createTestJob(ctx.prisma, org.id, user.id);
@@ -523,7 +523,7 @@ describe("Vitest Integration: Tier 1 Feature Coverage (16 Core Features)", () =>
 
     const agent = ctx.createAgent();
     const res = await agent.postMultipart("/applications/apply", formData);
-    expect([200, 201]).toContain(res.status);
+    expect(res.status).toBe(400);
   });
 
   it("T1-INT-F05-B [F05]: Route Guards - TenantGuard verifies matching organizationId on query parameters", async () => {

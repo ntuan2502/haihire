@@ -16,7 +16,7 @@ Stack baselines verified in `package.json`, `pnpm-workspace.yaml`, `scripts/chec
 ## 1. Mandatory 18 CI Architecture Gates (`pnpm check:all`)
 
 Never consider a non-trivial task complete until the applicable gates (and before release/PR merge, all gates in `scripts/check-all.ts`) pass:
-1. `lint:env-sync`: 100% parity between `.env.example`, `apps/api/src/config/env.ts`, and `apps/web/src/lib/env.ts` (`55` env keys).
+1. `lint:env-sync`: 100% parity between `.env.example`, `apps/api/src/config/env.ts`, and `apps/web/src/lib/env.ts`.
 2. `lint:i18n`: 2-way `vi.ts` / `en.ts` dictionary parity + zero hardcoded JSX strings.
 3. `lint`: ESLint across `api`, `web`, and `shared`.
 4. `typecheck`: `tsc --noEmit` across workspaces.
@@ -24,9 +24,9 @@ Never consider a non-trivial task complete until the applicable gates (and befor
 6. `lint:error-i18n`: Every `APP_ERROR_CODES` key localized in both `en.ts` and `vi.ts`.
 7. `lint:api-contract`: API endpoint contract & leak audit.
 8. `lint:prometheus-rules`: Monitoring & Prometheus alert rule schema audit.
-9. `lint:tenant-scope`: Static tenant isolation audit across all 8 tenant-scoped backend modules (`0` unsafe queries).
+9. `lint:tenant-scope`: Static tenant isolation audit across all 10 tenant-scoped backend modules (`0` unsafe queries).
 10. `lint:doc-links`: Markdown relative-link audit across `docs/`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, and package `README.md` files (rejects `file://` links, `\`, and dead targets).
-11. `lint:doc-sync`: Checks that all code-path references outside code blocks exist on disk, core env vars (`JWT_SECRET`, `ENCRYPTION_KEY`, `DATABASE_URL`, `REDIS_HOST`, `MINIO_ENDPOINT`, `CORS_ORIGIN`) are documented, and `README.md` + `AGENTS.md` `<!-- STATS:START -->` blocks match `collectRepoStats()`.
+11. `lint:doc-sync`: Checks that all code-path references outside code blocks exist on disk, environment variables used by the code are declared in the local template, and `docs/PROJECT_METRICS.md` matches the generated source inventory.
 12. `check:prod-email-provider`: Rejects `SIMULATED` email provider in production configs.
 13. `test:diff`: Fails if net test count shrinks (`netNew < 0`) unless `ALLOW_TEST_DELETION=true`.
 14. `lint:nextjs-conventions`: Enforces Next.js 16 `src/proxy.ts` and forbids `middleware.ts`.
@@ -51,5 +51,5 @@ Never consider a non-trivial task complete until the applicable gates (and befor
 ## 3. Documentation & Stats Hygiene
 
 - Never commit transient reports inside `docs/reports/` or unverified metrics.
-- Whenever tests, env keys, or CI gates change, run `pnpm docs:stats:write` (`scripts/generate-docs-stats.ts`) and verify `pnpm lint:doc-links` and `pnpm lint:doc-sync` exit `0`.
+- Whenever the source inventory changes, run `pnpm docs:stats:write` (`scripts/generate-docs-stats.ts`) and verify `pnpm lint:doc-links` and `pnpm lint:doc-sync` exit `0`.
 - Remember Windows PowerShell compatibility: avoid chaining `&&` in terminal commands; execute sequential steps individually or use `;` with `$LASTEXITCODE` checks.

@@ -14,6 +14,8 @@ import {
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDestructiveModal } from "@/components/shared";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Pagination } from "@/components/shared/pagination";
 import Link from "next/link";
 import { slugify } from "@/lib/utils";
@@ -45,20 +47,33 @@ export function TrackingLinksTab({
 }: TrackingLinksTabProps) {
   const { t } = useI18n();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [linkToDelete, setLinkToDelete] = useState<TrackingLinkItem | null>(
+    null,
+  );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const handleCopyLink = (
-    token: string,
-    id: string,
-    jobId?: string | null,
-    jobTitle?: string | null,
-  ) => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const jobSlug = jobTitle ? slugify(jobTitle) : jobId || "";
+  const buildCareerPath = (link: TrackingLinkItem) => {
+    const titleSlug = link.jobTitle ? slugify(link.jobTitle) : "";
+    const jobSlug =
+      titleSlug && link.jobId
+        ? `${titleSlug}-${link.jobId.slice(0, 8)}`
+        : titleSlug || link.jobId || "";
     const jobSegment = jobSlug ? `/${jobSlug}` : "";
-    const url = `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}`;
+    const params = new URLSearchParams({ ref: link.token });
+    if (link.utmSource) params.set("utm_source", link.utmSource);
+    if (link.utmMedium) params.set("utm_medium", link.utmMedium);
+    if (link.utmCampaign) params.set("utm_campaign", link.utmCampaign);
+    if (link.utmTerm) params.set("utm_term", link.utmTerm);
+    if (link.utmContent) params.set("utm_content", link.utmContent);
+    return `/careers/${orgSlug}${jobSegment}?${params.toString()}`;
+  };
+
+  const handleCopyLink = (link: TrackingLinkItem) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}${buildCareerPath(link)}`;
 
     navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(id);
+      setCopiedId(link.id);
       setTimeout(() => setCopiedId(null), 2000);
     });
   };
@@ -70,69 +85,71 @@ export function TrackingLinksTab({
   return (
     <div className="space-y-4">
       {/* Table Container */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+      <div className="rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-slate-400">
-            {t("common.loading")}
-          </div>
+          <LoadingSpinner />
         ) : links.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-              <Link2 className="h-6 w-6" />
+          <div className="px-6 py-12 sm:p-16 text-center flex flex-col items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
+              <Link2 className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                {t("sourcing.links.emptyTitle")}
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                {t("sourcing.links.emptyDesc")}
-              </p>
-            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              {t("sourcing.links.emptyTitle")}
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-sm mt-1">
+              {t("sourcing.links.emptyDesc")}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
-                  <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
-                  <th className="py-3.5 px-4 text-center">
+                <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
+                  <th scope="col" className="py-3.5 px-5">
+                    {t("sourcing.links.name")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4">
+                    {t("sourcing.links.source")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4">
+                    {t("sourcing.links.job")}
+                  </th>
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.clicks")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.apps")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.cvr")}
                   </th>
-                  <th className="py-3.5 px-4 text-center">
+                  <th scope="col" className="py-3.5 px-4 text-center">
                     {t("sourcing.links.status")}
                   </th>
-                  <th className="py-3.5 px-5 text-right">
+                  <th scope="col" className="py-3.5 px-5 text-right">
                     {t("sourcing.links.actions")}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-border font-medium">
                 {links.map((link) => {
                   const isCopied = copiedId === link.id;
 
                   return (
                     <tr
                       key={link.id}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       {/* Name & Token */}
                       <td className="py-3.5 px-5">
                         <div className="space-y-0.5">
                           <Link
-                            href={`/dashboard/source-tracking/${link.id}`}
-                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
+                            href={`/source-tracking/${link.id}`}
+                            className="font-bold text-foreground hover:text-primary transition-colors inline-block"
                           >
                             {link.name}
                           </Link>
-                          <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                          <p className="text-[11px] font-mono text-muted-foreground">
                             ?ref={link.token}
                           </p>
                         </div>
@@ -148,22 +165,22 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Job */}
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 text-muted-foreground">
                         {link.jobTitle || t("sourcing.modal.allJobsOption")}
                       </td>
 
                       {/* Clicks */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 text-center font-bold text-foreground">
                         {link.clicksCount}
                       </td>
 
                       {/* Applications */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 text-center font-bold text-foreground">
                         {link.applicationsCount}
                       </td>
 
                       {/* CVR */}
-                      <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
+                      <td className="py-3.5 px-4 text-center font-bold text-primary">
                         {link.conversionRate}%
                       </td>
 
@@ -178,14 +195,14 @@ export function TrackingLinksTab({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+                                : "bg-secondary text-muted-foreground border-border"
                             }`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${
                                 link.isActive
                                   ? "bg-emerald-500"
-                                  : "bg-slate-400"
+                                  : "bg-muted-foreground"
                               }`}
                             />
                             <span>
@@ -199,14 +216,14 @@ export function TrackingLinksTab({
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                               link.isActive
                                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+                                : "bg-secondary text-muted-foreground border-border"
                             }`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${
                                 link.isActive
                                   ? "bg-emerald-500"
-                                  : "bg-slate-400"
+                                  : "bg-muted-foreground"
                               }`}
                             />
                             <span>
@@ -225,15 +242,8 @@ export function TrackingLinksTab({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() =>
-                              handleCopyLink(
-                                link.token,
-                                link.id,
-                                link.jobId,
-                                link.jobTitle,
-                              )
-                            }
-                            className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
+                            onClick={() => handleCopyLink(link)}
+                            className="h-8 px-2.5 rounded-md text-muted-foreground hover:text-primary gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
                               <>
@@ -252,13 +262,17 @@ export function TrackingLinksTab({
 
                           {/* Open Career Link */}
                           <a
-                            href={`/careers/${orgSlug}${link.jobTitle ? `/${slugify(link.jobTitle)}` : link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
+                            href={buildCareerPath(link)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             title={t("sourcing.modal.previewLabel")}
+                            aria-label={t("sourcing.modal.previewLabel")}
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
+                            <ExternalLink
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
                           </a>
 
                           {/* Edit Link Button */}
@@ -267,10 +281,11 @@ export function TrackingLinksTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => onEditLink(link)}
-                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
                               title={t("common.edit")}
+                              aria-label={t("common.edit")}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
 
@@ -282,10 +297,11 @@ export function TrackingLinksTab({
                               onClick={() =>
                                 onToggleStatus(link.id, link.isActive)
                               }
-                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                              className="h-8 w-8 p-0 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
                               title={t("sourcing.links.toggleStatus")}
+                              aria-label={t("sourcing.links.toggleStatus")}
                             >
-                              <Power className="h-3.5 w-3.5" />
+                              <Power className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
 
@@ -295,15 +311,14 @@ export function TrackingLinksTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                if (
-                                  confirm(t("sourcing.links.deleteConfirm"))
-                                ) {
-                                  onDeleteLink(link.id);
-                                }
+                                setLinkToDelete(link);
+                                setIsDeleteModalOpen(true);
                               }}
-                              className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              aria-label={t("common.delete")}
+                              title={t("common.delete")}
+                              className="h-8 w-8 p-0 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           )}
                         </div>
@@ -318,7 +333,7 @@ export function TrackingLinksTab({
 
         {/* Server-Side Pagination */}
         {total > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+          <div className="py-3 px-4 sm:px-5 border-t border-border bg-muted/30">
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -326,10 +341,38 @@ export function TrackingLinksTab({
               pageSize={pageSize}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
+              itemLabel={t("sourcing.tabs.trackingLinks").toLowerCase()}
             />
           </div>
         )}
       </div>
+
+      <ConfirmDestructiveModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          if (!linkToDelete || !onDeleteLink) return;
+          await onDeleteLink(linkToDelete.id);
+          setIsDeleteModalOpen(false);
+        }}
+        title={t("common.delete")}
+        description={t("sourcing.links.deleteConfirm")}
+        notice={
+          linkToDelete ? (
+            <div className="flex flex-col gap-0.5 text-xs">
+              <span className="font-semibold text-foreground break-words">
+                {linkToDelete.name}
+              </span>
+              <span className="font-mono text-[11px] text-muted-foreground break-all">
+                {linkToDelete.token}
+              </span>
+            </div>
+          ) : undefined
+        }
+        confirmButtonLabel={t("common.delete")}
+        cancelButtonLabel={t("common.cancel")}
+        variant="danger"
+      />
     </div>
   );
 }

@@ -273,7 +273,7 @@ describe("CandidateDrawer Component", () => {
 
     const editBtn = screen.getByTitle("Chỉnh sửa");
     fireEvent.click(editBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/candidates/cand-1/edit");
+    expect(mockPush).toHaveBeenCalledWith("/candidates/cand-1/edit");
   });
 
   it("navigates to candidate full page when open full page button is clicked", () => {
@@ -290,7 +290,7 @@ describe("CandidateDrawer Component", () => {
 
     const fullPageBtn = screen.getByTitle("Xem toàn màn hình");
     fireEvent.click(fullPageBtn);
-    expect(mockPush).toHaveBeenCalledWith("/dashboard/candidates/cand-1");
+    expect(mockPush).toHaveBeenCalledWith("/candidates/cand-1");
   });
 
   it("calls onClose when close button is clicked", () => {
@@ -306,7 +306,7 @@ describe("CandidateDrawer Component", () => {
       />,
     );
 
-    const closeBtn = screen.getByRole("button", { name: "" });
+    const closeBtn = screen.getByRole("button", { name: "common.close" });
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalled();
   });
@@ -538,7 +538,7 @@ describe("CandidateDrawer Component", () => {
   });
 
   it("triggers file upload when file input changes", async () => {
-    const { container } = render(
+    render(
       <CandidateDrawer
         candidate={mockCandidate}
         onClose={vi.fn()}
@@ -551,7 +551,7 @@ describe("CandidateDrawer Component", () => {
 
     fireEvent.click(screen.getByText(/Tài liệu/));
 
-    const fileInput = container.querySelector(
+    const fileInput = document.querySelector(
       "#drawer-doc-upload",
     ) as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
@@ -566,7 +566,7 @@ describe("CandidateDrawer Component", () => {
       expect(mockUploadDocMutateAsync).toHaveBeenCalledWith({
         id: "cand-1",
         file,
-        type: "All",
+        type: "Resume",
       });
     });
   });
@@ -590,7 +590,9 @@ describe("CandidateDrawer Component", () => {
 
     // Modal opens, fill confirm text and submit form
     const confirmInput = screen.getByRole("textbox");
-    fireEvent.change(confirmInput, { target: { value: "XÓA" } });
+    fireEvent.change(confirmInput, {
+      target: { value: "Pham_Thi_Ung_Vien_CV.pdf" },
+    });
     fireEvent.submit(confirmInput.closest("form")!);
 
     await waitFor(() => {

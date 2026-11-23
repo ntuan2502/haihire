@@ -8,7 +8,7 @@ import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 
 describe("EmailService", () => {
   let service: EmailService;
-  let mockPrismaService: unknown;
+  let mockPrismaService: ReturnType<typeof createMockPrismaService>;
   let mockActivitiesService: { createActivity: ReturnType<typeof vi.fn> };
   let encryptionService: EncryptionService;
 
@@ -27,6 +27,52 @@ describe("EmailService", () => {
       emailSetting: inMemorySettings,
       emailLog: inMemoryLogs,
       organization: [{ id: "org-1" }],
+      candidate: [
+        {
+          id: "cand-123",
+          organizationId: "org-test",
+          email: "c123@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-999",
+          organizationId: "org-test",
+          email: "c999@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-retry",
+          organizationId: "org-test",
+          email: "retry@example.com",
+          deletedAt: null,
+        },
+        {
+          id: "cand-filter-1",
+          organizationId: "org-test",
+          email: "john@example.com",
+          deletedAt: null,
+        },
+      ],
+      application: [
+        {
+          id: "app-456",
+          organizationId: "org-test",
+          candidateId: "cand-123",
+          jobId: "job-1",
+        },
+        {
+          id: "app-888",
+          organizationId: "org-test",
+          candidateId: "cand-999",
+          jobId: "job-1",
+        },
+        {
+          id: "app-retry",
+          organizationId: "org-test",
+          candidateId: "cand-retry",
+          jobId: "job-1",
+        },
+      ],
     });
 
     service = createTestEmailService(
@@ -677,6 +723,104 @@ describe("EmailService", () => {
       expect(log.recipientEmail).toBe("fallback@example.com");
       expect(log.subject).toBe("Sync Fallback Subject");
     });
+
+    it("BUG-17: enqueues distinct jobIds for different subjects/variables with removeOnFail and deduplicates retry logs", async () => {
+      const mockQueue = {
+        add: vi.fn().mockResolvedValue({ id: "job-det-next" }),
+      };
+
+      const queuedService = createTestEmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        mockQueue as never,
+      );
+
+      await queuedService.sendEmail(
+        {
+          to: "applicant@example.com",
+          recipientName: "Test Applicant",
+          candidateId: "cand-999",
+          applicationId: "app-888",
+          templateType: "INTERVIEW_INVITATION",
+          subject: "Interview Round 1",
+          body: "Round 1 invite",
+          variables: { interview_date: "2026-10-20" },
+        },
+        "org-test",
+      );
+      await queuedService.sendEmail(
+        {
+          to: "applicant@example.com",
+          recipientName: "Test Applicant",
+          candidateId: "cand-999",
+          applicationId: "app-888",
+          templateType: "INTERVIEW_INVITATION",
+          subject: "Interview Round 2",
+          body: "Round 2 invite",
+          variables: { interview_date: "2026-10-25" },
+        },
+        "org-test",
+      );
+
+      const firstOpts = mockQueue.add.mock.calls[0]?.[2] as {
+        jobId: string;
+        removeOnFail?: boolean;
+      };
+      const secondOpts = mockQueue.add.mock.calls[1]?.[2] as {
+        jobId: string;
+        removeOnFail?: boolean;
+      };
+      expect(firstOpts.removeOnFail).toBe(true);
+      expect(secondOpts.removeOnFail).toBe(true);
+      expect(firstOpts.jobId).not.toBe(secondOpts.jobId);
+
+      // Simulate retry after initial FAILED attempt: should update existing FAILED EmailLog in place
+      const sendSpy = vi
+        .spyOn(EmailTransporterFactory, "create")
+        .mockReturnValueOnce({
+          send: vi
+            .fn()
+            .mockResolvedValue({ status: "FAILED", error: "Temporary 421" }),
+        })
+        .mockReturnValueOnce({
+          send: vi.fn().mockResolvedValue({ status: "SENT" }),
+        });
+
+      try {
+        await service.executeSendEmail(
+          {
+            to: "retry@example.com",
+            recipientName: "Retry Candidate",
+            candidateId: "cand-retry",
+            applicationId: "app-retry",
+            subject: "Retry Subject",
+            body: "<p>Retry body</p>",
+          },
+          "org-test",
+        );
+        await service.executeSendEmail(
+          {
+            to: "retry@example.com",
+            recipientName: "Retry Candidate",
+            candidateId: "cand-retry",
+            applicationId: "app-retry",
+            subject: "Retry Subject",
+            body: "<p>Retry body</p>",
+          },
+          "org-test",
+        );
+
+        const logs = await service.getLogs("org-test", {
+          candidateId: "cand-retry",
+        });
+        expect(logs.data).toHaveLength(1);
+        expect(logs.data[0]?.status).toBe("SENT");
+        expect(mockActivitiesService.createActivity).toHaveBeenCalledTimes(1);
+      } finally {
+        sendSpy.mockRestore();
+      }
+    });
   });
 
   describe("Sub-services and Facade Coverage Augmentation", () => {
@@ -810,6 +954,9 @@ describe("EmailService", () => {
       expect(diService).toBeDefined();
       const config = diService.getSystemEmailConfig();
       expect(config).toBeDefined();
+      await expect(
+        diService.resolveFlowTemplate("org-no-flows", "APPLICATION_RECEIVED"),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -923,21 +1070,39 @@ describe("EmailService", () => {
         enabled: true,
       });
 
-      // Default bound flow resolves system template
-      const resolvedDefault = await service.resolveFlowTemplate(
-        "org-res",
-        "APPLICATION_REJECTED",
-      );
-      expect(resolvedDefault?.type).toBe("REJECTION");
-      expect(resolvedDefault?.isSystem).toBe(true);
+      // Newly seeded flows default to disabled (opt-in) with default system template pre-bound
+      const initialFlows = await service.getFlows("org-res");
+      expect(initialFlows).toHaveLength(4);
+      expect(initialFlows.every((flow) => flow.enabled === false)).toBe(true);
+      expect(
+        initialFlows.every((flow) =>
+          Boolean(flow.templateId && flow.template?.isSystem),
+        ),
+      ).toBe(true);
 
-      // Override picks custom template even when flow points elsewhere
+      // Default disabled flow suppresses automated dispatch until explicitly enabled
+      expect(
+        await service.resolveFlowTemplate("org-res", "APPLICATION_REJECTED"),
+      ).toBeUndefined();
+
+      // Explicit override resolves custom template even when the flow itself is disabled
       const resolvedOverride = await service.resolveFlowTemplate(
         "org-res",
         "APPLICATION_REJECTED",
         customReject.id,
       );
       expect(resolvedOverride?.id).toBe(customReject.id);
+
+      // Enabling the bound flow resolves the assigned system template
+      await service.updateFlow("org-res", "APPLICATION_REJECTED", {
+        enabled: true,
+      });
+      const resolvedDefault = await service.resolveFlowTemplate(
+        "org-res",
+        "APPLICATION_REJECTED",
+      );
+      expect(resolvedDefault?.type).toBe("REJECTION");
+      expect(resolvedDefault?.isSystem).toBe(true);
 
       // Disabled or cross-org override returns undefined
       expect(
@@ -955,7 +1120,13 @@ describe("EmailService", () => {
         ),
       ).toBeUndefined();
 
-      // Disabling a flow suppresses default dispatch
+      // Enabling then disabling a flow controls default dispatch
+      await service.updateFlow("org-res", "APPLICATION_RECEIVED", {
+        enabled: true,
+      });
+      expect(
+        await service.resolveFlowTemplate("org-res", "APPLICATION_RECEIVED"),
+      ).toBeDefined();
       await service.updateFlow("org-res", "APPLICATION_RECEIVED", {
         enabled: false,
       });
@@ -997,6 +1168,57 @@ describe("EmailService", () => {
       const logs = await service.getLogs("org-log");
       expect(logs.data[0]?.templateId).toBe(created.id);
       expect(logs.data[0]?.templateName).toBe("Technical Invite Template");
+    });
+
+    it("rejects cross-tenant candidateId or applicationId in sendEmail and executeSendEmail", async () => {
+      await service.updateSettings("org-sender", { provider: "SIMULATED" });
+      await mockPrismaService.candidate.create({
+        data: {
+          id: "cand-foreign",
+          organizationId: "org-victim",
+          email: "victim@example.com",
+          firstName: "Victim",
+          lastName: "User",
+          deletedAt: null,
+        },
+      });
+      await mockPrismaService.application.create({
+        data: {
+          id: "app-foreign",
+          organizationId: "org-victim",
+          candidateId: "cand-foreign",
+          jobId: "job-foreign",
+          stage: "APPLIED",
+        },
+      });
+
+      await expect(
+        service.sendEmail(
+          {
+            to: "victim@example.com",
+            recipientName: "Victim",
+            subject: "Hi",
+            body: "<p>Hi</p>",
+            candidateId: "cand-foreign",
+          },
+          "org-sender",
+        ),
+      ).rejects.toMatchObject({ code: "CANDIDATE_NOT_FOUND" });
+
+      await expect(
+        service.executeSendEmail(
+          {
+            to: "victim@example.com",
+            recipientName: "Victim",
+            subject: "Hi",
+            body: "<p>Hi</p>",
+            applicationId: "app-foreign",
+          },
+          "org-sender",
+        ),
+      ).rejects.toMatchObject({ code: "APPLICATION_NOT_FOUND" });
+
+      expect(mockActivitiesService.createActivity).not.toHaveBeenCalled();
     });
   });
 });

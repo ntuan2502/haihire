@@ -43,13 +43,13 @@ export function BrandLogo({
       {/* Monogram Badge */}
       <div
         className={cn(
-          "relative flex items-center justify-center font-black tracking-tighter text-white shadow-md shadow-blue-500/20 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 p-0.5 transition-transform hover:scale-105",
+          "relative flex items-center justify-center font-semibold tracking-tight bg-primary text-primary-foreground",
           sizeStyles.icon,
           iconClassName,
         )}
       >
-        <div className="flex h-full w-full items-center justify-center rounded-[inherit] bg-gradient-to-tr from-blue-700 to-indigo-700 dark:from-slate-950 dark:to-slate-900">
-          <span className="font-extrabold tracking-tighter text-white dark:text-cyan-300">
+        <div className="flex h-full w-full items-center justify-center rounded-[inherit] bg-primary">
+          <span className="font-semibold tracking-tight text-primary-foreground">
             {BRAND_CONFIG.monogram}
           </span>
         </div>
@@ -60,18 +60,18 @@ export function BrandLogo({
         <div className="flex flex-col">
           <div
             className={cn(
-              "flex items-center font-black tracking-tight",
+              "flex items-center font-semibold tracking-tight",
               sizeStyles.text,
               textClassName,
             )}
           >
-            <span className="text-slate-900 dark:text-white">Hai</span>
-            <span className="text-blue-600 dark:text-cyan-400">Hire</span>
+            <span className="text-foreground">Hai</span>
+            <span className="text-primary">Hire</span>
           </div>
           {showTagline && (
             <span
               className={cn(
-                "font-medium text-slate-500 dark:text-slate-400 -mt-0.5",
+                "font-medium text-muted-foreground -mt-0.5",
                 sizeStyles.tagline,
               )}
             >

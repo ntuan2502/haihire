@@ -191,6 +191,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -216,7 +217,7 @@ describe("ScheduleInterviewModal Component", () => {
         id: "int-existing",
         data: expect.objectContaining({
           scheduledAt: "2026-10-20T08:00:00.000Z",
-          interviewer: "Tran Tech Lead",
+          interviewerId: "mem-2",
         }),
       });
       expect(handleClose).toHaveBeenCalledTimes(1);
@@ -236,6 +237,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -260,7 +262,7 @@ describe("ScheduleInterviewModal Component", () => {
         id: "int-ny",
         data: expect.objectContaining({
           scheduledAt: "2026-10-20T19:00:00.000Z",
-          interviewer: "Tran Tech Lead",
+          interviewerId: "mem-2",
         }),
       });
       expect(handleClose).toHaveBeenCalledTimes(1);
@@ -278,6 +280,7 @@ describe("ScheduleInterviewModal Component", () => {
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
+      interviewerId: "mem-2",
     };
 
     renderWithClient(
@@ -340,7 +343,7 @@ describe("ScheduleInterviewModal Component", () => {
     mockCreateMutateAsync.mockResolvedValueOnce({ id: "int-new" });
     const handleClose = vi.fn();
 
-    const { container } = renderWithClient(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={true}
         onClose={handleClose}
@@ -351,10 +354,10 @@ describe("ScheduleInterviewModal Component", () => {
       />,
     );
 
-    const dateInput = container.querySelector(
+    const dateInput = document.querySelector(
       'input[type="date"]',
     ) as HTMLInputElement;
-    const timeInput = container.querySelector(
+    const timeInput = document.querySelector(
       'input[type="time"]',
     ) as HTMLInputElement;
     fireEvent.change(dateInput, { target: { value: "2026-10-25" } });
@@ -368,10 +371,10 @@ describe("ScheduleInterviewModal Component", () => {
     fireEvent.click(screen.getByText("interviews.placeholders.selectFormat"));
     fireEvent.click((await screen.findAllByRole("option"))[0]);
 
-    const interviewerInput = screen.getByPlaceholderText(
-      "interviews.placeholders.interviewer",
+    fireEvent.click(screen.getByLabelText("interviews.primaryInterviewer"));
+    fireEvent.click(
+      await screen.findByRole("option", { name: /Tran Tech Lead/ }),
     );
-    fireEvent.change(interviewerInput, { target: { value: "Tran Tech Lead" } });
 
     const inviteCheckbox = document.getElementById(
       "sendEmailInviteCheckbox",
@@ -396,8 +399,80 @@ describe("ScheduleInterviewModal Component", () => {
           applicationId: "app-1",
           sendInvitationEmail: true,
           templateId: "tpl-intv-r2",
+          interviewerId: "mem-2",
         }),
       );
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("defaults invitation email checkbox to unchecked when INTERVIEW_SCHEDULED flow is disabled or unloaded", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
+    mockCanViewEmail = true;
+    mockEmailFlows = [
+      {
+        id: "flow-intv-off",
+        organizationId: "org-1",
+        flowKey: "INTERVIEW_SCHEDULED",
+        templateId: "tpl-intv-r1",
+        enabled: false,
+        template: null,
+      },
+    ];
+    mockCreateMutateAsync.mockResolvedValueOnce({ id: "int-no-email" });
+    const handleClose = vi.fn();
+
+    renderWithClient(
+      <ScheduleInterviewModal
+        isOpen={true}
+        onClose={handleClose}
+        jobs={[mockJob]}
+        applications={[mockCandidate]}
+        selectedApplicationId="app-1"
+        selectedJobId="job-1"
+      />,
+    );
+
+    const inviteCheckbox = document.getElementById(
+      "sendEmailInviteCheckbox",
+    ) as HTMLInputElement;
+    expect(inviteCheckbox.checked).toBe(false);
+
+    const dateInput = document.querySelector(
+      'input[type="date"]',
+    ) as HTMLInputElement;
+    const timeInput = document.querySelector(
+      'input[type="time"]',
+    ) as HTMLInputElement;
+    fireEvent.change(dateInput, { target: { value: "2026-10-25" } });
+    fireEvent.change(timeInput, { target: { value: "14:00" } });
+
+    fireEvent.click(
+      screen.getByText("interviews.placeholders.selectRoundType"),
+    );
+    fireEvent.click((await screen.findAllByRole("option"))[0]);
+
+    fireEvent.click(screen.getByText("interviews.placeholders.selectFormat"));
+    fireEvent.click((await screen.findAllByRole("option"))[0]);
+
+    fireEvent.click(screen.getByLabelText("interviews.primaryInterviewer"));
+    fireEvent.click(
+      await screen.findByRole("option", { name: /Tran Tech Lead/ }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận lên lịch" }));
+
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          applicationId: "app-1",
+          sendInvitationEmail: false,
+        }),
+      );
+      const sentPayload = mockCreateMutateAsync.mock.calls[0]?.[0] as {
+        templateId?: string;
+      };
+      expect(sentPayload.templateId).toBeUndefined();
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
   });

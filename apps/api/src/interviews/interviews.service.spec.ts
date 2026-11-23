@@ -56,6 +56,7 @@ describe("InterviewsService", () => {
     id: string;
     title: string;
     department: string;
+    location?: string;
     organizationId: string;
   }
 
@@ -173,6 +174,21 @@ describe("InterviewsService", () => {
       candidate: candidateTable,
       job: jobTable,
       organization: orgTable,
+      user: {
+        findFirst: vi.fn(async ({ where }) => {
+          expect(where.OR).toEqual([
+            { memberships: { some: { organizationId: "org-1" } } },
+            { ownedOrganizations: { some: { id: "org-1" } } },
+          ]);
+          return where.id === "user-1"
+            ? {
+                firstName: "Alice",
+                lastName: "Nguyen",
+                email: "alice@example.com",
+              }
+            : null;
+        }),
+      },
     });
     const mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({}),
@@ -196,14 +212,57 @@ describe("InterviewsService", () => {
     expect(list.data).toHaveLength(1);
     expect(list.total).toBe(1);
     expect(list.data[0].id).toBe("intv-1");
-    expect(list.data[0].candidateName).toBe("Alice Johnson");
+    expect(list.data[0].candidateName).toBe("Johnson Alice");
     expect(list.data[0].jobTitle).toBe("Frontend Developer");
+  });
+
+  it("stores the selected interviewer ID and a server-resolved display name", async () => {
+    const interview = await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-09-25T14:00:00.000Z",
+        type: "TECHNICAL",
+        interviewerId: "user-1",
+      },
+      "org-1",
+    );
+
+    expect(interview).toMatchObject({
+      interviewerId: "user-1",
+      interviewer: "Nguyen Alice",
+    });
+    const updated = await service.update(
+      "intv-1",
+      { interviewerId: "user-1" },
+      "org-1",
+    );
+    expect(updated).toMatchObject({
+      interviewerId: "user-1",
+      interviewer: "Nguyen Alice",
+    });
+  });
+
+  it("rejects an interviewer from another organization on create and update", async () => {
+    await expect(
+      service.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-09-25T14:00:00.000Z",
+          type: "TECHNICAL",
+          interviewerId: "user-2",
+        },
+        "org-1",
+      ),
+    ).rejects.toThrow(AppBadRequestException);
+    await expect(
+      service.update("intv-1", { interviewerId: "user-2" }, "org-1"),
+    ).rejects.toThrow(AppBadRequestException);
   });
 
   it("should find an interview by id", async () => {
     const intv = await service.findOne("intv-1");
     expect(intv.id).toBe("intv-1");
-    expect(intv.candidateName).toBe("Alice Johnson");
+    expect(intv.candidateName).toBe("Johnson Alice");
   });
 
   it("should throw NotFoundException when interview id does not exist", async () => {
@@ -403,6 +462,57 @@ describe("InterviewsService", () => {
     }
   });
 
+  it("BUG-18: uses human-readable format and job location without injecting Google Meet link for OFFICE interviews", async () => {
+    mockJobs[0].location = "Ha Noi HQ";
+    mockEmailService.getTemplateByType.mockResolvedValue({
+      id: "tpl-office",
+      name: "Office Invite",
+      type: "INTERVIEW_INVITATION",
+      enabled: true,
+      subject: "Invite",
+      body: "Location: {{interview_link}}",
+    });
+
+    await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-10-22T03:00:00.000Z",
+        type: "CULTURE_FIT",
+        format: "OFFICE",
+        interviewer: "HR Lead",
+        sendInvitationEmail: true,
+      },
+      "org-1",
+    );
+
+    const [withJobLoc] = mockEmailService.sendEmail.mock.calls[0];
+    expect(withJobLoc.variables).toMatchObject({
+      interview_format: "In-Person (At Office)",
+      interview_link: "Ha Noi HQ",
+    });
+
+    delete mockJobs[0].location;
+    mockEmailService.sendEmail.mockClear();
+
+    await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-10-23T03:00:00.000Z",
+        type: "CULTURE_FIT",
+        format: "OFFICE",
+        interviewer: "HR Lead",
+        sendInvitationEmail: true,
+      },
+      "org-1",
+    );
+
+    const [withoutJobLoc] = mockEmailService.sendEmail.mock.calls[0];
+    expect(withoutJobLoc.variables.interview_format).toBe(
+      "In-Person (At Office)",
+    );
+    expect(withoutJobLoc.variables.interview_link).toBeUndefined();
+  });
+
   describe("formatInterviewRecord", () => {
     it("should serialize scheduledAt to UTC ISO string and parse JSON scorecard", () => {
       const raw = {
@@ -469,6 +579,41 @@ describe("InterviewsService", () => {
       });
       expect(list.data).toHaveLength(0);
       expect(list.total).toBe(0);
+    });
+
+    it("increments application version on interview auto-advance and encodes context on cancelled interview notification", async () => {
+      const prismaAny = mockPrismaService as unknown as {
+        application: { update: ReturnType<typeof vi.fn> };
+        pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+      };
+      prismaAny.pipelineStage = {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "stage-intv", category: "INTERVIEW" }),
+      };
+      const updateSpy = vi.spyOn(prismaAny.application, "update");
+
+      mockApps[0].stage = "APPLIED";
+      await service.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-10-01T10:00:00Z",
+          type: "TECHNICAL",
+          interviewer: "Lead",
+        },
+        "org-1",
+      );
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: "app-1" }),
+          data: expect.objectContaining({
+            stage: "INTERVIEW",
+            stageId: "stage-intv",
+            version: { increment: 1 },
+          }),
+        }),
+      );
     });
   });
 });

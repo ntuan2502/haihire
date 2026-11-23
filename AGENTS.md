@@ -4,20 +4,7 @@
 
 ---
 
-<!-- STATS:START -->
-
-| Metric                           | Value                   | Reference / Notes                 |
-| :------------------------------- | :---------------------- | :-------------------------------- |
-| **Release Target**               | `Unreleased`            | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `4170b208` (2026-11-16) | Author: ntuan2502                 |
-| **Workspace Unit Tests**         | `1615 passed`           | Backend: 1024, Frontend: 591      |
-| **E2E Playwright Specs**         | `67 specs`              | End-to-end recruitment lifecycle  |
-| **CI Architecture Gates**        | `18/18 gates`           | `pnpm check:all` mandatory gates  |
-| **Environment Configuration**    | `56 keys`               | 100% key parity & codebase sync   |
-| **Pre-Release Dependencies**     | `0 (GA only)`           | Prisma 7.10.1 Stable GA           |
-| **Documentation Link Integrity** | `100% valid`            | Audited via `pnpm lint:doc-links` |
-
-<!-- STATS:END -->
+See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 
 ---
 
@@ -26,13 +13,13 @@
 All AI agents working in this repository MUST read and follow:
 
 1. **Architecture & Coding Rules:**
-   - [Engineering Conventions](docs/architecture/conventions.md) — TypeScript discipline, centralized Zod env validation, `DtoPipe` coverage, 2-way i18n, multi-tenant `organizationId` scoping, Next.js 16 `src/proxy.ts` rules, and Shadcn `base-nova` UI standards.
-   - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-016` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
+   - [Engineering Conventions](docs/architecture/conventions.md) — TypeScript discipline, centralized Zod env validation, `DtoPipe` coverage, 2-way i18n, multi-tenant `organizationId` scoping, Next.js 16 `src/proxy.ts` rules, and Shadcn `new-york` UI standards.
+   - [Architectural Decisions](docs/decisions/DECISIONS.md) — Decisions `D-001` through `D-018` (including Prisma `7.10.1` Stable GA + `@prisma/adapter-pg`).
 2. **HaiHire Specialized Agent Skills (`.agents/skills/`):**
-   - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`base-nova` + `@base-ui/react` + standalone `cn`).
-   - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `react-toastify`, 2-tier vi/en i18n.
+   - [haihire-nextjs-react](.agents/skills/haihire-nextjs-react/SKILL.md) — Next.js `16.4.5`, React `19.3.1`, Tailwind CSS `^4.3.5`, `shadcn@^4.23.0` (`new-york` + `radix-ui` + standalone `cn`).
+   - [haihire-frontend-data-i18n](.agents/skills/haihire-frontend-data-i18n/SKILL.md) — TanStack Query `^5.107.1`, Axios URL Gatekeeper & 401 refresh queue, 17-event SSE invalidation, `sonner`, 2-tier vi/en i18n.
    - [haihire-nestjs-backend](.agents/skills/haihire-nestjs-backend/SKILL.md) — NestJS `^12.4.0` ESM (`esbuild`), explicit `@Inject`, `DtoPipe`, 64 `APP_ERROR_CODES`, cookie JWT + `tokenVersion`, dynamic `ownerId` RBAC (`5` roles / `41` permissions), BullMQ DLQ queues, MinIO tenant isolation.
-   - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `22` models / `18` enums, `AsyncLocalStorage` transaction propagation, `8` tenant-scoped backend modules, `deletedAt` soft-delete rules.
+   - [haihire-prisma-postgres](.agents/skills/haihire-prisma-postgres/SKILL.md) — Prisma `7.10.1` (`@prisma/adapter-pg`), `AsyncLocalStorage` transaction propagation, `10` tenant-scoped backend modules, `deletedAt` soft-delete rules.
    - [haihire-testing-qa](.agents/skills/haihire-testing-qa/SKILL.md) — Vitest `5.1.0`, `createMockPrismaService`, RTL `jsdom`, Playwright `^1.65.0` E2E specs, `pnpm test:diff` gate.
    - [haihire-devops-release](.agents/skills/haihire-devops-release/SKILL.md) — `pnpm@12.18.0` catalog, Turborepo `^2.11.10`, Node 26 Alpine Dockerfiles, `18/18` CI architecture gates, GitHub Actions workflows.
 
@@ -44,9 +31,9 @@ All AI agents working in this repository MUST read and follow:
 | :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
 | **Runtime & Monorepo**                   | Node `26`, `pnpm@12.18.0`, `turbo@^2.11.10`, TypeScript `^6.0.3`                                                                                                                                                                     | [package.json](package.json), [pnpm-workspace.yaml](pnpm-workspace.yaml) |
 | **Shared Contracts (`@haihire/shared`)** | `5` Roles, `41` Permissions, `64` `APP_ERROR_CODES`, `17` SSE `AppEventType`s, `16` `SourcingChannel`s, Zod schemas                                                                                                                  | [packages/shared/src/index.ts](packages/shared/src/index.ts)             |
-| **Backend (`apps/api`)**                 | NestJS `^12.4.0` (Express ESM -> `dist/server.mjs`), `15` feature/infra modules imported in `AppModule`, `12` controllers, `109` endpoints, BullMQ (`email-queue`, `orphan-cleanup-queue`), MinIO (`haihire-resumes` private bucket) | [docs/api/overview.md](docs/api/overview.md)                             |
-| **Database (`PostgreSQL 17.6`)**         | Prisma `7.10.1` (`@prisma/adapter-pg` + `pg.Pool`), `25` models, `18` enums, `3` soft-delete models (`Job`, `Candidate`, `TrackingLink`), `21`-table `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`)                                 | [docs/architecture/data-model.md](docs/architecture/data-model.md)       |
-| **Frontend (`apps/web`)**                | Next.js `16.4.5` (`output: "standalone"`, `src/proxy.ts`), React `19.3.1`, Tailwind CSS `^4.3.5` (`oklch`), Shadcn `base-nova` (`@base-ui/react` + `cn@^0.5.2`), TanStack Query `^5.107.1`                                           | [apps/web/README.md](apps/web/README.md)                                 |
+| **Backend (`apps/api`)**                 | NestJS `^12.4.0` (Express ESM -> `dist/server.mjs`), `16` feature/infra modules imported in `AppModule`, `13` controllers, `119` endpoints, BullMQ (`email-queue`, `orphan-cleanup-queue`), MinIO (`haihire-resumes` private bucket) | [docs/api/overview.md](docs/api/overview.md)                             |
+| **Database (`PostgreSQL 17.6`)**         | Prisma `7.10.1` (`@prisma/adapter-pg` + `pg.Pool`), `3` soft-delete models (`Job`, `Candidate`, `TrackingLink`), `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`)                                                                     | [docs/architecture/data-model.md](docs/architecture/data-model.md)       |
+| **Frontend (`apps/web`)**                | Next.js `16.4.5` (`output: "standalone"`, `src/proxy.ts`), React `19.3.1`, Tailwind CSS `^4.3.5` (`oklch`), Shadcn `new-york` (`radix-ui` + `cn@^0.5.2`), TanStack Query `^5.107.1`                                                  | [apps/web/README.md](apps/web/README.md)                                 |
 
 ---
 
@@ -61,19 +48,19 @@ All AI agents working in this repository MUST read and follow:
 
 ## 4. Documentation Index
 
-| Area                                 | Document                                                                                 |
-| :----------------------------------- | :--------------------------------------------------------------------------------------- |
-| **Documentation Portal**             | [docs/README.md](docs/README.md)                                                         |
-| **Platform Metrics**                 | [docs/PROJECT_METRICS.md](docs/PROJECT_METRICS.md)                                       |
-| **System Overview**                  | [docs/architecture/system-overview.md](docs/architecture/system-overview.md)             |
-| **Data Model (`25` models)**         | [docs/architecture/data-model.md](docs/architecture/data-model.md)                       |
-| **Security & RBAC**                  | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)                 |
-| **Conventions (SSOT)**               | [docs/architecture/conventions.md](docs/architecture/conventions.md)                     |
-| **Architectural Decisions**          | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                               |
-| **REST & SSE API (`109` endpoints)** | [docs/api/overview.md](docs/api/overview.md)                                             |
-| **Developer Onboarding**             | [docs/guides/onboarding.md](docs/guides/onboarding.md)                                   |
-| **SRE & Ops Runbooks**               | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                                       |
-| **Releases & Versioning**            | [CHANGELOG.md](CHANGELOG.md), [docs/runbooks/versioning.md](docs/runbooks/versioning.md) |
+| Area                        | Document                                                                                 |
+| :-------------------------- | :--------------------------------------------------------------------------------------- |
+| **Documentation Portal**    | [docs/README.md](docs/README.md)                                                         |
+| **Platform Metrics**        | [docs/PROJECT_METRICS.md](docs/PROJECT_METRICS.md)                                       |
+| **System Overview**         | [docs/architecture/system-overview.md](docs/architecture/system-overview.md)             |
+| **Data Model**              | [docs/architecture/data-model.md](docs/architecture/data-model.md)                       |
+| **Security & RBAC**         | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)                 |
+| **Conventions (SSOT)**      | [docs/architecture/conventions.md](docs/architecture/conventions.md)                     |
+| **Architectural Decisions** | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                               |
+| **REST & SSE API**          | [docs/api/overview.md](docs/api/overview.md)                                             |
+| **Developer Onboarding**    | [docs/guides/onboarding.md](docs/guides/onboarding.md)                                   |
+| **SRE & Ops Runbooks**      | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                                       |
+| **Releases & Versioning**   | [CHANGELOG.md](CHANGELOG.md), [docs/runbooks/versioning.md](docs/runbooks/versioning.md) |
 
 ---
 

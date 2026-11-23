@@ -1,15 +1,11 @@
 "use client";
 
-import { type RefObject } from "react";
-import { ArrowLeft, ChevronDown, History, User } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
-import {
-  OverviewSectionsPopover,
-  type OverviewSectionsState,
-} from "@/components/applications/overview-sections-popover";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import type {
   Application,
   ApplicationStage,
@@ -22,7 +18,6 @@ import { StageSelector } from "./stage-selector";
 import { PipelineCandidateDetailHeader } from "./pipeline-candidate-detail-header";
 import { PipelineCandidateDetailOverview } from "./pipeline-candidate-detail-overview";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { formatDate } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
@@ -41,12 +36,6 @@ interface PipelineCandidateDetailProps {
   onNextCandidate: () => void;
   candidateTab: string;
   onSelectTab: (tab: string) => void;
-  overviewSections: OverviewSectionsState;
-  onToggleOverviewSection: (key: keyof OverviewSectionsState) => void;
-  isOverviewPopoverOpen: boolean;
-  onToggleOverviewPopover: () => void;
-  onCloseOverviewPopover: () => void;
-  overviewBtnRef: RefObject<HTMLButtonElement | null>;
   candidateDocuments: CandidateDocument[];
   onPreviewDoc: (doc: CandidateDocument) => void;
   onDownloadDoc: (url: string, filename?: string) => void;
@@ -66,7 +55,7 @@ export function PipelineCandidateDetail({
   mobileDetailOpen,
   onCloseMobileDetail,
   job,
-  canEdit,
+  canEdit: _canEdit,
   isMovingStage,
   onMoveStage,
   currentIndex,
@@ -75,12 +64,6 @@ export function PipelineCandidateDetail({
   onNextCandidate,
   candidateTab,
   onSelectTab,
-  overviewSections,
-  onToggleOverviewSection,
-  isOverviewPopoverOpen,
-  onToggleOverviewPopover,
-  onCloseOverviewPopover,
-  overviewBtnRef,
   candidateDocuments,
   onPreviewDoc,
   onDownloadDoc,
@@ -95,21 +78,23 @@ export function PipelineCandidateDetail({
 }: PipelineCandidateDetailProps) {
   const { t } = useI18n();
   const canUpdateStage = useHasPermission("application:update_stage");
+  const canCreateInterview = useHasPermission("interview:create");
+  const canUpdateApplication = useHasPermission("application:update");
 
   return (
     <section
-      className={`flex-1 min-h-0 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 ${
+      className={`flex-1 min-h-0 h-full overflow-y-auto bg-background p-4 sm:p-6 ${
         mobileDetailOpen ? "block" : "hidden md:block"
       }`}
     >
       {selectedCandidate ? (
-        <div className="max-w-4xl mx-auto space-y-5 pb-12">
+        <div className="w-full space-y-5 pb-12">
           {/* Mobile Back Button to return to list */}
           <div className="md:hidden pb-1">
             <button
               type="button"
               onClick={onCloseMobileDetail}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border text-xs font-medium text-foreground shadow-2xs cursor-pointer hover:bg-accent transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t("applications.backToApplications")}</span>
@@ -139,59 +124,12 @@ export function PipelineCandidateDetail({
           />
 
           {/* Sub-Navigation Tabs */}
-          <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
-            {/* Overview tab with Popover */}
-            <div
-              className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
-                candidateTab === "overview"
-                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectTab("overview");
-                  onCloseOverviewPopover();
-                }}
-                className={`py-2.5 cursor-pointer whitespace-nowrap ${
-                  candidateTab === "overview" ? "pl-3.5 pr-1" : "px-3.5"
-                }`}
-              >
-                {t("applications.tabs.overview")}
-              </button>
-
-              {candidateTab === "overview" && (
-                <button
-                  ref={overviewBtnRef}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleOverviewPopover();
-                  }}
-                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mr-2 cursor-pointer"
-                  title={t("applications.sections.sectionsTitle")}
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                      isOverviewPopoverOpen ? "rotate-180 text-blue-600" : ""
-                    }`}
-                  />
-                </button>
-              )}
-
-              {/* Popover */}
-              <OverviewSectionsPopover
-                isOpen={isOverviewPopoverOpen}
-                onClose={onCloseOverviewPopover}
-                triggerRef={overviewBtnRef}
-                sections={overviewSections}
-                onToggleSection={onToggleOverviewSection}
-              />
-            </div>
-
-            {/* Other tabs */}
+          <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
             {[
+              {
+                id: "overview",
+                label: t("applications.tabs.overview"),
+              },
               {
                 id: "documents",
                 label: t("applications.tabs.documents"),
@@ -215,13 +153,13 @@ export function PipelineCandidateDetail({
                 onClick={() => onSelectTab(tab.id)}
                 className={`px-3.5 py-2.5 border-b-2 -mb-[1px] transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   candidateTab === tab.id
-                    ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
-                    : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
+                    ? "border-primary text-foreground font-semibold"
+                    : "border-transparent text-muted-foreground hover:text-foreground font-medium"
                 }`}
               >
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-semibold">
                     {tab.count}
                   </span>
                 )}
@@ -235,7 +173,6 @@ export function PipelineCandidateDetail({
             {candidateTab === "overview" && (
               <PipelineCandidateDetailOverview
                 selectedCandidate={selectedCandidate}
-                overviewSections={overviewSections}
                 candidateDocuments={candidateDocuments}
                 onPreviewDoc={onPreviewDoc}
                 onDownloadDoc={onDownloadDoc}
@@ -256,17 +193,17 @@ export function PipelineCandidateDetail({
 
             {/* Interviews Tab */}
             {candidateTab === "interviews" && (
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+              <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <h3 className="text-xs font-semibold text-muted-foreground">
                     {t("applications.tabs.interviews")}
                   </h3>
-                  {canEdit && (
+                  {canCreateInterview && (
                     <Button
                       type="button"
                       size="sm"
                       onClick={() => onScheduleInterview()}
-                      className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                      className="h-7 text-xs cursor-pointer"
                     >
                       {t("interviews.scheduleInterview")}
                     </Button>
@@ -276,7 +213,7 @@ export function PipelineCandidateDetail({
                   application={selectedCandidate}
                   interviews={candidateInterviews}
                   onSchedule={onScheduleInterview}
-                  canEdit={canEdit}
+                  canEdit={canCreateInterview}
                   showSectionHeader={false}
                 />
               </div>
@@ -293,8 +230,8 @@ export function PipelineCandidateDetail({
                   />
                 ) : (
                   <div className="space-y-4">
-                    {canEdit && onChangeNoteInput && onAddNote && (
-                      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                    {canUpdateApplication && onChangeNoteInput && onAddNote && (
+                      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
                         <textarea
                           rows={3}
                           value={candidateNoteInput || ""}
@@ -302,7 +239,7 @@ export function PipelineCandidateDetail({
                           placeholder={t(
                             "pipeline.writePrivateNotePlaceholder",
                           )}
-                          className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full text-xs rounded-md border border-input bg-background text-foreground p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         />
                         <div className="flex justify-end">
                           <Button
@@ -312,7 +249,7 @@ export function PipelineCandidateDetail({
                             disabled={
                               !candidateNoteInput?.trim() || isUpdatingNote
                             }
-                            className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                            className="h-7 text-xs cursor-pointer"
                           >
                             {t("pipeline.saveNote")}
                           </Button>
@@ -325,7 +262,7 @@ export function PipelineCandidateDetail({
                         {candidateNotesList.map((n, idx) => (
                           <div
                             key={idx}
-                            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
+                            className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs text-xs"
                           >
                             {n}
                           </div>
@@ -333,7 +270,7 @@ export function PipelineCandidateDetail({
                       </div>
                     ) : (
                       !selectedCandidate?.id && (
-                        <div className="text-xs text-slate-400 p-4 text-center">
+                        <div className="text-xs text-muted-foreground p-4 text-center">
                           {t("applications.notesStream.empty")}
                         </div>
                       )
@@ -345,33 +282,42 @@ export function PipelineCandidateDetail({
 
             {/* Timeline Tab */}
             {candidateTab === "timeline" && (
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
-                <History className="h-8 w-8 text-slate-400 mx-auto" />
-                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {t("applications.timelineTitle")}
-                </h4>
-                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                  {t("pipeline.timelineApplied", {
-                    job: job?.title || "",
-                    date: formatDate(selectedCandidate.createdAt),
-                  })}
-                </p>
-              </div>
+              <CandidateTimeline
+                candidateId={selectedCandidate.candidateId}
+                applicationId={selectedCandidate.id}
+                candidateName={selectedCandidate.candidateName}
+                candidateEmail={selectedCandidate.candidateEmail}
+                initialEvents={[
+                  {
+                    id: `applied-${selectedCandidate.id}`,
+                    candidateId: selectedCandidate.candidateId,
+                    applicationId: selectedCandidate.id,
+                    type: "APPLIED",
+                    title: t("applications.timelineTitle"),
+                    description: t("pipeline.timelineApplied", {
+                      job: job?.title || "",
+                      date: String(selectedCandidate.createdAt || ""),
+                    }),
+                    actorName: selectedCandidate.candidateName || "",
+                    timestamp: String(selectedCandidate.createdAt || ""),
+                  },
+                ]}
+              />
             )}
           </div>
         </div>
       ) : (
         /* Empty state when no candidate is in stage */
         <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-2">
             <User className="h-6 w-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+          <h3 className="text-sm font-semibold text-foreground">
             {t("pipeline.noCandidatesInStage", {
               stage: currentStageConfig.label,
             })}
           </h3>
-          <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+          <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
             {t("pipeline.switchStageHint")}
           </p>
         </div>

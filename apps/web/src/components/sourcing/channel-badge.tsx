@@ -16,16 +16,16 @@ const CHANNEL_STYLES: Record<
   { bg: string; text: string; border: string; dot: string }
 > = {
   [SourcingChannel.LINKEDIN]: {
-    bg: "bg-blue-50 dark:bg-blue-950/60",
-    text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200/70 dark:border-blue-800/70",
-    dot: "bg-blue-600",
+    bg: "bg-sky-500/10",
+    text: "text-sky-700 dark:text-sky-300",
+    border: "border-sky-500/25",
+    dot: "bg-sky-600",
   },
   [SourcingChannel.INDEED]: {
-    bg: "bg-indigo-50 dark:bg-indigo-950/60",
-    text: "text-indigo-700 dark:text-indigo-300",
-    border: "border-indigo-200/70 dark:border-indigo-800/70",
-    dot: "bg-indigo-600",
+    bg: "bg-violet-500/10",
+    text: "text-violet-700 dark:text-violet-300",
+    border: "border-violet-500/25",
+    dot: "bg-violet-600",
   },
   [SourcingChannel.GOOGLE_JOBS]: {
     bg: "bg-rose-50 dark:bg-rose-950/60",
@@ -70,10 +70,10 @@ const CHANNEL_STYLES: Record<
     dot: "bg-orange-600",
   },
   [SourcingChannel.TWITTER_X]: {
-    bg: "bg-slate-100 dark:bg-slate-800",
-    text: "text-slate-800 dark:text-slate-200",
-    border: "border-slate-300/80 dark:border-slate-700",
-    dot: "bg-slate-900 dark:bg-slate-100",
+    bg: "bg-secondary",
+    text: "text-secondary-foreground",
+    border: "border-border",
+    dot: "bg-foreground",
   },
   [SourcingChannel.REDDIT]: {
     bg: "bg-orange-50 dark:bg-orange-950/60",
@@ -88,27 +88,27 @@ const CHANNEL_STYLES: Record<
     dot: "bg-green-600",
   },
   [SourcingChannel.FACEBOOK]: {
-    bg: "bg-blue-50 dark:bg-blue-950/60",
-    text: "text-blue-800 dark:text-blue-300",
-    border: "border-blue-200/70 dark:border-blue-800/70",
-    dot: "bg-blue-700",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-700 dark:text-cyan-300",
+    border: "border-cyan-500/25",
+    dot: "bg-cyan-600",
   },
   [SourcingChannel.DIRECT]: {
-    bg: "bg-slate-50 dark:bg-slate-900/60",
-    text: "text-slate-600 dark:text-slate-400",
-    border: "border-slate-200/70 dark:border-slate-800/70",
-    dot: "bg-slate-500",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
+    border: "border-border",
+    dot: "bg-muted-foreground",
   },
   [SourcingChannel.OTHER]: {
-    bg: "bg-slate-50 dark:bg-slate-900/60",
-    text: "text-slate-600 dark:text-slate-400",
-    border: "border-slate-200/70 dark:border-slate-800/70",
-    dot: "bg-slate-400",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
+    border: "border-border",
+    dot: "bg-muted-foreground",
   },
 };
 
 export function getChannelColor(channel: SourcingChannel | string): string {
-  return CHANNEL_STYLES[channel]?.dot || "bg-slate-500";
+  return CHANNEL_STYLES[channel]?.dot || "bg-muted-foreground";
 }
 
 export function ChannelBadge({

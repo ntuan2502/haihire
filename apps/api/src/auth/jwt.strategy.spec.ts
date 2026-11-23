@@ -222,4 +222,44 @@ describe("JwtStrategy", () => {
     const token = extractor(reqWithMalformedCookie);
     expect(token).toBeNull();
   });
+
+  it("clears organization context and downgrades role when removed member still presents an unexpired JWT", async () => {
+    const prismaWithMembership = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "usr-removed",
+          email: "removed@example.com",
+          firstName: "Removed",
+          lastName: "User",
+          tokenVersion: 1,
+          createdAt: new Date(),
+        }),
+      },
+      organization: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "org-1",
+          name: "Acme Org",
+          slug: "acme",
+          ownerId: "usr-owner",
+        }),
+      },
+      organizationMember: {
+        findFirst: vi.fn().mockResolvedValue(null),
+      },
+    };
+
+    const strictStrategy = new JwtStrategy(prismaWithMembership as never);
+    const result = await strictStrategy.validate({
+      sub: "usr-removed",
+      email: "removed@example.com",
+      role: "ADMIN",
+      organizationId: "org-1",
+      tokenVersion: 1,
+    });
+
+    expect(result.organizationId).toBeNull();
+    expect(result.organization).toBeNull();
+    expect(result.role).toBe("MEMBER");
+    expect(result.isOwner).toBe(false);
+  });
 });

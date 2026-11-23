@@ -12,7 +12,7 @@ export class UpdateTrackingLinkDto {
 
   @IsString()
   @IsOptional()
-  customSource?: string;
+  customSource?: string | null;
 
   @IsString()
   @IsOptional()
@@ -20,23 +20,23 @@ export class UpdateTrackingLinkDto {
 
   @IsString()
   @IsOptional()
-  utmSource?: string;
+  utmSource?: string | null;
 
   @IsString()
   @IsOptional()
-  utmMedium?: string;
+  utmMedium?: string | null;
 
   @IsString()
   @IsOptional()
-  utmCampaign?: string;
+  utmCampaign?: string | null;
 
   @IsString()
   @IsOptional()
-  utmTerm?: string;
+  utmTerm?: string | null;
 
   @IsString()
   @IsOptional()
-  utmContent?: string;
+  utmContent?: string | null;
 
   @IsBoolean()
   @IsOptional()

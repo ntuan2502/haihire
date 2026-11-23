@@ -23,8 +23,8 @@ export const SUPPORTED_TIME_FORMATS = ["24H", "12H"] as const;
 export type TimeFormat = (typeof SUPPORTED_TIME_FORMATS)[number];
 
 export const SUPPORTED_NAME_DISPLAY_ORDERS = [
-  "FIRST_LAST",
   "LAST_FIRST",
+  "FIRST_LAST",
 ] as const;
 export type NameDisplayOrder = (typeof SUPPORTED_NAME_DISPLAY_ORDERS)[number];
 
@@ -1006,7 +1006,7 @@ export const DEFAULT_ORG_LOCALIZATION: OrganizationLocalizationSettings = {
   timezone: "Asia/Ho_Chi_Minh",
   dateFormat: "DD/MM/YYYY",
   timeFormat: "24H",
-  nameDisplayOrder: "FIRST_LAST",
+  nameDisplayOrder: "LAST_FIRST",
   defaultCurrency: "VND",
 };
 
@@ -1053,11 +1053,27 @@ export function normalizeOrgLocalization(
   };
 }
 
+export const MAX_ORG_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+
+export const ALLOWED_ORG_LOGO_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export const ALLOWED_ORG_LOGO_EXTENSIONS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+] as const;
+
 export interface Organization {
   id: string;
   name: string;
   slug: string;
   ownerId?: string | null;
+  logoUrl?: string | null;
   defaultLanguage?: OrgLanguage;
   timezone?: string;
   dateFormat?: DateFormat;

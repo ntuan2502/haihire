@@ -98,10 +98,34 @@ export const TEMPLATE_VARIABLES: readonly TemplateVariableItem[] = [
     example: "an.nguyen@example.com",
   },
   {
+    key: "{{candidate_phone}}",
+    labelKey: "",
+    label: "Candidate Phone",
+    example: "0912 345 678",
+  },
+  {
     key: "{{job_title}}",
     labelKey: "email.varJobTitle",
     label: "Job Position",
     example: "Senior Frontend Engineer",
+  },
+  {
+    key: "{{job_department}}",
+    labelKey: "",
+    label: "Department",
+    example: "Engineering",
+  },
+  {
+    key: "{{job_location}}",
+    labelKey: "",
+    label: "Work Location",
+    example: "Hà Nội / Remote",
+  },
+  {
+    key: "{{job_salary}}",
+    labelKey: "",
+    label: "Salary Range",
+    example: "35,000,000 - 45,000,000 VND",
   },
   {
     key: "{{company_name}}",
@@ -144,6 +168,18 @@ export const TEMPLATE_VARIABLES: readonly TemplateVariableItem[] = [
     labelKey: "email.varSenderName",
     label: "Sender Name",
     example: "Recruiting Team",
+  },
+  {
+    key: "{{start_date}}",
+    labelKey: "",
+    label: "Start Date",
+    example: "01/10/2026",
+  },
+  {
+    key: "{{salary}}",
+    labelKey: "",
+    label: "Official Salary",
+    example: "40,000,000 VND",
   },
 ];
 
@@ -189,14 +225,6 @@ const EMAIL_FLOW_META_KEYS: Record<
   },
 };
 
-const EMAIL_TEMPLATE_TYPE_ICONS: Record<EmailTemplateType, string> = {
-  APPLICATION_CONFIRMATION: "✉️",
-  INTERVIEW_INVITATION: "📅",
-  REJECTION: "🤝",
-  OFFER: "🏆",
-  CUSTOM: "✏️",
-};
-
 /**
  * Resolves a localized display label for an email template type enum value.
  */
@@ -222,7 +250,7 @@ export function getEmailTemplateTypeOptions(t: (key: string) => string): Array<{
     Object.keys(EMAIL_TEMPLATE_TYPE_LABEL_KEYS) as EmailTemplateType[]
   ).map((typeKey) => ({
     value: typeKey,
-    label: `${EMAIL_TEMPLATE_TYPE_ICONS[typeKey]} ${getEmailTemplateTypeLabel(typeKey, t)}`,
+    label: getEmailTemplateTypeLabel(typeKey, t),
   }));
 }
 

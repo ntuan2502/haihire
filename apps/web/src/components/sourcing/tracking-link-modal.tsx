@@ -1,22 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useI18n } from "@/i18n";
 import { SourcingChannel, type TrackingLinkItem } from "@haihire/shared";
 import {
   useCreateTrackingLinkMutation,
   useUpdateTrackingLinkMutation,
 } from "@/hooks/use-sourcing-queries";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { Input } from "@/components/ui/input";
+import { FormModal, CustomSelect } from "@/components/shared";
 import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Lock } from "lucide-react";
 import { cn } from "cn";
 
@@ -31,7 +25,6 @@ export interface TrackingLinkModalProps {
   mode: "create" | "edit";
   link?: TrackingLinkItem;
   jobs: JobOption[];
-  orgSlug?: string;
   defaultJobId?: string;
   lockJob?: boolean;
 }
@@ -107,7 +100,8 @@ export function TrackingLinkModal({
   const [utmTerm, setUtmTerm] = useState("");
   const [utmContent, setUtmContent] = useState("");
 
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [nameInvalid, setNameInvalid] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -134,24 +128,31 @@ export function TrackingLinkModal({
         setUtmTerm("");
         setUtmContent("");
       }
-      setError(null);
+      setFormError(null);
+      setNameInvalid(false);
     }
   }, [isOpen, isEdit, link, defaultJobId, lockJob]);
 
   const handleChannelChange = (val: string) => {
     const ch = val as SourcingChannel;
     setSource(ch);
-    // Auto-update utm_source and utm_medium if not customized
+    // Auto-update utm_source and utm_medium only if user hasn't customized them
     if (!utmSource || utmSource === source.toLowerCase()) {
       setUtmSource(ch.toLowerCase());
     }
-    setUtmMedium(getDefaultMedium(ch));
+    if (!utmMedium || utmMedium === getDefaultMedium(source)) {
+      setUtmMedium(getDefaultMedium(ch));
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    setNameInvalid(false);
+
     if (!name.trim()) {
-      setError(t("sourcing.modal.nameRequired"));
+      setNameInvalid(true);
+      setFormError(t("sourcing.modal.nameRequired"));
       return;
     }
 
@@ -169,11 +170,11 @@ export function TrackingLinkModal({
                 ? customSource.trim() || null
                 : null,
             jobId: effectiveJobId === "ALL" ? null : effectiveJobId,
-            utmSource: utmSource.trim() || undefined,
-            utmMedium: utmMedium.trim() || undefined,
-            utmCampaign: utmCampaign.trim() || undefined,
-            utmTerm: utmTerm.trim() || undefined,
-            utmContent: utmContent.trim() || undefined,
+            utmSource: utmSource.trim() || null,
+            utmMedium: utmMedium.trim() || null,
+            utmCampaign: utmCampaign.trim() || null,
+            utmTerm: utmTerm.trim() || null,
+            utmContent: utmContent.trim() || null,
           },
         });
         toast.success(t("sourcing.details.editSuccess"));
@@ -195,8 +196,10 @@ export function TrackingLinkModal({
         toast.success(t("sourcing.modal.successToast"));
       }
       onClose();
-    } catch {
-      // Mutation errors handled by global query client
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, t);
+      setFormError(msg);
+      toast.error(msg);
     }
   };
 
@@ -223,258 +226,244 @@ export function TrackingLinkModal({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-[92vh] flex flex-col">
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 overflow-hidden min-w-0"
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={
+        isEdit
+          ? t("sourcing.details.editTitle")
+          : t("sourcing.modal.createTitle")
+      }
+      description={
+        isEdit && link
+          ? `${link.name} (${link.token})`
+          : t("sourcing.modal.createDesc")
+      }
+      size="md"
+      noValidate={true}
+      isSubmitting={isPending}
+      submitLabel={
+        isEdit ? t("sourcing.details.editSave") : t("sourcing.modal.createBtn")
+      }
+      savingLabel={
+        isEdit
+          ? t("sourcing.details.editSaving")
+          : t("sourcing.modal.creatingBtn")
+      }
+      cancelLabel={t("sourcing.modal.cancelBtn")}
+      error={formError}
+      bodyClassName="space-y-4"
+    >
+      {/* Link Name */}
+      <div className="space-y-1.5">
+        <label
+          htmlFor="tracking-link-name-input"
+          className="text-xs font-bold text-foreground block"
         >
-          <DialogHeader className="p-6 pb-4 space-y-1.5 text-left border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
-              {isEdit
-                ? t("sourcing.details.editTitle")
-                : t("sourcing.modal.createTitle")}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-              {isEdit && link
-                ? `${link.name} (${link.token})`
-                : t("sourcing.modal.createDesc")}
-            </DialogDescription>
-          </DialogHeader>
+          {t("sourcing.modal.linkNameLabel")}
+          <span className="text-rose-500 ml-1">*</span>
+        </label>
+        <Input
+          id="tracking-link-name-input"
+          name="name"
+          aria-label={t("sourcing.modal.linkNameLabel")}
+          aria-invalid={nameInvalid}
+          type="text"
+          value={name}
+          disabled={isPending}
+          placeholder={t("sourcing.modal.linkNamePlaceholder")}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (nameInvalid) setNameInvalid(false);
+            if (formError) setFormError(null);
+          }}
+          className={cn(
+            "h-9 text-xs",
+            nameInvalid &&
+              "border-destructive focus-visible:ring-destructive/30",
+          )}
+        />
+      </div>
 
-          <div className="p-6 space-y-4 overflow-y-auto flex-1 min-w-0">
-            {/* Link Name */}
+      {/* Source Channel */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-bold text-foreground block">
+          {t("sourcing.modal.sourceLabel")}
+        </label>
+        <CustomSelect
+          value={source}
+          options={channelSelectOptions}
+          onChange={handleChannelChange}
+          disabled={isPending}
+          className="w-full"
+          triggerClassName="w-full text-xs h-9 bg-background border-input rounded-md"
+        />
+      </div>
+
+      {/* Custom Source Input when OTHER */}
+      {source === SourcingChannel.OTHER && (
+        <div className="space-y-1.5">
+          <label
+            htmlFor="tracking-link-custom-source-input"
+            className="text-xs font-bold text-foreground block"
+          >
+            {t("sourcing.modal.customSourceLabel")}
+          </label>
+          <Input
+            id="tracking-link-custom-source-input"
+            name="customSource"
+            aria-label={t("sourcing.modal.customSourceLabel")}
+            type="text"
+            value={customSource}
+            disabled={isPending}
+            placeholder={t("sourcing.modal.customSourcePlaceholder")}
+            onChange={(e) => setCustomSource(e.target.value)}
+            className="h-9 text-xs"
+          />
+        </div>
+      )}
+
+      {/* Job Scope */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-foreground">
+            {t("sourcing.modal.jobLabel")}
+          </label>
+          {lockJob && (
+            <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+              <Lock className="h-3 w-3" aria-hidden="true" />
+              {t("sourcing.modal.jobLocked")}
+            </span>
+          )}
+        </div>
+        <CustomSelect
+          value={lockJob && defaultJobId ? defaultJobId : jobId}
+          options={jobSelectOptions}
+          onChange={setJobId}
+          disabled={isPending || lockJob}
+          icon={lockJob ? Lock : undefined}
+          className="w-full"
+          triggerClassName={cn(
+            "w-full text-xs h-9 bg-background border-input rounded-md",
+            lockJob && "bg-muted/50 opacity-80 cursor-not-allowed",
+          )}
+        />
+      </div>
+
+      {/* UTM Parameters Section */}
+      <div className="pt-2 border-t border-border space-y-3">
+        <h3 className="text-xs font-bold text-foreground">
+          {t("sourcing.details.editUtmAccordion")}
+        </h3>
+
+        <div className="space-y-3">
+          {/* utm_source & utm_medium */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label
-                htmlFor="tracking-link-name-input"
-                className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                htmlFor="tracking-link-utm-source-input"
+                className="text-xs font-bold text-foreground block"
               >
-                {t("sourcing.modal.linkNameLabel")}
-                <span className="text-rose-500 ml-1">*</span>
+                {t("sourcing.details.utmSourceLabel")}
               </label>
-              <input
-                id="tracking-link-name-input"
-                name="name"
-                aria-label={t("sourcing.modal.linkNameLabel")}
+              <Input
+                id="tracking-link-utm-source-input"
+                name="utmSource"
+                aria-label={t("sourcing.details.utmSourceLabel")}
                 type="text"
-                value={name}
-                placeholder={t("sourcing.modal.linkNamePlaceholder")}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (error) setError(null);
-                }}
-                className={`w-full px-3 py-2 text-xs rounded-xl border bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                  error
-                    ? "border-rose-300 dark:border-rose-700"
-                    : "border-slate-200 dark:border-slate-800"
-                }`}
+                value={utmSource}
+                disabled={isPending}
+                onChange={(e) => setUtmSource(e.target.value)}
+                placeholder="linkedin"
+                className="h-9 text-xs"
               />
-              {error && <p className="text-[11px] text-rose-500">{error}</p>}
             </div>
-
-            {/* Source Channel */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t("sourcing.modal.sourceLabel")}
+              <label
+                htmlFor="tracking-link-utm-medium-input"
+                className="text-xs font-bold text-foreground block"
+              >
+                {t("sourcing.details.utmMediumLabel")}
               </label>
-              <CustomSelect
-                value={source}
-                options={channelSelectOptions}
-                onChange={handleChannelChange}
-                className="w-full"
-                triggerClassName="w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+              <Input
+                id="tracking-link-utm-medium-input"
+                name="utmMedium"
+                aria-label={t("sourcing.details.utmMediumLabel")}
+                type="text"
+                value={utmMedium}
+                disabled={isPending}
+                onChange={(e) => setUtmMedium(e.target.value)}
+                placeholder="social"
+                className="h-9 text-xs"
               />
             </div>
+          </div>
 
-            {/* Custom Source Input when OTHER */}
-            {source === SourcingChannel.OTHER && (
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="tracking-link-custom-source-input"
-                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                >
-                  {t("sourcing.modal.customSourceLabel")}
-                </label>
-                <input
-                  id="tracking-link-custom-source-input"
-                  name="customSource"
-                  aria-label={t("sourcing.modal.customSourceLabel")}
-                  type="text"
-                  value={customSource}
-                  placeholder={t("sourcing.modal.customSourcePlaceholder")}
-                  onChange={(e) => setCustomSource(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
-              </div>
-            )}
-
-            {/* Job Scope */}
+          {/* utm_campaign & utm_term */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {t("sourcing.modal.jobLabel")}
-                </label>
-                {lockJob && (
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    {t("sourcing.modal.jobLocked")}
-                  </span>
-                )}
-              </div>
-              <CustomSelect
-                value={lockJob && defaultJobId ? defaultJobId : jobId}
-                options={jobSelectOptions}
-                onChange={setJobId}
-                disabled={lockJob}
-                icon={lockJob ? Lock : undefined}
-                className="w-full"
-                triggerClassName={cn(
-                  "w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl",
-                  lockJob &&
-                    "bg-slate-50/80 dark:bg-slate-800/50 opacity-80 cursor-not-allowed",
-                )}
+              <label
+                htmlFor="tracking-link-utm-campaign-input"
+                className="text-xs font-bold text-foreground block"
+              >
+                {t("sourcing.details.utmCampaignLabel")}
+              </label>
+              <Input
+                id="tracking-link-utm-campaign-input"
+                name="utmCampaign"
+                aria-label={t("sourcing.details.utmCampaignLabel")}
+                type="text"
+                value={utmCampaign}
+                disabled={isPending}
+                placeholder={t("sourcing.modal.campaignPlaceholder")}
+                onChange={(e) => setUtmCampaign(e.target.value)}
+                className="h-9 text-xs"
               />
             </div>
-
-            {/* UTM Parameters Section (Always visible, matching standard input style) */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t("sourcing.details.editUtmAccordion")}
-              </h3>
-
-              <div className="space-y-3">
-                {/* utm_source & utm_medium */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="tracking-link-utm-source-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                    >
-                      {t("sourcing.details.utmSourceLabel")}
-                    </label>
-                    <input
-                      id="tracking-link-utm-source-input"
-                      name="utmSource"
-                      aria-label={t("sourcing.details.utmSourceLabel")}
-                      type="text"
-                      value={utmSource}
-                      onChange={(e) => setUtmSource(e.target.value)}
-                      placeholder="linkedin"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="tracking-link-utm-medium-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                    >
-                      {t("sourcing.details.utmMediumLabel")}
-                    </label>
-                    <input
-                      id="tracking-link-utm-medium-input"
-                      name="utmMedium"
-                      aria-label={t("sourcing.details.utmMediumLabel")}
-                      type="text"
-                      value={utmMedium}
-                      onChange={(e) => setUtmMedium(e.target.value)}
-                      placeholder="social"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* utm_campaign & utm_term */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="tracking-link-utm-campaign-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                    >
-                      {t("sourcing.details.utmCampaignLabel")}
-                    </label>
-                    <input
-                      id="tracking-link-utm-campaign-input"
-                      name="utmCampaign"
-                      aria-label={t("sourcing.details.utmCampaignLabel")}
-                      type="text"
-                      value={utmCampaign}
-                      placeholder={t("sourcing.modal.campaignPlaceholder")}
-                      onChange={(e) => setUtmCampaign(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="tracking-link-utm-term-input"
-                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                    >
-                      {t("sourcing.details.utmTermLabel")}
-                    </label>
-                    <input
-                      id="tracking-link-utm-term-input"
-                      name="utmTerm"
-                      aria-label={t("sourcing.details.utmTermLabel")}
-                      type="text"
-                      value={utmTerm}
-                      placeholder={t("sourcing.details.utmTermPlaceholder")}
-                      onChange={(e) => setUtmTerm(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* utm_content */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="tracking-link-utm-content-input"
-                    className="text-xs font-bold text-slate-700 dark:text-slate-300"
-                  >
-                    {t("sourcing.details.utmContentLabel")}
-                  </label>
-                  <input
-                    id="tracking-link-utm-content-input"
-                    name="utmContent"
-                    aria-label={t("sourcing.details.utmContentLabel")}
-                    type="text"
-                    value={utmContent}
-                    placeholder={t("sourcing.details.utmContentPlaceholder")}
-                    onChange={(e) => setUtmContent(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="tracking-link-utm-term-input"
+                className="text-xs font-bold text-foreground block"
+              >
+                {t("sourcing.details.utmTermLabel")}
+              </label>
+              <Input
+                id="tracking-link-utm-term-input"
+                name="utmTerm"
+                aria-label={t("sourcing.details.utmTermLabel")}
+                type="text"
+                value={utmTerm}
+                disabled={isPending}
+                placeholder={t("sourcing.details.utmTermPlaceholder")}
+                onChange={(e) => setUtmTerm(e.target.value)}
+                className="h-9 text-xs"
+              />
             </div>
           </div>
 
-          {/* Action Footer - Perfectly aligned buttons */}
-          <div className="p-4 px-6 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              disabled={isPending}
-              className="h-9 px-4 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          {/* utm_content */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="tracking-link-utm-content-input"
+              className="text-xs font-bold text-foreground block"
             >
-              {t("sourcing.modal.cancelBtn")}
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
+              {t("sourcing.details.utmContentLabel")}
+            </label>
+            <Input
+              id="tracking-link-utm-content-input"
+              name="utmContent"
+              aria-label={t("sourcing.details.utmContentLabel")}
+              type="text"
+              value={utmContent}
               disabled={isPending}
-              className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
-            >
-              {isPending
-                ? isEdit
-                  ? t("sourcing.details.editSaving")
-                  : t("sourcing.modal.creatingBtn")
-                : isEdit
-                  ? t("sourcing.details.editSave")
-                  : t("sourcing.modal.createBtn")}
-            </Button>
+              placeholder={t("sourcing.details.utmContentPlaceholder")}
+              onChange={(e) => setUtmContent(e.target.value)}
+              className="h-9 text-xs"
+            />
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </FormModal>
   );
 }

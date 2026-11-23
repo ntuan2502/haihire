@@ -76,8 +76,9 @@ export class InterviewsService {
     id: string,
     dto: UpdateInterviewDto,
     tenantOrgId?: string | null,
+    actor?: { id?: string; name?: string; role?: string },
   ) {
-    return this.scheduleService.update(id, dto, tenantOrgId);
+    return this.scheduleService.update(id, dto, tenantOrgId, actor);
   }
 
   async remove(id: string, tenantOrgId?: string | null) {

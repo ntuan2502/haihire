@@ -1,3 +1,5 @@
+"use client";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sourcingApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
@@ -20,6 +22,7 @@ export function useSourcingStatsQuery(params?: {
       orgId: user?.organizationId,
     }),
     queryFn: () => sourcingApi.getStats(params),
+    enabled: Boolean(user?.organizationId),
     staleTime: 60 * 1000,
   });
 }
@@ -38,6 +41,7 @@ export function useTrackingLinksQuery(params?: {
       orgId: user?.organizationId,
     }),
     queryFn: () => sourcingApi.getLinks(params),
+    enabled: Boolean(user?.organizationId),
     staleTime: 30 * 1000,
   });
 }
@@ -53,7 +57,7 @@ export function useTrackingLinkDetailQuery(
       orgId: user?.organizationId,
     }),
     queryFn: () => sourcingApi.getLinkDetails(id, params),
-    enabled: Boolean(id),
+    enabled: Boolean(id && user?.organizationId),
     staleTime: 30 * 1000,
   });
 }
@@ -64,6 +68,7 @@ export function useAttributionLogQuery(params?: {
   search?: string;
   jobId?: string;
   source?: SourcingChannel;
+  timeRange?: TimeRangeFilter;
 }) {
   const { user } = useAuth();
   return useQuery({
@@ -72,6 +77,7 @@ export function useAttributionLogQuery(params?: {
       orgId: user?.organizationId,
     }),
     queryFn: () => sourcingApi.getAttributionLog(params),
+    enabled: Boolean(user?.organizationId),
     staleTime: 30 * 1000,
   });
 }

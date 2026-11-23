@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const CAREER_PAGE_URL =
-  "/careers/admin/senior-backend-engineer-nestjs-postgresql";
+  "/careers/demo-1/senior-backend-engineer-nestjs-postgresql";
 
 test.describe("Apply Form E2E Flow", () => {
   test("submitting with invalid email triggers validation error", async ({

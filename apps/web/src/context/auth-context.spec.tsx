@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
+import { queryKeys } from "@/hooks/query-keys";
 import type { ReactNode } from "react";
 import { AuthProvider, useAuth } from "./auth-context";
-import { api } from "@/lib/api/client";
+import { api, refreshAuthSession } from "@/lib/api/client";
 
 // Mock next/navigation
 const mockReplace = vi.fn();
@@ -30,6 +31,7 @@ vi.mock("@/lib/api/client", () => ({
     },
   },
   getApiBaseUrl: () => "/api",
+  refreshAuthSession: vi.fn().mockResolvedValue("refreshed-token"),
 }));
 
 describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
@@ -80,7 +82,7 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
   });
 
   it("redirects to /auth/login when 401 occurs on protected /dashboard route", async () => {
-    setWindowPath("/dashboard/jobs");
+    setWindowPath("/jobs");
     vi.mocked(api.get).mockRejectedValueOnce({
       response: { status: 401 },
     });
@@ -178,6 +180,81 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
   });
+
+  it("skips initial /auth/me fetch when initialHasSessionHint is false and clears stale localStorage", async () => {
+    setWindowPath("/auth/login");
+    localStorage.setItem(
+      "haihire_recruiter_user",
+      JSON.stringify({ id: "stale-user", email: "stale@test.local" }),
+    );
+    const noSessionWrapper = ({ children }: { children: ReactNode }) => (
+      <AuthProvider initialUser={null} initialHasSessionHint={false}>
+        {children}
+      </AuthProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: noSessionWrapper,
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(api.get).not.toHaveBeenCalled();
+    expect(localStorage.getItem("haihire_recruiter_user")).toBeNull();
+  });
+
+  it("hydrates SSR initialUser and initialPermissions into QueryClient without redundant /auth/me", async () => {
+    setWindowPath("/dashboard");
+    const queryClient = new QueryClient();
+    const ssrUser = {
+      id: "u-ssr",
+      email: "ssr@test.local",
+      name: "SSR User",
+      role: "MEMBER" as const,
+      isOwner: false,
+      organizationId: "org-ssr",
+      organization: {
+        id: "org-ssr",
+        name: "SSR Org",
+        slug: "ssr-org",
+        ownerId: "owner-1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    const ssrWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider
+          initialUser={ssrUser}
+          initialPermissions={["job:create", "candidate:create"]}
+          initialHasSessionHint={true}
+        >
+          {children}
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper: ssrWrapper });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user?.id).toBe("u-ssr");
+    expect(result.current.initialPermissions).toEqual([
+      "job:create",
+      "candidate:create",
+    ]);
+    expect(api.get).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(queryKeys.myOrg("org-ssr"))).toMatchObject({
+      id: "org-ssr",
+      name: "SSR Org",
+    });
+    expect(
+      queryClient.getQueryData(queryKeys.myPermissions("org-ssr", "MEMBER")),
+    ).toEqual({
+      permissions: ["job:create", "candidate:create"],
+    });
+  });
 });
 
 interface MockEventSourceInstance {
@@ -225,7 +302,7 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
   });
 
   it("refreshes user, invalidates permission/org queries, and shows warning toast on self MEMBER_ROLE_UPDATED", async () => {
-    window.history.pushState({}, "", "/dashboard/settings/members");
+    window.history.pushState({}, "", "/settings/members");
     const warnSpy = vi.spyOn(toast, "warning");
     const sseListener = vi.fn();
     window.addEventListener("ats:sse_event", sseListener);
@@ -301,7 +378,7 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
   });
 
   it("warns and refreshes user on self MEMBER_REMOVED", async () => {
-    window.history.pushState({}, "", "/dashboard/jobs");
+    window.history.pushState({}, "", "/jobs");
     const warnSpy = vi.spyOn(toast, "warning");
     const queryClient = new QueryClient();
 
@@ -475,5 +552,184 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
       );
     });
     expect(infoSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("reconnects EventSource on haihire:auth-refreshed and triggers debounced refreshAuthSession on error", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        id: "user-sse-reconnect",
+        email: "sse@example.com",
+        role: "ADMIN",
+        organizationId: "org-1",
+      },
+    } as never);
+    vi.mocked(refreshAuthSession).mockClear();
+
+    const prevSource = latestSource;
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.id).toBe("user-sse-reconnect");
+      expect(latestSource).not.toBeNull();
+      expect(latestSource).not.toBe(prevSource);
+    });
+
+    const firstSource = latestSource!;
+    const closeSpy = vi.spyOn(firstSource, "close");
+
+    act(() => {
+      window.dispatchEvent(new Event("haihire:auth-refreshed"));
+    });
+
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(latestSource).not.toBeNull();
+      expect(latestSource).not.toBe(firstSource);
+    });
+
+    const reconnectedSource = latestSource!;
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        reconnectedSource.onerror?.(new Event("error"));
+      });
+      expect(refreshAuthSession).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(refreshAuthSession).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("ignores stale in-flight /auth/me responses when updateUserOrg switches organization mid-flight", async () => {
+    window.history.pushState({}, "", "/dashboard");
+    const queryClient = new QueryClient();
+    const cancelSpy = vi.spyOn(queryClient, "cancelQueries");
+    queryClient.setQueryData(queryKeys.myOrgs(), [
+      { id: "org-1", name: "Org One", slug: "org-1" },
+      { id: "org-2", name: "Org Two", slug: "org-2" },
+    ]);
+
+    let resolveStaleMe!: (val: unknown) => void;
+    vi.mocked(api.get)
+      .mockResolvedValueOnce({
+        data: {
+          id: "u-switch",
+          email: "switch@test.local",
+          name: "Switch User",
+          role: "ADMIN",
+          organizationId: "org-1",
+          organization: {
+            id: "org-1",
+            name: "Org One",
+            slug: "org-1",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        },
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStaleMe = resolve;
+          }),
+      );
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{children}</AuthProvider>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.user?.organizationId).toBe("org-1");
+      expect(latestSource).not.toBeNull();
+    });
+
+    // Start an in-flight /auth/me request belonging to the org-1 epoch
+    let inFlightRefresh!: Promise<unknown>;
+    act(() => {
+      inFlightRefresh = result.current.refreshUser();
+    });
+
+    const refreshListener = vi.fn();
+    window.addEventListener("haihire:auth-refreshed", refreshListener);
+
+    // Switch organization to org-2 before the stale /auth/me settles
+    act(() => {
+      result.current.updateUserOrg(
+        {
+          id: "org-2",
+          name: "Org Two",
+          slug: "org-2",
+          ownerId: "u-other",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+        "RECRUITER",
+      );
+    });
+
+    expect(cancelSpy).toHaveBeenCalledTimes(1);
+    expect(refreshListener).toHaveBeenCalledTimes(1);
+    expect(result.current.user?.organizationId).toBe("org-2");
+    expect(result.current.user?.role).toBe("RECRUITER");
+    expect(queryClient.getQueryData(queryKeys.myOrg("org-2"))).toMatchObject({
+      id: "org-2",
+      name: "Org Two",
+    });
+    expect(queryClient.getQueryData(queryKeys.myOrgs())).toHaveLength(2);
+
+    // Resolve the stale /auth/me response with org-1: it must NOT overwrite org-2
+    await act(async () => {
+      resolveStaleMe({
+        data: {
+          id: "u-switch",
+          email: "switch@test.local",
+          name: "Switch User",
+          role: "ADMIN",
+          organizationId: "org-1",
+          organization: {
+            id: "org-1",
+            name: "Org One",
+            slug: "org-1",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        },
+      });
+      await inFlightRefresh;
+    });
+
+    expect(result.current.user?.organizationId).toBe("org-2");
+    expect(result.current.user?.organization?.name).toBe("Org Two");
+
+    // Targeted SSE ORG_UPDATED for the already-active org should not issue redundant /auth/me
+    const getCountBeforeSse = vi.mocked(api.get).mock.calls.length;
+    act(() => {
+      latestSource?.onmessage?.(
+        new MessageEvent("message", {
+          data: JSON.stringify({
+            type: "ORG_UPDATED",
+            targetUserId: "u-switch",
+            organizationId: "org-2",
+          }),
+        }),
+      );
+    });
+    expect(vi.mocked(api.get).mock.calls.length).toBe(getCountBeforeSse);
+
+    window.removeEventListener("haihire:auth-refreshed", refreshListener);
   });
 });

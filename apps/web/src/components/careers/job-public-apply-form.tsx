@@ -16,7 +16,6 @@ import {
   FileText,
   Loader2,
   ShieldCheck,
-  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -81,6 +80,11 @@ export function JobPublicApplyForm({
   const validateAndSetFile = (file?: File) => {
     setFileError(null);
     if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setFileError(t("careers.fileInvalidType"));
+      return;
+    }
 
     if (file.size > 10 * 1024 * 1024) {
       setFileError(t("careers.fileTooLarge"));
@@ -150,6 +154,22 @@ export function JobPublicApplyForm({
       if (typeof document !== "undefined" && document.referrer) {
         formData.append("referrer", document.referrer);
       }
+      if (typeof window !== "undefined" && window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const utmMap: Array<[string, string]> = [
+          ["utm_source", "utmSource"],
+          ["utm_medium", "utmMedium"],
+          ["utm_campaign", "utmCampaign"],
+          ["utm_term", "utmTerm"],
+          ["utm_content", "utmContent"],
+        ];
+        for (const [paramKey, fieldKey] of utmMap) {
+          const val = urlParams.get(paramKey)?.trim();
+          if (val) {
+            formData.append(fieldKey, val);
+          }
+        }
+      }
 
       await applyMutation.mutateAsync(formData);
       setIsSuccess(true);
@@ -162,26 +182,26 @@ export function JobPublicApplyForm({
 
   return (
     <div ref={formRef} className="lg:col-span-5 sticky top-24 space-y-6">
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
+      <div className="p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border space-y-6">
         <div>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-medium text-foreground">
             {t("careers.submitApplication")}
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {t("careers.applicationFormSubtitle")}
           </p>
         </div>
 
         {isSuccess ? (
           <div className="py-8 text-center space-y-4">
-            <div className="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center mx-auto">
+            <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
               <CheckCircle2 className="h-7 w-7" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-foreground">
                 {t("careers.submitSuccessTitle")}
               </h3>
-              <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
                 {t("careers.submitSuccessDesc", {
                   name: formatCandidateDisplayName(
                     { firstName, lastName },
@@ -194,7 +214,7 @@ export function JobPublicApplyForm({
             </div>
             <Button
               onClick={() => router.push(`/careers/${orgSlug}`)}
-              className="mt-2 h-9 rounded-xl text-xs font-semibold cursor-pointer"
+              className="mt-2 h-9 rounded-md text-xs font-semibold cursor-pointer"
               variant="outline"
             >
               {t("careers.viewOtherJobs")}
@@ -206,7 +226,7 @@ export function JobPublicApplyForm({
               <div
                 role="alert"
                 aria-live="assertive"
-                className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
+                className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
               >
                 <AlertCircle
                   className="h-4 w-4 shrink-0 mt-0.5"
@@ -255,7 +275,7 @@ export function JobPublicApplyForm({
                 <div key={field.id} className="space-y-1.5">
                   <label
                     htmlFor={field.id}
-                    className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    className="text-xs font-medium text-foreground"
                   >
                     {field.label} <span className="text-rose-500">*</span>
                   </label>
@@ -266,7 +286,7 @@ export function JobPublicApplyForm({
                     placeholder={field.placeholder}
                     value={field.value}
                     onChange={(e) => field.onChange(e.target.value)}
-                    className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
+                    className="h-10 text-xs rounded-md bg-background"
                   />
                 </div>
               ))}
@@ -276,7 +296,7 @@ export function JobPublicApplyForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="career-email"
-                className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.email")} <span className="text-rose-500">*</span>
               </label>
@@ -287,14 +307,14 @@ export function JobPublicApplyForm({
                 placeholder="name@example.com"
                 value={candidateEmail}
                 onChange={(e) => setCandidateEmail(e.target.value)}
-                className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
+                className="h-10 text-xs rounded-md bg-background"
               />
             </div>
 
             <div className="space-y-1.5">
               <label
                 htmlFor="career-phone"
-                className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.phone")}
               </label>
@@ -304,13 +324,13 @@ export function JobPublicApplyForm({
                 placeholder="0912 345 678"
                 value={candidatePhone}
                 onChange={(e) => setCandidatePhone(e.target.value)}
-                className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
+                className="h-10 text-xs rounded-md bg-background"
               />
             </div>
 
             {/* Resume Upload Box */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              <label className="text-xs font-medium text-foreground">
                 {t("careers.resume")} <span className="text-rose-500">*</span>
               </label>
 
@@ -318,24 +338,24 @@ export function JobPublicApplyForm({
                 id={fileInputId}
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf"
                 onChange={handleFileChange}
                 className="sr-only peer"
                 aria-label={t("careers.resume")}
               />
 
               {resumeFile ? (
-                <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/10 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 truncate">
                     <FileText
-                      className="h-5 w-5 text-blue-600 shrink-0"
+                      className="h-5 w-5 text-primary shrink-0"
                       aria-hidden="true"
                     />
                     <div className="truncate">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      <p className="text-xs font-bold text-foreground truncate">
                         {resumeFile.name}
                       </p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[10px] text-muted-foreground">
                         {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
                     </div>
@@ -347,7 +367,7 @@ export function JobPublicApplyForm({
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
                     aria-label={t("common.delete")}
-                    className="h-7 w-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    className="h-7 w-7 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -357,17 +377,17 @@ export function JobPublicApplyForm({
                   htmlFor={fileInputId}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-900/50 space-y-2 block peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
+                  className="border-2 border-dashed border-border hover:border-primary rounded-xl p-5 text-center cursor-pointer transition-colors bg-muted/40 space-y-2 block peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:border-primary focus-within:ring-2 focus-within:ring-ring focus-within:border-primary"
                 >
                   <UploadCloud
-                    className="h-6 w-6 text-slate-400 mx-auto"
+                    className="h-6 w-6 text-muted-foreground mx-auto"
                     aria-hidden="true"
                   />
                   <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <p className="text-xs font-semibold text-foreground">
                       {t("careers.dropCvHere")}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-muted-foreground">
                       {t("careers.cvFormats")}
                     </p>
                   </div>
@@ -389,7 +409,7 @@ export function JobPublicApplyForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="career-notes"
-                className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                className="text-xs font-medium text-foreground"
               >
                 {t("careers.notes")}
               </label>
@@ -399,13 +419,13 @@ export function JobPublicApplyForm({
                 placeholder={t("careers.placeholders.notes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full p-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                className="w-full p-3 text-xs rounded-md bg-background border border-input focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring transition-colors resize-none"
               />
             </div>
 
             {/* Privacy note */}
-            <div className="pt-1 flex items-start gap-2 text-[10px] text-slate-400 leading-normal">
-              <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+            <div className="pt-1 flex items-start gap-2 text-xs text-muted-foreground leading-normal">
+              <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
               <span>{t("careers.privacyNotice")}</span>
             </div>
 
@@ -413,7 +433,7 @@ export function JobPublicApplyForm({
             <Button
               type="submit"
               disabled={applyMutation.isPending}
-              className="w-full h-11 rounded-2xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
+              className="w-full h-11 rounded-lg text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer disabled:opacity-50"
             >
               {applyMutation.isPending ? (
                 <>
@@ -421,10 +441,7 @@ export function JobPublicApplyForm({
                   {t("careers.submitting")}
                 </>
               ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {t("careers.submitApplication")}
-                </>
+                <>{t("careers.submitApplication")}</>
               )}
             </Button>
           </form>

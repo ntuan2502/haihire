@@ -4,12 +4,15 @@ import Link from "next/link";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { cn } from "cn";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 
 export interface PublicFooterProps {
   /** Company/Organization name (optional) */
   orgName?: string;
   /** Company/Organization slug (optional) */
   orgSlug?: string;
+  /** Organization logo URL (optional) */
+  orgLogoUrl?: string | null;
   /** Custom additional CSS classes */
   className?: string;
   /** Custom max-width container class (default: max-w-7xl) */
@@ -19,6 +22,7 @@ export interface PublicFooterProps {
 export function PublicFooter({
   orgName,
   orgSlug,
+  orgLogoUrl,
   className,
   maxWidthClassName = "max-w-7xl",
 }: PublicFooterProps) {
@@ -29,7 +33,7 @@ export function PublicFooter({
   return (
     <footer
       className={cn(
-        "border-t border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs py-6 sm:py-8 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors select-none",
+        "border-t border-border bg-card py-6 sm:py-8 text-center text-xs text-muted-foreground mt-auto transition-colors select-none",
         className,
       )}
     >
@@ -45,10 +49,15 @@ export function PublicFooter({
               href={`/careers/${orgSlug}`}
               className="flex items-center gap-2 group hover:opacity-85 transition-opacity"
             >
-              <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <OrganizationLogo
+                name={displayName}
+                logoUrl={orgLogoUrl}
+                size="sm"
+                variant="gradient"
+                decorative
+                className="font-semibold text-xs"
+              />
+              <span className="font-semibold text-foreground">
                 {displayName} {t("careers.title")}
               </span>
             </Link>
@@ -57,21 +66,21 @@ export function PublicFooter({
               href="/"
               className="flex items-center gap-2 group hover:opacity-85 transition-opacity"
             >
-              <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform">
+              <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs">
                 {BRAND_CONFIG.monogram}
               </div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-foreground">
                 {BRAND_CONFIG.name}
               </span>
             </Link>
           )}
         </div>
 
-        <div className="text-slate-500 dark:text-slate-400">
+        <div className="text-muted-foreground">
           {t("careers.poweredBy")}{" "}
           <Link
             href="/"
-            className="font-bold text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="font-semibold text-foreground hover:text-primary transition-colors"
           >
             {BRAND_CONFIG.legalName}
           </Link>{" "}

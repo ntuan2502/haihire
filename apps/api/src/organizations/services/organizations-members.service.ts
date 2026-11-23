@@ -12,8 +12,13 @@ import {
   APP_ERROR_CODES,
   Role,
   formatUserDisplayName,
+  hasPermission,
   type NameDisplayOrder,
 } from "@haihire/shared";
+import {
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
+} from "../organization-logo.util";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 type MockUserTableCompat = {
@@ -127,8 +132,8 @@ export class OrganizationsMembersService {
     }
   }
 
-  async getInterviewers(userId: string) {
-    const members = await this.getMembers(userId);
+  async getInterviewers(userId: string, activeOrgId?: string | null) {
+    const members = await this.getMembers(userId, activeOrgId);
     return members.map((member) => ({
       id: member.id,
       firstName: member.firstName,
@@ -139,18 +144,63 @@ export class OrganizationsMembersService {
     }));
   }
 
-  async getMembers(userId: string) {
-    const userMember = await this.prisma.organizationMember.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { organizationId: true },
+  private async resolveTargetOrgId(
+    client: Pick<PrismaService, "organizationMember" | "organization" | "user">,
+    userId: string,
+    activeOrgId?: string | null,
+  ): Promise<{ orgId: string | null; legacyRole?: string }> {
+    if (activeOrgId) {
+      return { orgId: activeOrgId };
+    }
+    if (typeof client.organizationMember?.findFirst === "function") {
+      const userMember = await client.organizationMember.findFirst({
+        where: { userId },
+        orderBy: getPreferredMembershipOrderBy(),
+        select: { organizationId: true, role: true },
+      });
+      if (userMember?.organizationId) {
+        return {
+          orgId: userMember.organizationId,
+          legacyRole: userMember.role,
+        };
+      }
+    }
+    if (typeof client.organization?.findFirst === "function") {
+      const ownedOrg = await client.organization.findFirst({
+        where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
+        select: { id: true },
+      });
+      if (ownedOrg?.id) {
+        return { orgId: ownedOrg.id, legacyRole: "ADMIN" };
+      }
+    }
+    const callerRecord = await client.user.findFirst({
+      where: { id: userId },
     });
-    const ownedOrg = await this.prisma.organization.findFirst({
-      where: { ownerId: userId },
-      select: { id: true },
-    });
+    const compatOrgId = (
+      callerRecord as unknown as { organizationId?: string | null }
+    )?.organizationId;
+    const compatRole = (callerRecord as unknown as { role?: string })?.role;
+    return { orgId: compatOrgId ?? null, legacyRole: compatRole };
+  }
 
-    const currentOrgId = userMember?.organizationId || ownedOrg?.id;
+  async getMembers(userId: string, activeOrgId?: string | null) {
+    let currentOrgId = activeOrgId || null;
+    if (!currentOrgId) {
+      const userMember = await this.prisma.organizationMember.findFirst({
+        where: { userId },
+        orderBy: getPreferredMembershipOrderBy(),
+        select: { organizationId: true },
+      });
+      const ownedOrg = await this.prisma.organization.findFirst({
+        where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
+        select: { id: true },
+      });
+      currentOrgId = userMember?.organizationId || ownedOrg?.id || null;
+    }
+
     if (!currentOrgId) {
       return [];
     }
@@ -163,6 +213,9 @@ export class OrganizationsMembersService {
         nameDisplayOrder: true,
       },
     });
+    if (!org) {
+      return [];
+    }
     const nameOrder: NameDisplayOrder =
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
@@ -238,24 +291,25 @@ export class OrganizationsMembersService {
     callerId: string,
     targetMemberId: string,
     newRole: Role,
+    activeOrgId?: string | null,
   ) {
     const caller = await this.prisma.user.findFirst({
       where: { id: callerId },
-      select: {
-        id: true,
-        role: true,
-        organizationId: true,
-      },
+      select: { id: true },
     });
 
-    if (!caller || !caller.organizationId) {
+    const resolved = caller
+      ? await this.resolveTargetOrgId(this.prisma, callerId, activeOrgId)
+      : { orgId: null };
+
+    if (!caller || !resolved.orgId) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
         "User is not associated with an organization",
       );
     }
 
-    const targetOrgId = caller.organizationId as string;
+    const targetOrgId = resolved.orgId;
     const org = await this.prisma.organization.findFirst({
       where: { id: targetOrgId },
       select: {
@@ -264,10 +318,26 @@ export class OrganizationsMembersService {
       },
     });
 
-    const isCallerOwner = Boolean(org && org.ownerId === caller.id);
-    const isCallerAdmin = caller.role === "ADMIN";
+    const callerMembership =
+      typeof this.prisma.organizationMember?.findFirst === "function"
+        ? await this.prisma.organizationMember.findFirst({
+            where: { organizationId: targetOrgId, userId: caller.id },
+            select: { role: true },
+          })
+        : null;
 
-    if (!isCallerAdmin && !isCallerOwner) {
+    const isCallerOwner = Boolean(org && org.ownerId === caller.id);
+    const effectiveCallerRole = isCallerOwner
+      ? "ADMIN"
+      : callerMembership?.role || resolved.legacyRole || "MEMBER";
+    const canManageMembers = await this.resolveCanManageMembers(
+      this.prisma,
+      targetOrgId,
+      effectiveCallerRole,
+      isCallerOwner,
+    );
+
+    if (!canManageMembers) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can change member roles.",
@@ -307,6 +377,17 @@ export class OrganizationsMembersService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND,
         "Member not found in this organization",
+      );
+    }
+
+    if (
+      !isCallerOwner &&
+      effectiveCallerRole !== "ADMIN" &&
+      (newRole === "ADMIN" || membership.role === "ADMIN")
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Only organization owners and administrators can assign or modify the ADMIN role.",
       );
     }
 
@@ -380,25 +461,29 @@ export class OrganizationsMembersService {
     };
   }
 
-  async removeMember(callerId: string, targetMemberId: string) {
+  async removeMember(
+    callerId: string,
+    targetMemberId: string,
+    activeOrgId?: string | null,
+  ) {
     return runInTransaction(this.prisma, async (tx) => {
       const caller = await tx.user.findFirst({
         where: { id: callerId },
-        select: {
-          id: true,
-          role: true,
-          organizationId: true,
-        },
+        select: { id: true },
       });
 
-      if (!caller || !caller.organizationId) {
+      const resolved = caller
+        ? await this.resolveTargetOrgId(tx, callerId, activeOrgId)
+        : { orgId: null };
+
+      if (!caller || !resolved.orgId) {
         throw new AppNotFoundException(
           APP_ERROR_CODES.ORG_USER_NO_ORG,
           "User is not associated with an organization",
         );
       }
 
-      const targetOrgId = caller.organizationId as string;
+      const targetOrgId = resolved.orgId;
       const org = await tx.organization.findFirst({
         where: { id: targetOrgId },
         select: {
@@ -425,10 +510,26 @@ export class OrganizationsMembersService {
         );
       }
 
-      const isCallerOwner = Boolean(org && org.ownerId === caller.id);
-      const isCallerAdmin = caller.role === "ADMIN";
+      const callerMembership =
+        typeof tx.organizationMember?.findFirst === "function"
+          ? await tx.organizationMember.findFirst({
+              where: { organizationId: targetOrgId, userId: caller.id },
+              select: { role: true },
+            })
+          : null;
 
-      if (!isCallerAdmin && !isCallerOwner) {
+      const isCallerOwner = Boolean(org && org.ownerId === caller.id);
+      const effectiveCallerRole = isCallerOwner
+        ? "ADMIN"
+        : callerMembership?.role || resolved.legacyRole || "MEMBER";
+      const canManageMembers = await this.resolveCanManageMembers(
+        tx,
+        targetOrgId,
+        effectiveCallerRole,
+        isCallerOwner,
+      );
+
+      if (!canManageMembers) {
         throw new AppForbiddenException(
           APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
           "Only organization owners and administrators can remove members.",
@@ -450,6 +551,25 @@ export class OrganizationsMembersService {
         );
       }
 
+      if (!isCallerOwner && effectiveCallerRole !== "ADMIN") {
+        const targetMembership =
+          typeof tx.organizationMember?.findFirst === "function"
+            ? await tx.organizationMember.findFirst({
+                where: {
+                  organizationId: targetOrgId,
+                  userId: targetMemberId,
+                },
+                select: { role: true },
+              })
+            : null;
+        if (targetMembership?.role === "ADMIN") {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+            "Only organization owners and administrators can remove an administrator.",
+          );
+        }
+      }
+
       // Remove from OrganizationMember
       await tx.organizationMember.deleteMany({
         where: {
@@ -465,6 +585,15 @@ export class OrganizationsMembersService {
           data: { organizationId: null, role: "MEMBER" },
         });
       }
+
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        caller.id,
+        "MEMBER_REMOVED",
+        "MEMBER",
+        { memberId: targetMemberId },
+        tx as unknown as PrismaService,
+      );
 
       // Broadcast SSE event
       this.eventsService?.emit({
@@ -487,5 +616,41 @@ export class OrganizationsMembersService {
         message: "Member successfully removed from organization",
       };
     });
+  }
+
+  private async resolveCanManageMembers(
+    client: {
+      organizationRolePermission?: {
+        findFirst?: (args: {
+          where: {
+            organizationId: string;
+            role: Role;
+            permission: string;
+          };
+          select: { granted: true };
+        }) => Promise<{ granted: boolean } | null>;
+      };
+    },
+    organizationId: string,
+    effectiveRole: string,
+    isOwner: boolean,
+  ): Promise<boolean> {
+    if (isOwner || effectiveRole === "ADMIN") {
+      return true;
+    }
+    const rolePermOverride =
+      typeof client.organizationRolePermission?.findFirst === "function"
+        ? await client.organizationRolePermission.findFirst({
+            where: {
+              organizationId,
+              role: effectiveRole as Role,
+              permission: "org:manage_members",
+            },
+            select: { granted: true },
+          })
+        : null;
+    return rolePermOverride
+      ? rolePermOverride.granted
+      : hasPermission(effectiveRole as Role, "org:manage_members");
   }
 }

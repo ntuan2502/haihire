@@ -389,5 +389,160 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       expect(job.applications).toEqual([]);
       expect(job.applicationsCount).toBe(0);
     });
+
+    it("BUG-12 & BUG-14: findAll sorts by applicants count and findBySlug prefers PUBLISHED over CLOSED with same title", async () => {
+      const desc = await service.findAll({
+        tenantOrgId: "org-1",
+        sortBy: "applicants",
+        sortOrder: "desc",
+      });
+      expect(desc.data[0]?.id).toBe("job-1");
+      expect(desc.data[0]?.applicationsCount).toBe(2);
+
+      const asc = await service.findAll({
+        tenantOrgId: "org-1",
+        sortBy: "applicants",
+        sortOrder: "asc",
+      });
+      expect(asc.data[0]?.applicationsCount).toBe(0);
+      expect(asc.data[asc.data.length - 1]?.id).toBe("job-1");
+
+      mockJobs.push(
+        {
+          id: "job-closed-dup",
+          title: "Frontend Engineer",
+          department: "Engineering",
+          location: "HCM",
+          type: "FULL_TIME",
+          description: "Old closed opening",
+          requirements: "TS",
+          salaryRange: "$2,000 - $3,000",
+          status: "CLOSED",
+          organizationId: "org-1",
+          createdById: "usr-1",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+          updatedAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "job-pub-dup",
+          title: "Frontend Engineer",
+          department: "Engineering",
+          location: "Hanoi",
+          type: "FULL_TIME",
+          description: "New published opening",
+          requirements: "TS",
+          salaryRange: "$2,000 - $3,000",
+          status: "PUBLISHED",
+          organizationId: "org-1",
+          createdById: "usr-1",
+          createdAt: new Date("2026-02-01T00:00:00Z"),
+          updatedAt: new Date("2026-02-01T00:00:00Z"),
+        },
+      );
+
+      const matched = await service.findBySlug(
+        "acme-corp",
+        "frontend-engineer",
+      );
+      expect(matched.id).toBe("job-pub-dup");
+      expect(matched.status).toBe("PUBLISHED");
+    });
+
+    it("BUG-27: updatePipelineStages syncs Application.stage on category change and rejects foreign stage IDs", async () => {
+      const stagesTable = createMockTable([
+        {
+          id: "stg-1",
+          organizationId: "org-1",
+          jobId: "job-1",
+          name: "Tech Screen",
+          category: "SCREENING",
+          orderIndex: 1,
+          color: null,
+          isTerminal: false,
+          version: 1,
+          createdAt: new Date(),
+        },
+        {
+          id: "stg-other-job",
+          organizationId: "org-2",
+          jobId: "job-other",
+          name: "Foreign Stage",
+          category: "APPLIED",
+          orderIndex: 1,
+          color: null,
+          isTerminal: false,
+          version: 1,
+          createdAt: new Date(),
+        },
+      ]);
+      const localApps = createMockTable([
+        {
+          id: "app-sync-1",
+          organizationId: "org-1",
+          jobId: "job-1",
+          stageId: "stg-1",
+          stage: "SCREENING",
+        },
+      ]);
+      const localPrisma = createMockPrismaService({
+        job: createMockTable([
+          {
+            id: "job-1",
+            title: "Engineer",
+            department: "Eng",
+            location: "Remote",
+            type: "FULL_TIME",
+            status: "PUBLISHED",
+            organizationId: "org-1",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ]),
+        application: localApps,
+        pipelineStage: stagesTable,
+      });
+      const localService = new JobsService(localPrisma as never);
+
+      await localService.updatePipelineStages(
+        "job-1",
+        {
+          stages: [
+            {
+              id: "stg-1",
+              name: "Tech Interview",
+              category: "INTERVIEW",
+              orderIndex: 1,
+            },
+          ],
+        },
+        "org-1",
+      );
+
+      expect(localApps.store[0].stage).toBe("INTERVIEW");
+
+      await expect(
+        localService.updatePipelineStages(
+          "job-1",
+          {
+            stages: [
+              {
+                id: "stg-1",
+                name: "Tech Interview",
+                category: "INTERVIEW",
+                orderIndex: 1,
+              },
+              {
+                id: "stg-other-job",
+                name: "Hijack",
+                category: "APPLIED",
+                orderIndex: 2,
+              },
+            ],
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow(/another job/i);
+    });
   });
 });

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const CAREER_PAGE_URL =
-  "/careers/admin/senior-backend-engineer-nestjs-postgresql?ref=lnk-x-fresh-zero";
+  "/careers/demo-1/senior-backend-engineer-nestjs-postgresql?ref=lnk-x-fresh-zero";
 
 test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)", () => {
   test("renders career job details without script warnings or hydration errors (unmasked console audit)", async ({
@@ -36,7 +36,7 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
       .locator('meta[property="og:url"]')
       .getAttribute("content");
     expect(ogUrl).toContain(
-      "/careers/admin/senior-backend-engineer-nestjs-postgresql",
+      "/careers/demo-1/senior-backend-engineer-nestjs-postgresql",
     );
 
     const ogSiteName = await page
@@ -78,7 +78,7 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
     });
 
     const targetUrl =
-      "/careers/admin/senior-technical-recruiter-hr?ref=lnk-techinasia-fair";
+      "/careers/demo-1/senior-technical-recruiter-hr?ref=lnk-techinasia-fair";
     const response = await page.goto(targetUrl, {
       waitUntil: "networkidle",
     });

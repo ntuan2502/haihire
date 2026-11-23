@@ -8,6 +8,7 @@ import {
   CandidatesProfileService,
   CandidatesNotesService,
 } from "./services";
+import type { CheckCandidateDuplicateSchema } from "@haihire/shared";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import type { CreateCandidateNoteDto } from "./dto/create-candidate-note.dto";
@@ -134,6 +135,13 @@ export class CandidatesService {
 
   async remove(id: string, tenantOrgId?: string | null) {
     return this.crud.remove(id, tenantOrgId);
+  }
+
+  async checkDuplicates(
+    query: CheckCandidateDuplicateSchema,
+    tenantOrgId?: string | null,
+  ) {
+    return this.crud.checkDuplicates(query, tenantOrgId);
   }
 
   async findNotes(

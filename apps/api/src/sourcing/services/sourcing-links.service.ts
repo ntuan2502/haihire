@@ -90,9 +90,19 @@ export class SourcingLinksService {
       this.prisma.trackingLink.findMany({
         where: { ...where, organizationId },
         include: {
-          job: { select: { title: true } },
+          job: {
+            where: { deletedAt: null },
+            select: { title: true },
+          },
           _count: {
-            select: { applications: true },
+            select: {
+              applications: {
+                where: {
+                  candidate: { deletedAt: null },
+                  job: { deletedAt: null },
+                },
+              },
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -139,7 +149,7 @@ export class SourcingLinksService {
       ) as string[];
       if (jobIds.length > 0) {
         const jobs = await this.prisma.job.findMany({
-          where: { organizationId, id: { in: jobIds } },
+          where: { organizationId, id: { in: jobIds }, deletedAt: null },
           select: { id: true, title: true },
         });
         jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
@@ -203,10 +213,10 @@ export class SourcingLinksService {
 
     if (dto.jobId) {
       const job = await this.prisma.job.findFirst({
-        where: { id: dto.jobId as string },
-        select: { id: true, organizationId: true },
+        where: { id: dto.jobId as string, deletedAt: null },
+        select: { id: true, organizationId: true, deletedAt: true },
       });
-      if (!job || job.organizationId !== organizationId) {
+      if (!job || job.deletedAt || job.organizationId !== organizationId) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.JOB_NOT_FOUND,
           "Target job not found in this organization",
@@ -249,7 +259,7 @@ export class SourcingLinksService {
     let jobTitle: string | null = null;
     if (dto.jobId) {
       const j = await this.prisma.job.findFirst({
-        where: { id: dto.jobId as string },
+        where: { id: dto.jobId as string, organizationId, deletedAt: null },
         select: { title: true },
       });
       jobTitle = j?.title || null;

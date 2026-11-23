@@ -1,14 +1,18 @@
+import { NotificationsService } from "../../notifications/notifications.service";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
+  Role,
   SourcingChannel,
   formatCandidateDisplayName,
+  hasPermission,
   normalizeNameInput,
   resolveChannelFromDomain,
 } from "@haihire/shared";
+import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
 import {
@@ -55,6 +59,12 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(NotificationsService)
+    private readonly notifications?: NotificationsService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -63,9 +73,17 @@ export class ApplicationsSagaService {
   async create(
     dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
-    currentUser?: { role?: string; organizationId?: string | null } | null,
+    currentUser?: {
+      role?: string;
+      organizationId?: string | null;
+      isOwner?: boolean;
+    } | null,
   ) {
-    if (currentUser?.role === "MEMBER") {
+    if (
+      !this.permissionResolver &&
+      currentUser?.role === "MEMBER" &&
+      !currentUser?.isOwner
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only Admins can perform this action.",
@@ -79,14 +97,29 @@ export class ApplicationsSagaService {
       );
     }
 
-    const rawResumeUrl = "resumeUrl" in dto ? dto.resumeUrl : undefined;
+    const isAnonymousPublicApply =
+      !currentUser &&
+      (dto instanceof PublicApplyDto ||
+        (!("candidateId" in dto) &&
+          !("sourceChannel" in dto) &&
+          "email" in dto));
+
+    const rawResumeUrl =
+      !isAnonymousPublicApply && "resumeUrl" in dto ? dto.resumeUrl : undefined;
     const rawResumeFileName =
-      "resumeFileName" in dto ? dto.resumeFileName : undefined;
+      !isAnonymousPublicApply && "resumeFileName" in dto
+        ? dto.resumeFileName
+        : undefined;
+    const rawUtmSource = "utmSource" in dto ? dto.utmSource : undefined;
+    const rawUtmMedium = "utmMedium" in dto ? dto.utmMedium : undefined;
     const rawUtmCampaign = "utmCampaign" in dto ? dto.utmCampaign : undefined;
+    const rawUtmTerm = "utmTerm" in dto ? dto.utmTerm : undefined;
+    const rawUtmContent = "utmContent" in dto ? dto.utmContent : undefined;
 
     const job = await this.prisma.job.findFirst({
       where: { id: dto.jobId, deletedAt: null },
       select: {
+        createdById: true,
         id: true,
         title: true,
         status: true,
@@ -101,6 +134,41 @@ export class ApplicationsSagaService {
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${dto.jobId} not found`,
       );
+    }
+
+    if (currentUser) {
+      if (
+        currentUser.organizationId &&
+        job.organizationId &&
+        currentUser.organizationId !== job.organizationId
+      ) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "Cannot create application for another organization's job.",
+        );
+      }
+
+      if (
+        currentUser.role &&
+        !currentUser.isOwner &&
+        currentUser.role !== Role.ADMIN
+      ) {
+        const canCreate =
+          this.permissionResolver && job.organizationId
+            ? await this.permissionResolver.resolvePermission(
+                job.organizationId,
+                currentUser.role as Role,
+                "application:create",
+              )
+            : hasPermission(currentUser.role as Role, "application:create");
+
+        if (!canCreate) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+            "Insufficient permissions to create applications.",
+          );
+        }
+      }
     }
 
     if (job.status !== "PUBLISHED") {
@@ -172,7 +240,11 @@ export class ApplicationsSagaService {
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
+    let utmSource: string | null = rawUtmSource?.trim() || null;
+    let utmMedium: string | null = rawUtmMedium?.trim() || null;
     let utmCampaign: string | null = rawUtmCampaign?.trim() || null;
+    let utmTerm: string | null = rawUtmTerm?.trim() || null;
+    let utmContent: string | null = rawUtmContent?.trim() || null;
 
     try {
       created = await runInTransaction(this.prisma, async (tx) => {
@@ -201,12 +273,7 @@ export class ApplicationsSagaService {
           )?.trim() || null;
 
         // Strip caller-supplied admin fields if caller is anonymous / public apply
-        const isPublicApply =
-          dto instanceof PublicApplyDto ||
-          (!("candidateId" in dto) &&
-            !("sourceChannel" in dto) &&
-            "email" in dto);
-        let candidateId = isPublicApply ? undefined : dto.candidateId;
+        let candidateId = isAnonymousPublicApply ? undefined : dto.candidateId;
         const nameOrder = await resolveOrgNameDisplayOrder(tx, orgId);
         let applicantName = "";
 
@@ -238,6 +305,7 @@ export class ApplicationsSagaService {
               firstName: true,
               lastName: true,
               displayName: true,
+              phone: true,
             },
           });
 
@@ -247,6 +315,19 @@ export class ApplicationsSagaService {
               existingCandidate,
               nameOrder,
             );
+            if (!existingCandidate.phone && candidatePhone) {
+              await tx.candidate.updateMany({
+                where: {
+                  id: existingCandidate.id,
+                  organizationId: orgId,
+                  deletedAt: null,
+                },
+                data: {
+                  phone: candidatePhone,
+                  updatedAt: toInstant(),
+                },
+              });
+            }
           } else {
             const newCandidate = await tx.candidate.create({
               data: {
@@ -376,6 +457,11 @@ export class ApplicationsSagaService {
               source: true,
               customSource: true,
               campaign: true,
+              utmSource: true,
+              utmMedium: true,
+              utmCampaign: true,
+              utmTerm: true,
+              utmContent: true,
               isActive: true,
               deletedAt: true,
             },
@@ -391,40 +477,72 @@ export class ApplicationsSagaService {
             sourceChannel =
               (link.source as SourcingChannel) || SourcingChannel.DIRECT;
             sourceDetails = link.customSource || null;
-            if (!utmCampaign && link.campaign) {
-              utmCampaign = link.campaign;
+            if (!utmSource && link.utmSource) {
+              utmSource = link.utmSource;
+            }
+            if (!utmMedium && link.utmMedium) {
+              utmMedium = link.utmMedium;
+            }
+            if (!utmCampaign && (link.utmCampaign || link.campaign)) {
+              utmCampaign = link.utmCampaign || link.campaign;
+            }
+            if (!utmTerm && link.utmTerm) {
+              utmTerm = link.utmTerm;
+            }
+            if (!utmContent && link.utmContent) {
+              utmContent = link.utmContent;
             }
           }
         }
 
-        if (
-          !isPublicApply &&
-          !trackingLinkId &&
-          (dto as CreateApplicationDto).referrer
-        ) {
-          referrerDomain = parseDomain((dto as CreateApplicationDto).referrer!);
+        if (!trackingLinkId && dto.referrer) {
+          referrerDomain = parseDomain(dto.referrer);
           if (referrerDomain) {
             sourceChannel = resolveChannelFromDomain(referrerDomain);
           }
         }
 
         if (
-          !isPublicApply &&
+          !isAnonymousPublicApply &&
           !trackingLinkId &&
+          !referrerDomain &&
           (dto as CreateApplicationDto).sourceChannel
         ) {
           sourceChannel = (dto as CreateApplicationDto)
             .sourceChannel as SourcingChannel;
         }
 
-        if (isPublicApply) {
-          sourceChannel = trackingLinkId
-            ? sourceChannel
-            : SourcingChannel.DIRECT;
-          utmCampaign = trackingLinkId && utmCampaign ? utmCampaign : null;
+        if (isAnonymousPublicApply && !trackingLinkId && !referrerDomain) {
+          sourceChannel = SourcingChannel.DIRECT;
         }
 
-        // 6. Save Application record
+        // 6. Resolve APPLIED pipeline stage if initialized and save Application record
+        const appliedPipelineStage =
+          typeof (
+            tx as unknown as {
+              pipelineStage?: {
+                findFirst?: (args: unknown) => Promise<{ id: string } | null>;
+              };
+            }
+          ).pipelineStage?.findFirst === "function"
+            ? await (
+                tx as unknown as {
+                  pipelineStage: {
+                    findFirst: (
+                      args: unknown,
+                    ) => Promise<{ id: string } | null>;
+                  };
+                }
+              ).pipelineStage.findFirst({
+                where: {
+                  organizationId: orgId,
+                  jobId: dto.jobId,
+                  category: "APPLIED",
+                },
+                select: { id: true },
+              })
+            : null;
+
         const savedApp = await tx.application.create({
           data: {
             id: crypto.randomUUID(),
@@ -432,6 +550,9 @@ export class ApplicationsSagaService {
             candidateId: candidateId as string,
             jobId: dto.jobId,
             stage: "APPLIED",
+            ...(appliedPipelineStage
+              ? { stageId: appliedPipelineStage.id }
+              : {}),
             resumeUrl: uploadResult.url || null,
             resumeFileName: uploadResult.originalName || null,
             resumeFileSize: uploadResult.size || null,
@@ -441,7 +562,11 @@ export class ApplicationsSagaService {
             sourceChannel,
             sourceDetails,
             referrerDomain,
+            utmSource,
+            utmMedium,
             utmCampaign,
+            utmTerm,
+            utmContent,
             updatedAt: toInstant(),
           },
         });
@@ -513,6 +638,12 @@ export class ApplicationsSagaService {
             }
           }
         }
+      }
+      if ((dbError as { code?: string })?.code === "P2002") {
+        throw new AppConflictException(
+          APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+          "This candidate has already applied to this job.",
+        );
       }
       throw dbError;
     }
@@ -606,6 +737,12 @@ export class ApplicationsSagaService {
     }
 
     if (orgId) {
+      await this.notifications?.publish(
+        orgId,
+        job.createdById,
+        "applicationReceived",
+        result.id,
+      );
       this.eventsService?.emit({
         type: "APPLICATIONS_CHANGED",
         organizationId: orgId,

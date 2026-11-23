@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "@/lib/toast";
 import {
   useCandidate,
@@ -55,6 +55,11 @@ export function useCandidateDrawerState({
     useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
 
+  useEffect(() => {
+    setDrawerPreviewDoc(null);
+    setDrawerDocToDelete(null);
+  }, [candidate?.id]);
+
   // Mutations
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
@@ -79,7 +84,7 @@ export function useCandidateDrawerState({
     );
     const genderLabel = getGenderLabel(cand?.gender, t);
     const dobFormatted = cand?.dateOfBirth
-      ? formatDate(cand.dateOfBirth, "short")
+      ? formatDate(cand.dateOfBirth, "short", { timezone: "UTC" })
       : "—";
     return {
       gender: genderLabel,
@@ -177,7 +182,7 @@ export function useCandidateDrawerState({
       await uploadCandidateDocMutation.mutateAsync({
         id: candidate.id,
         file,
-        type: drawerDocFilter,
+        type: drawerDocFilter === "All" ? "Resume" : drawerDocFilter,
       });
     } catch (err) {
       console.error("Failed to upload document in drawer:", err);

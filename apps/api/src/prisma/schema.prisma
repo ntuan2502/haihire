@@ -150,11 +150,14 @@ model Organization {
   name             String
   slug             String                       @unique
   ownerId          String
+  logoObjectKey    String?
+  logoMimeType     String?
+  logoUpdatedAt    DateTime?
   defaultLanguage  String                       @default("vi")
   timezone         String                       @default("Asia/Ho_Chi_Minh")
   dateFormat       String                       @default("DD/MM/YYYY")
   timeFormat       String                       @default("24H")
-  nameDisplayOrder String                       @default("FIRST_LAST")
+  nameDisplayOrder String                       @default("LAST_FIRST")
   defaultCurrency  String                       @default("VND")
   owner            User                         @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   jobs             Job[]
@@ -182,6 +185,9 @@ model Organization {
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
+  notificationPreferences NotificationPreference[]
+  notifications           Notification[]
+
   @@index([ownerId])
   @@map("organization")
 }
@@ -206,6 +212,9 @@ model User {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
+  notificationPreferences NotificationPreference[]
+  notifications           Notification[]
+
   @@map("user")
 }
 
@@ -216,11 +225,13 @@ model OrganizationMember {
   userId         String
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           Role         @default(MEMBER)
+  lastAccessedAt DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, userId])
   @@index([userId])
+  @@index([userId, lastAccessedAt])
   @@map("organization_member")
 }
 
@@ -427,7 +438,7 @@ model EmailFlowConfig {
   flowKey        EmailFlowKey
   templateId     String?
   template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  enabled        Boolean        @default(true)
+  enabled        Boolean        @default(false)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -576,12 +587,12 @@ model TrackingClick {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   trackingLinkId String
-  trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
   referrer       String?
   referrerDomain String?
   ipHash         String?
   userAgent      String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime     @default(now())
 
   @@index([organizationId, createdAt])
   @@index([trackingLinkId, createdAt])
@@ -693,26 +704,26 @@ model PipelineStage {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  job            Job?             @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  applications   Application[]
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  job          Job?          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applications Application[]
 
   @@index([organizationId, jobId, orderIndex])
   @@map("pipeline_stage")
 }
 
 model StoredFile {
-  id                 String              @id @default(uuid())
-  organizationId     String
-  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  objectKey          String              @unique
-  bucket             String              @default("haihire-resumes")
-  originalName       String
-  mimeType           String
-  sizeBytes          Int
-  checksum           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  objectKey      String       @unique
+  bucket         String       @default("haihire-resumes")
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksum       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   candidates         Candidate[]
   applications       Application[]
@@ -741,4 +752,35 @@ model OutboxEvent {
   @@index([status, nextAttemptAt])
   @@index([organizationId, createdAt])
   @@map("outbox_event")
+}
+
+model NotificationPreference {
+  organizationId     String
+  userId             String
+  applicationWebsite Boolean      @default(true)
+  interviewWebsite   Boolean      @default(true)
+  applicationEmail   Boolean      @default(false)
+  interviewEmail     Boolean      @default(false)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId])
+  @@map("notification_preference")
+}
+
+model Notification {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  kind           String
+  resourceId     String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, createdAt])
+  @@index([userId])
+  @@map("notification")
 }

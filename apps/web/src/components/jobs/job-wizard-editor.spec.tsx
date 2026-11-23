@@ -427,7 +427,7 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
             organizationId: "org-test-1",
           }),
         );
-        expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+        expect(mockPush).toHaveBeenCalledWith("/jobs");
       });
     });
 
@@ -484,6 +484,31 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
           }),
         });
       });
+    });
+
+    it("BUG-11: preserves unsaved user edits when initialJob refetches with the same id", () => {
+      const { rerender } = render(
+        <JobWizardEditor mode="edit" initialJob={mockInitialJob} />,
+      );
+
+      const titleInput = screen.getByDisplayValue("Senior Frontend Engineer");
+      fireEvent.change(titleInput, {
+        target: { value: "Unsaved Title Edit" },
+      });
+
+      rerender(
+        <JobWizardEditor
+          mode="edit"
+          initialJob={{
+            ...mockInitialJob,
+            updatedAt: "2026-03-01T00:00:00.000Z",
+          }}
+        />,
+      );
+
+      expect(
+        screen.getByDisplayValue("Unsaved Title Edit"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -542,10 +567,8 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
         screen.getByText(/Bạn có chắc chắn muốn xóa/i),
       ).toBeInTheDocument();
 
-      // Find confirmation input by id
-      const confirmInput = document.getElementById(
-        "confirm-destructive-input",
-      ) as HTMLInputElement;
+      // Find confirmation input inside open dialog
+      const confirmInput = screen.getByRole("textbox") as HTMLInputElement;
       expect(confirmInput).toBeInTheDocument();
       fireEvent.change(confirmInput, {
         target: { value: "Senior Frontend Engineer" },
@@ -558,7 +581,7 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       await waitFor(() => {
         expect(mockDeleteMutateAsync).toHaveBeenCalledWith("job-101");
-        expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
+        expect(mockPush).toHaveBeenCalledWith("/jobs");
       });
     });
   });

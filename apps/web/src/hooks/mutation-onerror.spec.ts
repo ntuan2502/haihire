@@ -15,6 +15,8 @@ import {
 import {
   useSwitchOrgMutation,
   useUpdateMyOrgMutation,
+  useUploadOrgLogoMutation,
+  useDeleteOrgLogoMutation,
   useDeleteMyOrgMutation,
   useCreateInviteLinkMutation,
   useRevokeInviteLinkMutation,
@@ -55,7 +57,7 @@ import {
   applicationsApi,
   candidatesApi,
 } from "@/lib/api";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -79,6 +81,8 @@ vi.mock("@/lib/api", () => ({
   organizationsApi: {
     switchOrg: vi.fn(),
     updateMyOrg: vi.fn(),
+    uploadMyOrgLogo: vi.fn(),
+    deleteMyOrgLogo: vi.fn(),
     deleteMyOrg: vi.fn(),
     createInviteLink: vi.fn(),
     revokeInviteLink: vi.fn(),
@@ -280,7 +284,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("job-100")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
   });
 
@@ -324,6 +331,41 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
         result.current.mutateAsync({ name: "HaiHire Corp" }),
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it("useUploadOrgLogoMutation and useDeleteOrgLogoMutation invalidate myOrg on error", async () => {
+      const { queryClient, wrapper } = createWrapper();
+      const spy = vi.spyOn(queryClient, "invalidateQueries");
+      const mockFile = new File(["png"], "logo.png", { type: "image/png" });
+
+      vi.mocked(organizationsApi.uploadMyOrgLogo).mockResolvedValueOnce({
+        id: "org-1",
+        logoUrl: "/organizations/public/org-1/logo?v=1",
+      } as never);
+      const { result: uploadHook } = renderHook(
+        () => useUploadOrgLogoMutation(),
+        { wrapper },
+      );
+      await uploadHook.current.mutateAsync(mockFile);
+      expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.myOrg() });
+
+      vi.mocked(organizationsApi.uploadMyOrgLogo).mockRejectedValueOnce(
+        new Error("Upload failed"),
+      );
+      await expect(uploadHook.current.mutateAsync(mockFile)).rejects.toThrow();
+      expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.myOrg() });
+
+      const callsAfterUpload = spy.mock.calls.length;
+      vi.mocked(organizationsApi.deleteMyOrgLogo).mockRejectedValueOnce(
+        new Error("Delete logo failed"),
+      );
+      const { result: deleteHook } = renderHook(
+        () => useDeleteOrgLogoMutation(),
+        { wrapper },
+      );
+      await expect(deleteHook.current.mutateAsync()).rejects.toThrow();
+      expect(spy.mock.calls.length).toBe(callsAfterUpload + 1);
+      expect(spy).toHaveBeenLastCalledWith({ queryKey: queryKeys.myOrg() });
     });
 
     it("useDeleteMyOrgMutation invalidates myOrg on success and error", async () => {
@@ -460,7 +502,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
 
     it("useUpdateInterviewMutation invalidates interviews, detail, and applications on success and error", async () => {
@@ -497,7 +542,10 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
         queryKey: queryKeys.interview("int-1"),
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useDeleteInterviewMutation invalidates interviews, applications, and candidates on success and error", async () => {
@@ -521,8 +569,11 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("int-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
   });
 
@@ -656,7 +707,12 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync(new FormData()),
       ).rejects.toThrow();
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(7);
     });
 
     it("useUpdateStageMutation invalidates applications on success and error", async () => {
@@ -679,7 +735,14 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync({ id: "app-1", stage: "INTERVIEW" }),
       ).rejects.toThrow();
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useUpdateCandidateMutation invalidates applications on success and error", async () => {
@@ -757,8 +820,13 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       );
       await expect(result.current.mutateAsync("app-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
-      expect(spy).toHaveBeenCalledTimes(4);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["jobs"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["notifications"] });
+      expect(spy).toHaveBeenCalledTimes(10);
     });
 
     it("useDeleteDocumentMutation invalidates applications and candidates on success and error", async () => {
@@ -868,8 +936,11 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(result.current.mutateAsync("cand-1")).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["job-applications"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
-      expect(spy).toHaveBeenCalledTimes(6);
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["sourcing"] });
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["activities"] });
+      expect(spy).toHaveBeenCalledTimes(9);
     });
 
     it("useUploadCandidateDocumentMutation invalidates candidate detail and candidates on success and error", async () => {
@@ -933,6 +1004,61 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["candidates"] });
       expect(spy).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  describe("Multi-Tenant Query Isolation (keepPreviousDataForSameOrg & Org-Scoped Keys)", () => {
+    it("preserves previousData across pagination within the same org and clears immediately when orgId changes", () => {
+      const sameOrgPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>("org-1");
+
+      expect(
+        sameOrgPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toEqual({ items: ["org-1-job"] });
+
+      const crossOrgPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>("org-2");
+
+      expect(
+        crossOrgPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toBeUndefined();
+
+      expect(
+        crossOrgPlaceholder({ items: ["org-1-app"] }, {
+          queryKey: ["applications", "paginated", { orgId: "org-1", page: 1 }],
+        } as never),
+      ).toBeUndefined();
+
+      const signedOutPlaceholder = keepPreviousDataForSameOrg<{
+        items: string[];
+      }>(null);
+      expect(
+        signedOutPlaceholder({ items: ["org-1-job"] }, {
+          queryKey: ["jobs", { orgId: "org-1" }, 1, 20],
+        } as never),
+      ).toBeUndefined();
+    });
+
+    it("produces org-scoped keys when orgId is provided while preserving base prefixes for invalidation", () => {
+      expect(queryKeys.myOrg()).toEqual(["organization", "my"]);
+      expect(queryKeys.myOrg("org-2")).toEqual([
+        "organization",
+        "my",
+        { orgId: "org-2" },
+      ]);
+      expect(queryKeys.myPermissions()).toEqual(["auth", "me", "permissions"]);
+      expect(queryKeys.myPermissions("org-2", "RECRUITER")).toEqual([
+        "auth",
+        "me",
+        "permissions",
+        { orgId: "org-2", role: "RECRUITER" },
+      ]);
     });
   });
 });

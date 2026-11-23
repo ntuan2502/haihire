@@ -1,10 +1,8 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import type { OverviewSectionsState } from "@/components/applications/overview-sections-popover";
 import type { Application, CandidateDocument, Interview } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -12,7 +10,6 @@ import { useI18n } from "@/i18n";
 
 interface PipelineCandidateDetailOverviewProps {
   selectedCandidate: Application;
-  overviewSections: OverviewSectionsState;
   candidateDocuments: CandidateDocument[];
   onPreviewDoc: (doc: CandidateDocument) => void;
   onDownloadDoc: (url: string, filename?: string) => void;
@@ -22,7 +19,6 @@ interface PipelineCandidateDetailOverviewProps {
 
 export function PipelineCandidateDetailOverview({
   selectedCandidate,
-  overviewSections,
   candidateDocuments,
   onPreviewDoc,
   onDownloadDoc,
@@ -34,73 +30,66 @@ export function PipelineCandidateDetailOverview({
 
   return (
     <div className="space-y-5">
-      {overviewSections.ai && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              <Sparkles className="h-4 w-4 text-emerald-500" />
-              <span>{t("applications.matchScore")}</span>
-            </div>
-            {selectedCandidate.matchScore !== null &&
-            selectedCandidate.matchScore !== undefined ? (
-              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                {selectedCandidate.matchScore}%
-              </span>
-            ) : (
-              <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                {t("applications.matchScoreUnrated")}
-              </span>
-            )}
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-medium text-muted-foreground">
+            <span>{t("applications.matchScore")}</span>
           </div>
           {selectedCandidate.matchScore !== null &&
-            selectedCandidate.matchScore !== undefined && (
-              <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, selectedCandidate.matchScore))}%`,
-                  }}
-                />
-              </div>
-            )}
+          selectedCandidate.matchScore !== undefined ? (
+            <span className="text-sm font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+              {selectedCandidate.matchScore}%
+            </span>
+          ) : (
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("applications.matchScoreUnrated")}
+            </span>
+          )}
         </div>
-      )}
+        {selectedCandidate.matchScore !== null &&
+          selectedCandidate.matchScore !== undefined && (
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-[width] duration-500"
+                style={{
+                  width: `${Math.max(0, Math.min(100, selectedCandidate.matchScore))}%`,
+                }}
+              />
+            </div>
+          )}
+      </div>
 
-      {overviewSections.documents && (
-        <ApplicationDocumentsSection
-          documents={candidateDocuments}
-          onPreview={onPreviewDoc}
-          onDownload={onDownloadDoc}
-          appId={selectedCandidate.id}
+      <ApplicationDocumentsSection
+        documents={candidateDocuments}
+        onPreview={onPreviewDoc}
+        onDownload={onDownloadDoc}
+        appId={selectedCandidate.id}
+      />
+
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-medium text-foreground">
+            {t("applications.tabs.interviews")}
+          </h3>
+          {canCreateInterview && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => onScheduleInterview()}
+              className="h-7 text-xs cursor-pointer"
+            >
+              {t("interviews.scheduleInterview")}
+            </Button>
+          )}
+        </div>
+        <CandidateInterviewsList
+          application={selectedCandidate}
+          interviews={candidateInterviews}
+          onSchedule={onScheduleInterview}
+          canEdit={canCreateInterview}
+          showSectionHeader={false}
         />
-      )}
-
-      {overviewSections.interviews && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {t("applications.tabs.interviews")}
-            </h3>
-            {canCreateInterview && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => onScheduleInterview()}
-                className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-              >
-                {t("interviews.scheduleInterview")}
-              </Button>
-            )}
-          </div>
-          <CandidateInterviewsList
-            application={selectedCandidate}
-            interviews={candidateInterviews}
-            onSchedule={onScheduleInterview}
-            canEdit={canCreateInterview}
-            showSectionHeader={false}
-          />
-        </div>
-      )}
+      </div>
     </div>
   );
 }

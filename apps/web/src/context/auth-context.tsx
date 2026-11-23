@@ -11,19 +11,19 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { QueryClientContext } from "@tanstack/react-query";
-import { isAppEventType, type AppEvent } from "@haihire/shared";
-import { toast } from "@/lib/toast";
-import { api, getApiBaseUrl } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 import { queryKeys } from "@/hooks/query-keys";
-import { createRealtimeInvalidator } from "@/lib/realtime-sync";
-import { getOrgRoleLabel } from "@/lib/roles";
+import { isWorkspaceRoute } from "@/lib/workspace-routes";
 import { useOptionalI18n } from "@/i18n/optional";
+import { useAuthSse } from "./use-auth-sse";
+import type { Permission } from "@haihire/shared";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  initialPermissions?: Permission[] | null;
   login: (email: string, password: string) => Promise<User>;
   register: (
     firstName: string,
@@ -73,21 +73,47 @@ function clearAuthCookies() {
 }
 
 function isSessionRequiredRoute(pathname: string): boolean {
-  return (
-    pathname.startsWith("/dashboard") || pathname.startsWith("/auth/onboarding")
-  );
+  return isWorkspaceRoute(pathname) || pathname.startsWith("/auth/onboarding");
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export interface AuthProviderProps {
+  children: ReactNode;
+  initialUser?: User | null;
+  initialPermissions?: Permission[] | null;
+  initialHasSessionHint?: boolean;
+}
+
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialPermissions = null,
+  initialHasSessionHint,
+}: AuthProviderProps) {
   const router = useRouter();
   const routerRef = useRef(router);
   const queryClient = useContext(QueryClientContext) ?? null;
   const { t } = useOptionalI18n();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => initialUser ?? null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const userRef = useRef<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(() =>
+    initialUser ? false : initialHasSessionHint === false ? false : true,
+  );
+  const [ssrPermissions, setSsrPermissions] = useState<{
+    orgId: string | null;
+    role: string | null;
+    permissions: Permission[];
+  } | null>(() =>
+    initialUser && Array.isArray(initialPermissions)
+      ? {
+          orgId: initialUser.organizationId ?? null,
+          role: initialUser.role ?? null,
+          permissions: initialPermissions,
+        }
+      : null,
+  );
+  const userRef = useRef<User | null>(initialUser ?? null);
   const tRef = useRef(t);
+  const sessionEpochRef = useRef(0);
 
   useEffect(() => {
     routerRef.current = router;
@@ -97,8 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setSession = useCallback(
     (newAccessToken: string, _newRefreshToken?: string, newUserData?: User) => {
+      sessionEpochRef.current += 1;
       setToken(newAccessToken);
       if (newUserData) {
+        userRef.current = newUserData;
         setUser(newUserData);
         localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
         setAuthCookies(newAccessToken, Boolean(newUserData.organizationId));
@@ -112,8 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    sessionEpochRef.current += 1;
+    userRef.current = null;
     setToken(null);
     setUser(null);
+    setSsrPermissions(null);
     localStorage.removeItem(USER_KEY);
     queryClient?.clear();
     try {
@@ -128,19 +159,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
+    const requestEpoch = sessionEpochRef.current;
     try {
       const response = await api.get<User>("/auth/me");
+      if (requestEpoch !== sessionEpochRef.current) {
+        return userRef.current;
+      }
       const latestUser = response.data;
 
+      userRef.current = latestUser;
       setUser(latestUser);
       localStorage.setItem(USER_KEY, JSON.stringify(latestUser));
       setAuthCookies(null, Boolean(latestUser.organizationId));
 
-      // If member was removed from org and is currently in dashboard, kick out immediately!
+      // If member was removed from org and is currently in workspace, kick out immediately!
       if (!latestUser.organizationId) {
         if (
           typeof window !== "undefined" &&
-          window.location.pathname.startsWith("/dashboard")
+          isWorkspaceRoute(window.location.pathname)
         ) {
           routerRef.current.replace("/auth/onboarding");
         }
@@ -148,6 +184,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return latestUser;
     } catch (err: unknown) {
+      if (requestEpoch !== sessionEpochRef.current) {
+        return userRef.current;
+      }
       const axiosError = err as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
         const hadClientSession = Boolean(
@@ -160,8 +199,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof window !== "undefined" &&
           isSessionRequiredRoute(window.location.pathname);
 
+        sessionEpochRef.current += 1;
+        userRef.current = null;
         setToken(null);
         setUser(null);
+        setSsrPermissions(null);
         localStorage.removeItem(USER_KEY);
         queryClient?.clear();
 
@@ -183,14 +225,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient]);
 
-  // Initialize auth state from localStorage and verify with backend
+  // Initialize auth state from SSR preloaded session, or cookie/localStorage fallback
   useEffect(() => {
+    if (sessionEpochRef.current !== 0) {
+      return;
+    }
+
+    if (initialUser) {
+      userRef.current = initialUser;
+      setUser(initialUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(initialUser));
+      setAuthCookies(null, Boolean(initialUser.organizationId));
+      if (initialUser.organization) {
+        queryClient?.setQueryData(
+          queryKeys.myOrg(initialUser.organization.id),
+          initialUser.organization,
+        );
+        queryClient?.setQueryData(queryKeys.myOrg(), initialUser.organization);
+      }
+      if (Array.isArray(initialPermissions) && initialUser.organizationId) {
+        queryClient?.setQueryData(
+          queryKeys.myPermissions(initialUser.organizationId, initialUser.role),
+          { permissions: initialPermissions },
+        );
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (initialHasSessionHint === false) {
+      userRef.current = null;
+      setUser(null);
+      localStorage.removeItem(USER_KEY);
+      clearAuthCookies();
+      setLoading(false);
+      return;
+    }
+
     let hasOptimisticSession = false;
     try {
       const savedUser = localStorage.getItem(USER_KEY);
 
       if (savedUser) {
         const parsedUser: User = JSON.parse(savedUser);
+        userRef.current = parsedUser;
         setUser(parsedUser);
         setAuthCookies(null, Boolean(parsedUser.organizationId));
         hasOptimisticSession = true;
@@ -206,143 +284,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().finally(() => {
       setLoading(false);
     });
-  }, [refreshUser]);
+  }, [
+    refreshUser,
+    initialUser,
+    initialPermissions,
+    initialHasSessionHint,
+    queryClient,
+  ]);
 
-  // SSE Real-Time Sync & Background Visibility Wake-Up
-  const currentUserId = user?.id;
+  // Synchronize auth expiry from background Axios / SSE refresh rejections
   useEffect(() => {
-    if (!currentUserId || typeof EventSource === "undefined") return;
-
-    const invalidator = queryClient
-      ? createRealtimeInvalidator(queryClient)
-      : null;
-    const sseBaseUrl = getApiBaseUrl();
-    const eventSource = new EventSource(`${sseBaseUrl}/events/sse`, {
-      withCredentials: true,
-    });
-
-    eventSource.onmessage = (e) => {
-      try {
-        const parsed: unknown = JSON.parse(e.data);
-        if (
-          !parsed ||
-          typeof parsed !== "object" ||
-          !("type" in parsed) ||
-          typeof parsed.type !== "string"
-        ) {
-          return;
-        }
-
-        // Notify entire app of SSE events
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("ats:sse_event", { detail: parsed }),
-          );
-        }
-
-        if (!isAppEventType(parsed.type)) {
-          return;
-        }
-
-        const data = parsed as AppEvent;
-        invalidator?.scheduleForEvent(data.type);
-
-        const activeUser = userRef.current;
-
-        if (data.type === "MEMBER_ROLE_UPDATED") {
-          if (data.targetUserId === currentUserId) {
-            const previousRole = activeUser?.role;
-            const nextRole = data.role;
-            if (nextRole && nextRole !== previousRole) {
-              toast.warning(
-                tRef.current("auth.sseRoleChanged", {
-                  role: getOrgRoleLabel(nextRole, tRef.current),
-                }),
-                { toastId: `sse-role-changed-${nextRole}` },
-              );
-            }
-            void refreshUser().finally(() => {
-              if (!queryClient) return;
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myPermissions(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.rolePermissionsMatrix(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrg(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrgs(),
-              });
-            });
-          }
-        } else if (data.type === "MEMBER_REMOVED") {
-          if (data.targetUserId === currentUserId) {
-            toast.warning(tRef.current("auth.sseOrgRemoved"), {
-              toastId: "sse-org-removed",
-            });
-            void refreshUser().finally(() => {
-              if (!queryClient) return;
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrg(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myOrgs(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.myPermissions(),
-              });
-              void queryClient.invalidateQueries({
-                queryKey: queryKeys.rolePermissionsMatrix(),
-              });
-            });
-          }
-        } else if (data.type === "PERMISSIONS_CHANGED") {
-          if (
-            activeUser &&
-            !activeUser.isOwner &&
-            activeUser.role !== "ADMIN" &&
-            (!data.role || data.role === activeUser.role || data.role === "ALL")
-          ) {
-            toast.info(tRef.current("auth.ssePermissionsChanged"), {
-              toastId: "sse-permissions-changed",
-            });
-          }
-        } else if (data.type === "ORG_UPDATED") {
-          if (!data.targetUserId || data.targetUserId === currentUserId) {
-            void refreshUser();
-          }
-        }
-      } catch (err) {
-        console.error("[SSE Auth] Failed to parse message:", err);
+    if (typeof window === "undefined") return;
+    const handleAuthExpired = () => {
+      sessionEpochRef.current += 1;
+      userRef.current = null;
+      setToken(null);
+      setUser(null);
+      setSsrPermissions(null);
+      localStorage.removeItem(USER_KEY);
+      queryClient?.clear();
+      if (isSessionRequiredRoute(window.location.pathname)) {
+        routerRef.current.replace("/auth/login");
+        routerRef.current.refresh?.();
       }
     };
-
-    eventSource.onerror = (err) => {
-      console.warn("[SSE Auth] Connection dropped or reconnecting...", err);
-    };
-
-    const handleFocus = () => {
-      refreshUser();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshUser();
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
+    window.addEventListener("haihire:auth-expired", handleAuthExpired);
     return () => {
-      invalidator?.cancel();
-      eventSource.close();
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("haihire:auth-expired", handleAuthExpired);
     };
-  }, [currentUserId, queryClient, refreshUser]);
+  }, [queryClient]);
+
+  // SSE Real-Time Sync, 15m JWT Reconnect & Background Visibility Wake-Up
+  const currentUserId = user?.id;
+  useAuthSse({
+    currentUserId,
+    queryClient,
+    refreshUser,
+    userRef,
+    tRef,
+  });
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{
@@ -356,8 +336,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { accessToken, user: userData } = response.data;
 
+    sessionEpochRef.current += 1;
+    userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
+    setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
@@ -383,39 +366,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { accessToken, user: userData } = response.data;
 
+    sessionEpochRef.current += 1;
+    userRef.current = userData;
     setToken(accessToken);
     setUser(userData);
+    setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
     return userData;
   };
 
-  const updateUserOrg = (org: Organization, updatedRole?: string) => {
-    if (!user) return;
-    queryClient?.clear();
-    const isOwner = Boolean(
-      (org as { ownerId?: string })?.ownerId &&
-      (org as { ownerId?: string }).ownerId === user.id,
-    );
-    const updated: User = {
-      ...user,
-      organizationId: org.id,
-      organization: org,
-      isOwner,
-      role: isOwner
+  const updateUserOrg = useCallback(
+    (org: Organization, updatedRole?: string) => {
+      const currentUser = userRef.current ?? user;
+      if (!currentUser) return;
+      sessionEpochRef.current += 1;
+      const isOrgSwitch = currentUser.organizationId !== org.id;
+      if (isOrgSwitch) {
+        void queryClient?.cancelQueries();
+      }
+      const isOwner = Boolean(
+        (org as { ownerId?: string })?.ownerId &&
+        (org as { ownerId?: string }).ownerId === currentUser.id,
+      );
+      const nextRole = isOwner
         ? "ADMIN"
-        : (updatedRole as "ADMIN" | "MEMBER") || user.role,
-    };
-    setUser(updated);
-    localStorage.setItem(USER_KEY, JSON.stringify(updated));
-    setAuthCookies(token, true);
-  };
+        : (updatedRole as User["role"]) || currentUser.role;
+      const updated: User = {
+        ...currentUser,
+        organizationId: org.id,
+        organization: org,
+        isOwner,
+        role: nextRole,
+      };
+      if (isOrgSwitch || nextRole !== currentUser.role) {
+        setSsrPermissions(null);
+      }
+      userRef.current = updated;
+      setUser(updated);
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      setAuthCookies(token, true);
+      queryClient?.setQueryData(queryKeys.myOrg(org.id), org);
+      queryClient?.setQueryData(queryKeys.myOrg(), org);
+      if (isOrgSwitch && typeof window !== "undefined") {
+        window.dispatchEvent(new Event("haihire:auth-refreshed"));
+      }
+    },
+    [queryClient, token, user],
+  );
 
   const updateUser = useCallback((updatedFields: Partial<User>) => {
+    sessionEpochRef.current += 1;
     setUser((prev) => {
       if (!prev) return prev;
       const next: User = { ...prev, ...updatedFields };
+      userRef.current = next;
       if (typeof window !== "undefined") {
         localStorage.setItem(USER_KEY, JSON.stringify(next));
       }
@@ -430,6 +436,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "ADMIN";
   const isMember = user?.role === "MEMBER";
   const canEdit = isOwner || isAdmin || user?.role === "RECRUITER";
+  const activeInitialPermissions =
+    ssrPermissions &&
+    user &&
+    ssrPermissions.orgId === (user.organizationId ?? null) &&
+    ssrPermissions.role === (user.role ?? null)
+      ? ssrPermissions.permissions
+      : null;
 
   return (
     <AuthContext.Provider
@@ -437,6 +450,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         loading,
+        initialPermissions: activeInitialPermissions,
         login,
         register,
         logout,
@@ -464,6 +478,7 @@ export function useAuth(): AuthContextType {
       user: null,
       token: null,
       loading: false,
+      initialPermissions: null,
       login: async () => {
         throw new Error("useAuth must be used within an AuthProvider");
       },

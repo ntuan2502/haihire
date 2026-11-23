@@ -15,9 +15,9 @@ HaiHire implements defense-in-depth security across network boundaries, authenti
 
 ## 2. Multi-Tenant Data Isolation
 
-- **Global Request Boundary (`TenantGuard`):** [apps/api/src/common/guards/tenant.guard.ts](../../apps/api/src/common/guards/tenant.guard.ts) inspects `req.query.organizationId`, `req.body.organizationId`, and `req.params.organizationId` against `req.user.organizationId` and persistent `OrganizationMember` rows, throwing `AppForbiddenException(ORG_FORBIDDEN_ACTION)` on unauthorized cross-tenant targets.
-- **Service-Layer `organizationId` Scoping:** All **8 tenant-scoped backend modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`) enforce `organizationId` filtering in Prisma `where` clauses or parent relation verification.
-- **Automated Static Gate (`pnpm lint:tenant-scope`):** [scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts) audits `267` Prisma queries across `29` service files, isolating function boundaries per method so guards in earlier methods never mask later queries.
+- **Global Request Boundary (`TenantGuard`):** [apps/api/src/common/guards/tenant.guard.ts](../../apps/api/src/common/guards/tenant.guard.ts) inspects `req.query.organizationId`, `req.body.organizationId`, and `req.params.organizationId` (rejecting conflicting or non-string inputs), validates active membership, and synchronizes `req.user.organizationId`, `req.user.role`, `req.user.isOwner`, and `req.user.organization` before `RolesGuard` executes, throwing `AppForbiddenException(ORG_FORBIDDEN_ACTION)` on unauthorized cross-tenant targets.
+- **Service-Layer `organizationId` Scoping:** All **10 tenant-scoped backend modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`, `email`, `notifications`) enforce `organizationId` filtering in Prisma `where` clauses or parent relation verification.
+- **Automated Static Gate (`pnpm lint:tenant-scope`):** [scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts) audits `321` Prisma queries across `34` service files, stripping `select: { ... }` projections before lookahead, ignoring non-call `typeof` checks, and isolating function boundaries per method so guards in earlier methods never mask later queries.
 
 ---
 
@@ -38,6 +38,8 @@ Definitions live in [packages/shared/src/permissions.ts](../../packages/shared/s
 1. **Dynamic Owner Bypass (`Organization.ownerId`):** If `user.isOwner` or `user.organization?.ownerId === user.id`, `RolesGuard` grants full privileges unconditionally; ownership transfers atomically via `POST /organizations/my/transfer-ownership`.
 2. **`ADMIN` Immutability:** `ADMIN` always resolves `true` for all `41` permissions (`ORG_ADMIN_PERMISSIONS_IMMUTABLE` blocks overrides).
 3. **Per-Org Overrides (`OrganizationRolePermission`):** `PermissionResolverService` resolves role permissions using a 2-tier cache: L1 in-memory LRU (`60s` TTL) and L2 Valkey/Redis cache (`300s` TTL). When an admin updates or resets permissions (`POST /organizations/my/roles/permissions`), Redis pub/sub invalidation (`haihire:permissions:invalidate`) purges L1 and L2 caches instantly across all horizontal API replicas before falling back to `PERMISSIONS` defaults in `@haihire/shared`.
+4. **`candidate:view` PII Masking:** When a caller holds `job:view` or `application:view` (such as baseline `MEMBER`) without `candidate:view`, `GET /jobs/:id`, `GET /applications`, `GET /applications/job/:jobId`, and `GET /applications/:id` resolve `PermissionResolverService` (`"candidate:view"`) and redact candidate names to `"[Masked]"` while stripping email, phone, resume metadata, interviews, and candidate search matching.
+5. **PostgreSQL RLS & Cross-Org Invites:** Tenant tables enforce PostgreSQL Row-Level Security (`FORCE ROW LEVEL SECURITY` under `haihire_rls_user`). Cross-organization invite acceptance (`OrganizationsInvitesService.join` / `joinByToken`) enters `withSystemRlsBypass` so authenticated users belonging to Org A can resolve and accept pending `InviteLink` tokens issued by Org B cleanly.
 
 ### 41 Permissions Inventory
 

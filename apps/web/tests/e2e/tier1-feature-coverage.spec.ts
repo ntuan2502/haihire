@@ -69,9 +69,9 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     }
 
     // 2. UI Verification: member visits job pipeline; candidate real emails are not leaked in DOM
-    await memberPage.goto(`/dashboard/jobs/${seededJobId}/pipeline`);
+    await memberPage.goto(`/jobs/${seededJobId}/pipeline`);
     const pipelineContainer = memberPage
-      .locator("main, [data-testid^='stage-pill-']")
+      .locator("[data-testid^='stage-pill-'], [data-testid^='candidate-card-']")
       .first();
     await expect(pipelineContainer).toBeVisible({ timeout: 10000 });
 
@@ -84,13 +84,36 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-04 [F16]: Dashboard layout and navigation persist across routes", async ({
     adminPage,
   }) => {
+    const consoleIssues: string[] = [];
+    adminPage.on("console", (msg) => {
+      if (msg.type() === "error" || msg.type() === "warning") {
+        consoleIssues.push(msg.text());
+      }
+    });
+    adminPage.on("pageerror", (err) => {
+      consoleIssues.push(err.message);
+    });
+
+    // Visit landing page as an authenticated user (triggers LocalizationProvider + LandingAtsPreview)
+    await adminPage.goto("/", { waitUntil: "networkidle" });
+    await expect(
+      adminPage.locator('#demo [data-testid^="candidate-card-"]').first(),
+    ).toBeVisible({ timeout: 10000 });
+
+    const hydrationOrScriptIssues = consoleIssues.filter(
+      (text) =>
+        text.toLowerCase().includes("hydration") ||
+        text.includes("Encountered a script tag"),
+    );
+    expect(hydrationOrScriptIssues).toHaveLength(0);
+
     await adminPage.goto("/dashboard");
     const header = adminPage.locator("header, nav").first();
     await expect(header).toBeVisible({ timeout: 10000 });
 
     // Navigate to jobs section
-    await adminPage.goto("/dashboard/jobs");
-    await expect(adminPage).toHaveURL(/\/dashboard\/jobs/);
+    await adminPage.goto("/jobs");
+    await expect(adminPage).toHaveURL(/\/jobs/);
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
@@ -123,8 +146,11 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
     await expect(darkOption).toBeVisible({ timeout: 5000 });
     await darkOption.click();
 
-    // Explicitly assert html element contains dark class
+    // Explicitly assert html element contains dark class and dropdown closed
     await expect(html).toHaveClass(/dark/, { timeout: 5000 });
+    await expect(adminPage.locator('[role="menu"]')).toBeHidden({
+      timeout: 5000,
+    });
 
     // 2. Switch back to Light Mode
     await themeTrigger.click();
@@ -143,7 +169,7 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-06 [F01]: Multi-tenant candidate list renders and does not leak foreign candidates", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list']").first(),
     ).toBeVisible({ timeout: 10000 });
@@ -155,14 +181,14 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-07 [F14]: Candidate table renders search filter input and pagination controls", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/candidates");
+    await adminPage.goto("/candidates");
     await expect(
       adminPage.locator("table, [data-testid='candidate-list']").first(),
     ).toBeVisible({ timeout: 10000 });
 
     const searchInput = adminPage
       .locator(
-        'input[type="search"], input[placeholder*="search" i], input[placeholder*="tìm kiếm" i]',
+        'input[type="search"], input[placeholder*="search" i], input[placeholder*="tìm" i]',
       )
       .first();
     await expect(searchInput).toBeVisible({ timeout: 8000 });
@@ -173,16 +199,12 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   }) => {
     await adminPage.goto("/dashboard");
     const userMenuTrigger = adminPage
-      .locator(
-        'button[aria-label="User profile"], button[aria-label="Hồ sơ người dùng"], [data-testid="user-menu-trigger"]',
-      )
+      .locator('[data-testid="user-menu-trigger"]')
       .first();
-    await expect(userMenuTrigger).toBeVisible({ timeout: 8000 });
+    await expect(userMenuTrigger).toBeVisible({ timeout: 10000 });
     await userMenuTrigger.click();
 
-    const menuContent = adminPage
-      .locator('[role="menu"], [role="listbox"]')
-      .first();
+    const menuContent = adminPage.locator('[role="menu"]').first();
     await expect(menuContent).toBeVisible({ timeout: 5000 });
     const menuText = await menuContent.textContent();
     expect(menuText).toContain("admin@tun.io.vn");
@@ -191,20 +213,20 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
   test("T1-E2E-09 [F05]: Sourcing links dashboard view renders active channels and links", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/sourcing");
+    await adminPage.goto("/source-tracking");
     await expect(adminPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });
-    expect(adminPage.url()).toContain("/dashboard/sourcing");
+    expect(adminPage.url()).toContain("/source-tracking");
   });
 
   test("T1-E2E-10 [F16]: Job creation navigation displays job editor form", async ({
     adminPage,
   }) => {
-    await adminPage.goto("/dashboard/jobs/new");
+    await adminPage.goto("/jobs/new");
     await expect(adminPage.locator("form, main, h1").first()).toBeVisible({
       timeout: 10000,
     });
-    expect(adminPage.url()).toContain("/dashboard/jobs/new");
+    expect(adminPage.url()).toContain("/jobs/new");
   });
 });

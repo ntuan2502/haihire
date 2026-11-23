@@ -46,8 +46,14 @@ export class ApplicationsService {
     jobId: string,
     organizationId?: string,
     options?: { limit?: number; offset?: number },
+    fullCandidateAccess = true,
   ) {
-    return this.query.findByJob(jobId, organizationId, options);
+    return this.query.findByJob(
+      jobId,
+      organizationId,
+      options,
+      fullCandidateAccess,
+    );
   }
 
   findAll(
@@ -60,16 +66,22 @@ export class ApplicationsService {
       stage?: string;
     },
     tenantOrgId?: string | null,
+    fullCandidateAccess = true,
   ) {
-    return this.query.findAll(organizationId, options, tenantOrgId);
+    return this.query.findAll(
+      organizationId,
+      options,
+      tenantOrgId,
+      fullCandidateAccess,
+    );
   }
 
   getStats(organizationId?: string, tenantOrgId?: string | null) {
     return this.query.getStats(organizationId, tenantOrgId);
   }
 
-  findOne(id: string, tenantOrgId?: string | null) {
-    return this.query.findOne(id, tenantOrgId);
+  findOne(id: string, tenantOrgId?: string | null, fullCandidateAccess = true) {
+    return this.query.findOne(id, tenantOrgId, fullCandidateAccess);
   }
 
   updateCandidate(
@@ -102,7 +114,12 @@ export class ApplicationsService {
     id: string,
     dto: UpdateStageDto,
     tenantOrgId?: string | null,
-    currentUser?: { id?: string; name?: string; role?: string } | null,
+    currentUser?: {
+      id?: string;
+      name?: string;
+      role?: string;
+      isOwner?: boolean;
+    } | null,
   ) {
     return this.stage.updateStage(id, dto, tenantOrgId, currentUser);
   }

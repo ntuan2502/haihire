@@ -4,20 +4,7 @@ HaiHire is a multi-tenant Applicant Tracking System built as a TypeScript monore
 
 ---
 
-<!-- STATS:START -->
-
-| Metric                           | Value                   | Reference / Notes                 |
-| :------------------------------- | :---------------------- | :-------------------------------- |
-| **Release Target**               | `Unreleased`            | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `4170b208` (2026-11-16) | Author: ntuan2502                 |
-| **Workspace Unit Tests**         | `1615 passed`           | Backend: 1024, Frontend: 591      |
-| **E2E Playwright Specs**         | `67 specs`              | End-to-end recruitment lifecycle  |
-| **CI Architecture Gates**        | `18/18 gates`           | `pnpm check:all` mandatory gates  |
-| **Environment Configuration**    | `56 keys`               | 100% key parity & codebase sync   |
-| **Pre-Release Dependencies**     | `0 (GA only)`           | Prisma 7.10.1 Stable GA           |
-| **Documentation Link Integrity** | `100% valid`            | Audited via `pnpm lint:doc-links` |
-
-<!-- STATS:END -->
+See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 
 ---
 
@@ -37,7 +24,7 @@ HaiHire is a multi-tenant Applicant Tracking System built as a TypeScript monore
 haihire/
 ├── apps/
 │   ├── api/                 # NestJS 12 REST + SSE API, Prisma 7 schema, BullMQ workers
-│   └── web/                 # Next.js 16 App Router portal, Tailwind CSS v4, Shadcn base-nova UI
+│   └── web/                 # Next.js 16 App Router portal, Tailwind CSS v4, Shadcn new-york UI
 ├── packages/
 │   └── shared/              # Pure TS schemas (Zod), RBAC matrix (5 roles / 41 perms), 64 error codes
 ├── monitoring/prometheus/   # Prometheus alert rules + rule unit specs
@@ -104,10 +91,10 @@ pnpm check:all       # Full 18-gate CI architecture, security, i18n, doc, and bu
 
 - **Portal:** [docs/README.md](docs/README.md)
 - **System Overview:** [docs/architecture/system-overview.md](docs/architecture/system-overview.md)
-- **Database Schema (`25` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
+- **Database Schema (`27` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
 - **Security & RBAC:** [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)
 - **Engineering Conventions:** [docs/architecture/conventions.md](docs/architecture/conventions.md)
-- **REST & SSE API (`12` Controllers / `109` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
+- **REST & SSE API (`13` Controllers / `118` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
 - **Decisions Log:** [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)
 - **Onboarding & QA:** [docs/guides/onboarding.md](docs/guides/onboarding.md)
 - **SRE Runbooks:** [docs/runbooks/alerts.md](docs/runbooks/alerts.md)

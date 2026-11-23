@@ -10,6 +10,11 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import type { Request } from "express";
 import { PrismaService } from "../prisma/prisma.service";
 import { env } from "../config/env";
+import {
+  ORG_SUMMARY_SELECT,
+  getPreferredMembershipOrderBy,
+  serializeOrganizationSummary,
+} from "../organizations/organization-logo.util";
 
 export interface JwtPayload {
   sub: string;
@@ -109,6 +114,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       name: string;
       slug: string;
       ownerId: string;
+      logoUrl?: string | null;
       defaultLanguage?: string;
       timezone?: string;
       dateFormat?: string;
@@ -120,22 +126,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (requestedOrgId) {
       const org = await this.prisma.organization.findUnique({
         where: { id: requestedOrgId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-          defaultLanguage: true,
-          timezone: true,
-          dateFormat: true,
-          timeFormat: true,
-          nameDisplayOrder: true,
-          defaultCurrency: true,
-        },
+        select: ORG_SUMMARY_SELECT,
       });
 
       if (org) {
-        organization = org;
+        organization = serializeOrganizationSummary(org);
         isOwner = Boolean(org.ownerId === user.id);
         activeOrgId = org.id;
 
@@ -145,37 +140,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             select: { role: true },
           });
           if (member) {
-            activeRole = member.role;
+            activeRole = isOwner ? "ADMIN" : member.role;
           } else if (isOwner) {
             activeRole = "ADMIN";
+          } else {
+            organization = null;
+            activeOrgId = null;
+            activeRole = "MEMBER";
           }
         }
+      } else {
+        activeRole = "MEMBER";
       }
     } else {
       if (this.prisma.organizationMember?.findFirst) {
         const member = await this.prisma.organizationMember.findFirst({
           where: { userId: user.id },
-          orderBy: { createdAt: "asc" },
+          orderBy: getPreferredMembershipOrderBy(),
           select: { organizationId: true, role: true },
         });
         if (member) {
           const org = await this.prisma.organization.findUnique({
             where: { id: member.organizationId },
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              ownerId: true,
-              defaultLanguage: true,
-              timezone: true,
-              dateFormat: true,
-              timeFormat: true,
-              nameDisplayOrder: true,
-              defaultCurrency: true,
-            },
+            select: ORG_SUMMARY_SELECT,
           });
           if (org) {
-            organization = org;
+            organization = serializeOrganizationSummary(org);
             isOwner = Boolean(org.ownerId === user.id);
             activeOrgId = org.id;
             activeRole = isOwner ? "ADMIN" : member.role;

@@ -147,6 +147,7 @@ export class SourcingService {
       search?: string;
       jobId?: string;
       source?: SourcingChannel;
+      timeRange?: TimeRangeFilter;
     },
   ): Promise<PaginatedResult<AttributionLogItem>> {
     return this.metrics.getAttributionLog(organizationId, pagination);

@@ -3,6 +3,7 @@
 import { type RefObject, type ReactNode, type ComponentType } from "react";
 import { Check, Search } from "lucide-react";
 import { cn } from "cn";
+import { PopoverContent } from "@/components/ui/popover";
 
 export interface CustomSelectOptionItem<T extends string = string> {
   value: T;
@@ -12,22 +13,14 @@ export interface CustomSelectOptionItem<T extends string = string> {
   disabled?: boolean;
 }
 
-export interface PopupCoords {
-  top?: number;
-  bottom?: number;
-  left: number;
-  minWidth: number;
-}
-
 interface CustomSelectPopupProps<T extends string = string> {
-  isOpen: boolean;
-  mounted: boolean;
-  coords: PopupCoords | null;
+  align: "left" | "right";
+  direction: "auto" | "up" | "down";
+  dropdownRef: RefObject<HTMLDivElement | null>;
   listboxId: string;
   popupRef: RefObject<HTMLDivElement | null>;
   ariaLabel?: string;
   placeholder?: string;
-  isLanding: boolean;
   popupClassName?: string;
   searchable: boolean;
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -45,14 +38,13 @@ interface CustomSelectPopupProps<T extends string = string> {
 }
 
 export function CustomSelectPopup<T extends string = string>({
-  isOpen,
-  mounted,
-  coords,
+  align,
+  direction,
+  dropdownRef,
   listboxId,
   popupRef,
   ariaLabel,
   placeholder,
-  isLanding,
   popupClassName,
   searchable,
   searchInputRef,
@@ -68,50 +60,62 @@ export function CustomSelectPopup<T extends string = string>({
   onChange,
   closeSelect,
 }: CustomSelectPopupProps<T>) {
-  if (!isOpen || !mounted || !coords) return null;
-
   return (
-    <div
+    <PopoverContent
       ref={popupRef}
+      align={align === "right" ? "end" : "start"}
+      side={direction === "up" ? "top" : "bottom"}
+      sideOffset={6}
+      avoidCollisions={direction === "auto"}
+      collisionPadding={8}
       id={listboxId}
       role="listbox"
-      tabIndex={-1}
+      data-custom-select-popup="true"
       aria-label={
         ariaLabel || (typeof placeholder === "string" ? placeholder : undefined)
       }
       aria-activedescendant={
         focusedIndex >= 0 ? `${listboxId}-opt-${focusedIndex}` : undefined
       }
+      onOpenAutoFocus={(e) => {
+        e.preventDefault();
+        if (searchable) {
+          searchInputRef.current?.focus();
+        }
+      }}
+      onCloseAutoFocus={(e) => {
+        e.preventDefault();
+      }}
+      onEscapeKeyDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSelect(true);
+      }}
+      onPointerDownOutside={(e) => {
+        if (dropdownRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }}
+      onInteractOutside={(e) => {
+        if (dropdownRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }}
+      onKeyDown={handleKeyDown}
       style={{
-        position: "fixed",
-        ...(coords.top !== undefined ? { top: `${coords.top}px` } : {}),
-        ...(coords.bottom !== undefined
-          ? { bottom: `${coords.bottom}px` }
-          : {}),
-        left: `${coords.left}px`,
-        minWidth: `${coords.minWidth}px`,
+        minWidth: "max(var(--radix-popover-trigger-width, 0px), 140px)",
         maxWidth: "calc(100vw - 16px)",
       }}
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl p-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-150 border shadow-2xl focus:outline-none",
-        isLanding
-          ? "bg-[#0b152d]/95 backdrop-blur-xl border-white/15 text-white"
-          : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200",
+        "pointer-events-auto w-auto flex flex-col overflow-hidden rounded-lg p-1 shadow-md",
         popupClassName,
       )}
     >
       {searchable && (
-        <div
-          className={cn(
-            "px-1 pb-1.5 mb-1 border-b shrink-0",
-            isLanding
-              ? "border-white/10"
-              : "border-slate-100 dark:border-slate-800",
-          )}
-        >
+        <div className="px-1 pb-1.5 mb-1 border-b border-border shrink-0">
           <div className="relative">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
               aria-hidden="true"
             />
             <input
@@ -126,19 +130,14 @@ export function CustomSelectPopup<T extends string = string>({
               onClick={(e) => e.stopPropagation()}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder || ariaLabel}
-              className={cn(
-                "w-full h-8 pl-8 pr-2.5 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-blue-500",
-                isLanding
-                  ? "bg-white/10 border-white/15 text-white placeholder:text-slate-400"
-                  : "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400",
-              )}
+              className="w-full h-8 pl-8 pr-2.5 border text-xs rounded-md border-input bg-transparent dark:bg-input/30 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             />
           </div>
         </div>
       )}
       <div className="max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {filteredOptions.length === 0 ? (
-          <div className="px-3 py-3 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="px-3 py-3 text-center text-xs text-muted-foreground">
             {emptyText}
           </div>
         ) : (
@@ -155,6 +154,10 @@ export function CustomSelectPopup<T extends string = string>({
                 role="option"
                 aria-selected={isSelected}
                 disabled={option.disabled}
+                onMouseDown={(e) => {
+                  // Keep focus inside Radix Dialog/Sheet FocusScope when selecting portaled options
+                  e.preventDefault();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onChange(option.value);
@@ -164,21 +167,15 @@ export function CustomSelectPopup<T extends string = string>({
                   if (!option.disabled) setFocusedIndex(index);
                 }}
                 className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer min-w-0 max-w-full focus:outline-none",
+                  "w-full flex items-center justify-between gap-2 text-xs transition-colors text-left cursor-pointer min-w-0 max-w-full focus:outline-none px-2.5 py-1.5 rounded-md font-normal",
                   option.disabled
                     ? "opacity-40 cursor-not-allowed pointer-events-none"
                     : "",
                   isSelected
-                    ? isLanding
-                      ? "bg-blue-600/30 text-cyan-300 font-bold border border-blue-400/20 shadow-xs"
-                      : "bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold"
-                    : isLanding
-                      ? isFocused
-                        ? "bg-white/15 text-white"
-                        : "text-slate-300 hover:bg-white/10 hover:text-white"
-                      : isFocused
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80",
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : isFocused
+                      ? "bg-accent/70 text-accent-foreground"
+                      : "text-popover-foreground hover:bg-accent/60 hover:text-accent-foreground",
                 )}
               >
                 <div className="flex items-center gap-2 truncate min-w-0 flex-1">
@@ -187,8 +184,8 @@ export function CustomSelectPopup<T extends string = string>({
                       className={cn(
                         "h-3.5 w-3.5 shrink-0",
                         isSelected
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-slate-400 dark:text-slate-400",
+                          ? "text-foreground"
+                          : "text-muted-foreground",
                       )}
                       aria-hidden="true"
                     />
@@ -197,12 +194,7 @@ export function CustomSelectPopup<T extends string = string>({
                 </div>
                 {isSelected && (
                   <Check
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 ml-2",
-                      isLanding
-                        ? "text-cyan-300"
-                        : "text-blue-600 dark:text-blue-400",
-                    )}
+                    className="h-3.5 w-3.5 shrink-0 ml-2 text-foreground"
                     aria-hidden="true"
                   />
                 )}
@@ -211,6 +203,6 @@ export function CustomSelectPopup<T extends string = string>({
           })
         )}
       </div>
-    </div>
+    </PopoverContent>
   );
 }

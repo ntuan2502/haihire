@@ -1,7 +1,7 @@
 "use client";
 
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { getCandidateDisplayName, normalizeEmailAddress } from "@/lib/utils";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
@@ -26,6 +26,8 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
     selectedApp: table.selectedApp,
     setSelectedApp: table.setSelectedApp,
     jobMap: table.jobMap,
+    drawerTab: props.drawerTab,
+    onDrawerTabChange: props.onDrawerTabChange,
   });
 
   return (
@@ -38,9 +40,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         handleClearStages={table.handleClearStages}
         search={table.search}
         onSearchChangeHandler={table.onSearchChangeHandler}
-        isColumnsOpen={table.isColumnsOpen}
-        setIsColumnsOpen={table.setIsColumnsOpen}
-        columnsRef={table.columnsRef}
         visibleColumns={table.visibleColumns}
         toggleColumn={table.toggleColumn}
         setIsFilterOpen={table.setIsFilterOpen}
@@ -88,21 +87,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         selectedJobTitle={drawer.selectedJobTitle}
         drawerTab={drawer.drawerTab}
         onTabChange={drawer.setDrawerTab}
-        drawerOverviewSections={drawer.drawerOverviewSections}
-        onToggleOverviewSection={(key) =>
-          drawer.setDrawerOverviewSections((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-          }))
-        }
-        isDrawerOverviewPopoverOpen={drawer.isDrawerOverviewPopoverOpen}
-        onToggleDrawerOverviewPopover={() =>
-          drawer.setIsDrawerOverviewPopoverOpen((prev) => !prev)
-        }
-        onCloseDrawerOverviewPopover={() =>
-          drawer.setIsDrawerOverviewPopoverOpen(false)
-        }
-        drawerOverviewBtnRef={drawer.drawerOverviewBtnRef}
         allScheduledInterviews={drawer.allScheduledInterviews}
         drawerCandidateDocuments={drawer.drawerCandidateDocuments}
         onScheduleInterview={(intv) => {
@@ -161,7 +145,9 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           onClose={() => drawer.setPendingRejectApp(null)}
           onConfirm={drawer.handleConfirmReject}
           candidateName={getCandidateDisplayName(drawer.pendingRejectApp)}
-          candidateEmail={drawer.pendingRejectApp.candidateEmail}
+          candidateEmail={normalizeEmailAddress(
+            drawer.pendingRejectApp.candidateEmail,
+          )}
           jobTitle={
             table.jobMap.get(drawer.pendingRejectApp.jobId)?.title ||
             drawer.selectedJobTitle ||
@@ -178,7 +164,9 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           onClose={() => drawer.setPendingOfferApp(null)}
           onConfirm={drawer.handleConfirmOffer}
           candidateName={getCandidateDisplayName(drawer.pendingOfferApp)}
-          candidateEmail={drawer.pendingOfferApp.candidateEmail}
+          candidateEmail={normalizeEmailAddress(
+            drawer.pendingOfferApp.candidateEmail,
+          )}
           jobTitle={
             table.jobMap.get(drawer.pendingOfferApp.jobId)?.title ||
             drawer.selectedJobTitle ||

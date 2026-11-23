@@ -14,7 +14,7 @@ const getApiBase = () => {
 
 async function fetchPublicJobs(): Promise<Job[]> {
   try {
-    const res = await fetch(`${getApiBase()}/jobs/public?limit=100`, {
+    const res = await fetch(`${getApiBase()}/jobs/public?limit=1000`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return [];

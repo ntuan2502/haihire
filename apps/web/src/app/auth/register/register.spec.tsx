@@ -18,13 +18,20 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock auth-context
+let mockRegisterAuthState: {
+  register: typeof mockRegister;
+  isAuthenticated: boolean;
+  user: { id: string; organizationId?: string | null } | null;
+  loading: boolean;
+} = {
+  register: mockRegister,
+  isAuthenticated: false,
+  user: null,
+  loading: false,
+};
+
 vi.mock("@/context/auth-context", () => ({
-  useAuth: () => ({
-    register: mockRegister,
-    isAuthenticated: false,
-    user: null,
-    loading: false,
-  }),
+  useAuth: () => mockRegisterAuthState,
 }));
 
 // Mock i18n
@@ -33,6 +40,8 @@ vi.mock("@/i18n", () => ({
     locale: "vi",
     t: (key: string) => {
       const translations: Record<string, string> = {
+        "common.loading": "Đang tải...",
+        "auth.alreadySignedIn": "Đã đăng nhập thành công. Đang chuyển hướng...",
         "auth.recruiterSignUp": "Đăng ký tuyển dụng",
         "auth.registerTitle": "Tạo tài khoản mới",
         "auth.registerSubtitle": "Bắt đầu quản lý quy trình tuyển dụng",
@@ -61,6 +70,12 @@ vi.mock("@/i18n", () => ({
 describe("RegisterPage Component Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRegisterAuthState = {
+      register: mockRegister,
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+    };
   });
 
   it("renders register form fields properly", () => {
@@ -142,5 +157,21 @@ describe("RegisterPage Component Tests", () => {
       );
       expect(mockPush).toHaveBeenCalledWith("/auth/onboarding");
     });
+  });
+
+  it("renders neutral loading text instead of alreadySignedIn while authLoading is true and unauthenticated", () => {
+    mockRegisterAuthState = {
+      register: mockRegister,
+      isAuthenticated: false,
+      user: null,
+      loading: true,
+    };
+
+    render(<RegisterPage />);
+
+    expect(screen.getByText("Đang tải...")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Đã đăng nhập thành công. Đang chuyển hướng..."),
+    ).not.toBeInTheDocument();
   });
 });

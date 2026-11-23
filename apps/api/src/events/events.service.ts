@@ -24,11 +24,27 @@ export type { AppEvent, AppEventType };
 
 export const EVENTS_PUBSUB_CHANNEL = "haihire:events";
 
+const VALIDATION_CACHE_TTL_MS = 5000;
+const MEMBERSHIP_INVALIDATION_EVENTS = new Set<string>([
+  "MEMBER_REMOVED",
+  "MEMBER_ROLE_UPDATED",
+  "MEMBERS_CHANGED",
+  "ORG_DELETED",
+]);
+
 @Injectable()
 export class EventsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsService.name);
   private readonly events$ = new Subject<AppEvent>();
   private subscriberClient?: Redis;
+  private readonly validationCache = new Map<
+    string,
+    { expiresAt: number; tokenVersion: number; orgIds: Set<string> }
+  >();
+  private readonly inFlightValidations = new Map<
+    string,
+    Promise<{ tokenVersion: number; orgIds: Set<string> }>
+  >();
 
   constructor(
     @Optional()
@@ -57,6 +73,7 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
             if (channel === EVENTS_PUBSUB_CHANNEL) {
               try {
                 const event = JSON.parse(message) as AppEvent;
+                this.evictValidationCacheForEvent(event);
                 this.events$.next(event);
               } catch (err) {
                 this.logger.warn(`Failed to deserialize pub/sub event: ${err}`);
@@ -85,7 +102,58 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private evictValidationCacheForEvent(event: AppEvent) {
+    if (MEMBERSHIP_INVALIDATION_EVENTS.has(event.type)) {
+      if (event.targetUserId) {
+        this.validationCache.delete(event.targetUserId);
+      } else {
+        this.validationCache.clear();
+      }
+    }
+  }
+
+  private async getValidatedUserState(
+    userId: string,
+  ): Promise<{ tokenVersion: number; orgIds: Set<string> }> {
+    const cached = this.validationCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { tokenVersion: cached.tokenVersion, orgIds: cached.orgIds };
+    }
+
+    const existingPromise = this.inFlightValidations.get(userId);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const validationPromise = (async () => {
+      if (!this.prisma) throw new Error("PrismaService not available");
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, tokenVersion: true },
+      });
+      if (!user) {
+        throw new Error("User session deleted");
+      }
+      const orgIds = await this.resolveUserOrgIds(userId);
+      const tokenVersion = user.tokenVersion ?? 0;
+      this.validationCache.set(userId, {
+        expiresAt: Date.now() + VALIDATION_CACHE_TTL_MS,
+        tokenVersion,
+        orgIds,
+      });
+      return { tokenVersion, orgIds };
+    })();
+
+    this.inFlightValidations.set(userId, validationPromise);
+    try {
+      return await validationPromise;
+    } finally {
+      this.inFlightValidations.delete(userId);
+    }
+  }
+
   emit(event: AppEvent) {
+    this.evictValidationCacheForEvent(event);
     if (this.redisClient) {
       this.redisClient
         .publish(EVENTS_PUBSUB_CHANNEL, JSON.stringify(event))
@@ -181,18 +249,11 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
             try {
               const currentPayload =
                 this.jwtService!.verify<typeof payload>(token);
-              if (!this.prisma) throw new Error("PrismaService not available");
-              const user = await this.prisma.user.findUnique({
-                where: { id: userId },
-                select: { id: true, tokenVersion: true },
-              });
-              if (
-                !user ||
-                (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)
-              ) {
+              const { tokenVersion, orgIds: currentOrgIds } =
+                await this.getValidatedUserState(userId);
+              if (tokenVersion !== (currentPayload.tokenVersion ?? 0)) {
                 throw new Error("User session revoked");
               }
-              const currentOrgIds = await this.resolveUserOrgIds(userId);
               userOrgIds.clear();
               currentOrgIds.forEach((id) => userOrgIds.add(id));
               const allowed = event.targetUserId

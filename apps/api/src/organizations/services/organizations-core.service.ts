@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
+import { extname } from "node:path";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CreateOrgDto } from "../dto/create-org.dto";
 import { UpdateOrgDto } from "../dto/update-org.dto";
@@ -9,16 +10,32 @@ import {
   AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
+  AppServiceUnavailableException,
 } from "../../common/app-exception";
 import {
   APP_ERROR_CODES,
   canonicalizeTimezone,
   formatUserDisplayName,
+  hasPermission,
   normalizeOrgLocalization,
   type OrganizationLocalizationSettings,
+  type Role,
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { EventsService } from "../../events/events.service";
+import { MinioService, type UploadResult } from "../../minio/minio.service";
+import { fixUtf8String } from "../../common/doc-utils";
+import {
+  ALLOWED_LOGO_EXTENSIONS,
+  ALLOWED_LOGO_MIME_TYPES,
+  sanitizeFilename,
+  validateUploadedLogoFile,
+} from "../../common/upload-utils";
+import {
+  attachOrganizationLogoUrl,
+  getPreferredMembershipOrderBy,
+  getPreferredOwnedOrgOrderBy,
+} from "../organization-logo.util";
 
 type MockUserTableCompat = {
   store?: Array<Record<string, unknown>>;
@@ -38,6 +55,8 @@ const ORG_CORE_SELECT = {
   name: true,
   slug: true,
   ownerId: true,
+  logoObjectKey: true,
+  logoUpdatedAt: true,
   defaultLanguage: true,
   timezone: true,
   dateFormat: true,
@@ -51,6 +70,8 @@ const ORG_PUBLIC_SELECT = {
   id: true,
   name: true,
   slug: true,
+  logoObjectKey: true,
+  logoUpdatedAt: true,
   defaultLanguage: true,
   timezone: true,
   dateFormat: true,
@@ -72,16 +93,40 @@ export class OrganizationsCoreService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(MinioService)
+    private readonly minioService?: MinioService,
   ) {}
 
-  private withLocalization<T extends Record<string, unknown>>(
+  private withLocalization<
+    T extends {
+      id: string;
+      logoObjectKey?: string | null;
+      logoMimeType?: string | null;
+      logoUpdatedAt?: Date | string | null;
+    } & Partial<Record<keyof OrganizationLocalizationSettings, unknown>>,
+  >(
     org: T,
-  ): Omit<T, keyof OrganizationLocalizationSettings> &
-    OrganizationLocalizationSettings {
+  ): Omit<
+    T,
+    | keyof OrganizationLocalizationSettings
+    | "logoObjectKey"
+    | "logoMimeType"
+    | "logoUpdatedAt"
+  > &
+    OrganizationLocalizationSettings & { logoUrl: string | null } {
+    const withUrl = attachOrganizationLogoUrl(org);
     return {
-      ...org,
+      ...withUrl,
       ...normalizeOrgLocalization(org),
-    };
+    } as Omit<
+      T,
+      | keyof OrganizationLocalizationSettings
+      | "logoObjectKey"
+      | "logoMimeType"
+      | "logoUpdatedAt"
+    > &
+      OrganizationLocalizationSettings & { logoUrl: string | null };
   }
 
   async create(userId: string, dto: CreateOrgDto) {
@@ -101,6 +146,7 @@ export class OrganizationsCoreService {
     }
 
     const orgId = crypto.randomUUID();
+    const now = toInstant();
     let org;
     try {
       org = await runInTransaction(this.prisma, async (tx) => {
@@ -110,7 +156,7 @@ export class OrganizationsCoreService {
             name: dto.name.trim(),
             slug: normalizedSlug,
             ownerId: userId,
-            updatedAt: toInstant(),
+            updatedAt: now,
           },
           select: ORG_CORE_SELECT,
         });
@@ -128,11 +174,13 @@ export class OrganizationsCoreService {
             organizationId: createdOrg.id,
             userId,
             role: "ADMIN",
-            updatedAt: toInstant(),
+            lastAccessedAt: now,
+            updatedAt: now,
           },
           update: {
             role: "ADMIN",
-            updatedAt: toInstant(),
+            lastAccessedAt: now,
+            updatedAt: now,
           },
         });
 
@@ -175,27 +223,53 @@ export class OrganizationsCoreService {
     };
   }
 
-  async getMyOrg(userId: string) {
+  async getMyOrg(userId: string, activeOrgId?: string | null) {
     const user = await this.prisma.user.findFirst({
       where: { id: userId },
     });
+    const legacyOrgId = (user as unknown as { organizationId?: string | null })
+      ?.organizationId;
     if (
       user &&
       "organizationId" in user &&
-      (user as unknown as { organizationId: string | null }).organizationId ===
-        null
+      legacyOrgId === null &&
+      !activeOrgId
     ) {
+      return null;
+    }
+
+    if (activeOrgId) {
+      const org = await this.prisma.organization.findFirst({
+        where: { id: activeOrgId },
+        select: ORG_CORE_SELECT,
+      });
+      if (org) {
+        const isOwner = Boolean(org.ownerId === userId);
+        const member =
+          typeof this.prisma.organizationMember?.findFirst === "function"
+            ? await this.prisma.organizationMember.findFirst({
+                where: { organizationId: activeOrgId, userId },
+                select: { id: true },
+              })
+            : null;
+        if (
+          isOwner ||
+          member ||
+          legacyOrgId === activeOrgId ||
+          typeof this.prisma.organizationMember?.findFirst !== "function"
+        ) {
+          return this.withLocalization(org);
+        }
+      }
       return null;
     }
 
     const member = await this.prisma.organizationMember.findFirst({
       where: { userId },
-      orderBy: { createdAt: "asc" },
+      orderBy: getPreferredMembershipOrderBy(),
       select: { organizationId: true },
     });
-    const orgId =
-      member?.organizationId ||
-      (user as unknown as { organizationId?: string })?.organizationId;
+    const orgId = member?.organizationId || legacyOrgId;
     if (orgId) {
       const org = await this.prisma.organization.findFirst({
         where: { id: orgId },
@@ -206,6 +280,7 @@ export class OrganizationsCoreService {
 
     const owned = await this.prisma.organization.findFirst({
       where: { ownerId: userId },
+      orderBy: getPreferredOwnedOrgOrderBy(),
       select: ORG_CORE_SELECT,
     });
     return owned ? this.withLocalization(owned) : null;
@@ -214,6 +289,7 @@ export class OrganizationsCoreService {
   async getMyOrgs(userId: string) {
     const ownedOrgs = await this.prisma.organization.findMany({
       where: { ownerId: userId },
+      orderBy: getPreferredOwnedOrgOrderBy(),
       select: ORG_CORE_SELECT,
     });
 
@@ -234,6 +310,7 @@ export class OrganizationsCoreService {
       memberOrgIds.length > 0
         ? await this.prisma.organization.findMany({
             where: { id: { in: memberOrgIds } },
+            orderBy: getPreferredOwnedOrgOrderBy(),
             select: ORG_CORE_SELECT,
           })
         : [];
@@ -289,6 +366,7 @@ export class OrganizationsCoreService {
     }
 
     const targetRole = isOwner ? "ADMIN" : membership?.role || "MEMBER";
+    const now = toInstant();
 
     if (isOwner && !membership) {
       await this.prisma.organizationMember.upsert({
@@ -303,12 +381,22 @@ export class OrganizationsCoreService {
           organizationId: targetOrgId,
           userId,
           role: "ADMIN",
-          updatedAt: toInstant(),
+          lastAccessedAt: now,
+          updatedAt: now,
         },
         update: {
           role: "ADMIN",
-          updatedAt: toInstant(),
+          lastAccessedAt: now,
+          updatedAt: now,
         },
+      });
+    } else if (
+      membership &&
+      typeof this.prisma.organizationMember?.updateMany === "function"
+    ) {
+      await this.prisma.organizationMember.updateMany({
+        where: { organizationId: targetOrgId, userId },
+        data: { lastAccessedAt: now },
       });
     }
 
@@ -349,28 +437,33 @@ export class OrganizationsCoreService {
     };
   }
 
-  async updateMyOrg(userId: string, dto: UpdateOrgDto) {
-    const userMember = await this.prisma.organizationMember.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { organizationId: true, role: true },
-    });
-    const ownedOrg = await this.prisma.organization.findFirst({
-      where: { ownerId: userId },
-      select: { id: true },
-    });
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-    });
-    const legacyOrgId = (user as unknown as { organizationId?: string })
-      ?.organizationId;
+  private async resolveAndAuthorizeOrgUpdate(
+    userId: string,
+    activeOrgId?: string | null,
+  ) {
+    let orgId = activeOrgId || null;
+    let fallbackMemberRole: string | undefined;
 
-    const orgId = userMember?.organizationId || ownedOrg?.id || legacyOrgId;
-    const userRole = ownedOrg
-      ? "ADMIN"
-      : userMember?.role ||
-        (user as unknown as { role?: string })?.role ||
-        "MEMBER";
+    if (!orgId) {
+      const userMember = await this.prisma.organizationMember.findFirst({
+        where: { userId },
+        orderBy: getPreferredMembershipOrderBy(),
+        select: { organizationId: true, role: true },
+      });
+      const ownedOrg = await this.prisma.organization.findFirst({
+        where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
+        select: { id: true },
+      });
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId },
+      });
+      const legacyOrgId = (user as unknown as { organizationId?: string })
+        ?.organizationId;
+      orgId = userMember?.organizationId || ownedOrg?.id || legacyOrgId || null;
+      fallbackMemberRole =
+        userMember?.role || (user as unknown as { role?: string })?.role;
+    }
 
     if (!orgId) {
       throw new AppNotFoundException(
@@ -379,18 +472,13 @@ export class OrganizationsCoreService {
       );
     }
 
-    if (userRole === "MEMBER") {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
-        "Members have read-only access. Only Admins can perform this action.",
-      );
-    }
-
     const currentOrg = await this.prisma.organization.findFirst({
       where: { id: orgId },
       select: {
         id: true,
         slug: true,
+        ownerId: true,
+        logoObjectKey: true,
       },
     });
 
@@ -400,6 +488,67 @@ export class OrganizationsCoreService {
         "Organization not found",
       );
     }
+
+    const isOwnerOfCurrentOrg = Boolean(currentOrg.ownerId === userId);
+    let userRole = isOwnerOfCurrentOrg
+      ? "ADMIN"
+      : fallbackMemberRole || "MEMBER";
+
+    if (typeof this.prisma.organizationMember?.findFirst === "function") {
+      const activeMember = await this.prisma.organizationMember.findFirst({
+        where: { organizationId: orgId, userId },
+        select: { role: true },
+      });
+      if (!isOwnerOfCurrentOrg && !activeMember && !fallbackMemberRole) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "You do not belong to this organization.",
+        );
+      }
+      if (!isOwnerOfCurrentOrg && activeMember?.role) {
+        userRole = activeMember.role;
+      }
+    }
+
+    const rolePermOverride =
+      !isOwnerOfCurrentOrg &&
+      userRole !== "ADMIN" &&
+      typeof this.prisma.organizationRolePermission?.findFirst === "function"
+        ? await this.prisma.organizationRolePermission.findFirst({
+            where: {
+              organizationId: orgId,
+              role: userRole as Role,
+              permission: "org:update",
+            },
+            select: { granted: true },
+          })
+        : null;
+    const canUpdateOrg =
+      isOwnerOfCurrentOrg ||
+      userRole === "ADMIN" ||
+      (rolePermOverride
+        ? rolePermOverride.granted
+        : hasPermission(userRole as Role, "org:update"));
+
+    if (!canUpdateOrg) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Members have read-only access. Only Admins can perform this action.",
+      );
+    }
+
+    return { orgId, currentOrg };
+  }
+
+  async updateMyOrg(
+    userId: string,
+    dto: UpdateOrgDto,
+    activeOrgId?: string | null,
+  ) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
 
     if (dto.slug) {
       const normalizedSlug = dto.slug.toLowerCase().trim();
@@ -490,23 +639,240 @@ export class OrganizationsCoreService {
     return updatedOrg ? this.withLocalization(updatedOrg) : null;
   }
 
-  async deleteMyOrg(userId: string) {
-    const userMember = await this.prisma.organizationMember.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-      select: { organizationId: true, role: true },
-    });
-    const ownedOrg = await this.prisma.organization.findFirst({
-      where: { ownerId: userId },
-      select: { id: true, name: true, ownerId: true },
-    });
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-    });
-    const legacyOrgId = (user as unknown as { organizationId?: string })
-      ?.organizationId;
+  async uploadMyOrgLogo(
+    userId: string,
+    file: Express.Multer.File | undefined,
+    activeOrgId?: string | null,
+  ) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
 
-    const orgId = ownedOrg?.id || userMember?.organizationId || legacyOrgId;
+    const validated = validateUploadedLogoFile(file);
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    let uploadResult: UploadResult;
+    try {
+      uploadResult = await this.minioService.uploadFile(
+        file!,
+        "logos",
+        orgId,
+        ALLOWED_LOGO_EXTENSIONS,
+      );
+    } catch (error) {
+      if (error instanceof AppBadRequestException) {
+        throw error;
+      }
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload organization logo to storage service",
+      );
+    }
+
+    const updatedOrg = await runInTransaction(this.prisma, async (tx) => {
+      return tx.organization.update({
+        where: { id: orgId },
+        data: {
+          logoObjectKey: uploadResult.fileName,
+          logoMimeType: validated.mimeType,
+          logoUpdatedAt: toInstant(),
+        },
+        select: ORG_CORE_SELECT,
+      });
+    }).catch(async (dbError) => {
+      await this.minioService!.deleteFile(uploadResult.fileName).catch(
+        (err) => {
+          this.logger.warn(
+            `Failed to compensate uploaded logo '${uploadResult.fileName}': ${String(err)}`,
+          );
+        },
+      );
+      throw dbError;
+    });
+
+    if (
+      currentOrg.logoObjectKey &&
+      currentOrg.logoObjectKey !== uploadResult.fileName
+    ) {
+      await this.minioService
+        .deleteFile(currentOrg.logoObjectKey)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to remove previous logo '${currentOrg.logoObjectKey}': ${String(err)}`,
+          );
+        });
+    }
+
+    const cleanName = sanitizeFilename(
+      fixUtf8String(file!.originalname || `logo${validated.ext}`),
+    );
+    await this.auditLog?.logOrg(
+      orgId,
+      userId,
+      "ORG_LOGO_UPDATED",
+      "ORGANIZATION",
+      {
+        fileName: cleanName,
+        mimeType: validated.mimeType,
+        sizeBytes: file!.size ?? file!.buffer?.length ?? 0,
+      },
+    );
+
+    this.eventsService?.emit({
+      type: "ORG_UPDATED",
+      organizationId: orgId,
+      data: { updatedBy: userId },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: orgId,
+    });
+
+    return this.withLocalization(updatedOrg);
+  }
+
+  async deleteMyOrgLogo(userId: string, activeOrgId?: string | null) {
+    const { orgId, currentOrg } = await this.resolveAndAuthorizeOrgUpdate(
+      userId,
+      activeOrgId,
+    );
+
+    const updatedOrg = await this.prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        logoObjectKey: null,
+        logoMimeType: null,
+        logoUpdatedAt: null,
+      },
+      select: ORG_CORE_SELECT,
+    });
+
+    if (currentOrg.logoObjectKey) {
+      await this.minioService
+        ?.deleteFile(currentOrg.logoObjectKey)
+        .catch((err) => {
+          this.logger.warn(
+            `Failed to delete logo '${currentOrg.logoObjectKey}' from storage: ${String(err)}`,
+          );
+        });
+
+      await this.auditLog?.logOrg(
+        orgId,
+        userId,
+        "ORG_LOGO_REMOVED",
+        "ORGANIZATION",
+        null,
+      );
+
+      this.eventsService?.emit({
+        type: "ORG_UPDATED",
+        organizationId: orgId,
+        data: { updatedBy: userId },
+      });
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
+        organizationId: orgId,
+      });
+    }
+
+    return this.withLocalization(updatedOrg);
+  }
+
+  async preparePublicOrgLogo(orgId: string) {
+    const org = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        logoObjectKey: true,
+        logoMimeType: true,
+      },
+    });
+
+    if (!org || !org.logoObjectKey) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    const normalizedKey = this.minioService.extractObjectName(
+      org.logoObjectKey,
+    );
+    const safeTenant = org.id.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!normalizedKey.startsWith(`tenants/${safeTenant}/logos/`)) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+
+    const ext = extname(normalizedKey).toLowerCase();
+    const fallbackMime =
+      ext === ".png"
+        ? "image/png"
+        : ext === ".webp"
+          ? "image/webp"
+          : "image/jpeg";
+    const normalizedMime = org.logoMimeType?.trim().toLowerCase();
+    const mimeType =
+      normalizedMime && ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)
+        ? normalizedMime
+        : fallbackMime;
+
+    try {
+      const stream = await this.minioService.getObjectStream(
+        normalizedKey,
+        org.id,
+      );
+      return { stream, mimeType };
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Organization logo not found",
+      );
+    }
+  }
+
+  async deleteMyOrg(userId: string, activeOrgId?: string | null) {
+    let orgId = activeOrgId || null;
+    let fallbackRole: string | undefined;
+
+    if (!orgId) {
+      const userMember = await this.prisma.organizationMember.findFirst({
+        where: { userId },
+        orderBy: getPreferredMembershipOrderBy(),
+        select: { organizationId: true, role: true },
+      });
+      const ownedOrg = await this.prisma.organization.findFirst({
+        where: { ownerId: userId },
+        orderBy: getPreferredOwnedOrgOrderBy(),
+        select: { id: true, name: true, ownerId: true },
+      });
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId },
+      });
+      const legacyOrgId = (user as unknown as { organizationId?: string })
+        ?.organizationId;
+
+      orgId = ownedOrg?.id || userMember?.organizationId || legacyOrgId || null;
+      fallbackRole =
+        userMember?.role || (user as unknown as { role?: string })?.role;
+    }
+
     if (!orgId) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_USER_NO_ORG,
@@ -514,16 +880,15 @@ export class OrganizationsCoreService {
       );
     }
 
-    const currentOrg =
-      ownedOrg ||
-      (await this.prisma.organization.findFirst({
-        where: { id: orgId },
-        select: {
-          id: true,
-          ownerId: true,
-          name: true,
-        },
-      }));
+    const currentOrg = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        logoObjectKey: true,
+      },
+    });
 
     if (!currentOrg) {
       throw new AppNotFoundException(
@@ -533,10 +898,16 @@ export class OrganizationsCoreService {
     }
 
     if (currentOrg.ownerId !== userId) {
-      const role =
-        userMember?.role ||
-        (user as unknown as { role?: string })?.role ||
-        "MEMBER";
+      let role = fallbackRole || "MEMBER";
+      if (typeof this.prisma.organizationMember?.findFirst === "function") {
+        const activeMember = await this.prisma.organizationMember.findFirst({
+          where: { organizationId: orgId, userId },
+          select: { role: true },
+        });
+        if (activeMember?.role) {
+          role = activeMember.role;
+        }
+      }
       if (role === "MEMBER") {
         throw new AppForbiddenException(
           APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
@@ -607,6 +978,12 @@ export class OrganizationsCoreService {
       });
     });
 
+    if (currentOrg.logoObjectKey) {
+      await this.minioService
+        ?.deleteFile(currentOrg.logoObjectKey)
+        .catch(() => {});
+    }
+
     for (const targetUserId of affectedUserIds) {
       this.eventsService?.emit({
         type: "MEMBER_REMOVED",
@@ -618,7 +995,11 @@ export class OrganizationsCoreService {
     return { success: true, message: "Organization deleted successfully" };
   }
 
-  async transferOwnership(userId: string, newOwnerUserId: string) {
+  async transferOwnership(
+    userId: string,
+    newOwnerUserId: string,
+    activeOrgId?: string | null,
+  ) {
     if (userId === newOwnerUserId) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_CANNOT_TRANSFER_TO_SELF,
@@ -638,12 +1019,26 @@ export class OrganizationsCoreService {
       );
 
     const orgId = await runInTransaction(this.prisma, async (tx) => {
-      const ownedOrg = await tx.organization.findFirst({
-        where: { ownerId: userId },
-        select: { id: true, ownerId: true },
-      });
+      const ownedOrg = activeOrgId
+        ? await tx.organization.findFirst({
+            where: { id: activeOrgId, ownerId: userId },
+            select: { id: true, ownerId: true },
+          })
+        : await tx.organization.findFirst({
+            where: { ownerId: userId },
+            select: { id: true, ownerId: true },
+          });
 
       if (!ownedOrg) {
+        if (activeOrgId) {
+          const targetOrg = await tx.organization.findFirst({
+            where: { id: activeOrgId },
+            select: { id: true },
+          });
+          if (targetOrg) {
+            throw ownerRequired();
+          }
+        }
         const member = await tx.organizationMember.findFirst({
           where: { userId },
           select: { organizationId: true },

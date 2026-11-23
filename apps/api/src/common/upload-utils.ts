@@ -1,25 +1,34 @@
 import { extname } from "node:path";
 import { AppBadRequestException } from "./app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  ALLOWED_ORG_LOGO_EXTENSIONS,
+  ALLOWED_ORG_LOGO_MIME_TYPES,
+  APP_ERROR_CODES,
+  MAX_ORG_LOGO_SIZE_BYTES,
+} from "@haihire/shared";
 import type { Request } from "express";
 
-export const ALLOWED_RESUME_MIME_TYPES = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/octet-stream", // Fallback for some OS/browser uploads of docx
-  "image/png",
-  "image/jpeg",
-]);
+export const ALLOWED_RESUME_MIME_TYPES = new Set(["application/pdf"]);
 
-export const ALLOWED_RESUME_EXTENSIONS = new Set([
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".png",
-  ".jpg",
-  ".jpeg",
-]);
+export const ALLOWED_RESUME_EXTENSIONS = new Set([".pdf"]);
+
+export const ALLOWED_LOGO_MIME_TYPES = new Set<string>(
+  ALLOWED_ORG_LOGO_MIME_TYPES,
+);
+
+export const ALLOWED_LOGO_EXTENSIONS = new Set<string>(
+  ALLOWED_ORG_LOGO_EXTENSIONS,
+);
+
+const LOGO_EXT_TO_MIME: Record<
+  string,
+  (typeof ALLOWED_ORG_LOGO_MIME_TYPES)[number]
+> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+};
 
 /**
  * Sanitize filename to prevent path traversal attacks.
@@ -63,48 +72,6 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
     return tail.includes("%%EOF");
   }
 
-  // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04) and EOCD trailer PK\x05\x06 (0x50 0x4B 0x05 0x06)
-  if (normalizedExt === ".docx") {
-    const hasHeader =
-      buffer[0] === 0x50 &&
-      buffer[1] === 0x4b &&
-      buffer[2] === 0x03 &&
-      buffer[3] === 0x04;
-    if (!hasHeader) return false;
-
-    const windowSize = Math.min(buffer.length, 65557);
-    const tail = buffer.subarray(buffer.length - windowSize);
-    return tail.includes(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
-  }
-
-  // 3. DOC: OLE2 Compound Document (0xD0 0xCF 0x11 0xE0)
-  if (normalizedExt === ".doc") {
-    return (
-      buffer[0] === 0xd0 &&
-      buffer[1] === 0xcf &&
-      buffer[2] === 0x11 &&
-      buffer[3] === 0xe0
-    );
-  }
-
-  // 4. Images if used for avatars or attachments
-  if (normalizedExt === ".png") {
-    return (
-      (buffer[0] === 0x89 &&
-        buffer[1] === 0x50 &&
-        buffer[2] === 0x4e &&
-        buffer[3] === 0x47) ||
-      (buffer[0] === 0xc2 &&
-        buffer[1] === 0x89 &&
-        buffer[2] === 0x50 &&
-        buffer[3] === 0x4e)
-    );
-  }
-
-  if (normalizedExt === ".jpg" || normalizedExt === ".jpeg") {
-    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-  }
-
   return false;
 }
 
@@ -120,54 +87,26 @@ export function validateUploadedFile(file?: Express.Multer.File | null) {
   if (!ALLOWED_RESUME_EXTENSIONS.has(ext)) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      `File extension '${ext}' is not permitted. Only .pdf, .doc, and .docx formats are accepted.`,
+      `File extension '${ext}' is not permitted. Only .pdf format is accepted.`,
     );
   }
 
   if (file.buffer) {
-    if (ext === ".pdf") {
-      const header = file.buffer
-        .subarray(0, Math.min(file.buffer.length, 1024))
-        .toString("binary");
-      if (!header.includes("%PDF-")) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.VALIDATION_ERROR,
-          `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
-        );
-      }
-      const tailStart = Math.max(0, file.buffer.length - 2048);
-      const tail = file.buffer.subarray(tailStart).toString("binary");
-      if (!tail.includes("%%EOF")) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
-          "PDF file appears truncated or corrupt (missing %%EOF trailer in trailing 2048 bytes).",
-        );
-      }
-    } else if (ext === ".docx") {
-      const hasHeader =
-        file.buffer.length >= 4 &&
-        file.buffer[0] === 0x50 &&
-        file.buffer[1] === 0x4b &&
-        file.buffer[2] === 0x03 &&
-        file.buffer[3] === 0x04;
-      if (!hasHeader) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.VALIDATION_ERROR,
-          `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
-        );
-      }
-      const tailStart = Math.max(0, file.buffer.length - 65557);
-      const tail = file.buffer.subarray(tailStart);
-      if (!tail.includes(Buffer.from([0x50, 0x4b, 0x05, 0x06]))) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
-          "DOCX file appears truncated or corrupt (missing ZIP End of Central Directory trailer in trailing 65557 bytes).",
-        );
-      }
-    } else if (!validateMagicBytes(file.buffer, ext)) {
+    const header = file.buffer
+      .subarray(0, Math.min(file.buffer.length, 1024))
+      .toString("binary");
+    if (!header.includes("%PDF-")) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.VALIDATION_ERROR,
         `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
+      );
+    }
+    const tailStart = Math.max(0, file.buffer.length - 2048);
+    const tail = file.buffer.subarray(tailStart).toString("binary");
+    if (!tail.includes("%%EOF")) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+        "PDF file appears truncated or corrupt (missing %%EOF trailer in trailing 2048 bytes).",
       );
     }
   }
@@ -184,7 +123,7 @@ export function resumeFileFilter(
     return callback(
       new AppBadRequestException(
         APP_ERROR_CODES.VALIDATION_ERROR,
-        `File type not allowed. Only .pdf, .doc, and .docx formats are accepted (received: ${ext || "none"})`,
+        `File type not allowed. Only .pdf format is accepted (received: ${ext || "none"})`,
       ),
       false,
     );
@@ -195,6 +134,129 @@ export function resumeFileFilter(
       new AppBadRequestException(
         APP_ERROR_CODES.VALIDATION_ERROR,
         `Invalid file MIME type: ${file.mimetype}. Only PDF and Word documents are permitted.`,
+      ),
+      false,
+    );
+  }
+
+  callback(null, true);
+}
+
+const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
+
+export function validateImageMagicBytes(buffer: Buffer, ext: string): boolean {
+  if (!buffer || buffer.length < 4) {
+    return false;
+  }
+
+  const normalizedExt = ext.toLowerCase();
+
+  if (normalizedExt === ".png") {
+    if (buffer.length < PNG_MAGIC.length) {
+      return false;
+    }
+    return PNG_MAGIC.every((byte, idx) => buffer[idx] === byte);
+  }
+
+  if (normalizedExt === ".jpg" || normalizedExt === ".jpeg") {
+    return (
+      buffer.length >= 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff
+    );
+  }
+
+  if (normalizedExt === ".webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  return false;
+}
+
+export function validateUploadedLogoFile(file?: Express.Multer.File | null): {
+  ext: string;
+  mimeType: (typeof ALLOWED_ORG_LOGO_MIME_TYPES)[number];
+} {
+  if (!file) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
+      "Logo file is required.",
+    );
+  }
+
+  const byteSize = file.size ?? file.buffer?.length ?? 0;
+  if (
+    byteSize > MAX_ORG_LOGO_SIZE_BYTES ||
+    (file.buffer && file.buffer.length > MAX_ORG_LOGO_SIZE_BYTES)
+  ) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "Logo file exceeds the 2 MB maximum size limit.",
+    );
+  }
+
+  const ext = extname(file.originalname || "").toLowerCase();
+  if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `Logo extension '${ext || "none"}' is not permitted. Only PNG, JPG, and WebP are accepted.`,
+    );
+  }
+
+  const normalizedMime = file.mimetype?.split(";")[0]?.trim().toLowerCase();
+  if (normalizedMime && !ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `Invalid logo MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
+    );
+  }
+
+  const expectedMime = LOGO_EXT_TO_MIME[ext];
+  if (normalizedMime && normalizedMime !== expectedMime) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `Logo MIME type '${normalizedMime}' does not match extension '${ext}'.`,
+    );
+  }
+
+  if (!file.buffer || !validateImageMagicBytes(file.buffer, ext)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `Logo content does not match expected binary signature for extension '${ext}'.`,
+    );
+  }
+
+  return { ext, mimeType: expectedMime };
+}
+
+export function logoFileFilter(
+  _req: Request,
+  file: Express.Multer.File,
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) {
+  const ext = extname(file.originalname || "").toLowerCase();
+
+  if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
+    return callback(
+      new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Logo file type not allowed. Only PNG, JPG, and WebP formats are accepted (received: ${ext || "none"})`,
+      ),
+      false,
+    );
+  }
+
+  const normalizedMime = file.mimetype?.split(";")[0]?.trim().toLowerCase();
+  if (normalizedMime && !ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)) {
+    return callback(
+      new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Invalid logo MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
       ),
       false,
     );

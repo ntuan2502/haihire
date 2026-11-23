@@ -122,24 +122,24 @@ export function WizardStepDetails({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-xl font-semibold text-foreground">
           {t("jobs.wizard.jobDetailsTitle")}
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
           {t("jobs.wizard.jobDetailsDesc")}{" "}
-          <span className="underline decoration-slate-300 dark:decoration-slate-700 cursor-pointer">
+          <span className="underline decoration-border cursor-pointer">
             {t("jobs.wizard.saveChangesLink")}
           </span>
         </p>
       </div>
 
-      <div className="space-y-5 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      <div className="space-y-5 bg-card text-card-foreground p-6 rounded-xl border border-border shadow-xs">
         {/* Field 1 & 1.5: Job Title & Department */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-8">
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("jobs.wizard.jobTitleLabel")}{" "}
-              <span className="text-rose-500">*</span>
+              <span className="text-destructive">*</span>
             </label>
             <Input
               type="text"
@@ -148,21 +148,21 @@ export function WizardStepDetails({
               onChange={(e) => setJobTitle(e.target.value)}
               onBlur={() => setTouched((prev) => ({ ...prev, title: true }))}
               className={cn(
-                "h-10 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
+                "h-10 text-xs transition-colors",
                 showTitleError &&
-                  "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
+                  "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
               )}
               required
             />
             {showTitleError && (
-              <p className="text-[11px] text-rose-500 font-medium mt-1">
+              <p className="text-[11px] text-destructive font-medium mt-1">
                 {t("jobs.wizard.errors.titleRequired")}
               </p>
             )}
           </div>
 
           <div className="sm:col-span-4">
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("jobs.wizard.departmentLabel")}
             </label>
             <Input
@@ -170,9 +170,9 @@ export function WizardStepDetails({
               placeholder={t("jobs.wizard.placeholders.department")}
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+              className="h-10 text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               {t("jobs.wizard.departmentHint")}
             </p>
           </div>
@@ -181,12 +181,12 @@ export function WizardStepDetails({
         {/* Field 2 & 3: Location & Postal Code */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-8">
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("jobs.wizard.locationLabel")}{" "}
-              <span className="text-rose-500">*</span>
+              <span className="text-destructive">*</span>
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={t("jobs.wizard.placeholders.location")}
@@ -196,28 +196,28 @@ export function WizardStepDetails({
                   setTouched((prev) => ({ ...prev, location: true }))
                 }
                 className={cn(
-                  "h-10 pl-9 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
+                  "h-10 pl-9 text-xs transition-colors",
                   showLocationError &&
-                    "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
+                    "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
                 )}
                 required
               />
             </div>
             {showLocationError ? (
-              <p className="text-[11px] text-rose-500 font-medium mt-1">
+              <p className="text-[11px] text-destructive font-medium mt-1">
                 {t("jobs.wizard.locationErrorHelp")}
               </p>
             ) : (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-[11px] text-muted-foreground mt-1">
                 {t("jobs.wizard.locationDesc")}
               </p>
             )}
           </div>
 
           <div className="sm:col-span-4">
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5">
               {t("jobs.wizard.postalCodeLabel")}{" "}
-              <span className="text-slate-400 font-normal">
+              <span className="text-muted-foreground font-normal">
                 ({t("common.optional")})
               </span>
             </label>
@@ -226,9 +226,9 @@ export function WizardStepDetails({
               placeholder={t("jobs.wizard.placeholders.postalCode")}
               value={postalCode}
               onChange={(e) => setPostalCode(e.target.value)}
-              className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+              className="h-10 text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               {t("jobs.wizard.pickLocationFirst")}
             </p>
           </div>
@@ -270,9 +270,9 @@ export function WizardStepDetails({
 
         {/* Field 8: Description */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("jobs.wizard.descriptionTitle")}{" "}
-            <span className="text-rose-500">*</span>
+            <span className="text-destructive">*</span>
           </label>
           <Textarea
             placeholder={t("jobs.wizard.placeholders.description")}
@@ -282,29 +282,29 @@ export function WizardStepDetails({
               setTouched((prev) => ({ ...prev, description: true }))
             }
             className={cn(
-              "h-40 text-xs bg-slate-50/50 dark:bg-slate-950 resize-none overflow-y-auto transition-colors",
+              "h-40 text-xs resize-none overflow-y-auto transition-colors",
               showDescriptionError &&
-                "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
+                "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
             )}
             required
           />
           <div className="flex items-center justify-between text-[11px] mt-1">
             {showDescriptionError ? (
-              <span className="text-rose-500 font-medium">
+              <span className="text-destructive font-medium">
                 {t("jobs.wizard.errors.descRequired")}
               </span>
             ) : (
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-muted-foreground">
                 {t("jobs.wizard.descriptionHelpText")}
               </span>
             )}
             <span
               className={
                 showDescriptionError
-                  ? "text-rose-500 font-semibold shrink-0 ml-2"
+                  ? "text-destructive font-semibold shrink-0 ml-2"
                   : isDescriptionValid
                     ? "text-emerald-600 font-semibold shrink-0 ml-2"
-                    : "text-slate-400 font-medium shrink-0 ml-2"
+                    : "text-muted-foreground font-medium shrink-0 ml-2"
               }
             >
               {description.trim().length > 0
@@ -316,16 +316,16 @@ export function WizardStepDetails({
 
         {/* Field 9: Requirements */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5">
             {t("jobs.wizard.requirementsTitle")}
           </label>
           <Textarea
             placeholder={t("jobs.wizard.placeholders.requirements")}
             value={requirements}
             onChange={(e) => setRequirements(e.target.value)}
-            className="h-32 text-xs bg-slate-50/50 dark:bg-slate-950 resize-none overflow-y-auto transition-colors"
+            className="h-32 text-xs resize-none overflow-y-auto transition-colors"
           />
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-[11px] text-muted-foreground mt-1">
             {t("jobs.wizard.requirementsNotice")}
           </p>
         </div>
@@ -337,7 +337,7 @@ export function WizardStepDetails({
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          className="text-xs cursor-pointer"
         >
           {t("common.cancel")}
         </Button>
@@ -346,12 +346,7 @@ export function WizardStepDetails({
           type="button"
           onClick={onContinue}
           disabled={!isStep1Valid}
-          className={cn(
-            "text-white text-xs font-bold px-6 py-2 rounded-xl shadow-xs transition-all",
-            isStep1Valid
-              ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-              : "bg-blue-600/50 cursor-not-allowed opacity-60",
-          )}
+          className="text-xs font-semibold px-6 cursor-pointer"
         >
           {t("jobs.wizard.continueToPublish")}
         </Button>

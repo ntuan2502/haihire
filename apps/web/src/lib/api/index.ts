@@ -9,3 +9,4 @@ export * from "./email";
 export * from "./activities";
 export * from "./sourcing";
 export * from "./webhook-settings";
+export * from "./notifications";

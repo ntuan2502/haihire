@@ -1,5 +1,11 @@
 import { Transform } from "class-transformer";
-import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from "class-validator";
 import { ROLE_LIST, Role } from "@haihire/shared";
 
 const VALID_ROLE_MESSAGE = `Role must be one of: ${ROLE_LIST.join(", ")}`;
@@ -28,6 +34,13 @@ export class CreateInviteLinkDto {
     message: VALID_ROLE_MESSAGE,
   })
   role?: Role;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  )
+  @IsEmail({}, { message: "Invalid email address" })
+  email?: string;
 
   @IsOptional()
   @IsString()

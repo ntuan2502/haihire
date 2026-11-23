@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  formatDayMonth,
   formatFileSize,
   formatRelativeTime,
   formatTime,
@@ -15,6 +16,7 @@ import {
   parseCandidateDocuments,
   resetActiveLocalization,
   resolveCandidateProfile,
+  sanitizeRedirectPath,
   setActiveLocalization,
 } from "./utils";
 import {
@@ -33,7 +35,7 @@ describe("Frontend utils", () => {
     ).toMatchObject({
       firstName: "Minh",
       lastName: "Tran Van",
-      effectiveName: "Minh Tran Van",
+      effectiveName: "Tran Van Minh",
     });
 
     expect(
@@ -69,7 +71,7 @@ describe("Frontend utils", () => {
     ).toMatchObject({
       firstName: "An",
       lastName: "Nguyễn Văn",
-      effectiveName: "An Nguyễn Văn",
+      effectiveName: "Nguyễn Văn An",
     });
   });
   describe("cn (classnames utility)", () => {
@@ -97,6 +99,21 @@ describe("Frontend utils", () => {
       const date = new Date(2026, 7, 27);
       const result = formatDate(date, "short");
       expect(result).toBe("8/27/2026");
+    });
+  });
+
+  describe("formatDayMonth", () => {
+    it("formats day and month respecting DD/MM/YYYY, MM/DD/YYYY, and YYYY-MM-DD", () => {
+      expect(formatDayMonth("2026-08-27", { dateFormat: "DD/MM/YYYY" })).toBe(
+        "27/08",
+      );
+      expect(formatDayMonth("2026-08-27", { dateFormat: "MM/DD/YYYY" })).toBe(
+        "08/27",
+      );
+      expect(formatDayMonth("2026-08-27", { dateFormat: "YYYY-MM-DD" })).toBe(
+        "08-27",
+      );
+      expect(formatDayMonth(null)).toBe("—");
     });
   });
 
@@ -144,7 +161,7 @@ describe("Frontend utils", () => {
           lastName: "Smith",
           displayName: null,
         }),
-      ).toBe("Alice Smith");
+      ).toBe("Smith Alice");
     });
 
     it("unwraps nested application.candidate fields cleanly under nameDisplayOrder", () => {
@@ -425,6 +442,17 @@ describe("Frontend utils", () => {
         "only@example.com",
       );
       expect(getUserDisplayName(null)).toBe("—");
+    });
+
+    it("sanitizes client redirect URLs to prevent open redirects", () => {
+      expect(sanitizeRedirectPath("/jobs/123?tab=pipeline")).toBe(
+        "/jobs/123?tab=pipeline",
+      );
+      expect(sanitizeRedirectPath("https://evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("//evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("/\\evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectPath("javascript:alert(1)")).toBe("/dashboard");
+      expect(sanitizeRedirectPath(null, "/onboarding")).toBe("/onboarding");
     });
   });
 });

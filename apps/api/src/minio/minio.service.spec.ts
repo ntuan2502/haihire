@@ -103,6 +103,31 @@ describe("MinioService Security", () => {
       expect(res.fileName).toContain("tenants/abc/resumes/");
       putSpy.mockRestore();
     });
+
+    it("should reject non-pdf extensions by default and allow custom allowedExtensions for logos", async () => {
+      const pngFile = {
+        originalname: "logo.png",
+        mimetype: "image/png",
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        size: 8,
+      } as Express.Multer.File;
+
+      await expect(
+        service.uploadFile(pngFile, "logos", "org-1"),
+      ).rejects.toThrow("Disallowed or missing file extension");
+
+      const putSpy = vi
+        .spyOn(service["client"], "putObject")
+        .mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(
+        pngFile,
+        "logos",
+        "org-1",
+        new Set([".png", ".jpg", ".jpeg", ".webp"]),
+      );
+      expect(res.fileName).toMatch(/^tenants\/org-1\/logos\/.+\.png$/);
+      putSpy.mockRestore();
+    });
   });
 
   describe("getObjectStream and getPresignedUrl Tenant Boundary (C-01)", () => {

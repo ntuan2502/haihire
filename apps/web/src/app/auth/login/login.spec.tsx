@@ -20,13 +20,20 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock auth-context
+let mockAuthState: {
+  login: typeof mockLogin;
+  isAuthenticated: boolean;
+  user: { id: string; organizationId?: string | null } | null;
+  loading: boolean;
+} = {
+  login: mockLogin,
+  isAuthenticated: false,
+  user: null,
+  loading: false,
+};
+
 vi.mock("@/context/auth-context", () => ({
-  useAuth: () => ({
-    login: mockLogin,
-    isAuthenticated: false,
-    user: null,
-    loading: false,
-  }),
+  useAuth: () => mockAuthState,
 }));
 
 describe("LoginPage Component Tests", () => {
@@ -35,6 +42,12 @@ describe("LoginPage Component Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockAuthState = {
+      login: mockLogin,
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+    };
   });
 
   afterEach(() => {
@@ -161,5 +174,37 @@ describe("LoginPage Component Tests", () => {
         expect(mockPush).toHaveBeenCalledWith("/dashboard");
       });
     }
+  });
+
+  it("renders neutral loading text instead of alreadySignedIn while authLoading is true and unauthenticated", () => {
+    mockAuthState = {
+      login: mockLogin,
+      isAuthenticated: false,
+      user: null,
+      loading: true,
+    };
+
+    render(<LoginPage />);
+
+    expect(screen.getByText(viLocale.common.loading)).toBeInTheDocument();
+    expect(
+      screen.queryByText(viLocale.auth.alreadySignedIn),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders alreadySignedIn and redirects when user is authenticated", async () => {
+    mockAuthState = {
+      login: mockLogin,
+      isAuthenticated: true,
+      user: { id: "user-1", organizationId: "org-1" },
+      loading: false,
+    };
+
+    render(<LoginPage />);
+
+    expect(screen.getByText(viLocale.auth.alreadySignedIn)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith("/dashboard");
+    });
   });
 });

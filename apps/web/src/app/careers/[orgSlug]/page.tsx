@@ -96,6 +96,7 @@ export default async function OrgCareersPage({ params }: PageProps) {
             <li key={job.id}>
               <a
                 href={`/careers/${orgSlug}/${job.id}`}
+                tabIndex={-1}
               >{`${job.title} - ${job.department} (${job.location})`}</a>
               <p>{job.description}</p>
             </li>

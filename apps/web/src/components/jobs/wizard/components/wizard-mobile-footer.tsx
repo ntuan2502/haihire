@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
-import { cn } from "cn";
 import type { StepId } from "../types";
 
 interface WizardMobileFooterProps {
@@ -33,7 +32,7 @@ export function WizardMobileFooter({
   }
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-4 py-2.5 shadow-lg flex items-center justify-between gap-3">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border px-4 py-2.5 shadow-lg flex items-center justify-between gap-3">
       {currentStep === 1 ? (
         <>
           <Button
@@ -41,7 +40,7 @@ export function WizardMobileFooter({
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            className="text-xs font-semibold text-slate-600 dark:text-slate-400"
+            className="text-xs cursor-pointer"
           >
             {t("common.cancel")}
           </Button>
@@ -50,12 +49,7 @@ export function WizardMobileFooter({
             size="sm"
             onClick={onStep1Continue}
             disabled={!isStep1Valid}
-            className={cn(
-              "text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all",
-              isStep1Valid
-                ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                : "bg-blue-600/50 cursor-not-allowed opacity-60",
-            )}
+            className="text-xs font-semibold px-4 cursor-pointer"
           >
             {t("jobs.wizard.continueToPublish")}
           </Button>
@@ -67,7 +61,7 @@ export function WizardMobileFooter({
             variant="outline"
             size="sm"
             onClick={onBackToStep1}
-            className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="text-xs cursor-pointer"
           >
             {t("jobs.wizard.backAction")}
           </Button>
@@ -76,7 +70,7 @@ export function WizardMobileFooter({
             size="sm"
             onClick={onSaveJob}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs gap-1.5"
+            className="text-xs font-semibold px-4 gap-1.5 cursor-pointer"
           >
             {isSaving
               ? t("jobs.wizard.saving")

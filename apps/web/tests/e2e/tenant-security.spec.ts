@@ -1,13 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import {
-  SEED_BETA_CANDIDATE_ID,
-  getOrgAlphaId,
-  getOrgBetaId,
-  getBetaJobId,
-  getBetaApplicationId,
-  getBetaWebhookId,
-  loginAsAdmin,
+  SEED_ALPHA_ORG_ID,
+  createIsolatedTenant,
+  loginWithCookies,
+  type IsolatedTenantSession,
 } from "./fixtures/seed-helpers";
 
 test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
@@ -16,8 +13,10 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
   let alphaCookies: string;
   let authToken: string;
   let alphaOrgId: string;
+  let betaTenant: IsolatedTenantSession;
   let betaOrgId: string;
   let betaJobId: string;
+  let betaCandidateId: string;
   let betaAppId: string;
   let betaWebhookId: string;
   let setupError: string | null = null;
@@ -30,14 +29,69 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     }
 
     try {
-      alphaOrgId = await getOrgAlphaId();
-      betaOrgId = await getOrgBetaId();
-      betaJobId = await getBetaJobId();
-      betaAppId = await getBetaApplicationId();
-      betaWebhookId = await getBetaWebhookId();
+      alphaOrgId = SEED_ALPHA_ORG_ID;
+      const alphaSession = await loginWithCookies(
+        request,
+        "admin@tun.io.vn",
+        undefined,
+        alphaOrgId,
+      );
+      alphaCookies = alphaSession.cookieHeader;
+      authToken = alphaSession.parsed.accessToken;
 
-      alphaCookies = await loginAsAdmin(request, "admin@tun.io.vn");
-      authToken = alphaCookies.replace(/^haihire_token=/, "");
+      // Provision a completely isolated foreign Beta tenant and sample records
+      betaTenant = await createIsolatedTenant(request, "tenant-sec-beta");
+      betaOrgId = betaTenant.orgId;
+      const betaHeaders = {
+        Cookie: betaTenant.cookieHeader,
+        Authorization: `Bearer ${betaTenant.accessToken}`,
+      };
+
+      const jobRes = await request.post("/api/jobs", {
+        headers: betaHeaders,
+        data: {
+          title: `Beta Security Job ${randomUUID().slice(0, 6)}`,
+          department: "Engineering",
+          location: "Remote",
+          description: "Isolated tenant job",
+          status: "PUBLISHED",
+        },
+      });
+      expect(jobRes.status()).toBe(201);
+      betaJobId = ((await jobRes.json()) as { id: string }).id;
+
+      const candRes = await request.post("/api/candidates", {
+        headers: betaHeaders,
+        data: {
+          firstName: "Beta",
+          lastName: "Candidate",
+          email: `beta-cand-${randomUUID().slice(0, 8)}@example.com`,
+          phone: "0987654321",
+        },
+      });
+      expect(candRes.status()).toBe(201);
+      betaCandidateId = ((await candRes.json()) as { id: string }).id;
+
+      const appRes = await request.post("/api/applications/apply", {
+        headers: betaHeaders,
+        data: {
+          jobId: betaJobId,
+          candidateId: betaCandidateId,
+        },
+      });
+      expect(appRes.status()).toBe(201);
+      betaAppId = ((await appRes.json()) as { id: string }).id;
+
+      const webhookRes = await request.post("/api/webhook-settings", {
+        headers: betaHeaders,
+        data: {
+          eventType: "DLQ_ALERT",
+          provider: "DISCORD",
+          webhookUrl: "https://discord.com/api/webhooks/123456/token-e2e",
+        },
+      });
+      expect(webhookRes.status()).toBe(201);
+      betaWebhookId = ((await webhookRes.json()) as { id: string }).id;
     } catch (err: unknown) {
       throw new Error("Tenant security setup failed", { cause: err });
     }
@@ -162,7 +216,6 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
   });
 
   test("only the invite's organization can revoke it", async ({ request }) => {
-    const betaCookies = await loginAsAdmin(request, "admin@beta.test");
     const inviteResponse = await request.post(
       "/api/organizations/my/invite-links",
       {
@@ -176,8 +229,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     const revokePath = `/api/organizations/my/invite-links/${id}`;
     const crossTenant = await request.delete(revokePath, {
       headers: {
-        Cookie: betaCookies,
-        Authorization: `Bearer ${betaCookies.replace(/^haihire_token=/, "")}`,
+        Cookie: betaTenant.cookieHeader,
+        Authorization: `Bearer ${betaTenant.accessToken}`,
       },
     });
     expect(crossTenant.status()).toBe(404);
@@ -200,7 +253,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       headers: { Authorization: `Bearer ${authToken}`, Cookie: alphaCookies },
       data: {
         organizationId: betaOrgId,
-        name: "Cross Tenant Attempt",
+        firstName: "Cross",
+        lastName: "Tenant Attempt",
         email: `foreign-candidate-${randomUUID()}@example.com`,
       },
     });
@@ -214,7 +268,7 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     request,
   }) => {
     for (const path of [
-      `/api/candidates/${SEED_BETA_CANDIDATE_ID}/documents`,
+      `/api/candidates/${betaCandidateId}/documents`,
       `/api/applications/${betaAppId}/documents`,
     ]) {
       const response = await request.delete(
@@ -342,13 +396,13 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
 
     for (const path of [
       `/api/candidates?organizationId=${betaOrgId}`,
-      `/api/candidates/${SEED_BETA_CANDIDATE_ID}`,
+      `/api/candidates/${betaCandidateId}`,
       `/api/applications?organizationId=${betaOrgId}`,
       `/api/applications/job/${betaJobId}`,
       `/api/applications/${betaAppId}`,
       `/api/email/logs?organizationId=${betaOrgId}`,
       "/api/interviews",
-      `/api/activities/candidate/${SEED_BETA_CANDIDATE_ID}`,
+      `/api/activities/candidate/${betaCandidateId}`,
       `/api/activities/application/${betaAppId}`,
     ]) {
       const response = await request.get(path, { headers });

@@ -1,9 +1,10 @@
 "use client";
 
+import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { useState, type FormEvent } from "react";
 import { Role } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -11,6 +12,8 @@ import {
 import { UserPlus, X, Send } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
+import { useCreateInviteLinkMutation } from "@/hooks/use-queries";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 interface InviteMemberCardProps {
   canEdit: boolean;
@@ -34,6 +37,7 @@ export function InviteMemberCard({
   hideTrigger = false,
 }: InviteMemberCardProps) {
   const { t } = useI18n();
+  const createInviteMutation = useCreateInviteLinkMutation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role>(Role.MEMBER);
@@ -54,7 +58,7 @@ export function InviteMemberCard({
   const resolveRoleLabel = (role: string) =>
     getRoleLabel ? getRoleLabel(role) : getOrgRoleLabel(role, t);
 
-  const handleSendInvite = (e: FormEvent) => {
+  const handleSendInvite = async (e: FormEvent) => {
     e.preventDefault();
 
     const trimmedEmail = inviteEmail.trim();
@@ -64,8 +68,13 @@ export function InviteMemberCard({
     }
 
     setIsInviting(true);
-    setTimeout(() => {
-      setIsInviting(false);
+    try {
+      await createInviteMutation.mutateAsync({
+        email: trimmedEmail,
+        role: inviteRole,
+        expiresIn: "7 days",
+        maxUses: "1",
+      });
       onInviteSuccess(
         t("members.inviteSentSuccess", {
           email: trimmedEmail,
@@ -73,7 +82,11 @@ export function InviteMemberCard({
         }),
       );
       setInviteEmail("");
-    }, 500);
+    } catch (err) {
+      onInviteError(getApiErrorMessage(err, t));
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   if (!resolvedOpen) {
@@ -82,35 +95,35 @@ export function InviteMemberCard({
     }
     return (
       <div>
-        <Button
+        <SettingsButton
           type="button"
           onClick={() => setInviteOpen(true)}
-          className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+          icon={UserPlus}
         >
-          <UserPlus className="h-4 w-4" />
-          <span>{t("members.inviteMemberTitle")}</span>
-        </Button>
+          {t("members.inviteMemberTitle")}
+        </SettingsButton>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <SettingsCard className="space-y-4 animate-in fade-in zoom-in-95 duration-150">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+          <UserPlus className="h-4 w-4 text-foreground" aria-hidden="true" />
+          <h3 className="text-xs font-semibold text-foreground">
             {t("members.inviteMemberTitle")}
           </h3>
         </div>
-        <button
+        <SettingsButton
+          variant="ghost"
+          size="icon-sm"
           type="button"
           onClick={() => setInviteOpen(false)}
           aria-label={t("common.close")}
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
-        </button>
+        </SettingsButton>
       </div>
 
       <form
@@ -123,7 +136,7 @@ export function InviteMemberCard({
             placeholder={t("members.inviteEmailPlaceholder")}
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+            className="text-xs"
             required
           />
         </div>
@@ -134,21 +147,20 @@ export function InviteMemberCard({
             onChange={(val) => setInviteRole(val)}
             options={resolvedRoleOptions}
             className="w-full sm:w-48"
-            triggerClassName="h-10 text-xs font-semibold"
+            triggerClassName="text-xs font-medium"
           />
         </div>
 
-        <Button
+        <SettingsButton
           type="submit"
+          icon={Send}
+          pending={isInviting}
           disabled={isInviting}
-          className="h-10 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+          className="h-9 shrink-0"
         >
-          <Send className="h-3.5 w-3.5" />
-          <span>
-            {isInviting ? t("members.sendingInvite") : t("members.sendInvite")}
-          </span>
-        </Button>
+          {isInviting ? t("members.sendingInvite") : t("members.sendInvite")}
+        </SettingsButton>
       </form>
-    </div>
+    </SettingsCard>
   );
 }

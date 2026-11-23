@@ -113,6 +113,7 @@ export interface ScheduledInterviewInfo {
   format: InterviewFormat;
   linkOrLocation: string;
   interviewer: string;
+  interviewerId?: string | null;
   notes?: string;
   round?: number;
   scorecard?: InterviewScorecard;
@@ -137,6 +138,7 @@ export function getInterviewsFromApplication(
       format?: InterviewFormat | string;
       linkOrLocation: string;
       interviewer: string;
+      interviewerId?: string | null;
       round?: number;
       scorecard?: InterviewScorecard | string | null;
       notes?: string | null;
@@ -173,6 +175,7 @@ export function getInterviewsFromApplication(
         format: (inv.format as InterviewFormat) || "MEET",
         linkOrLocation: inv.linkOrLocation,
         interviewer: inv.interviewer,
+        interviewerId: inv.interviewerId,
         notes: inv.notes || undefined,
         round: inv.round,
         scorecard,

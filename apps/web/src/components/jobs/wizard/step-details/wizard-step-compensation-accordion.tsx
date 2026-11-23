@@ -47,37 +47,37 @@ export function WizardStepCompensationAccordion({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 transition-all">
+    <div className="rounded-lg border border-border bg-muted/30 transition-colors">
       <button
         type="button"
         onClick={() => setCompensationOpen(!compensationOpen)}
         className={cn(
-          "w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors",
-          !compensationOpen ? "rounded-xl" : "rounded-t-xl",
+          "w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-accent/50 transition-colors",
+          !compensationOpen ? "rounded-lg" : "rounded-t-lg",
         )}
       >
         <div className="flex items-center gap-2">
           {compensationOpen ? (
-            <ChevronDown className="h-4 w-4 text-slate-500" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-slate-500" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+          <span className="text-xs font-semibold text-foreground">
             {t("jobs.wizard.compensationTitle")}
           </span>
-          <span className="rounded-md bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
             {t("jobs.wizard.compensationOptional")}
           </span>
         </div>
       </button>
 
       {!compensationOpen ? (
-        <div className="px-4 pb-4 pt-0 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="px-4 pb-4 pt-0 text-[11px] text-muted-foreground">
           {t("jobs.wizard.compensationHintClosed")}
         </div>
       ) : (
-        <div className="px-4 pb-5 pt-0 space-y-4 border-t border-slate-200/60 dark:border-slate-800/80">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-3">
+        <div className="px-4 pb-5 pt-0 space-y-4 border-t border-border">
+          <p className="text-[11px] text-muted-foreground pt-3">
             {t("jobs.wizard.compensationHintOpen")}
           </p>
 
@@ -92,9 +92,9 @@ export function WizardStepCompensationAccordion({
               type="checkbox"
               checked={payNegotiable}
               onChange={(e) => setPayNegotiable(e.target.checked)}
-              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+              className="rounded border-input accent-primary h-3.5 w-3.5"
             />
-            <span className="text-xs text-slate-700 dark:text-slate-300">
+            <span className="text-xs text-foreground">
               {t("jobs.wizard.payNegotiableDetail")}
             </span>
           </label>
@@ -102,7 +102,7 @@ export function WizardStepCompensationAccordion({
           {!payNegotiable && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                   {t("jobs.wizard.minSalary")}
                 </label>
                 <Input
@@ -119,12 +119,12 @@ export function WizardStepCompensationAccordion({
                       }));
                     }
                   }}
-                  className="h-9 text-xs bg-white dark:bg-slate-900"
+                  className="h-9 text-xs bg-background"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                   {t("jobs.wizard.maxSalary")}
                 </label>
                 <Input
@@ -141,15 +141,15 @@ export function WizardStepCompensationAccordion({
                       }));
                     }
                   }}
-                  className="h-9 text-xs bg-white dark:bg-slate-900"
+                  className="h-9 text-xs bg-background"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                   {t("jobs.wizard.currency")}
                   {hasSalaryData && (
-                    <span className="text-rose-500 ml-0.5">*</span>
+                    <span className="text-destructive ml-0.5">*</span>
                   )}
                 </label>
                 <CustomSelect
@@ -170,22 +170,23 @@ export function WizardStepCompensationAccordion({
                   ]}
                   className="w-full"
                   triggerClassName={cn(
-                    "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
-                    showCurrencyError && "border-rose-500 ring-1 ring-rose-500",
+                    "w-full h-9 text-xs font-normal bg-background",
+                    showCurrencyError &&
+                      "border-destructive ring-1 ring-destructive/30",
                   )}
                 />
                 {showCurrencyError && (
-                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                  <p className="text-[11px] text-destructive mt-1 font-medium">
                     {t("jobs.wizard.currencyError")}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                   {t("jobs.wizard.perPeriod")}
                   {hasSalaryData && (
-                    <span className="text-rose-500 ml-0.5">*</span>
+                    <span className="text-destructive ml-0.5">*</span>
                   )}
                 </label>
                 <CustomSelect
@@ -202,13 +203,13 @@ export function WizardStepCompensationAccordion({
                   ]}
                   className="w-full"
                   triggerClassName={cn(
-                    "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
+                    "w-full h-9 text-xs font-normal bg-background",
                     showSalaryPerError &&
-                      "border-rose-500 ring-1 ring-rose-500",
+                      "border-destructive ring-1 ring-destructive/30",
                   )}
                 />
                 {showSalaryPerError && (
-                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                  <p className="text-[11px] text-destructive mt-1 font-medium">
                     {t("jobs.wizard.salaryPerError")}
                   </p>
                 )}

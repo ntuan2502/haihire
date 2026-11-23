@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   ApplicationStats,
   PaginatedResult,
 } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useApplications(params?: {
   organizationId?: string | null;
@@ -61,7 +56,8 @@ export function useApplications(params?: {
       });
     },
     enabled: (params?.enabled ?? true) && Boolean(effectiveOrgId),
-    placeholderData: keepPreviousData,
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Application>>(effectiveOrgId),
   });
 }
 
@@ -136,9 +132,14 @@ export function useCreateApplicationMutation() {
     mutationFn: (formData: FormData) => applicationsApi.apply(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }
@@ -175,11 +176,20 @@ export function useUpdateStageMutation() {
         sendOfferEmail,
         emailTemplateId,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["applications"] }),
+        queryClient.invalidateQueries({ queryKey: ["job-applications"] }),
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+        queryClient.invalidateQueries({ queryKey: ["sourcing"] }),
+        queryClient.invalidateQueries({ queryKey: ["activities"] }),
+        queryClient.invalidateQueries({ queryKey: ["interviews"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }
@@ -235,10 +245,16 @@ export function useDeleteApplicationMutation() {
     mutationFn: (id: string) => applicationsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });

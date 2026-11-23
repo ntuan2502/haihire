@@ -79,7 +79,7 @@ export function StageSelector({
               handleStageClick(next);
             }
           }}
-          className="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="" disabled>
             {t("pipeline.switchStageHint")}
@@ -108,10 +108,10 @@ export function StageSelector({
               disabled={isButtonDisabled}
               title={stage.reason || stage.actionLabel}
               onClick={() => handleStageClick(stage.id)}
-              className={`h-8 px-3.5 rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors ${
+              className={`h-8 px-3.5 rounded-md text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors ${
                 stage.allowed
                   ? `${stage.btnBg} ${stage.btnHover} text-white cursor-pointer disabled:opacity-50`
-                  : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed opacity-50 shadow-none border border-slate-200 dark:border-slate-800"
+                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-50 shadow-none border border-border"
               }`}
             >
               <span>{stage.actionLabel}</span>
@@ -119,7 +119,7 @@ export function StageSelector({
                 className={`h-4 w-4 rounded-full text-[10px] flex items-center justify-center ${
                   stage.allowed
                     ? "bg-white/20"
-                    : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+                    : "bg-background/80 text-muted-foreground"
                 }`}
               >
                 {stage.stepNumber}

@@ -17,7 +17,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
   return (
     <div className="space-y-1.5 max-w-md">
       {/* Multi-segment Progress Bar */}
-      <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-slate-800 flex overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-muted flex overflow-hidden">
         {pipelineStages.map((stage) => {
           const count = counts.byStage[stage.id] || 0;
           const pct = totalPipeline > 0 ? (count / totalPipeline) * 100 : 0;
@@ -45,11 +45,9 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
               key={stage.id}
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(
-                  `/dashboard/jobs/${jobId}/pipeline?stage=${stage.id}`,
-                );
+                router.push(`/jobs/${jobId}/pipeline?stage=${stage.id}`);
               }}
-              className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
+              className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
               title={`${stage.label}: ${count}`}
               aria-label={`${stage.label}: ${count}`}
             >
@@ -59,7 +57,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
                 {displayLabel}
               </span>
               <span
-                className={`text-[10.5px] font-black ${stage.textColor} shrink-0`}
+                className={`text-[10.5px] font-semibold font-mono tabular-nums ${stage.textColor} shrink-0`}
               >
                 {count}
               </span>

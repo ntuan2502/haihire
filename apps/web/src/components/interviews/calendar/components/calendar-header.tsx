@@ -1,11 +1,16 @@
+import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import type { CalendarViewMode } from "../types";
 
 export interface CalendarHeaderProps {
   calendarMode: CalendarViewMode;
   setCalendarMode: (mode: CalendarViewMode) => void;
+  currentYear: number;
+  currentMonth: number;
+  onSelectMonthYear: (year: number, monthIndex: number) => void;
   monthTitle: string;
   weekTitle: string;
   handlePrevMonth: () => void;
@@ -16,23 +21,46 @@ export interface CalendarHeaderProps {
 export function CalendarHeader({
   calendarMode,
   setCalendarMode,
+  currentYear,
+  currentMonth,
+  onSelectMonthYear,
   monthTitle,
   weekTitle,
   handlePrevMonth,
   handleNextMonth,
   handleToday,
 }: CalendarHeaderProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+
+  const monthOptions = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(
+      locale === "vi" ? "vi-VN" : "en-US",
+      { month: "long", timeZone: "UTC" },
+    );
+    return Array.from({ length: 12 }, (_, idx) => {
+      const raw = formatter.format(new Date(Date.UTC(2026, idx, 15)));
+      const label = raw.charAt(0).toUpperCase() + raw.slice(1);
+      return { value: String(idx), label };
+    });
+  }, [locale]);
+
+  const yearOptions = useMemo(() => {
+    const startYear = currentYear - 3;
+    return Array.from({ length: 7 }, (_, i) => {
+      const y = startYear + i;
+      return { value: String(y), label: String(y) };
+    });
+  }, [currentYear]);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-xl bg-card text-card-foreground border border-border shadow-2xs">
       {/* Left: Date Title & Nav Arrows */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="h-8 w-8 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
             title={t("interviews.prevPeriod")}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -40,7 +68,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="h-8 w-8 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+            className="h-8 w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
             title={t("interviews.nextPeriod")}
           >
             <ChevronRight className="h-4 w-4" />
@@ -51,26 +79,53 @@ export function CalendarHeader({
           size="sm"
           variant="outline"
           onClick={handleToday}
-          className="h-8 px-3 rounded-xl text-xs font-bold cursor-pointer"
+          className="h-8 px-3 rounded-md text-xs font-bold cursor-pointer"
         >
           {t("interviews.today")}
         </Button>
 
-        <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
+        <h2 className="text-base sm:text-lg font-semibold text-foreground">
           {calendarMode === "month" ? monthTitle : weekTitle}
         </h2>
       </div>
 
-      {/* Right: Mode Switcher (Month / Week) */}
-      <div className="flex items-center gap-2 self-end sm:self-auto">
-        <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+      {/* Right: Month/Year Selectors (Month mode) + Mode Switcher */}
+      <div className="flex flex-wrap items-center gap-2 self-end lg:self-auto">
+        {calendarMode === "month" && (
+          <div className="flex items-center gap-1.5">
+            <CustomSelect
+              size="sm"
+              aria-label={t("interviews.selectMonth")}
+              value={String(currentMonth)}
+              onChange={(val) =>
+                onSelectMonthYear(currentYear, Number.parseInt(val, 10))
+              }
+              options={monthOptions}
+              className="w-32"
+              triggerClassName="text-xs font-semibold h-8"
+            />
+            <CustomSelect
+              size="sm"
+              aria-label={t("interviews.selectYear")}
+              value={String(currentYear)}
+              onChange={(val) =>
+                onSelectMonthYear(Number.parseInt(val, 10), currentMonth)
+              }
+              options={yearOptions}
+              className="w-22"
+              triggerClassName="text-xs font-semibold h-8 tabular-nums"
+            />
+          </div>
+        )}
+
+        <div className="flex items-center p-1 rounded-lg bg-muted border border-border">
           <button
             type="button"
             onClick={() => setCalendarMode("month")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
               calendarMode === "month"
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-card text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t("interviews.month")}
@@ -78,10 +133,10 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={() => setCalendarMode("week")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
               calendarMode === "week"
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-card text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t("interviews.week")}

@@ -1,3 +1,4 @@
+import { NotificationsModule } from "../notifications/notifications.module";
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { MinioModule } from "../minio/minio.module";
@@ -23,6 +24,7 @@ import { CommonModule } from "../common/common.module";
 
 @Module({
   imports: [
+    NotificationsModule,
     CommonModule,
     MinioModule,
     ActivitiesModule,

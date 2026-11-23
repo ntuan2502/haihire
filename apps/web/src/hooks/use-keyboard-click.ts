@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, type KeyboardEvent } from "react";
 
 export interface UseKeyboardClickOptions {

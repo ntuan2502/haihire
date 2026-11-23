@@ -22,7 +22,7 @@ Before submitting a PR, review [Engineering Conventions](docs/architecture/conve
 2. **Backend Validation (`DtoPipe`):** Validate every controller input with `@Body(DtoPipe(...))` or `@Query(DtoPipe(...))` ([apps/api/src/common/dto-validation.pipe.ts](apps/api/src/common/dto-validation.pipe.ts)).
 3. **Tenant Isolation:** Every database read/write in the 8 scoped backend modules must filter by `organizationId` (or verify ownership against a parent relation in the same method) and pass `pnpm lint:tenant-scope`.
 4. **Two-Way Localization:** Keep all UI copy localized in both `en` and `vi` dictionaries (`apps/web/src/i18n/locales/en.ts` and `apps/web/src/i18n/locales/vi.ts`) and map all `APP_ERROR_CODES`.
-5. **Shadcn `base-nova` UI & Next.js 16:** Keep authentication routing in [apps/web/src/proxy.ts](apps/web/src/proxy.ts) (never `middleware.ts`), build UI primitives with `@base-ui/react` and `cn` from `"cn"`, and use `oklch` design tokens in CSS variables.
+5. **Shadcn `new-york` UI & Next.js 16:** Keep authentication routing in [apps/web/src/proxy.ts](apps/web/src/proxy.ts) (never `middleware.ts`), build UI primitives with `radix-ui` (`new-york`) and `cn` from `"cn"`, and use `oklch` design tokens in CSS variables.
 6. **Testing & Anti-Regression:** Add Vitest unit/integration tests (including cross-tenant negative assertions for backend endpoints) and keep net test count non-decreasing (`pnpm test:diff`).
 
 ---

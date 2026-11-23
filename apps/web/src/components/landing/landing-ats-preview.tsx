@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, ArrowUpDown, Menu, User } from "lucide-react";
 import { matchesPersonNameSearch } from "@haihire/shared";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,6 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
 import { PipelineCandidateCard } from "@/components/jobs/pipeline/pipeline-candidate-card";
 import { PipelineCandidateDetail } from "@/components/jobs/pipeline/pipeline-candidate-detail";
-import {
-  type OverviewSectionsState,
-  DEFAULT_OVERVIEW_SECTIONS,
-} from "@/components/applications/overview-sections-popover";
 import type {
   Application,
   ApplicationStage,
@@ -50,12 +46,6 @@ export const LandingAtsPreview: React.FC = () => {
   const [isListCollapsed, setIsListCollapsed] = useState(false);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Overview popover state
-  const [overviewSections, setOverviewSections] =
-    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
-  const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
-  const overviewBtnRef = useRef<HTMLButtonElement>(null);
 
   // Notes state
   const [candidateNotesList, setCandidateNotesList] = useState<string[]>([
@@ -237,71 +227,68 @@ export const LandingAtsPreview: React.FC = () => {
       id="demo"
       className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20"
     >
-      {/* Background Atmosphere Glow */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-blue-600/15 dark:bg-blue-600/20 blur-[120px] rounded-full" />
-
       {/* Main macOS Application Frame */}
-      <div className="relative rounded-2xl border border-slate-200/90 dark:border-white/15 bg-white dark:bg-slate-950 shadow-2xl backdrop-blur-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10 transition-colors">
+      <div className="relative rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden transition-colors">
         {/* 1. macOS Window Titlebar */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/90 px-3 sm:px-6 py-2 select-none">
+        <div className="flex items-center justify-between border-b border-border bg-muted/80 px-3 sm:px-6 py-2 select-none">
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-rose-500/80 ring-1 ring-rose-400/30" />
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-amber-500/80 ring-1 ring-amber-400/30" />
             <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500/80 ring-1 ring-emerald-400/30" />
           </div>
 
-          <div className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[160px] sm:max-w-none px-2">
+          <div className="text-xs font-medium text-muted-foreground truncate max-w-[160px] sm:max-w-none px-2">
             {t("landing.mockupAtsWindowTitle", { brand: "HaiHire" })}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 shrink-0">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
             <span>{t("landing.mockupActiveCandidates")}</span>
           </div>
         </div>
 
         {/* 2. Top Internal Application Bar */}
-        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 px-3 sm:px-6 py-2 flex items-center justify-between gap-3 overflow-hidden">
+        <div className="border-b border-border bg-card px-3 sm:px-6 py-2 flex items-center justify-between gap-3 overflow-hidden">
           <div className="flex items-center gap-4 sm:gap-6 min-w-0">
             <BrandLogo size="sm" />
 
-            <div className="hidden sm:flex items-center gap-1 text-xs font-semibold">
-              <span className="px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400">
+            <div className="hidden sm:flex items-center gap-1 text-xs font-medium">
+              <span className="px-3 py-1.5 rounded-md text-muted-foreground">
                 {t("nav.dashboard")}
               </span>
-              <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold">
+              <span className="px-3 py-1.5 rounded-md bg-secondary text-foreground font-medium">
                 {t("nav.jobs")}
               </span>
-              <span className="px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400">
+              <span className="px-3 py-1.5 rounded-md text-muted-foreground">
                 {t("nav.candidates")}
               </span>
-              <span className="px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400">
+              <span className="px-3 py-1.5 rounded-md text-muted-foreground">
                 {t("nav.applications")}
               </span>
-              <span className="px-3 py-1.5 rounded-lg text-slate-500 dark:text-slate-400">
+              <span className="px-3 py-1.5 rounded-md text-muted-foreground">
                 {t("nav.interviews")}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+            <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground font-medium text-xs flex items-center justify-center">
               AT
             </div>
           </div>
         </div>
 
         {/* 3. Job Breadcrumb */}
-        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-3 sm:px-6 py-2 flex items-center justify-between text-xs overflow-hidden">
+        <div className="border-b border-border bg-muted/40 px-3 sm:px-6 py-2 flex items-center justify-between text-xs overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("nav.jobs")}
             </span>
-            <span className="text-slate-400 shrink-0">/</span>
-            <span className="font-bold text-slate-900 dark:text-white truncate">
+            <span className="text-muted-foreground shrink-0">/</span>
+            <span className="font-medium text-foreground truncate">
               {mockJob.title}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full ml-1 shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md ml-1 shrink-0">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>{mockJob.location}</span>
             </span>
@@ -331,26 +318,26 @@ export const LandingAtsPreview: React.FC = () => {
           {/* LEFT COLUMN: Candidates List */}
           <aside
             className={`w-full ${
-              isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-84"
-            } shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200 ${
+              isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-80"
+            } shrink-0 flex flex-col h-full border-r border-border bg-card overflow-hidden transition-colors duration-200 ${
               mobileDetailOpen ? "hidden md:flex" : "flex"
             }`}
           >
             {/* Search box & Toolbar */}
-            <div className="shrink-0 p-3 border-b border-slate-200/80 dark:border-slate-800 space-y-2">
+            <div className="shrink-0 p-3 border-b border-border space-y-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder={t("candidates.searchCandidates")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 pl-8 pr-3 text-xs bg-slate-50/70 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+                  className="h-8 pl-8 pr-3 text-xs bg-background border-input rounded-md"
                 />
               </div>
 
               {/* Sort toolbar */}
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+              <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
                 <CustomSelect
                   value={sortBy}
                   onChange={(val) =>
@@ -365,35 +352,36 @@ export const LandingAtsPreview: React.FC = () => {
                     { value: "name", label: t("candidates.candidateName") },
                   ]}
                   className="w-auto"
-                  triggerClassName="h-7 text-xs py-1 px-2.5 font-semibold"
+                  triggerClassName="h-7 text-xs py-1 px-2.5 font-medium"
                 />
 
                 <button
                   type="button"
                   disabled
-                  className="h-6 w-6 rounded-md flex items-center justify-center text-slate-400 opacity-40 cursor-not-allowed"
+                  aria-label={t("common.views")}
+                  className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground opacity-40 cursor-not-allowed"
                 >
-                  <Menu className="h-3 w-3" />
+                  <Menu className="h-3 w-3" aria-hidden="true" />
                 </button>
               </div>
 
-              <p className="text-[10px] text-slate-400 font-medium pt-0.5">
+              <p className="text-xs text-muted-foreground font-mono tabular-nums pt-0.5">
                 {candidateCountText}
               </p>
             </div>
 
             {/* Candidates List Container with ACTUAL PipelineCandidateCard */}
-            <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 scrollbar-thin">
+            <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border scrollbar-thin">
               {filteredCandidates.length === 0 ? (
-                <div className="pt-8 pb-6 px-4 flex flex-col items-center text-center space-y-2 text-slate-400">
-                  <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <div className="pt-8 pb-6 px-4 flex flex-col items-center text-center space-y-2 text-muted-foreground">
+                  <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                     <User className="h-5 w-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <h4 className="text-xs font-medium text-foreground">
                       {t("candidates.noCandidatesYet")}
                     </h4>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-xs text-muted-foreground">
                       {t("candidates.noApplicationsMatchingStage")}
                     </p>
                   </div>
@@ -430,16 +418,6 @@ export const LandingAtsPreview: React.FC = () => {
             onNextCandidate={handleNextCandidate}
             candidateTab={candidateTab}
             onSelectTab={setCandidateTab}
-            overviewSections={overviewSections}
-            onToggleOverviewSection={(key) =>
-              setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }))
-            }
-            isOverviewPopoverOpen={isOverviewPopoverOpen}
-            onToggleOverviewPopover={() =>
-              setIsOverviewPopoverOpen((prev) => !prev)
-            }
-            onCloseOverviewPopover={() => setIsOverviewPopoverOpen(false)}
-            overviewBtnRef={overviewBtnRef}
             candidateDocuments={candidateDocuments}
             onPreviewDoc={() => {}}
             onDownloadDoc={() => {}}

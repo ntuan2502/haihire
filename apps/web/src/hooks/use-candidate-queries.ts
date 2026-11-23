@@ -1,15 +1,16 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  CandidateDuplicateCheckResult,
+  CheckCandidateDuplicateSchema,
+} from "@haihire/shared";
 import { candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "./use-has-permission";
 import type { Candidate, CandidateNote, PaginatedResult } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useCandidates(
   organizationId?: string | null,
@@ -21,6 +22,7 @@ export function useCandidates(
   },
 ) {
   const { user } = useAuth();
+  const canViewCandidates = useHasPermission("candidate:view");
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
@@ -48,8 +50,12 @@ export function useCandidates(
         search: options?.search,
       });
     },
-    enabled: Boolean(effectiveOrgId) && (options?.enabled ?? true),
-    placeholderData: keepPreviousData,
+    enabled:
+      Boolean(effectiveOrgId) &&
+      canViewCandidates &&
+      (options?.enabled ?? true),
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Candidate>>(effectiveOrgId),
   });
 }
 
@@ -68,6 +74,100 @@ export function useCandidate(
       return candidatesApi.getById(id);
     },
     enabled: Boolean(id),
+  });
+}
+
+export function useCandidateDuplicateCheck(
+  params: CheckCandidateDuplicateSchema & { enabled?: boolean },
+) {
+  const { user } = useAuth();
+  const canViewCandidates = useHasPermission("candidate:view");
+
+  const email = params.email?.trim() || undefined;
+  const phone = params.phone?.trim() || undefined;
+  const firstName = params.firstName?.trim() || undefined;
+  const lastName = params.lastName?.trim() || undefined;
+  const dateOfBirth = params.dateOfBirth?.trim() || undefined;
+  const excludeId = params.excludeId || undefined;
+
+  const hasValidEmail = Boolean(email && email.includes("@"));
+  const hasValidPhone = Boolean(phone && phone.replace(/\D/g, "").length >= 7);
+  const hasValidNameDob = Boolean(firstName && lastName && dateOfBirth);
+  const hasInput = hasValidEmail || hasValidPhone || hasValidNameDob;
+
+  return useQuery<CandidateDuplicateCheckResult>({
+    queryKey: [
+      "candidates",
+      "check-duplicate",
+      { orgId: user?.organizationId ?? null },
+      {
+        email: hasValidEmail ? email : undefined,
+        phone: hasValidPhone ? phone : undefined,
+        firstName: hasValidNameDob ? firstName : undefined,
+        lastName: hasValidNameDob ? lastName : undefined,
+        dateOfBirth: hasValidNameDob ? dateOfBirth : undefined,
+        excludeId,
+      },
+    ],
+    queryFn: () =>
+      candidatesApi.checkDuplicates({
+        ...(hasValidEmail ? { email } : {}),
+        ...(hasValidPhone ? { phone } : {}),
+        ...(hasValidNameDob ? { firstName, lastName, dateOfBirth } : {}),
+        ...(excludeId ? { excludeId } : {}),
+      }),
+    staleTime: 10_000,
+    enabled:
+      Boolean(user?.organizationId) &&
+      canViewCandidates &&
+      hasInput &&
+      (params.enabled ?? true),
+  });
+}
+
+export function useDebouncedCandidateDuplicateCheck(
+  params: CheckCandidateDuplicateSchema & {
+    enabled?: boolean;
+    delayMs?: number;
+  },
+) {
+  const {
+    email,
+    phone,
+    firstName,
+    lastName,
+    dateOfBirth,
+    excludeId,
+    enabled,
+    delayMs = 400,
+  } = params;
+
+  const [debounced, setDebounced] = useState({
+    email,
+    phone,
+    firstName,
+    lastName,
+    dateOfBirth,
+    excludeId,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebounced({
+        email,
+        phone,
+        firstName,
+        lastName,
+        dateOfBirth,
+        excludeId,
+      });
+    }, delayMs);
+    return () => clearTimeout(timer);
+  }, [email, phone, firstName, lastName, dateOfBirth, excludeId, delayMs]);
+
+  return useCandidateDuplicateCheck({
+    ...debounced,
+    enabled,
   });
 }
 
@@ -121,7 +221,10 @@ export function useDeleteCandidateMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });

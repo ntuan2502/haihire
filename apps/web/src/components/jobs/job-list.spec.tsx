@@ -195,7 +195,7 @@ describe("JobList Component - Characterization Tests", () => {
       expect(handleSearchChange).toHaveBeenCalledWith("Engineer");
     });
 
-    it("resets search and filters when clicking cancel button in empty state", () => {
+    it("resets search and filters when clicking reset button in empty state", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
       const searchInput = screen.getByPlaceholderText(en.jobs.searchJobs);
@@ -206,8 +206,8 @@ describe("JobList Component - Characterization Tests", () => {
 
       expect(screen.getByText(en.jobs.noJobsFound)).toBeDefined();
 
-      const cancelBtn = screen.getByText(en.common.cancel);
-      fireEvent.click(cancelBtn);
+      const resetBtn = screen.getByText(en.jobs.resetAll);
+      fireEvent.click(resetBtn);
 
       expect(screen.getByText("Senior Full-Stack Engineer")).toBeDefined();
     });
@@ -277,53 +277,62 @@ describe("JobList Component - Characterization Tests", () => {
       fireEvent.click(appliedCount.parentElement!);
 
       expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/jobs/job-1/pipeline?stage=APPLIED",
+        "/jobs/job-1/pipeline?stage=APPLIED",
       );
     });
 
-    it("renders new applicants badge with pulse indicator when count > 0", () => {
+    it("renders pipeline column before status column and omits new applicants column", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const badge = screen.getByText(/5 new/i);
-      expect(badge).toBeDefined();
-
-      fireEvent.click(badge);
-      expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/jobs/job-1/pipeline?stage=APPLIED",
-      );
+      const headers = screen
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent);
+      expect(headers).toEqual([
+        en.jobs.jobTitle,
+        en.dashboard.hiringPipeline,
+        en.jobs.status,
+        en.common.actions,
+      ]);
+      expect(screen.queryByText(/5 new/i)).toBeNull();
     });
   });
 
   // 5. COLUMN VISIBILITY DROPDOWN
   describe("5. Column Visibility Dropdown", () => {
-    it("opens columns toggle dropdown and allows toggling status column", () => {
+    it("opens columns toggle dropdown and allows toggling status column", async () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const columnsBtn = screen.getByText(en.common.columns);
+      const columnsBtn = screen.getByRole("button", {
+        name: en.common.columns,
+      });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      expect(screen.getByText(en.jobs.toggleColumns)).toBeDefined();
+      expect(await screen.findByText(en.jobs.toggleColumns)).toBeDefined();
 
-      // Find checkbox for Status
-      const statusCheckbox = screen.getByLabelText(
-        en.jobs.columns.status,
-      ) as HTMLInputElement;
-      expect(statusCheckbox.checked).toBe(true);
+      // Find menuitemcheckbox for Status
+      const statusItem = screen.getByRole("menuitemcheckbox", {
+        name: en.jobs.columns.status,
+      });
+      expect(statusItem).toHaveAttribute("aria-checked", "true");
 
-      fireEvent.click(statusCheckbox);
-      expect(statusCheckbox.checked).toBe(false);
+      fireEvent.click(statusItem);
+      expect(statusItem).toHaveAttribute("aria-checked", "false");
     });
 
-    it("prevents unchecking locked Title column", () => {
+    it("prevents unchecking locked Title column", async () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const columnsBtn = screen.getByText(en.common.columns);
+      const columnsBtn = screen.getByRole("button", {
+        name: en.common.columns,
+      });
+      fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      const titleCheckbox = screen.getByLabelText(
-        en.jobs.columns.title,
-      ) as HTMLInputElement;
-      expect(titleCheckbox.disabled).toBe(true);
+      const titleItem = await screen.findByRole("menuitemcheckbox", {
+        name: en.jobs.columns.title,
+      });
+      expect(titleItem).toHaveAttribute("aria-disabled", "true");
     });
   });
 
@@ -363,6 +372,17 @@ describe("JobList Component - Characterization Tests", () => {
       // Product Designer is CONTRACT, so it shouldn't be in the table
       expect(screen.queryByText("Product Designer")).toBeNull();
       expect(screen.getByText("Senior Full-Stack Engineer")).toBeDefined();
+    });
+
+    it("closes the filter drawer with the done button", () => {
+      render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
+
+      fireEvent.click(screen.getByText(en.common.filter));
+      const drawer = screen.getByRole("dialog");
+      expect(within(drawer).queryByText(en.jobs.saveAsView)).toBeNull();
+
+      fireEvent.click(within(drawer).getByText(en.jobs.done));
+      expect(screen.queryByRole("dialog")).toBeNull();
     });
 
     it("calls onFilterChange when filters update in controlled mode", () => {
@@ -411,22 +431,13 @@ describe("JobList Component - Characterization Tests", () => {
       expect(handleDelete).toHaveBeenCalledWith("job-1");
     });
 
-    it("copies public job url to clipboard when clicking copy link button", async () => {
-      const writeTextMock = vi.fn().mockResolvedValue(undefined);
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: writeTextMock,
-        },
-      });
-
+    it("renders link to public job recruitment page instead of copy link button", () => {
       render(<JobList jobs={mockJobs} loading={false} onDeleteJob={vi.fn()} />);
 
-      const copyButtons = screen.getAllByTitle(en.jobs.copyPublicApplyLink);
-      fireEvent.click(copyButtons[0]);
-
-      expect(writeTextMock).toHaveBeenCalledWith(
-        expect.stringContaining("/careers/"),
-      );
+      const publicLinks = screen.getAllByTitle(en.jobs.viewPublicPage);
+      expect(publicLinks.length).toBeGreaterThan(0);
+      expect(publicLinks[0].getAttribute("href")).toContain("/careers/");
+      expect(screen.queryByTitle(en.jobs.copyPublicApplyLink)).toBeNull();
     });
   });
 

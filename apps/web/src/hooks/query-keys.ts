@@ -1,5 +1,39 @@
+import type { PlaceholderDataFunction } from "@tanstack/react-query";
+
+function extractOrgIdFromQueryKey(
+  queryKey: readonly unknown[] | undefined,
+): string | null | undefined {
+  if (!Array.isArray(queryKey)) return undefined;
+  for (const segment of queryKey) {
+    if (segment && typeof segment === "object" && "orgId" in segment) {
+      return (segment as { orgId?: string | null }).orgId;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Replacement for TanStack `keepPreviousData` in multi-tenant list hooks.
+ * Preserves previous page/filter results only while `orgId` matches; clears
+ * immediately on organization switch or sign-out so stale tenant rows never flash.
+ */
+export function keepPreviousDataForSameOrg<TData>(
+  currentOrgId?: string | null,
+): PlaceholderDataFunction<TData> {
+  return (previousData, previousQuery) => {
+    if (!previousQuery) return undefined;
+    const prevOrgId = extractOrgIdFromQueryKey(previousQuery.queryKey);
+    if ((prevOrgId ?? null) !== (currentOrgId ?? null)) {
+      return undefined;
+    }
+    return previousData;
+  };
+}
+
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
+  allJobs: (orgId?: string | null) => ["jobs", "all", { orgId }] as const,
+  openJobs: (orgId?: string | null) => ["jobs", "open", { orgId }] as const,
   jobStages: (jobId?: string | null, orgId?: string | null) =>
     ["jobs", "stages", jobId, { orgId }] as const,
   applications: (jobId?: string | null, orgId?: string | null) =>
@@ -31,14 +65,36 @@ export const queryKeys = {
     orgId !== undefined
       ? (["interviews", "detail", id, { orgId }] as const)
       : (["interviews", "detail", id] as const),
-  myOrg: () => ["organization", "my"] as const,
+  myOrg: (orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "my", { orgId }] as const)
+      : (["organization", "my"] as const),
   myOrgs: () => ["organization", "my-all"] as const,
-  orgMembers: () => ["organization", "members"] as const,
-  orgInterviewers: () => ["organization", "interviewers"] as const,
-  inviteLinks: () => ["organization", "invite-links"] as const,
-  rolePermissionsMatrix: () =>
-    ["organization", "roles", "permissions"] as const,
-  myPermissions: () => ["auth", "me", "permissions"] as const,
+  orgMembers: (orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "members", { orgId }] as const)
+      : (["organization", "members"] as const),
+  orgInterviewers: (orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "interviewers", { orgId }] as const)
+      : (["organization", "interviewers"] as const),
+  inviteLinks: (orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "invite-links", { orgId }] as const)
+      : (["organization", "invite-links"] as const),
+  rolePermissionsMatrix: (orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "roles", "permissions", { orgId }] as const)
+      : (["organization", "roles", "permissions"] as const),
+  myPermissions: (orgId?: string | null, role?: string | null) =>
+    orgId !== undefined
+      ? ([
+          "auth",
+          "me",
+          "permissions",
+          { orgId, ...(role ? { role } : {}) },
+        ] as const)
+      : (["auth", "me", "permissions"] as const),
   auditLogs: (params?: Record<string, unknown>) =>
     ["organization", "audit-logs", params] as const,
   emailTemplates: (orgId?: string | null) =>
@@ -88,6 +144,17 @@ export const queryKeys = {
     ["sourcing", "attribution-log", params] as const,
   webhookSettings: (orgId?: string | null) =>
     ["webhook-settings", { orgId }] as const,
-  webhookSetting: (id?: string | null) =>
-    ["webhook-settings", "detail", id] as const,
+  webhookSetting: (id?: string | null, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["webhook-settings", "detail", id, { orgId }] as const)
+      : (["webhook-settings", "detail", id] as const),
+  notifications: (
+    orgId?: string | null,
+    userId?: string | null,
+    params?: Record<string, unknown>,
+  ) =>
+    [
+      "notifications",
+      { orgId: orgId ?? null, userId: userId ?? null, ...(params ?? {}) },
+    ] as const,
 };

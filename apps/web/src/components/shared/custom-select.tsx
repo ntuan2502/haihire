@@ -9,12 +9,11 @@ import {
   useMemo,
   type ComponentType,
 } from "react";
-import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
+import { Popover, PopoverAnchor } from "@/components/ui/popover";
 import {
   CustomSelectPopup,
-  type PopupCoords,
   type CustomSelectOptionItem,
 } from "./custom-select-popup";
 
@@ -36,7 +35,6 @@ export interface CustomSelectProps<T extends string = string> {
   direction?: "auto" | "up" | "down";
   disabled?: boolean;
   icon?: ComponentType<{ className?: string }>;
-  variant?: "default" | "landing";
   size?: "sm" | "default";
   id?: string;
   name?: string;
@@ -58,15 +56,12 @@ export function CustomSelect<T extends string = string>({
   direction = "auto",
   disabled = false,
   icon: LeadingIcon,
-  variant = "default",
   size = "default",
   id,
   name,
   "aria-label": ariaLabel,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [coords, setCoords] = useState<PopupCoords | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -95,59 +90,8 @@ export function CustomSelect<T extends string = string>({
     });
   }, [options, searchable, searchQuery]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const calculateCoords = useCallback((): PopupCoords | null => {
-    if (!dropdownRef.current) return null;
-    const rect = dropdownRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const shouldOpenUp =
-      direction === "up" ||
-      (direction !== "down" && spaceBelow < 220 && rect.top > 160);
-
-    const minWidth = Math.max(rect.width, 140);
-    let left = rect.left;
-
-    if (align === "right") {
-      left = rect.right - minWidth;
-    }
-
-    // Clamp within viewport
-    if (left < 8) left = 8;
-    if (left + minWidth > window.innerWidth - 8) {
-      left = window.innerWidth - minWidth - 8;
-    }
-
-    if (shouldOpenUp) {
-      return {
-        bottom: window.innerHeight - rect.top + 6,
-        left,
-        minWidth,
-      };
-    } else {
-      return {
-        top: rect.bottom + 6,
-        left,
-        minWidth,
-      };
-    }
-  }, [align, direction]);
-
-  const updateCoords = useCallback(() => {
-    const nextCoords = calculateCoords();
-    if (nextCoords) {
-      setCoords(nextCoords);
-    }
-  }, [calculateCoords]);
-
   const openSelect = useCallback(() => {
     if (disabled) return;
-    const nextCoords = calculateCoords();
-    if (nextCoords) {
-      setCoords(nextCoords);
-    }
     setSearchQuery("");
     const selectedIdx = options.findIndex((opt) => opt.value === value);
     if (selectedIdx >= 0) {
@@ -157,12 +101,7 @@ export function CustomSelect<T extends string = string>({
       setFocusedIndex(firstNonDisabled >= 0 ? firstNonDisabled : 0);
     }
     setIsOpen(true);
-    if (searchable) {
-      requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-      });
-    }
-  }, [disabled, calculateCoords, options, value, searchable]);
+  }, [disabled, options, value]);
 
   const closeSelect = useCallback((restoreFocus = true) => {
     setIsOpen(false);
@@ -181,43 +120,11 @@ export function CustomSelect<T extends string = string>({
     }
   }, [disabled, isOpen, openSelect, closeSelect]);
 
-  // Click outside and resize listeners
-  useEffect(() => {
-    if (!isOpen) return;
-
-    updateCoords();
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        dropdownRef.current?.contains(target) ||
-        popupRef.current?.contains(target)
-      ) {
-        return;
-      }
-      closeSelect(false);
-    }
-
-    function handleScrollOrResize() {
-      updateCoords();
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("scroll", handleScrollOrResize, true);
-    window.addEventListener("resize", handleScrollOrResize);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScrollOrResize, true);
-      window.removeEventListener("resize", handleScrollOrResize);
-    };
-  }, [isOpen, updateCoords, closeSelect]);
-
   // Auto-scroll active option into view when focusedIndex changes
   useEffect(() => {
     if (isOpen && focusedIndex >= 0 && popupRef.current) {
-      const activeElem = popupRef.current.querySelector(
-        `#${listboxId}-opt-${focusedIndex}`,
+      const activeElem = document.getElementById(
+        `${listboxId}-opt-${focusedIndex}`,
       );
       if (
         activeElem &&
@@ -247,6 +154,7 @@ export function CustomSelect<T extends string = string>({
 
     if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       closeSelect(true);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -299,109 +207,103 @@ export function CustomSelect<T extends string = string>({
   };
 
   const selectedOption = options.find((opt) => opt.value === value);
-  const isLanding = variant === "landing";
   const SelectedIcon = selectedOption?.icon || LeadingIcon;
 
-  const dropdownPopup = (
-    <CustomSelectPopup
-      isOpen={isOpen}
-      mounted={mounted}
-      coords={coords}
-      listboxId={listboxId}
-      popupRef={popupRef}
-      ariaLabel={ariaLabel}
-      placeholder={typeof placeholder === "string" ? placeholder : undefined}
-      isLanding={isLanding}
-      popupClassName={popupClassName}
-      searchable={searchable}
-      searchInputRef={searchInputRef}
-      searchQuery={searchQuery}
-      setSearchQuery={setSearchQuery}
-      setFocusedIndex={setFocusedIndex}
-      handleKeyDown={handleKeyDown}
-      searchPlaceholder={searchPlaceholder}
-      emptyText={emptyText}
-      filteredOptions={filteredOptions}
-      value={value}
-      focusedIndex={focusedIndex}
-      onChange={onChange}
-      closeSelect={closeSelect}
-    />
-  );
-
   return (
-    <div
-      ref={dropdownRef}
-      className={cn(
-        "relative inline-block text-left min-w-0 max-w-full",
-        className,
-      )}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      {/* Hidden input for form compatibility if name is provided */}
-      {name && <input type="hidden" name={name} value={value} id={id} />}
-
-      <button
-        ref={triggerRef}
-        type="button"
-        id={id ? `${id}-trigger` : undefined}
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? listboxId : undefined}
-        aria-activedescendant={
-          isOpen && focusedIndex >= 0
-            ? `${listboxId}-opt-${focusedIndex}`
-            : undefined
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeSelect(false);
         }
-        aria-label={ariaLabel}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleOpen();
-        }}
-        onKeyDown={handleKeyDown}
+      }}
+    >
+      <div
+        ref={dropdownRef}
         className={cn(
-          "w-full flex items-center justify-between gap-2 rounded-xl font-normal transition-all cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900",
-          size === "sm"
-            ? "px-2.5 py-1.5 text-xs"
-            : "px-3 py-2 text-xs sm:text-sm",
-          disabled
-            ? "opacity-50 cursor-not-allowed pointer-events-none"
-            : "active:scale-[0.98]",
-          isLanding
-            ? "bg-white/10 hover:bg-white/15 border border-white/10 text-cyan-200 shadow-sm"
-            : "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80 border border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200 shadow-xs",
-          triggerClassName,
+          "relative inline-block text-left min-w-0 max-w-full",
+          className,
         )}
       >
-        <div className="flex items-center gap-2 truncate min-w-0 flex-1">
-          {SelectedIcon && (
-            <SelectedIcon
-              className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-400"
+        {/* Hidden input for form compatibility if name is provided */}
+        {name && <input type="hidden" name={name} value={value} id={id} />}
+
+        <PopoverAnchor asChild>
+          <button
+            ref={triggerRef}
+            type="button"
+            id={id ? `${id}-trigger` : undefined}
+            disabled={disabled}
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            aria-controls={isOpen ? listboxId : undefined}
+            aria-activedescendant={
+              isOpen && focusedIndex >= 0
+                ? `${listboxId}-opt-${focusedIndex}`
+                : undefined
+            }
+            aria-label={ariaLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleOpen();
+            }}
+            onKeyDown={handleKeyDown}
+            className={cn(
+              "w-full flex items-center justify-between gap-2 rounded-md font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
+              size === "sm"
+                ? "h-8 px-2.5 text-xs"
+                : "h-9 px-3 text-xs sm:text-sm",
+              disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+              triggerClassName,
+            )}
+          >
+            <div className="flex items-center gap-2 truncate min-w-0 flex-1">
+              {SelectedIcon && (
+                <SelectedIcon
+                  className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              )}
+              <span className="truncate block">
+                {selectedOption ? selectedOption.label : placeholder || value}
+              </span>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 transition-transform duration-200 ml-1.5 text-muted-foreground",
+                isOpen && "rotate-180",
+              )}
               aria-hidden="true"
             />
-          )}
-          <span className="truncate block">
-            {selectedOption ? selectedOption.label : placeholder || value}
-          </span>
-        </div>
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 shrink-0 transition-transform duration-200 ml-1.5",
-            isLanding
-              ? "text-cyan-300/80"
-              : "text-slate-400 dark:text-slate-400",
-            isOpen && "rotate-180",
-          )}
-          aria-hidden="true"
-        />
-      </button>
+          </button>
+        </PopoverAnchor>
 
-      {/* Render dropdown menu in Portal so it never gets clipped by parent overflow */}
-      {isOpen &&
-        mounted &&
-        coords &&
-        createPortal(dropdownPopup, document.body)}
-    </div>
+        <CustomSelectPopup
+          align={align}
+          direction={direction}
+          dropdownRef={dropdownRef}
+          listboxId={listboxId}
+          popupRef={popupRef}
+          ariaLabel={ariaLabel}
+          placeholder={
+            typeof placeholder === "string" ? placeholder : undefined
+          }
+          popupClassName={popupClassName}
+          searchable={searchable}
+          searchInputRef={searchInputRef}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setFocusedIndex={setFocusedIndex}
+          handleKeyDown={handleKeyDown}
+          searchPlaceholder={searchPlaceholder}
+          emptyText={emptyText}
+          filteredOptions={filteredOptions}
+          value={value}
+          focusedIndex={focusedIndex}
+          onChange={onChange}
+          closeSelect={closeSelect}
+        />
+      </div>
+    </Popover>
   );
 }

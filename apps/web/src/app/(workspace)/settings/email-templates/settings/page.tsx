@@ -1,0 +1,423 @@
+"use client";
+
+import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
+import { useState } from "react";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { Send, Save, Sliders } from "lucide-react";
+import {
+  type EmailSettings,
+  type EmailProviderType,
+  DEFAULT_EMAIL_SETTINGS,
+} from "@/lib/email-templates";
+import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { toast } from "@/lib/toast";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/shared";
+import {
+  useEmailSettings,
+  useUpdateEmailSettingsMutation,
+  useSendTestEmailMutation,
+} from "@/hooks/use-queries";
+
+export default function EmailSettingsPage() {
+  const { t } = useI18n();
+  const canManageSettings = useHasPermission("email:manage_settings");
+  const canSendTest = useHasPermission("email:send");
+
+  const {
+    data: remoteSettings,
+    isPending: isLoadingSettings,
+    isError: settingsLoadFailed,
+  } = useEmailSettings();
+  const updateSettingsMutation = useUpdateEmailSettingsMutation();
+  const sendTestMutation = useSendTestEmailMutation();
+
+  const [draft, setDraft] = useState<EmailSettings | null>(null);
+  const [testEmailAddress, setTestEmailAddress] = useState("");
+  const savedSettings = {
+    ...DEFAULT_EMAIL_SETTINGS,
+    ...Object.fromEntries(
+      Object.entries(remoteSettings ?? {}).filter(([, value]) => value != null),
+    ),
+  };
+  const emailSettings = draft ?? savedSettings;
+  const setEmailSettings = (
+    update: (previous: EmailSettings) => EmailSettings,
+  ) => setDraft((previous) => update(previous ?? savedSettings));
+  const hasChanges = Object.keys(DEFAULT_EMAIL_SETTINGS).some((key) => {
+    const field = key as keyof EmailSettings;
+    return emailSettings[field] !== savedSettings[field];
+  });
+  const canEdit =
+    canManageSettings &&
+    !isLoadingSettings &&
+    !settingsLoadFailed &&
+    !updateSettingsMutation.isPending;
+
+  const handleSaveSettings = async () => {
+    if (!canEdit || !hasChanges) return;
+    try {
+      const payload: Partial<EmailSettings> = {
+        provider: emailSettings.provider,
+        fromName: (emailSettings.fromName || "").trim(),
+        fromEmail: (emailSettings.fromEmail || "").trim(),
+        smtpHost: (emailSettings.smtpHost ?? "").trim(),
+        smtpPort: emailSettings.smtpPort
+          ? Number(emailSettings.smtpPort)
+          : undefined,
+        smtpUser: (emailSettings.smtpUser ?? "").trim(),
+        smtpPass: emailSettings.smtpPass ?? "",
+        resendApiKey: (emailSettings.resendApiKey ?? "").trim(),
+        sendgridApiKey: (emailSettings.sendgridApiKey ?? "").trim(),
+      };
+
+      await updateSettingsMutation.mutateAsync(payload);
+      setDraft(null);
+      toast.success(t("email.settingsSavedSuccess"));
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, t, "email.settingsSaveError");
+      toast.error(msg);
+    }
+  };
+
+  const handleSendTest = async () => {
+    const to = testEmailAddress.trim();
+    if (!to || !canSendTest || sendTestMutation.isPending) return;
+    try {
+      await sendTestMutation.mutateAsync(to);
+      toast.success(t("email.testSentSuccess"));
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, t, "email.testSentError");
+      toast.error(msg);
+    }
+  };
+
+  const isSendingTest = sendTestMutation.isPending;
+
+  if (isLoadingSettings && !remoteSettings) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <div className="space-y-6 w-full min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        {/* Provider Selection */}
+        <SettingsCard className="xl:col-span-7 space-y-5">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+              <Sliders className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2
+                id="email-provider-title"
+                className="text-sm font-semibold text-foreground"
+              >
+                {t("email.providerTitle")}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t("email.providerDesc")}
+              </p>
+            </div>
+          </div>
+
+          {!canManageSettings && <SettingsReadOnlyBanner />}
+          {settingsLoadFailed && (
+            <p role="alert" className="text-sm text-destructive">
+              {t("errors.generic")}
+            </p>
+          )}
+          <fieldset
+            aria-labelledby="email-provider-title"
+            disabled={!canEdit}
+            className="min-w-0 space-y-5"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                {
+                  id: "SIMULATED",
+                  title: t("email.providerSimulated"),
+                  desc: t("email.providerSimulatedDesc"),
+                  badge: t("email.badgeDevTest"),
+                },
+                {
+                  id: "SMTP",
+                  title: t("email.providerSmtp"),
+                  desc: t("email.providerSmtpDesc"),
+                  badge: t("email.badgeEnterprise"),
+                },
+                {
+                  id: "RESEND",
+                  title: t("email.providerResend"),
+                  desc: t("email.providerResendDesc"),
+                },
+                {
+                  id: "SENDGRID",
+                  title: t("email.providerSendGrid"),
+                  desc: t("email.providerSendGridDesc"),
+                },
+              ].map((prov) => (
+                <button
+                  key={prov.id}
+                  aria-pressed={emailSettings.provider === prov.id}
+                  type="button"
+                  onClick={() =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      provider: prov.id as EmailProviderType,
+                    }))
+                  }
+                  className={`p-4 rounded-lg border text-left transition-colors cursor-pointer flex flex-col justify-between gap-2 ${
+                    emailSettings.provider === prov.id
+                      ? "border-primary bg-accent/60 ring-1 ring-ring/30"
+                      : "border-border bg-background hover:bg-accent/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">
+                      {prov.title}
+                    </span>
+                    {prov.badge && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground">
+                        {prov.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {prov.desc}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* Sender Server Info */}
+            <h3 className="text-xs font-semibold text-foreground pt-2 border-t border-border">
+              {t("email.senderServerInfo")}
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  {t("email.senderName")}
+                </label>
+                <Input
+                  value={emailSettings.fromName ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      fromName: e.target.value,
+                    }))
+                  }
+                  placeholder={t("email.senderNamePlaceholder")}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  {t("email.senderEmail")}
+                </label>
+                <Input
+                  value={emailSettings.fromEmail ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      fromEmail: e.target.value,
+                    }))
+                  }
+                  placeholder="careers@nexus.com"
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Specific fields for SMTP */}
+            {emailSettings.provider === "SMTP" && (
+              <div className="pt-2 border-t border-border space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      {t("email.smtpHost")}
+                    </label>
+                    <Input
+                      value={emailSettings.smtpHost ?? ""}
+                      onChange={(e) =>
+                        setEmailSettings((prev) => ({
+                          ...prev,
+                          smtpHost: e.target.value,
+                        }))
+                      }
+                      placeholder={t("email.smtpHostPlaceholder")}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      {t("email.smtpPort")}
+                    </label>
+                    <Input
+                      type="number"
+                      value={emailSettings.smtpPort ?? 587}
+                      onChange={(e) =>
+                        setEmailSettings((prev) => ({
+                          ...prev,
+                          smtpPort: parseInt(e.target.value, 10) || 587,
+                        }))
+                      }
+                      placeholder="587"
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      {t("email.smtpUsername")}
+                    </label>
+                    <Input
+                      value={emailSettings.smtpUser ?? ""}
+                      onChange={(e) =>
+                        setEmailSettings((prev) => ({
+                          ...prev,
+                          smtpUser: e.target.value,
+                        }))
+                      }
+                      placeholder="user@example.com"
+                      className="h-9 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-foreground mb-1.5">
+                      {t("email.smtpPassword")}
+                    </label>
+                    <Input
+                      type="password"
+                      value={emailSettings.smtpPass ?? ""}
+                      onChange={(e) =>
+                        setEmailSettings((prev) => ({
+                          ...prev,
+                          smtpPass: e.target.value,
+                        }))
+                      }
+                      placeholder="••••••••••••"
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Specific fields for Resend */}
+            {emailSettings.provider === "RESEND" && (
+              <div className="pt-2 border-t border-border">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  {t("email.resendApiKeyLabel")}
+                </label>
+                <Input
+                  type="password"
+                  value={emailSettings.resendApiKey ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      resendApiKey: e.target.value,
+                    }))
+                  }
+                  placeholder="re_••••••••••••••••••••••••"
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            )}
+
+            {/* Specific fields for SendGrid */}
+            {emailSettings.provider === "SENDGRID" && (
+              <div className="pt-2 border-t border-border">
+                <label className="block text-xs font-medium text-foreground mb-1.5">
+                  {t("email.sendgridApiKeyLabel")}
+                </label>
+                <Input
+                  type="password"
+                  value={emailSettings.sendgridApiKey ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      sendgridApiKey: e.target.value,
+                    }))
+                  }
+                  placeholder="SG.••••••••••••••••••••••••"
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            )}
+
+            {canManageSettings && (
+              <div className="pt-3">
+                <SettingsButton
+                  type="button"
+                  icon={Save}
+                  pending={updateSettingsMutation.isPending}
+                  onClick={handleSaveSettings}
+                  disabled={!canEdit || !hasChanges}
+                  className="w-full sm:w-auto"
+                >
+                  {updateSettingsMutation.isPending
+                    ? t("common.saving")
+                    : t("email.saveSettingsBtn")}
+                </SettingsButton>
+              </div>
+            )}
+          </fieldset>
+        </SettingsCard>
+
+        {/* Test Email Box */}
+        <SettingsCard className="xl:col-span-5 space-y-4 xl:sticky xl:top-6">
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+              <Send className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">
+                {t("email.testEmailSection")}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t("email.testEmailDesc")}
+              </p>
+            </div>
+          </div>
+
+          {!canSendTest && <SettingsReadOnlyBanner />}
+
+          <div className="flex flex-col sm:flex-row xl:flex-col items-stretch sm:items-center xl:items-stretch gap-3">
+            <Input
+              type="email"
+              aria-label={t("email.testEmailPlaceholder")}
+              disabled={!canSendTest || isSendingTest}
+              value={testEmailAddress}
+              onChange={(e) => setTestEmailAddress(e.target.value)}
+              placeholder={t("email.testEmailPlaceholder")}
+              className="text-xs flex-1"
+            />
+            {canSendTest && (
+              <SettingsButton
+                type="button"
+                icon={Send}
+                pending={isSendingTest}
+                onClick={handleSendTest}
+                disabled={
+                  !canSendTest || isSendingTest || !testEmailAddress.trim()
+                }
+                className="w-full sm:w-auto xl:w-full shrink-0"
+              >
+                {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
+              </SettingsButton>
+            )}
+          </div>
+        </SettingsCard>
+      </div>
+    </div>
+  );
+}

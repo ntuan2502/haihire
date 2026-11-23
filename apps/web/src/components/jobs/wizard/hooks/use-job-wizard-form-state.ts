@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
 import { getActiveDefaultCurrency } from "@/lib/utils";
 import {
@@ -34,6 +34,7 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   const [maxSalary, setMaxSalary] = useState(initialSalary.max);
   const [currency, setCurrency] = useState<string | null>(
     initialSalary.currency ??
+      initialJob?.salaryCurrency ??
       (!initialJob && !initialSalary.negotiable
         ? getActiveDefaultCurrency()
         : null),
@@ -78,16 +79,23 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   const [publishMode, setPublishMode] = useState<
     "publish" | "draft" | "closed"
   >(
-    initialJob?.status === "PUBLISHED"
+    !initialJob || initialJob.status === "PUBLISHED"
       ? "publish"
-      : initialJob?.status === "CLOSED"
+      : initialJob.status === "CLOSED"
         ? "closed"
         : "draft",
   );
 
-  // Synchronize state when initialJob changes
+  const syncedJobIdRef = useRef<string | null>(initialJob?.id ?? null);
+  const syncedStatusRef = useRef<string | undefined>(initialJob?.status);
+
+  // Synchronize state only when the edited job identity changes, avoiding wiping user edits on refetch
   useEffect(() => {
-    if (initialJob) {
+    if (!initialJob) return;
+
+    if (initialJob.id !== syncedJobIdRef.current) {
+      syncedJobIdRef.current = initialJob.id;
+      syncedStatusRef.current = initialJob.status;
       setJobTitle(initialJob.title || "");
       setDepartment(initialJob.department || "");
       setLocation(initialJob.location || "");
@@ -112,7 +120,7 @@ export function useJobWizardFormState(initialJob?: Job | null) {
         setPayNegotiable(parsed.negotiable);
         setMinSalary(parsed.min);
         setMaxSalary(parsed.max);
-        setCurrency(parsed.currency);
+        setCurrency(parsed.currency ?? initialJob.salaryCurrency ?? null);
         setSalaryPer(parsed.per);
       } else {
         setCompensationOpen(false);
@@ -121,6 +129,18 @@ export function useJobWizardFormState(initialJob?: Job | null) {
         setMaxSalary("");
         setCurrency(null);
         setSalaryPer(null);
+      }
+      return;
+    }
+
+    if (initialJob.status !== syncedStatusRef.current) {
+      syncedStatusRef.current = initialJob.status;
+      if (initialJob.status === "PUBLISHED") {
+        setPublishMode("publish");
+      } else if (initialJob.status === "CLOSED") {
+        setPublishMode("closed");
+      } else {
+        setPublishMode("draft");
       }
     }
   }, [initialJob]);

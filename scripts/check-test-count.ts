@@ -12,7 +12,7 @@ function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
 
   try {
     const diff = execSync(
-      `git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx"`,
+      `git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx" "*.test.ts" "*.test.tsx" "*.e2e-spec.ts"`,
       {
         encoding: "utf-8",
       },

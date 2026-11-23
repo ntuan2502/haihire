@@ -62,6 +62,7 @@ export class MinioService implements OnModuleInit {
     file: Express.Multer.File,
     folder = "resumes",
     tenantOrgId?: string | null,
+    allowedExtensions: ReadonlySet<string> = new Set([".pdf"]),
   ): Promise<UploadResult> {
     if (!tenantOrgId || !tenantOrgId.trim()) {
       throw new AppBadRequestException(
@@ -77,8 +78,7 @@ export class MinioService implements OnModuleInit {
       );
     }
     const ext = extname(file.originalname).toLowerCase();
-    const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
-    if (!ext || !allowed.has(ext)) {
+    if (!ext || !allowedExtensions.has(ext)) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
         `Disallowed or missing file extension: ${ext || "(none)"}`,
@@ -150,9 +150,18 @@ export class MinioService implements OnModuleInit {
     if (clean.startsWith(`${this.bucketName}/`)) {
       clean = clean.slice(this.bucketName.length + 1);
     }
-    // Prevent directory traversal
-    if (clean.includes("..")) {
-      throw new Error("Invalid object path: directory traversal not allowed");
+    // Prevent directory traversal (including percent-encoded sequences)
+    let decoded = clean;
+    try {
+      decoded = decodeURIComponent(clean);
+    } catch {
+      // keep raw path if malformed URI sequence
+    }
+    if (clean.includes("..") || decoded.includes("..")) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Invalid object path: directory traversal not allowed",
+      );
     }
     return clean;
   }

@@ -74,7 +74,7 @@ export function splitFullName(rawFullName: string | null | undefined): {
  */
 export function formatPersonDisplayName(
   person: PersonNameInput | null | undefined,
-  order: NameDisplayOrder = "FIRST_LAST",
+  order: NameDisplayOrder = "LAST_FIRST",
 ): string {
   if (!person) return "";
   const custom = normalizeNameInput(person.displayName);
@@ -106,7 +106,7 @@ export function formatUserDisplayName(
       }
     | null
     | undefined,
-  order: NameDisplayOrder = "FIRST_LAST",
+  order: NameDisplayOrder = "LAST_FIRST",
 ): string {
   return formatPersonDisplayName(user, order);
 }

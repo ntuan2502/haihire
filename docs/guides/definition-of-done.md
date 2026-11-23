@@ -9,7 +9,7 @@ A task, bugfix, feature, or refactor in HaiHire is complete only when all engine
 - TypeScript strictness maintained across `apps/api`, `apps/web`, and `packages/shared` (zero introduced `any` leaks).
 - Backend constructor dependencies annotated explicitly with `@Inject(...)` / `@Optional()` and request DTOs validated with `DtoPipe(...)` ([apps/api/src/common/dto-validation.pipe.ts](../../apps/api/src/common/dto-validation.pipe.ts)).
 - Domain constants, Zod schemas, permissions, event names, and `APP_ERROR_CODES` reused from `@haihire/shared` with zero duplication.
-- Frontend adheres to Next.js 16 `src/proxy.ts` (zero `middleware.ts`), Tailwind CSS v4 `oklch` CSS tokens, Shadcn `base-nova` (`@base-ui/react` + standalone `"cn"`), and `@/lib/toast`.
+- Frontend adheres to Next.js 16 `src/proxy.ts` (zero `middleware.ts`), Tailwind CSS v4 `oklch` CSS tokens, Shadcn `new-york` (`radix-ui` + standalone `"cn"`), and `@/lib/toast`.
 
 ---
 

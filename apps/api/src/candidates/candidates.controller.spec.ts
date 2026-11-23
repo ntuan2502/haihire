@@ -28,6 +28,7 @@ describe("CandidatesController", () => {
   const mockService = {
     findAll: vi.fn(),
     findOne: vi.fn(),
+    checkDuplicates: vi.fn(),
     uploadDocument: vi.fn(),
     prepareDocumentDownload: vi.fn(),
     findNotes: vi.fn(),
@@ -344,6 +345,50 @@ describe("CandidatesController", () => {
         recruiterReq.user,
       );
       expect(res).toEqual({ success: true });
+    });
+  });
+
+  describe("GET /candidates/check-duplicate", () => {
+    it("rejects Role.MEMBER with 403 AppForbiddenException", () => {
+      const context = {
+        getHandler: () => controller.checkDuplicates,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => memberReq }),
+      } as unknown as ExecutionContext;
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+
+    it("allows Role.RECRUITER and delegates query + organizationId to service.checkDuplicates", async () => {
+      const context = {
+        getHandler: () => controller.checkDuplicates,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => recruiterReq }),
+      } as unknown as ExecutionContext;
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      const expected = {
+        hasBlockingDuplicate: false,
+        hasWarningDuplicate: true,
+        matches: [
+          {
+            id: "cand-1",
+            name: "Alice",
+            email: "alice@example.com",
+            phone: "0901234567",
+            dateOfBirth: null,
+            matchReasons: ["PHONE"],
+            severity: "WARNING",
+          },
+        ],
+      };
+      mockService.checkDuplicates.mockResolvedValue(expected);
+
+      const query = { phone: "+84 901 234 567" };
+      const res = await controller.checkDuplicates(query, recruiterReq);
+      expect(mockService.checkDuplicates).toHaveBeenCalledWith(query, "org-1");
+      expect(res).toEqual(expected);
     });
   });
 });

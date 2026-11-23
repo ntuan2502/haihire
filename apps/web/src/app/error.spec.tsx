@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import RootError from "./error";
-import DashboardError from "./dashboard/error";
+import DashboardError from "./(workspace)/error";
 import CareersError from "./careers/error";
 import NotFound from "./not-found";
 import { I18nProvider } from "@/i18n";

@@ -120,6 +120,17 @@ const backendEnvSchema = z
           "SEED_DEMO_ON_BOOT cannot be true when NODE_ENV is 'production'",
       });
     }
+    if (
+      data.NODE_ENV === "production" &&
+      data.SYSTEM_EMAIL_PROVIDER === "SIMULATED"
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["SYSTEM_EMAIL_PROVIDER"],
+        message:
+          "SYSTEM_EMAIL_PROVIDER cannot be 'SIMULATED' when NODE_ENV is 'production'",
+      });
+    }
     if (data.WEBHOOK_PROVIDER) {
       if (!data.WEBHOOK_URL || !data.WEBHOOK_URL.trim()) {
         ctx.addIssue({

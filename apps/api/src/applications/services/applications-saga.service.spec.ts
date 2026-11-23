@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import { ApplicationsSagaService } from "./applications-saga.service";
+import { PublicApplyDto } from "../dto/public-apply.dto";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -626,6 +627,112 @@ describe("ApplicationsSagaService", () => {
         expect.any(Error),
       );
       consoleWarnSpy.mockRestore();
+    });
+
+    it("preserves organic referrer attribution for PublicApplyDto and allows authenticated Recruiter candidateId apply while stripping anonymous candidateId", async () => {
+      const publicDto = Object.assign(new PublicApplyDto(), {
+        jobId: "job-1",
+        firstName: "Organic",
+        lastName: "Candidate",
+        candidateEmail: "organic@example.com",
+        referrer: "https://www.linkedin.com/jobs/view/999",
+        candidateId: "cand-existing",
+      });
+
+      await service.create(publicDto);
+      const anonApp = applicationTable.store.find(
+        (a) => a.sourceChannel === SourcingChannel.LINKEDIN,
+      );
+      expect(anonApp).toBeDefined();
+      expect(anonApp?.candidateId).not.toBe("cand-existing");
+
+      const internalDto = Object.assign(new PublicApplyDto(), {
+        jobId: "job-1",
+        candidateId: "cand-existing",
+        candidateEmail: "existing@example.com",
+      });
+      const internalResult = await service.create(internalDto, undefined, {
+        role: "RECRUITER",
+        organizationId: "org-1",
+      });
+      expect(internalResult).toHaveProperty("candidate");
+    });
+
+    it("honors PermissionResolverService override granting application:create to MEMBER and maps P2002 to AppConflictException", async () => {
+      const mockResolver = {
+        resolvePermission: vi.fn().mockResolvedValue(true),
+      };
+      const sagaWithResolver = new ApplicationsSagaService(
+        mockPrisma,
+        mockMinio as unknown as MinioService,
+        mockActivities as unknown as ActivitiesService,
+        mockEmail as unknown as EmailService,
+        mockQueue as unknown as Queue,
+        mockQuery as unknown as ApplicationsQueryService,
+        undefined,
+        undefined,
+        mockResolver as never,
+      );
+
+      const created = await sagaWithResolver.create(
+        {
+          jobId: "job-1",
+          candidateId: "cand-existing",
+        },
+        undefined,
+        { role: "MEMBER", organizationId: "org-1", isOwner: false },
+      );
+      expect(created).toBeDefined();
+      expect(mockResolver.resolvePermission).toHaveBeenCalledWith(
+        "org-1",
+        "MEMBER",
+        "application:create",
+      );
+
+      // P2002 unique violation inside transaction must map to AppConflictException
+      vi.spyOn(mockPrisma.application, "create").mockRejectedValueOnce({
+        code: "P2002",
+      });
+      await expect(
+        sagaWithResolver.create(
+          {
+            jobId: "job-1",
+            firstName: "Race",
+            lastName: "Applicant",
+            candidateEmail: "race@example.com",
+          },
+          undefined,
+          { role: "ADMIN", organizationId: "org-1", isOwner: true },
+        ),
+      ).rejects.toBeInstanceOf(AppConflictException);
+    });
+
+    it("backfills empty candidate phone on returning apply without overwriting an existing non-empty phone", async () => {
+      candidateTable.store[0].phone = null;
+      await service.create({
+        jobId: "job-1",
+        firstName: "Existing",
+        lastName: "Candidate",
+        candidateEmail: "existing@example.com",
+        candidatePhone: "0909888777",
+      });
+      expect(candidateTable.store[0].phone).toBe("0909888777");
+
+      // Second job with a different phone submitted must preserve the existing non-empty phone
+      await jobTable.create({
+        id: "job-2",
+        title: "Staff Frontend Engineer",
+        status: "PUBLISHED",
+        organizationId: "org-1",
+      });
+      await service.create({
+        jobId: "job-2",
+        firstName: "Existing",
+        lastName: "Candidate",
+        candidateEmail: "existing@example.com",
+        candidatePhone: "0911222333",
+      });
+      expect(candidateTable.store[0].phone).toBe("0909888777");
     });
   });
 });

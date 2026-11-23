@@ -165,7 +165,8 @@ export class JobsController {
   }
 
   @Get(":id/stages")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("job:view")
   getPipelineStages(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Request() req?: { user?: { organizationId?: string | null } },

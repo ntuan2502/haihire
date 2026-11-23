@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useDeleteApplicationMutation } from "@/hooks/use-queries";
 import type { Job, Application } from "@/types";
@@ -16,6 +17,7 @@ import { useApplicationsFilterSort } from "./use-applications-filter-sort";
 export function useApplicationsTable({
   applications: initialApplications,
   jobs,
+  loading = false,
   fixedJobId,
   totalCount: propTotalCount,
   totalPages: propTotalPages,
@@ -23,37 +25,51 @@ export function useApplicationsTable({
   rowsPerPage: propRowsPerPage,
   search: propSearch,
   stageFilter,
+  scoreFilter: propScoreFilter,
+  sortField: propSortField,
+  sortDirection: propSortDirection,
+  selectedAppId: propSelectedAppId,
   stageCounts,
   jobFilter: propJobFilter,
   onPageChange,
   onLimitChange,
   onSearchChange,
   onStageFilterChange,
+  onScoreFilterChange,
+  onSortChange,
+  onSelectedAppIdChange,
   onJobFilterChange,
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
-  const { canEdit } = useAuth();
+  const { canEdit: authCanEdit } = useAuth();
+  const canDeleteApplication = useHasPermission("application:delete");
+  const canCreateInterview = useHasPermission("interview:create");
+  const canUpdateInterview = useHasPermission("interview:update");
+  const canEdit =
+    authCanEdit ||
+    canDeleteApplication ||
+    canCreateInterview ||
+    canUpdateInterview;
   const deleteAppMutation = useDeleteApplicationMutation();
 
-  const isServerPaginated = Boolean(onPageChange);
+  const isServerPaginated = Boolean(
+    onPageChange && propTotalCount !== undefined,
+  );
   const [localSearch, setLocalSearch] = useState("");
-  const search =
-    isServerPaginated && propSearch !== undefined ? propSearch : localSearch;
+  const search = propSearch !== undefined ? propSearch : localSearch;
 
   const [localRowsPerPage, setLocalRowsPerPage] = useState<number>(20);
   const rowsPerPage =
-    isServerPaginated && propRowsPerPage !== undefined
-      ? propRowsPerPage
-      : localRowsPerPage;
+    propRowsPerPage !== undefined ? propRowsPerPage : localRowsPerPage;
 
   const [localCurrentPage, setLocalCurrentPage] = useState<number>(1);
   const currentPage =
-    isServerPaginated && propCurrentPage !== undefined
-      ? propCurrentPage
-      : localCurrentPage;
+    propCurrentPage !== undefined ? propCurrentPage : localCurrentPage;
 
-  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [localSelectedApp, setLocalSelectedApp] = useState<Application | null>(
+    null,
+  );
   const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(
     null,
   );
@@ -64,7 +80,20 @@ export function useApplicationsTable({
 
   // Filter Drawer State & Secondary Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [scoreFilter, setScoreFilter] = useState<string>("ALL");
+  const [localScoreFilter, setLocalScoreFilter] = useState<string>("ALL");
+  const scoreFilter =
+    propScoreFilter !== undefined ? propScoreFilter || "ALL" : localScoreFilter;
+  const setScoreFilter = useCallback(
+    (val: string) => {
+      if (onScoreFilterChange) {
+        onScoreFilterChange(val === "ALL" ? undefined : val);
+      } else {
+        setLocalScoreFilter(val);
+        setLocalCurrentPage(1);
+      }
+    },
+    [onScoreFilterChange],
+  );
   const [localJobFilter, setLocalJobFilter] = useState<string>("ALL");
   const currentJobFilter =
     propJobFilter !== undefined ? propJobFilter || "ALL" : localJobFilter;
@@ -82,8 +111,6 @@ export function useApplicationsTable({
   );
 
   // Column Visibility Toggle State (Persisted in localStorage)
-  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
-  const columnsRef = useRef<HTMLDivElement>(null);
   const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
     "haihire_applications_columns_v1",
     {
@@ -95,23 +122,6 @@ export function useApplicationsTable({
       applied: true,
     },
   );
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        columnsRef.current &&
-        !columnsRef.current.contains(event.target as Node)
-      ) {
-        setIsColumnsOpen(false);
-      }
-    }
-    if (isColumnsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isColumnsOpen]);
 
   // Job Map for Fast Lookup
   const jobMap = useMemo(() => {
@@ -128,6 +138,35 @@ export function useApplicationsTable({
       (a) => String(a.jobId) === String(fixedJobId),
     );
   }, [initialApplications, fixedJobId]);
+
+  const selectedApp = useMemo(() => {
+    if (propSelectedAppId !== undefined) {
+      if (!propSelectedAppId) return null;
+      return (
+        baseApplications.find(
+          (a) =>
+            String(a.id) === String(propSelectedAppId) ||
+            String(a.candidateId) === String(propSelectedAppId),
+        ) ?? null
+      );
+    }
+    return localSelectedApp;
+  }, [propSelectedAppId, baseApplications, localSelectedApp]);
+
+  const setSelectedApp = useCallback(
+    (
+      next:
+        Application | null | ((prev: Application | null) => Application | null),
+    ) => {
+      const resolved = typeof next === "function" ? next(selectedApp) : next;
+      if (onSelectedAppIdChange) {
+        onSelectedAppIdChange(resolved ? resolved.id : null);
+      } else {
+        setLocalSelectedApp(resolved);
+      }
+    },
+    [onSelectedAppIdChange, selectedApp],
+  );
 
   const setJobFilter = (val: string) => {
     if (onJobFilterChange) {
@@ -175,6 +214,9 @@ export function useApplicationsTable({
     setJobFilter,
     setScoreFilter,
     handleClearStages,
+    sortField: propSortField,
+    sortDirection: propSortDirection,
+    onSortChange,
   });
 
   const handleConfirmDelete = async () => {
@@ -199,7 +241,8 @@ export function useApplicationsTable({
       {
         id: "ALL",
         label: t("common.all"),
-        count: stageCounts?.ALL ?? filterSort.totalCount,
+        count:
+          stageCounts?.ALL ?? (loading ? undefined : filterSort.totalCount),
       },
       {
         id: "APPLIED",
@@ -232,7 +275,7 @@ export function useApplicationsTable({
         count: stageCounts?.REJECTED,
       },
     ],
-    [t, stageCounts, filterSort.totalCount],
+    [t, stageCounts, loading, filterSort.totalCount],
   );
 
   const onSearchChangeHandler = (val: string) => {
@@ -278,9 +321,6 @@ export function useApplicationsTable({
     setSortField: filterSort.setSortField,
     setSortDirection: filterSort.setSortDirection,
     // Column Visibility
-    isColumnsOpen,
-    setIsColumnsOpen,
-    columnsRef,
     visibleColumns,
     toggleColumn,
     // Filter Drawer & Secondary Filters

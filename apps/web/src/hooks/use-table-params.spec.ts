@@ -7,7 +7,7 @@ let mockSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace }),
-  usePathname: () => "/dashboard/candidates",
+  usePathname: () => "/candidates",
   useSearchParams: () => mockSearchParams,
 }));
 
@@ -41,7 +41,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?limit=50",
+      "/candidates?limit=50",
     );
   });
 
@@ -58,7 +58,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenLastCalledWith(
       null,
       "",
-      "/dashboard/candidates?limit=10",
+      "/candidates?limit=10",
     );
   });
 
@@ -79,7 +79,7 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?search=senior+engineer",
+      "/candidates?search=senior+engineer",
     );
     expect(result.current.search).toBe("senior engineer");
     vi.useRealTimers();
@@ -106,12 +106,36 @@ describe("useTableParams hook", () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(
       null,
       "",
-      "/dashboard/candidates?search=%C4%90%E1%BB%A9c",
+      "/candidates?search=%C4%90%E1%BB%A9c",
     );
 
     // CRITICAL: The search input draft MUST still retain the trailing space for smooth typing!
     expect(result.current.searchInput).toBe("Đức ");
 
     vi.useRealTimers();
+  });
+
+  it("strips table-only params and re-renders getParam when switching to calendar", () => {
+    mockSearchParams = new URLSearchParams(
+      "viewMode=table&tab=UPCOMING&sortBy=upcoming&page=3&limit=50&jobId=job-1&search=an",
+    );
+    const { result } = renderHook(() => useTableParams());
+
+    act(() => {
+      result.current.setParams(
+        { viewMode: "calendar", tab: null, sortBy: null, limit: null },
+        true,
+      );
+    });
+
+    expect(result.current.getParam("viewMode")).toBe("calendar");
+    expect(result.current.getParam("tab")).toBe("");
+    expect(result.current.getParam("sortBy")).toBe("");
+    expect(result.current.getParam("jobId")).toBe("job-1");
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      "/candidates?viewMode=calendar&jobId=job-1&search=an",
+    );
   });
 });

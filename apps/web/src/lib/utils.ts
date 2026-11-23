@@ -24,6 +24,9 @@ export function setActiveLocalization(
   orgSettings?: Partial<OrganizationLocalizationSettings> | null,
   uiLocale?: OrgLanguage | null,
 ): void {
+  if (typeof window === "undefined") {
+    return;
+  }
   activeOrgLocalization = orgSettings
     ? normalizeOrgLocalization(orgSettings)
     : null;
@@ -184,6 +187,30 @@ export function formatDate(
         ? { timeZone: effectiveTimezone }
         : {}),
   }).format(parsedDate);
+}
+
+/**
+ * Format day + month compactly (without year) respecting active organization dateFormat.
+ */
+export function formatDayMonth(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (!dateInput) return "—";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+  const effectiveDateFormat: DateFormat =
+    overrides?.dateFormat ?? activeOrgLocalization?.dateFormat ?? "MM/DD/YYYY";
+
+  const parts = extractCalendarParts(dateInput, effectiveTimezone);
+  if (!parts) return "—";
+
+  const dd = String(parts.day).padStart(2, "0");
+  const mm = String(parts.month).padStart(2, "0");
+
+  if (effectiveDateFormat === "DD/MM/YYYY") return `${dd}/${mm}`;
+  if (effectiveDateFormat === "YYYY-MM-DD") return `${mm}-${dd}`;
+  return `${mm}/${dd}`;
 }
 
 /**
@@ -493,6 +520,36 @@ export function parseCandidateDocuments(
   }
 
   return [];
+}
+
+/**
+ * Normalizes optional candidate/recipient email values and rejects display placeholders like "—".
+ */
+export function normalizeEmailAddress(email?: string | null): string {
+  const trimmed = email?.trim() || "";
+  if (!trimmed || trimmed === "—" || !trimmed.includes("@")) {
+    return "";
+  }
+  return trimmed;
+}
+
+/**
+ * Validates that a client redirect query parameter points strictly to an internal path.
+ */
+export function sanitizeRedirectPath(
+  redirectParam: string | null | undefined,
+  fallback = "/dashboard",
+): string {
+  if (
+    typeof redirectParam === "string" &&
+    redirectParam.startsWith("/") &&
+    !redirectParam.startsWith("//") &&
+    !redirectParam.startsWith("/\\") &&
+    !/[\r\n\\]/.test(redirectParam)
+  ) {
+    return redirectParam;
+  }
+  return fallback;
 }
 
 export * from "./candidate-formatters";

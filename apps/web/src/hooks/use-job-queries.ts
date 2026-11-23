@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   PipelineStageItem,
   UpsertPipelineStagesSchema,
 } from "@/types";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useJobs(
   organizationId?: string | null,
@@ -78,7 +73,9 @@ export function useJobs(
       });
     },
     enabled: Boolean(effectiveOrgId || options?.organizationSlug),
-    placeholderData: keepPreviousData,
+    placeholderData: keepPreviousDataForSameOrg<PaginatedResult<Job>>(
+      effectiveOrgId ?? null,
+    ),
   });
 }
 
@@ -88,7 +85,7 @@ export function useAllJobs(organizationId?: string | null) {
     organizationId !== undefined ? organizationId : user?.organizationId;
 
   return useQuery<Job[]>({
-    queryKey: ["jobs", "all", effectiveOrgId],
+    queryKey: queryKeys.allJobs(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
       const res = await jobsApi.getAll({
@@ -107,7 +104,7 @@ export function useOpenJobs(organizationId?: string | null) {
     organizationId !== undefined ? organizationId : user?.organizationId;
 
   return useQuery<Job[]>({
-    queryKey: ["jobs", "open", effectiveOrgId],
+    queryKey: queryKeys.openJobs(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
       const res = await jobsApi.getAll({
@@ -122,8 +119,13 @@ export function useOpenJobs(organizationId?: string | null) {
 }
 
 export function useJob(id: string | null) {
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
   return useQuery<Job>({
-    queryKey: ["jobs", id],
+    queryKey:
+      orgId !== undefined
+        ? (["jobs", id, { orgId }] as const)
+        : (["jobs", id] as const),
     queryFn: () => {
       if (!id) throw new Error("Job ID is required");
       return jobsApi.getById(id);
@@ -143,13 +145,19 @@ export function usePublicOrg(slug: string | null) {
   });
 }
 
-export function useAllPublicJobs() {
+export function useAllPublicJobs(initialData?: Job[]) {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-all-published"],
     queryFn: async () => {
       const res = await jobsApi.getPublic({ limit: 1000 });
       return res.data;
     },
+    ...(initialData !== undefined
+      ? {
+          initialData,
+          initialDataUpdatedAt: initialData.length > 0 ? undefined : 0,
+        }
+      : {}),
     staleTime: 120_000,
   });
 }
@@ -228,6 +236,9 @@ export function useDeleteJobMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });

@@ -1,6 +1,6 @@
 ---
 name: haihire-prisma-postgres
-description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage transactions, 22-model PostgreSQL schema rules, soft-delete filters, and multi-tenant organizationId query isolation. Use when editing schema.prisma, PrismaService, repositories, or service database queries in apps/api.
+description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage transactions, PostgreSQL schema and row-level security rules, soft-delete filters, and multi-tenant organizationId query isolation. Use when editing schema.prisma, PrismaService, repositories, or service database queries in apps/api.
 ---
 
 # HaiHire Prisma 7, PostgreSQL & Tenant Isolation Skill
@@ -8,7 +8,7 @@ description: Enforces Prisma 7.10.1 with @prisma/adapter-pg, AsyncLocalStorage t
 Stack baselines verified in `apps/api/package.json`, `apps/api/prisma.config.ts`, and `apps/api/src/prisma/`:
 - **Prisma**: `7.10.1` (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) with `pg@^8.23.1` (`pg.Pool`)
 - **Config (`apps/api/prisma.config.ts`)**: `defineConfig({ schema: "src/prisma/schema.prisma", datasource: { url: env("DATABASE_URL") } })`
-- **Schema (`apps/api/src/prisma/schema.prisma`)**: `22` models, `18` enums, `provider = "prisma-client-js"` (`datasource db { provider = "postgresql" }` without inline `url`)
+- **Schema (`apps/api/src/prisma/schema.prisma`)**: `provider = "prisma-client-js"` (`datasource db { provider = "postgresql" }` without inline `url`)
 
 ---
 
@@ -26,18 +26,20 @@ Per Prisma 7 official architecture:
 
 - Use `runInTransaction(this.prisma, async (tx) => ...)` (or `this.prisma.transaction(...)` / `executeTx`) whenever multiple writes must be atomic (e.g., application creation saga, org creation + membership creation, demo auto-seed ordering, ownership transfer).
 - `PrismaService` stores the active interactive transaction client inside `AsyncLocalStorage` and exposes `this.tx` cleanly across `PrismaPg.$transaction`.
-- **Ordering invariant for Org/User creation:** Always create/upsert `User` (`organizationId: null`) before creating `Organization` (`ownerId: user.id`), then update `User.organizationId`, because `Organization.ownerId` and `User.organizationId` cross-reference each other.
+- **Organization ownership and membership:** Create the owner user before referencing its ID from the organization. Represent workspace membership through `OrganizationMember` and use the existing organization services to create related rows atomically.
 
 ---
 
 ## 3. Mandatory Multi-Tenant Query Isolation (`pnpm lint:tenant-scope`)
 
-CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma query across the **8 tenant-scoped modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`):
+For authenticated HTTP requests, `TenantRlsInterceptor` propagates the tenant context into Prisma, and `PrismaService` wraps itself in an `AsyncLocalStorage` `Proxy` forwarding all `27` model delegates and raw queries to `als.getStore()` inside `runInTransaction`. Keep explicit tenant filters in service queries and use the existing Prisma context helpers.
+
+CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma query across the **10 tenant-scoped modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`, `email`, `notifications`):
 - Every query against a tenant-owned model MUST satisfy one of four verified rules:
-  1. **Inline `organizationId` / `targetOrgId` filter inside the query's 350-character lookahead window** (or `organizationId` in `select` if checking immediately after).
-  2. **Model in `MODELS_WITHOUT_ORG_COLUMN`** (`Organization` only — defined in `scripts/tenant-scoping.config.ts`). `Application`, `Interview`, and `TrackingClick` all carry `organizationId` directly and enforce both direct tenant filters/checks and parent ownership verification.
-  3. **Parent ownership guard in the SAME enclosing method** (`entity.organizationId !== ...`, `entity.organizationId === ...`, or `throw new AppForbiddenException`). Never assume an earlier method's guard covers a later method, and keep lookback guards inside the same method as the query.
-  4. **Explicitly whitelisted safe public pattern** in `SAFE_QUERY_PATTERNS` (`findBySlug`, `healthCheck`, `recordClick`).
+  1. **Inline `organizationId` / `targetOrgId` filter inside the query's 350-character lookahead window** (`select: { ... }` projections are stripped before scanning, so merely selecting `organizationId` without filtering in `where` fails the gate; non-call `typeof` reflection checks are ignored).
+  2. **Model in `MODELS_WITHOUT_ORG_COLUMN`** (`Organization` and `User` — defined in `scripts/tenant-scoping.config.ts`). `Application`, `Interview`, and `TrackingClick` all carry `organizationId` directly and enforce both direct tenant filters/checks and parent ownership verification.
+  3. **Parent ownership guard in the SAME enclosing method** (`entity.organizationId !== ...`, `entity.organizationId === ...`, prior `organizationId`-filtered `where`, or post-query `throw new AppForbiddenException` checking `.organizationId`). Never assume an earlier method's guard covers a later method, and keep guards inside the same method as the query.
+  4. **Explicitly whitelisted safe public pattern** in `SAFE_QUERY_PATTERNS` (`findBySlug`, `healthCheck`, `recordClick`, `where: { token ... }` invite resolution, and `where: { userId }` default membership lookup).
 - Never suppress cross-tenant warnings by copying unrelated guards into methods; enforce true relational `organizationId` filtering on `findMany`, `findFirst`, `update`, `updateMany`, and `deleteMany`, especially in enrichment queries (e.g., `candidate.findMany` and `job.findMany` inside `InterviewsQueryService`).
 
 ---
@@ -46,5 +48,5 @@ CI Gate 9 (`scripts/check-tenant-scoping.ts`) statically audits every Prisma que
 
 - **3 Soft-Deletable Models:** `Job`, `Candidate`, and `TrackingLink` carry `deletedAt DateTime?`.
 - Always filter `deletedAt: null` on active reads, counts, search lists, public job listings, and application sagas (`job.findFirst({ where: { id: dto.jobId, deletedAt: null } })`, `candidate.findFirst({ where: { id: candidateId, deletedAt: null } })`).
-- **Soft-deleted Candidate re-application:** `Candidate` has a unique constraint on `(organizationId, email)`. When creating an application by `email`, query by `(organizationId, email)` selecting `deletedAt`, and if found with `deletedAt !== null`, restore it (`deletedAt: null, updatedAt: toInstant()`) inside the transaction before linking the new `Application`.
+- **Soft-deleted Candidate re-application:** `Candidate` does not enforce a global unique constraint on `(organizationId, email)` so soft-deleted candidate history remains immutable. When creating an application by `email`, always filter `{ organizationId, email, deletedAt: null }` so re-applying creates a fresh active `Candidate` record rather than resurrecting soft-deleted history.
 - For non-deleted lookups by relation (`Interview` -> `Application` -> `Job` / `Candidate`), check `deletedAt` / stage rules consistently before allowing mutations.

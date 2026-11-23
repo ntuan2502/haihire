@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
 } from "class-validator";
 
 export class PublicApplyDto {
@@ -11,13 +12,23 @@ export class PublicApplyDto {
   @IsNotEmpty()
   jobId: string;
 
+  @IsUUID()
+  @IsOptional()
+  candidateId?: string;
+
+  @ValidateIf((o: PublicApplyDto) => !o.candidateId)
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  firstName?: string;
+
+  @ValidateIf((o: PublicApplyDto) => !o.candidateId)
+  @IsString()
+  @IsNotEmpty()
+  lastName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  lastName: string;
+  @IsOptional()
+  displayName?: string;
 
   @IsEmail()
   @IsOptional()
@@ -37,11 +48,47 @@ export class PublicApplyDto {
 
   @IsString()
   @IsOptional()
+  resumeUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  resumeFileName?: string;
+
+  @IsString()
+  @IsOptional()
   trackingToken?: string;
 
   @IsString()
   @IsOptional()
   ref?: string;
+
+  @IsString()
+  @IsOptional()
+  referrer?: string;
+
+  @IsString()
+  @IsOptional()
+  sourceChannel?: string;
+
+  @IsString()
+  @IsOptional()
+  utmSource?: string;
+
+  @IsString()
+  @IsOptional()
+  utmMedium?: string;
+
+  @IsString()
+  @IsOptional()
+  utmCampaign?: string;
+
+  @IsString()
+  @IsOptional()
+  utmTerm?: string;
+
+  @IsString()
+  @IsOptional()
+  utmContent?: string;
 
   @IsString()
   @IsOptional()

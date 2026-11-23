@@ -1,0 +1,106 @@
+import { Mail, Phone, ArrowRight, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { StageBadge } from "@/components/shared/stage-badge";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useI18n } from "@/i18n";
+import type { ApplicationStage } from "@/types";
+
+interface ApplicationDetailHeaderProps {
+  initials: string;
+  candidateName: string;
+  stage?: ApplicationStage;
+  rejectionReason?: string | null;
+  candidateEmail: string;
+  candidatePhone?: string;
+  jobTitle: string;
+  appliedDate: string;
+  onOpenSendEmail: () => void;
+}
+
+export function ApplicationDetailHeader({
+  initials,
+  candidateName,
+  stage,
+  rejectionReason,
+  candidateEmail,
+  candidatePhone,
+  jobTitle,
+  appliedDate,
+  onOpenSendEmail,
+}: ApplicationDetailHeaderProps) {
+  const { t } = useI18n();
+  const canSendEmail = useHasPermission("email:send");
+
+  return (
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
+        <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+          {initials}
+        </div>
+
+        {/* Info */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold text-foreground">
+              {candidateName}
+            </h1>
+            <StageBadge stage={stage} />
+          </div>
+
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            <a
+              href={`mailto:${candidateEmail}`}
+              className="flex items-center gap-1 hover:text-primary transition-colors"
+            >
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>{candidateEmail}</span>
+            </a>
+            {candidatePhone && (
+              <a
+                href={`tel:${candidatePhone}`}
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{candidatePhone}</span>
+              </a>
+            )}
+            <span className="flex items-center gap-1 text-foreground font-semibold">
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              {jobTitle}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1 pt-0.5">
+            <Clock className="h-3 w-3" />
+            <span>
+              {t("applications.applied")} {appliedDate}
+            </span>
+          </p>
+          {stage === "REJECTED" && rejectionReason && (
+            <div className="mt-2 rounded-lg border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/30 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300">
+              <span className="font-medium">
+                {t("applications.rejectionReasonLabel")}:{" "}
+              </span>
+              <span>{rejectionReason}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {canSendEmail && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={onOpenSendEmail}
+            className="h-8 px-3 rounded-md text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            <span>{t("email.sendEmailAction")}</span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

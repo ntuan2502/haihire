@@ -35,6 +35,10 @@ export class UpdateInterviewDto {
   @IsOptional()
   interviewer?: string;
 
+  @IsString()
+  @IsOptional()
+  interviewerId?: string;
+
   @IsNumber()
   @IsOptional()
   round?: number;

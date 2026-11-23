@@ -6,6 +6,7 @@ import {
   type NameDisplayOrder,
 } from "@haihire/shared";
 import {
+  AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
@@ -61,22 +62,32 @@ export class InterviewsQueryService {
     if (options?.applicationId) {
       interviewWhere.applicationId = options.applicationId;
     }
-    if (options?.jobId) {
-      interviewWhere.application = { jobId: options.jobId };
-    }
+    interviewWhere.application = {
+      candidate: { deletedAt: null },
+      job: { deletedAt: null },
+      ...(options?.jobId ? { jobId: options.jobId } : {}),
+    };
 
     if (options?.startDate && options?.endDate) {
+      const parsedStart = new Date(options.startDate);
+      const parsedEnd = new Date(options.endDate);
+      if (
+        Number.isNaN(parsedStart.getTime()) ||
+        Number.isNaN(parsedEnd.getTime())
+      ) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid startDate or endDate filter.",
+        );
+      }
       interviewWhere.scheduledAt = {
-        gte: new Date(options.startDate),
-        lte: new Date(options.endDate),
+        gte: parsedStart,
+        lte: parsedEnd,
       };
     } else if (options?.tab === "UPCOMING") {
       const now = new Date();
-      const startOfToday = new Date(
-        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0),
-      );
       interviewWhere.scheduledAt = {
-        gte: startOfToday,
+        gte: now,
       };
     } else if (options?.tab === "AWAITING") {
       const now = new Date();
@@ -109,7 +120,11 @@ export class InterviewsQueryService {
     }
 
     const isCalendarMode = Boolean(options?.startDate && options?.endDate);
-    const limit = isCalendarMode ? 250 : defaultLimit;
+    const limit = isCalendarMode
+      ? options?.limit && options.limit > 0
+        ? options.limit
+        : 1000
+      : defaultLimit;
     const page = isCalendarMode ? 1 : defaultPage;
     const skip = (page - 1) * limit;
 
@@ -140,7 +155,13 @@ export class InterviewsQueryService {
       ? await resolveOrgNameDisplayOrder(this.prisma, targetOrgId)
       : "FIRST_LAST";
 
-    const data = interviews.map((intv) => {
+    const activeInterviews = interviews.filter(
+      (intv) =>
+        !intv.application?.candidate?.deletedAt &&
+        !intv.application?.job?.deletedAt,
+    );
+
+    const data = activeInterviews.map((intv) => {
       const formatted = formatInterviewRecord(intv);
       const app = intv.application;
       const candidate = app?.candidate;
@@ -176,6 +197,10 @@ export class InterviewsQueryService {
           : undefined,
       };
     });
+
+    if (options?.sortBy === "name") {
+      data.sort((a, b) => a.candidateName.localeCompare(b.candidateName));
+    }
 
     const totalPages = Math.ceil(total / limit) || 1;
 
@@ -218,7 +243,7 @@ export class InterviewsQueryService {
           throw new AppForbiddenException(
             APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
             "Access denied: interview belongs to another organization.",
-            { id, organizationId: otherOrg.organizationId || "" },
+            { id },
           );
         }
       }
@@ -232,6 +257,13 @@ export class InterviewsQueryService {
     const app = intv.application;
     const candidate = app?.candidate || null;
     const job = app?.job || null;
+    if (candidate?.deletedAt || job?.deletedAt) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
+    }
     const interviewOrgId =
       intv.organizationId || candidate?.organizationId || job?.organizationId;
     if (tenantOrgId && interviewOrgId && interviewOrgId !== tenantOrgId) {
@@ -256,6 +288,9 @@ export class InterviewsQueryService {
       application: app
         ? {
             ...app,
+            candidateName: resolvedCandidateName,
+            candidateEmail: candidate?.email || "",
+            candidatePhone: candidate?.phone || null,
             candidate: candidate
               ? { ...candidate, name: resolvedCandidateName }
               : undefined,

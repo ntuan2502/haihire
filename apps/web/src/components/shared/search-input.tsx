@@ -128,7 +128,7 @@ export function SearchInput({
   return (
     <div className={cn("relative flex-1 min-w-0 w-full", className)}>
       <Search
-        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
         aria-hidden="true"
       />
       <Input
@@ -141,7 +141,7 @@ export function SearchInput({
         autoFocus={autoFocus}
         aria-label={resolvedAriaLabel}
         className={cn(
-          "h-9 pl-9 pr-8 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full transition-colors",
+          "h-9 pl-9 pr-8 text-xs bg-background border-input rounded-md shadow-xs w-full transition-colors",
           inputClassName,
         )}
       />
@@ -150,7 +150,7 @@ export function SearchInput({
           type="button"
           onClick={handleClear}
           aria-label={t("common.clearSearch")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded-sm hover:bg-accent transition-colors"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>

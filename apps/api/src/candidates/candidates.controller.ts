@@ -29,8 +29,10 @@ import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import {
+  checkCandidateDuplicateSchema,
   createCandidateSchema,
   updateCandidateSchema,
+  type CheckCandidateDuplicateSchema,
   type CreateCandidateSchema,
   type UpdateCandidateSchema,
 } from "@haihire/shared";
@@ -65,6 +67,20 @@ export class CandidatesController {
         limit: query?.limit,
         search: query?.search,
       },
+      req?.user?.organizationId,
+    );
+  }
+
+  @Get("check-duplicate")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  checkDuplicates(
+    @Query(DtoPipe(checkCandidateDuplicateSchema))
+    query: CheckCandidateDuplicateSchema,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.checkDuplicates(
+      query,
       req?.user?.organizationId,
     );
   }
@@ -164,13 +180,35 @@ export class CandidatesController {
         req?.user,
       );
 
+    const safeAsciiFallback = asciiFallback.replace(
+      /[^\x20-\x7E]|["\\;]/g,
+      "_",
+    );
     const dispType = disposition === "inline" ? "inline" : "attachment";
     res.setHeader(
       "Content-Disposition",
-      `${dispType}; filename="${asciiFallback}"; filename*=UTF-8''${encodedFileName}`,
+      `${dispType}; filename="${safeAsciiFallback}"; filename*=UTF-8''${encodedFileName}`,
     );
     if (mimeType) {
       res.setHeader("Content-Type", mimeType);
+    }
+
+    if (typeof stream.on === "function") {
+      stream.on("error", (err) => {
+        if (!res.headersSent) {
+          res.status(502).end();
+        } else if (typeof res.destroy === "function") {
+          res.destroy(err instanceof Error ? err : undefined);
+        }
+      });
+    }
+    if (typeof res.on === "function") {
+      res.on("close", () => {
+        const destroyable = stream as { destroy?: () => void };
+        if (!res.writableEnded && typeof destroyable.destroy === "function") {
+          destroyable.destroy();
+        }
+      });
     }
 
     stream.pipe(res);

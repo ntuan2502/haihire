@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
@@ -15,7 +10,7 @@ import type {
   PaginatedResult,
 } from "@/types";
 import type { InterviewScorecard } from "@/lib/interviews";
-import { queryKeys } from "./query-keys";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useInterviews(params?: {
   organizationId?: string | null;
@@ -73,7 +68,8 @@ export function useInterviews(params?: {
       });
     },
     enabled: Boolean(effectiveOrgId) && (params?.enabled ?? true),
-    placeholderData: keepPreviousData,
+    placeholderData:
+      keepPreviousDataForSameOrg<PaginatedResult<Interview>>(effectiveOrgId),
   });
 }
 
@@ -103,6 +99,9 @@ export function useCreateInterviewMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -123,6 +122,9 @@ export function useUpdateInterviewMutation() {
         queryKey: queryKeys.interview(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -151,6 +153,9 @@ export function useSubmitScorecardMutation() {
         queryKey: queryKeys.interview(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -170,7 +175,10 @@ export function useDeleteInterviewMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });

@@ -50,6 +50,7 @@ export function useTableParams(options?: UseTableParamsOptions) {
   const [searchInput, setSearchInput] = useState(
     () => searchParams.get("search") || "",
   );
+  const [, setParamsRevision] = useState(0);
 
   // Sync in-memory ref and local state when URL changes externally (F5, back/forward)
   const syncFromUrl = useCallback(
@@ -95,6 +96,7 @@ export function useTableParams(options?: UseTableParamsOptions) {
       shouldResetPage = false,
     ) => {
       const current = currentParamsRef.current;
+      const prevQueryString = current.toString();
 
       if (shouldResetPage) {
         current.delete("page");
@@ -113,6 +115,9 @@ export function useTableParams(options?: UseTableParamsOptions) {
       }
 
       const queryString = current.toString();
+      if (queryString !== prevQueryString) {
+        setParamsRevision((v) => v + 1);
+      }
       const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
       // Use window.history.replaceState for shallow URL updates without triggering

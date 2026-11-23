@@ -1,6 +1,7 @@
 import { createTestOrganizationsService } from "../test/helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
+import { OrganizationsInvitesService } from "./services";
 import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import {
   BadRequestException,
@@ -726,6 +727,176 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         }
       ).organizationMember.upsert;
       expect(upsertSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("R2 Schema Safety & Multi-Org Scoping (BUG-01 & BUG-03)", () => {
+    it("does not select or filter by dropped User.role / User.organizationId columns and scopes getMyOrg/updateMyOrg to requested activeOrgId", async () => {
+      const strictMemberships = [
+        {
+          id: "mem-a",
+          organizationId: "org-1",
+          userId: "usr-strict",
+          role: "MEMBER",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "mem-b",
+          organizationId: "org-2",
+          userId: "usr-strict",
+          role: "ADMIN",
+          createdAt: new Date("2026-01-02T00:00:00Z"),
+        },
+      ];
+      const strictOrgs = [
+        {
+          id: "org-1",
+          name: "Org One",
+          slug: "org-one",
+          ownerId: "other-1",
+        },
+        {
+          id: "org-2",
+          name: "Org Two",
+          slug: "org-two",
+          ownerId: "other-2",
+        },
+      ];
+      const strictPrisma = createMockPrismaService({
+        organization: strictOrgs,
+        user: [
+          {
+            id: "usr-strict",
+            email: "strict@tun.io.vn",
+            firstName: "Strict",
+            lastName: "User",
+          },
+          {
+            id: "usr-target",
+            email: "target@tun.io.vn",
+            firstName: "Target",
+            lastName: "Member",
+          },
+        ],
+        organizationMember: [
+          ...strictMemberships,
+          {
+            id: "mem-t",
+            organizationId: "org-2",
+            userId: "usr-target",
+            role: "MEMBER",
+            createdAt: new Date("2026-01-03T00:00:00Z"),
+          },
+        ],
+      });
+
+      const origFindFirst = strictPrisma.user.findFirst;
+      strictPrisma.user.findFirst = vi.fn(
+        async (args?: {
+          where?: Record<string, unknown>;
+          select?: Record<string, unknown>;
+        }) => {
+          if (
+            (args?.select &&
+              ("role" in args.select || "organizationId" in args.select)) ||
+            (args?.where &&
+              ("role" in args.where || "organizationId" in args.where))
+          ) {
+            throw new Error(
+              "PrismaClientValidationError: Unknown field on model User",
+            );
+          }
+          return origFindFirst(args as never);
+        },
+      ) as never;
+
+      const strictService = createTestOrganizationsService(
+        strictPrisma as never,
+      );
+
+      const org2 = await strictService.getMyOrg("usr-strict", "org-2");
+      expect(org2?.id).toBe("org-2");
+
+      const updated = await strictService.updateMyOrg(
+        "usr-strict",
+        { name: "Org Two Renamed" },
+        "org-2",
+      );
+      expect(updated?.name).toBe("Org Two Renamed");
+
+      const link = await strictService.createInviteLink(
+        "usr-strict",
+        { role: "RECRUITER" },
+        "org-2",
+      );
+      expect(link.organizationId).toBe("org-2");
+
+      const preview = await strictService.getPublicInvite(link.token);
+      expect(preview.valid).toBe(true);
+
+      const roleUpdate = await strictService.updateMemberRole(
+        "usr-strict",
+        "usr-target",
+        "INTERVIEWER",
+        "org-2",
+      );
+      expect(roleUpdate.role).toBe("INTERVIEWER");
+
+      const removed = await strictService.removeMember(
+        "usr-strict",
+        "usr-target",
+        "org-2",
+      );
+      expect(removed.success).toBe(true);
+    });
+
+    it("BUG-10: createInviteLink with email dispatches invitation email and defaults maxUses to 1", async () => {
+      const mockEmailSystem = {
+        sendSystemEmail: vi.fn().mockResolvedValue({ status: "QUEUED" }),
+      };
+      const invitesSvc = new OrganizationsInvitesService(
+        mockPrismaService as never,
+        undefined,
+        undefined,
+        mockEmailSystem as never,
+      );
+
+      const created = await invitesSvc.createInviteLink(
+        "usr-2",
+        { email: "Colleague@HaiHire.vn", role: "RECRUITER" },
+        "org-1",
+      );
+
+      expect(created.maxUses).toBe(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledTimes(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "colleague@haihire.vn",
+          organizationId: "org-1",
+          subject: expect.stringContaining("Acme Corp"),
+          body: expect.stringContaining(`/auth/join/${created.token}`),
+        }),
+      );
+    });
+
+    it("executes joinByToken and join inside withSystemRlsBypass so multi-org users can accept cross-org invites", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+      const withSystemRlsBypass = vi.fn(
+        async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrismaService),
+      );
+      (
+        mockPrismaService as { withSystemRlsBypass?: unknown }
+      ).withSystemRlsBypass = withSystemRlsBypass;
+
+      const joined = await service.joinByToken("usr-1", link.token);
+      expect(joined.success).toBe(true);
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(1);
+
+      const secondLink = await service.createInviteLink("usr-2", {
+        role: "RECRUITER",
+      });
+      await service.join("usr-3", { inviteCodeOrSlug: secondLink.token });
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(2);
     });
   });
 });

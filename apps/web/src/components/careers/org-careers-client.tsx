@@ -18,7 +18,6 @@ import {
   DollarSign,
   Search,
   ArrowRight,
-  Sparkles,
   AlertCircle,
   Globe2,
   ChevronRight,
@@ -123,19 +122,19 @@ export function OrgCareersClient({
 
   if (!initialOrg) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
-        <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
+        <div className="h-14 w-14 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-xl font-bold text-foreground">
           {t("careers.orgNotFound")}
         </h1>
-        <p className="mt-2 text-sm text-slate-500 max-w-md">
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">
           {t("careers.orgNotFoundDesc", { slug: orgSlug })}
         </p>
         <Button
           onClick={() => router.push("/")}
-          className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
+          className="mt-6 h-9 rounded-md text-xs font-semibold cursor-pointer"
           variant="outline"
         >
           {t("careers.backToHome")}
@@ -147,11 +146,12 @@ export function OrgCareersClient({
   const orgName = initialOrg.name || t("careers.companyPage");
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200">
       {/* Top Navbar */}
       <CareersHeader
         orgName={orgName}
         orgSlug={orgSlug}
+        orgLogoUrl={initialOrg.logoUrl}
         showShareButton={true}
         onShare={handleCopyPortalLink}
         copiedLink={copiedLink}
@@ -159,43 +159,36 @@ export function OrgCareersClient({
       />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-slate-100/50 dark:from-slate-900 dark:via-slate-900/50 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-radial-[circle_at_top_right] from-blue-500/5 dark:from-blue-500/10 via-transparent to-transparent pointer-events-none" />
-
+      <section className="relative overflow-hidden bg-background border-b border-border py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{t("careers.hiringTalentBadge")}</span>
-            </div>
-          </div>
+          <p className="text-xs font-mono text-muted-foreground">
+            {t("careers.hiringTalentBadge")}
+          </p>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight text-balance">
+          <h1 className="text-3xl sm:text-5xl font-medium text-foreground tracking-tight leading-[1.08] text-balance">
             {t("careers.buildCareerWith")}{" "}
-            <span className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              {orgName}
-            </span>
+            <span className="text-foreground">{orgName}</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             {t("careers.companyHeroDesc")}
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
-            <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-blue-600" />
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium text-muted-foreground">
+            <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">
+                <strong className="text-foreground font-medium font-mono tabular-nums">
                   {filteredJobs.length}
                 </strong>{" "}
                 {t("careers.openPositions")}
               </span>
             </div>
             {departments.length > 0 && (
-              <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-indigo-600" />
+              <div className="px-4 py-2 rounded-lg bg-card text-card-foreground border border-border flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white font-extrabold">
+                  <strong className="text-foreground font-medium font-mono tabular-nums">
                     {departments.length}
                   </strong>{" "}
                   {t("careers.departmentsCount")}
@@ -207,12 +200,15 @@ export function OrgCareersClient({
       </section>
 
       {/* Main Content: Search, Filter, Jobs Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
+      <main
+        id="main-content"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8"
+      >
         {/* Search & Filter Bar */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
+        <div className="p-4 sm:p-5 rounded-xl bg-card border border-border shadow-xs flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
               aria-hidden="true"
             />
             <Input
@@ -222,7 +218,7 @@ export function OrgCareersClient({
               aria-label={t("careers.searchInCompany")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-10 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+              className="pl-10 h-10 rounded-md text-xs bg-background border-input"
             />
           </div>
 
@@ -261,14 +257,14 @@ export function OrgCareersClient({
 
         {/* Jobs List / Cards */}
         {filteredJobs.length === 0 ? (
-          <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 space-y-3">
-            <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+          <div className="py-16 text-center bg-card text-card-foreground rounded-2xl border border-border p-8 space-y-3">
+            <div className="h-12 w-12 rounded-xl bg-muted text-muted-foreground flex items-center justify-center mx-auto">
               <Briefcase className="h-6 w-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="text-base font-bold text-foreground">
               {t("careers.noCompanyJobs")}
             </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
               {t("careers.noCompanyJobsDesc")}
             </p>
             {(search || selectedDept !== "all" || selectedType !== "all") && (
@@ -280,7 +276,7 @@ export function OrgCareersClient({
                   setSelectedDept("all");
                   setSelectedType("all");
                 }}
-                className="mt-2 text-xs rounded-xl cursor-pointer"
+                className="mt-2 text-xs rounded-md cursor-pointer"
               >
                 {t("careers.resetFilter")}
               </Button>
@@ -289,70 +285,84 @@ export function OrgCareersClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredJobs.map((job) => {
-              const jobSlug = slugify(job.title) || job.id;
-              const jobUrl = refParam
-                ? `/careers/${orgSlug}/${jobSlug}?ref=${encodeURIComponent(refParam)}`
+              const baseSlug = slugify(job.title);
+              const jobSlug = baseSlug
+                ? `${baseSlug}-${job.id.slice(0, 8)}`
+                : job.id;
+              const linkParams = new URLSearchParams();
+              for (const key of [
+                "ref",
+                "utm_source",
+                "utm_medium",
+                "utm_campaign",
+                "utm_term",
+                "utm_content",
+              ]) {
+                const val = searchParams.get(key);
+                if (val) linkParams.set(key, val);
+              }
+              const queryString = linkParams.toString();
+              const jobUrl = queryString
+                ? `/careers/${orgSlug}/${jobSlug}?${queryString}`
                 : `/careers/${orgSlug}/${jobSlug}`;
 
               return (
                 <Link
                   key={job.id}
                   href={jobUrl}
-                  className="group relative flex flex-col justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md transition-all duration-200"
+                  className="group relative flex flex-col justify-between p-6 rounded-xl bg-card text-card-foreground border border-border hover:border-foreground/20 transition-colors duration-200"
                 >
                   <div className="space-y-3.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-foreground border border-border">
                         {job.department}
                       </span>
                       {job.workplace && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                          <Globe2 className="h-3 w-3 text-indigo-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                          <Globe2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
                           {getWorkplaceLabel(job.workplace, t)}
                         </span>
                       )}
                       {job.experienceLevel && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                          <Briefcase className="h-3 w-3 text-blue-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
+                          <Briefcase className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
                           {getExperienceLevelLabel(job.experienceLevel, t)}
                         </span>
                       )}
                       {job.salaryRange && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                          <DollarSign className="h-3 w-3 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium font-mono tabular-nums bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                          <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[1.5]" />
                           {job.salaryRange}
                         </span>
                       )}
                     </div>
 
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                    <h2 className="text-lg font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">
                       {job.title}
                     </h2>
 
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-medium">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5]" />
                         <span>{job.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5]" />
                         <span>{getJobTypeLabel(job.type, t)}</span>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed pt-1">
+                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed pt-1">
                       {job.description}
                     </p>
                   </div>
 
-                  <div className="pt-6 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                  <div className="pt-6 mt-4 border-t border-border flex items-center justify-between">
+                    <span className="text-xs font-medium text-foreground group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
                       {t("careers.viewDetailAndApply")}
                       <ChevronRight className="h-3.5 w-3.5" />
                     </span>
-                    <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 text-slate-400 group-hover:text-blue-600 flex items-center justify-center transition-colors">
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                 </Link>
               );
@@ -362,7 +372,11 @@ export function OrgCareersClient({
       </main>
 
       {/* Footer */}
-      <CareersFooter orgName={orgName} orgSlug={orgSlug} />
+      <CareersFooter
+        orgName={orgName}
+        orgSlug={orgSlug}
+        orgLogoUrl={initialOrg.logoUrl}
+      />
     </div>
   );
 }

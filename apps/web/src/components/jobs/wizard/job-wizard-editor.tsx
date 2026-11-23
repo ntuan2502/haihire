@@ -103,9 +103,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200 overflow-y-auto">
+    <div className="flex-1 flex flex-col min-h-0 bg-background text-foreground font-sans transition-colors duration-200 overflow-y-auto">
       <WizardHeader
         mode={mode}
+        publishMode={form.publishMode}
         initialJob={initialJob}
         currentStep={currentStep}
         steps={steps}
@@ -117,7 +118,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onSaveJob={submit.handleSaveJob}
       />
 
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-28 sm:pb-20">
+      <div className="flex-1 w-full p-4 sm:p-6 space-y-6 pb-28 sm:pb-20">
         {mode === "create" &&
           draft.hasRestoredDraft &&
           !draft.draftBannerDismissed && (
@@ -129,85 +130,81 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           )}
 
         {form.formError && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2 animate-in fade-in">
+          <div className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium flex items-center gap-2 animate-in fade-in">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{form.formError}</span>
           </div>
         )}
 
         {currentStep === 1 && (
-          <div className="max-w-4xl mx-auto">
-            <WizardStepDetails
-              jobTitle={form.jobTitle}
-              setJobTitle={form.setJobTitle}
-              department={form.department}
-              setDepartment={form.setDepartment}
-              location={form.location}
-              setLocation={form.setLocation}
-              postalCode={form.postalCode}
-              setPostalCode={form.setPostalCode}
-              employmentType={form.employmentType}
-              setEmploymentType={form.setEmploymentType}
-              experienceLevel={form.experienceLevel}
-              setExperienceLevel={form.setExperienceLevel}
-              workplace={form.workplace}
-              setWorkplace={form.setWorkplace}
-              compensationOpen={form.compensationOpen}
-              setCompensationOpen={form.setCompensationOpen}
-              payNegotiable={form.payNegotiable}
-              setPayNegotiable={form.setPayNegotiable}
-              minSalary={form.minSalary}
-              setMinSalary={form.setMinSalary}
-              maxSalary={form.maxSalary}
-              setMaxSalary={form.setMaxSalary}
-              currency={form.currency || ""}
-              setCurrency={form.setCurrency}
-              salaryPer={form.salaryPer || ""}
-              setSalaryPer={form.setSalaryPer}
-              description={form.description}
-              setDescription={form.setDescription}
-              requirements={form.requirements}
-              setRequirements={form.setRequirements}
-              touched={validation.touched}
-              setTouched={validation.setTouched}
-              showTitleError={validation.showTitleError}
-              showLocationError={validation.showLocationError}
-              showEmploymentTypeError={validation.showEmploymentTypeError}
-              showExperienceLevelError={validation.showExperienceLevelError}
-              showWorkplaceError={validation.showWorkplaceError}
-              hasSalaryData={validation.hasSalaryData}
-              showCurrencyError={validation.showCurrencyError}
-              showSalaryPerError={validation.showSalaryPerError}
-              showDescriptionError={validation.showDescriptionError}
-              isDescriptionValid={validation.isDescriptionValid}
-              isStep1Valid={validation.isStep1Valid}
-              onContinue={handleStep1Continue}
-              onCancel={submit.handleCancel}
-            />
-          </div>
+          <WizardStepDetails
+            jobTitle={form.jobTitle}
+            setJobTitle={form.setJobTitle}
+            department={form.department}
+            setDepartment={form.setDepartment}
+            location={form.location}
+            setLocation={form.setLocation}
+            postalCode={form.postalCode}
+            setPostalCode={form.setPostalCode}
+            employmentType={form.employmentType}
+            setEmploymentType={form.setEmploymentType}
+            experienceLevel={form.experienceLevel}
+            setExperienceLevel={form.setExperienceLevel}
+            workplace={form.workplace}
+            setWorkplace={form.setWorkplace}
+            compensationOpen={form.compensationOpen}
+            setCompensationOpen={form.setCompensationOpen}
+            payNegotiable={form.payNegotiable}
+            setPayNegotiable={form.setPayNegotiable}
+            minSalary={form.minSalary}
+            setMinSalary={form.setMinSalary}
+            maxSalary={form.maxSalary}
+            setMaxSalary={form.setMaxSalary}
+            currency={form.currency || ""}
+            setCurrency={form.setCurrency}
+            salaryPer={form.salaryPer || ""}
+            setSalaryPer={form.setSalaryPer}
+            description={form.description}
+            setDescription={form.setDescription}
+            requirements={form.requirements}
+            setRequirements={form.setRequirements}
+            touched={validation.touched}
+            setTouched={validation.setTouched}
+            showTitleError={validation.showTitleError}
+            showLocationError={validation.showLocationError}
+            showEmploymentTypeError={validation.showEmploymentTypeError}
+            showExperienceLevelError={validation.showExperienceLevelError}
+            showWorkplaceError={validation.showWorkplaceError}
+            hasSalaryData={validation.hasSalaryData}
+            showCurrencyError={validation.showCurrencyError}
+            showSalaryPerError={validation.showSalaryPerError}
+            showDescriptionError={validation.showDescriptionError}
+            isDescriptionValid={validation.isDescriptionValid}
+            isStep1Valid={validation.isStep1Valid}
+            onContinue={handleStep1Continue}
+            onCancel={submit.handleCancel}
+          />
         )}
 
         {currentStep === 2 && (
-          <div className="max-w-4xl mx-auto">
-            <WizardStepForm
-              phoneSetting={form.phoneSetting}
-              setPhoneSetting={form.setPhoneSetting}
-              resumeSetting={form.resumeSetting}
-              setResumeSetting={form.setResumeSetting}
-              coverLetterSetting={form.coverLetterSetting}
-              setCoverLetterSetting={form.setCoverLetterSetting}
-              screeningQuestions={form.screeningQuestions}
-              isAddingQuestion={form.isAddingQuestion}
-              setIsAddingQuestion={form.setIsAddingQuestion}
-              newQuestionText={form.newQuestionText}
-              setNewQuestionText={form.setNewQuestionText}
-              onAddQuestion={form.handleAddQuestion}
-              onRemoveQuestion={form.handleRemoveQuestion}
-              onCancel={submit.handleCancel}
-              onBack={() => setCurrentStep(1)}
-              onContinue={() => setCurrentStep(3)}
-            />
-          </div>
+          <WizardStepForm
+            phoneSetting={form.phoneSetting}
+            setPhoneSetting={form.setPhoneSetting}
+            resumeSetting={form.resumeSetting}
+            setResumeSetting={form.setResumeSetting}
+            coverLetterSetting={form.coverLetterSetting}
+            setCoverLetterSetting={form.setCoverLetterSetting}
+            screeningQuestions={form.screeningQuestions}
+            isAddingQuestion={form.isAddingQuestion}
+            setIsAddingQuestion={form.setIsAddingQuestion}
+            newQuestionText={form.newQuestionText}
+            setNewQuestionText={form.setNewQuestionText}
+            onAddQuestion={form.handleAddQuestion}
+            onRemoveQuestion={form.handleRemoveQuestion}
+            onCancel={submit.handleCancel}
+            onBack={() => setCurrentStep(1)}
+            onContinue={() => setCurrentStep(3)}
+          />
         )}
 
         {currentStep === 3 && (
@@ -256,7 +253,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           isOpen={Boolean(deleteConfirmOpen && initialJob)}
           onClose={() => setDeleteConfirmOpen(false)}
           onConfirm={submit.handleDeleteJob}
-          jobTitle={form.jobTitle}
+          jobTitle={initialJob?.title || ""}
           isDeleting={submit.isDeleting}
         />
 
@@ -281,8 +278,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           coverLetterSetting={form.coverLetterSetting}
           screeningQuestions={form.screeningQuestions}
           orgName={user?.organization?.name}
+          orgLogoUrl={user?.organization?.logoUrl}
         />
-      </main>
+      </div>
 
       <WizardMobileFooter
         currentStep={currentStep}

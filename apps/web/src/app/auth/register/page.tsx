@@ -19,12 +19,14 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { sanitizeRedirectPath } from "@/lib/utils";
 import { registerSchema } from "@haihire/shared";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
+  const rawRedirect = searchParams.get("redirect");
+  const redirectUrl = rawRedirect ? sanitizeRedirectPath(rawRedirect, "") : "";
   const { register, isAuthenticated, user, loading: authLoading } = useAuth();
   const { t, locale } = useI18n();
   const isLastFirst = locale === "vi";
@@ -50,12 +52,23 @@ function RegisterForm() {
     }
   }, [isAuthenticated, user, authLoading, redirectUrl, router]);
 
-  if (authLoading || isAuthenticated) {
+  if (isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-3">
-        <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
-        <p className="text-xs text-slate-500 font-medium">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground font-medium">
           {t("auth.alreadySignedIn")}
+        </p>
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-3">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <p className="text-xs text-muted-foreground font-medium">
+          {t("common.loading")}
         </p>
       </div>
     );
@@ -144,13 +157,13 @@ function RegisterForm() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+        <div className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary mb-2">
           <Building2 className="h-3.5 w-3.5" /> {t("auth.recruiterSignUp")}
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
           {t("auth.registerTitle")}
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {t("auth.registerSubtitle")}
         </p>
       </div>
@@ -174,9 +187,9 @@ function RegisterForm() {
             <div key={field.id}>
               <label
                 htmlFor={field.id}
-                className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+                className="text-xs font-semibold text-foreground flex items-center gap-1.5"
               >
-                <UserIcon className="h-3.5 w-3.5 text-slate-400" />{" "}
+                <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />{" "}
                 {field.label}
               </label>
               <Input
@@ -185,7 +198,7 @@ function RegisterForm() {
                 placeholder={field.placeholder}
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
-                className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
+                className="mt-1 h-10 text-xs rounded-md bg-background"
                 required
               />
             </div>
@@ -195,9 +208,9 @@ function RegisterForm() {
         <div>
           <label
             htmlFor="register-email"
-            className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+            className="text-xs font-semibold text-foreground flex items-center gap-1.5"
           >
-            <Mail className="h-3.5 w-3.5 text-slate-400" />{" "}
+            <Mail className="h-3.5 w-3.5 text-muted-foreground" />{" "}
             {t("auth.emailLabel")}
           </label>
           <Input
@@ -206,7 +219,7 @@ function RegisterForm() {
             placeholder={t("auth.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
+            className="mt-1 h-10 text-xs rounded-md bg-background"
             required
           />
         </div>
@@ -215,12 +228,12 @@ function RegisterForm() {
           <div className="flex items-center justify-between">
             <label
               htmlFor="register-password"
-              className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"
+              className="text-xs font-semibold text-foreground flex items-center gap-1.5"
             >
-              <Lock className="h-3.5 w-3.5 text-slate-400" />{" "}
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />{" "}
               {t("auth.passwordLabel")}
             </label>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-muted-foreground">
               {t("auth.minPasswordLength")}
             </span>
           </div>
@@ -231,20 +244,21 @@ function RegisterForm() {
               placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="pr-10 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
+              className="pr-10 h-10 text-xs rounded-md bg-background"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              tabIndex={-1}
+              aria-label={t("auth.passwordLabel")}
+              aria-pressed={showPassword}
+              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -253,7 +267,7 @@ function RegisterForm() {
         <Button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-10 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-10 rounded-md shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -267,12 +281,12 @@ function RegisterForm() {
       </form>
 
       {/* Login Link */}
-      <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+      <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
         <span>{t("auth.hasAccount")}</span>
         <Link
           href={loginHref}
           prefetch={false}
-          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+          className="font-semibold text-primary hover:underline inline-flex items-center gap-1 hover:text-primary/80 transition-colors"
         >
           <LogIn className="h-3.5 w-3.5" />
           <span>{t("auth.loginLink")}</span>
@@ -286,7 +300,7 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
       }
     >
       <RegisterForm />

@@ -1,24 +1,40 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Send, Eye, Edit3, Sparkles, User, Briefcase } from "lucide-react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  useId,
+  type FormEvent,
+} from "react";
+import { Send, Eye, Edit3 } from "lucide-react";
 import {
   type EmailFlowKey,
   type EmailTemplateType,
   type EmailLog,
   DEFAULT_EMAIL_TEMPLATES,
-  TEMPLATE_VARIABLES,
   getEmailTemplateTypeLabel,
   interpolateTemplate,
 } from "@/lib/email-templates";
-import { useI18n, type TranslationKey } from "@/i18n";
-import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n";
 import { Input } from "@/components/ui/input";
-import { CustomSelect, CustomModal } from "@/components/shared";
+import { Textarea } from "@/components/ui/textarea";
+import { CustomSelect, FormModal } from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
-import { EmailHtmlPreview } from "./email-html-preview";
+import {
+  formatDate,
+  formatTime,
+  getCandidateDisplayName,
+  normalizeEmailAddress,
+} from "@/lib/utils";
+import {
+  SendEmailPreviewPane,
+  SendEmailRecipientBanner,
+  SendEmailVariableBar,
+} from "./send-email-modal-sections";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useEmailFlows } from "@/hooks/use-email-queries";
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
@@ -63,15 +79,27 @@ export function SendEmailModal({
   onSendSuccess,
 }: SendEmailModalProps) {
   const { t } = useI18n();
+  const baseId = useId();
+  const templateSelectId = `${baseId}-template`;
+  const subjectInputId = `${baseId}-subject`;
   const canViewEmail = useHasPermission("email:view");
 
   const candidateDisplayName = candidate
     ? getCandidateDisplayName(candidate)
     : "";
+  const normalizedEmail = normalizeEmailAddress(candidate?.email);
+  const hasEmail = normalizedEmail.length > 0;
   const effectiveJobTitle = jobTitle || t("email.defaultJobTitle");
   const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
-  const { data: remoteTemplates } = useEmailTemplates();
+  const interviewScheduledAt = interviewDetails?.scheduledAt;
+  const interviewFormat = interviewDetails?.format;
+  const interviewLinkOrLocation = interviewDetails?.linkOrLocation;
+  const interviewInterviewer = interviewDetails?.interviewer;
+
+  const { data: remoteTemplates } = useEmailTemplates(undefined, {
+    enabled: isOpen,
+  });
   const { data: remoteFlows } = useEmailFlows(undefined, {
     enabled: isOpen && canViewEmail && Boolean(defaultFlowKey),
   });
@@ -91,7 +119,7 @@ export function SendEmailModal({
         })),
         {
           value: ADHOC_TEMPLATE_VALUE,
-          label: `✏️ ${t("email.customAdHocOption")}`,
+          label: t("email.customAdHocOption"),
         },
       ];
     }
@@ -109,7 +137,7 @@ export function SendEmailModal({
       })),
       {
         value: ADHOC_TEMPLATE_VALUE,
-        label: `✏️ ${t("email.customAdHocOption")}`,
+        label: t("email.customAdHocOption"),
       },
     ];
   }, [activeTemplates, t]);
@@ -145,36 +173,41 @@ export function SendEmailModal({
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const bodyInputRef = useRef<HTMLTextAreaElement>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOpenRef = useRef(false);
-  const hasManualSelectionRef = useRef(false);
+  const hasManualEditRef = useRef(false);
+  const appliedDefaultRef = useRef<string | null>(null);
 
-  // Variables map for interpolation
+  // Variables map with primitive dependencies so parent object literals never re-trigger composer resets
+  const candidatePhone = candidate?.phone;
   const variablesMap = useMemo(() => {
     return {
       candidate_name: candidateDisplayName || t("email.defaultCandidateName"),
-      candidate_email: candidate?.email || "candidate@example.com",
+      candidate_email: normalizedEmail || undefined,
+      candidate_phone: candidatePhone || undefined,
       job_title: effectiveJobTitle,
       company_name: effectiveOrgName,
-      interview_date: interviewDetails?.scheduledAt
-        ? formatDate(interviewDetails.scheduledAt)
-        : "22/09/2026",
-      interview_time: interviewDetails?.scheduledAt
-        ? formatTime(interviewDetails.scheduledAt)
-        : "14:30",
-      interview_format: interviewDetails?.format || "Google Meet",
-      interview_link:
-        interviewDetails?.linkOrLocation ||
-        "https://meet.google.com/xyz-abcd-efg",
-      interviewer_name:
-        interviewDetails?.interviewer || t("email.defaultInterviewerName"),
+      interview_date: interviewScheduledAt
+        ? formatDate(interviewScheduledAt)
+        : undefined,
+      interview_time: interviewScheduledAt
+        ? formatTime(interviewScheduledAt)
+        : undefined,
+      interview_format: interviewFormat || undefined,
+      interview_link: interviewLinkOrLocation || undefined,
+      interviewer_name: interviewInterviewer || undefined,
       sender_name: t("email.defaultSenderName"),
     };
   }, [
     candidateDisplayName,
-    candidate?.email,
+    normalizedEmail,
+    candidatePhone,
     effectiveJobTitle,
     effectiveOrgName,
-    interviewDetails,
+    interviewScheduledAt,
+    interviewFormat,
+    interviewLinkOrLocation,
+    interviewInterviewer,
     t,
   ]);
 
@@ -205,32 +238,49 @@ export function SendEmailModal({
     [activeTemplates, variablesMap],
   );
 
-  // Sync default template when modal opens or templates resolve asynchronously
+  // Sync default template when modal opens or async default resolves, preserving manual edits
   useEffect(() => {
     if (!isOpen) {
       wasOpenRef.current = false;
-      hasManualSelectionRef.current = false;
+      hasManualEditRef.current = false;
+      appliedDefaultRef.current = null;
       return;
     }
     if (!wasOpenRef.current) {
       wasOpenRef.current = true;
       setIsPreviewMode(false);
     }
-    if (!hasManualSelectionRef.current) {
+    if (
+      !hasManualEditRef.current &&
+      appliedDefaultRef.current !== resolvedDefaultValue
+    ) {
+      appliedDefaultRef.current = resolvedDefaultValue;
       setSelectedValue(resolvedDefaultValue);
       applyTemplateByValue(resolvedDefaultValue);
     }
   }, [isOpen, resolvedDefaultValue, applyTemplateByValue]);
 
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectTemplate = (nextValue: string) => {
-    hasManualSelectionRef.current = true;
+    hasManualEditRef.current = true;
     setSelectedValue(nextValue);
     applyTemplateByValue(nextValue);
   };
 
-  if (!isOpen || !candidate) return null;
+  if (!candidate) return null;
+
+  const isSending = sendEmailMutation.isPending;
 
   const handleInsertVariable = (varKey: string) => {
+    if (isSending) return;
+    hasManualEditRef.current = true;
     if (!bodyInputRef.current) {
       setBody((prev) => prev + " " + varKey);
       return;
@@ -240,13 +290,18 @@ export function SendEmailModal({
     const end = textarea.selectionEnd;
     const nextBody = body.substring(0, start) + varKey + body.substring(end);
     setBody(nextBody);
-    setTimeout(() => {
+    if (focusTimerRef.current) {
+      clearTimeout(focusTimerRef.current);
+    }
+    focusTimerRef.current = setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + varKey.length, start + varKey.length);
     }, 0);
   };
 
-  const handleSend = async () => {
+  const handleSend = async (e: FormEvent) => {
+    e.preventDefault();
+    if (isSending || !hasEmail || !subject.trim() || !body.trim()) return;
     try {
       const selectedTemplate = activeTemplates.find(
         (tpl) => tpl.id === selectedValue,
@@ -265,11 +320,21 @@ export function SendEmailModal({
           ? t("email.customAdHocOption")
           : undefined;
 
+      const definedVariables: Record<string, string> = {};
+      for (const [key, val] of Object.entries(variablesMap)) {
+        if (val !== undefined) {
+          definedVariables[key] = val;
+        }
+      }
+
       const log = await sendEmailMutation.mutateAsync({
-        to: candidate.email,
+        to: normalizedEmail,
         recipientName: candidateDisplayName,
-        subject,
-        body,
+        subject: interpolateTemplate(subject, variablesMap),
+        body: interpolateTemplate(body, variablesMap),
+        ...(Object.keys(definedVariables).length > 0
+          ? { variables: definedVariables }
+          : {}),
         ...(templateId ? { templateId } : {}),
         ...(templateName ? { templateName } : {}),
         templateType,
@@ -285,197 +350,145 @@ export function SendEmailModal({
     }
   };
 
-  const isSending = sendEmailMutation.isPending;
-
   return (
-    <CustomModal
+    <FormModal
       isOpen={isOpen}
-      onClose={isSending ? () => {} : onClose}
+      onClose={onClose}
+      onSubmit={handleSend}
       title={t("email.modalTitle")}
+      icon={
+        <Send className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+      }
       badge={
-        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+        <span className="text-[11px] font-semibold text-foreground">
           {candidateDisplayName}
         </span>
       }
       size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      isSubmitting={isSending}
+      submitDisabled={!subject.trim() || !body.trim() || !hasEmail}
+      submitLabel={t("email.sendBtn")}
+      savingLabel={t("email.sendingBtn")}
+      cancelLabel={t("email.cancel")}
+      bodyClassName="space-y-4 bg-background"
     >
-      {/* Subheader Candidate info strip */}
-      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-900 dark:text-white">
-            {candidateDisplayName}
-          </span>
-          <span className="text-slate-400">•</span>
-          <span className="text-slate-500 dark:text-slate-400">
-            {candidate.email}
-          </span>
-        </div>
+      {/* Template Selector */}
+      <div>
+        <label
+          htmlFor={`${templateSelectId}-trigger`}
+          className="block text-xs font-medium text-foreground mb-1.5"
+        >
+          {t("email.selectTemplate")}
+        </label>
+        <CustomSelect
+          id={templateSelectId}
+          value={selectedValue}
+          onChange={handleSelectTemplate}
+          options={templateOptions}
+          disabled={isSending}
+          className="w-full"
+          triggerClassName="h-9 text-xs"
+        />
       </div>
 
-      {/* Modal Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {/* Template Selector */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-            {t("email.selectTemplate")}
-          </label>
-          <CustomSelect
-            value={selectedValue}
-            onChange={handleSelectTemplate}
-            options={templateOptions}
-            className="w-full"
-            triggerClassName="h-9 text-xs"
-          />
+      {/* Recipient Information Pill */}
+      <SendEmailRecipientBanner
+        candidateDisplayName={candidateDisplayName}
+        normalizedEmail={normalizedEmail}
+        hasEmail={hasEmail}
+        effectiveJobTitle={effectiveJobTitle}
+      />
+
+      {/* Subject Field */}
+      <div>
+        <label
+          htmlFor={subjectInputId}
+          className="block text-xs font-medium text-foreground mb-1.5"
+        >
+          {t("email.subject")}
+        </label>
+        <Input
+          id={subjectInputId}
+          value={subject}
+          disabled={isSending}
+          onChange={(e) => {
+            hasManualEditRef.current = true;
+            setSubject(e.target.value);
+          }}
+          placeholder={t("email.subjectPlaceholder")}
+          className="h-9 text-xs"
+        />
+      </div>
+
+      {/* Edit / Preview Tabs */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+        <div className="flex items-center gap-1 p-0.5 bg-muted border border-border rounded-lg">
+          <button
+            type="button"
+            disabled={isSending}
+            onClick={() => setIsPreviewMode(false)}
+            className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+              !isPreviewMode
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <Edit3 className="h-3 w-3" aria-hidden="true" />
+            <span>{t("email.tabCompose")}</span>
+          </button>
+          <button
+            type="button"
+            disabled={isSending}
+            onClick={() => setIsPreviewMode(true)}
+            className={`px-3 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 ${
+              isPreviewMode
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <Eye className="h-3 w-3" aria-hidden="true" />
+            <span>{t("email.livePreview")}</span>
+          </button>
         </div>
 
-        {/* Recipient Information Pill */}
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 text-xs flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-            <User className="h-3.5 w-3.5 text-slate-400" />
-            <span>{t("email.recipient")}:</span>
-            <strong className="font-semibold text-slate-900 dark:text-white">
-              {candidateDisplayName}
-            </strong>
-            <span className="text-slate-400">({candidate.email})</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <Briefcase className="h-3 w-3 text-slate-400" />
-            <span>{jobTitle}</span>
-          </div>
-        </div>
-
-        {/* Subject Field */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-            {t("email.subject")}
-          </label>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder={t("email.subjectPlaceholder")}
-            className="h-9 text-xs"
-          />
-        </div>
-
-        {/* Edit / Preview Tabs */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setIsPreviewMode(false)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                !isPreviewMode
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              <Edit3 className="h-3 w-3" />
-              <span>{t("email.tabCompose")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPreviewMode(true)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                isPreviewMode
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              <Eye className="h-3 w-3" />
-              <span>{t("email.livePreview")}</span>
-            </button>
-          </div>
-
-          {!isPreviewMode && (
-            <span className="text-[11px] text-slate-400 flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-amber-500" />
-              <span>{t("email.htmlAndVariables")}</span>
-            </span>
-          )}
-        </div>
-
-        {/* Body Editor or Preview Mode */}
-        {!isPreviewMode ? (
-          <div className="space-y-2">
-            <textarea
-              ref={bodyInputRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={10}
-              className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white font-mono leading-relaxed focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-2xs"
-              placeholder={t("email.bodyPlaceholder")}
-            />
-
-            {/* Variable Insertion Pills */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                <Sparkles className="h-3 w-3 text-blue-500" />
-                <span>{t("email.insertVariableHint")}</span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {TEMPLATE_VARIABLES.map((v) => (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => handleInsertVariable(v.key)}
-                    className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-2xs"
-                    title={t(v.labelKey as TranslationKey) || v.label}
-                  >
-                    {v.key}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Live HTML Preview */
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-xs space-y-4">
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 text-xs space-y-1 text-slate-500">
-              <div>
-                <strong className="text-slate-700 dark:text-slate-300">
-                  {t("email.thSubject")}:
-                </strong>{" "}
-                {subject}
-              </div>
-              <div>
-                <strong className="text-slate-700 dark:text-slate-300">
-                  {t("email.thRecipient")}:
-                </strong>{" "}
-                {candidateDisplayName} &lt;{candidate.email}&gt;
-              </div>
-            </div>
-            <EmailHtmlPreview
-              title={subject}
-              body={body}
-              className="prose prose-xs dark:prose-invert max-w-none text-xs text-slate-800 dark:text-slate-200 leading-relaxed"
-            />
-          </div>
+        {!isPreviewMode && (
+          <span className="text-[11px] text-muted-foreground">
+            {t("email.htmlAndVariables")}
+          </span>
         )}
       </div>
 
-      {/* Modal Footer */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] shrink-0">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClose}
-          disabled={isSending}
-          className="h-8 px-3.5 text-xs font-semibold rounded-lg cursor-pointer shadow-2xs"
-        >
-          {t("email.cancel")}
-        </Button>
+      {/* Body Editor or Preview Mode */}
+      {!isPreviewMode ? (
+        <div className="space-y-2">
+          <Textarea
+            ref={bodyInputRef}
+            value={body}
+            disabled={isSending}
+            onChange={(e) => {
+              hasManualEditRef.current = true;
+              setBody(e.target.value);
+            }}
+            rows={10}
+            className="p-3.5 text-xs font-mono leading-relaxed shadow-2xs"
+            placeholder={t("email.bodyPlaceholder")}
+          />
 
-        <Button
-          type="button"
-          onClick={handleSend}
-          disabled={isSending || !subject.trim() || !body.trim()}
-          className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
-        >
-          <Send className="h-3.5 w-3.5" />
-          <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>
-        </Button>
-      </div>
-    </CustomModal>
+          <SendEmailVariableBar
+            isSending={isSending}
+            onInsertVariable={handleInsertVariable}
+          />
+        </div>
+      ) : (
+        <SendEmailPreviewPane
+          subject={subject}
+          body={body}
+          variablesMap={variablesMap}
+          candidateDisplayName={candidateDisplayName}
+          normalizedEmail={normalizedEmail}
+          hasEmail={hasEmail}
+        />
+      )}
+    </FormModal>
   );
 }

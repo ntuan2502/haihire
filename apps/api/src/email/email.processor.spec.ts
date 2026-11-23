@@ -7,6 +7,10 @@ import {
   type SendEmailJobData,
   type SendSystemEmailJobData,
 } from "./email.processor";
+import type { PrismaService } from "../prisma/prisma.service";
+import type { PermissionResolverService } from "../auth/permission-resolver.service";
+import type { NotificationEvent } from "../notifications/notification-recipient";
+import { Role } from "@haihire/shared";
 import type { EmailService } from "./email.service";
 import type { WebhookNotifierService } from "../common/webhook/webhook-notifier.service";
 
@@ -56,6 +60,48 @@ describe("EmailProcessor", () => {
   });
 
   describe("process", () => {
+    it("skips queued notification email after the recipient opts out", async () => {
+      const transaction = {
+        organizationMember: {
+          findUnique: vi.fn().mockResolvedValue({ role: Role.RECRUITER }),
+        },
+        organization: { findFirst: vi.fn().mockResolvedValue(null) },
+        notificationPreference: {
+          findUnique: vi.fn().mockResolvedValue({ interviewEmail: false }),
+        },
+        user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ email: "member@example.com" }),
+        },
+      };
+      const withTenantRls = vi.fn(async (_orgId, execute) =>
+        execute(transaction),
+      );
+      const worker = new EmailProcessor(
+        mockEmailService as unknown as EmailService,
+        undefined,
+        undefined,
+        { withTenantRls } as unknown as PrismaService,
+        {
+          resolvePermission: vi.fn().mockResolvedValue(true),
+        } as unknown as PermissionResolverService,
+      );
+      const job = {
+        name: "send-notification-email",
+        data: {
+          organizationId: "org-1",
+          userId: "user-1",
+          resourceId: "interview-1",
+          kind: "interviewChanged",
+        },
+      } as Job<NotificationEvent>;
+
+      await expect(worker.process(job)).resolves.toEqual({ status: "SKIPPED" });
+      expect(withTenantRls).toHaveBeenCalledWith("org-1", expect.any(Function));
+      expect(mockEmailService.executeSendEmail).not.toHaveBeenCalled();
+    });
+
     it.each(["send-email", "send-system-email"])(
       "rejects resolved FAILED delivery for %s so BullMQ retries",
       async (name) => {

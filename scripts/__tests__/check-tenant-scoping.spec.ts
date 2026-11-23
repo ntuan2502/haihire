@@ -256,4 +256,24 @@ export class MultiMethodService {
     expect(result.compliant).toBe(false);
     expect(result.violations.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("Test 11: selecting organizationId in select: { ... } without a where filter is flagged as unsafe", () => {
+    const testFile = path.join(tempDir, "select-mask.service.ts");
+    const code = `
+@Injectable()
+export class SelectMaskService {
+  async leakyLookup(id: string) {
+    return this.prisma.candidate.findUnique({
+      where: { id },
+      select: { id: true, organizationId: true },
+    });
+  }
+}
+`;
+    fs.writeFileSync(testFile, code, "utf-8");
+
+    const result = checkTenantScoping({ files: [testFile] });
+    expect(result.compliant).toBe(false);
+    expect(result.unsafeQueries).toBe(1);
+  });
 });

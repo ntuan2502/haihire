@@ -118,7 +118,7 @@ export class EmailFlowsService {
         organizationId,
         flowKey: flowKey as PrismaEmailFlowKey,
         templateId: defaultTemplate?.id ?? null,
-        enabled: defaultTemplate ? defaultTemplate.enabled : false,
+        enabled: false,
         updatedAt: toInstant(),
       };
     });

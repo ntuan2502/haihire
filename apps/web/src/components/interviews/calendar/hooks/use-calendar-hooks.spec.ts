@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import { setActiveLocalization, resetActiveLocalization } from "@/lib/utils";
@@ -83,6 +83,53 @@ describe("useCalendarDateMath", () => {
     expect(result.current.isWeekend(saturday)).toBe(true);
     expect(result.current.isWeekend(sunday)).toBe(true);
     expect(result.current.isWeekend(monday)).toBe(false);
+  });
+
+  it("supports controlled mode, URL month/date params, selectMonthYear, and cross-year localized weekTitle", () => {
+    setActiveLocalization({
+      dateFormat: "DD/MM/YYYY",
+      timezone: "Asia/Ho_Chi_Minh",
+    });
+    const onStateChange = vi.fn();
+
+    const { result, rerender } = renderHook(
+      (props: { mode: "month" | "week"; month?: string; date?: string }) =>
+        useCalendarDateMath({
+          controlledMode: props.mode,
+          controlledMonth: props.month,
+          controlledDate: props.date,
+          onStateChange,
+        }),
+      {
+        initialProps: {
+          mode: "month" as "month" | "week",
+          month: "2026-12",
+          date: undefined as string | undefined,
+        },
+      },
+    );
+
+    expect(result.current.currentYear).toBe(2026);
+    expect(result.current.currentMonth).toBe(11);
+
+    act(() => {
+      result.current.handleSelectMonthYear(2027, 0);
+    });
+    expect(onStateChange).toHaveBeenCalledWith({
+      calendarMode: "month",
+      month: "2027-01",
+      date: null,
+    });
+
+    rerender({ mode: "week", month: undefined, date: "2026-12-28" });
+    expect(result.current.weekDays[0].displayDate).toBe("28/12");
+    expect(result.current.weekDays[6].displayDate).toBe("03/01");
+    expect(result.current.weekTitle).toBe("Tuần: 28/12/2026 – 03/01/2027");
+
+    // Invalid params safely fall back without NaN
+    rerender({ mode: "month", month: "invalid-month", date: "bad-date" });
+    expect(Number.isNaN(result.current.currentYear)).toBe(false);
+    expect(Number.isNaN(result.current.currentMonth)).toBe(false);
   });
 });
 

@@ -1,3 +1,5 @@
+"use client";
+
 import { useAuth } from "@/context/auth-context";
 import { hasPermission, type Permission, type Role } from "@haihire/shared";
 import {
@@ -5,12 +7,18 @@ import {
   useMyPermissions,
 } from "./use-organization-queries";
 
+export interface PermissionCheckState {
+  allowed: boolean;
+  isLoading: boolean;
+}
+
 /**
- * Hook to verify if the currently authenticated user possesses a given permission.
- * Automatically resolves dynamic isOwner bypass, dynamic organization role permissions,
- * and role-based permissions fallback.
+ * Hook returning both resolved permission boolean and loading state so guarded
+ * pages avoid premature redirects while custom role permissions load.
  */
-export function useHasPermission(permission: Permission): boolean {
+export function usePermissionState(
+  permission: Permission,
+): PermissionCheckState {
   const authContext = useAuth();
   const { user, isOwner } = authContext;
   const effectiveIsOwner = Boolean(
@@ -23,6 +31,7 @@ export function useHasPermission(permission: Permission): boolean {
 
   let matrix: Record<Role, Record<Permission, boolean>> | undefined;
   let myPermissions: { permissions: Permission[] } | undefined;
+  let isMyPermsLoading = false;
 
   try {
     const matrixQuery = useRolePermissionsMatrix({
@@ -39,26 +48,28 @@ export function useHasPermission(permission: Permission): boolean {
       enabled: Boolean(user && !isAdminOrOwner),
     });
     myPermissions = myPermsQuery?.data;
+    isMyPermsLoading = Boolean(myPermsQuery?.isLoading);
   } catch {
     myPermissions = undefined;
+    isMyPermsLoading = false;
   }
 
   // Fallback for tests running outside AuthProvider where user is null but canEdit is true
   if (!user && authContext.canEdit) {
-    return true;
+    return { allowed: true, isLoading: false };
   }
 
   if (!user) {
-    return false;
+    return { allowed: false, isLoading: Boolean(authContext.loading) };
   }
   if (effectiveIsOwner) {
-    return true;
+    return { allowed: true, isLoading: false };
   }
 
   const role = (user.role ||
     (authContext.canEdit ? "ADMIN" : undefined)) as Role;
   if (!role) {
-    return false;
+    return { allowed: false, isLoading: Boolean(authContext.loading) };
   }
   if (
     role !== "ADMIN" &&
@@ -66,12 +77,36 @@ export function useHasPermission(permission: Permission): boolean {
     matrix[role] &&
     typeof matrix[role][permission] === "boolean"
   ) {
-    return matrix[role][permission];
+    return { allowed: matrix[role][permission], isLoading: false };
   }
 
   if (myPermissions?.permissions && Array.isArray(myPermissions.permissions)) {
-    return myPermissions.permissions.includes(permission);
+    return {
+      allowed: myPermissions.permissions.includes(permission),
+      isLoading: false,
+    };
   }
 
-  return hasPermission(role, permission, effectiveIsOwner);
+  if (Array.isArray(authContext.initialPermissions)) {
+    return {
+      allowed: authContext.initialPermissions.includes(permission),
+      isLoading: false,
+    };
+  }
+
+  return {
+    allowed: hasPermission(role, permission, effectiveIsOwner),
+    isLoading: Boolean(
+      authContext.loading || (user && !isAdminOrOwner && isMyPermsLoading),
+    ),
+  };
+}
+
+/**
+ * Hook to verify if the currently authenticated user possesses a given permission.
+ * Automatically resolves dynamic isOwner bypass, dynamic organization role permissions,
+ * and role-based permissions fallback.
+ */
+export function useHasPermission(permission: Permission): boolean {
+  return usePermissionState(permission).allowed;
 }

@@ -49,6 +49,16 @@ export class ApplicationsDocumentsService {
     tenantOrgId?: string | null,
   ) {
     const existing = await this.query.findOne(id, tenantOrgId);
+    const targetOrgId =
+      existing.job?.organizationId ||
+      existing.candidate?.organizationId ||
+      tenantOrgId;
+    if (tenantOrgId && targetOrgId && targetOrgId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+      );
+    }
 
     if (!file) {
       throw new AppBadRequestException(
@@ -62,10 +72,9 @@ export class ApplicationsDocumentsService {
       fixUtf8String(file.originalname || "document.pdf"),
     );
 
-    const targetOrgId = existing.job?.organizationId || tenantOrgId;
-
     let uploadResult: {
       url: string;
+      fileName?: string;
       originalName: string;
       size: number;
       mimeType: string;
@@ -88,43 +97,53 @@ export class ApplicationsDocumentsService {
     const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
-    await runInTransaction(this.prisma, async (tx) => {
-      if (existing.candidateId) {
-        try {
-          const cand = await tx.candidate.findFirst({
-            where: { id: existing.candidateId },
-            select: { id: true, organizationId: true },
-          });
-          if (cand) {
-            await tx.candidateDocument.create({
-              data: {
-                id: newDocId,
-                candidateId: cand.id,
-                organizationId: cand.organizationId,
-                name: cleanDocName,
-                url: uploadResult.url,
-                size: uploadResult.size ?? null,
-                mimeType: uploadResult.mimeType ?? null,
-                type: documentType || "Resume",
-                updatedAt: toInstant(),
-              },
+    try {
+      await runInTransaction(this.prisma, async (tx) => {
+        if (existing.candidateId) {
+          try {
+            const cand = await tx.candidate.findFirst({
+              where: { id: existing.candidateId },
+              select: { id: true, organizationId: true },
             });
+            if (cand) {
+              await tx.candidateDocument.create({
+                data: {
+                  id: newDocId,
+                  candidateId: cand.id,
+                  organizationId: cand.organizationId,
+                  name: cleanDocName,
+                  url: uploadResult.url,
+                  size: uploadResult.size ?? null,
+                  mimeType: uploadResult.mimeType ?? null,
+                  type: documentType || "Resume",
+                  updatedAt: toInstant(),
+                },
+              });
+            }
+          } catch {
+            // ignore if mock or table unavailable in test
           }
-        } catch {
-          // ignore if mock or table unavailable in test
         }
-      }
 
-      await tx.application.update({
-        where: { id },
-        data: {
-          resumeUrl: uploadResult.url,
-          resumeFileName: cleanDocName,
-          resumeFileSize: uploadResult.size ?? null,
-          resumeMimeType: uploadResult.mimeType ?? null,
-        },
+        await tx.application.update({
+          where: { id },
+          data: {
+            resumeUrl: uploadResult.url,
+            resumeFileName: cleanDocName,
+            resumeFileSize: uploadResult.size ?? null,
+            resumeMimeType: uploadResult.mimeType ?? null,
+          },
+        });
       });
-    });
+    } catch (err) {
+      const cleanupKey = uploadResult.fileName || uploadResult.url;
+      if (cleanupKey) {
+        await this.minioService
+          .deleteFile?.(cleanupKey)
+          ?.catch(() => undefined);
+      }
+      throw err;
+    }
 
     const orgId =
       existing.job?.organizationId ||
@@ -208,7 +227,7 @@ export class ApplicationsDocumentsService {
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
     const cleanFileName = fixUtf8String(rawName);
-    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
+    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]|["\\;]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
     const resolvedMimeType = resolveDocumentMimeType(
       matchedDocMimeType,
@@ -286,12 +305,24 @@ export class ApplicationsDocumentsService {
       );
     }
 
+    const isSyntheticId =
+      opts?.documentId === `doc-${id}` ||
+      opts?.documentId === `doc-${app.candidateId}`;
+
     const deleteWhere = opts?.documentId
-      ? {
-          id: opts.documentId,
-          candidateId: app.candidateId,
-          organizationId,
-        }
+      ? isSyntheticId
+        ? opts?.url
+          ? {
+              url: opts.url,
+              candidateId: app.candidateId,
+              organizationId,
+            }
+          : null
+        : {
+            id: opts.documentId,
+            candidateId: app.candidateId,
+            organizationId,
+          }
       : opts?.url
         ? {
             url: opts.url,
@@ -309,13 +340,24 @@ export class ApplicationsDocumentsService {
     }
 
     if (
-      docsToDelete.length > 0 &&
       typeof this.minioService?.extractObjectName === "function" &&
       typeof this.minioService?.deleteFile === "function"
     ) {
       for (const doc of docsToDelete) {
         if (!doc.url) continue;
         const objectName = this.minioService.extractObjectName(doc.url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+      if (
+        docsToDelete.length === 0 &&
+        app.resumeUrl &&
+        (isSyntheticId ||
+          (!opts?.documentId && !opts?.url) ||
+          opts?.url === app.resumeUrl)
+      ) {
+        const objectName = this.minioService.extractObjectName(app.resumeUrl);
         if (objectName) {
           await this.minioService.deleteFile(objectName).catch(() => {});
         }
@@ -338,6 +380,27 @@ export class ApplicationsDocumentsService {
           resumeMimeType: null,
         },
       });
+
+      const targetDeletedUrl = opts?.url || app.resumeUrl;
+      if (
+        app.candidate?.resumeUrl &&
+        targetDeletedUrl &&
+        app.candidate.resumeUrl === targetDeletedUrl &&
+        (isSyntheticId ||
+          (!opts?.documentId && !opts?.url) ||
+          opts?.url === app.candidate.resumeUrl) &&
+        typeof tx.candidate?.update === "function"
+      ) {
+        await tx.candidate.update({
+          where: { id: app.candidateId },
+          data: {
+            resumeUrl: null,
+            resumeFileName: null,
+            resumeFileSize: null,
+            resumeMimeType: null,
+          },
+        });
+      }
     });
 
     this.eventsService?.emit({
@@ -356,10 +419,14 @@ export class ApplicationsDocumentsService {
 
   async getCandidateDocuments(
     candidateId: string,
+    organizationId?: string | null,
   ): Promise<CandidateDocument[]> {
     try {
       const queried = await this.prisma.candidateDocument.findMany({
-        where: { candidateId },
+        where: {
+          candidateId,
+          ...(organizationId ? { organizationId } : {}),
+        },
         select: {
           id: true,
           candidateId: true,

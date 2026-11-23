@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { OrganizationLogo } from "@/components/shared/organization-logo";
 import {
   UserMenu,
   MobileDrawer,
@@ -27,6 +28,8 @@ export interface CareersHeaderProps {
   orgName?: string;
   /** Organization slug (if viewing a company or job page) */
   orgSlug?: string;
+  /** Organization logo URL (if configured) */
+  orgLogoUrl?: string | null;
   /** Whether to show the share button */
   showShareButton?: boolean;
   /** Share click handler */
@@ -40,6 +43,7 @@ export interface CareersHeaderProps {
 export function CareersHeader({
   orgName,
   orgSlug,
+  orgLogoUrl,
   showShareButton = false,
   onShare,
   copiedLink = false,
@@ -54,21 +58,24 @@ export function CareersHeader({
   if (orgSlug && orgName) {
     return (
       <>
-        <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+        <header className="sticky top-0 z-40 w-full h-16 bg-background/85 backdrop-blur-md border-b border-border transition-colors select-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
             {/* Left: Branding */}
             <Link
               href={`/careers/${orgSlug}`}
               className="flex items-center gap-3 min-w-0 group hover:opacity-90 transition-opacity"
             >
-              <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
-                {orgName.charAt(0).toUpperCase()}
-              </div>
+              <OrganizationLogo
+                name={orgName}
+                logoUrl={orgLogoUrl}
+                decorative
+                className="h-9 w-9 rounded-lg text-base"
+              />
               <div className="min-w-0">
-                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <span>{t("careers.companyPage")}</span>
                 </div>
-                <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+                <div className="text-sm sm:text-base font-medium text-foreground leading-tight truncate">
                   {orgName}
                 </div>
               </div>
@@ -79,10 +86,10 @@ export function CareersHeader({
               {/* Quick link back to the general careers directory */}
               <Link
                 href="/careers"
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-colors"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-secondary/70 text-xs font-semibold text-secondary-foreground hover:bg-secondary transition-colors"
                 title={t("careers.allCompanies")}
               >
-                <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{t("careers.allCompanies")}</span>
               </Link>
 
@@ -91,7 +98,7 @@ export function CareersHeader({
                 <button
                   onClick={onShare}
                   type="button"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-card text-xs font-semibold text-foreground hover:bg-accent transition-colors cursor-pointer"
                   title={t("careers.copyLink")}
                 >
                   {copiedLink ? (
@@ -103,7 +110,7 @@ export function CareersHeader({
                     </>
                   ) : (
                     <>
-                      <Share2 className="h-3.5 w-3.5 text-slate-400" />
+                      <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="hidden sm:inline">
                         {activeShareLabel}
                       </span>
@@ -128,7 +135,7 @@ export function CareersHeader({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
                 aria-label={t("common.toggleNavigationMenu")}
               >
                 {mobileMenuOpen ? (
@@ -157,9 +164,9 @@ export function CareersHeader({
           <Link
             href="/careers"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+            className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-xs font-semibold text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            <Building2 className="h-4 w-4 text-slate-500 shrink-0" />
+            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
             <span>{t("careers.allCompanies")}</span>
           </Link>
 
@@ -170,9 +177,9 @@ export function CareersHeader({
                 onShare();
                 setMobileMenuOpen(false);
               }}
-              className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-xs font-semibold text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
             >
-              <Share2 className="h-4 w-4 text-slate-500 shrink-0" />
+              <Share2 className="h-4 w-4 text-muted-foreground shrink-0" />
               <span>{activeShareLabel}</span>
             </button>
           )}
@@ -184,7 +191,7 @@ export function CareersHeader({
   // Case 2: General /careers directory
   return (
     <>
-      <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+      <header className="sticky top-0 z-40 w-full h-16 bg-background/85 backdrop-blur-md border-b border-border transition-colors select-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group">
@@ -207,7 +214,7 @@ export function CareersHeader({
               <Link
                 href="/auth/login"
                 prefetch={false}
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <span>{t("careers.forEmployers")}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -218,7 +225,7 @@ export function CareersHeader({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
               aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (
@@ -247,9 +254,9 @@ export function CareersHeader({
         <Link
           href="/careers"
           onClick={() => setMobileMenuOpen(false)}
-          className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+          className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-xs font-semibold text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors"
         >
-          <Briefcase className="h-4 w-4 text-slate-500 shrink-0" />
+          <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
           <span>{t("landing.navCareers")}</span>
         </Link>
         {!isAuthenticated && (
@@ -257,9 +264,9 @@ export function CareersHeader({
             href="/auth/login"
             prefetch={false}
             onClick={() => setMobileMenuOpen(false)}
-            className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+            className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-xs font-semibold text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors"
           >
-            <Building2 className="h-4 w-4 text-slate-500 shrink-0" />
+            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
             <span>{t("careers.forEmployers")}</span>
           </Link>
         )}

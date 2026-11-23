@@ -1,58 +1,13 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/auth-fixtures";
 
 test.describe("Webhook Settings E2E Flow", () => {
-  const adminUser = {
-    id: "admin-user-id",
-    name: "Admin User",
-    email: "admin@tun.io.vn",
-    role: "ADMIN",
-    organizationId: "org-1",
-    organization: {
-      id: "org-1",
-      name: "Acme Corp",
-      slug: "acme-corp",
-    },
-  };
-
-  const memberUser = {
-    id: "member-user-id",
-    name: "Member User",
-    email: "member@tun.io.vn",
-    role: "MEMBER",
-    organizationId: "org-1",
-    organization: {
-      id: "org-1",
-      name: "Acme Corp",
-      slug: "acme-corp",
-    },
-  };
-
   test("Case 1: Admin creates Telegram webhook setting and verifies it appears in list", async ({
-    page,
+    adminPage: page,
   }) => {
-    // 1. Mock auth/me for admin
-    await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-      },
-      { token: "mock-jwt-token-admin-12345", user: adminUser },
-    );
-
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(adminUser),
-      });
-    });
-
     const webhooksList = [
       {
         id: "webhook-existing-1",
-        organizationId: "org-1",
+        organizationId: "00000000-0000-4000-8000-000000000010",
         eventType: "DLQ_ALERT",
         provider: "DISCORD",
         webhookUrl: "https://discord.com/api/webhooks/123/***",
@@ -66,7 +21,7 @@ test.describe("Webhook Settings E2E Flow", () => {
       },
     ];
 
-    // 2. Mock GET /webhook-settings
+    // Mock GET / POST /webhook-settings (auth verified by real adminPage session)
     await page.route("**/api/webhook-settings", async (route) => {
       if (route.request().method() === "GET") {
         await route.fulfill({
@@ -78,7 +33,7 @@ test.describe("Webhook Settings E2E Flow", () => {
         const postData = JSON.parse(route.request().postData() || "{}");
         const createdItem = {
           id: "webhook-created-2",
-          organizationId: "org-1",
+          organizationId: "00000000-0000-4000-8000-000000000010",
           eventType: postData.eventType || "DLQ_ALERT",
           provider: postData.provider || "TELEGRAM",
           webhookUrl: "https://api.telegram.org/bot***/sendMessage",
@@ -101,18 +56,13 @@ test.describe("Webhook Settings E2E Flow", () => {
       }
     });
 
-    // 3. Navigate to integrations page
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
-    // 4. Verify Add Webhook button is visible for admin
     const addBtn = page.locator("#add-webhook-btn");
     await expect(addBtn).toBeVisible({ timeout: 10000 });
-
-    // 5. Click Add Webhook to open modal
     await addBtn.click();
 
-    // 6. Fill form
     const urlInput = page.locator("input[placeholder*='telegram.org']");
     await expect(urlInput).toBeVisible({ timeout: 5000 });
     await urlInput.fill(
@@ -123,13 +73,11 @@ test.describe("Webhook Settings E2E Flow", () => {
     await expect(chatIdInput).toBeVisible();
     await chatIdInput.fill("-100123456789");
 
-    // 7. Click Save button in modal
     const saveBtn = page
       .locator("button:has-text('Save'), button:has-text('Lưu')")
       .last();
     await saveBtn.click();
 
-    // 8. Verify new Telegram webhook appears in list
     await expect(page.locator("text=Telegram").first()).toBeVisible({
       timeout: 5000,
     });
@@ -139,26 +87,8 @@ test.describe("Webhook Settings E2E Flow", () => {
   });
 
   test("Case 2: Admin tests webhook connection and receives toast notification", async ({
-    page,
+    adminPage: page,
   }) => {
-    await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-      },
-      { token: "mock-jwt-token-admin-12345", user: adminUser },
-    );
-
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(adminUser),
-      });
-    });
-
     await page.route("**/api/webhook-settings", async (route) => {
       await route.fulfill({
         status: 200,
@@ -166,7 +96,7 @@ test.describe("Webhook Settings E2E Flow", () => {
         body: JSON.stringify([
           {
             id: "webhook-test-1",
-            organizationId: "org-1",
+            organizationId: "00000000-0000-4000-8000-000000000010",
             eventType: "DLQ_ALERT",
             provider: "TELEGRAM",
             webhookUrl: "https://api.telegram.org/bot***/sendMessage",
@@ -191,60 +121,31 @@ test.describe("Webhook Settings E2E Flow", () => {
       });
     });
 
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
-    // Click test connection button in row
     const testRowBtn = page.locator("button:has(svg.lucide-send)").first();
     await expect(testRowBtn).toBeVisible({ timeout: 10000 });
     await testRowBtn.click();
 
-    // Verify toast notification appears
     const toast = page.locator(
-      ".Toastify__toast, div[role='alert'], div[role='status']",
+      "[data-sonner-toast], div[role='alert'], div[role='status']",
     );
     await expect(toast.first()).toBeVisible({ timeout: 5000 });
   });
 
   test("Case 3: Member cannot see Add Webhook button and sees admin-only warning", async ({
-    page,
+    memberPage: page,
   }) => {
-    // Mock member user
-    await page.addInitScript(
-      ({ token, user }) => {
-        localStorage.setItem("haihire_recruiter_token", token);
-        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-      },
-      { token: "mock-jwt-token-member-12345", user: memberUser },
-    );
-
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(memberUser),
-      });
-    });
-
-    await page.route("**/api/webhook-settings", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.goto("/dashboard/settings/integrations");
+    await page.goto("/settings/integrations");
     await page.waitForLoadState("networkidle");
 
-    // Add button should NOT be visible
     const addBtn = page.locator("#add-webhook-btn");
     await expect(addBtn).not.toBeVisible();
 
-    // Admin only indicator should be visible
-    const adminNotice = page.locator("svg.lucide-shield-alert");
-    await expect(adminNotice.first()).toBeVisible({ timeout: 5000 });
+    const adminNotice = page
+      .locator("[data-testid='status-state-403'], svg.lucide-shield-alert")
+      .first();
+    await expect(adminNotice).toBeVisible({ timeout: 10000 });
   });
 });

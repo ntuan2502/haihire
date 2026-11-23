@@ -1,12 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  logoFileFilter,
   resumeFileFilter,
+  validateImageMagicBytes,
   validateMagicBytes,
   sanitizeFilename,
   validateUploadedFile,
+  validateUploadedLogoFile,
 } from "./upload-utils";
 import type { Request } from "express";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, MAX_ORG_LOGO_SIZE_BYTES } from "@haihire/shared";
 import { AppBadRequestException } from "./app-exception";
 
 describe("upload-utils resumeFileFilter", () => {
@@ -22,7 +25,7 @@ describe("upload-utils resumeFileFilter", () => {
     expect(cb).toHaveBeenCalledWith(null, true);
   });
 
-  it("should accept valid docx file", () => {
+  it("should reject .docx file since only PDF is permitted", () => {
     const mockFile = {
       originalname: "candidate_cv.docx",
       mimetype:
@@ -32,7 +35,9 @@ describe("upload-utils resumeFileFilter", () => {
     const cb = vi.fn();
     resumeFileFilter({} as Request, mockFile, cb);
 
-    expect(cb).toHaveBeenCalledWith(null, true);
+    expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
+    const err = cb.mock.calls[0][0];
+    expect(err.message).toContain("Only .pdf format is accepted");
   });
 
   it("should reject dangerous executable file (.exe)", () => {
@@ -46,7 +51,7 @@ describe("upload-utils resumeFileFilter", () => {
 
     expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
     const err = cb.mock.calls[0][0];
-    expect(err.message).toContain(".pdf, .doc, and .docx formats are accepted");
+    expect(err.message).toContain("Only .pdf format is accepted");
   });
 
   it("should reject invalid mime type for pdf extension spoofing", () => {
@@ -96,54 +101,49 @@ describe("upload-utils resumeFileFilter", () => {
       expect(validateMagicBytes(fakePdfBuffer, ".pdf")).toBe(false);
     });
 
-    it("should accept valid DOCX with PK\\x03\\x04 header and PK\\x05\\x06 EOCD trailer", () => {
+    it("should reject non-PDF extensions like .docx in validateMagicBytes", () => {
       const validDocxBuffer = Buffer.concat([
         Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00]),
         Buffer.from("dummy zip payload content"),
         Buffer.from([0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00]),
       ]);
-      expect(validateMagicBytes(validDocxBuffer, ".docx")).toBe(true);
+      expect(validateMagicBytes(validDocxBuffer, ".docx")).toBe(false);
     });
 
-    it("should reject DOCX truncated 90% (missing EOCD trailer)", () => {
-      const truncatedDocx = Buffer.from([
-        0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00,
-      ]);
-      expect(validateMagicBytes(truncatedDocx, ".docx")).toBe(false);
+    it("should reject legacy .doc extension in validateMagicBytes", () => {
+      expect(
+        validateMagicBytes(Buffer.from([0xd0, 0xcf, 0x11, 0xe0]), ".doc"),
+      ).toBe(false);
     });
 
-    it("should reject DOCX with header PK\\x03\\x04 but no EOCD", () => {
-      const noEocdDocx = Buffer.concat([
-        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
-        Buffer.alloc(1000, 0xaa),
-      ]);
-      expect(validateMagicBytes(noEocdDocx, ".docx")).toBe(false);
+    it("should reject image extensions (.png, .jpg) in validateMagicBytes", () => {
+      expect(
+        validateMagicBytes(Buffer.from([0x89, 0x50, 0x4e, 0x47]), ".png"),
+      ).toBe(false);
+      expect(
+        validateMagicBytes(Buffer.from([0xff, 0xd8, 0xff, 0xe0]), ".jpg"),
+      ).toBe(false);
     });
 
-    it("should reject DOCX where EOCD is outside last 65557 bytes", () => {
-      const eocdOutside = Buffer.concat([
-        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
-        Buffer.from([0x50, 0x4b, 0x05, 0x06]),
-        Buffer.alloc(66000, 0x20),
-      ]);
-      expect(validateMagicBytes(eocdOutside, ".docx")).toBe(false);
+    it("should reject truncated PDF without %%EOF trailer in validateMagicBytes", () => {
+      expect(
+        validateMagicBytes(Buffer.from("%PDF-1.4 partial content"), ".pdf"),
+      ).toBe(false);
     });
 
-    it("should accept DOCX where EOCD is within last 65557 bytes (middle of trailing window)", () => {
-      const eocdInsideWindow = Buffer.concat([
-        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
-        Buffer.alloc(10000, 0xaa),
-        Buffer.from([0x50, 0x4b, 0x05, 0x06]),
-        Buffer.alloc(20000, 0x20),
-      ]);
-      expect(validateMagicBytes(eocdInsideWindow, ".docx")).toBe(true);
-    });
-
-    it("should reject fake DOCX with non-zip content", () => {
-      const fakeDocxBuffer = Buffer.from(
-        "This is plain text pretending to be docx",
-      );
-      expect(validateMagicBytes(fakeDocxBuffer, ".docx")).toBe(false);
+    it("should reject .doc and .png via resumeFileFilter", () => {
+      for (const [name, mime] of [
+        ["cv.doc", "application/msword"],
+        ["avatar.png", "image/png"],
+      ]) {
+        const cb = vi.fn();
+        resumeFileFilter(
+          {} as Request,
+          { originalname: name, mimetype: mime } as Express.Multer.File,
+          cb,
+        );
+        expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
+      }
     });
 
     it("should sanitize path traversal characters in filename", () => {
@@ -235,24 +235,24 @@ describe("upload-utils resumeFileFilter", () => {
       }
     });
 
-    it("should reject truncated DOCX via validateUploadedFile with UPLOAD_TRUNCATED_FILE", () => {
-      const truncatedDocxFile = {
-        originalname: "truncated_resume.docx",
+    it("should reject DOCX via validateUploadedFile with VALIDATION_ERROR", () => {
+      const docxFile = {
+        originalname: "candidate_resume.docx",
         mimetype:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00]),
       } as Express.Multer.File;
 
       try {
-        validateUploadedFile(truncatedDocxFile);
+        validateUploadedFile(docxFile);
         expect.unreachable("Should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(AppBadRequestException);
         expect((err as AppBadRequestException).code).toBe(
-          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+          APP_ERROR_CODES.VALIDATION_ERROR,
         );
         expect((err as AppBadRequestException).message).toContain(
-          "DOCX file appears truncated or corrupt",
+          "Only .pdf format is accepted",
         );
       }
     });
@@ -265,6 +265,84 @@ describe("upload-utils resumeFileFilter", () => {
       } as Express.Multer.File;
 
       expect(() => validateUploadedFile(goodFile)).not.toThrow();
+    });
+  });
+
+  describe("Organization Logo Upload Validation", () => {
+    const pngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+    ]);
+    const jpgBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    const webpBuffer = Buffer.concat([
+      Buffer.from("RIFF"),
+      Buffer.from([0x24, 0x00, 0x00, 0x00]),
+      Buffer.from("WEBP"),
+      Buffer.from([0x56, 0x50, 0x38, 0x20]),
+    ]);
+
+    it("accepts valid PNG, JPG, and WebP buffers", () => {
+      expect(validateImageMagicBytes(pngBuffer, ".png")).toBe(true);
+      expect(validateImageMagicBytes(jpgBuffer, ".jpg")).toBe(true);
+      expect(validateImageMagicBytes(jpgBuffer, ".jpeg")).toBe(true);
+      expect(validateImageMagicBytes(webpBuffer, ".webp")).toBe(true);
+
+      const res = validateUploadedLogoFile({
+        originalname: "brand.png",
+        mimetype: "image/png",
+        size: pngBuffer.length,
+        buffer: pngBuffer,
+      } as Express.Multer.File);
+      expect(res).toEqual({ ext: ".png", mimeType: "image/png" });
+    });
+
+    it("rejects SVG uploads in both filter and byte validation", () => {
+      const cb = vi.fn();
+      logoFileFilter(
+        {} as Request,
+        {
+          originalname: "logo.svg",
+          mimetype: "image/svg+xml",
+        } as Express.Multer.File,
+        cb,
+      );
+      expect(cb).toHaveBeenCalledWith(expect.any(Error), false);
+
+      expect(
+        validateImageMagicBytes(
+          Buffer.from("<svg><script>alert(1)</script></svg>"),
+          ".svg",
+        ),
+      ).toBe(false);
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "logo.svg",
+          mimetype: "image/svg+xml",
+          size: 32,
+          buffer: Buffer.from("<svg></svg>"),
+        } as Express.Multer.File),
+      ).toThrow();
+    });
+
+    it("rejects forged magic bytes disguised as .png", () => {
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "fake.png",
+          mimetype: "image/png",
+          size: 16,
+          buffer: Buffer.from("<script>alert(1)</script>"),
+        } as Express.Multer.File),
+      ).toThrow(AppBadRequestException);
+    });
+
+    it("rejects logo files exceeding 2 MB", () => {
+      expect(() =>
+        validateUploadedLogoFile({
+          originalname: "huge.png",
+          mimetype: "image/png",
+          size: MAX_ORG_LOGO_SIZE_BYTES + 1,
+          buffer: pngBuffer,
+        } as Express.Multer.File),
+      ).toThrow("2 MB");
     });
   });
 });

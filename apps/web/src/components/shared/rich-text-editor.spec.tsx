@@ -108,4 +108,57 @@ describe("RichTextEditor", () => {
     });
     unmount();
   });
+
+  it("opens shadcn link popover, rejects unsafe URLs, and applies valid links without window.prompt", async () => {
+    const promptSpy = vi.spyOn(window, "prompt").mockImplementation(() => null);
+    const onChange = vi.fn();
+
+    const { unmount } = render(
+      <RichTextEditor
+        value="<p>Initial content</p>"
+        onChange={onChange}
+        ariaLabel="Job description editor"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector(".tiptap p")).not.toBeNull();
+    });
+
+    const linkBtn = screen.getByRole("button", {
+      name: "jobs.wizard.editor.link",
+    });
+    fireEvent.click(linkBtn);
+
+    const urlInput = await screen.findByPlaceholderText(
+      "jobs.wizard.editor.linkPlaceholder",
+    );
+    expect(promptSpy).not.toHaveBeenCalled();
+
+    fireEvent.change(urlInput, { target: { value: "javascript:alert(1)" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "jobs.wizard.editor.linkApply" }),
+    );
+
+    expect(
+      screen.getByText("jobs.wizard.editor.linkInvalidUrl"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(urlInput, { target: { value: "https://haihire.com" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "jobs.wizard.editor.linkApply" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByPlaceholderText("jobs.wizard.editor.linkPlaceholder"),
+      ).not.toBeInTheDocument();
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    });
+    promptSpy.mockRestore();
+    unmount();
+  });
 });

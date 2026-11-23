@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -14,9 +14,17 @@ import {
   ListOrdered,
   Redo2,
   Undo2,
+  Unlink,
 } from "lucide-react";
 import { cn } from "cn";
 import { useI18n } from "@/i18n";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface RichTextEditorProps {
   value: string;
@@ -64,6 +72,9 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const { t } = useI18n();
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
   const onChangeRef = useRef(onChange);
   const onBlurRef = useRef(onBlur);
 
@@ -134,26 +145,40 @@ export function RichTextEditor({
     }
   }, [editor, value]);
 
-  const handleSetLink = () => {
+  const handleLinkPopoverChange = (nextOpen: boolean) => {
+    setLinkPopoverOpen(nextOpen);
+    if (nextOpen) {
+      const previousUrl = (editor?.getAttributes("link").href as string) || "";
+      setLinkUrl(previousUrl);
+      setLinkError(null);
+    }
+  };
+
+  const handleApplyLink = () => {
     if (!editor) return;
-    const previousUrl = (editor.getAttributes("link").href as string) || "";
-    const entered = window.prompt(
-      t("jobs.wizard.editor.linkPrompt"),
-      previousUrl,
-    );
-    if (entered === null) return;
-    const trimmed = entered.trim();
+    const trimmed = linkUrl.trim();
     if (trimmed === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      setLinkPopoverOpen(false);
       return;
     }
-    if (!isSafeLinkUrl(trimmed)) return;
+    if (!isSafeLinkUrl(trimmed)) {
+      setLinkError(t("jobs.wizard.editor.linkInvalidUrl"));
+      return;
+    }
     editor
       .chain()
       .focus()
       .extendMarkRange("link")
       .setLink({ href: trimmed })
       .run();
+    setLinkPopoverOpen(false);
+  };
+
+  const handleRemoveLink = () => {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    setLinkPopoverOpen(false);
   };
 
   const toolbarBtnClass = (active: boolean) =>
@@ -252,16 +277,70 @@ export function RichTextEditor({
           <ListOrdered className="h-3.5 w-3.5" />
         </button>
 
-        <button
-          type="button"
-          onClick={handleSetLink}
-          aria-label={t("jobs.wizard.editor.link")}
-          title={t("jobs.wizard.editor.link")}
-          aria-pressed={editor?.isActive("link") ?? false}
-          className={toolbarBtnClass(editor?.isActive("link") ?? false)}
-        >
-          <Link2 className="h-3.5 w-3.5" />
-        </button>
+        <Popover open={linkPopoverOpen} onOpenChange={handleLinkPopoverChange}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={t("jobs.wizard.editor.link")}
+              title={t("jobs.wizard.editor.link")}
+              aria-pressed={editor?.isActive("link") ?? false}
+              className={toolbarBtnClass(editor?.isActive("link") ?? false)}
+            >
+              <Link2 className="h-3.5 w-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-80 p-3 space-y-2.5">
+            <label
+              htmlFor="rich-text-link-url"
+              className="block text-xs font-medium text-foreground"
+            >
+              {t("jobs.wizard.editor.linkPrompt")}
+            </label>
+            <Input
+              id="rich-text-link-url"
+              type="url"
+              value={linkUrl}
+              onChange={(e) => {
+                setLinkUrl(e.target.value);
+                if (linkError) setLinkError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleApplyLink();
+                }
+              }}
+              placeholder={t("jobs.wizard.editor.linkPlaceholder")}
+              aria-invalid={Boolean(linkError)}
+              className="h-8 text-xs"
+            />
+            {linkError && (
+              <p className="text-[11px] text-destructive">{linkError}</p>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              {editor?.isActive("link") && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveLink}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  <Unlink className="mr-1 h-3 w-3" />
+                  {t("jobs.wizard.editor.linkRemove")}
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleApplyLink}
+                className="h-7 px-3 text-xs"
+              >
+                {t("jobs.wizard.editor.linkApply")}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <span className="mx-0.5 h-4 w-px bg-border" />
 

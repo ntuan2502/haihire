@@ -743,6 +743,10 @@ export interface TranslationSchema {
         orderedList: string;
         link: string;
         linkPrompt: string;
+        linkPlaceholder: string;
+        linkApply: string;
+        linkRemove: string;
+        linkInvalidUrl: string;
         undo: string;
         redo: string;
       };

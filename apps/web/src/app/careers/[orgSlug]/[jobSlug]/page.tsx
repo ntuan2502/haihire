@@ -9,7 +9,7 @@ interface PageProps {
   params: Promise<{ orgSlug: string; jobSlug: string }>;
 }
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const getApiBase = () => {
   return (
@@ -23,7 +23,7 @@ async function fetchJob(orgSlug: string, jobSlug: string): Promise<Job | null> {
   try {
     const res = await fetch(
       `${getApiBase()}/jobs/careers/${encodeURIComponent(orgSlug)}/${encodeURIComponent(jobSlug)}`,
-      { next: { revalidate: 60 } },
+      { cache: "no-store" },
     );
     if (!res.ok) return null;
     return await res.json();
@@ -37,7 +37,7 @@ async function fetchOrg(slug: string): Promise<Organization | null> {
     const res = await fetch(
       `${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       },
     );
     if (!res.ok) return null;

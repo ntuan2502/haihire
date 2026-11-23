@@ -836,6 +836,11 @@ export const vi: TranslationSchema = {
         orderedList: "Danh sách đánh số",
         link: "Chèn liên kết",
         linkPrompt: "Nhập địa chỉ liên kết",
+        linkPlaceholder: "https://...",
+        linkApply: "Áp dụng",
+        linkRemove: "Gỡ liên kết",
+        linkInvalidUrl:
+          "Liên kết phải bắt đầu bằng https://, http://, mailto: hoặc /",
         undo: "Hoàn tác",
         redo: "Làm lại",
       },

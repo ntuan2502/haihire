@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CareersDirectoryClient } from "@/components/careers/careers-directory-client";
 import type { Job } from "@/types";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const getApiBase = () => {
   return (
@@ -15,7 +15,7 @@ const getApiBase = () => {
 async function fetchPublicJobs(): Promise<Job[]> {
   try {
     const res = await fetch(`${getApiBase()}/jobs/public?limit=1000`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return [];
     const data = await res.json();

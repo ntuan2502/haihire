@@ -8,7 +8,7 @@ interface PageProps {
   params: Promise<{ orgSlug: string }>;
 }
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const getApiBase = () => {
   return (
@@ -23,7 +23,7 @@ async function fetchOrg(slug: string): Promise<Organization | null> {
     const res = await fetch(
       `${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       },
     );
     if (!res.ok) return null;
@@ -37,7 +37,7 @@ async function fetchJobs(orgSlug: string): Promise<Job[]> {
   try {
     const res = await fetch(
       `${getApiBase()}/jobs?organizationSlug=${encodeURIComponent(orgSlug)}&status=PUBLISHED&limit=1000`,
-      { next: { revalidate: 60 } },
+      { cache: "no-store" },
     );
     if (!res.ok) return [];
     const data = await res.json();

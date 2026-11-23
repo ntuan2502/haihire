@@ -114,116 +114,126 @@ describe("NotificationsPage", () => {
   });
 
   it("renders date-grouped notifications, supports read/unread toggles, blocks cancelled navigation, and routes to detail and settings", async () => {
-    const now = new Date();
-    const tenMinsAgo = new Date(now.getTime() - 10 * 60_000).toISOString();
-    const yesterdayIso = new Date(
-      now.getTime() - 24 * 60 * 60_000,
-    ).toISOString();
-    const fourDaysAgo = new Date(
-      now.getTime() - 4 * 24 * 60 * 60_000,
-    ).toISOString();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-24T05:10:00.000Z"));
+    try {
+      const now = new Date();
+      const tenMinsAgo = new Date(now.getTime() - 10 * 60_000).toISOString();
+      const yesterdayIso = new Date(
+        now.getTime() - 24 * 60 * 60_000,
+      ).toISOString();
+      const fourDaysAgo = new Date(
+        now.getTime() - 4 * 24 * 60 * 60_000,
+      ).toISOString();
 
-    const inboxData: WebsiteNotificationInbox = {
-      unreadCount: 1,
-      total: 3,
-      page: 1,
-      limit: 20,
-      totalPages: 1,
-      items: [
-        {
-          id: "notif-today",
-          kind: "applicationReceived",
-          resourceId: "app-42",
-          createdAt: tenMinsAgo,
-          readAt: null,
-          candidateName: "Nguyen Van An",
-          jobTitle: "Senior Backend Engineer",
-        },
-        {
-          id: "notif-yesterday",
-          kind: "interviewScheduled",
-          resourceId: "int-7",
-          createdAt: yesterdayIso,
-          readAt: yesterdayIso,
-          candidateName: "Tran Thi Binh",
-          jobTitle: "Product Designer",
-          scheduledAt: "2026-11-20T07:30:00.000Z",
-          round: 2,
-        },
-        {
-          id: "notif-earlier-cancel",
-          kind: "interviewCancelled",
-          resourceId: "int-cancelled",
-          createdAt: fourDaysAgo,
-          readAt: fourDaysAgo,
-          candidateName: "Le Minh Cuong",
-          jobTitle: "QA Lead",
-        },
-      ],
-    };
+      const inboxData: WebsiteNotificationInbox = {
+        unreadCount: 1,
+        total: 3,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+        items: [
+          {
+            id: "notif-today",
+            kind: "applicationReceived",
+            resourceId: "app-42",
+            createdAt: tenMinsAgo,
+            readAt: null,
+            candidateName: "Nguyen Van An",
+            jobTitle: "Senior Backend Engineer",
+          },
+          {
+            id: "notif-yesterday",
+            kind: "interviewScheduled",
+            resourceId: "int-7",
+            createdAt: yesterdayIso,
+            readAt: yesterdayIso,
+            candidateName: "Tran Thi Binh",
+            jobTitle: "Product Designer",
+            scheduledAt: "2026-11-20T07:30:00.000Z",
+            round: 2,
+          },
+          {
+            id: "notif-earlier-cancel",
+            kind: "interviewCancelled",
+            resourceId: "int-cancelled",
+            createdAt: fourDaysAgo,
+            readAt: fourDaysAgo,
+            candidateName: "Le Minh Cuong",
+            jobTitle: "QA Lead",
+          },
+        ],
+      };
 
-    vi.mocked(api.get).mockResolvedValue({ data: inboxData });
+      vi.mocked(api.get).mockResolvedValue({ data: inboxData });
 
-    renderPage();
+      renderPage();
 
-    expect(
-      await screen.findByText("Workspace: HaiHire Corp"),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("notificationInbox.groupToday"),
-    ).toBeVisible();
-    expect(screen.getByText("notificationInbox.groupYesterday")).toBeVisible();
-    expect(screen.getByText("notificationInbox.groupEarlier")).toBeVisible();
-    expect(
-      screen.getByText("Nguyen Van An applied for Senior Backend Engineer"),
-    ).toBeVisible();
-    expect(screen.getByText("10m ago")).toBeVisible();
-    expect(screen.getByText("20/11/2026 14:30 · Round 2")).toBeVisible();
+      expect(
+        await screen.findByText("Workspace: HaiHire Corp"),
+      ).toBeInTheDocument();
+      expect(
+        await screen.findByText("notificationInbox.groupToday"),
+      ).toBeVisible();
+      expect(
+        screen.getByText("notificationInbox.groupYesterday"),
+      ).toBeVisible();
+      expect(screen.getByText("notificationInbox.groupEarlier")).toBeVisible();
+      expect(
+        screen.getByText("Nguyen Van An applied for Senior Backend Engineer"),
+      ).toBeVisible();
+      expect(screen.getByText("10m ago")).toBeVisible();
+      expect(screen.getByText("20/11/2026 14:30 · Round 2")).toBeVisible();
 
-    // Toggling unread on a read notification calls /unread without navigating
-    const markUnreadBtns = screen.getAllByRole("button", {
-      name: "notificationInbox.markAsUnread",
-    });
-    fireEvent.click(markUnreadBtns[0]);
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith(
-        "/notifications/notif-yesterday/unread",
+      // Toggling unread on a read notification calls /unread without navigating
+      const markUnreadBtns = screen.getAllByRole("button", {
+        name: "notificationInbox.markAsUnread",
+      });
+      fireEvent.click(markUnreadBtns[0]);
+      await waitFor(() => {
+        expect(api.patch).toHaveBeenCalledWith(
+          "/notifications/notif-yesterday/unread",
+        );
+      });
+      expect(mockPush).not.toHaveBeenCalled();
+
+      // Toggling read on an unread notification calls /read without navigating
+      const markReadBtn = screen.getByRole("button", {
+        name: "notificationInbox.markAsRead",
+      });
+      fireEvent.click(markReadBtn);
+      await waitFor(() => {
+        expect(api.patch).toHaveBeenCalledWith(
+          "/notifications/notif-today/read",
+        );
+      });
+      expect(mockPush).not.toHaveBeenCalled();
+
+      // Clicking cancelled interview text does NOT navigate
+      fireEvent.click(screen.getByText("Le Minh Cuong • QA Lead"));
+      expect(mockPush).not.toHaveBeenCalled();
+
+      // Clicking navigable notification marks read & pushes detail route
+      fireEvent.click(
+        screen.getByText("Nguyen Van An applied for Senior Backend Engineer"),
       );
-    });
-    expect(mockPush).not.toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith("/applications/app-42");
 
-    // Toggling read on an unread notification calls /read without navigating
-    const markReadBtn = screen.getByRole("button", {
-      name: "notificationInbox.markAsRead",
-    });
-    fireEvent.click(markReadBtn);
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith("/notifications/notif-today/read");
-    });
-    expect(mockPush).not.toHaveBeenCalled();
+      // Mark all read & settings header buttons work
+      fireEvent.click(
+        screen.getByRole("button", { name: "notificationInbox.readAll" }),
+      );
+      await waitFor(() => {
+        expect(api.patch).toHaveBeenCalledWith("/notifications/read");
+      });
 
-    // Clicking cancelled interview text does NOT navigate
-    fireEvent.click(screen.getByText("Le Minh Cuong • QA Lead"));
-    expect(mockPush).not.toHaveBeenCalled();
-
-    // Clicking navigable notification marks read & pushes detail route
-    fireEvent.click(
-      screen.getByText("Nguyen Van An applied for Senior Backend Engineer"),
-    );
-    expect(mockPush).toHaveBeenCalledWith("/applications/app-42");
-
-    // Mark all read & settings header buttons work
-    fireEvent.click(
-      screen.getByRole("button", { name: "notificationInbox.readAll" }),
-    );
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith("/notifications/read");
-    });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "notificationInbox.settings" }),
-    );
-    expect(mockPush).toHaveBeenCalledWith("/account#notifications");
+      fireEvent.click(
+        screen.getByRole("button", { name: "notificationInbox.settings" }),
+      );
+      expect(mockPush).toHaveBeenCalledWith("/account#notifications");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("syncs status, kind, and page filters with API query params and URL search params", async () => {

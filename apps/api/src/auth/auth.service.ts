@@ -3,6 +3,7 @@ import type Redis from "ioredis";
 import { REDIS_CLIENT } from "../redis/redis.module";
 import { PermissionResolverService } from "./permission-resolver.service";
 import { JwtService } from "@nestjs/jwt";
+import { EventsService } from "../events/events.service";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
@@ -62,6 +63,9 @@ export class AuthService {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly events?: EventsService,
   ) {}
 
   async validateRecruiter(dto: LoginDto) {
@@ -923,6 +927,11 @@ export class AuthService {
       where: { id: userId },
       data,
       select: { id: true },
+    });
+
+    this.events?.emit({
+      type: "USER_PREFERENCES_CHANGED",
+      targetUserId: userId,
     });
 
     return this.getProfile(userId, requestedOrgId);

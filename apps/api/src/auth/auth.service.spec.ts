@@ -476,6 +476,23 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
       expect(cleared.preferredLanguage).toBeNull();
       expect(cleared.preferredTimezone).toBeNull();
+
+      const mockEvents = { emit: vi.fn() };
+      const sseAuthService = new AuthService(
+        mockPrismaService as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        mockEvents as never,
+      );
+      await sseAuthService.updatePreferences("usr-member", {
+        preferredLanguage: "vi",
+      });
+      expect(mockEvents.emit).toHaveBeenCalledTimes(1);
+      expect(mockEvents.emit).toHaveBeenCalledWith({
+        type: "USER_PREFERENCES_CHANGED",
+        targetUserId: "usr-member",
+      });
     });
 
     it("17. Should update firstName and lastName via updateProfile and reject blank names", async () => {

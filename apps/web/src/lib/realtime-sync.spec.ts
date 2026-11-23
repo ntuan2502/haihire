@@ -91,6 +91,17 @@ describe("realtime-sync", () => {
         matchesPrefix(prefix, queryKeys.auditLogs({})),
       ),
     ).toBe(true);
+    expect(
+      getQueryKeyPrefixesForEvent("NOTIFICATIONS_CHANGED").some((prefix) =>
+        matchesPrefix(prefix, queryKeys.notifications("org-1", "user-1")),
+      ),
+    ).toBe(true);
+    expect(
+      getQueryKeyPrefixesForEvent("NOTIFICATIONS_CHANGED").some((prefix) =>
+        matchesPrefix(prefix, ["notification-preferences", "org-1", "user-1"]),
+      ),
+    ).toBe(true);
+    expect(getQueryKeyPrefixesForEvent("USER_PREFERENCES_CHANGED")).toEqual([]);
   });
 
   it("coalesces burst events and deduplicates repeated query key prefixes", () => {

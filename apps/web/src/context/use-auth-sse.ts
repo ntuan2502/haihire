@@ -147,6 +147,10 @@ export function useAuthSse({
           ) {
             void refreshUser();
           }
+        } else if (data.type === "USER_PREFERENCES_CHANGED") {
+          if (data.targetUserId === currentUserId) {
+            void refreshUser();
+          }
         }
       } catch (err) {
         console.error("[SSE Auth] Failed to parse message:", err);

@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import { createHash } from "node:crypto";
 import type { NotificationKind } from "@haihire/shared";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
+import { EventsService } from "../events/events.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { EMAIL_QUEUE_NAME } from "../email/email.processor";
 import { resolveNotificationRecipient } from "./notification-recipient";
@@ -17,6 +18,9 @@ export class NotificationsService {
     @Inject(PermissionResolverService)
     private readonly permissions: PermissionResolverService,
     @InjectQueue(EMAIL_QUEUE_NAME) private readonly emailQueue: Queue,
+    @Optional()
+    @Inject(EventsService)
+    private readonly events?: EventsService,
   ) {}
 
   async publish(
@@ -43,6 +47,13 @@ export class NotificationsService {
           return recipient;
         },
       );
+      if (recipient?.website) {
+        this.events?.emit({
+          type: "NOTIFICATIONS_CHANGED",
+          targetUserId: userId,
+          organizationId,
+        });
+      }
       if (recipient?.email) {
         const key = createHash("sha256")
           .update(

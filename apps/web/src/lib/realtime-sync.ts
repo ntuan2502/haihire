@@ -57,6 +57,8 @@ const EVENT_QUERY_KEY_PREFIXES: Record<AppEventType, readonly QueryKey[]> = {
   EMAIL_CHANGED: [["email"]],
   WEBHOOKS_CHANGED: [["webhook-settings"]],
   ACTIVITIES_CHANGED: [["activities"]],
+  NOTIFICATIONS_CHANGED: [["notifications"], ["notification-preferences"]],
+  USER_PREFERENCES_CHANGED: [],
 };
 
 /**

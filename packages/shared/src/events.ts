@@ -16,6 +16,8 @@ export const APP_EVENT_TYPES = [
   "WEBHOOKS_CHANGED",
   "AUDIT_LOGS_CHANGED",
   "ACTIVITIES_CHANGED",
+  "NOTIFICATIONS_CHANGED",
+  "USER_PREFERENCES_CHANGED",
 ] as const;
 
 export type AppEventType = (typeof APP_EVENT_TYPES)[number];

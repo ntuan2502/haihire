@@ -1,0 +1,902 @@
+import { createTestOrganizationsService } from "../test/helpers/service-factories";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { OrganizationsService } from "./organizations.service";
+import { OrganizationsInvitesService } from "./services";
+import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
+
+describe("OrganizationsService - Multi-Tenant Organization Management", () => {
+  let service: OrganizationsService;
+  let mockPrismaService: unknown;
+
+  interface MockOrg {
+    id: string;
+    name: string;
+    slug: string;
+    ownerId?: string;
+    createdAt?: Date;
+    [key: string]: unknown;
+  }
+  interface MockUser {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    organizationId: string | null;
+    [key: string]: unknown;
+  }
+  interface MockLink extends Record<string, unknown> {
+    id: string;
+    token: string;
+    organizationId: string;
+    role: string;
+    expiresAt: Date | null;
+    maxUses: number | null;
+    usesCount: number;
+    status: string;
+    createdById: string;
+    createdAt?: Date;
+  }
+  interface MockMember {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role: string;
+    createdAt: Date;
+  }
+
+  let mockOrgs: MockOrg[] = [];
+  let mockUsers: MockUser[] = [];
+  let mockLinks: MockLink[] = [];
+  let mockMembers: MockMember[] = [];
+  let mockRolePermissions: Array<{
+    id: string;
+    organizationId: string;
+    role: string;
+    permission: string;
+    granted: boolean;
+  }> = [];
+
+  beforeEach(() => {
+    mockOrgs = [
+      {
+        id: "org-1",
+        name: "Acme Corp",
+        slug: "acme-corp",
+        ownerId: "usr-1",
+        createdAt: new Date(),
+      },
+    ];
+
+    mockUsers = [
+      {
+        id: "usr-1",
+        email: "hr@tun.io.vn",
+        firstName: "HR",
+        lastName: "Lead",
+        role: "ADMIN",
+        organizationId: null,
+        createdAt: new Date("2026-01-01T00:00:00Z"),
+      },
+      {
+        id: "usr-2",
+        email: "admin@tun.io.vn",
+        firstName: "Admin",
+        lastName: "",
+        role: "ADMIN",
+        organizationId: "org-1",
+        createdAt: new Date("2026-01-02T00:00:00Z"),
+      },
+      {
+        id: "usr-3",
+        email: "member@tun.io.vn",
+        firstName: "Member",
+        lastName: "User",
+        role: "MEMBER",
+        organizationId: "org-1",
+        createdAt: new Date("2026-01-03T00:00:00Z"),
+      },
+    ];
+
+    mockLinks = [];
+
+    mockMembers = [
+      {
+        id: "mem-2",
+        organizationId: "org-1",
+        userId: "usr-2",
+        role: "ADMIN",
+        createdAt: new Date(),
+      },
+      {
+        id: "mem-3",
+        organizationId: "org-1",
+        userId: "usr-3",
+        role: "MEMBER",
+        createdAt: new Date(),
+      },
+    ];
+
+    mockRolePermissions = [];
+
+    mockPrismaService = createMockPrismaService({
+      organization: mockOrgs,
+      user: mockUsers,
+      organizationMember: mockMembers,
+      inviteLink: mockLinks,
+      organizationInviteLink: mockLinks,
+      organizationRolePermission: mockRolePermissions,
+    });
+
+    service = createTestOrganizationsService(mockPrismaService as never);
+  });
+
+  describe("Organization Core", () => {
+    it("1. Should successfully create a new organization and link the user", async () => {
+      const result = await service.create("usr-1", {
+        name: "Stark Industries",
+        slug: "stark-industries",
+      });
+
+      expect(result.organization.name).toBe("Stark Industries");
+      expect(result.organization.slug).toBe("stark-industries");
+
+      const user = mockUsers.find((u) => u.id === "usr-1");
+      expect(user?.organizationId).toBe(result.organization.id);
+    });
+
+    it("2. Should throw ConflictException when creating organization with existing slug", async () => {
+      await expect(
+        service.create("usr-1", {
+          name: "Acme Duplicate",
+          slug: "acme-corp",
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it("3. Should successfully join an organization with valid invite link token or url", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+      const result = await service.join("usr-1", {
+        inviteCodeOrSlug: `http://localhost:3000/join/${link.token}`,
+      });
+
+      expect(result.organization.name).toBe("Acme Corp");
+      const user = mockUsers.find((u) => u.id === "usr-1");
+      expect(user?.organizationId).toBe("org-1");
+    });
+
+    it("4. Should throw NotFoundException when invite link is invalid", async () => {
+      await expect(
+        service.join("usr-1", {
+          inviteCodeOrSlug: "INVALID-TOKEN",
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("5. Should reject joining by slug or invalid link (only active invite link allowed)", async () => {
+      await expect(
+        service.join("usr-1", {
+          inviteCodeOrSlug: "acme-corp",
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      await expect(
+        service.join("usr-1", {
+          inviteCodeOrSlug: "invalid-code-or-token",
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("6. Should get current organization of user (getMyOrg)", async () => {
+      const org = await service.getMyOrg("usr-2");
+      expect(org).toBeDefined();
+      expect(org?.name).toBe("Acme Corp");
+
+      const noOrg = await service.getMyOrg("usr-1");
+      expect(noOrg).toBeNull();
+    });
+
+    it("7. Should get members of organization including owner", async () => {
+      const members = await service.getMembers("usr-2");
+      expect(members.length).toBe(3);
+      expect(members.some((m) => m.name === "HR Lead" && m.isOwner)).toBe(true);
+      expect(members.some((m) => m.name === "Admin")).toBe(true);
+      expect(members.some((m) => m.name === "Member User")).toBe(true);
+    });
+
+    it("7a. Should get interviewers directory containing minimal member identity fields", async () => {
+      const interviewers = await service.getInterviewers("usr-2");
+      expect(interviewers.length).toBe(3);
+      expect(Object.keys(interviewers[0] || {}).sort()).toEqual([
+        "email",
+        "firstName",
+        "id",
+        "lastName",
+        "name",
+        "role",
+      ]);
+      expect(interviewers.some((m) => m.name === "HR Lead")).toBe(true);
+    });
+
+    it("7b. Should get all organizations for switching (getMyOrgs)", async () => {
+      const orgs = await service.getMyOrgs("usr-2");
+      expect(orgs.length).toBeGreaterThanOrEqual(1);
+      expect(orgs.some((o) => o.name === "Acme Corp")).toBe(true);
+    });
+
+    it("7c. Should switch organization for user", async () => {
+      const result = await service.switchOrg("usr-1", "org-1");
+      expect(result.success).toBe(true);
+      expect(result.organization.name).toBe("Acme Corp");
+
+      const user = mockUsers.find((u) => u.id === "usr-1");
+      expect(user?.organizationId).toBe("org-1");
+    });
+  });
+
+  describe("Invite Links Management", () => {
+    it("8. Should create an invite link with 64-character token", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        expiresIn: "7 days",
+        maxUses: "5",
+      });
+
+      expect(link).toBeDefined();
+      expect(link.token).toHaveLength(64);
+      expect(link.organizationId).toBe("org-1");
+      expect(link.status).toBe("ACTIVE");
+      expect(link.maxUses).toBe(5);
+    });
+
+    it("9. Should list active invite links and filter revoked links", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        expiresIn: "7 days",
+      });
+
+      let links = await service.getInviteLinks("usr-2");
+      expect(links.length).toBe(1);
+      expect(links[0].token).toBe(link.token);
+
+      await service.revokeInviteLink("usr-2", link.id);
+      links = await service.getInviteLinks("usr-2");
+      expect(links.length).toBe(0);
+    });
+
+    it("10. Should allow external user to get public invite preview", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+
+      const preview = await service.getPublicInvite(link.token);
+      expect(preview.valid).toBe(true);
+      expect(preview.organization?.name).toBe("Acme Corp");
+    });
+
+    it("rejects revocation of another organization's invite link", async () => {
+      const invite = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      mockLinks[0].organizationId = "org-2";
+
+      await expect(
+        service.revokeInviteLink("usr-2", invite.id),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockLinks[0].status).toBe("ACTIVE");
+    });
+
+    it("11. Should allow unassociated user to join organization via invite token", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+
+      // usr-1 has organizationId: null
+      const joinResult = await service.joinByToken("usr-1", link.token);
+      expect(joinResult.success).toBe(true);
+
+      const user = mockUsers.find((u) => u.id === "usr-1");
+      expect(user?.organizationId).toBe("org-1");
+    });
+
+    it("12. Should REJECT when user is already a member of the organization", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+
+      // usr-2 is ALREADY in org-1!
+      await expect(service.joinByToken("usr-2", link.token)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("12a. Should atomically reject joinByToken when invite link maxUses is saturated concurrently (H-08)", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+
+      const updateManySpy = vi
+        .spyOn(
+          (
+            mockPrismaService as unknown as {
+              inviteLink: {
+                updateMany: (...args: unknown[]) => Promise<{ count: number }>;
+              };
+            }
+          ).inviteLink,
+          "updateMany",
+        )
+        .mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.joinByToken("usr-1", link.token)).rejects.toThrow(
+        BadRequestException,
+      );
+      updateManySpy.mockRestore();
+    });
+
+    it("12b. Should atomically reject join when invite link maxUses is saturated concurrently (H-08)", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+
+      const updateManySpy = vi
+        .spyOn(
+          (
+            mockPrismaService as unknown as {
+              inviteLink: {
+                updateMany: (...args: unknown[]) => Promise<{ count: number }>;
+              };
+            }
+          ).inviteLink,
+          "updateMany",
+        )
+        .mockResolvedValueOnce({ count: 0 });
+
+      await expect(
+        service.join("usr-1", { inviteCodeOrSlug: link.token }),
+      ).rejects.toThrow(BadRequestException);
+      updateManySpy.mockRestore();
+    });
+
+    it("12c. Supports creating and joining with all non-admin roles (RECRUITER, HIRING_MANAGER, INTERVIEWER)", async () => {
+      const recruiterLink = await service.createInviteLink("usr-2", {
+        role: "RECRUITER",
+      });
+      const hmLink = await service.createInviteLink("usr-2", {
+        role: "HIRING_MANAGER",
+      });
+      const interviewerLink = await service.createInviteLink("usr-2", {
+        role: "INTERVIEWER",
+      });
+
+      expect(recruiterLink.role).toBe("RECRUITER");
+      expect(hmLink.role).toBe("HIRING_MANAGER");
+      expect(interviewerLink.role).toBe("INTERVIEWER");
+
+      const joinByTokenResult = await service.joinByToken(
+        "usr-1",
+        recruiterLink.token,
+      );
+      expect(joinByTokenResult.role).toBe("RECRUITER");
+      expect(mockUsers.find((u) => u.id === "usr-1")?.role).toBe("RECRUITER");
+      expect(
+        mockMembers.find(
+          (m) => m.organizationId === "org-1" && m.userId === "usr-1",
+        )?.role,
+      ).toBe("RECRUITER");
+
+      mockUsers.push({
+        id: "usr-hm",
+        email: "hm@tun.io.vn",
+        firstName: "Hiring Manager",
+        lastName: "User",
+        role: "MEMBER",
+        organizationId: null,
+        createdAt: new Date(),
+      });
+      const joinResult = await service.join("usr-hm", {
+        inviteCodeOrSlug: hmLink.token,
+      });
+      expect(joinResult.role).toBe("HIRING_MANAGER");
+      expect(mockUsers.find((u) => u.id === "usr-hm")?.role).toBe(
+        "HIRING_MANAGER",
+      );
+      expect(
+        mockMembers.find(
+          (m) => m.organizationId === "org-1" && m.userId === "usr-hm",
+        )?.role,
+      ).toBe("HIRING_MANAGER");
+    });
+
+    it("12d. Rejects invalid invite role string when creating invite link", async () => {
+      await expect(
+        service.createInviteLink("usr-2", { role: "INVALID_ROLE" }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("12e. Rejects non-admin without org:manage_members permission from creating, listing, or revoking invite links", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+
+      mockUsers.push({
+        id: "usr-recruiter",
+        email: "recruiter@tun.io.vn",
+        firstName: "Recruiter",
+        lastName: "User",
+        role: "RECRUITER",
+        organizationId: "org-1",
+        createdAt: new Date(),
+      });
+      mockMembers.push({
+        id: "mem-recruiter",
+        organizationId: "org-1",
+        userId: "usr-recruiter",
+        role: "RECRUITER",
+        createdAt: new Date(),
+      });
+
+      await expect(
+        service.createInviteLink("usr-recruiter", { role: "INTERVIEWER" }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(await service.getInviteLinks("usr-recruiter")).toEqual([]);
+      await expect(
+        service.revokeInviteLink("usr-recruiter", link.id),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("12f. Allows non-admin with dynamic org:manage_members to invite non-admin roles while blocking ADMIN invites", async () => {
+      mockUsers.push({
+        id: "usr-recruiter",
+        email: "recruiter@tun.io.vn",
+        firstName: "Recruiter",
+        lastName: "User",
+        role: "RECRUITER",
+        organizationId: "org-1",
+        createdAt: new Date(),
+      });
+      mockMembers.push({
+        id: "mem-recruiter",
+        organizationId: "org-1",
+        userId: "usr-recruiter",
+        role: "RECRUITER",
+        createdAt: new Date(),
+      });
+      mockRolePermissions.push({
+        id: "perm-1",
+        organizationId: "org-1",
+        role: "RECRUITER",
+        permission: "org:manage_members",
+        granted: true,
+      });
+
+      const created = await service.createInviteLink("usr-recruiter", {
+        role: "HIRING_MANAGER",
+      });
+      expect(created.role).toBe("HIRING_MANAGER");
+
+      const listed = await service.getInviteLinks("usr-recruiter");
+      expect(listed.some((l) => l.id === created.id)).toBe(true);
+
+      // Non-owner/non-admin cannot escalate by creating ADMIN invites
+      await expect(
+        service.createInviteLink("usr-recruiter", { role: "ADMIN" }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.revokeInviteLink("usr-recruiter", created.id),
+      ).resolves.toMatchObject({ success: true });
+    });
+  });
+
+  describe("Member Role & Removal Management", () => {
+    it("13. Should allow admin/owner to update member role", async () => {
+      // usr-2 is ADMIN in org-1, updating usr-3 from MEMBER to ADMIN
+      const result = await service.updateMemberRole("usr-2", "usr-3", "ADMIN");
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("ADMIN");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("ADMIN");
+    });
+
+    it("14. Should REJECT updating organization owner's role", async () => {
+      // usr-1 is owner of org-1
+      await expect(
+        service.updateMemberRole("usr-2", "usr-1", "MEMBER"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("14a. Should allow updating member role from MEMBER to RECRUITER", async () => {
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "RECRUITER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("RECRUITER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("RECRUITER");
+    });
+
+    it("14b. Should allow updating member role from RECRUITER to HIRING_MANAGER", async () => {
+      await service.updateMemberRole("usr-2", "usr-3", "RECRUITER");
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "HIRING_MANAGER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("HIRING_MANAGER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("HIRING_MANAGER");
+    });
+
+    it("14c. Should allow updating member role from HIRING_MANAGER to INTERVIEWER", async () => {
+      await service.updateMemberRole("usr-2", "usr-3", "HIRING_MANAGER");
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "INTERVIEWER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("INTERVIEWER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("INTERVIEWER");
+    });
+
+    it("14d. Should REJECT updating own role with 400 (ORG_CANNOT_CHANGE_SELF_ROLE)", async () => {
+      // usr-2 is ADMIN, cannot change own role
+      await expect(
+        service.updateMemberRole("usr-2", "usr-2", "MEMBER"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("14e. Should REJECT when non-admin non-owner attempts to update member role (403)", async () => {
+      // usr-3 is MEMBER
+      await expect(
+        service.updateMemberRole("usr-3", "usr-2", "ADMIN"),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("14f. Should maintain stable member list order (owner first, then createdAt asc) after role change", async () => {
+      const beforeMembers = await service.getMembers("usr-2");
+      expect(beforeMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+
+      await service.updateMemberRole("usr-2", "usr-3", "HIRING_MANAGER");
+
+      const afterMembers = await service.getMembers("usr-2");
+      expect(afterMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+      expect(afterMembers[2].role).toBe("HIRING_MANAGER");
+    });
+
+    it("15. Should allow admin/owner to remove member from organization", async () => {
+      // usr-2 is ADMIN in org-1, removing usr-3
+      const result = await service.removeMember("usr-2", "usr-3");
+      expect(result.success).toBe(true);
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.organizationId).toBeNull();
+      expect(usr3?.role).toBe("MEMBER");
+    });
+
+    it("16. Should REJECT removing organization owner or self", async () => {
+      // Cannot remove self
+      await expect(service.removeMember("usr-2", "usr-2")).rejects.toThrow(
+        BadRequestException,
+      );
+
+      // Cannot remove org owner
+      await expect(service.removeMember("usr-2", "usr-1")).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("17. Should allow switching between multiple organizations without losing membership", async () => {
+      // 1. usr-1 owns org-1
+      // 2. Add org-2 owned by usr-2
+      mockOrgs.push({
+        id: "org-2",
+        name: "Org B",
+        slug: "org-b",
+        ownerId: "usr-2",
+        createdAt: new Date(),
+      });
+
+      // 3. Create invite link for org-2
+      mockLinks.push({
+        id: "link-org-2",
+        token: "token-for-org-2",
+        organizationId: "org-2",
+        role: "MEMBER",
+        status: "ACTIVE",
+        expiresAt: null,
+        maxUses: null,
+        usesCount: 0,
+        createdById: "usr-2",
+      });
+
+      // 4. usr-1 is in org-1. usr-1 accepts invite to org-2
+      const joinRes = await service.joinByToken("usr-1", "token-for-org-2");
+      expect(joinRes.success).toBe(true);
+
+      const usr1 = mockUsers.find((u) => u.id === "usr-1");
+      expect(usr1?.organizationId).toBe("org-2");
+
+      // 5. getMyOrgs for usr-1 must include BOTH org-1 and org-2
+      let orgs = await service.getMyOrgs("usr-1");
+      expect(orgs.map((o) => o.id)).toContain("org-1");
+      expect(orgs.map((o) => o.id)).toContain("org-2");
+
+      // 6. usr-1 switches back to org-1
+      const switchRes = await service.switchOrg("usr-1", "org-1");
+      expect(switchRes.success).toBe(true);
+      expect(usr1?.organizationId).toBe("org-1");
+
+      // 7. Critical: org-2 must NOT disappear from getMyOrgs!
+      orgs = await service.getMyOrgs("usr-1");
+      expect(orgs.map((o) => o.id)).toContain("org-1");
+      expect(orgs.map((o) => o.id)).toContain("org-2");
+
+      // 8. usr-1 can switch back to org-2 seamlessly
+      const switchBack = await service.switchOrg("usr-1", "org-2");
+      expect(switchBack.success).toBe(true);
+      expect(usr1?.organizationId).toBe("org-2");
+    });
+  });
+
+  describe("Startup Membership Backfill (Task #14B)", () => {
+    it("should backfill memberships using only 3 batched queries for 100 orgs and 100 users without N+1 query storms", async () => {
+      // 1. Seed 100 orgs without members
+      for (let i = 10; i < 110; i++) {
+        mockOrgs.push({
+          id: `org-${i}`,
+          name: `Org ${i}`,
+          slug: `org-${i}`,
+          ownerId: `owner-${i}`,
+          createdAt: new Date(),
+        });
+      }
+
+      // 2. Seed 100 users without members
+      for (let i = 10; i < 110; i++) {
+        mockUsers.push({
+          id: `owner-${i}`,
+          email: `owner-${i}@test.com`,
+          firstName: "Owner",
+          lastName: `${i}`,
+          role: "ADMIN",
+          organizationId: `org-${i}`,
+        });
+      }
+
+      const orgSelectSpy = vi.spyOn(
+        (
+          mockPrismaService as unknown as {
+            organization: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).organization,
+        "findMany",
+      );
+      const userSelectSpy = vi.spyOn(
+        (
+          mockPrismaService as unknown as {
+            user: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).user,
+        "findMany",
+      );
+      const memberSelectSpy = vi.spyOn(
+        (
+          mockPrismaService as unknown as {
+            organizationMember: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).organizationMember,
+        "findMany",
+      );
+
+      // 3. Execute startup backfill
+      await service.onModuleInit();
+
+      // 4. Assert exactly 1 batched query per table (3 total SELECT queries)
+      expect(orgSelectSpy).toHaveBeenCalledTimes(1);
+      expect(userSelectSpy).toHaveBeenCalledTimes(1);
+      expect(memberSelectSpy).toHaveBeenCalledTimes(1);
+
+      // Verify members were upserted for the owners
+      const upsertSpy = (
+        mockPrismaService as unknown as {
+          organizationMember: { upsert: unknown };
+        }
+      ).organizationMember.upsert;
+      expect(upsertSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("R2 Schema Safety & Multi-Org Scoping (BUG-01 & BUG-03)", () => {
+    it("does not select or filter by dropped User.role / User.organizationId columns and scopes getMyOrg/updateMyOrg to requested activeOrgId", async () => {
+      const strictMemberships = [
+        {
+          id: "mem-a",
+          organizationId: "org-1",
+          userId: "usr-strict",
+          role: "MEMBER",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "mem-b",
+          organizationId: "org-2",
+          userId: "usr-strict",
+          role: "ADMIN",
+          createdAt: new Date("2026-01-02T00:00:00Z"),
+        },
+      ];
+      const strictOrgs = [
+        {
+          id: "org-1",
+          name: "Org One",
+          slug: "org-one",
+          ownerId: "other-1",
+        },
+        {
+          id: "org-2",
+          name: "Org Two",
+          slug: "org-two",
+          ownerId: "other-2",
+        },
+      ];
+      const strictPrisma = createMockPrismaService({
+        organization: strictOrgs,
+        user: [
+          {
+            id: "usr-strict",
+            email: "strict@tun.io.vn",
+            firstName: "Strict",
+            lastName: "User",
+          },
+          {
+            id: "usr-target",
+            email: "target@tun.io.vn",
+            firstName: "Target",
+            lastName: "Member",
+          },
+        ],
+        organizationMember: [
+          ...strictMemberships,
+          {
+            id: "mem-t",
+            organizationId: "org-2",
+            userId: "usr-target",
+            role: "MEMBER",
+            createdAt: new Date("2026-01-03T00:00:00Z"),
+          },
+        ],
+      });
+
+      const origFindFirst = strictPrisma.user.findFirst;
+      strictPrisma.user.findFirst = vi.fn(
+        async (args?: {
+          where?: Record<string, unknown>;
+          select?: Record<string, unknown>;
+        }) => {
+          if (
+            (args?.select &&
+              ("role" in args.select || "organizationId" in args.select)) ||
+            (args?.where &&
+              ("role" in args.where || "organizationId" in args.where))
+          ) {
+            throw new Error(
+              "PrismaClientValidationError: Unknown field on model User",
+            );
+          }
+          return origFindFirst(args as never);
+        },
+      ) as never;
+
+      const strictService = createTestOrganizationsService(
+        strictPrisma as never,
+      );
+
+      const org2 = await strictService.getMyOrg("usr-strict", "org-2");
+      expect(org2?.id).toBe("org-2");
+
+      const updated = await strictService.updateMyOrg(
+        "usr-strict",
+        { name: "Org Two Renamed" },
+        "org-2",
+      );
+      expect(updated?.name).toBe("Org Two Renamed");
+
+      const link = await strictService.createInviteLink(
+        "usr-strict",
+        { role: "RECRUITER" },
+        "org-2",
+      );
+      expect(link.organizationId).toBe("org-2");
+
+      const preview = await strictService.getPublicInvite(link.token);
+      expect(preview.valid).toBe(true);
+
+      const roleUpdate = await strictService.updateMemberRole(
+        "usr-strict",
+        "usr-target",
+        "INTERVIEWER",
+        "org-2",
+      );
+      expect(roleUpdate.role).toBe("INTERVIEWER");
+
+      const removed = await strictService.removeMember(
+        "usr-strict",
+        "usr-target",
+        "org-2",
+      );
+      expect(removed.success).toBe(true);
+    });
+
+    it("BUG-10: createInviteLink with email dispatches invitation email and defaults maxUses to 1", async () => {
+      const mockEmailSystem = {
+        sendSystemEmail: vi.fn().mockResolvedValue({ status: "QUEUED" }),
+      };
+      const invitesSvc = new OrganizationsInvitesService(
+        mockPrismaService as never,
+        undefined,
+        undefined,
+        mockEmailSystem as never,
+      );
+
+      const created = await invitesSvc.createInviteLink(
+        "usr-2",
+        { email: "Colleague@HaiHire.vn", role: "RECRUITER" },
+        "org-1",
+      );
+
+      expect(created.maxUses).toBe(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledTimes(1);
+      expect(mockEmailSystem.sendSystemEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "colleague@haihire.vn",
+          organizationId: "org-1",
+          subject: expect.stringContaining("Acme Corp"),
+          body: expect.stringContaining(`/auth/join/${created.token}`),
+        }),
+      );
+    });
+
+    it("executes joinByToken and join inside withSystemRlsBypass so multi-org users can accept cross-org invites", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
+      const withSystemRlsBypass = vi.fn(
+        async (fn: (tx: unknown) => Promise<unknown>) => fn(mockPrismaService),
+      );
+      (
+        mockPrismaService as { withSystemRlsBypass?: unknown }
+      ).withSystemRlsBypass = withSystemRlsBypass;
+
+      const joined = await service.joinByToken("usr-1", link.token);
+      expect(joined.success).toBe(true);
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(1);
+
+      const secondLink = await service.createInviteLink("usr-2", {
+        role: "RECRUITER",
+      });
+      await service.join("usr-3", { inviteCodeOrSlug: secondLink.token });
+      expect(withSystemRlsBypass).toHaveBeenCalledTimes(2);
+    });
+  });
+});

@@ -10,7 +10,8 @@ export const ApplicationStage = {
   HIRED: "HIRED",
   REJECTED: "REJECTED",
 } as const;
-export type ApplicationStage = (typeof ApplicationStage)[keyof typeof ApplicationStage];
+export type ApplicationStage =
+  (typeof ApplicationStage)[keyof typeof ApplicationStage];
 
 export const APPLICATION_STAGES = [
   ApplicationStage.APPLIED,
@@ -21,13 +22,30 @@ export const APPLICATION_STAGES = [
   ApplicationStage.REJECTED,
 ] as const;
 
-export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<ApplicationStage, readonly ApplicationStage[]> = {
-  [ApplicationStage.APPLIED]: [ApplicationStage.SCREENING, ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
-  [ApplicationStage.SCREENING]: [ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
-  [ApplicationStage.INTERVIEW]: [ApplicationStage.OFFER, ApplicationStage.REJECTED],
+export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<
+  ApplicationStage,
+  readonly ApplicationStage[]
+> = {
+  [ApplicationStage.APPLIED]: [
+    ApplicationStage.SCREENING,
+    ApplicationStage.INTERVIEW,
+    ApplicationStage.REJECTED,
+  ],
+  [ApplicationStage.SCREENING]: [
+    ApplicationStage.INTERVIEW,
+    ApplicationStage.REJECTED,
+  ],
+  [ApplicationStage.INTERVIEW]: [
+    ApplicationStage.OFFER,
+    ApplicationStage.REJECTED,
+  ],
   [ApplicationStage.OFFER]: [ApplicationStage.HIRED, ApplicationStage.REJECTED],
   [ApplicationStage.HIRED]: [],
-  [ApplicationStage.REJECTED]: [],
+  [ApplicationStage.REJECTED]: [
+    ApplicationStage.APPLIED,
+    ApplicationStage.SCREENING,
+    ApplicationStage.INTERVIEW,
+  ],
 };
 
 export interface Application {
@@ -39,27 +57,69 @@ export interface Application {
   candidateEmail: string;
   candidatePhone?: string | null;
   stage: ApplicationStage;
+  stageId?: string | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
   resumeUrl: string;
   resumeFileName: string;
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
-  notes?: string | null;
+  applicationNotes?: ApplicationNote[];
   orderIndex: number;
   matchScore?: number | null;
   interviews?: Interview[];
   createdAt: string;
   updatedAt: string;
-  job?: Pick<Job, "id" | "title" | "department" | "location" | "status" | "type">;
+  job?: Pick<
+    Job,
+    "id" | "title" | "department" | "location" | "status" | "type"
+  >;
 }
 
 export interface CreateApplicationInput {
   jobId: string;
   candidateId?: string;
-  candidateName?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string | null;
   candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
   resumeFile?: unknown;
+}
+
+export interface ApplicationNote {
+  id: string;
+  organizationId: string;
+  applicationId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateApplicationStageInput {
+  stage: ApplicationStage;
+  stageId?: string;
+  orderIndex?: number;
+  rejectionReason?: string;
+  sendRejectionEmail?: boolean;
+  sendOfferEmail?: boolean;
+  emailTemplateId?: string;
+}
+
+export interface ApplicationJobStats {
+  total: number;
+  byStage: Record<ApplicationStage, number>;
+}
+
+export interface ApplicationStats {
+  totalApplications: number;
+  byStage: Record<ApplicationStage, number>;
+  byJob: Record<string, ApplicationJobStats>;
 }

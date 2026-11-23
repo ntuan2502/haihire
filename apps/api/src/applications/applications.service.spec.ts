@@ -1,0 +1,1078 @@
+import { createTestApplicationsService } from "../test/helpers/service-factories";
+import {
+  createMockTable,
+  createMockPrismaService,
+} from "../test/helpers/prisma-composer-mock";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { ApplicationsService } from "./applications.service";
+import { NotFoundException } from "@nestjs/common";
+import { ApplicationStage } from "./dto/update-stage.dto";
+import { AppConflictException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
+
+describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
+  let service: ApplicationsService;
+  let mockPrismaService: {
+    db: {
+      orm: {
+        public: Record<string, unknown>;
+      };
+    };
+  };
+  let mockMinioService: {
+    uploadFile: ReturnType<typeof vi.fn>;
+    deleteFile: ReturnType<typeof vi.fn>;
+    getObjectStream: ReturnType<typeof vi.fn>;
+    extractObjectName: ReturnType<typeof vi.fn>;
+  };
+  let mockActivitiesService: {
+    createActivity: ReturnType<typeof vi.fn>;
+    findByCandidate: ReturnType<typeof vi.fn>;
+  };
+  let mockEmailService: {
+    getTemplateByType: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
+  };
+
+  interface MockJob {
+    id: string;
+    title: string;
+    organizationId: string;
+    department?: string;
+    location?: string;
+    status?: string;
+    deletedAt?: Date | null;
+  }
+
+  interface MockCandidate {
+    id: string;
+    organizationId: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone: string;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    deletedAt?: Date | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  interface MockApp {
+    id: string;
+    organizationId?: string | null;
+    candidateId: string;
+    jobId: string;
+    stage: string;
+    orderIndex?: number;
+    matchScore?: number | null;
+    notes?: string | null;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  let mockJobs: MockJob[] = [];
+  let mockCandidates: MockCandidate[] = [];
+  let mockApps: MockApp[] = [];
+  let mockCandidateDocs: Array<Record<string, unknown>> = [];
+
+  beforeEach(() => {
+    mockCandidateDocs = [
+      {
+        id: "doc-1",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "alice.pdf",
+        url: "https://s3.local/resumes/alice.pdf",
+        size: 1024,
+        mimeType: "application/pdf",
+        type: "Resume",
+        createdAt: new Date(),
+      },
+    ];
+    mockJobs = [
+      {
+        id: "job-org1-a",
+        title: "Frontend Developer",
+        organizationId: "org-1",
+        status: "PUBLISHED",
+      },
+      {
+        id: "job-org1-b",
+        title: "Backend Developer",
+        organizationId: "org-1",
+        status: "PUBLISHED",
+      },
+      {
+        id: "job-org2-c",
+        title: "Competitor Designer",
+        organizationId: "org-2", // Belongs to different organization!
+        status: "PUBLISHED",
+      },
+    ];
+
+    mockCandidates = [
+      {
+        id: "cand-1",
+        organizationId: "org-1",
+        name: "Alice Nguyen",
+        email: "alice@gmail.com",
+        phone: "0901234567",
+        resumeUrl: "https://s3.local/resumes/alice.pdf",
+        resumeFileName: "alice.pdf",
+        resumeFileSize: 1024,
+        resumeMimeType: "application/pdf",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "cand-2",
+        organizationId: "org-1",
+        name: "Bob Tran",
+        email: "bob@gmail.com",
+        phone: "0912345678",
+        resumeUrl: "https://s3.local/resumes/bob.pdf",
+        resumeFileName: "bob.pdf",
+        resumeFileSize: 2048,
+        resumeMimeType: "application/pdf",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "cand-3",
+        organizationId: "org-2",
+        name: "Charlie Competitor Candidate",
+        email: "charlie@gmail.com",
+        phone: "0987654321",
+        resumeUrl: "https://s3.local/resumes/charlie.pdf",
+        resumeFileName: "charlie.pdf",
+        resumeFileSize: 3072,
+        resumeMimeType: "application/pdf",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    mockApps = [
+      {
+        id: "app-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        resumeUrl: "https://s3.local/resumes/alice.pdf",
+        resumeFileName: "alice.pdf",
+        resumeFileSize: 1024,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        orderIndex: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "app-2",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        jobId: "job-org1-b",
+        stage: "INTERVIEW",
+        resumeUrl: "https://s3.local/resumes/bob.pdf",
+        resumeFileName: "bob.pdf",
+        resumeFileSize: 2048,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        orderIndex: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "app-3",
+        organizationId: "org-2",
+        candidateId: "cand-3",
+        jobId: "job-org2-c", // Belongs to org-2!
+        stage: "OFFER",
+        resumeUrl: "https://s3.local/resumes/charlie.pdf",
+        resumeFileName: "charlie.pdf",
+        resumeFileSize: 3072,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        orderIndex: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    mockMinioService = {
+      uploadFile: vi.fn().mockResolvedValue({
+        url: "https://s3.local/resumes/uploaded.pdf",
+        originalName: "uploaded.pdf",
+        size: 512,
+        mimeType: "application/pdf",
+      }),
+      deleteFile: vi.fn().mockResolvedValue(true),
+      getObjectStream: vi.fn().mockResolvedValue({
+        pipe: vi.fn(),
+      }),
+      extractObjectName: vi.fn().mockImplementation((url: string) => {
+        if (!url) return "";
+        const idx = url.indexOf("tenants/");
+        if (idx !== -1) return url.slice(idx);
+        return url.split("/").pop() || "";
+      }),
+    };
+
+    const jobTable = createMockTable(mockJobs);
+    const appTable = createMockTable(mockApps);
+    const candidateTable = createMockTable(mockCandidates);
+    const candidateDocTable = createMockTable(mockCandidateDocs);
+    const interviewTable = createMockTable();
+    const trackingLinkTable = createMockTable();
+    const orgTable = createMockTable([
+      { id: "org-1", name: "Org 1", slug: "org-1" },
+      { id: "org-2", name: "Org 2", slug: "org-2" },
+    ]);
+
+    mockPrismaService = createMockPrismaService({
+      job: jobTable,
+      application: appTable,
+      candidate: candidateTable,
+      candidateDocument: candidateDocTable,
+      interview: interviewTable,
+      trackingLink: trackingLinkTable,
+      organization: orgTable,
+    });
+    mockActivitiesService = {
+      createActivity: vi.fn().mockResolvedValue({}),
+      findByCandidate: vi.fn().mockResolvedValue([]),
+    };
+
+    mockEmailService = {
+      getTemplateByType: vi.fn().mockResolvedValue({
+        id: "tpl-rej",
+        type: "REJECTION",
+        enabled: true,
+        subject: "Application Update",
+        body: "Hello {{candidateName}}",
+      }),
+      sendEmail: vi.fn().mockResolvedValue({}),
+    };
+
+    service = createTestApplicationsService(
+      mockPrismaService as never,
+      mockMinioService as never,
+      mockActivitiesService as never,
+      mockEmailService as never,
+    );
+  });
+
+  describe("Multi-Tenant Isolation", () => {
+    it("should return ONLY applications belonging to org-1", async () => {
+      const results = await service.findAll("org-1");
+
+      expect(results.total).toBe(2);
+      expect(results.data.length).toBe(2);
+      expect(results.data.some((a) => a.candidateName === "Alice Nguyen")).toBe(
+        true,
+      );
+      expect(results.data.some((a) => a.candidateName === "Bob Tran")).toBe(
+        true,
+      );
+      // Strictly verify org-2 candidate is NEVER present
+      expect(
+        results.data.some(
+          (a) => a.candidateName === "Charlie Competitor Candidate",
+        ),
+      ).toBe(false);
+    });
+
+    it("should return ONLY applications belonging to org-2", async () => {
+      const results = await service.findAll("org-2");
+
+      expect(results.total).toBe(1);
+      expect(results.data.length).toBe(1);
+      expect(results.data[0].candidateName).toBe(
+        "Charlie Competitor Candidate",
+      );
+    });
+
+    it("should return empty array if organizationId is not provided", async () => {
+      const results = await service.findAll(undefined);
+      expect(results.data).toEqual([]);
+      expect(results.total).toBe(0);
+    });
+
+    it("should return empty array if organization has no jobs", async () => {
+      const results = await service.findAll("non-existent-org");
+      expect(results.data).toEqual([]);
+      expect(results.total).toBe(0);
+    });
+
+    it("should filter applications by stage using SQL-level filtering (M-01)", async () => {
+      const results = await service.findAll("org-1", { stage: "APPLIED" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should filter applications by jobId (M-01)", async () => {
+      const results = await service.findAll("org-1", { jobId: "job-org1-b" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Bob Tran");
+    });
+
+    it("should filter applications by search across candidate name (M-01)", async () => {
+      const results = await service.findAll("org-1", { search: "Alice" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should paginate applications with page and limit pushed to database (M-01)", async () => {
+      const page1 = await service.findAll("org-1", { page: 1, limit: 1 });
+      expect(page1.total).toBe(2);
+      expect(page1.totalPages).toBe(2);
+      expect(page1.data.length).toBe(1);
+
+      const page2 = await service.findAll("org-1", { page: 2, limit: 1 });
+      expect(page2.total).toBe(2);
+      expect(page2.totalPages).toBe(2);
+      expect(page2.data.length).toBe(1);
+      expect(page2.data[0].id).not.toBe(page1.data[0].id);
+    });
+
+    it("should cap requested limit at 100 to prevent OOM spikes (F14)", async () => {
+      const result = await service.findAll("org-1", { page: 1, limit: 1000 });
+      expect(result.limit).toBe(100);
+    });
+  });
+
+  describe("Job Applications & Stages", () => {
+    it("should find applications for a specific job", async () => {
+      const apps = await service.findByJob("job-org1-a");
+      expect(apps.length).toBe(1);
+      expect(apps[0].candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should throw NotFoundException when finding by non-existent job", async () => {
+      await expect(service.findByJob("invalid-job")).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it("should throw AppForbiddenException when accessing job applications from another organization", async () => {
+      await expect(
+        service.findByJob("job-1", "foreign-org-id"),
+      ).rejects.toThrow();
+    });
+
+    it("should find a specific application by id", async () => {
+      const app = await service.findOne("app-1");
+      expect(app).toBeDefined();
+      expect(app.candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should update application stage through valid lifecycle transitions", async () => {
+      // APPLIED -> SCREENING
+      const s1 = await service.updateStage(
+        "app-1",
+        {
+          stage: ApplicationStage.SCREENING,
+          orderIndex: 2,
+        },
+        undefined,
+        { id: "u-recruiter", name: "Recruiter Bob", role: "RECRUITER" },
+      );
+      expect(s1?.stage).toBe(ApplicationStage.SCREENING);
+      expect(s1?.orderIndex).toBe(2);
+      expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorName: "Recruiter Bob",
+          actorRole: "RECRUITER",
+        }),
+      );
+
+      // SCREENING -> INTERVIEW
+      const s2 = await service.updateStage("app-1", {
+        stage: ApplicationStage.INTERVIEW,
+      });
+      expect(s2?.stage).toBe(ApplicationStage.INTERVIEW);
+
+      // INTERVIEW -> OFFER
+      const s3 = await service.updateStage("app-1", {
+        stage: ApplicationStage.OFFER,
+      });
+      expect(s3?.stage).toBe(ApplicationStage.OFFER);
+
+      // OFFER -> HIRED
+      const s4 = await service.updateStage("app-1", {
+        stage: ApplicationStage.HIRED,
+      });
+      expect(s4?.stage).toBe(ApplicationStage.HIRED);
+    });
+
+    it("should reject invalid stage transitions without changing database state", async () => {
+      // 1. APPLIED -> HIRED (skipping screening/interview/offer)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.HIRED }),
+      ).rejects.toThrow();
+
+      let app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.APPLIED);
+
+      // 2. APPLIED -> OFFER (skipping stages)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.OFFER }),
+      ).rejects.toThrow();
+
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.APPLIED);
+
+      // 3. Move to REJECTED (terminal state)
+      await service.updateStage("app-1", { stage: ApplicationStage.REJECTED });
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.REJECTED);
+
+      // 4. REJECTED -> OFFER (invalid from terminal)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.OFFER }),
+      ).rejects.toThrow();
+
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.REJECTED);
+    });
+
+    it("should allow sequential valid updates to next stages", async () => {
+      // app-1 starts at APPLIED
+      const step1 = await service.updateStage("app-1", {
+        stage: ApplicationStage.SCREENING,
+      });
+      expect(step1.stage).toBe(ApplicationStage.SCREENING);
+
+      const step2 = await service.updateStage("app-1", {
+        stage: ApplicationStage.INTERVIEW,
+      });
+      expect(step2.stage).toBe(ApplicationStage.INTERVIEW);
+    });
+
+    it("should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict", async () => {
+      // app-1 starts at APPLIED. Both see APPLIED.
+      const p1 = service.updateStage("app-1", {
+        stage: ApplicationStage.SCREENING,
+      });
+      const p2 = service.updateStage("app-1", {
+        stage: ApplicationStage.REJECTED,
+      });
+
+      const results = await Promise.allSettled([p1, p2]);
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      expect(fulfilled.length).toBe(1);
+      expect(rejected.length).toBe(1);
+
+      const err = (rejected[0] as PromiseRejectedResult).reason;
+      expect(err).toBeInstanceOf(AppConflictException);
+      expect(err.code).toBe(APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT);
+    });
+
+    it("should throw NotFoundException when updating non-existent application", async () => {
+      await expect(
+        service.updateStage("non-existent-app-id", {
+          stage: ApplicationStage.SCREENING,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should update candidate personal information", async () => {
+      const updated = await service.updateCandidate("app-1", {
+        firstName: "Alice",
+        lastName: "Nguyen",
+        displayName: "Alice Nguyen (Updated)",
+        candidatePhone: "0999999999",
+      });
+
+      expect(updated.candidateName).toBe("Alice Nguyen (Updated)");
+      expect(updated.candidatePhone).toBe("0999999999");
+    });
+
+    it("should delete an application and record audit activity log", async () => {
+      const result = await service.remove("app-1");
+      expect(result.success).toBe(true);
+      await expect(service.findOne("app-1")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("Application Creation & Validations", () => {
+    it("should throw when target job does not exist", async () => {
+      await expect(
+        service.create({
+          jobId: "non-existent-job",
+          firstName: "Test",
+          lastName: "Candidate",
+          candidateEmail: "test@example.com",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidate belongs to different organization than job", async () => {
+      // cand-3 belongs to org-2, job-org1-a belongs to org-1
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+          candidateId: "cand-3",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidate already applied to the same job", async () => {
+      // cand-1 is already applied to job-org1-a via app-1
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+          candidateId: "cand-1",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidateId is missing and name/email are missing", async () => {
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should create application and new candidate when valid info provided", async () => {
+      const created = await service.create({
+        jobId: "job-org1-a",
+        firstName: "David",
+        lastName: "Beckham",
+        candidateEmail: "david@example.com",
+        candidatePhone: "0123456789",
+      });
+
+      expect(created).toBeDefined();
+      expect(created).not.toHaveProperty("candidateName");
+      expect(created.jobId).toBe("job-org1-a");
+    });
+  });
+
+  describe("Document Management & Downloads", () => {
+    it("should reject uploadDocument if file is missing", async () => {
+      await expect(
+        service.uploadDocument("app-2", null as never),
+      ).rejects.toThrow();
+    });
+
+    it("should upload document and attach to application and candidate", async () => {
+      const mockFile = {
+        originalname: "portfolio.pdf",
+        mimetype: "application/pdf",
+        size: 2048,
+        buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
+      } as Express.Multer.File;
+
+      const updated = await service.uploadDocument(
+        "app-2",
+        mockFile,
+        "Portfolio",
+      );
+      expect(updated).toBeDefined();
+      expect(mockMinioService.uploadFile).toHaveBeenCalled();
+    });
+
+    it("should throw AppServiceUnavailableException when MinIO upload fails (H-06)", async () => {
+      const mockFile = {
+        originalname: "portfolio.pdf",
+        mimetype: "application/pdf",
+        size: 2048,
+        buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
+      } as Express.Multer.File;
+
+      mockMinioService.uploadFile = vi
+        .fn()
+        .mockRejectedValue(new Error("MinIO storage unavailable"));
+
+      await expect(
+        service.uploadDocument("app-2", mockFile, "Portfolio"),
+      ).rejects.toThrow("Failed to upload document to storage service");
+    });
+
+    it("should get candidate documents list", async () => {
+      const docs = await service.getCandidateDocuments("cand-1");
+      expect(docs.length).toBeGreaterThanOrEqual(1);
+      expect(docs[0].name).toBe("alice.pdf");
+    });
+
+    it("should prepare document download stream", async () => {
+      const download = await service.prepareDocumentDownload(
+        "app-2",
+        "https://s3.local/resumes/bob.pdf",
+        "bob.pdf",
+        "org-1",
+        { id: "recruiter-1", name: "Recruiter Bob" },
+      );
+
+      expect(download.cleanFileName).toBe("bob.pdf");
+      expect(download.mimeType).toBe("application/pdf");
+      expect(download.stream).toBeDefined();
+      expect(mockMinioService.getObjectStream).toHaveBeenCalled();
+    });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const targetApp = mockApps.find((a) => a.id === "app-2");
+      if (targetApp) {
+        targetApp.resumeMimeType = null;
+      }
+
+      const inferredDownload = await service.prepareDocumentDownload(
+        "app-2",
+        "https://s3.local/resumes/bob.pdf",
+        "bob.pdf",
+        "org-1",
+      );
+      expect(inferredDownload.mimeType).toBe("application/pdf");
+
+      mockCandidateDocs.push({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://s3.local/resumes/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: new Date(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "app-1",
+        "https://s3.local/resumes/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
+    });
+
+    it("should block document download if targetUrl does not belong to application (SSRF guard)", async () => {
+      await expect(
+        service.prepareDocumentDownload(
+          "app-2",
+          "https://s3.local/other-org-bucket/secret.pdf",
+        ),
+      ).rejects.toThrow();
+    });
+
+    it.each([
+      { documentId: "doc-1" },
+      { url: "https://s3.local/resumes/alice.pdf" },
+    ])(
+      "preserves another candidate's document when deleting through an application: %j",
+      async (selector) => {
+        await service.deleteDocument("app-2", selector, "org-1");
+        expect(mockCandidateDocs.some((doc) => doc.id === "doc-1")).toBe(true);
+      },
+    );
+
+    it.each([
+      { documentId: "foreign-doc" },
+      { url: "https://s3.local/resumes/foreign.pdf" },
+    ])("preserves documents in another tenant: %j", async (selector) => {
+      mockCandidateDocs.push({
+        id: "foreign-doc",
+        candidateId: "cand-3",
+        organizationId: "org-2",
+        url: "https://s3.local/resumes/foreign.pdf",
+      });
+      await service.deleteDocument("app-2", selector, "org-1");
+      expect(mockCandidateDocs.some((doc) => doc.id === "foreign-doc")).toBe(
+        true,
+      );
+    });
+
+    it("should delete document and clear resume fields from application", async () => {
+      const result = await service.deleteDocument("app-2", {
+        url: "https://s3.local/resumes/bob.pdf",
+      });
+      expect(result).toBeDefined();
+      expect(result.id).toBe("app-2");
+    });
+  });
+
+  describe("Job Query Guardrails", () => {
+    it("should reject findByJob if job does not exist", async () => {
+      await expect(service.findByJob("unknown-job-id")).rejects.toThrow();
+    });
+
+    it("should reject findByJob if job belongs to another organization", async () => {
+      // job-org2-c belongs to org-2
+      await expect(service.findByJob("job-org2-c", "org-1")).rejects.toThrow();
+    });
+  });
+
+  describe("Rejection, Reopening, Soft-Delete & Stats Integrity", () => {
+    it("suppresses automated rejection email by default when sendRejectionEmail is omitted", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("saves rejectionReason & rejectedAt and suppresses automated email when sendRejectionEmail=false", async () => {
+      const updated = await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "  Missing Go experience  ",
+        sendRejectionEmail: false,
+      });
+
+      expect(updated.stage).toBe("REJECTED");
+      expect(updated.rejectionReason).toBe("Missing Go experience");
+      expect(updated.rejectedAt).toBeInstanceOf(Date);
+      expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("sends automated rejection email when sendRejectionEmail=true", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Role filled",
+        sendRejectionEmail: true,
+      });
+
+      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it("passes override emailTemplateId on rejection and supports opt-in OFFER flow with sender context", async () => {
+      const resolveFlowMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          id: "tpl-custom-rej",
+          name: "Custom Reject",
+          type: "REJECTION",
+          enabled: true,
+          subject: "Custom Update",
+          body: "<p>Sorry {{candidate_name}}</p>",
+        })
+        .mockResolvedValueOnce({
+          id: "tpl-custom-offer",
+          name: "Senior Offer",
+          type: "OFFER",
+          enabled: true,
+          subject: "Offer {{job_title}}",
+          body: "<p>Congrats {{candidate_name}} from {{sender_name}}</p>",
+        });
+
+      (
+        mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+      ).resolveFlowTemplate = resolveFlowMock;
+
+      try {
+        await service.updateStage("app-1", {
+          stage: "REJECTED",
+          rejectionReason: "Cultural mismatch",
+          sendRejectionEmail: true,
+          emailTemplateId: "tpl-custom-rej",
+        });
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_REJECTED",
+          "tpl-custom-rej",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-rej",
+            templateName: "Custom Reject",
+            templateType: "REJECTION",
+          }),
+          "org-1",
+        );
+
+        vi.mocked(mockEmailService.sendEmail).mockClear();
+
+        // Moving to OFFER without sendOfferEmail=true does NOT auto-dispatch email
+        await service.updateStage("app-2", {
+          stage: "OFFER",
+        });
+        expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
+
+        // Reset app-2 back cleanly to INTERVIEW via REOPEN -> INTERVIEW? Move app-2 to HIRED isn't offer; instead test OFFER from INTERVIEW after resetting mockApps or creating stage transition:
+        mockApps[1].stage = "INTERVIEW";
+
+        await service.updateStage(
+          "app-2",
+          {
+            stage: "OFFER",
+            sendOfferEmail: true,
+            emailTemplateId: "tpl-custom-offer",
+          },
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter", role: "RECRUITER" },
+        );
+
+        expect(resolveFlowMock).toHaveBeenCalledWith(
+          "org-1",
+          "APPLICATION_OFFER",
+          "tpl-custom-offer",
+        );
+        expect(mockEmailService.sendEmail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            templateId: "tpl-custom-offer",
+            templateName: "Senior Offer",
+            templateType: "OFFER",
+            variables: expect.objectContaining({
+              sender_name: "Nguyen Recruiter",
+            }),
+          }),
+          "org-1",
+          { id: "user-rec-1", name: "Nguyen Recruiter" },
+        );
+      } finally {
+        delete (
+          mockEmailService as { resolveFlowTemplate?: typeof resolveFlowMock }
+        ).resolveFlowTemplate;
+      }
+    });
+
+    it("allows reopening REJECTED application to SCREENING and clears rejection metadata", async () => {
+      await service.updateStage("app-1", {
+        stage: "REJECTED",
+        rejectionReason: "Initial mismatch",
+        sendRejectionEmail: false,
+      });
+
+      const reopened = await service.updateStage("app-1", {
+        stage: "SCREENING",
+      });
+
+      expect(reopened.stage).toBe("SCREENING");
+      expect(reopened.rejectionReason).toBeNull();
+      expect(reopened.rejectedAt).toBeNull();
+      expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "STAGE_CHANGED",
+          metadata: expect.objectContaining({
+            fromStage: "REJECTED",
+            toStage: "SCREENING",
+            reopened: true,
+          }),
+        }),
+      );
+    });
+
+    it("excludes soft-deleted jobs and candidates from findAll, findByJob, findOne, and getStats", async () => {
+      mockJobs[1].deletedAt = new Date();
+      mockCandidates[0].deletedAt = new Date();
+
+      const all = await service.findAll("org-1");
+      expect(all.data).toHaveLength(0);
+
+      await expect(service.findByJob("job-org1-b", "org-1")).rejects.toThrow();
+      await expect(service.findOne("app-1", "org-1")).rejects.toThrow();
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(0);
+    });
+
+    it("returns more than 100 applications from findByJob without silent 100-item truncation", async () => {
+      const manyApps = Array.from({ length: 120 }, (_, i) => ({
+        id: `bulk-app-${i}`,
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        orderIndex: i,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      mockApps.splice(0, mockApps.length, ...manyApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(120);
+    });
+
+    it("returns deterministic pagination order when orderIndex collisions occur using id tiebreaker", async () => {
+      const collidingApps = [
+        {
+          id: "app-tie-b",
+          organizationId: "org-1",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-tie-a",
+          organizationId: "org-1",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockApps.splice(0, mockApps.length, ...collidingApps);
+
+      const results = await service.findByJob("job-org1-a", "org-1");
+      expect(results.length).toBe(2);
+      expect(results[0].id).toBe("app-tie-a");
+      expect(results[1].id).toBe("app-tie-b");
+    });
+
+    it("aggregates SQL groupBy stage stats across multiple jobs cleanly", async () => {
+      mockApps.push(
+        {
+          id: "app-4",
+          candidateId: "cand-1",
+          jobId: "job-org1-a",
+          stage: "SCREENING",
+          orderIndex: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "app-5",
+          candidateId: "cand-2",
+          jobId: "job-org1-a",
+          stage: "APPLIED",
+          orderIndex: 2,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      );
+
+      const stats = await service.getStats("org-1");
+      expect(stats.totalApplications).toBe(4);
+      expect(stats.byStage.APPLIED).toBe(2);
+      expect(stats.byStage.SCREENING).toBe(1);
+      expect(stats.byStage.INTERVIEW).toBe(1);
+      expect(stats.byJob["job-org1-a"]?.total).toBe(3);
+      expect(stats.byJob["job-org1-a"]?.byStage.APPLIED).toBe(2);
+      expect(stats.byJob["job-org1-a"]?.byStage.SCREENING).toBe(1);
+      expect(stats.byJob["job-org1-b"]?.total).toBe(1);
+    });
+
+    it("BUG-07: findByJob returns [] when the job's only candidate is soft-deleted (no resurrection)", async () => {
+      mockCandidates[1].deletedAt = new Date();
+      const results = await service.findByJob("job-org1-b", "org-1");
+      expect(results).toEqual([]);
+    });
+
+    it("syncs stageId on updateStage when job has PipelineStage and writes outboxEvent inside transaction", async () => {
+      const txSpy = vi.spyOn(
+        mockPrismaService as unknown as {
+          transaction: (fn: unknown) => Promise<unknown>;
+        },
+        "transaction",
+      );
+      const outboxCreate = vi.fn().mockResolvedValue({ id: "outbox-1" });
+      (
+        mockPrismaService as unknown as {
+          outboxEvent: { create: typeof outboxCreate };
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).outboxEvent = { create: outboxCreate };
+      (
+        mockPrismaService as unknown as {
+          pipelineStage: { findFirst: ReturnType<typeof vi.fn> };
+        }
+      ).pipelineStage = {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "stage-screen-1",
+          category: "SCREENING",
+          name: "Screening",
+        }),
+      };
+
+      const updated = await service.updateStage(
+        "app-1",
+        { stage: ApplicationStage.SCREENING },
+        "org-1",
+        { id: "user-1", role: "ADMIN" },
+      );
+
+      expect(updated.stage).toBe("SCREENING");
+      expect(txSpy).toHaveBeenCalled();
+      expect(outboxCreate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("Candidate PII Masking without candidate:view", () => {
+    it("masks candidate PII, resume metadata, and interviews in findByJob, findAll, and findOne when fullCandidateAccess is false", async () => {
+      const byJob = await service.findByJob(
+        "job-org1-a",
+        "org-1",
+        undefined,
+        false,
+      );
+      expect(byJob.length).toBeGreaterThan(0);
+      expect(byJob[0].candidateName).toBe("[Masked]");
+      expect(byJob[0].candidateEmail).toBe("");
+      expect(byJob[0].candidatePhone).toBeNull();
+      expect(byJob[0].resumeUrl).toBe("");
+      expect(byJob[0].resumeFileName).toBe("");
+      expect(byJob[0].interviews).toEqual([]);
+      expect(byJob[0].candidate?.email).toBe("");
+      expect(byJob[0].candidate?.phone).toBeNull();
+      expect(byJob[0].candidate?.name).toBe("[Masked]");
+
+      const all = await service.findAll("org-1", undefined, "org-1", false);
+      expect(all.data.length).toBeGreaterThan(0);
+      for (const row of all.data) {
+        expect(row.candidateName).toBe("[Masked]");
+        expect(row.candidateEmail).toBe("");
+        expect(row.candidatePhone).toBeNull();
+        expect(row.resumeUrl).toBe("");
+        expect(row.resumeFileName).toBe("");
+        expect(row.interviews).toEqual([]);
+        expect(row.candidate?.email).toBe("");
+        expect(row.candidate?.phone).toBeNull();
+      }
+
+      // Oracle search against candidate PII must not return hits when !fullCandidateAccess
+      const emailSearch = await service.findAll(
+        "org-1",
+        { search: "alice@gmail.com" },
+        "org-1",
+        false,
+      );
+      expect(emailSearch.total).toBe(0);
+
+      const jobSearch = await service.findAll(
+        "org-1",
+        { search: "Frontend" },
+        "org-1",
+        false,
+      );
+      expect(jobSearch.total).toBe(1);
+      expect(jobSearch.data[0].candidateName).toBe("[Masked]");
+
+      const single = await service.findOne("app-1", "org-1", false);
+      expect(single.candidateName).toBe("[Masked]");
+      expect(single.candidateEmail).toBe("");
+      expect(single.candidatePhone).toBeNull();
+      expect(single.resumeUrl).toBe("");
+      expect(single.resumeFileName).toBe("");
+      expect(single.interviews).toEqual([]);
+      expect(single.candidate?.name).toBe("[Masked]");
+      expect(single.candidate?.email).toBe("");
+      expect(single.candidate?.phone).toBeNull();
+    });
+
+    it("preserves full candidate details by default when fullCandidateAccess is true", async () => {
+      const single = await service.findOne("app-1", "org-1", true);
+      expect(single.candidateName).toBe("Alice Nguyen");
+      expect(single.candidateEmail).toBe("alice@gmail.com");
+      expect(single.candidatePhone).toBe("0901234567");
+      expect(single.resumeUrl).toBe("https://s3.local/resumes/alice.pdf");
+    });
+  });
+});

@@ -17,6 +17,7 @@ const Configuration: UserConfig = {
         "perf",
         "ci",
         "build",
+        "revert",
       ],
     ],
     "subject-case": [2, "always", "lower-case"],

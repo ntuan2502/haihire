@@ -1,0 +1,311 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Request,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+import { RolesGuard } from "../auth/roles.guard";
+import { RequirePermission } from "../auth/require-permission.decorator";
+import type { Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { CandidatesService } from "./candidates.service";
+import { CreateCandidateNoteDto } from "./dto/create-candidate-note.dto";
+import { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
+import { QueryCandidatesDto } from "./dto/query-candidates.dto";
+import { resumeFileFilter } from "../common/upload-utils";
+import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { TenantGuard } from "../common/guards/tenant.guard";
+import {
+  checkCandidateDuplicateSchema,
+  createCandidateSchema,
+  updateCandidateSchema,
+  type CheckCandidateDuplicateSchema,
+  type CreateCandidateSchema,
+  type UpdateCandidateSchema,
+} from "@haihire/shared";
+
+@Controller("candidates")
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard)
+export class CandidatesController {
+  constructor(
+    @Inject(CandidatesService)
+    private readonly candidatesService: CandidatesService,
+  ) {}
+
+  @Get()
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  findAll(
+    @Request()
+    req: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+    @Query(DtoPipe(QueryCandidatesDto)) query?: QueryCandidatesDto,
+  ) {
+    return this.candidatesService.findAll(
+      query?.organizationId,
+      {
+        page: query?.page,
+        limit: query?.limit,
+        search: query?.search,
+      },
+      req?.user?.organizationId,
+    );
+  }
+
+  @Get("check-duplicate")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  checkDuplicates(
+    @Query(DtoPipe(checkCandidateDuplicateSchema))
+    query: CheckCandidateDuplicateSchema,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.checkDuplicates(
+      query,
+      req?.user?.organizationId,
+    );
+  }
+
+  @Get(":id")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  findOne(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
+  ) {
+    return this.candidatesService.findOne(
+      id,
+      req?.user?.organizationId,
+      req?.user,
+    );
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:create")
+  @UseInterceptors(
+    FileInterceptor("resume", {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
+    }),
+  )
+  create(
+    @Body(DtoPipe(createCandidateSchema)) dto: CreateCandidateSchema,
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.create(
+      dto,
+      file,
+      req?.user?.organizationId || undefined,
+    );
+  }
+
+  @Patch(":id")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:update")
+  update(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(updateCandidateSchema)) dto: UpdateCandidateSchema,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.update(id, dto, req?.user?.organizationId);
+  }
+
+  @Post(":id/documents")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:document_upload")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
+    }),
+  )
+  uploadDocument(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Query("type") documentType?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.uploadDocument(
+      id,
+      file,
+      documentType,
+      req?.user?.organizationId,
+    );
+  }
+
+  @Get(":id/documents/download")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:document_download")
+  async downloadDocument(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Query("url") targetUrl: string,
+    @Query("name") targetName: string,
+    @Res() res: Response,
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
+    @Query("disposition") disposition?: string,
+  ) {
+    const { asciiFallback, encodedFileName, mimeType, stream } =
+      await this.candidatesService.prepareDocumentDownload(
+        id,
+        targetUrl,
+        targetName,
+        req?.user?.organizationId,
+        req?.user,
+      );
+
+    const safeAsciiFallback = asciiFallback.replace(
+      /[^\x20-\x7E]|["\\;]/g,
+      "_",
+    );
+    const dispType = disposition === "inline" ? "inline" : "attachment";
+    res.setHeader(
+      "Content-Disposition",
+      `${dispType}; filename="${safeAsciiFallback}"; filename*=UTF-8''${encodedFileName}`,
+    );
+    if (mimeType) {
+      res.setHeader("Content-Type", mimeType);
+    }
+
+    if (typeof stream.on === "function") {
+      stream.on("error", (err) => {
+        if (!res.headersSent) {
+          res.status(502).end();
+        } else if (typeof res.destroy === "function") {
+          res.destroy(err instanceof Error ? err : undefined);
+        }
+      });
+    }
+    if (typeof res.on === "function") {
+      res.on("close", () => {
+        const destroyable = stream as { destroy?: () => void };
+        if (!res.writableEnded && typeof destroyable.destroy === "function") {
+          destroyable.destroy();
+        }
+      });
+    }
+
+    stream.pipe(res);
+  }
+
+  @Delete(":id/documents")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:document_delete")
+  deleteDocument(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Query("documentId") documentId?: string,
+    @Query("url") url?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.deleteDocument(
+      id,
+      { documentId, url },
+      req?.user?.organizationId,
+    );
+  }
+
+  @Delete(":id")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:delete")
+  remove(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.remove(id, req?.user?.organizationId);
+  }
+
+  @Get(":id/notes")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  findNotes(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request()
+    req?: { user?: { id?: string; organizationId?: string | null } },
+  ) {
+    return this.candidatesService.findNotes(id, req?.user?.organizationId);
+  }
+
+  @Post(":id/notes")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:update")
+  createNote(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body(DtoPipe(CreateCandidateNoteDto)) dto: CreateCandidateNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        name?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.createNote(id, dto, req.user);
+  }
+
+  @Patch(":id/notes/:noteId")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:update")
+  updateNote(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
+    @Body(DtoPipe(UpdateCandidateNoteDto)) dto: UpdateCandidateNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.updateNote(id, noteId, dto, req.user);
+  }
+
+  @Delete(":id/notes/:noteId")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:update")
+  deleteNote(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("noteId", new ParseUUIDPipe()) noteId: string,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.deleteNote(id, noteId, req.user);
+  }
+}

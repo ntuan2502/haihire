@@ -1,0 +1,119 @@
+"use client";
+
+import type { DragEvent } from "react";
+import { MessageSquare } from "lucide-react";
+import {
+  formatRelativeTime,
+  getInitials,
+  getCandidateDisplayName,
+} from "@/lib/utils";
+import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
+import { getStageLabel } from "@/lib/stages";
+import { useKeyboardClick } from "@/hooks/use-keyboard-click";
+import type { Application } from "@/types";
+
+interface PipelineCandidateCardProps {
+  candidate: Application;
+  isSelected: boolean;
+  onSelect: () => void;
+  canDrag?: boolean;
+}
+
+export function PipelineCandidateCard({
+  candidate,
+  isSelected,
+  onSelect,
+  canDrag = true,
+}: PipelineCandidateCardProps) {
+  const { t, locale } = useI18n();
+  const { localization } = useLocalization();
+  const displayName = getCandidateDisplayName(candidate, localization);
+  const initials = getInitials(displayName);
+  const matchScore = (candidate as unknown as { matchScore?: number })
+    .matchScore;
+  const handleKeyDown = useKeyboardClick({ onActivate: onSelect });
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    try {
+      e.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({ id: candidate.id, stage: candidate.stage }),
+      );
+      e.dataTransfer.setData("text/plain", candidate.id);
+      e.dataTransfer.effectAllowed = "move";
+    } catch {
+      // Ignore
+    }
+  };
+
+  return (
+    <div
+      id={`candidate-card-${candidate.id}`}
+      data-testid={`candidate-card-${candidate.id}`}
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={handleKeyDown}
+      draggable={canDrag}
+      onDragStart={handleDragStart}
+      aria-label={t("pipeline.viewCandidateLabel", {
+        name: displayName,
+        stage: getStageLabel(candidate.stage, t),
+      })}
+      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
+        isSelected
+          ? "bg-accent/70 border-l-4 border-primary"
+          : "hover:bg-muted/50"
+      }`}
+    >
+      {/* Initials circle */}
+      <div
+        className={`h-9 w-9 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${
+          isSelected
+            ? "bg-primary text-primary-foreground shadow-xs"
+            : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {initials}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-1">
+          <h4 className="text-xs font-semibold truncate text-foreground">
+            {displayName}
+          </h4>
+          {matchScore !== undefined && matchScore !== null && (
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              {matchScore}%
+            </span>
+          )}
+        </div>
+
+        <p className="text-[11px] text-muted-foreground truncate">
+          {candidate.candidateEmail || t("pipeline.noEmail")}
+        </p>
+
+        <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
+          <span suppressHydrationWarning>
+            {formatRelativeTime(candidate.createdAt, {
+              ...localization,
+              defaultLanguage: locale,
+            })}
+          </span>
+          {candidate.applicationNotes &&
+            candidate.applicationNotes.length > 0 && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-0.5">
+                  <MessageSquare className="h-2.5 w-2.5" />
+                  <span>{t("candidates.columns.quickNotes")}</span>
+                </span>
+              </>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}

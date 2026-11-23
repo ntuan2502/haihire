@@ -1,5 +1,5 @@
 import type { Organization } from "./organizations";
-import type { Application } from "./applications";
+import type { Application, ApplicationStage } from "./applications";
 
 export const JobType = {
   FULL_TIME: "FULL_TIME",
@@ -31,7 +31,8 @@ export const ExperienceLevel = {
   LEAD: "LEAD",
   EXECUTIVE: "EXECUTIVE",
 } as const;
-export type ExperienceLevel = (typeof ExperienceLevel)[keyof typeof ExperienceLevel];
+export type ExperienceLevel =
+  (typeof ExperienceLevel)[keyof typeof ExperienceLevel];
 
 export interface Job {
   id: string;
@@ -45,6 +46,9 @@ export interface Job {
   description: string;
   requirements?: string | null;
   salaryRange?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
   status: JobStatus;
   createdById?: string | null;
   organizationId: string;
@@ -68,7 +72,24 @@ export interface CreateJobInput {
   description: string;
   requirements?: string | null;
   salaryRange?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
   status?: JobStatus;
   organizationId?: string | null;
   createdById?: string | null;
+}
+
+export interface PipelineStageItem {
+  id: string;
+  organizationId: string;
+  jobId?: string | null;
+  name: string;
+  category: ApplicationStage;
+  orderIndex: number;
+  color?: string | null;
+  isTerminal: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }

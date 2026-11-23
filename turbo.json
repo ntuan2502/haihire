@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "INTERNAL_API_URL",
+        "BACKEND_HOST",
+        "BACKEND_PORT",
+        "FRONTEND_PORT",
+        "MINIO_HOST",
+        "MINIO_PORT",
+        "PORT",
+        "NEXT_PUBLIC_*"
+      ]
+    },
+    "@haihire/shared#build": {
+      "outputs": []
+    },
+    "test": {
+      "outputs": []
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

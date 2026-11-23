@@ -1,17 +1,34 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 /**
  * Automates counting added, renamed, and removed tests from git diff
  * to prevent human reporting discrepancies (IVV3-01).
  */
 function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
-  console.log(`Analyzing test changes between [${baseRef}] and [${targetRef}]...\n`);
+  console.log(
+    `Analyzing test changes between [${baseRef}] and [${targetRef}]...\n`,
+  );
 
   try {
-    const diff = execSync(`git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx"`, {
-      encoding: "utf-8",
-    });
+    const diff = execFileSync(
+      "git",
+      [
+        "diff",
+        "-U0",
+        `${baseRef}..${targetRef}`,
+        "--",
+        "*.spec.ts",
+        "*.spec.tsx",
+        "*.test.ts",
+        "*.test.tsx",
+        "*.e2e-spec.ts",
+      ],
+      {
+        encoding: "utf-8",
+        maxBuffer: 50 * 1024 * 1024,
+      },
+    );
 
     const lines = diff.split("\n");
     let addedCount = 0;
@@ -54,9 +71,17 @@ function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
       removedTests.forEach((t, i) => console.log(`  ${i + 1}. - ${t}`));
     }
 
+    if (netNew < 0 && process.env.ALLOW_TEST_DELETION !== "true") {
+      console.error(
+        `[FAIL] Test count regression detected (netNew=${netNew}). Set ALLOW_TEST_DELETION=true to override.`,
+      );
+      process.exit(1);
+    }
+
     return { addedCount, removedCount, netNew };
-  } catch (err: any) {
-    console.error("Failed to calculate test diff:", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Failed to calculate test diff:", message);
     process.exit(1);
   }
 }

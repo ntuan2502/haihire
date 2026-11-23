@@ -1,162 +1,62 @@
-# Security, Authentication & Role-Based Access Control (RBAC)
+# Security Architecture & Dynamic RBAC
 
-> **Single Source of Truth for Security Architecture, Authentication Boundaries, and RBAC Matrix**  
-> Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`) and enforced via NestJS Guard Pipeline.
-
----
-
-## 1. Authentication Architecture
-
-HaiHire enforces a secure, cookie-based JWT authentication model across all client-server communications:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User / Client
-    participant Proxy as Next.js Edge Proxy (proxy.ts)
-    participant Auth as NestJS AuthController
-    participant Guard as JwtAuthGuard & RolesGuard
-    participant Service as Business Domain Service
-
-    User->>Auth: POST /auth/login { email, password }
-    Auth->>User: 200 OK + Set-Cookie (haihire_token, HttpOnly, SameSite=Lax)
-    User->>Proxy: GET /dashboard/jobs
-    Proxy->>Proxy: Inspect haihire_token & haihire_has_org cookies
-    Proxy->>User: Allow request to proceed
-    User->>Guard: GET /api/jobs (with Cookie header)
-    Guard->>Guard: JwtStrategy extracts & validates token against tokenVersion
-    Guard->>Guard: Inject user, organization, isOwner into request context
-    Guard->>Guard: RolesGuard verifies permissions or grants owner bypass
-    Guard->>Service: Dispatch handler
-    Service->>User: 200 JSON Response
-```
-
-### Key Security Safeguards
-
-1. **HttpOnly & Secure Session Cookies:** JWT tokens are stored exclusively in `HttpOnly`, `SameSite=Lax` cookies, preventing XSS-based credential theft.
-2. **Session Revocation via `tokenVersion`:** `User.tokenVersion` in PostgreSQL enables instant invalidation of all issued refresh/access tokens upon password reset or account lock.
-3. **Fail-Fast Edge Interception:** `frontend/src/proxy.ts` evaluates session presence at the edge, redirecting unauthorized traffic before rendering page components.
+HaiHire implements defense-in-depth security across network boundaries, authentication cookies, tenant isolation, role/permission resolution, object storage, and outbound integrations.
 
 ---
 
-## 2. Dynamic Ownership Model (D-003)
+## 1. Authentication & Session Lifecycle (`apps/api/src/auth/`)
 
-Following the removal of the static `Role.OWNER` enum value in [D-003](../decisions/DECISIONS.md#d-003):
-
-1. **Source of Truth:** Tenant ownership is defined solely by `Organization.ownerId` (`User.id`).
-2. **Runtime Resolution:** `JwtStrategy` dynamically injects:
-   ```typescript
-   request.user.isOwner = Boolean(
-     user.organization?.ownerId && user.organization.ownerId === user.id,
-   );
-   ```
-3. **Super-Admin Bypass:** If `request.user.isOwner === true`, `RolesGuard` grants unconditional authorization across all tenant endpoints.
-4. **Ownership Transfer:** The active owner can transfer ownership via `POST /organizations/my/transfer-ownership` (guarded by `org:transfer_ownership`). The previous owner retains the `ADMIN` role.
+- **HttpOnly Cookie JWT + Bearer Fallback:** `AuthController` (`POST /auth/login`, `POST /auth/register`, `POST /auth/refresh`, `POST /auth/logout`) issues signed JWT access/refresh tokens (`haihire_token`, `haihire_refresh_token`) alongside a client-readable org-membership hint cookie (`haihire_has_org`) evaluated by [apps/web/src/proxy.ts](../../apps/web/src/proxy.ts).
+- **Immediate Session Revocation (`tokenVersion`):** `User.tokenVersion` increments on logout-all and `POST /auth/change-password`; `JwtStrategy` validates `payload.tokenVersion === user.tokenVersion` against PostgreSQL on authenticated requests.
+- **Frontend Silent Refresh Queue:** Axios interceptors ([apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts)) queue concurrent `401` failures behind a single `POST /auth/refresh` exchange before replaying or logging out cleanly.
+- **SSE Authentication (`GET /events/sse`):** Accepts cookie/Bearer/query JWT token via `EventsService.subscribeWithToken`, rejecting invalid streams with `APP_ERROR_CODES.SSE_UNAUTHORIZED`.
 
 ---
 
-## 3. The 5 Fixed RBAC Roles
+## 2. Multi-Tenant Data Isolation
 
-| Role                 | Domain Scope & Purpose                                                                                  |
-| :------------------- | :------------------------------------------------------------------------------------------------------ |
-| **`ADMIN`**          | Full tenant administrator managing settings, billing, members, and all recruitment entities.            |
-| **`RECRUITER`**      | Primary operational role managing jobs, candidates, applications, sourcing links, and candidate emails. |
-| **`HIRING_MANAGER`** | Department hiring lead reviewing candidates, moving pipeline stages, and managing interview schedules.  |
-| **`INTERVIEWER`**    | Focused evaluation role conducting candidate interviews and submitting scorecards.                      |
-| **`MEMBER`**         | Default base role with read-only visibility into active organization job listings.                      |
+- **Global Request Boundary (`TenantGuard`):** [apps/api/src/common/guards/tenant.guard.ts](../../apps/api/src/common/guards/tenant.guard.ts) inspects `req.query.organizationId`, `req.body.organizationId`, and `req.params.organizationId` (rejecting conflicting or non-string inputs), validates active membership, and synchronizes `req.user.organizationId`, `req.user.role`, `req.user.isOwner`, and `req.user.organization` before `RolesGuard` executes, throwing `AppForbiddenException(ORG_FORBIDDEN_ACTION)` on unauthorized cross-tenant targets.
+- **Service-Layer `organizationId` Scoping:** All **10 tenant-scoped backend modules** (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `activities`, `organizations`, `webhook-settings`, `email`, `notifications`) enforce `organizationId` filtering in Prisma `where` clauses or parent relation verification.
+- **Automated Static Gate (`pnpm lint:tenant-scope`):** [scripts/check-tenant-scoping.ts](../../scripts/check-tenant-scoping.ts) audits `321` Prisma queries across `34` service files, stripping `select: { ... }` projections before lookahead, ignoring non-call `typeof` checks, and isolating function boundaries per method so guards in earlier methods never mask later queries.
 
 ---
 
-## 4. The 41 Granular Permissions Matrix
+## 3. Dynamic Owner & 5-Role / 41-Permission RBAC
 
-Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
+Definitions live in [packages/shared/src/permissions.ts](../../packages/shared/src/permissions.ts) and resolve dynamically via [apps/api/src/auth/permission-resolver.service.ts](../../apps/api/src/auth/permission-resolver.service.ts) and [apps/api/src/auth/roles.guard.ts](../../apps/api/src/auth/roles.guard.ts):
 
-### 4.1 Organization & Administration (6 Permissions)
+### 5 Roles
 
-- `org:view`: View organization details and settings.
-- `org:update`: Update organization profile, name, or metadata.
-- `org:delete`: Soft-delete or terminate the organization (Owner / Admin only).
-- `org:manage_members`: Invite, update roles, or remove tenant members.
-- `org:manage_billing`: Access and modify subscription and billing tiers.
-- `org:transfer_ownership`: Transfer tenant ownership to an existing member.
+- `ADMIN` (full organizational access; immutable in `OrganizationRolePermission`)
+- `RECRUITER` (requisitions, candidates, applications, documents, sourcing, email send)
+- `HIRING_MANAGER` (pipeline stage moves, interviews, scorecards, read-only sourcing/candidates)
+- `INTERVIEWER` (application/interview visibility, scorecard submission, read-only resume downloads)
+- `MEMBER` (read-only baseline view across core entities)
 
-### 4.2 Job Requisitions & Pipelines (4 Permissions)
+### Resolution Precedence
 
-- `job:view`: View job listings and pipeline configurations.
-- `job:create`: Create new job openings.
-- `job:update`: Edit job details, stages, and requirements.
-- `job:delete`: Archive or delete job requisitions.
+1. **Dynamic Owner Bypass (`Organization.ownerId`):** If `user.isOwner` or `user.organization?.ownerId === user.id`, `RolesGuard` grants full privileges unconditionally; ownership transfers atomically via `POST /organizations/my/transfer-ownership`.
+2. **`ADMIN` Immutability:** `ADMIN` always resolves `true` for all `41` permissions (`ORG_ADMIN_PERMISSIONS_IMMUTABLE` blocks overrides).
+3. **Per-Org Overrides (`OrganizationRolePermission`):** `PermissionResolverService` resolves role permissions using a 2-tier cache: L1 in-memory LRU (`60s` TTL) and L2 Valkey/Redis cache (`300s` TTL). When an admin updates or resets permissions (`POST /organizations/my/roles/permissions`), Redis pub/sub invalidation (`haihire:permissions:invalidate`) purges L1 and L2 caches instantly across all horizontal API replicas before falling back to `PERMISSIONS` defaults in `@haihire/shared`.
+4. **`candidate:view` PII Masking:** When a caller holds `job:view` or `application:view` (such as baseline `MEMBER`) without `candidate:view`, `GET /jobs/:id`, `GET /applications`, `GET /applications/job/:jobId`, and `GET /applications/:id` resolve `PermissionResolverService` (`"candidate:view"`) and redact candidate names to `"[Masked]"` while stripping email, phone, resume metadata, interviews, and candidate search matching.
+5. **PostgreSQL RLS & Cross-Org Invites:** Tenant tables enforce PostgreSQL Row-Level Security (`FORCE ROW LEVEL SECURITY` under `haihire_rls_user`). Cross-organization invite acceptance (`OrganizationsInvitesService.join` / `joinByToken`) enters `withSystemRlsBypass` so authenticated users belonging to Org A can resolve and accept pending `InviteLink` tokens issued by Org B cleanly.
 
-### 4.3 Candidate Management (8 Permissions)
+### 41 Permissions Inventory
 
-- `candidate:view`: Access complete candidate profiles.
-- `candidate:view_basic`: Access non-sensitive candidate contact details.
-- `candidate:create`: Manually add or import candidate profiles.
-- `candidate:update`: Edit candidate information and tags.
-- `candidate:delete`: Delete or soft-delete candidates.
-- `candidate:document_upload`: Upload resumes and candidate attachments.
-- `candidate:document_download`: Access and download stored candidate documents.
-- `candidate:document_delete`: Remove attached documents from candidate profiles.
-
-### 4.4 Applications & Funnel Progression (8 Permissions)
-
-- `application:view`: View job submissions and applicant profiles.
-- `application:create`: Submit applications to job openings.
-- `application:update`: Modify applicant attributes.
-- `application:update_stage`: Advance or reject applications in the recruitment pipeline.
-- `application:delete`: Purge candidate applications.
-- `application:document_upload`: Attach documents to a specific application.
-- `application:document_download`: Download application attachments.
-- `application:document_delete`: Remove application attachments.
-
-### 4.5 Interview Scheduling & Scorecards (5 Permissions)
-
-- `interview:view`: View scheduled interview rounds.
-- `interview:create`: Schedule interviews with candidates and panel members.
-- `interview:update`: Reschedule or modify interview details.
-- `interview:delete`: Cancel scheduled interview rounds.
-- `interview:scorecard_submit`: Submit interview evaluation feedback and ratings.
-
-### 4.6 Sourcing & Attribution (4 Permissions)
-
-- `sourcing:view`: View sourcing links and traffic analytics.
-- `sourcing:create`: Generate new campaign tracking links.
-- `sourcing:update`: Modify tracking link parameters.
-- `sourcing:delete`: Deactivate or remove tracking links.
-
-### 4.7 Communications & System Integration (6 Permissions)
-
-- `email:view`: View transactional email history and logs.
-- `email:send`: Send recruitment emails to candidates.
-- `email:manage_templates`: Author and edit organization email templates.
-- `email:manage_settings`: Configure SMTP, SendGrid, or Resend credentials.
-- `email:manage_system`: Manage system-level email dispatches.
-- `settings:manage_integrations`: Configure outbound webhooks (Discord, Telegram, Generic).
+- **Organization (`8`):** `org:view`, `org:update`, `org:delete`, `org:manage_members`, `org:manage_roles`, `org:manage_billing`, `org:transfer_ownership`, `org:view_audit_log`
+- **Jobs (`4`):** `job:view`, `job:create`, `job:update`, `job:delete`
+- **Candidates (`7`):** `candidate:view`, `candidate:create`, `candidate:update`, `candidate:delete`, `candidate:document_upload`, `candidate:document_download`, `candidate:document_delete`
+- **Applications (`8`):** `application:view`, `application:create`, `application:update`, `application:update_stage`, `application:delete`, `application:document_upload`, `application:document_download`, `application:document_delete`
+- **Interviews (`5`):** `interview:view`, `interview:create`, `interview:update`, `interview:delete`, `interview:scorecard_submit`
+- **Sourcing (`4`):** `sourcing:view`, `sourcing:create`, `sourcing:update`, `sourcing:delete`
+- **Email (`4`):** `email:view`, `email:send`, `email:manage_templates`, `email:manage_settings`
+- **Settings (`1`):** `settings:manage_integrations`
 
 ---
 
-## 5. NestJS Guard Execution Pipeline
+## 4. Infrastructure, Cryptography & Edge Controls
 
-Controllers declare access requirements via `@RequirePermission(PERMISSIONS.<KEY>)`. The runtime guard pipeline executes in strict sequence:
-
-```text
-[HTTP Request]
-       │
-       ▼
-[JwtAuthGuard]
-  ├── Validates JWT cookie signature & expiration
-  ├── Asserts tokenVersion matches User record
-  └── Injects req.user, req.organization, and req.user.isOwner
-       │
-       ▼
-[RolesGuard / RequirePermissionGuard]
-  ├── IF req.user.isOwner === true ──► Bypass (ALLOW)
-  ├── IF req.user is unauthenticated ──► 401 Unauthorized
-  ├── Checks user.role against ROLE_PERMISSIONS[role]
-  └── IF permission exists ──► ALLOW, ELSE ──► 403 Forbidden
-       │
-       ▼
-[Controller Route Handler]
-```
-
-_For coding rules and guard implementation standards, refer to [`docs/architecture/conventions.md`](conventions.md)._
+- **HTTP Hardening & Distributed Rate Limiting (`apps/api/src/main.ts`):** `ThrottlerModule` backed by `ThrottlerStorageRedisService` (`100` req / `60s` window) enforces distributed rate limiting across horizontal API replicas via atomic Redis operations (`haihire:throttler:*`), with automatic in-memory fallback during Redis degradation. Strict comma-separated CORS (`FRONTEND_URL`, `credentials: true`), CSP (`default-src 'self'; frame-ancestors 'none'`), `nosniff`, `DENY` framing, and production HTTPS redirect (exempting health/metrics probes and loopback).
+- **Secrets at Rest:** Tenant SMTP passwords and Resend/SendGrid keys in `EmailSetting` as well as webhook tokens in `OrganizationWebhookSetting` are encrypted using AES-256 derived from `ENCRYPTION_SECRET` (minimum `32` chars enforced on startup).
+- **Private Storage (`MinIO`):** `haihire-resumes` bucket enforces private access with `tenants/<orgId>/...` path isolation, magic-byte upload checks, sanitized filenames, and authenticated download streaming.
+- **Metrics & SSRF Protection:** `GET /metrics` checks `METRICS_TOKEN` via `crypto.timingSafeEqual` (returning `404` in production if unset); outbound webhook and custom SMTP destinations block private/loopback DNS targets against SSRF.

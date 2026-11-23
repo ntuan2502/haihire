@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const backendDir = path.resolve(__dirname, "../backend/src");
-const frontendDir = path.resolve(__dirname, "../frontend/src");
+const backendDir = path.resolve(__dirname, "../apps/api/src");
+const frontendDir = path.resolve(__dirname, "../apps/web/src");
 
 interface EndpointDef {
   controller: string;
@@ -15,15 +15,19 @@ interface EndpointDef {
   line: number;
 }
 
-function getAllFiles(dir: string, ext = ".ts"): string[] {
+function getAllFiles(dir: string, exts: string[] = [".ts"]): string[] {
   let results: string[] = [];
   const list = fs.readdirSync(dir);
   for (const file of list) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
     if (stat && stat.isDirectory()) {
-      results = results.concat(getAllFiles(fullPath, ext));
-    } else if (file.endsWith(ext) && !file.endsWith(".spec.ts")) {
+      results = results.concat(getAllFiles(fullPath, exts));
+    } else if (
+      exts.some((ext) => file.endsWith(ext)) &&
+      !file.includes(".spec.") &&
+      !file.includes(".test.")
+    ) {
       results.push(fullPath);
     }
   }
@@ -98,20 +102,28 @@ for (const file of controllerFiles) {
 }
 
 // Read frontend files for API calls and error handling
-const frontendFiles = getAllFiles(frontendDir);
+const frontendFiles = getAllFiles(frontendDir, [".ts", ".tsx"]);
 const frontendContent = frontendFiles
   .map((f) => fs.readFileSync(f, "utf8"))
   .join("\n");
 
-console.log("==================================================================");
-console.log("       CI ARCHITECTURE GATE: API CONTRACT COVERAGE AUDIT          ");
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);
+console.log(
+  "       CI ARCHITECTURE GATE: API CONTRACT COVERAGE AUDIT          ",
+);
+console.log(
+  "==================================================================",
+);
 console.log(`Backend Controllers Scanned: ${controllerFiles.length}`);
 console.log(`Total Endpoints Discovered: ${endpoints.length}`);
 
 const bodyEndpoints = endpoints.filter((e) => e.hasBody);
 console.log(`Endpoints with @Body(): ${bodyEndpoints.length}`);
-console.log("------------------------------------------------------------------");
+console.log(
+  "------------------------------------------------------------------",
+);
 
 // Verify every backend resource controller has frontend coverage
 const expectedControllers = [
@@ -122,8 +134,10 @@ const expectedControllers = [
   "email.controller.ts",
   "interviews.controller.ts",
   "jobs.controller.ts",
+  "notifications.controller.ts",
   "organizations.controller.ts",
   "sourcing.controller.ts",
+  "webhook-settings.controller.ts",
 ];
 
 const missingControllers: string[] = [];
@@ -153,10 +167,13 @@ let alertGenericErrors = 0;
 
 for (const file of frontendFiles) {
   const content = fs.readFileSync(file, "utf8");
-  if (content.includes("JSON.stringify(err") || content.includes("JSON.stringify(error")) {
+  if (
+    content.includes("JSON.stringify(err") ||
+    content.includes("JSON.stringify(error")
+  ) {
     rawStringifyErrors++;
   }
-  if (content.includes("alert(") && !file.includes(".spec.")) {
+  if (/\b(?:window\.)?alert\s*\(/.test(content) && !file.includes(".spec.")) {
     alertGenericErrors++;
   }
 }
@@ -183,6 +200,10 @@ if (alertGenericErrors > 0) {
   );
 }
 
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);
 console.log("[CI GATE PASSED] API Contract and Frontend Coverage Validated.");
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);

@@ -4,6 +4,9 @@ import { resolve, join, extname } from "node:path";
 import { parseEnvKeys, scanCodebaseEnvVariables } from "./check-env-sync.ts";
 import {
   collectRepoStats,
+  generateStatsMarkdown,
+  statsBlockPattern,
+  statsDocument,
   detectPreReleasePackages,
 } from "./generate-docs-stats.ts";
 
@@ -57,10 +60,10 @@ export function checkPathExistence(): CheckResult {
 
   const brokenPaths: string[] = [];
 
-  // Match relative paths like backend/..., frontend/..., packages/..., scripts/..., docs/...
+  // Match relative paths like apps/api/..., apps/web/..., packages/..., scripts/..., docs/...
   // Exclude URLs (http/https), globs (*), ellipses (...), placeholders (<...>, {...}), and template tokens
   const pathRegex =
-    /(?:[`"'\s(]|^)((?:backend|frontend|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
+    /(?:[`"'\s(]|^)((?:apps\/api|apps\/web|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
 
   for (const filePath of mdFiles) {
     const content = readFileSync(filePath, "utf-8");
@@ -159,47 +162,32 @@ export function checkEnvVarSync(): CheckResult {
 // Check 3: Stats Synchronization Against <!-- STATS:START -->
 // -----------------------------------------------------------------------------
 export function checkStatsSync(): CheckResult {
-  const root = process.cwd();
-  const stats = collectRepoStats();
-  const targetFiles = [resolve(root, "README.md"), resolve(root, "AGENTS.md")];
-
-  const discrepancies: string[] = [];
-
-  for (const f of targetFiles) {
-    if (!existsSync(f)) continue;
-    const content = readFileSync(f, "utf-8");
-    const match = content.match(
-      /<!-- STATS:START -->([\s\S]*?)<!-- STATS:END -->/,
-    );
-    if (!match) {
-      discrepancies.push(`${f}: Missing <!-- STATS:START --> marker`);
-      continue;
-    }
-
-    const block = match[1];
-    // Verify total unit test count assertion
-    if (!block.includes(`${stats.totalUnitTests} passed`)) {
-      discrepancies.push(
-        `${f}: Stats block does not reflect current unit test count (${stats.totalUnitTests} passed)`,
-      );
-    }
-    // Verify env keys count assertion
-    if (!block.includes(`${stats.envKeysCount} keys`)) {
-      discrepancies.push(
-        `${f}: Stats block does not reflect current env keys count (${stats.envKeysCount} keys)`,
-      );
-    }
-  }
-
-  const passed = discrepancies.length === 0;
+  const expected = generateStatsMarkdown(collectRepoStats());
+  const actual = existsSync(statsDocument)
+    ? readFileSync(statsDocument, "utf-8").match(statsBlockPattern)?.[0]
+    : undefined;
+  const normalize = (block: string) =>
+    block
+      .split(/\r?\n/)
+      .map((line) =>
+        line
+          .trim()
+          .replace(/\s*\|\s*/g, "|")
+          .replace(/-{3,}/g, "---"),
+      )
+      .filter(Boolean)
+      .join("\n");
+  const passed =
+    actual !== undefined && normalize(actual) === normalize(expected);
   return {
-    checkName:
-      "Check 3: Project Metrics Block (<!-- STATS:START -->) Synchronization",
+    checkName: "Check 3: Project Metrics Block Synchronization",
     passed,
     message: passed
-      ? `Documentation stats blocks in README.md & AGENTS.md match repository metrics.`
-      : `Found ${discrepancies.length} metric discrepancies in documentation.`,
-    details: discrepancies,
+      ? "Project Metrics matches the source inventory."
+      : "Project Metrics is out of date or missing its stats block.",
+    details: passed
+      ? []
+      : ["Run pnpm docs:stats:write and review the changes."],
   };
 }
 

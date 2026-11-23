@@ -43,11 +43,19 @@ describe("Prometheus Alert Rules Specification", () => {
 
   it("Case 2: Every rule has all mandatory top-level fields (alert, expr, for, labels, annotations)", () => {
     for (const rule of allRules) {
-      expect(rule.alert, `Rule missing 'alert': ${JSON.stringify(rule)}`).toBeTruthy();
+      expect(
+        rule.alert,
+        `Rule missing 'alert': ${JSON.stringify(rule)}`,
+      ).toBeTruthy();
       expect(rule.expr, `Rule ${rule.alert} missing 'expr'`).toBeTruthy();
       expect(rule.for, `Rule ${rule.alert} missing 'for'`).toBeTruthy();
-      expect(rule.labels, `Rule ${rule.alert} missing 'labels'`).toBeTypeOf("object");
-      expect(rule.annotations, `Rule ${rule.alert} missing 'annotations'`).toBeTypeOf("object");
+      expect(rule.labels, `Rule ${rule.alert} missing 'labels'`).toBeTypeOf(
+        "object",
+      );
+      expect(
+        rule.annotations,
+        `Rule ${rule.alert} missing 'annotations'`,
+      ).toBeTypeOf("object");
     }
   });
 
@@ -83,28 +91,36 @@ describe("Prometheus Alert Rules Specification", () => {
     // 1. HaiHireBullMqDlqGrowing
     const dlqGrowing = ruleMap.get("HaiHireBullMqDlqGrowing");
     expect(dlqGrowing).toBeDefined();
-    expect(dlqGrowing?.expr.trim()).toBe('bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 10');
+    expect(dlqGrowing?.expr.trim()).toBe(
+      'bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 10',
+    );
     expect(dlqGrowing?.for).toBe("5m");
     expect(dlqGrowing?.labels.severity).toBe("warning");
 
     // 2. HaiHireBullMqDlqCritical
     const dlqCritical = ruleMap.get("HaiHireBullMqDlqCritical");
     expect(dlqCritical).toBeDefined();
-    expect(dlqCritical?.expr.trim()).toBe('bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 100');
+    expect(dlqCritical?.expr.trim()).toBe(
+      'bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 100',
+    );
     expect(dlqCritical?.for).toBe("2m");
     expect(dlqCritical?.labels.severity).toBe("critical");
 
     // 3. HaiHireEmailQueueBacklog
     const emailBacklog = ruleMap.get("HaiHireEmailQueueBacklog");
     expect(emailBacklog).toBeDefined();
-    expect(emailBacklog?.expr.trim()).toBe('bullmq_queue_depth{queue="email-queue",state="waiting"} > 500');
+    expect(emailBacklog?.expr.trim()).toBe(
+      'bullmq_queue_depth{queue="email-queue",state="waiting"} > 500',
+    );
     expect(emailBacklog?.for).toBe("10m");
     expect(emailBacklog?.labels.severity).toBe("warning");
 
     // 4. HaiHireBullMqRedisDown
     const redisDown = ruleMap.get("HaiHireBullMqRedisDown");
     expect(redisDown).toBeDefined();
-    expect(redisDown?.expr.trim()).toBe('bullmq_queue_depth{queue="orphan-cleanup-queue",state="waiting"} == -1');
+    expect(redisDown?.expr.trim()).toBe(
+      'bullmq_queue_depth{queue="orphan-cleanup-queue",state="waiting"} == -1',
+    );
     expect(redisDown?.for).toBe("2m");
     expect(redisDown?.labels.severity).toBe("critical");
   });
@@ -131,7 +147,9 @@ describe("Prometheus Alert Rules Specification", () => {
     // 1. HaiHireOrphanCleanupSpikeWarning
     const spikeWarning = ruleMap.get("HaiHireOrphanCleanupSpikeWarning");
     expect(spikeWarning).toBeDefined();
-    expect(spikeWarning?.expr.trim()).toBe("minio_orphan_cleanup_orphans_found_total > 50");
+    expect(spikeWarning?.expr.trim()).toBe(
+      "minio_orphan_cleanup_orphans_found_total > 50",
+    );
     expect(spikeWarning?.for).toBe("0m");
     expect(spikeWarning?.labels.severity).toBe("warning");
     expect(spikeWarning?.labels.team).toBe("sre");
@@ -139,7 +157,9 @@ describe("Prometheus Alert Rules Specification", () => {
     // 2. HaiHireOrphanCleanupSpikeCritical
     const spikeCritical = ruleMap.get("HaiHireOrphanCleanupSpikeCritical");
     expect(spikeCritical).toBeDefined();
-    expect(spikeCritical?.expr.trim()).toBe("minio_orphan_cleanup_orphans_found_total > 500");
+    expect(spikeCritical?.expr.trim()).toBe(
+      "minio_orphan_cleanup_orphans_found_total > 500",
+    );
     expect(spikeCritical?.for).toBe("0m");
     expect(spikeCritical?.labels.severity).toBe("critical");
     expect(spikeCritical?.labels.team).toBe("sre");
@@ -147,7 +167,9 @@ describe("Prometheus Alert Rules Specification", () => {
     // 3. HaiHireOrphanCleanupCronMissing
     const cronMissing = ruleMap.get("HaiHireOrphanCleanupCronMissing");
     expect(cronMissing).toBeDefined();
-    expect(cronMissing?.expr.trim()).toBe("time() - minio_orphan_cleanup_last_run_timestamp_seconds > 90000");
+    expect(cronMissing?.expr.trim()).toBe(
+      "time() - minio_orphan_cleanup_last_run_timestamp_seconds > 90000",
+    );
     expect(cronMissing?.expr).toContain("time()");
     expect(cronMissing?.for).toBe("5m");
     expect(cronMissing?.labels.severity).toBe("critical");
@@ -165,12 +187,21 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(dlqNotEmpty?.labels.severity).toBe("warning");
     expect(dlqNotEmpty?.labels.team).toBe("sre");
 
-    // 2. BullMQDLQGrowing
+    // 2. BullMQDLQGrowing (gauge metric must use deriv, not rate)
     const dlqGrowing = ruleMap.get("BullMQDLQGrowing");
     expect(dlqGrowing).toBeDefined();
-    expect(dlqGrowing?.expr.trim()).toBe("rate(bullmq_dlq_size[15m]) > 0");
+    expect(dlqGrowing?.expr.trim()).toBe("deriv(bullmq_dlq_size[15m]) > 0");
     expect(dlqGrowing?.for).toBe("5m");
     expect(dlqGrowing?.labels.severity).toBe("critical");
     expect(dlqGrowing?.labels.team).toBe("sre");
+  });
+
+  it("Case 11: HaiHireHighHttp5xxErrorRate aggregates totals across all routes before dividing", () => {
+    const ruleMap = new Map(allRules.map((r) => [r.alert, r]));
+    const http5xx = ruleMap.get("HaiHireHighHttp5xxErrorRate");
+    expect(http5xx).toBeDefined();
+    expect(http5xx?.expr.trim()).toBe(
+      'sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9) * 100 > 5',
+    );
   });
 });

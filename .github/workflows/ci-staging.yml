@@ -35,8 +35,8 @@ jobs:
         with:
           filters: |
             code:
-              - 'backend/**'
-              - 'frontend/**'
+              - 'apps/api/**'
+              - 'apps/web/**'
               - 'packages/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -53,7 +53,7 @@ jobs:
   # 1. ARCHITECTURAL QUALITY GATES
   # ============================================================================
   ci-gates:
-    name: 11 CI Architecture Gates
+    name: 15 CI Architecture Gates
     needs: path-filter
     if: |
       (github.event_name == 'pull_request' || 
@@ -99,6 +99,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -125,8 +126,9 @@ jobs:
           sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
-      - name: Run 11 Architecture Quality Gates (Fast)
+      - name: Run 15 Architecture Quality Gates (Fast)
         run: pnpm check:all:fast
 
   # ============================================================================
@@ -179,6 +181,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -205,14 +208,16 @@ jobs:
           sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
+          pnpm db:migrate
 
       - name: Audit Test Differences
-        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
+        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD
 
       - name: Run Unit Tests with Coverage
         run: |
-          pnpm --filter ./backend run test --coverage
-          pnpm --filter ./frontend run test --coverage
+          pnpm --filter api run test --coverage
+          pnpm --filter web run test --coverage
 
   # ============================================================================
   # 3. PLAYWRIGHT END-TO-END TESTS
@@ -265,6 +270,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -300,6 +306,7 @@ jobs:
           sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
           sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
@@ -331,8 +338,8 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run db:seed
+          pnpm db:migrate
+          pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
@@ -353,7 +360,7 @@ jobs:
 
       - name: Pre-start services in background & wait for healthcheck
         run: |
-          pnpm dev &
+          pnpm start &
           timeout 180s bash -c '
             until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
               sleep 3
@@ -392,6 +399,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -413,8 +421,8 @@ jobs:
       - name: Cache Next.js build
         uses: actions/cache@v5
         with:
-          path: ${{ github.workspace }}/frontend/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('frontend/src/**', 'frontend/public/**') }}
+          path: ${{ github.workspace }}/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'apps/web/public/**') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
@@ -445,6 +453,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12

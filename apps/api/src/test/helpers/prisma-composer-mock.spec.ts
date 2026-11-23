@@ -1,0 +1,409 @@
+import { describe, expect, it } from "vitest";
+import {
+  createQueryBuilder,
+  createMockTable,
+  createMockPrismaService,
+  evaluatePredicate,
+  type ProxyRecord,
+} from "./prisma-composer-mock";
+
+interface TestItem {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  isActive: boolean;
+  [key: string]: unknown;
+}
+
+describe("prisma-composer-mock helper", () => {
+  const sampleData: TestItem[] = [
+    { id: "1", name: "Apple", category: "Fruit", price: 10, isActive: true },
+    { id: "2", name: "Banana", category: "Fruit", price: 5, isActive: false },
+    {
+      id: "3",
+      name: "Carrot",
+      category: "Vegetable",
+      price: 8,
+      isActive: true,
+    },
+    { id: "4", name: "Donut", category: "Bakery", price: 15, isActive: true },
+  ];
+
+  describe("evaluatePredicate", () => {
+    it("evaluates eq and in operators with wrapResult", () => {
+      const item: TestItem = {
+        id: "1",
+        name: "Apple",
+        category: "Fruit",
+        price: 10,
+        isActive: true,
+        role: "ADMIN",
+      };
+      expect(
+        evaluatePredicate(item, (p: ProxyRecord) => p.role.eq("ADMIN")),
+      ).toBe(true);
+      expect(
+        evaluatePredicate(item, (p: ProxyRecord) => p.role.eq("USER")),
+      ).toBe(false);
+      expect(
+        evaluatePredicate(item, (p: ProxyRecord) =>
+          p.role.in(["ADMIN", "SUPERADMIN"]),
+        ),
+      ).toBe(true);
+    });
+
+    it("evaluates direct boolean predicates", () => {
+      const item: TestItem = {
+        id: "1",
+        name: "Apple",
+        category: "Fruit",
+        price: 10,
+        isActive: true,
+      };
+      expect(evaluatePredicate(item, (r: TestItem) => r.price > 5)).toBe(true);
+      expect(evaluatePredicate(item, (r: TestItem) => r.price > 20)).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("QueryBuilder", () => {
+    it("supports select, where, all, first", async () => {
+      const store = [...sampleData];
+      const qb = createQueryBuilder(store);
+
+      const allItems = await qb.all();
+      expect(allItems).toHaveLength(4);
+
+      const fruits = await qb
+        .where((r: TestItem) => r.category === "Fruit")
+        .all();
+      expect(fruits).toHaveLength(2);
+
+      const selected = await createQueryBuilder(store)
+        .select("id", "name")
+        .where((r: TestItem) => r.id === "1")
+        .first();
+      expect(selected).toEqual({ id: "1", name: "Apple" });
+
+      const nonExistent = await createQueryBuilder(store)
+        .where((r: TestItem) => r.id === "999")
+        .first();
+      expect(nonExistent).toBeNull();
+    });
+
+    it("supports update, create, count, delete", async () => {
+      const store = [...sampleData];
+      const qb = createQueryBuilder(store);
+
+      const countBefore = await qb.count();
+      expect(countBefore).toBe(4);
+
+      const created = await qb.create({
+        id: "5",
+        name: "Eggplant",
+        category: "Vegetable",
+        price: 12,
+        isActive: true,
+      });
+      expect(created.id).toBe("5");
+      expect(store).toHaveLength(5);
+
+      const updated = await createQueryBuilder(store)
+        .where((r: TestItem) => r.id === "5")
+        .update({ price: 14 });
+      expect(updated?.price).toBe(14);
+
+      const deleteRes = await createQueryBuilder(store)
+        .where((r: TestItem) => r.id === "5")
+        .delete();
+      expect(deleteRes.count).toBe(1);
+      expect(store).toHaveLength(4);
+    });
+
+    it("supports orderBy, skip, take", async () => {
+      const store = [...sampleData];
+
+      const sortedAsc = await createQueryBuilder(store)
+        .orderBy("price", "asc")
+        .all();
+      expect(sortedAsc.map((i) => i.price)).toEqual([5, 8, 10, 15]);
+
+      const sortedDesc = await createQueryBuilder(store)
+        .orderBy("price", "desc")
+        .all();
+      expect(sortedDesc.map((i) => i.price)).toEqual([15, 10, 8, 5]);
+
+      const paged = await createQueryBuilder(store)
+        .orderBy("price", "asc")
+        .skip(1)
+        .take(2)
+        .all();
+      expect(paged.map((i) => i.price)).toEqual([8, 10]);
+    });
+  });
+
+  describe("createMockTable", () => {
+    it("creates an in-memory table supporting select, where, and create", async () => {
+      const table = createMockTable<TestItem>(sampleData);
+      expect(await table.count()).toBe(4);
+
+      const item = await table
+        .where((r: TestItem) => r.id === "2")
+        .select("id", "price")
+        .first();
+      expect(item).toEqual({ id: "2", price: 5 });
+
+      const newItem = await table.create({
+        id: "6",
+        name: "Fig",
+        category: "Fruit",
+        price: 20,
+        isActive: true,
+      });
+      expect(newItem.id).toBe("6");
+      expect(await table.count()).toBe(5);
+    });
+
+    it("sorts findMany orderBy numerically and by Date instead of string order", async () => {
+      const mock = createMockPrismaService({
+        candidate: [
+          {
+            id: "c1",
+            orderIndex: 10,
+            createdAt: new Date("2026-01-03T00:00:00Z"),
+          },
+          {
+            id: "c2",
+            orderIndex: 2,
+            createdAt: new Date("2026-01-01T00:00:00Z"),
+          },
+          {
+            id: "c3",
+            orderIndex: 1,
+            createdAt: new Date("2026-01-02T00:00:00Z"),
+          },
+        ],
+      });
+
+      const byNum = await (
+        mock.candidate as unknown as {
+          findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+        }
+      ).findMany({ orderBy: { orderIndex: "asc" } });
+      expect(byNum.map((r) => r.id)).toEqual(["c3", "c2", "c1"]);
+
+      const byDateDesc = await (
+        mock.candidate as unknown as {
+          findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+        }
+      ).findMany({ orderBy: { createdAt: "desc" } });
+      expect(byDateDesc.map((r) => r.id)).toEqual(["c1", "c3", "c2"]);
+    });
+
+    it("supports Prisma array orderBy with { sort, nulls: 'last' | 'first' } and tie-breakers", async () => {
+      const mock = createMockPrismaService({
+        organizationMember: [
+          {
+            id: "m-null-1",
+            organizationId: "org-3",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-null-2",
+            organizationId: "org-1",
+            lastAccessedAt: null,
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+          {
+            id: "m-recent",
+            organizationId: "org-2",
+            lastAccessedAt: new Date("2026-11-20T10:00:00Z"),
+            createdAt: new Date("2026-10-29T23:00:00Z"),
+          },
+        ],
+      });
+
+      const rows = await (
+        mock.organizationMember as unknown as {
+          findMany: (
+            args: unknown,
+          ) => Promise<Array<{ organizationId: string }>>;
+        }
+      ).findMany({
+        orderBy: [
+          { lastAccessedAt: { sort: "desc", nulls: "last" } },
+          { createdAt: "asc" },
+          { organizationId: "asc" },
+        ],
+      });
+
+      expect(rows.map((r) => r.organizationId)).toEqual([
+        "org-2",
+        "org-1",
+        "org-3",
+      ]);
+    });
+
+    it("rolls back store mutations when a $transaction callback throws", async () => {
+      const mock = createMockPrismaService({
+        job: [{ id: "j1", title: "Original Title" }],
+      });
+
+      await expect(
+        mock.$transaction(async (tx) => {
+          await (
+            tx.job as unknown as {
+              update: (args: unknown) => Promise<unknown>;
+            }
+          ).update({
+            where: { id: "j1" },
+            data: { title: "Mutated Title" },
+          });
+          await (
+            tx.activityLog as unknown as {
+              create: (args: unknown) => Promise<unknown>;
+            }
+          ).create({
+            data: { id: "a1", action: "SHOULD_ROLLBACK" },
+          });
+          throw new Error("Simulated failure");
+        }),
+      ).rejects.toThrow("Simulated failure");
+
+      const job = await (
+        mock.job as unknown as {
+          findFirst: (args: unknown) => Promise<{ title: string } | null>;
+        }
+      ).findFirst({ where: { id: "j1" } });
+      expect(job?.title).toBe("Original Title");
+
+      const logs = await (
+        mock.activityLog as unknown as {
+          findMany: () => Promise<unknown[]>;
+        }
+      ).findMany();
+      expect(logs).toHaveLength(0);
+    });
+
+    it("supports composite unique key lookup in upsert and findUnique", async () => {
+      const mock = createMockPrismaService({
+        organizationMember: [
+          {
+            id: "mem-1",
+            organizationId: "org-1",
+            userId: "user-1",
+            role: "MEMBER",
+          },
+        ],
+      });
+
+      const table = mock.organizationMember as unknown as {
+        upsert: (args: unknown) => Promise<Record<string, unknown>>;
+        findUnique: (args: unknown) => Promise<Record<string, unknown> | null>;
+        findMany: () => Promise<Array<Record<string, unknown>>>;
+      };
+
+      const updated = await table.upsert({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-1" },
+        },
+        update: { role: "RECRUITER" },
+        create: {
+          id: "mem-dup",
+          organizationId: "org-1",
+          userId: "user-1",
+          role: "ADMIN",
+        },
+      });
+
+      expect(updated.role).toBe("RECRUITER");
+      expect(await table.findMany()).toHaveLength(1);
+
+      const found = await table.findUnique({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-1" },
+        },
+      });
+      expect(found?.id).toBe("mem-1");
+
+      const inserted = await table.upsert({
+        where: {
+          organizationId_userId: { organizationId: "org-1", userId: "user-2" },
+        },
+        update: { role: "RECRUITER" },
+        create: {
+          id: "mem-2",
+          organizationId: "org-1",
+          userId: "user-2",
+          role: "INTERVIEWER",
+        },
+      });
+      expect(inserted.id).toBe("mem-2");
+      expect(await table.findMany()).toHaveLength(2);
+    });
+
+    it("matches populated nested relation filters and relation array predicates while allowing unpopulated flat mocks", async () => {
+      const mock = createMockPrismaService({
+        application: [
+          {
+            id: "app-active",
+            organizationId: "org-1",
+            candidate: { id: "c-1", deletedAt: null },
+          },
+          {
+            id: "app-deleted-candidate",
+            organizationId: "org-1",
+            candidate: {
+              id: "c-2",
+              deletedAt: new Date("2026-11-01T00:00:00Z"),
+            },
+          },
+          {
+            id: "app-flat-unpopulated",
+            organizationId: "org-1",
+          },
+        ],
+        user: [
+          {
+            id: "u-1",
+            memberships: [{ organizationId: "org-1", role: "ADMIN" }],
+          },
+          {
+            id: "u-2",
+            memberships: [{ organizationId: "org-2", role: "MEMBER" }],
+          },
+        ],
+      });
+
+      const appTable = mock.application as unknown as {
+        findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+      };
+      const matchedApps = await appTable.findMany({
+        where: {
+          organizationId: "org-1",
+          candidate: { deletedAt: null },
+        },
+      });
+      expect(matchedApps.map((a) => a.id)).toEqual([
+        "app-active",
+        "app-flat-unpopulated",
+      ]);
+
+      const userTable = mock.user as unknown as {
+        findMany: (args: unknown) => Promise<Array<{ id: string }>>;
+      };
+      const org1Users = await userTable.findMany({
+        where: { memberships: { some: { organizationId: "org-1" } } },
+      });
+      expect(org1Users.map((u) => u.id)).toEqual(["u-1"]);
+
+      const nonOrg1Users = await userTable.findMany({
+        where: { memberships: { none: { organizationId: "org-1" } } },
+      });
+      expect(nonOrg1Users.map((u) => u.id)).toEqual(["u-2"]);
+    });
+  });
+});

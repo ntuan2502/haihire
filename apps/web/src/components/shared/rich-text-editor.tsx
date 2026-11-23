@@ -28,6 +28,26 @@ interface RichTextEditorProps {
   className?: string;
 }
 
+const HTML_TAG_REGEX =
+  /<\/?(?:p|br|h[1-6]|ul|ol|li|strong|b|em|i|u|s|blockquote|a|div|span)\b[^>]*>/i;
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function normalizeEditorContent(raw: string): string {
+  if (!raw) return "";
+  if (HTML_TAG_REGEX.test(raw)) return raw;
+  const normalized = raw.replace(/\r\n?/g, "\n");
+  return normalized
+    .split(/\n{2,}/)
+    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
 function isSafeLinkUrl(rawUrl: string): boolean {
   const trimmed = rawUrl.trim();
   if (!trimmed) return false;
@@ -54,6 +74,7 @@ export function RichTextEditor({
 
   const editor = useEditor({
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
@@ -71,7 +92,7 @@ export function RichTextEditor({
         placeholder,
       }),
     ],
-    content: value || "",
+    content: normalizeEditorContent(value || ""),
     editorProps: {
       attributes: {
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
@@ -106,7 +127,7 @@ export function RichTextEditor({
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
-    const nextValue = value || "";
+    const nextValue = normalizeEditorContent(value || "");
     const currentValue = editor.isEmpty ? "" : editor.getHTML();
     if (nextValue !== currentValue) {
       editor.commands.setContent(nextValue, { emitUpdate: false });

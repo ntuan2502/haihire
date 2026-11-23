@@ -96,7 +96,9 @@ export function OrgCareersClient({
         const matchesTitle = job.title.toLowerCase().includes(query);
         const matchesDept = job.department.toLowerCase().includes(query);
         const matchesLoc = job.location.toLowerCase().includes(query);
-        const matchesDesc = job.description.toLowerCase().includes(query);
+        const matchesDesc = extractPlainTextFromHtml(job.description)
+          .toLowerCase()
+          .includes(query);
         if (!matchesTitle && !matchesDept && !matchesLoc && !matchesDesc) {
           return false;
         }

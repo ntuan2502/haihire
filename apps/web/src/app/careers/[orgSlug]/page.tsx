@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import { OrgCareersClient } from "@/components/careers/org-careers-client";
 import type { Organization, Job } from "@/types";
 
@@ -98,7 +99,7 @@ export default async function OrgCareersPage({ params }: PageProps) {
                 href={`/careers/${orgSlug}/${job.id}`}
                 tabIndex={-1}
               >{`${job.title} - ${job.department} (${job.location})`}</a>
-              <p>{job.description}</p>
+              <p>{extractPlainTextFromHtml(job.description || "")}</p>
             </li>
           ))}
         </ul>

@@ -12,6 +12,7 @@ import {
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { parseCandidateDocuments, fixUtf8String } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -257,13 +258,7 @@ export function useCandidateDrawer({
 
   const selectedJob = currentApp?.jobId ? jobMap.get(currentApp.jobId) : null;
   const selectedJobTitle = selectedJob
-    ? `${selectedJob.title} (${
-        selectedJob.type === "FULL_TIME"
-          ? t("jobs.fullTime")
-          : selectedJob.type === "PART_TIME"
-            ? t("jobs.partTime")
-            : selectedJob.type
-      })`
+    ? `${selectedJob.title} (${getJobTypeLabel(selectedJob.type, t)})`
     : currentApp?.jobId
       ? `${t("jobs.jobTitle")} #${currentApp.jobId}`
       : t("candidates.role");

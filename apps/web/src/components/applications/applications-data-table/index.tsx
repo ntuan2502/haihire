@@ -2,6 +2,7 @@
 
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { getCandidateDisplayName, normalizeEmailAddress } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
@@ -123,15 +124,10 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           jobTitle={
             table.deleteModalApp.jobId &&
             table.jobMap.get(table.deleteModalApp.jobId)
-              ? `${table.jobMap.get(table.deleteModalApp.jobId)!.title} (${
-                  table.jobMap.get(table.deleteModalApp.jobId)!.type ===
-                  "FULL_TIME"
-                    ? t("jobs.fullTime")
-                    : table.jobMap.get(table.deleteModalApp.jobId)!.type ===
-                        "PART_TIME"
-                      ? t("jobs.partTime")
-                      : table.jobMap.get(table.deleteModalApp.jobId)!.type
-                })`
+              ? `${table.jobMap.get(table.deleteModalApp.jobId)!.title} (${getJobTypeLabel(
+                  table.jobMap.get(table.deleteModalApp.jobId)!.type,
+                  t,
+                )})`
               : t("applications.applyingForPosition")
           }
           isDeleting={table.isDeleting}

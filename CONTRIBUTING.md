@@ -10,7 +10,7 @@ Thank you for contributing to HaiHire. All contributors and automated coding age
 - Branch off `dev` using clean feature/fix branch naming (`feat/...`, `fix/...`, `chore/...`).
 - Commit messages follow **Conventional Commits** enforced by `commitlint` + `husky` (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`).
 
-See [Branch Protection Runbook](docs/runbooks/branch-protection.md) and [CI/CD Pipeline](docs/runbooks/ci-cd.md) for merge rules across `dev`, `staging`, and `main`.
+See [Branch Protection Runbook](docs/runbooks/branch-protection.md) and [CI/CD Pipeline](docs/runbooks/ci-cd.md) for merge rules across `dev` and `main`.
 
 ---
 

@@ -19,18 +19,15 @@ jobs:
   audit:
     name: Dependency Vulnerability Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js 26
-        uses: actions/setup-node@v5
+      - name: Setup Workspace (pnpm only)
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 26
-          package-manager-cache: false
-
-      - name: Install pnpm
-        run: npm install -g pnpm@12
+          install-deps: "false"
 
       - name: Run Moderate & High Vulnerability Audit
         run: |
@@ -50,21 +47,13 @@ jobs:
   tenant-isolation:
     name: Tenant Scoping Static Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js 26
-        uses: actions/setup-node@v5
-        with:
-          node-version: 26
-          package-manager-cache: false
-
-      - name: Install pnpm
-        run: npm install -g pnpm@12
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Workspace
+        uses: ./.github/actions/setup-workspace
 
       - name: Verify 100% Tenant Isolation Coverage
         run: pnpm lint:tenant-scope
@@ -75,18 +64,15 @@ jobs:
   dependency-check:
     name: Outdated Dependencies Report
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Setup Node.js 26
-        uses: actions/setup-node@v5
+      - name: Setup Workspace (pnpm only)
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 26
-          package-manager-cache: false
-
-      - name: Install pnpm
-        run: npm install -g pnpm@12
+          install-deps: "false"
 
       - name: Inspect Outdated Packages
         run: |
@@ -108,6 +94,7 @@ jobs:
     needs: [audit, tenant-isolation, dependency-check]
     if: failure()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Dispatch Webhook Alert
         env:

@@ -33,6 +33,7 @@ jobs:
   publish-images:
     name: Build & Push Candidate Images
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     outputs:
       tag-name: ${{ steps.vars.outputs.TAG_NAME }}
       sha-tag: ${{ steps.vars.outputs.SHA_TAG }}
@@ -108,6 +109,7 @@ jobs:
     name: Container Vulnerability Scan
     needs: publish-images
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -145,7 +147,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload API SARIF Report (Code Scanning)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: false
         if: always()
         with:
@@ -178,7 +180,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Web SARIF Report (Code Scanning)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: false
         if: always()
         with:
@@ -202,6 +204,7 @@ jobs:
     name: Promote Release Tags & Publish GitHub Release
     needs: [publish-images, trivy-scan]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -224,7 +227,7 @@ jobs:
           SHA_TAG="${{ needs.publish-images.outputs.sha-tag }}"
           API_TAGS="-t ${{ env.API_IMAGE }}:${TAG}"
           WEB_TAGS="-t ${{ env.WEB_IMAGE }}:${TAG}"
-          if [[ "${TAG}" != *alpha* && "${TAG}" != *beta* ]]; then
+          if [[ "${TAG}" != *-* ]]; then
             API_TAGS="${API_TAGS} -t ${{ env.API_IMAGE }}:latest"
             WEB_TAGS="${WEB_TAGS} -t ${{ env.WEB_IMAGE }}:latest"
           fi

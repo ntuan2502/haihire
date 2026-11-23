@@ -9,7 +9,7 @@ Stack baselines verified in `package.json`, `pnpm-workspace.yaml`, `scripts/chec
 - **Package Manager**: `pnpm@12.18.0` with workspace catalog (`typescript@^6.0.3`, `vitest@5.1.0`, `eslint@^10.14.0`, `prettier@^3.9.10`, `zod@^4.6.7`, `@types/node@^26.6.6`, `tsx@^4.23.15`) and `minimumReleaseAge: 1440`
 - **Build Orchestrator**: `turbo@^2.11.10`, `node:26-alpine` containers (`apps/api/Dockerfile`, `apps/web/Dockerfile`)
 - **Verification**: `pnpm check:all` (`scripts/check-all.ts` running **18 CI gates**)
-- **Workflows**: `.github/workflows/{ci-feature,ci-dev,ci-staging,ci-main,cd-release,e2e-weekly,security-weekly}.yml`
+- **Workflows**: `.github/workflows/{ci-dev,ci-main,cd-release,e2e-weekly,security-weekly}.yml` + `.github/actions/{setup-workspace,setup-e2e}`
 
 ---
 

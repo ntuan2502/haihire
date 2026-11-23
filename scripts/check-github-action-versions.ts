@@ -12,6 +12,7 @@ export interface ActionViolation {
 
 export interface CheckGithubActionOptions {
   workflowsDir?: string;
+  actionsDir?: string;
   files?: Record<string, string>; // Optional virtual file map for testing
 }
 
@@ -28,6 +29,7 @@ export const MINIMUM_ACTION_VERSIONS: Record<string, string> = {
   "actions/upload-artifact": "v6",
   "actions/download-artifact": "v6",
   "aquasecurity/trivy-action": "v0.36.0",
+  "github/codeql-action/upload-sarif": "v4",
 };
 
 export function parseMajorVersion(versionStr: string): number | null {
@@ -126,18 +128,40 @@ export function checkGithubActionVersions(
   const workflowsDir =
     options.workflowsDir || path.join(process.cwd(), ".github/workflows");
 
-  if (!fs.existsSync(workflowsDir)) {
-    return { passed: true, violations: [] };
+  if (fs.existsSync(workflowsDir)) {
+    const workflowFiles = fs
+      .readdirSync(workflowsDir)
+      .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
+
+    for (const file of workflowFiles) {
+      const fullPath = path.join(workflowsDir, file);
+      const content = fs.readFileSync(fullPath, "utf-8");
+      violations.push(...auditWorkflowContent(content, file));
+    }
   }
 
-  const workflowFiles = fs
-    .readdirSync(workflowsDir)
-    .filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
+  const actionsDir =
+    options.actionsDir ??
+    (options.workflowsDir
+      ? undefined
+      : path.join(process.cwd(), ".github/actions"));
 
-  for (const file of workflowFiles) {
-    const fullPath = path.join(workflowsDir, file);
-    const content = fs.readFileSync(fullPath, "utf-8");
-    violations.push(...auditWorkflowContent(content, file));
+  if (actionsDir && fs.existsSync(actionsDir)) {
+    const entries = fs.readdirSync(actionsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      for (const fileName of ["action.yml", "action.yaml"]) {
+        const fullPath = path.join(actionsDir, entry.name, fileName);
+        if (!fs.existsSync(fullPath)) continue;
+        const content = fs.readFileSync(fullPath, "utf-8");
+        violations.push(
+          ...auditWorkflowContent(
+            content,
+            path.posix.join("actions", entry.name, fileName),
+          ),
+        );
+      }
+    }
   }
 
   return {
@@ -175,7 +199,7 @@ if (
     "✅ CI Gate 'lint:github-action-versions' PASSED! All action versions conform to Node 24 policy.",
   );
   for (const [action, min] of Object.entries(MINIMUM_ACTION_VERSIONS)) {
-    console.log(`   • ${action.padEnd(25)} >= ${min}`);
+    console.log(`   • ${action.padEnd(35)} >= ${min}`);
   }
   console.log(
     "==================================================================",

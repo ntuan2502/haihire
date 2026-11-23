@@ -1,0 +1,40 @@
+name: Setup HaiHire Workspace
+description: Configure Node 26, pinned pnpm@12.18.0, pnpm store cache, and frozen dependencies
+
+inputs:
+  install-deps:
+    description: "Whether to cache the pnpm store and run pnpm install --frozen-lockfile"
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js 26
+      uses: actions/setup-node@v5
+      with:
+        node-version: 26
+        package-manager-cache: false
+
+    - name: Install pinned pnpm@12.18.0
+      shell: bash
+      run: npm install -g pnpm@12.18.0
+
+    - name: Get pnpm store directory
+      if: ${{ inputs.install-deps == 'true' }}
+      id: pnpm-cache
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+    - name: Cache pnpm store
+      if: ${{ inputs.install-deps == 'true' }}
+      uses: actions/cache@v5
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      if: ${{ inputs.install-deps == 'true' }}
+      shell: bash
+      run: pnpm install --frozen-lockfile

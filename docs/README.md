@@ -41,8 +41,8 @@ Central index for **HaiHire Platform** architecture, API contracts, engineering 
 | [Orphan MinIO Cleanup](runbooks/orphan-cleanup.md)                   | Manual CLI sweep ([scripts/cleanup-orphan-minio.ts](../scripts/cleanup-orphan-minio.ts)) & Pushgateway |
 | [Valkey / Redis Recovery](runbooks/redis-recovery.md)                | Handling `noeviction` memory pressure, AOF persistence, and BullMQ recovery                            |
 | [Environment Management](runbooks/env-management.md)                 | `.env.example` / `.env.production.example` sync and rotation (`56` keys)                               |
-| [CI/CD Pipelines](runbooks/ci-cd.md)                                 | GitHub Actions feature/dev/staging/main gates and Trivy SARIF release flow                             |
-| [Branch Protection](runbooks/branch-protection.md)                   | Rules across `feature/*`, `dev`, `staging`, and `main`                                                 |
+| [CI/CD Pipelines](runbooks/ci-cd.md)                                 | GitHub Actions `dev`/`main` gates, composite actions, and Trivy SARIF release flow                     |
+| [Branch Protection](runbooks/branch-protection.md)                   | Rules across `feature/*`, `dev`, and `main`                                                            |
 | [Prisma Version Policy](runbooks/prisma-version-policy.md)           | Prisma `7.10.1` GA lock, `@prisma/adapter-pg`, and `pnpm` catalog policy                               |
 | [Production Deployment Plan](runbooks/production-deployment-plan.md) | `docker-compose.prod.yml` rollout, TLS/proxy checklist, and smoke tests                                |
 | [Versioning & Release Policy](runbooks/versioning.md)                | SemVer tags (`v0.1.0` baseline), `CHANGELOG.md`, and version sync scripts                              |

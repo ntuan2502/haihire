@@ -33,12 +33,13 @@ jobs:
   publish-images:
     name: Build & Push Candidate Images
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     outputs:
       tag-name: ${{ steps.vars.outputs.TAG_NAME }}
       sha-tag: ${{ steps.vars.outputs.SHA_TAG }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -54,7 +55,7 @@ jobs:
           echo "SHA_TAG=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -65,7 +66,7 @@ jobs:
 
       - name: Extract Docker metadata for API
         id: meta-api
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.API_IMAGE }}
           tags: |
@@ -84,7 +85,7 @@ jobs:
 
       - name: Extract Docker metadata for Web
         id: meta-web
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.WEB_IMAGE }}
           tags: |
@@ -108,9 +109,10 @@ jobs:
     name: Container Vulnerability Scan
     needs: publish-images
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -145,7 +147,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload API SARIF Report (Code Scanning)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: false
         if: always()
         with:
@@ -178,7 +180,7 @@ jobs:
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Web SARIF Report (Code Scanning)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: false
         if: always()
         with:
@@ -202,14 +204,15 @@ jobs:
     name: Promote Release Tags & Publish GitHub Release
     needs: [publish-images, trivy-scan]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -224,7 +227,7 @@ jobs:
           SHA_TAG="${{ needs.publish-images.outputs.sha-tag }}"
           API_TAGS="-t ${{ env.API_IMAGE }}:${TAG}"
           WEB_TAGS="-t ${{ env.WEB_IMAGE }}:${TAG}"
-          if [[ "${TAG}" != *alpha* && "${TAG}" != *beta* ]]; then
+          if [[ "${TAG}" != *-* ]]; then
             API_TAGS="${API_TAGS} -t ${{ env.API_IMAGE }}:latest"
             WEB_TAGS="${WEB_TAGS} -t ${{ env.WEB_IMAGE }}:latest"
           fi
@@ -232,7 +235,7 @@ jobs:
           docker buildx imagetools create ${WEB_TAGS} "${{ env.WEB_IMAGE }}:${SHA_TAG}"
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.publish-images.outputs.tag-name }}
           name: "HaiHire Enterprise ATS ${{ needs.publish-images.outputs.tag-name }}"

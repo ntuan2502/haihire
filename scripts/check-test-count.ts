@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 /**
  * Automates counting added, renamed, and removed tests from git diff
@@ -11,10 +11,22 @@ function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
   );
 
   try {
-    const diff = execSync(
-      `git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx" "*.test.ts" "*.test.tsx" "*.e2e-spec.ts"`,
+    const diff = execFileSync(
+      "git",
+      [
+        "diff",
+        "-U0",
+        `${baseRef}..${targetRef}`,
+        "--",
+        "*.spec.ts",
+        "*.spec.tsx",
+        "*.test.ts",
+        "*.test.tsx",
+        "*.e2e-spec.ts",
+      ],
       {
         encoding: "utf-8",
+        maxBuffer: 50 * 1024 * 1024,
       },
     );
 

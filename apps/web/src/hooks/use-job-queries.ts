@@ -1,0 +1,286 @@
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { jobsApi, organizationsApi } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
+import type {
+  Job,
+  Organization,
+  PaginatedResult,
+  PipelineStageItem,
+  UpsertPipelineStagesSchema,
+} from "@/types";
+import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
+
+export function useJobs(
+  organizationId?: string | null,
+  options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    department?: string;
+    type?: string;
+    experienceLevel?: string;
+    workplace?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    organizationSlug?: string | null;
+  },
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<PaginatedResult<Job>>({
+    queryKey: [
+      ...queryKeys.jobs(effectiveOrgId),
+      options?.page,
+      options?.limit,
+      options?.search,
+      options?.status,
+      options?.department,
+      options?.type,
+      options?.experienceLevel,
+      options?.workplace,
+      options?.sortBy,
+      options?.sortOrder,
+      options?.organizationSlug,
+    ],
+    queryFn: async () => {
+      if (!effectiveOrgId && !options?.organizationSlug) {
+        return {
+          data: [],
+          total: 0,
+          page: 1,
+          limit: options?.limit || 15,
+          totalPages: 0,
+        };
+      }
+      return jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        organizationSlug: options?.organizationSlug,
+        page: options?.page,
+        limit: options?.limit,
+        search: options?.search,
+        status: options?.status,
+        department: options?.department,
+        type: options?.type,
+        experienceLevel: options?.experienceLevel,
+        workplace: options?.workplace,
+        sortBy: options?.sortBy,
+        sortOrder: options?.sortOrder,
+      });
+    },
+    enabled: Boolean(effectiveOrgId || options?.organizationSlug),
+    placeholderData: keepPreviousDataForSameOrg<PaginatedResult<Job>>(
+      effectiveOrgId ?? null,
+    ),
+  });
+}
+
+export function useAllJobs(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<Job[]>({
+    queryKey: queryKeys.allJobs(effectiveOrgId),
+    queryFn: async () => {
+      if (!effectiveOrgId) return [];
+      const res = await jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        limit: 1000,
+      });
+      return res.data;
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useOpenJobs(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<Job[]>({
+    queryKey: queryKeys.openJobs(effectiveOrgId),
+    queryFn: async () => {
+      if (!effectiveOrgId) return [];
+      const res = await jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        status: "PUBLISHED",
+        limit: 1000,
+      });
+      return res.data;
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useJob(id: string | null) {
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
+  return useQuery<Job>({
+    queryKey:
+      orgId !== undefined
+        ? (["jobs", id, { orgId }] as const)
+        : (["jobs", id] as const),
+    queryFn: () => {
+      if (!id) throw new Error("Job ID is required");
+      return jobsApi.getById(id);
+    },
+    enabled: Boolean(id),
+  });
+}
+
+export function usePublicOrg(slug: string | null) {
+  return useQuery<Organization>({
+    queryKey: ["organization", "public", slug],
+    queryFn: () => {
+      if (!slug) throw new Error("Organization slug is required");
+      return organizationsApi.getPublicOrg(slug);
+    },
+    enabled: Boolean(slug),
+  });
+}
+
+export function useAllPublicJobs(initialData?: Job[]) {
+  return useQuery<Job[]>({
+    queryKey: ["jobs", "public-all-published"],
+    queryFn: async () => {
+      const res = await jobsApi.getPublic({ limit: 1000 });
+      return res.data;
+    },
+    ...(initialData !== undefined
+      ? {
+          initialData,
+          initialDataUpdatedAt: initialData.length > 0 ? undefined : 0,
+        }
+      : {}),
+    staleTime: 120_000,
+  });
+}
+
+export function usePublicJobs(orgSlug: string | null) {
+  return useQuery<Job[]>({
+    queryKey: ["jobs", "public-list", orgSlug],
+    queryFn: async () => {
+      if (!orgSlug) return [];
+      const res = await jobsApi.getAll({
+        organizationSlug: orgSlug,
+        status: "PUBLISHED",
+        limit: 1000,
+      });
+      return res.data;
+    },
+    enabled: Boolean(orgSlug),
+  });
+}
+
+export function usePublicJob(orgSlug: string | null, jobSlug: string | null) {
+  return useQuery<Job>({
+    queryKey: ["jobs", "public-detail", orgSlug, jobSlug],
+    queryFn: () => {
+      if (!orgSlug || !jobSlug)
+        throw new Error("Org slug and Job slug are required");
+      return jobsApi.getBySlug(orgSlug, jobSlug);
+    },
+    enabled: Boolean(orgSlug && jobSlug),
+  });
+}
+
+export function useUpdateJobMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof jobsApi.update>[1];
+    }) => jobsApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.id] });
+    },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.id] });
+    },
+  });
+}
+
+export function useCreateJobMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Parameters<typeof jobsApi.create>[0]) =>
+      jobsApi.create(data),
+    onSuccess: () => {
+      // Invalidate all jobs queries to instantly refresh
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+  });
+}
+
+export function useDeleteJobMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => jobsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useJobStages(jobId: string | null) {
+  const { user } = useAuth();
+  return useQuery<PipelineStageItem[]>({
+    queryKey: queryKeys.jobStages(jobId, user?.organizationId),
+    queryFn: () => {
+      if (!jobId) return [];
+      return jobsApi.getStages(jobId);
+    },
+    enabled: Boolean(jobId),
+  });
+}
+
+export function useUpdateJobStagesMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({
+      jobId,
+      stages,
+    }: {
+      jobId: string;
+      stages: UpsertPipelineStagesSchema["stages"];
+    }) => jobsApi.updateStages(jobId, { stages }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.jobStages(variables.jobId, user?.organizationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.jobId] });
+    },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.jobStages(variables.jobId, user?.organizationId),
+      });
+    },
+  });
+}

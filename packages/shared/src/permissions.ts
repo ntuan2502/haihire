@@ -14,14 +14,24 @@ export const Role = {
 
 export type Role = (typeof Role)[keyof typeof Role];
 
+export const ROLE_LIST: readonly Role[] = [
+  Role.ADMIN,
+  Role.RECRUITER,
+  Role.HIRING_MANAGER,
+  Role.INTERVIEWER,
+  Role.MEMBER,
+];
+
 export type Permission =
   // Organization Management
   | "org:view"
   | "org:update"
   | "org:delete"
   | "org:manage_members"
+  | "org:manage_roles"
   | "org:manage_billing"
   | "org:transfer_ownership"
+  | "org:view_audit_log"
   // Job Requisition Management
   | "job:view"
   | "job:create"
@@ -29,7 +39,6 @@ export type Permission =
   | "job:delete"
   // Candidate Profile Management
   | "candidate:view"
-  | "candidate:view_basic"
   | "candidate:create"
   | "candidate:update"
   | "candidate:delete"
@@ -61,7 +70,6 @@ export type Permission =
   | "email:send"
   | "email:manage_templates"
   | "email:manage_settings"
-  | "email:manage_system"
   // Settings & Integrations
   | "settings:manage_integrations";
 
@@ -77,8 +85,10 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   "org:update": [Role.ADMIN],
   "org:delete": [Role.ADMIN],
   "org:manage_members": [Role.ADMIN],
+  "org:manage_roles": [Role.ADMIN],
   "org:manage_billing": [],
   "org:transfer_ownership": [Role.ADMIN],
+  "org:view_audit_log": [Role.ADMIN],
 
   // Jobs
   "job:view": [
@@ -94,13 +104,6 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
 
   // Candidates
   "candidate:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
-  "candidate:view_basic": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.INTERVIEWER,
-    Role.MEMBER,
-  ],
   "candidate:create": [Role.ADMIN, Role.RECRUITER],
   "candidate:update": [Role.ADMIN, Role.RECRUITER],
   "candidate:delete": [Role.ADMIN, Role.RECRUITER],
@@ -142,9 +145,9 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
     Role.INTERVIEWER,
     Role.MEMBER,
   ],
-  "interview:create": [Role.ADMIN, Role.RECRUITER],
-  "interview:update": [Role.ADMIN, Role.RECRUITER],
-  "interview:delete": [Role.ADMIN, Role.RECRUITER],
+  "interview:create": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:update": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:delete": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "interview:scorecard_submit": [
     Role.ADMIN,
     Role.RECRUITER,
@@ -153,12 +156,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   ],
 
   // Sourcing
-  "sourcing:view": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.MEMBER,
-  ],
+  "sourcing:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "sourcing:create": [Role.ADMIN, Role.RECRUITER],
   "sourcing:update": [Role.ADMIN, Role.RECRUITER],
   "sourcing:delete": [Role.ADMIN, Role.RECRUITER],
@@ -168,11 +166,12 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   "email:send": [Role.ADMIN, Role.RECRUITER],
   "email:manage_templates": [Role.ADMIN],
   "email:manage_settings": [Role.ADMIN],
-  "email:manage_system": [Role.ADMIN],
 
   // Settings & Integrations
   "settings:manage_integrations": [Role.ADMIN],
 };
+
+export const PERMISSION_LIST = Object.keys(PERMISSIONS) as Permission[];
 
 /**
  * Checks whether a given role is granted a specific permission.

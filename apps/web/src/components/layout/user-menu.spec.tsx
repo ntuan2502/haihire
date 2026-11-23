@@ -1,0 +1,181 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { UserMenu } from "./user-menu";
+import type { User, Organization } from "@/types";
+
+const mockPush = vi.fn();
+const mockLogout = vi.fn();
+const mockMutateAsync = vi.fn().mockResolvedValue({});
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
+const mockUser: User = {
+  id: "user-1",
+  email: "admin@haihire.vn",
+  firstName: "Hai",
+  lastName: "Admin",
+  name: "Hai Admin",
+  role: "ADMIN",
+  organizationId: "org-1",
+  organization: {
+    id: "org-1",
+    name: "HaiHire Corp",
+    slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const mockOrgs: Organization[] = [
+  {
+    id: "org-1",
+    name: "HaiHire Corp",
+    slug: "haihire-corp",
+    logoUrl: "/organizations/public/org-1/logo?v=1",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "org-2",
+    name: "Partner Org",
+    slug: "partner-org",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: mockUser,
+    logout: mockLogout,
+    isOwner: true,
+    isAdmin: true,
+  }),
+}));
+
+vi.mock("@/hooks/use-queries", () => ({
+  useMyOrgs: () => ({
+    data: mockOrgs,
+  }),
+  useSwitchOrgMutation: () => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  }),
+}));
+
+vi.mock("@/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
+describe("UserMenu Accessibility", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders trigger and opens menu with keyboard-accessible items", async () => {
+    render(<UserMenu />);
+
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
+    expect(trigger).toBeInTheDocument();
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+
+    await waitFor(() => {
+      expect(screen.getByText("nav.signOut")).toBeInTheDocument();
+    });
+
+    const signOutBtn = screen.getByRole("menuitem", { name: /nav\.signOut/i });
+    expect(signOutBtn).toBeInTheDocument();
+    expect(signOutBtn.tagName).toBe("BUTTON");
+
+    fireEvent.click(signOutBtn);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it("has keyboard-accessible organization switcher and items", async () => {
+    render(<UserMenu />);
+
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+
+    await waitFor(() => {
+      expect(screen.getByText("HaiHire Corp")).toBeInTheDocument();
+    });
+
+    expect(
+      document.body.querySelector(
+        'img[src="/api/organizations/public/org-1/logo?v=1"]',
+      ),
+    ).toBeInTheDocument();
+
+    const orgSwitcherBtn = screen.getByRole("button", {
+      name: "HaiHire Corp",
+    });
+    expect(orgSwitcherBtn).toBeInTheDocument();
+    expect(orgSwitcherBtn).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(orgSwitcherBtn);
+    expect(orgSwitcherBtn).toHaveAttribute("aria-expanded", "true");
+
+    expect(screen.getByText("P")).toBeInTheDocument();
+    const partnerOrgBtn = screen.getByRole("menuitem", {
+      name: "Partner Org",
+    });
+    expect(partnerOrgBtn).toBeInTheDocument();
+    expect(partnerOrgBtn.tagName).toBe("BUTTON");
+
+    fireEvent.click(partnerOrgBtn);
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith("org-2");
+    });
+  });
+
+  it("has keyboard-accessible account and settings buttons", async () => {
+    render(<UserMenu />);
+
+    const trigger = screen.getByRole("button", { name: "common.userProfile" });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+
+    await waitFor(() => {
+      expect(screen.getByText("settings.tabs.account")).toBeInTheDocument();
+      expect(screen.getByText("settings.notifications")).toBeInTheDocument();
+      expect(screen.getByText("nav.settings")).toBeInTheDocument();
+    });
+
+    const accountBtn = screen.getByRole("menuitem", {
+      name: /settings\.tabs\.account/i,
+    });
+    expect(accountBtn).toBeInTheDocument();
+    fireEvent.click(accountBtn);
+    expect(mockPush).toHaveBeenCalledWith("/account");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const notificationsBtn = await screen.findByRole("menuitem", {
+      name: /settings\.notifications/i,
+    });
+    expect(notificationsBtn).toBeInTheDocument();
+    fireEvent.click(notificationsBtn);
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
+
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    const settingsBtn = await screen.findByRole("menuitem", {
+      name: /nav\.settings/i,
+    });
+    expect(settingsBtn).toBeInTheDocument();
+    expect(settingsBtn.tagName).toBe("BUTTON");
+
+    fireEvent.click(settingsBtn);
+    expect(mockPush).toHaveBeenCalledWith("/settings");
+    expect(screen.queryByText("Updates & changelog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Report issue")).not.toBeInTheDocument();
+  });
+});

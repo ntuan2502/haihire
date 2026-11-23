@@ -1,88 +1,25 @@
-# Runbook: Email Queue Backlog Remediation
+# Email Queue & Provider Operations Runbook
 
-**System:** HaiHire Enterprise ATS  
-**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)  
-**Alert Rule:** `HaiHireEmailQueueBacklog` (Warning)  
-**Responsible Teams:** SRE & Backend Engineering (`team: sre`)
+Transactional candidate communications and system emails dispatch asynchronously through BullMQ `email-queue` (`EmailProcessor` in [apps/api/src/email/email.processor.ts](../../apps/api/src/email/email.processor.ts)).
 
 ---
 
-## Alert Triggers & Conditions
+## 1. Architecture & Transporters
 
-- **`HaiHireEmailQueueBacklog` (Warning):**
-  > Email queue `email-queue` has $> 500$ jobs in `waiting` state for $> 10$ minutes.  
-  > Email delivery throughput (interview invitations, rejection letters, verification notices) is experiencing severe delays.
-
----
-
-## Step 1: Verify Incident
-
-Inspect email queue depth directly on the Prometheus metrics endpoint:
-
-```bash
-# Production
-curl -s http://localhost:3001/metrics | grep bullmq_queue_depth | grep email-queue
-
-# Development
-curl -s http://localhost:13001/metrics | grep bullmq_queue_depth | grep email-queue
-```
-
-Inspect `EmailProcessor` application logs:
-
-```bash
-docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "EmailProcessor|EmailService"
-```
+- **Queues:** `email-queue` -> on exhausted retry attempts, failed payload moves to `email-dlq-queue` + fires optional DLQ webhook notifications.
+- **Supported Providers:**
+  - `SIMULATED` (development/test only — rejected in production checks by [scripts/check-prod-email-provider.ts](../../scripts/check-prod-email-provider.ts))
+  - `SMTP` (`nodemailer`, tested against SSRF / non-public destination hazards)
+  - `RESEND` (`SYSTEM_EMAIL_RESEND_API_KEY` or encrypted per-org key)
+  - `SENDGRID` (`SYSTEM_EMAIL_SENDGRID_API_KEY` or encrypted per-org key; parses `Display Name <email>` via `parseSendGridFrom`)
 
 ---
 
-## Step 2: Diagnose Root Cause
+## 2. Responding to `HaiHireEmailQueueBacklog`
 
-1. **Verify Email Provider Status:**
-   - **SMTP:** Test TCP reachability to SMTP host:
-     ```bash
-     nc -zv smtp.gmail.com 587
-     ```
-   - **Resend / SendGrid:** Check external provider status dashboards:
-     - Resend Status: https://status.resend.com
-     - SendGrid Status: https://status.sendgrid.com
-2. **Check Provider Quota & Rate Limits:**
-   - Search logs for HTTP `429 Too Many Requests` or `Daily sending quota exceeded`.
-3. **Verify Email Credentials & Secrets:**
-   - Check environment variables: `SYSTEM_EMAIL_PROVIDER`, `SYSTEM_EMAIL_SMTP_PASS`, `SYSTEM_EMAIL_RESEND_API_KEY`.
+Triggered when `bullmq_queue_depth{queue="email-queue",state="waiting"} > 500` for `10m`:
 
----
-
-## Step 3: Mitigate (Short-Term Action)
-
-1. **If Primary Provider Experiences Outage:**
-   - Temporarily failover to secondary provider (e.g. switch from SMTP to Resend or vice versa) in `.env.production`:
-     ```env
-     SYSTEM_EMAIL_PROVIDER="RESEND"
-     SYSTEM_EMAIL_RESEND_API_KEY="re_..."
-     ```
-   - Restart backend container to apply configuration:
-     ```bash
-     docker compose -f docker-compose.prod.yml restart backend
-     ```
-2. **If Backlog is Due to Mass Candidate Campaign:**
-   - Temporarily scale up worker `concurrency` in NestJS BullMQ module (provided host CPU/RAM allows).
-
----
-
-## Step 4: Resolve (Long-Term Fix)
-
-1. Upgrade provider billing tier if daily sending quotas were exhausted.
-2. Implement adaptive tenant-level rate limiting and exponential backoff for batch email dispatches.
-3. Validate domain SPF, DKIM, and DMARC DNS records to prevent connection drops by destination MX servers.
-
----
-
-## Step 5: Post-Mortem & Incident Closure
-
-- [ ] Metric `bullmq_queue_depth{queue="email-queue",state="waiting"}` drops to $< 50$.
-- [ ] Alert `HaiHireEmailQueueBacklog` transitions to `RESOLVED`.
-- [ ] Query database `EmailLog` table to inspect failure counts:
-  ```bash
-  docker exec -it haihire-prod-postgres psql -U haihire_user -d haihire_db -c "SELECT status, COUNT(*) FROM \"EmailLog\" WHERE \"createdAt\" > NOW() - INTERVAL '2 hours' GROUP BY status;"
-  ```
-- [ ] Notify affected tenant organizations if critical notices were delayed.
+1. Verify API container logs (`EmailProcessor`) for SMTP timeouts, DNS resolution issues, or HTTP `401`/`429` responses from Resend/SendGrid.
+2. Verify Valkey/Redis availability ([Valkey / Redis Recovery](redis-recovery.md)) and confirm worker processes are not paused or starved.
+3. Inspect recent `email_log` rows (`status = 'FAILED'`) in PostgreSQL to identify whether failures affect one tenant's custom credentials (`EmailSetting`) or the system-wide fallback (`SYSTEM_EMAIL_PROVIDER`).
+4. Temporarily pause offending broken custom org configurations if one misconfigured SMTP host stalls worker concurrency, fix credentials, and replay any `email-dlq-queue` items per [DLQ Recovery](dlq-recovery.md).

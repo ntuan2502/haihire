@@ -1,0 +1,40 @@
+import { IsEmail, IsEnum, IsOptional, IsString } from "class-validator";
+import { Gender } from "./create-candidate.dto";
+
+export class UpdateCandidateDto {
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  displayName?: string | null;
+
+  @IsEnum(Gender)
+  @IsOptional()
+  gender?: Gender;
+
+  @IsString()
+  @IsOptional()
+  dateOfBirth?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  resumeUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  resumeFileName?: string;
+}

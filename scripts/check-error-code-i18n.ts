@@ -1,6 +1,6 @@
 import { APP_ERROR_CODES } from "../packages/shared/src/errors";
-import { vi } from "../frontend/src/i18n/locales/vi";
-import { en } from "../frontend/src/i18n/locales/en";
+import { vi } from "../apps/web/src/i18n/locales/vi";
+import { en } from "../apps/web/src/i18n/locales/en";
 
 const codes = Object.keys(APP_ERROR_CODES) as (keyof typeof APP_ERROR_CODES)[];
 
@@ -23,13 +23,17 @@ console.log("=================================================");
 if (missingVi.length > 0) {
   console.error(`[FAIL] Missing in vi.ts (${missingVi.length}):`, missingVi);
 } else {
-  console.log(`[PASS] 100% error codes present in vi.ts (${codes.length}/${codes.length})`);
+  console.log(
+    `[PASS] 100% error codes present in vi.ts (${codes.length}/${codes.length})`,
+  );
 }
 
 if (missingEn.length > 0) {
   console.error(`[FAIL] Missing in en.ts (${missingEn.length}):`, missingEn);
 } else {
-  console.log(`[PASS] 100% error codes present in en.ts (${codes.length}/${codes.length})`);
+  console.log(
+    `[PASS] 100% error codes present in en.ts (${codes.length}/${codes.length})`,
+  );
 }
 
 if (missingVi.length > 0 || missingEn.length > 0) {

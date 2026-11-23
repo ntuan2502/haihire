@@ -1,0 +1,250 @@
+"use client";
+
+import { useRef, type ChangeEvent } from "react";
+import {
+  ArrowLeft,
+  Download,
+  Eye,
+  FileText,
+  Loader2,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
+import { CustomSelect } from "@/components/shared/custom-select";
+import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
+import { formatDate } from "@/lib/utils";
+import { getDocumentTypeLabel } from "@/lib/roles";
+import type { CandidateDocument } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useI18n } from "@/i18n";
+
+export interface CandidateDrawerDocumentsTabProps {
+  candidateId?: string;
+  canEdit: boolean;
+  docFilter: string;
+  onDocFilterChange: (filter: string) => void;
+  documents: CandidateDocument[];
+  previewDoc: CandidateDocument | null;
+  onPreviewDoc: (doc: CandidateDocument | null) => void;
+  onDownloadDoc: (
+    docUrl: string,
+    docName: string,
+    appId?: string,
+  ) => Promise<void>;
+  onDeleteDoc: (doc: CandidateDocument) => void;
+  onUploadDoc: (file: File) => Promise<void>;
+  isUploading: boolean;
+}
+
+export function CandidateDrawerDocumentsTab({
+  candidateId,
+  canEdit: _canEdit,
+  docFilter,
+  onDocFilterChange,
+  documents,
+  previewDoc,
+  onPreviewDoc,
+  onDownloadDoc,
+  onDeleteDoc,
+  onUploadDoc,
+  isUploading,
+}: CandidateDrawerDocumentsTabProps) {
+  const { t } = useI18n();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canUploadDoc = useHasPermission("candidate:document_upload");
+  const canDownloadDoc = useHasPermission("candidate:document_download");
+  const canDeleteDoc = useHasPermission("candidate:document_delete");
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      try {
+        await onUploadDoc(file);
+      } finally {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+    }
+  };
+
+  if (previewDoc) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => onPreviewDoc(null)}
+            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{t("candidates.backToDocuments")}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              onDownloadDoc(
+                previewDoc.url,
+                previewDoc.name,
+                previewDoc.sourceApplicationId,
+              )
+            }
+            className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+            title={t("common.download")}
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground truncate">
+          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="truncate">{previewDoc.name}</span>
+        </div>
+
+        <div className="w-full h-[500px] rounded-xl border border-border overflow-hidden bg-muted/40 shadow-inner">
+          <AuthenticatedDocumentViewer
+            document={previewDoc}
+            candidateId={candidateId}
+            onDownload={onDownloadDoc}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <CustomSelect
+          value={docFilter}
+          onChange={onDocFilterChange}
+          options={[
+            { value: "All", label: t("common.all") },
+            { value: "Resume", label: t("candidates.resume") },
+            {
+              value: "Cover Letter",
+              label: t("candidates.coverLetter"),
+            },
+            { value: "Other", label: t("common.other") },
+          ]}
+          size="sm"
+          triggerClassName="h-7 w-28 text-xs font-normal"
+        />
+
+        {canUploadDoc && (
+          <div>
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              {isUploading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <UploadCloud className="h-3 w-3 text-muted-foreground" />
+              )}
+              <span>{t("candidates.uploadDoc")}</span>
+            </button>
+            <input
+              id="drawer-doc-upload"
+              name="drawer-doc-upload"
+              aria-label={t("candidates.uploadDoc")}
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+        )}
+      </div>
+
+      {documents.length > 0 ? (
+        <div className="space-y-2.5">
+          {documents.map((doc) => (
+            <div
+              key={doc.id || doc.url}
+              className="p-3 rounded-xl border border-border bg-card/60 text-card-foreground shadow-xs flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 border border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <h4 className="text-xs font-semibold text-foreground truncate">
+                    {doc.name}
+                  </h4>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap">
+                    <span>{getDocumentTypeLabel(doc.type, t)}</span>
+                    <span>•</span>
+                    <span>{formatDate(doc.createdAt, "short")}</span>
+                    <span>•</span>
+                    <button
+                      type="button"
+                      onClick={() => onPreviewDoc(doc)}
+                      className="text-foreground font-medium underline underline-offset-4 hover:opacity-80 cursor-pointer"
+                    >
+                      {t("candidates.clickToPreview")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-0.5 shrink-0 text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => onPreviewDoc(doc)}
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  title={t("common.preview")}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
+
+                {canDownloadDoc && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onDownloadDoc(doc.url, doc.name, doc.sourceApplicationId)
+                    }
+                    className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    title={t("common.download")}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {canDeleteDoc && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteDoc(doc)}
+                    className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10 transition-colors cursor-pointer"
+                    title={t("common.delete")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border p-6 flex flex-col items-center justify-center text-center space-y-1.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground mb-0.5">
+            <FileText className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <h4 className="text-xs font-semibold text-foreground">
+            {t("candidates.noDocuments")}
+          </h4>
+          <p className="text-[10px] text-muted-foreground max-w-xs">
+            {canUploadDoc
+              ? t("candidates.uploadDocHint")
+              : t("candidates.noDocuments")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

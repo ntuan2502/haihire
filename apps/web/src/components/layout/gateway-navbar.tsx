@@ -1,0 +1,87 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { BrandLogo } from "@/components/shared/brand-logo";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { LanguageDropdown } from "@/components/shared/language-dropdown";
+import { UserMenu } from "@/components/layout/user-menu";
+import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
+import { Menu, X } from "lucide-react";
+import { cn } from "cn";
+
+export interface GatewayNavbarProps {
+  className?: string;
+  maxWidthClassName?: string;
+}
+
+export function GatewayNavbar({
+  className,
+  maxWidthClassName = "max-w-7xl",
+}: GatewayNavbarProps) {
+  const { isAuthenticated, user } = useAuth();
+  const { t } = useI18n();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <>
+      <header
+        className={cn(
+          "sticky top-0 z-40 w-full h-16 bg-background/80 backdrop-blur-md border-b border-border transition-colors select-none",
+          className,
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto h-full px-4 sm:px-6 flex items-center justify-between gap-4",
+            maxWidthClassName,
+          )}
+        >
+          {/* Left: Brand Identity with link to home */}
+          <Link
+            href="/"
+            aria-label={BRAND_CONFIG.name}
+            className="rounded-md hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <BrandLogo size="md" />
+          </Link>
+
+          {/* Right: Controls */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Desktop Theme & Language */}
+            <div className="hidden md:flex items-center gap-1.5">
+              <ThemeToggle />
+              <LanguageDropdown />
+            </div>
+
+            {/* Authenticated user menu if already logged in */}
+            {isAuthenticated && user && <UserMenu />}
+
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-accent transition-colors cursor-pointer"
+              aria-label={t("common.toggleNavigationMenu")}
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5 stroke-[2]" />
+              ) : (
+                <Menu className="h-5 w-5 stroke-[2]" />
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Drawer (Only Theme & Language change) */}
+      <MobileDrawer
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+    </>
+  );
+}

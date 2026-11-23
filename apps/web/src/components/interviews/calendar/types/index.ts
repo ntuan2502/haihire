@@ -1,0 +1,69 @@
+import type { Application, Job } from "@/types";
+import type { ScheduledInterviewInfo } from "@/lib/interviews";
+
+export type CalendarViewMode = "month" | "week";
+export type CalendarMode = CalendarViewMode;
+
+export interface CalendarDateInfo {
+  dateStr: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isWeekend?: boolean;
+  year?: number;
+  month?: number;
+  day?: number;
+  date?: Date;
+}
+
+export interface CalendarWeekDayInfo {
+  dateStr: string;
+  dayNumber: number;
+  monthName: string;
+  displayDate: string;
+  isToday: boolean;
+}
+
+export interface CalendarEventItem {
+  id?: string;
+  application: Application;
+  interview: ScheduledInterviewInfo;
+  job?: Job;
+  dateKey?: string;
+  dayOfMonth?: number;
+}
+
+export interface DayDetailsInfo {
+  dateStr: string;
+  dayNumber: number;
+}
+
+export interface CalendarStateUpdate {
+  calendarMode: CalendarViewMode;
+  month: string | null;
+  date: string | null;
+}
+
+export interface InterviewsCalendarViewProps {
+  applications: Application[];
+  jobs: Job[];
+  calendarMode?: CalendarViewMode;
+  activeMonth?: string;
+  activeDate?: string;
+  onCalendarStateChange?: (next: CalendarStateUpdate) => void;
+  onScheduleDate: (dateStr: string) => void;
+  onEditSchedule: (app: Application, interview: ScheduledInterviewInfo) => void;
+  onOpenScorecard: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
+  onCancelInterview?: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
+  onVisibleRangeChange?: (range: {
+    startDate?: string;
+    endDate?: string;
+  }) => void;
+  canEdit?: boolean;
+}

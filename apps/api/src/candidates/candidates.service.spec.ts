@@ -1,0 +1,898 @@
+import { describe, expect, it, beforeEach, vi } from "vitest";
+import { Readable } from "node:stream";
+import { APP_ERROR_CODES, normalizeCandidatePhone } from "@haihire/shared";
+import { CandidatesService } from "./candidates.service";
+import {
+  CandidatesCrudService,
+  CandidatesDocumentsService,
+  CandidatesProfileService,
+} from "./services";
+import {
+  createMockTable,
+  createMockPrismaService,
+  type MockTable,
+} from "../test/helpers/prisma-composer-mock";
+import type { PrismaService } from "../prisma/prisma.service";
+import type { MinioService } from "../minio/minio.service";
+import type { ActivitiesService } from "../activities/activities.service";
+import {
+  AppConflictException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
+import { toInstant } from "../common/date.util";
+
+describe("CandidatesService (Characterization Tests)", () => {
+  let service: CandidatesService;
+
+  let candidateTable: MockTable<Record<string, unknown>>;
+  let applicationTable: MockTable<Record<string, unknown>>;
+  let jobTable: MockTable<Record<string, unknown>>;
+  let interviewTable: MockTable<Record<string, unknown>>;
+  let candidateDocTable: MockTable<Record<string, unknown>>;
+  let candidateNoteTable: MockTable<Record<string, unknown>>;
+
+  let mockPrisma: PrismaService;
+  let mockMinio: MinioService;
+  let mockActivities: ActivitiesService;
+
+  beforeEach(() => {
+    candidateTable = createMockTable([
+      {
+        id: "cand-1",
+        organizationId: "org-1",
+        firstName: "A",
+        lastName: "Nguyen Van",
+        email: "nguyenvana@example.com",
+        phone: "0901234567",
+        resumeUrl: "https://minio.local/resumes/org-1/resume-1.pdf",
+        resumeFileName: "resume-1.pdf",
+        resumeFileSize: 1024,
+        resumeMimeType: "application/pdf",
+        gender: "MALE",
+        dateOfBirth: toInstant(),
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+        deletedAt: null,
+      },
+      {
+        id: "cand-2",
+        organizationId: "org-1",
+        firstName: "B",
+        lastName: "Tran Thi",
+        email: "tranthib@example.com",
+        phone: "0912345678",
+        resumeUrl: null,
+        resumeFileName: null,
+        resumeFileSize: null,
+        resumeMimeType: null,
+        gender: "FEMALE",
+        dateOfBirth: null,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+        deletedAt: null,
+      },
+      {
+        id: "cand-deleted",
+        organizationId: "org-1",
+        firstName: "C",
+        lastName: "Le Van",
+        email: "levanc@example.com",
+        phone: null,
+        resumeUrl: null,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+        deletedAt: toInstant(),
+      },
+      {
+        id: "cand-other-org",
+        organizationId: "org-2",
+        firstName: "D",
+        lastName: "Pham Van",
+        email: "phamvand@example.com",
+        phone: null,
+        resumeUrl: null,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+        deletedAt: null,
+      },
+    ]);
+
+    applicationTable = createMockTable([
+      {
+        id: "app-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-1",
+        stage: "INTERVIEW",
+        resumeUrl: "https://minio.local/resumes/org-1/app-resume-1.pdf",
+        resumeFileName: "app-resume-1.pdf",
+        resumeFileSize: 2048,
+        resumeMimeType: "application/pdf",
+        orderIndex: 0,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      },
+    ]);
+
+    jobTable = createMockTable([
+      {
+        id: "job-1",
+        organizationId: "org-1",
+        title: "Senior Full-Stack Engineer",
+        department: "Engineering",
+        location: "Ho Chi Minh City",
+        deletedAt: null,
+      },
+    ]);
+
+    interviewTable = createMockTable([
+      {
+        id: "intv-1",
+        applicationId: "app-1",
+        title: "Technical Round 1",
+        scheduledAt: toInstant(),
+        status: "COMPLETED",
+      },
+    ]);
+
+    candidateDocTable = createMockTable([
+      {
+        id: "doc-1",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "Certificate.pdf",
+        url: "https://minio.local/resumes/org-1/cert.pdf",
+        size: 512,
+        mimeType: "application/pdf",
+        type: "Certificate",
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      },
+    ]);
+
+    candidateNoteTable = createMockTable([
+      {
+        id: "cnote-1",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Initial phone screen passed",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-01T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-2",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Strong Rust and TypeScript background",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-05T10:00:00.000Z")),
+      },
+      {
+        id: "cnote-3",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        authorId: "user-1",
+        authorName: "Recruiter Alice",
+        authorRole: "RECRUITER",
+        content: "Portfolio link verified",
+        isEdited: false,
+        createdAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+        updatedAt: toInstant(new Date("2026-03-04T10:00:00.000Z")),
+      },
+    ]);
+
+    const mockOrm = {
+      public: {
+        Candidate: candidateTable,
+        Application: applicationTable,
+        Job: jobTable,
+        Interview: interviewTable,
+        CandidateDocument: candidateDocTable,
+        CandidateNote: candidateNoteTable,
+      },
+    };
+
+    const _mockDb = {
+      orm: mockOrm,
+    };
+
+    mockPrisma = createMockPrismaService({
+      Candidate: candidateTable,
+      Application: applicationTable,
+      Job: jobTable,
+      Interview: interviewTable,
+      CandidateDocument: candidateDocTable,
+      CandidateNote: candidateNoteTable,
+    }) as unknown as PrismaService;
+
+    mockMinio = {
+      uploadFile: vi.fn().mockResolvedValue({
+        url: "https://minio.local/resumes/org-1/uploaded-file.pdf",
+        originalName: "uploaded-file.pdf",
+        size: 4096,
+        mimeType: "application/pdf",
+      }),
+      extractObjectName: vi.fn().mockImplementation((url: string) => {
+        if (!url) return "";
+        const idx = url.indexOf("tenants/");
+        if (idx !== -1) return url.slice(idx);
+        const parts = url.split("/");
+        return parts[parts.length - 1];
+      }),
+      getObjectStream: vi
+        .fn()
+        .mockResolvedValue(Readable.from(["mock stream content"])),
+    } as unknown as MinioService;
+
+    mockActivities = {
+      createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
+    } as unknown as ActivitiesService;
+
+    service = new CandidatesService(mockPrisma, mockMinio, mockActivities);
+  });
+
+  describe("A.1.1: findAll", () => {
+    it("enforces tenant isolation and throws AppForbiddenException on org mismatch", async () => {
+      await expect(
+        service.findAll("org-1", undefined, "org-2"),
+      ).rejects.toThrow(AppForbiddenException);
+
+      const result = await service.findAll("org-1", undefined, "org-1");
+      expect(result.data).toHaveLength(2);
+      expect(result.data.every((c) => c.organizationId === "org-1")).toBe(true);
+    });
+
+    it("filters out soft-deleted candidates", async () => {
+      const result = await service.findAll("org-1");
+      const ids = result.data.map((c) => c.id);
+      expect(ids).toContain("cand-1");
+      expect(ids).toContain("cand-2");
+      expect(ids).not.toContain("cand-deleted");
+    });
+
+    it("applies search filtering across fields and slices paginated results", async () => {
+      const searchByName = await service.findAll("org-1", { search: "Nguyen" });
+      expect(searchByName.data).toHaveLength(1);
+      expect(searchByName.data[0].id).toBe("cand-1");
+      expect(searchByName.data[0].applicationsCount).toBe(1);
+
+      const paged = await service.findAll("org-1", { page: 2, limit: 1 });
+      expect(paged.page).toBe(2);
+      expect(paged.limit).toBe(1);
+      expect(paged.total).toBe(2);
+      expect(paged.totalPages).toBe(2);
+      expect(paged.data).toHaveLength(1);
+    });
+
+    it("returns latestNote, notesCount, and matches search terms inside candidateNote content", async () => {
+      const result = await service.findAll("org-1", { search: "Strong Rust" });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe("cand-1");
+      expect(result.data[0].notesCount).toBe(2);
+      expect(result.data[0].latestNote).toMatchObject({
+        id: "cnote-2",
+        content: "Strong Rust and TypeScript background",
+        authorName: "Recruiter Alice",
+      });
+    });
+  });
+
+  describe("A.1.2: findOne", () => {
+    it("throws AppNotFoundException on non-existent or soft-deleted candidate", async () => {
+      await expect(service.findOne("non-existent-id")).rejects.toThrow(
+        AppNotFoundException,
+      );
+      await expect(service.findOne("cand-deleted")).rejects.toThrow(
+        AppNotFoundException,
+      );
+    });
+
+    it("throws AppForbiddenException on cross-tenant candidate lookup", async () => {
+      await expect(service.findOne("cand-other-org", "org-1")).rejects.toThrow(
+        AppForbiddenException,
+      );
+    });
+
+    it("aggregates applications, jobs, interviews, documents, and logs PII access", async () => {
+      const candidate = await service.findOne("cand-1", "org-1", {
+        id: "user-recruiter-1",
+        name: "Recruiter Alice",
+      });
+
+      expect(candidate).toBeDefined();
+      expect(candidate.id).toBe("cand-1");
+      expect(candidate.applications).toHaveLength(1);
+      expect(candidate.applications[0].job).toBeDefined();
+      expect(candidate.applications[0].job?.title).toBe(
+        "Senior Full-Stack Engineer",
+      );
+      expect(candidate.applications[0].interviews).toHaveLength(1);
+
+      // Verify documents aggregation includes direct documents and application resume
+      expect(candidate.allDocuments.length).toBeGreaterThanOrEqual(2);
+      const docUrls = candidate.allDocuments.map((d: { url: string }) => d.url);
+      expect(docUrls).toContain("https://minio.local/resumes/org-1/cert.pdf");
+      expect(docUrls).toContain(
+        "https://minio.local/resumes/org-1/app-resume-1.pdf",
+      );
+
+      // Verify PII access logging
+      expect(mockActivities.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: "org-1",
+          candidateId: "cand-1",
+          actorId: "user-recruiter-1",
+          metadata: expect.objectContaining({
+            action: "VIEW_PROFILE",
+            accessType: "PII_READ",
+          }),
+        }),
+      );
+    });
+  });
+
+  describe("A.1.3: create", () => {
+    it("rejects duplicate email within the same organization with AppConflictException (409)", async () => {
+      await expect(
+        service.create(
+          {
+            firstName: "Duplicate",
+            lastName: "Email Candidate",
+            email: "nguyenvana@example.com",
+            organizationId: "org-1",
+          },
+          undefined,
+          "org-1",
+        ),
+      ).rejects.toThrow(AppConflictException);
+    });
+
+    it("computes search name from structured firstName/lastName/displayName and parses dateOfBirth", async () => {
+      const created = await service.create(
+        {
+          firstName: "Minh",
+          lastName: "Tran Van",
+          email: "tranvanminh@example.com",
+          dateOfBirth: "1995-05-20",
+          phone: "0988776655",
+        },
+        undefined,
+        "org-1",
+      );
+
+      expect(created).toBeDefined();
+      expect(created.name).toBe("Tran Van Minh");
+      expect(created.firstName).toBe("Minh");
+      expect(created.lastName).toBe("Tran Van");
+      expect(created.displayName).toBeNull();
+      expect(created.email).toBe("tranvanminh@example.com");
+      expect(created.dateOfBirth).toBeDefined();
+
+      const customCreated = await service.create(
+        {
+          firstName: "An",
+          lastName: "Nguyen Van",
+          displayName: "Andy Nguyen",
+          email: "andynguyen@example.com",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(customCreated.displayName).toBe("Andy Nguyen");
+      expect(customCreated.name).toBe("Andy Nguyen");
+    });
+  });
+
+  describe("A.1.4: prepareDocumentDownload", () => {
+    it("enforces SSRF protection by rejecting unassociated document URLs and provides RFC 5987 headers", async () => {
+      // SSRF attack attempt with arbitrary or cross-tenant URL
+      await expect(
+        service.prepareDocumentDownload(
+          "cand-1",
+          "https://minio.local/resumes/other-tenant/private-cv.pdf",
+          "private-cv.pdf",
+          "org-1",
+        ),
+      ).rejects.toThrow(AppForbiddenException);
+
+      // Legitimate download of candidate's own document
+      const result = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+        "Hồ sơ ứng viên.pdf",
+        "org-1",
+        { id: "user-1", name: "Recruiter Bob" },
+      );
+
+      expect(result).toBeDefined();
+      expect(result.cleanFileName).toBe("Hồ sơ ứng viên.pdf");
+      expect(result.asciiFallback).toBeDefined();
+      expect(result.encodedFileName).toBe(
+        encodeURIComponent("Hồ sơ ứng viên.pdf"),
+      );
+      expect(result.stream).toBeDefined();
+      expect(mockMinio.getObjectStream).toHaveBeenCalledWith(
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+        "org-1",
+      );
+
+      // Verify download audit logging
+      expect(mockActivities.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: "org-1",
+          candidateId: "cand-1",
+          metadata: expect.objectContaining({
+            action: "DOWNLOAD_DOCUMENT",
+            subType: "DOCUMENT_DOWNLOADED",
+          }),
+        }),
+      );
+    });
+
+    it("infers MIME type from filename when stored resumeMimeType is null and resolves matched candidate document MIME", async () => {
+      const candRow = candidateTable.store.find((c) => c.id === "cand-1");
+      if (candRow) {
+        candRow.resumeMimeType = null;
+      }
+
+      const inferred = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+        "resume-1.pdf",
+        "org-1",
+      );
+      expect(inferred.mimeType).toBe("application/pdf");
+
+      await candidateDocTable.create({
+        id: "doc-img",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "portfolio.png",
+        url: "https://minio.local/resumes/org-1/portfolio.png",
+        size: 512,
+        mimeType: "image/png",
+        type: "Portfolio",
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const docDownload = await service.prepareDocumentDownload(
+        "cand-1",
+        "https://minio.local/resumes/org-1/portfolio.png",
+        "portfolio.png",
+        "org-1",
+      );
+      expect(docDownload.mimeType).toBe("image/png");
+    });
+  });
+
+  describe("A.1.5: remove", () => {
+    it("performs soft-delete setting deletedAt within database transaction", async () => {
+      const result = await service.remove("cand-1", "org-1");
+      expect(result.success).toBe(true);
+      expect(mockPrisma.transaction).toHaveBeenCalled();
+
+      // Ensure candidate now has deletedAt set in the table
+      const inDb = candidateTable.store.find((c) => c.id === "cand-1");
+      expect(inDb?.deletedAt).toBeDefined();
+      expect(inDb?.deletedAt).not.toBeNull();
+    });
+  });
+
+  describe("Additional coverage: update, uploadDocument, deleteDocument, DI", () => {
+    it("updates candidate details and parses dateOfBirth", async () => {
+      const updated = await service.update(
+        "cand-1",
+        {
+          firstName: "A Updated",
+          lastName: "Nguyen Van",
+          phone: "0999888777",
+          dateOfBirth: "1992-08-15",
+        },
+        "org-1",
+      );
+
+      expect(updated).toBeDefined();
+      expect(updated.firstName).toBe("A Updated");
+      expect(updated.name).toBe("Nguyen Van A Updated");
+      expect(updated.phone).toBe("0999888777");
+      expect(updated.dateOfBirth).toBeDefined();
+      expect(new Date(updated.dateOfBirth!).toISOString()).toBe(
+        "1992-08-15T12:00:00.000Z",
+      );
+    });
+
+    it("uploads a document with validated file and updates candidate resume fields", async () => {
+      const mockFile = {
+        fieldname: "file",
+        originalname: "My_Resume.pdf",
+        encoding: "7bit",
+        mimetype: "application/pdf",
+        size: 512,
+        buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+      } as Express.Multer.File;
+
+      const result = await service.uploadDocument(
+        "cand-2",
+        mockFile,
+        "Resume",
+        "org-1",
+      );
+
+      expect(result).toBeDefined();
+      expect(mockMinio.uploadFile).toHaveBeenCalled();
+      expect(result.resumeUrl).toBe(
+        "https://minio.local/resumes/org-1/uploaded-file.pdf",
+      );
+      expect(result.resumeFileName).toBe("My_Resume.pdf");
+    });
+
+    it("throws AppServiceUnavailableException when MinIO upload fails during document upload (H-06)", async () => {
+      const mockFile = {
+        fieldname: "file",
+        originalname: "Broken.pdf",
+        encoding: "7bit",
+        mimetype: "application/pdf",
+        size: 512,
+        buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+      } as Express.Multer.File;
+
+      mockMinio.uploadFile = vi
+        .fn()
+        .mockRejectedValue(new Error("MinIO connection timeout"));
+
+      await expect(
+        service.uploadDocument("cand-2", mockFile, "Resume", "org-1"),
+      ).rejects.toThrow("Failed to upload document to storage service");
+    });
+
+    it("rejects candidate creation with cross-tenant resumeUrl (C-01)", async () => {
+      await expect(
+        service.create(
+          {
+            firstName: "Hacker",
+            lastName: "Candidate",
+            email: "hacker@test.local",
+            organizationId: "org-1",
+            resumeUrl:
+              "https://minio.local/resumes/tenants/victim-org/resumes/victim-cv.pdf",
+          },
+          undefined,
+          "org-1",
+        ),
+      ).rejects.toThrow("Cross-tenant resume reference is not permitted");
+    });
+
+    it("rejects candidate update with cross-tenant resumeUrl (C-01)", async () => {
+      await expect(
+        service.update(
+          "cand-1",
+          {
+            resumeUrl:
+              "https://minio.local/resumes/tenants/other-org/resumes/victim-cv.pdf",
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow("Cross-tenant resume reference is not permitted");
+    });
+
+    it("rejects tenant overrides before creating candidates or uploading files", async () => {
+      await expect(
+        service.create(
+          {
+            firstName: "Attacker",
+            lastName: "User",
+            email: "attacker@example.com",
+            organizationId: "org-2",
+          },
+          undefined,
+          "org-1",
+        ),
+      ).rejects.toThrow(AppForbiddenException);
+      expect(candidateTable.store).toHaveLength(4);
+      expect(mockMinio.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it("reports document deletion failures without clearing the candidate resume", async () => {
+      vi.spyOn(
+        mockPrisma.candidateDocument,
+        "deleteMany",
+      ).mockRejectedValueOnce(new Error("Database unavailable"));
+      await expect(
+        service.deleteDocument("cand-1", { documentId: "doc-1" }, "org-1"),
+      ).rejects.toThrow("Database unavailable");
+      expect(
+        candidateTable.store.find((candidate) => candidate.id === "cand-1")
+          ?.resumeUrl,
+      ).toBe("https://minio.local/resumes/org-1/resume-1.pdf");
+    });
+
+    it("reports document lookup failures without clearing the candidate resume", async () => {
+      vi.spyOn(mockPrisma.candidateDocument, "findMany")
+        .mockResolvedValueOnce([])
+        .mockRejectedValueOnce(new Error("Database unavailable"));
+      await expect(
+        service.deleteDocument("cand-1", undefined, "org-1"),
+      ).rejects.toThrow("Database unavailable");
+      expect(
+        candidateTable.store.find((candidate) => candidate.id === "cand-1")
+          ?.resumeUrl,
+      ).toBe("https://minio.local/resumes/org-1/resume-1.pdf");
+    });
+
+    it.each([
+      { documentId: "doc-1" },
+      { url: "https://minio.local/resumes/org-1/cert.pdf" },
+    ])(
+      "does not delete another candidate's document using %j",
+      async (selector) => {
+        await service.deleteDocument("cand-2", selector, "org-1");
+        expect(candidateDocTable.store.some((doc) => doc.id === "doc-1")).toBe(
+          true,
+        );
+      },
+    );
+
+    it("deletes a document and resets or falls back candidate resume", async () => {
+      const result = await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-1" },
+        "org-1",
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it("supports direct NestJS DI constructor instantiation", async () => {
+      const profile = new CandidatesProfileService(mockPrisma, mockActivities);
+      const docs = new CandidatesDocumentsService(
+        mockPrisma,
+        mockMinio,
+        profile,
+        mockActivities,
+      );
+      const crud = new CandidatesCrudService(mockPrisma, mockMinio, profile);
+
+      const diService = new CandidatesService(crud, docs, profile);
+      expect(diService).toBeDefined();
+
+      const list = await diService.findAll("org-1");
+      expect(list.data).toBeDefined();
+    });
+
+    it("BUG-09: allows re-creating candidate with soft-deleted email and rejects update to active duplicate email", async () => {
+      const recreated = await service.create(
+        {
+          firstName: "C",
+          lastName: "Reborn",
+          email: "levanc@example.com",
+          organizationId: "org-1",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(recreated.email).toBe("levanc@example.com");
+
+      await expect(
+        service.update("cand-1", { email: "tranthib@example.com" }, "org-1"),
+      ).rejects.toThrow(AppConflictException);
+    });
+
+    it("BUG-08: normalizes All->Resume on upload, keeps primary resumeUrl in allDocuments, and preserves it when deleting secondary doc", async () => {
+      const pdfFile = {
+        originalname: "certificate.pdf",
+        mimetype: "application/pdf",
+        size: 1024,
+        buffer: Buffer.from("%PDF-1.4\ncertificate content\n%%EOF"),
+      } as Express.Multer.File;
+
+      const afterUpload = await service.uploadDocument(
+        "cand-1",
+        pdfFile,
+        "All",
+        "org-1",
+      );
+
+      const uploaded = afterUpload.allDocuments.find(
+        (d: { url: string }) =>
+          d.url === "https://minio.local/resumes/org-1/uploaded-file.pdf",
+      );
+      expect(uploaded?.type).toBe("Resume");
+      expect(
+        afterUpload.allDocuments.some(
+          (d: { url: string }) =>
+            d.url === "https://minio.local/resumes/org-1/resume-1.pdf",
+        ),
+      ).toBe(true);
+
+      const afterDelete = await service.deleteDocument(
+        "cand-1",
+        { documentId: uploaded!.id },
+        "org-1",
+      );
+      expect(afterDelete.resumeUrl).toBe(
+        "https://minio.local/resumes/org-1/resume-1.pdf",
+      );
+    });
+
+    it("excludes applications belonging to soft-deleted jobs in findOne and findAll", async () => {
+      await jobTable.create({
+        id: "job-deleted",
+        organizationId: "org-1",
+        title: "Deleted Job",
+        deletedAt: new Date().toISOString(),
+      });
+      await applicationTable.create({
+        id: "app-deleted-job",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-deleted",
+        stage: "APPLIED",
+        orderIndex: 1,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+      });
+
+      const profile = await service.findOne("cand-1", "org-1");
+      expect(profile.applications.map((a: { id: string }) => a.id)).toEqual([
+        "app-1",
+      ]);
+
+      const list = await service.findAll("org-1", { page: 1, limit: 10 });
+      const cand1 = list.data.find((c: { id: string }) => c.id === "cand-1");
+      expect(cand1?.applicationsCount).toBe(1);
+    });
+  });
+
+  describe("Duplicate detection & conflict handling", () => {
+    it("normalizes Vietnamese and international phone formats consistently", () => {
+      expect(normalizeCandidatePhone("+84 901-234-567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("84901234567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("0901 234 567")).toBe("0901234567");
+      expect(normalizeCandidatePhone("+1 (555) 123-4567")).toBe("15551234567");
+      expect(normalizeCandidatePhone("12345")).toBeNull();
+      expect(normalizeCandidatePhone("")).toBeNull();
+      expect(normalizeCandidatePhone(null)).toBeNull();
+    });
+
+    it("includes { email } params in CANDIDATE_EMAIL_EXISTS exception on create and update", async () => {
+      let createErr: unknown;
+      try {
+        await service.create(
+          {
+            organizationId: "org-1",
+            firstName: "Another",
+            lastName: "Person",
+            email: "  NguyenVanA@Example.com ",
+          },
+          undefined,
+          "org-1",
+        );
+      } catch (err) {
+        createErr = err;
+      }
+      expect(createErr).toBeInstanceOf(AppConflictException);
+      expect((createErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((createErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      let updatePrecheckErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "nguyenvana@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updatePrecheckErr = err;
+      }
+      expect(updatePrecheckErr).toBeInstanceOf(AppConflictException);
+      expect((updatePrecheckErr as AppConflictException).params).toEqual({
+        email: "nguyenvana@example.com",
+      });
+
+      vi.spyOn(mockPrisma.candidate, "update").mockRejectedValueOnce({
+        code: "P2002",
+      });
+      let updateRaceErr: unknown;
+      try {
+        await service.update(
+          "cand-2",
+          { email: "race-condition@example.com" },
+          "org-1",
+        );
+      } catch (err) {
+        updateRaceErr = err;
+      }
+      expect(updateRaceErr).toBeInstanceOf(AppConflictException);
+      expect((updateRaceErr as AppConflictException).code).toBe(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+      );
+      expect((updateRaceErr as AppConflictException).params).toEqual({
+        email: "race-condition@example.com",
+      });
+    });
+
+    it("detects BLOCKING email matches and WARNING phone / name+DOB matches within tenant", async () => {
+      const cand1Dob = (candidateTable.store[0].dateOfBirth as Date)
+        .toISOString()
+        .slice(0, 10);
+
+      const emailAndPhoneResult = await service.checkDuplicates(
+        {
+          email: "NGUYENVANA@EXAMPLE.COM",
+          phone: "+84 912-345-678",
+        },
+        "org-1",
+      );
+      expect(emailAndPhoneResult.hasBlockingDuplicate).toBe(true);
+      expect(emailAndPhoneResult.hasWarningDuplicate).toBe(true);
+      expect(emailAndPhoneResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        severity: "BLOCKING",
+        matchReasons: ["EMAIL"],
+      });
+      expect(emailAndPhoneResult.matches[1]).toMatchObject({
+        id: "cand-2",
+        severity: "WARNING",
+        matchReasons: ["PHONE"],
+      });
+
+      const nameDobResult = await service.checkDuplicates(
+        {
+          firstName: " a ",
+          lastName: " nguyen   van ",
+          dateOfBirth: cand1Dob,
+        },
+        "org-1",
+      );
+      expect(nameDobResult.hasBlockingDuplicate).toBe(false);
+      expect(nameDobResult.hasWarningDuplicate).toBe(true);
+      expect(nameDobResult.matches).toHaveLength(1);
+      expect(nameDobResult.matches[0]).toMatchObject({
+        id: "cand-1",
+        matchReasons: ["NAME_DOB"],
+        severity: "WARNING",
+      });
+
+      const excludedResult = await service.checkDuplicates(
+        {
+          email: "nguyenvana@example.com",
+          phone: "0901234567",
+          excludeId: "cand-1",
+        },
+        "org-1",
+      );
+      expect(excludedResult.matches).toEqual([]);
+
+      const deletedAndOtherTenant = await service.checkDuplicates(
+        {
+          email: "levanc@example.com",
+        },
+        "org-1",
+      );
+      expect(deletedAndOtherTenant.matches).toEqual([]);
+
+      const otherTenantEmail = await service.checkDuplicates(
+        {
+          email: "phamvand@example.com",
+        },
+        "org-1",
+      );
+      expect(otherTenantEmail.matches).toEqual([]);
+    });
+  });
+});

@@ -1,0 +1,230 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { matchesPersonNameSearch } from "@haihire/shared";
+import { getCandidateDisplayName } from "@/lib/utils";
+import type { Application, Job } from "@/types";
+import type { SortField, SortDirection } from "../types";
+
+interface UseApplicationsFilterSortProps {
+  baseApplications: Application[];
+  stageFilters: string[];
+  fixedJobId?: string;
+  currentJobFilter: string;
+  scoreFilter: string;
+  search: string;
+  jobMap: Map<string, Job>;
+  isServerPaginated: boolean;
+  propTotalCount?: number;
+  propTotalPages?: number;
+  rowsPerPage: number;
+  currentPage: number;
+  setJobFilter: (val: string) => void;
+  setScoreFilter: (val: string) => void;
+  handleClearStages: () => void;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  onSortChange?: (field: SortField, direction: SortDirection) => void;
+}
+
+export function useApplicationsFilterSort({
+  baseApplications,
+  stageFilters,
+  fixedJobId,
+  currentJobFilter,
+  scoreFilter,
+  search,
+  jobMap,
+  isServerPaginated,
+  propTotalCount,
+  propTotalPages,
+  rowsPerPage,
+  currentPage,
+  setJobFilter,
+  setScoreFilter,
+  handleClearStages,
+  sortField: propSortField,
+  sortDirection: propSortDirection,
+  onSortChange,
+}: UseApplicationsFilterSortProps) {
+  const [localSortField, setLocalSortField] = useState<SortField>("applied");
+  const [localSortDirection, setLocalSortDirection] =
+    useState<SortDirection>("desc");
+
+  const sortField = propSortField ?? localSortField;
+  const sortDirection = propSortDirection ?? localSortDirection;
+
+  const setSortField = (field: SortField) => {
+    if (onSortChange) {
+      onSortChange(field, sortDirection);
+    } else {
+      setLocalSortField(field);
+    }
+  };
+
+  const setSortDirection = (
+    dir: SortDirection | ((prev: SortDirection) => SortDirection),
+  ) => {
+    const next = typeof dir === "function" ? dir(sortDirection) : dir;
+    if (onSortChange) {
+      onSortChange(sortField, next);
+    } else {
+      setLocalSortDirection(next);
+    }
+  };
+
+  const filteredApps = useMemo(() => {
+    let list = baseApplications;
+    if (stageFilters.length > 0) {
+      list = list.filter((app) => stageFilters.includes(app.stage));
+    }
+    if (!fixedJobId && currentJobFilter !== "ALL") {
+      list = list.filter(
+        (app) => String(app.jobId) === String(currentJobFilter),
+      );
+    }
+    if (scoreFilter !== "ALL") {
+      list = list.filter((app) => {
+        if (typeof app.matchScore !== "number") return false;
+        const score = app.matchScore;
+        if (scoreFilter === "80" && score < 80) return false;
+        if (scoreFilter === "60" && (score < 60 || score >= 80)) return false;
+        if (scoreFilter === "BELOW_60" && score >= 60) return false;
+        return true;
+      });
+    }
+    if (search.trim()) {
+      list = list.filter((app) => {
+        const job = app.jobId ? jobMap.get(app.jobId) : null;
+        return matchesPersonNameSearch(
+          {
+            firstName: app.candidate?.firstName,
+            lastName: app.candidate?.lastName,
+            displayName: app.candidate?.displayName,
+            name: getCandidateDisplayName(app),
+            candidateName: app.candidateName,
+            email: app.candidateEmail,
+            phone: app.candidatePhone,
+            extraFields: [job?.title],
+          },
+          search,
+        );
+      });
+    }
+    return [...list].sort((a, b) => {
+      let diff = 0;
+      switch (sortField) {
+        case "candidate":
+          diff = getCandidateDisplayName(a).localeCompare(
+            getCandidateDisplayName(b),
+          );
+          break;
+        case "email":
+          diff = a.candidateEmail.localeCompare(b.candidateEmail);
+          break;
+        case "job": {
+          const jobA = a.jobId ? jobMap.get(a.jobId)?.title || "" : "";
+          const jobB = b.jobId ? jobMap.get(b.jobId)?.title || "" : "";
+          diff = jobA.localeCompare(jobB);
+          break;
+        }
+        case "status":
+          diff = a.stage.localeCompare(b.stage);
+          break;
+        case "score": {
+          const aHas = typeof a.matchScore === "number";
+          const bHas = typeof b.matchScore === "number";
+          if (!aHas && !bHas) diff = 0;
+          else if (!aHas) diff = -1;
+          else if (!bHas) diff = 1;
+          else diff = (a.matchScore as number) - (b.matchScore as number);
+          break;
+        }
+        case "applied":
+        default:
+          diff =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return sortDirection === "asc" ? diff : -diff;
+    });
+  }, [
+    baseApplications,
+    stageFilters,
+    fixedJobId,
+    currentJobFilter,
+    scoreFilter,
+    search,
+    jobMap,
+    sortField,
+    sortDirection,
+  ]);
+
+  const secondaryFiltersCount =
+    (currentJobFilter !== "ALL" && !fixedJobId ? 1 : 0) +
+    (scoreFilter !== "ALL" ? 1 : 0);
+  const hasSecondaryFilters = secondaryFiltersCount > 0;
+
+  const handleResetFilters = () => {
+    setJobFilter("ALL");
+    setScoreFilter("ALL");
+    handleClearStages();
+    if (onSortChange) {
+      onSortChange("applied", "desc");
+    } else {
+      setLocalSortField("applied");
+      setLocalSortDirection("desc");
+    }
+  };
+
+  const totalCount =
+    isServerPaginated && propTotalCount !== undefined
+      ? scoreFilter !== "ALL"
+        ? filteredApps.length
+        : propTotalCount
+      : filteredApps.length;
+  const totalPages =
+    isServerPaginated && propTotalPages !== undefined
+      ? scoreFilter !== "ALL"
+        ? Math.max(1, Math.ceil(filteredApps.length / rowsPerPage))
+        : propTotalPages
+      : Math.max(1, Math.ceil(totalCount / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedApps =
+    isServerPaginated && scoreFilter === "ALL"
+      ? filteredApps
+      : filteredApps.slice(startIndex, startIndex + rowsPerPage);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      const nextDir: SortDirection = sortDirection === "asc" ? "desc" : "asc";
+      if (onSortChange) {
+        onSortChange(field, nextDir);
+      } else {
+        setLocalSortDirection(nextDir);
+      }
+    } else {
+      if (onSortChange) {
+        onSortChange(field, "asc");
+      } else {
+        setLocalSortField(field);
+        setLocalSortDirection("asc");
+      }
+    }
+  };
+
+  return {
+    sortField,
+    sortDirection,
+    handleSort,
+    setSortField,
+    setSortDirection,
+    filteredApps,
+    paginatedApps,
+    totalCount,
+    totalPages,
+    secondaryFiltersCount,
+    hasSecondaryFilters,
+    handleResetFilters,
+  };
+}

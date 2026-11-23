@@ -32,12 +32,17 @@ export interface TenantScopingAuditResult {
 }
 
 export const PRISMA_QUERY_REGEX =
-  /(?:this\.prisma\.db|tx|db)\.orm\.public\.([A-Za-z0-9_]+)(?:\s*\.\s*([A-Za-z0-9_]+))?/g;
+  /(?:(?:this\.)?prisma(?:\.db)?|tx|db)(?:\.orm\.public)?\.([A-Za-z0-9_]+)(?:\s*\.\s*([A-Za-z0-9_]+))?/g;
 
 /**
  * Determines the repository root directory regardless of current working directory.
  */
 function getWorkspaceRoot(): string {
+  let curr = process.cwd();
+  while (curr && curr !== path.dirname(curr)) {
+    if (fs.existsSync(path.resolve(curr, "pnpm-workspace.yaml"))) return curr;
+    curr = path.dirname(curr);
+  }
   if (fs.existsSync(path.resolve(process.cwd(), "pnpm-workspace.yaml"))) {
     return process.cwd();
   }
@@ -62,7 +67,7 @@ function normalizeRelativePath(filePath: string): string {
  */
 export function findTenantServiceFiles(baseDir?: string): string[] {
   const root = getWorkspaceRoot();
-  const targetDir = baseDir || path.resolve(root, "backend/src");
+  const targetDir = baseDir || path.resolve(root, "apps/api/src");
   const result: string[] = [];
   if (!fs.existsSync(targetDir)) return result;
 
@@ -84,12 +89,12 @@ export function findTenantServiceFiles(baseDir?: string): string[] {
           continue;
         }
 
-        // If scanning within backend/src, verify module is in TENANT_SCOPED_MODULES
-        const isBackendSrc = normRel.startsWith("backend/src/");
+        // If scanning within apps/api/src, verify module is in TENANT_SCOPED_MODULES
+        const isBackendSrc = normRel.startsWith("apps/api/src/");
         if (isBackendSrc) {
           const isTenantModule = TENANT_SCOPED_MODULES.some(
             (mod) =>
-              normRel.startsWith(`backend/src/${mod}/`) ||
+              normRel.startsWith(`apps/api/src/${mod}/`) ||
               normRel.includes(`/${mod}/`),
           );
           if (!isTenantModule) {
@@ -113,7 +118,8 @@ export function checkTenantScoping(options?: {
   baseDir?: string;
   files?: string[];
 }): TenantScopingAuditResult {
-  const filesToScan = options?.files || findTenantServiceFiles(options?.baseDir);
+  const filesToScan =
+    options?.files || findTenantServiceFiles(options?.baseDir);
 
   let totalQueries = 0;
   let explicitFilterCount = 0;
@@ -135,40 +141,96 @@ export function checkTenantScoping(options?: {
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(content)) !== null) {
-      totalQueries++;
-      const modelName = match[1];
-      const methodName = match[2];
       const matchIndex = match.index;
       const lineNumber = content.slice(0, matchIndex).split("\n").length;
       const lineSnippet = lines[lineNumber - 1]?.trim() || "";
 
-      // Step 1: Check model name against MODELS_WITHOUT_ORG_COLUMN
-      if (MODELS_WITHOUT_ORG_COLUMN.has(modelName)) {
+      // Skip import statements, comments, and typeof/non-invocation property references
+      if (
+        lineSnippet.startsWith("import ") ||
+        lineSnippet.startsWith("export ") ||
+        lineSnippet.startsWith("//") ||
+        lineSnippet.startsWith("/*") ||
+        lineSnippet.startsWith("*")
+      ) {
+        continue;
+      }
+
+      const afterMatch = content.slice(matchIndex + match[0].length);
+      const isInvocation =
+        /^\s*(?:<[^>]*>\s*)?[(`]/.test(afterMatch) ||
+        /^\?\.\s*[A-Za-z0-9_]+\s*(?:<[^>]*>\s*)?\(/.test(afterMatch);
+      if (lineSnippet.includes("typeof ") || !isInvocation) {
+        continue;
+      }
+
+      totalQueries++;
+      const modelName = match[1];
+      const methodName = match[2];
+
+      // Step 1: Check model name against MODELS_WITHOUT_ORG_COLUMN (case-insensitive)
+      const isModelWithoutOrg =
+        MODELS_WITHOUT_ORG_COLUMN.has(modelName) ||
+        Array.from(MODELS_WITHOUT_ORG_COLUMN).some(
+          (m) => m.toLowerCase() === modelName.toLowerCase(),
+        );
+      if (isModelWithoutOrg) {
         modelWhitelistCount++;
         continue;
       }
 
-      // Step 2: Context window check (lookahead 350 characters for organizationId / targetOrgId)
+      // Step 2: Context window check (lookahead 350 characters for organizationId / targetOrgId,
+      // excluding `select: { ... }` projections so selecting the column does not mask missing `where` scope)
       const contextWindow = content.slice(matchIndex, matchIndex + 350);
+      let sanitizedWindow = contextWindow;
+      for (let pass = 0; pass < 3; pass++) {
+        const nextWindow = sanitizedWindow.replace(
+          /select\s*:\s*\{[^{}]*\}/g,
+          "",
+        );
+        if (nextWindow === sanitizedWindow) break;
+        sanitizedWindow = nextWindow;
+      }
       if (
-        contextWindow.includes("organizationId") ||
-        contextWindow.includes("targetOrgId")
+        sanitizedWindow.includes("organizationId") ||
+        sanitizedWindow.includes("targetOrgId")
       ) {
         explicitFilterCount++;
         continue;
       }
 
-      // Step 3: Function scope detection (look backwards for parent verification)
+      // Step 3: Function scope detection (look backwards for the enclosing method/function header)
       const beforeContent = content.slice(0, matchIndex);
-      const funcMatch = beforeContent.match(
-        /(?:async|private|public|function)\s+([A-Za-z0-9_]+)\s*\([^)]*\)[\s\S]*$/,
-      );
-      const funcPrefix = funcMatch ? funcMatch[0] : "";
+      const funcHeaderRegex =
+        /(?:async|private|public|function)\s+([A-Za-z0-9_]+)\s*\([^)]*\)/g;
+      let lastHeaderIndex = -1;
+      let headerMatch: RegExpExecArray | null;
+      while ((headerMatch = funcHeaderRegex.exec(beforeContent)) !== null) {
+        lastHeaderIndex = headerMatch.index;
+      }
+      const funcPrefix =
+        lastHeaderIndex >= 0 ? beforeContent.slice(lastHeaderIndex) : "";
+
+      const tailSlice = content.slice(matchIndex, matchIndex + 900);
+      const nextMethodOffset = tailSlice
+        .slice(20)
+        .search(
+          /\n {0,2}(?:(?:async|private|public|protected|function)\s+)+[A-Za-z0-9_]+\s*\(|\n {0,2}(?!(?:if|for|while|switch|catch|else|return|await|throw|new)\b)[A-Za-z0-9_]+\s*\([^)]*\)\s*(?::\s*[^{;\n]+)?\{/,
+        );
+      const afterWindow =
+        nextMethodOffset >= 0
+          ? tailSlice.slice(0, 20 + nextMethodOffset)
+          : tailSlice;
 
       const hasParentGuard =
         funcPrefix.includes(".organizationId !==") ||
         funcPrefix.includes(".organizationId ===") ||
-        funcPrefix.includes("throw new AppForbiddenException");
+        funcPrefix.includes("throw new AppForbiddenException") ||
+        /where\s*:\s*\{[\s\S]*?\borganizationId\b/.test(funcPrefix) ||
+        (afterWindow.includes("throw new AppForbiddenException") &&
+          (afterWindow.includes("organizationId") ||
+            afterWindow.includes("appOrgId") ||
+            afterWindow.includes("if (otherOrg)")));
 
       if (hasParentGuard) {
         parentGuardCount++;
@@ -229,14 +291,22 @@ export function checkTenantScoping(options?: {
  */
 export function formatReport(result: TenantScopingAuditResult): string {
   const lines: string[] = [];
-  lines.push("==================================================================");
-  lines.push("      CI ARCHITECTURE GATE: TENANT SCOPING AUDIT                  ");
-  lines.push("==================================================================");
+  lines.push(
+    "==================================================================",
+  );
+  lines.push(
+    "      CI ARCHITECTURE GATE: TENANT SCOPING AUDIT                  ",
+  );
+  lines.push(
+    "==================================================================",
+  );
   lines.push(`Scanned files: ${result.totalFiles}`);
   lines.push(`Total queries inspected: ${result.totalQueries}`);
   lines.push(`Safe queries: ${result.safeQueries}`);
   lines.push(`Unsafe queries: ${result.unsafeQueries}`);
-  lines.push("------------------------------------------------------------------");
+  lines.push(
+    "------------------------------------------------------------------",
+  );
 
   if (result.compliant) {
     lines.push(
@@ -246,7 +316,7 @@ export function formatReport(result: TenantScopingAuditResult): string {
       `  • ${result.explicitFilterCount} queries have explicit organizationId/targetOrgId filter`,
     );
     lines.push(
-      `  • 4 models whitelisted (no org column in schema): Interview, Application, TrackingClick, Organization (${result.modelWhitelistCount} queries)`,
+      `  • 1 model whitelisted (no org column in schema): Organization (${result.modelWhitelistCount} queries)`,
     );
     lines.push(
       `  • ${result.parentGuardCount} queries verified via parent object guard`,
@@ -256,9 +326,13 @@ export function formatReport(result: TenantScopingAuditResult): string {
         `  • ${result.patternMatchCount} queries matched safe query patterns`,
       );
     }
-    lines.push("==================================================================");
+    lines.push(
+      "==================================================================",
+    );
   } else {
-    lines.push(`[CI GATE FAILED] Found ${result.violations.length} unsafe queries:\n`);
+    lines.push(
+      `[CI GATE FAILED] Found ${result.violations.length} unsafe queries:\n`,
+    );
     result.violations.forEach((v, index) => {
       lines.push(`${index + 1}. ${v.file}:${v.line}`);
       lines.push(`   Query: ${v.snippet}`);
@@ -272,7 +346,9 @@ export function formatReport(result: TenantScopingAuditResult): string {
     lines.push(
       "  - Add to whitelist in scripts/tenant-scoping.config.ts with reason.",
     );
-    lines.push("==================================================================");
+    lines.push(
+      "==================================================================",
+    );
   }
 
   return lines.join("\n");
@@ -281,7 +357,9 @@ export function formatReport(result: TenantScopingAuditResult): string {
 // Standalone execution
 if (
   process.argv[1]?.endsWith("check-tenant-scoping.ts") ||
-  process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/check-tenant-scoping.ts")
+  process.argv[1]
+    ?.replace(/\\/g, "/")
+    .endsWith("scripts/check-tenant-scoping.ts")
 ) {
   const result = checkTenantScoping();
   const report = formatReport(result);

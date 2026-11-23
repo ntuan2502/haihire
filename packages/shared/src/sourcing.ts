@@ -69,6 +69,9 @@ export interface RecentAttributedCandidateItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobTitle: string;
   source: SourcingChannel;
@@ -107,6 +110,9 @@ export interface AttributionLogItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobId: string;
   jobTitle: string;
@@ -159,6 +165,9 @@ export interface AttributedApplicationDetailItem {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
   candidateEmail: string;
   jobId: string;
   jobTitle: string;
@@ -216,3 +225,48 @@ export function buildPublicTrackingUrl(
   return `${origin}/careers/${orgSlug}${jobSegment}?${params.toString()}`;
 }
 
+const KNOWN_SOURCING_DOMAINS: Array<{
+  domain: string;
+  channel: SourcingChannel;
+}> = [
+  { domain: "linkedin.com", channel: SourcingChannel.LINKEDIN },
+  { domain: "indeed.com", channel: SourcingChannel.INDEED },
+  { domain: "google.com", channel: SourcingChannel.GOOGLE_JOBS },
+  { domain: "glassdoor.com", channel: SourcingChannel.GLASSDOOR },
+  { domain: "facebook.com", channel: SourcingChannel.FACEBOOK },
+  { domain: "twitter.com", channel: SourcingChannel.TWITTER_X },
+  { domain: "x.com", channel: SourcingChannel.TWITTER_X },
+  { domain: "reddit.com", channel: SourcingChannel.REDDIT },
+  { domain: "stackoverflow.com", channel: SourcingChannel.STACK_OVERFLOW },
+  { domain: "handshake.com", channel: SourcingChannel.HANDSHAKE },
+  { domain: "joinhandshake.com", channel: SourcingChannel.HANDSHAKE },
+];
+
+function extractHostname(raw: string): string {
+  const trimmed = raw.trim().toLowerCase();
+  if (!trimmed) return "";
+  try {
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    return new URL(withScheme).hostname.toLowerCase();
+  } catch {
+    return trimmed
+      .replace(/^[a-z][a-z0-9+.-]*:\/\//i, "")
+      .split(/[/?#]/)[0]
+      .split(":")[0]
+      .toLowerCase();
+  }
+}
+
+export function resolveChannelFromDomain(
+  domain?: string | null,
+): SourcingChannel {
+  if (!domain) return SourcingChannel.DIRECT;
+  const host = extractHostname(domain);
+  if (!host) return SourcingChannel.DIRECT;
+  const match = KNOWN_SOURCING_DOMAINS.find(
+    (entry) => host === entry.domain || host.endsWith(`.${entry.domain}`),
+  );
+  return match ? match.channel : SourcingChannel.OTHER;
+}

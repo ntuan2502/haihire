@@ -1,0 +1,50 @@
+import { NotificationsModule } from "../notifications/notifications.module";
+import { Module } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
+import { MinioModule } from "../minio/minio.module";
+
+import { ApplicationsController } from "./applications.controller";
+import {
+  ApplicationsService,
+  ApplicationsQueryService,
+  ApplicationsSagaService,
+  ApplicationsStageService,
+  ApplicationsDocumentsService,
+  ApplicationsNotesService,
+} from "./applications.service";
+import {
+  OrphanCleanupProcessor,
+  ORPHAN_CLEANUP_QUEUE,
+  ORPHAN_CLEANUP_DLQ,
+} from "./orphan-cleanup.processor";
+
+import { ActivitiesModule } from "../activities/activities.module";
+import { EmailModule } from "../email/email.module";
+import { CommonModule } from "../common/common.module";
+
+@Module({
+  imports: [
+    NotificationsModule,
+    CommonModule,
+    MinioModule,
+    ActivitiesModule,
+    EmailModule,
+    BullModule.registerQueue(
+      { name: ORPHAN_CLEANUP_QUEUE },
+      { name: ORPHAN_CLEANUP_DLQ },
+    ),
+  ],
+  controllers: [ApplicationsController],
+  providers: [
+    ApplicationsService,
+    ApplicationsQueryService,
+    ApplicationsSagaService,
+    ApplicationsStageService,
+    ApplicationsDocumentsService,
+    ApplicationsNotesService,
+
+    OrphanCleanupProcessor,
+  ],
+  exports: [ApplicationsService, BullModule],
+})
+export class ApplicationsModule {}

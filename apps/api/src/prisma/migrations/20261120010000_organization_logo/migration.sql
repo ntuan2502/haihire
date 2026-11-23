@@ -1,0 +1,4 @@
+ALTER TABLE "organization"
+  ADD COLUMN IF NOT EXISTS "logoObjectKey" TEXT,
+  ADD COLUMN IF NOT EXISTS "logoMimeType" TEXT,
+  ADD COLUMN IF NOT EXISTS "logoUpdatedAt" TIMESTAMP(3);

@@ -57,6 +57,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm 12
         run: npm install -g pnpm@12
@@ -92,6 +93,7 @@ jobs:
           sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
           sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
@@ -123,8 +125,8 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run db:seed
+          pnpm db:migrate
+          pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
@@ -145,7 +147,7 @@ jobs:
 
       - name: Pre-start services in background & wait for healthcheck
         run: |
-          pnpm dev &
+          pnpm start &
           timeout 180s bash -c '
             until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
               sleep 3

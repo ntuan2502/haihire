@@ -1,0 +1,129 @@
+import { Calendar, Clock } from "lucide-react";
+import { getGenderLabel, resolveCandidateProfile } from "@/lib/utils";
+import { useI18n } from "@/i18n";
+
+interface CandidateProfileCardProps {
+  candidateName: string;
+  candidateEmail: string;
+  candidatePhone?: string;
+  gender?: string | null;
+  dob?: string | null;
+  candidateCreated: string;
+  candidateUpdated: string;
+  parsedNotes: ReturnType<typeof resolveCandidateProfile>;
+}
+
+export function CandidateProfileCard({
+  candidateName,
+  candidateEmail,
+  candidatePhone,
+  gender,
+  dob,
+  candidateCreated,
+  candidateUpdated,
+  parsedNotes,
+}: CandidateProfileCardProps) {
+  const { t } = useI18n();
+
+  return (
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+      <h3 className="text-xs font-semibold text-foreground">
+        {t("candidates.overviewTab")}
+      </h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-xs">
+        {/* First Name */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.firstName")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {parsedNotes.firstName || "—"}
+          </span>
+        </div>
+
+        {/* Last Name */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.lastName")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {parsedNotes.lastName || "—"}
+          </span>
+        </div>
+
+        {/* Display Name */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.displayName")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {parsedNotes.displayName || candidateName || "—"}
+          </span>
+        </div>
+
+        {/* Email */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.email")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {candidateEmail}
+          </span>
+        </div>
+
+        {/* Phone */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.phone")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {candidatePhone || "—"}
+          </span>
+        </div>
+
+        {/* Gender */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.gender")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {getGenderLabel(gender, t)}
+          </span>
+        </div>
+
+        {/* Date of Birth */}
+        <div>
+          <span className="text-muted-foreground text-[11px] block">
+            {t("candidates.dateOfBirth")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {dob}
+          </span>
+        </div>
+
+        {/* Created */}
+        <div>
+          <span className="text-muted-foreground text-[11px] flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {t("candidates.columns.added")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {candidateCreated}
+          </span>
+        </div>
+
+        {/* Updated */}
+        <div>
+          <span className="text-muted-foreground text-[11px] flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {t("common.updated")}
+          </span>
+          <span className="font-semibold text-foreground mt-0.5 block">
+            {candidateUpdated}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

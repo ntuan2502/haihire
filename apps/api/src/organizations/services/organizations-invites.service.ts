@@ -6,6 +6,7 @@ import { JoinOrgDto } from "../dto/join-org.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import {
   AppBadRequestException,
+  AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
@@ -16,6 +17,9 @@ import {
   formatUserDisplayName,
   hasPermission,
   normalizeOrgLocalization,
+  type DerivedInviteStatus,
+  type InviteLinkUsageItem,
+  type InviteType,
   type NameDisplayOrder,
 } from "@haihire/shared";
 import { EventsService } from "../../events/events.service";
@@ -43,13 +47,56 @@ export interface InviteLinkRecord {
   organizationName: string;
   organizationSlug: string;
   role: string;
+  invitedEmail: string | null;
+  inviteType: InviteType;
   expiresAt: string | null;
   maxUses: number | null;
   usesCount: number;
   createdById: string | null;
   createdByName: string;
   status: string;
+  derivedStatus: DerivedInviteStatus;
+  recentUsages: InviteLinkUsageItem[];
   createdAt: string;
+}
+
+function maskEmail(email: string): string {
+  const trimmed = email.trim();
+  const atIndex = trimmed.indexOf("@");
+  if (atIndex <= 0) return "***";
+  const local = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex + 1);
+  if (local.length <= 2) {
+    return `${local[0]}***@${domain}`;
+  }
+  return `${local[0]}***${local[local.length - 1]}@${domain}`;
+}
+
+function computeDerivedStatus(input: {
+  status: string;
+  invitedEmail: string | null;
+  maxUses: number | null;
+  usesCount: number;
+  expiresAt: unknown;
+}): DerivedInviteStatus {
+  if (input.status === "REVOKED") {
+    return "REVOKED";
+  }
+  const isExpiredByDate = Boolean(
+    input.expiresAt && toTimestamp(input.expiresAt) < Date.now(),
+  );
+  if (input.invitedEmail) {
+    if (input.usesCount > 0) return "ACCEPTED";
+    if (isExpiredByDate || input.status === "EXPIRED") return "EXPIRED";
+    return "PENDING";
+  }
+  if (input.maxUses !== null && input.usesCount >= input.maxUses) {
+    return "LIMIT_REACHED";
+  }
+  if (isExpiredByDate || input.status === "EXPIRED") {
+    return "EXPIRED";
+  }
+  return "ACTIVE";
 }
 
 interface MemberInviteContext {
@@ -302,6 +349,58 @@ export class OrganizationsInvitesService {
       );
     }
 
+    const invitedEmail = dto.email?.trim()
+      ? dto.email.trim().toLowerCase()
+      : null;
+
+    if (invitedEmail) {
+      const existingUser = await this.prisma.user.findFirst({
+        where: { email: invitedEmail },
+        select: { id: true, email: true },
+      });
+      const matchedUser =
+        existingUser &&
+        existingUser.email?.trim().toLowerCase() === invitedEmail
+          ? existingUser
+          : null;
+
+      if (matchedUser) {
+        const isOwnerAlready = Boolean(
+          org.ownerId && org.ownerId === matchedUser.id,
+        );
+        const existingMember =
+          typeof this.prisma.organizationMember?.findFirst === "function"
+            ? await this.prisma.organizationMember.findFirst({
+                where: {
+                  organizationId: org.id,
+                  userId: matchedUser.id,
+                },
+                select: { id: true },
+              })
+            : null;
+        const legacyOrgId = (
+          matchedUser as unknown as { organizationId?: string | null }
+        ).organizationId;
+        if (isOwnerAlready || existingMember || legacyOrgId === org.id) {
+          throw new AppConflictException(
+            APP_ERROR_CODES.ORG_MEMBER_ALREADY_EXISTS,
+            "This user is already a member of the organization.",
+          );
+        }
+      }
+
+      if (typeof this.prisma.inviteLink?.updateMany === "function") {
+        await this.prisma.inviteLink.updateMany({
+          where: {
+            organizationId: org.id,
+            invitedEmail,
+            status: "ACTIVE",
+          },
+          data: { status: "REVOKED" },
+        });
+      }
+    }
+
     // 64-character cryptographic hex token
     const token = crypto.randomBytes(32).toString("hex");
 
@@ -323,13 +422,15 @@ export class OrganizationsInvitesService {
         ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
         : null;
 
-    // Calculate max uses
-    let maxUses: number | null = null;
-    const rawUses = dto.maxUses || (dto.email ? "1" : "Unlimited");
-    if (rawUses !== "Unlimited") {
-      const parsed = parseInt(rawUses, 10);
-      if (!isNaN(parsed) && parsed > 0) {
-        maxUses = parsed;
+    // Calculate max uses (email invitations are always single-use)
+    let maxUses: number | null = invitedEmail ? 1 : null;
+    if (!invitedEmail) {
+      const rawUses = dto.maxUses || "Unlimited";
+      if (rawUses !== "Unlimited") {
+        const parsed = parseInt(rawUses, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          maxUses = parsed;
+        }
       }
     }
 
@@ -341,6 +442,7 @@ export class OrganizationsInvitesService {
         token,
         organizationId: org.id,
         role: linkRole,
+        invitedEmail,
         expiresAt,
         maxUses,
         usesCount: 0,
@@ -356,24 +458,25 @@ export class OrganizationsInvitesService {
       data: { linkId: id },
     });
 
-    if (dto.email && this.emailSystemService) {
+    if (invitedEmail && this.emailSystemService) {
       const escapeHtml = (val: string) =>
         val
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;");
-      const recipientEmail = dto.email.trim().toLowerCase();
       const joinUrl = `${env.FRONTEND_URL.replace(/\/$/, "")}/auth/join/${token}`;
       await this.emailSystemService.sendSystemEmail({
-        to: recipientEmail,
-        recipientName: recipientEmail,
+        to: invitedEmail,
+        recipientName: invitedEmail,
         organizationId: org.id,
         templateType: "CUSTOM",
         subject: `Invitation to join ${org.name} on HaiHire`,
         body: `<p>Hello,</p><p><strong>${escapeHtml(user.name || "A team member")}</strong> has invited you to join <strong>${escapeHtml(org.name)}</strong> on HaiHire as <strong>${escapeHtml(linkRole)}</strong>.</p><p><a href="${escapeHtml(joinUrl)}">Accept Invitation</a></p><p>This invitation link expires in 7 days and can be used once.</p>`,
       });
     }
+
+    const inviteType: InviteType = invitedEmail ? "EMAIL" : "LINK";
 
     return {
       id,
@@ -382,19 +485,94 @@ export class OrganizationsInvitesService {
       organizationName: org.name,
       organizationSlug: org.slug,
       role: linkRole,
-      expiresAt: expiresAt ? expiresAt.toString() : null,
+      invitedEmail,
+      inviteType,
+      expiresAt: expiresAt ? expiresAt.toISOString() : null,
       maxUses,
       usesCount: 0,
       createdById: user.id,
       createdByName: user.name || "Team Member",
       status: "ACTIVE",
+      derivedStatus: invitedEmail ? "PENDING" : "ACTIVE",
+      recentUsages: [],
       createdAt: new Date().toISOString(),
     };
+  }
+
+  async resendInviteLink(
+    userId: string,
+    linkId: string,
+    activeOrgId?: string | null,
+  ): Promise<InviteLinkRecord> {
+    const ctx = await this.resolveMemberInviteContext(userId, activeOrgId);
+    if (!ctx) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
+    }
+
+    const { orgId, isOwner, effectiveRole, canManageMembers } = ctx;
+    if (!canManageMembers) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "You do not have permission to resend invite links.",
+      );
+    }
+
+    const existing = await this.prisma.inviteLink.findFirst({
+      where: { id: linkId, organizationId: orgId },
+      select: {
+        id: true,
+        invitedEmail: true,
+        role: true,
+        usesCount: true,
+        status: true,
+      },
+    });
+
+    if (!existing || !existing.invitedEmail) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
+        "Email invitation not found in the active organization",
+      );
+    }
+
+    const existingRole = this.resolveValidInviteRole(existing.role);
+    if (
+      existingRole === Role.ADMIN &&
+      !isOwner &&
+      effectiveRole !== Role.ADMIN
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Only organization owners and administrators can resend admin invitations.",
+      );
+    }
+
+    if (existing.usesCount > 0) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
+        "This invitation has already been accepted.",
+      );
+    }
+
+    return this.createInviteLink(
+      userId,
+      {
+        email: existing.invitedEmail,
+        role: existingRole,
+        expiresIn: "7 days",
+        maxUses: "1",
+      },
+      orgId,
+    );
   }
 
   async getInviteLinks(
     userId: string,
     activeOrgId?: string | null,
+    includeRevoked = false,
   ): Promise<InviteLinkRecord[]> {
     const ctx = await this.resolveMemberInviteContext(userId, activeOrgId);
     if (!ctx || !ctx.canManageMembers) {
@@ -405,10 +583,12 @@ export class OrganizationsInvitesService {
 
     const allLinks = await this.prisma.inviteLink.findMany({
       where: { organizationId: orgId },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         token: true,
         role: true,
+        invitedEmail: true,
         expiresAt: true,
         maxUses: true,
         usesCount: true,
@@ -419,20 +599,117 @@ export class OrganizationsInvitesService {
       },
     });
 
-    const links = allLinks.filter((l) => l.status !== "REVOKED");
+    const links = (
+      includeRevoked ? allLinks : allLinks.filter((l) => l.status !== "REVOKED")
+    ).sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+
+    const linkIds = links.map((l) => l.id);
+    const prismaWithUsage = this.prisma as unknown as {
+      inviteLinkUsage?: {
+        findMany?: (args: {
+          where: {
+            organizationId: string;
+            inviteLinkId: { in: string[] };
+          };
+          orderBy?: { usedAt: "desc" };
+          select?: {
+            id: boolean;
+            inviteLinkId: boolean;
+            userId: boolean;
+            userEmailSnapshot: boolean;
+            usedAt: boolean;
+          };
+        }) => Promise<
+          Array<{
+            id: string;
+            inviteLinkId: string;
+            userId: string | null;
+            userEmailSnapshot: string;
+            usedAt: Date | string;
+          }>
+        >;
+      };
+    };
+
+    const rawUsages =
+      linkIds.length > 0 &&
+      typeof prismaWithUsage.inviteLinkUsage?.findMany === "function"
+        ? await prismaWithUsage.inviteLinkUsage.findMany({
+            where: {
+              organizationId: orgId,
+              inviteLinkId: { in: linkIds },
+            },
+            orderBy: { usedAt: "desc" },
+            select: {
+              id: true,
+              inviteLinkId: true,
+              userId: true,
+              userEmailSnapshot: true,
+              usedAt: true,
+            },
+          })
+        : [];
 
     const orgOrder: NameDisplayOrder =
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
 
-    const users = await this.prisma.user.findMany({
-      where: { memberships: { some: { organizationId: orgId } } },
-      select: { id: true, firstName: true, lastName: true },
-    });
-    const userMap = new Map(
-      users.map((u) => [u.id, formatUserDisplayName(u, orgOrder)]),
+    const referencedUserIds = new Set<string>();
+    for (const l of links) {
+      if (l.createdById) referencedUserIds.add(l.createdById);
+    }
+    for (const u of rawUsages) {
+      if (u.userId) referencedUserIds.add(u.userId);
+    }
+
+    const users =
+      referencedUserIds.size > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: Array.from(referencedUserIds) } },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              avatarUrl: true,
+            },
+          })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const usagesByLinkId = new Map<string, InviteLinkUsageItem[]>();
+    const sortedUsages = [...rawUsages].sort(
+      (a, b) => toTimestamp(b.usedAt) - toTimestamp(a.usedAt),
     );
+    for (const usage of sortedUsages) {
+      const bucket = usagesByLinkId.get(usage.inviteLinkId) ?? [];
+      if (bucket.length >= 5) continue;
+      const usageUser = usage.userId ? userMap.get(usage.userId) : undefined;
+      const displayName =
+        (usageUser && formatUserDisplayName(usageUser, orgOrder)) ||
+        usageUser?.email ||
+        usage.userEmailSnapshot;
+      bucket.push({
+        id: usage.id,
+        userId: usage.userId,
+        userName: displayName,
+        userEmail: usageUser?.email ?? usage.userEmailSnapshot,
+        userAvatarUrl: usageUser?.avatarUrl ?? null,
+        usedAt: new Date(toTimestamp(usage.usedAt)).toISOString(),
+      });
+      usagesByLinkId.set(usage.inviteLinkId, bucket);
+    }
 
     return links.map((link) => {
+      const invitedEmail = link.invitedEmail ?? null;
+      const inviteType: InviteType = invitedEmail ? "EMAIL" : "LINK";
+      const derivedStatus = computeDerivedStatus({
+        status: link.status,
+        invitedEmail,
+        maxUses: link.maxUses,
+        usesCount: link.usesCount,
+        expiresAt: link.expiresAt,
+      });
+
       let status = link.status;
       if (status === "ACTIVE") {
         if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
@@ -442,6 +719,12 @@ export class OrganizationsInvitesService {
         }
       }
 
+      const creator = link.createdById
+        ? userMap.get(link.createdById)
+        : undefined;
+      const createdByName =
+        (creator && formatUserDisplayName(creator, orgOrder)) || "Admin";
+
       return {
         id: link.id,
         token: link.token,
@@ -449,18 +732,127 @@ export class OrganizationsInvitesService {
         organizationName: org?.name || "Organization",
         organizationSlug: org?.slug || "org",
         role: link.role,
+        invitedEmail,
+        inviteType,
         expiresAt: link.expiresAt
           ? new Date(toTimestamp(link.expiresAt)).toISOString()
           : null,
         maxUses: link.maxUses,
         usesCount: link.usesCount,
         createdById: link.createdById,
-        createdByName:
-          (link.createdById && userMap.get(link.createdById)) || "Admin",
+        createdByName,
         status,
+        derivedStatus,
+        recentUsages: usagesByLinkId.get(link.id) ?? [],
         createdAt: new Date(toTimestamp(link.createdAt)).toISOString(),
       };
     });
+  }
+
+  async getInviteLinkUsages(
+    userId: string,
+    linkId: string,
+    activeOrgId?: string | null,
+  ): Promise<InviteLinkUsageItem[]> {
+    const ctx = await this.resolveMemberInviteContext(userId, activeOrgId);
+    if (!ctx) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
+    }
+    if (!ctx.canManageMembers) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "You do not have permission to view invite link usage history.",
+      );
+    }
+
+    const { orgId, org } = ctx;
+    const link = await this.prisma.inviteLink.findFirst({
+      where: { id: linkId, organizationId: orgId },
+      select: { id: true },
+    });
+    if (!link) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
+        "Invite link not found in the active organization",
+      );
+    }
+
+    const prismaWithUsage = this.prisma as unknown as {
+      inviteLinkUsage?: {
+        findMany?: (args: {
+          where: { inviteLinkId: string; organizationId: string };
+          orderBy?: { usedAt: "desc" };
+          select?: {
+            id: boolean;
+            userId: boolean;
+            userEmailSnapshot: boolean;
+            usedAt: boolean;
+          };
+        }) => Promise<
+          Array<{
+            id: string;
+            userId: string | null;
+            userEmailSnapshot: string;
+            usedAt: Date | string;
+          }>
+        >;
+      };
+    };
+
+    if (typeof prismaWithUsage.inviteLinkUsage?.findMany !== "function") {
+      return [];
+    }
+
+    const rawUsages = await prismaWithUsage.inviteLinkUsage.findMany({
+      where: { inviteLinkId: linkId, organizationId: orgId },
+      orderBy: { usedAt: "desc" },
+      select: {
+        id: true,
+        userId: true,
+        userEmailSnapshot: true,
+        usedAt: true,
+      },
+    });
+
+    const userIds = Array.from(
+      new Set(rawUsages.map((u) => u.userId).filter(Boolean) as string[]),
+    );
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              avatarUrl: true,
+            },
+          })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const orgOrder: NameDisplayOrder =
+      org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+
+    return [...rawUsages]
+      .sort((a, b) => toTimestamp(b.usedAt) - toTimestamp(a.usedAt))
+      .map((usage) => {
+        const usageUser = usage.userId ? userMap.get(usage.userId) : undefined;
+        return {
+          id: usage.id,
+          userId: usage.userId,
+          userName:
+            (usageUser && formatUserDisplayName(usageUser, orgOrder)) ||
+            usageUser?.email ||
+            usage.userEmailSnapshot,
+          userEmail: usageUser?.email ?? usage.userEmailSnapshot,
+          userAvatarUrl: usageUser?.avatarUrl ?? null,
+          usedAt: new Date(toTimestamp(usage.usedAt)).toISOString(),
+        };
+      });
   }
 
   async revokeInviteLink(
@@ -508,13 +900,69 @@ export class OrganizationsInvitesService {
     return { success: true, message: "Invite link revoked successfully" };
   }
 
-  async getPublicInvite(token: string) {
+  private assertInviteEmailMatch(
+    invitedEmail: string | null | undefined,
+    callerEmail: string | null | undefined,
+  ): void {
+    if (!invitedEmail) return;
+    const normalizedCaller = callerEmail?.trim().toLowerCase();
+    if (
+      !normalizedCaller ||
+      normalizedCaller !== invitedEmail.trim().toLowerCase()
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_INVITE_EMAIL_MISMATCH,
+        "This invitation was sent to a different email address.",
+      );
+    }
+  }
+
+  private async recordInviteUsage(
+    tx: PrismaService,
+    params: {
+      inviteLinkId: string;
+      organizationId: string;
+      userId: string;
+      userEmailSnapshot: string;
+      usedAt: Date;
+    },
+  ): Promise<void> {
+    const txWithUsage = tx as unknown as {
+      inviteLinkUsage?: {
+        create?: (args: {
+          data: {
+            id: string;
+            inviteLinkId: string;
+            organizationId: string;
+            userId: string;
+            userEmailSnapshot: string;
+            usedAt: Date;
+          };
+        }) => Promise<unknown>;
+      };
+    };
+    if (typeof txWithUsage.inviteLinkUsage?.create === "function") {
+      await txWithUsage.inviteLinkUsage.create({
+        data: {
+          id: crypto.randomUUID(),
+          inviteLinkId: params.inviteLinkId,
+          organizationId: params.organizationId,
+          userId: params.userId,
+          userEmailSnapshot: params.userEmailSnapshot,
+          usedAt: params.usedAt,
+        },
+      });
+    }
+  }
+
+  async getPublicInvite(token: string, currentUserId?: string | null) {
     const link = await this.prisma.inviteLink.findFirst({
       where: { token },
       select: {
         id: true,
         token: true,
         role: true,
+        invitedEmail: true,
         expiresAt: true,
         maxUses: true,
         usesCount: true,
@@ -527,6 +975,7 @@ export class OrganizationsInvitesService {
     if (!link) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_INVALID,
         message: "Invite link not found or invalid",
       };
     }
@@ -534,6 +983,7 @@ export class OrganizationsInvitesService {
     if (link.status === "REVOKED") {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_REVOKED,
         message: "This invitation link has been revoked by an administrator",
         link,
       };
@@ -542,6 +992,7 @@ export class OrganizationsInvitesService {
     if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_EXPIRED,
         message: "This invitation link has expired",
         link,
       };
@@ -550,6 +1001,7 @@ export class OrganizationsInvitesService {
     if (link.maxUses !== null && link.usesCount >= link.maxUses) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
         message: "This invitation link has reached its maximum allowed uses",
         link,
       };
@@ -599,6 +1051,22 @@ export class OrganizationsInvitesService {
       }
     }
 
+    const isEmailRestricted = Boolean(link.invitedEmail);
+    const maskedInvitedEmail = link.invitedEmail
+      ? maskEmail(link.invitedEmail)
+      : null;
+    let emailMismatch = false;
+    if (isEmailRestricted && link.invitedEmail && currentUserId) {
+      const currentUser = await this.prisma.user.findFirst({
+        where: { id: currentUserId },
+        select: { email: true },
+      });
+      const callerEmail = currentUser?.email?.trim().toLowerCase();
+      emailMismatch = Boolean(
+        !callerEmail || callerEmail !== link.invitedEmail.toLowerCase(),
+      );
+    }
+
     return {
       valid: true,
       token: link.token,
@@ -613,6 +1081,9 @@ export class OrganizationsInvitesService {
       expiresAt: link.expiresAt
         ? new Date(toTimestamp(link.expiresAt)).toISOString()
         : null,
+      isEmailRestricted,
+      maskedInvitedEmail,
+      emailMismatch,
     };
   }
 
@@ -635,6 +1106,7 @@ export class OrganizationsInvitesService {
           id: true,
           token: true,
           role: true,
+          invitedEmail: true,
           expiresAt: true,
           maxUses: true,
           usesCount: true,
@@ -666,16 +1138,17 @@ export class OrganizationsInvitesService {
 
       if (link.maxUses !== null && link.usesCount >= link.maxUses) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invitation link has reached its maximum allowed uses",
         );
       }
 
-      // Check if user is already a member of this organization
+      // Enforce email-bound invite BEFORE membership checks
       const user = await tx.user.findFirst({
         where: { id: userId },
-        select: { id: true },
+        select: { id: true, email: true },
       });
+      this.assertInviteEmailMatch(link.invitedEmail, user?.email);
 
       const userMemberships = await tx.organizationMember.findMany({
         where: { userId, organizationId: link.organizationId },
@@ -744,6 +1217,14 @@ export class OrganizationsInvitesService {
           lastAccessedAt: nowTimestamp,
           updatedAt: nowTimestamp,
         },
+      });
+
+      await this.recordInviteUsage(tx, {
+        inviteLinkId: link.id,
+        organizationId: link.organizationId,
+        userId,
+        userEmailSnapshot: user?.email ?? link.invitedEmail ?? "",
+        usedAt: nowTimestamp,
       });
 
       if (txUserCompat?.store) {
@@ -834,6 +1315,7 @@ export class OrganizationsInvitesService {
           id: true,
           organizationId: true,
           role: true,
+          invitedEmail: true,
           status: true,
           expiresAt: true,
           maxUses: true,
@@ -863,7 +1345,7 @@ export class OrganizationsInvitesService {
         inviteLink.usesCount >= inviteLink.maxUses
       ) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invite link has reached its maximum allowed uses.",
         );
       }
@@ -899,6 +1381,13 @@ export class OrganizationsInvitesService {
       });
 
       const assignedRole = this.resolveValidInviteRole(inviteLink.role);
+
+      // Enforce email-bound invite BEFORE membership checks / org switch
+      const callerUser = await tx.user.findFirst({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+      this.assertInviteEmailMatch(inviteLink.invitedEmail, callerUser?.email);
 
       // Check if user already has an active membership in this organization
       const existingMembership = await tx.organizationMember.findFirst({
@@ -961,7 +1450,7 @@ export class OrganizationsInvitesService {
 
       if (incResult.count === 0) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invite link has reached its maximum allowed uses.",
         );
       }
@@ -978,6 +1467,14 @@ export class OrganizationsInvitesService {
           lastAccessedAt: memberTimestamp,
           updatedAt: memberTimestamp,
         },
+      });
+
+      await this.recordInviteUsage(tx, {
+        inviteLinkId: inviteLink.id,
+        organizationId: org.id,
+        userId,
+        userEmailSnapshot: callerUser?.email ?? inviteLink.invitedEmail ?? "",
+        usedAt: memberTimestamp,
       });
 
       if (txUserCompat?.store) {

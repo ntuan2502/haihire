@@ -6,11 +6,11 @@ This inventory is generated from the Prisma schema, API controllers, AppModule, 
 
 | Metric                                           |                  Count |
 | ------------------------------------------------ | ---------------------: |
-| Prisma models                                    |                     27 |
+| Prisma models                                    |                     28 |
 | Prisma enums                                     |                     18 |
 | Project modules registered directly in AppModule |                     16 |
 | Backend controllers                              |                     13 |
-| API endpoints                                    | 119 (118 REST + 1 SSE) |
+| API endpoints                                    | 125 (124 REST + 1 SSE) |
 | Playwright spec files                            |                     14 |
 | Playwright test declarations                     |                     68 |
 | CI gates defined in check-all                    |                     18 |

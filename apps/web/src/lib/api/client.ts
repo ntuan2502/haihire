@@ -194,11 +194,9 @@ export const getDocumentUrl = (
   return `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
-export const resolveOrganizationLogoUrl = (
-  logoUrl?: string | null,
-): string | null => {
-  if (!logoUrl) return null;
-  const trimmed = logoUrl.trim();
+function resolveAssetUrl(assetUrl?: string | null): string | null {
+  if (!assetUrl) return null;
+  const trimmed = assetUrl.trim();
   if (!trimmed) return null;
   if (
     trimmed.startsWith("http://") ||
@@ -211,7 +209,10 @@ export const resolveOrganizationLogoUrl = (
   }
   const apiUrl = getBrowserApiBaseUrl().replace(/\/+$/, "");
   return `${apiUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
-};
+}
+
+export const resolveOrganizationLogoUrl = resolveAssetUrl;
+export const resolveUserAvatarUrl = resolveAssetUrl;
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),

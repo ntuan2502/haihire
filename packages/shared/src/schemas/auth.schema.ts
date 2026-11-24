@@ -13,3 +13,29 @@ export const registerSchema = updateUserProfileSchema.extend({
 });
 
 export type RegisterSchema = z.infer<typeof registerSchema>;
+
+export const USER_AVATAR_SOURCES = ["NONE", "UPLOAD", "GRAVATAR"] as const;
+export type UserAvatarSource = (typeof USER_AVATAR_SOURCES)[number];
+
+export const MAX_USER_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
+
+export const ALLOWED_USER_AVATAR_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export const ALLOWED_USER_AVATAR_EXTENSIONS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+] as const;
+
+export const updateUserAvatarSourceSchema = z.object({
+  source: z.enum(["NONE", "GRAVATAR"]),
+});
+
+export type UpdateUserAvatarSourceSchema = z.infer<
+  typeof updateUserAvatarSourceSchema
+>;

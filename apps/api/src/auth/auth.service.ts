@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional } from "@nestjs/common";
+import { Injectable, Inject, Logger, Optional } from "@nestjs/common";
 import type Redis from "ioredis";
 import { REDIS_CLIENT } from "../redis/redis.module";
 import { PermissionResolverService } from "./permission-resolver.service";
@@ -6,7 +6,7 @@ import { JwtService } from "@nestjs/jwt";
 import { EventsService } from "../events/events.service";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
@@ -16,6 +16,9 @@ import {
   AppUnauthorizedException,
   AppConflictException,
   AppBadRequestException,
+  AppForbiddenException,
+  AppNotFoundException,
+  AppServiceUnavailableException,
 } from "../common/app-exception";
 import {
   APP_ERROR_CODES,
@@ -32,6 +35,16 @@ import { BCRYPT_SALT_ROUNDS, DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { ensureDefaultDemoAccounts } from "../prisma/demo-seed.util";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
+import { MinioService, type UploadResult } from "../minio/minio.service";
+import {
+  ALLOWED_LOGO_EXTENSIONS,
+  resolveImageMimeType,
+  validateUploadedAvatarFile,
+} from "../common/upload-utils";
+import {
+  buildGravatarUrl,
+  buildUploadedUserAvatarUrl,
+} from "./user-avatar.util";
 import {
   ORG_SUMMARY_SELECT,
   getPreferredMembershipOrderBy,
@@ -45,6 +58,7 @@ const USER_PROFILE_SELECT = {
   firstName: true,
   lastName: true,
   avatarUrl: true,
+  avatarSource: true,
   preferredLanguage: true,
   preferredTimezone: true,
   createdAt: true,
@@ -52,6 +66,8 @@ const USER_PROFILE_SELECT = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -66,6 +82,9 @@ export class AuthService {
     @Optional()
     @Inject(EventsService)
     private readonly events?: EventsService,
+    @Optional()
+    @Inject(MinioService)
+    private readonly minioService?: MinioService,
   ) {}
 
   async validateRecruiter(dto: LoginDto) {
@@ -442,6 +461,7 @@ export class AuthService {
       name: displayName,
       role: "MEMBER" as const,
       avatarUrl: null,
+      avatarSource: "NONE" as const,
       preferredLanguage: null,
       preferredTimezone: null,
       organizationId: null,
@@ -658,6 +678,7 @@ export class AuthService {
       name: string;
       role: string;
       avatarUrl: string | null;
+      avatarSource?: string;
       preferredLanguage: string | null;
       preferredTimezone: string | null;
       organizationId: string | null;
@@ -755,6 +776,8 @@ export class AuthService {
         name: formatUserDisplayName(updatedUser, orgOrder),
         role: activeRole,
         avatarUrl: updatedUser.avatarUrl,
+        avatarSource:
+          (updatedUser as { avatarSource?: string }).avatarSource ?? "NONE",
         preferredLanguage: updatedUser.preferredLanguage,
         preferredTimezone: updatedUser.preferredTimezone,
         organizationId: activeOrgId,
@@ -935,6 +958,263 @@ export class AuthService {
     });
 
     return this.getProfile(userId, requestedOrgId);
+  }
+
+  private async deleteAvatarObjectQuietly(
+    objectKey?: string | null,
+  ): Promise<void> {
+    if (!objectKey || !this.minioService) return;
+    await this.minioService.deleteFile(objectKey).catch((err) => {
+      this.logger.warn(
+        `Failed to remove previous avatar '${objectKey}': ${String(err)}`,
+      );
+    });
+  }
+
+  private async assertCanViewUserAvatar(
+    viewerId: string,
+    targetUserId: string,
+  ): Promise<void> {
+    if (viewerId === targetUserId) return;
+
+    const viewerOrgIds = new Set<string>();
+    const memberships =
+      typeof this.prisma.organizationMember?.findMany === "function"
+        ? await this.prisma.organizationMember.findMany({
+            where: { userId: viewerId },
+            select: { organizationId: true },
+          })
+        : [];
+    for (const m of memberships) {
+      if (m.organizationId) viewerOrgIds.add(m.organizationId);
+    }
+
+    const ownedOrgs =
+      typeof this.prisma.organization?.findMany === "function"
+        ? await this.prisma.organization.findMany({
+            where: { ownerId: viewerId },
+            select: { id: true },
+          })
+        : [];
+    for (const o of ownedOrgs) {
+      if (o.id) viewerOrgIds.add(o.id);
+    }
+
+    if (viewerOrgIds.size === 0) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "You do not have permission to view this avatar.",
+      );
+    }
+
+    const orgIdList = Array.from(viewerOrgIds);
+    const sharedMember =
+      typeof this.prisma.organizationMember?.findFirst === "function"
+        ? await this.prisma.organizationMember.findFirst({
+            where: { userId: targetUserId, organizationId: { in: orgIdList } },
+            select: { id: true },
+          })
+        : null;
+    if (sharedMember) return;
+
+    const sharedOwned =
+      typeof this.prisma.organization?.findFirst === "function"
+        ? await this.prisma.organization.findFirst({
+            where: { ownerId: targetUserId, id: { in: orgIdList } },
+            select: { id: true },
+          })
+        : null;
+    if (sharedOwned) return;
+
+    throw new AppForbiddenException(
+      APP_ERROR_CODES.FORBIDDEN,
+      "You do not have permission to view this avatar.",
+    );
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File | undefined,
+    requestedOrgId?: string | null,
+  ) {
+    const validated = validateUploadedAvatarFile(file);
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, avatarObjectKey: true },
+    });
+    if (!currentUser) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "User session expired or not found",
+      );
+    }
+
+    let uploadResult: UploadResult;
+    try {
+      uploadResult = await this.minioService.uploadUserFile(
+        file!,
+        userId,
+        "avatars",
+        ALLOWED_LOGO_EXTENSIONS,
+      );
+    } catch (error) {
+      if (error instanceof AppBadRequestException) {
+        throw error;
+      }
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload user avatar to storage service",
+      );
+    }
+
+    const now = toInstant();
+    const avatarUrl = buildUploadedUserAvatarUrl(userId, now);
+
+    await runInTransaction(this.prisma, async (tx) => {
+      return tx.user.update({
+        where: { id: userId },
+        data: {
+          avatarSource: "UPLOAD",
+          avatarObjectKey: uploadResult.fileName,
+          avatarMimeType: validated.mimeType,
+          avatarUpdatedAt: now,
+          avatarUrl,
+          updatedAt: now,
+        },
+        select: { id: true },
+      });
+    }).catch(async (dbError) => {
+      await this.deleteAvatarObjectQuietly(uploadResult.fileName);
+      throw dbError;
+    });
+
+    if (
+      currentUser.avatarObjectKey &&
+      currentUser.avatarObjectKey !== uploadResult.fileName
+    ) {
+      await this.deleteAvatarObjectQuietly(currentUser.avatarObjectKey);
+    }
+
+    this.events?.emit({
+      type: "USER_PREFERENCES_CHANGED",
+      targetUserId: userId,
+    });
+
+    return this.getProfile(userId, requestedOrgId);
+  }
+
+  async updateAvatarSource(
+    userId: string,
+    source: "NONE" | "GRAVATAR",
+    requestedOrgId?: string | null,
+  ) {
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, avatarObjectKey: true },
+    });
+    if (!currentUser) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "User session expired or not found",
+      );
+    }
+
+    const now = toInstant();
+    const avatarUrl =
+      source === "GRAVATAR" ? buildGravatarUrl(currentUser.email) : null;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarSource: source,
+        avatarObjectKey: null,
+        avatarMimeType: null,
+        avatarUpdatedAt: now,
+        avatarUrl,
+        updatedAt: now,
+      },
+      select: { id: true },
+    });
+
+    if (currentUser.avatarObjectKey) {
+      await this.deleteAvatarObjectQuietly(currentUser.avatarObjectKey);
+    }
+
+    this.events?.emit({
+      type: "USER_PREFERENCES_CHANGED",
+      targetUserId: userId,
+    });
+
+    return this.getProfile(userId, requestedOrgId);
+  }
+
+  async prepareUserAvatarStream(viewerId: string, targetUserId: string) {
+    await this.assertCanViewUserAvatar(viewerId, targetUserId);
+
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        avatarSource: true,
+        avatarObjectKey: true,
+        avatarMimeType: true,
+      },
+    });
+
+    if (
+      !targetUser ||
+      targetUser.avatarSource !== "UPLOAD" ||
+      !targetUser.avatarObjectKey
+    ) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "User avatar not found",
+      );
+    }
+
+    if (!this.minioService) {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Storage service is unavailable",
+      );
+    }
+
+    const normalizedKey = this.minioService.extractObjectName(
+      targetUser.avatarObjectKey,
+    );
+    const safeTargetId = targetUser.id.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!normalizedKey.startsWith(`users/${safeTargetId}/avatars/`)) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "User avatar not found",
+      );
+    }
+
+    const mimeType = resolveImageMimeType(
+      normalizedKey,
+      targetUser.avatarMimeType,
+    );
+
+    try {
+      const stream = await this.minioService.getUserObjectStream(
+        normalizedKey,
+        targetUser.id,
+      );
+      return { stream, mimeType };
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "User avatar not found",
+      );
+    }
   }
 
   async getMyPermissions(user: {

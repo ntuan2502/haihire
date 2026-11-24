@@ -3,7 +3,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi, authApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Organization, User, InviteLink } from "@/types";
+import type {
+  Organization,
+  User,
+  InviteLink,
+  InviteLinkUsageItem,
+} from "@/types";
 import type {
   Role,
   Permission,
@@ -141,6 +146,24 @@ export function useDeleteMyOrgMutation() {
   });
 }
 
+export function useLeaveOrganizationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => organizationsApi.leaveMyOrg(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myPermissions() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+    },
+  });
+}
+
 export function useOrgMembers(options?: { enabled?: boolean }) {
   const { user } = useAuth();
   return useQuery<User[]>({
@@ -159,12 +182,45 @@ export function useOrgInterviewers(options?: { enabled?: boolean }) {
   });
 }
 
-export function useInviteLinks(options?: { enabled?: boolean }) {
+export function useInviteLinks(options?: {
+  enabled?: boolean;
+  includeRevoked?: boolean;
+}) {
   const { user } = useAuth();
+  const includeRevoked = Boolean(options?.includeRevoked);
   return useQuery<InviteLink[]>({
-    queryKey: queryKeys.inviteLinks(user?.organizationId),
-    queryFn: () => organizationsApi.getInviteLinks(),
+    queryKey: [
+      ...queryKeys.inviteLinks(user?.organizationId),
+      { includeRevoked },
+    ],
+    queryFn: () => organizationsApi.getInviteLinks({ includeRevoked }),
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useInviteLinkUsages(
+  linkId: string | null,
+  options?: { enabled?: boolean },
+) {
+  const { user } = useAuth();
+  return useQuery<InviteLinkUsageItem[]>({
+    queryKey: queryKeys.inviteLinkUsages(linkId ?? "", user?.organizationId),
+    queryFn: () => organizationsApi.getInviteLinkUsages(linkId!),
+    enabled: Boolean(linkId) && (options?.enabled ?? true),
+  });
+}
+
+export function useResendInviteLinkMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => organizationsApi.resendInviteLink(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
   });
 }
 

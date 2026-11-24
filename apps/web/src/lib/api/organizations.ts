@@ -1,5 +1,11 @@
 import { api } from "./client";
-import type { Organization, User, InviteLink } from "@/types";
+import type {
+  Organization,
+  User,
+  InviteLink,
+  InviteLinkUsageItem,
+  PublicInvitePreview,
+} from "@/types";
 import type {
   Role,
   Permission,
@@ -86,6 +92,23 @@ export const organizationsApi = {
     return response.data;
   },
 
+  leaveMyOrg: async (): Promise<{
+    success: boolean;
+    organizationId: string;
+    organizationName: string;
+    message: string;
+    nextOrganization: Organization | null;
+  }> => {
+    const response = await api.post<{
+      success: boolean;
+      organizationId: string;
+      organizationName: string;
+      message: string;
+      nextOrganization: Organization | null;
+    }>("/organizations/my/leave");
+    return response.data;
+  },
+
   transferOwnership: async (
     newOwnerUserId: string,
   ): Promise<{ success: boolean; newOwnerId: string }> => {
@@ -109,9 +132,30 @@ export const organizationsApi = {
     return response.data;
   },
 
-  getInviteLinks: async (): Promise<InviteLink[]> => {
+  getInviteLinks: async (options?: {
+    includeRevoked?: boolean;
+  }): Promise<InviteLink[]> => {
     const response = await api.get<InviteLink[]>(
       "/organizations/my/invite-links",
+      {
+        params: options?.includeRevoked
+          ? { includeRevoked: "true" }
+          : undefined,
+      },
+    );
+    return response.data;
+  },
+
+  resendInviteLink: async (id: string): Promise<InviteLink> => {
+    const response = await api.post<InviteLink>(
+      `/organizations/my/invite-links/${id}/resend`,
+    );
+    return response.data;
+  },
+
+  getInviteLinkUsages: async (id: string): Promise<InviteLinkUsageItem[]> => {
+    const response = await api.get<InviteLinkUsageItem[]>(
+      `/organizations/my/invite-links/${id}/usages`,
     );
     return response.data;
   },
@@ -125,23 +169,8 @@ export const organizationsApi = {
     return response.data;
   },
 
-  getPublicInvite: async (
-    token: string,
-  ): Promise<{
-    valid: boolean;
-    token?: string;
-    role?: string;
-    organization?: {
-      id: string;
-      name: string;
-      slug: string;
-      logoUrl?: string | null;
-    };
-    createdByName?: string;
-    expiresAt?: string | null;
-    message?: string;
-  }> => {
-    const response = await api.get(
+  getPublicInvite: async (token: string): Promise<PublicInvitePreview> => {
+    const response = await api.get<PublicInvitePreview>(
       `/organizations/invite-links/public/${token}`,
     );
     return response.data;

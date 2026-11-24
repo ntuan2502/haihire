@@ -9,13 +9,21 @@ import {
   type CustomSelectOption,
 } from "@/components/shared/custom-select";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Link2, Plus, X, Shield, Copy, Check, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
 import { useCreateInviteLinkMutation } from "@/hooks/use-queries";
+import { useLocalization } from "@/components/providers/localization-provider";
+import { formatDate } from "@/lib/utils";
 import type { InviteLink } from "@/types";
+import {
+  formatInviteExpiry,
+  resolveDerivedInviteStatus,
+} from "./invite-format";
 
 interface InviteLinksCardProps {
   canEdit: boolean;
@@ -25,6 +33,7 @@ interface InviteLinksCardProps {
   isLoading?: boolean;
   refetchLinks: () => void;
   onRevokeClick: (linkId: string) => void;
+  onViewUsagesClick?: (link: InviteLink) => void;
   revokingId: string | null;
   onError: (msg: string) => void;
   displayHost: string;
@@ -39,12 +48,14 @@ export function InviteLinksCard({
   isLoading = false,
   refetchLinks,
   onRevokeClick,
+  onViewUsagesClick,
   revokingId,
   onError,
   displayHost,
   mountedTime,
 }: InviteLinksCardProps) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
   const createInviteMutation = useCreateInviteLinkMutation();
 
   const [isCreateLinkOpen, setIsCreateLinkOpen] = useState(false);
@@ -66,13 +77,13 @@ export function InviteLinksCard({
         expiresIn: linkExpiresIn,
         maxUses: linkMaxUses,
       });
+      toast.success(t("members.createLinkSuccess"));
       setIsCreateLinkOpen(false);
       refetchLinks();
     } catch (err: unknown) {
       console.error(err);
       const msg = getApiErrorMessage(err, t);
       onError(msg);
-      toast.error(msg);
     }
   };
 
@@ -85,15 +96,6 @@ export function InviteLinksCard({
     navigator.clipboard.writeText(fullUrl);
     setCopiedLinkId(link.id);
     setTimeout(() => setCopiedLinkId(null), 2000);
-  };
-
-  const calculateDaysRemaining = (expiresAt: string | null): string => {
-    if (!expiresAt) return "never";
-    const current = mountedTime || 0;
-    if (!current) return "7d";
-    const diff = new Date(expiresAt).getTime() - current;
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? `${days}d` : "expired";
   };
 
   return (
@@ -232,31 +234,56 @@ export function InviteLinksCard({
         <div className="divide-y divide-border pt-1">
           {serverInviteLinks.map((link) => {
             const isCopied = copiedLinkId === link.id;
-            const isFull =
-              link.maxUses !== null && link.usesCount >= link.maxUses;
-            const isInactive = link.status !== "ACTIVE" || isFull;
-            const daysRemaining = calculateDaysRemaining(link.expiresAt);
+            const derived = resolveDerivedInviteStatus(link, mountedTime);
+            const isLimitReached = derived === "LIMIT_REACHED";
+            const isInactive = derived !== "ACTIVE";
+            const expiryText = formatInviteExpiry(
+              link.expiresAt,
+              link.status,
+              mountedTime,
+              t,
+            );
+            const usesText = t("members.usesCount", {
+              used: link.usesCount,
+              max: link.maxUses !== null ? link.maxUses : "∞",
+            });
+            const createdDateText = link.createdAt
+              ? t("members.linkCreatedOn", {
+                  date: formatDate(link.createdAt, "numeric", localization),
+                })
+              : null;
+            const createdByText = `${t("common.created")}: ${link.createdByName || t("members.roleAdmin")}`;
+            const metaLine = [
+              usesText,
+              expiryText,
+              createdDateText,
+              createdByText,
+            ]
+              .filter(Boolean)
+              .join(" • ");
+            const recentUsages = link.recentUsages ?? [];
+            const usageCount = Math.max(link.usesCount, recentUsages.length);
 
             return (
               <div
                 key={link.id}
-                className={`py-3 flex items-center justify-between gap-4 transition-opacity ${
-                  isFull ? "opacity-50" : ""
+                className={`py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-opacity ${
+                  isInactive ? "opacity-65" : ""
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-start gap-3 min-w-0">
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                      isFull
+                    className={`flex h-7 w-7 items-center justify-center rounded-full shrink-0 mt-0.5 ${
+                      isInactive
                         ? "bg-muted text-muted-foreground"
                         : "bg-secondary text-foreground"
-                    } shrink-0`}
+                    }`}
                   >
                     <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </div>
 
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-xs font-semibold text-foreground flex items-center gap-1">
                         <Shield
                           className="h-3 w-3 text-muted-foreground"
@@ -265,28 +292,61 @@ export function InviteLinksCard({
                         <span>{resolveRoleLabel(link.role)}</span>
                       </span>
 
-                      {isInactive && (
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {t("common.inactive")}
-                        </span>
+                      {!isInactive ? (
+                        <Badge
+                          variant="outline"
+                          className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] px-1.5 py-0 h-4"
+                        >
+                          {t("common.active")}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground"
+                        >
+                          {isLimitReached
+                            ? t("members.linkLimitReached")
+                            : t("members.linkExpired")}
+                        </Badge>
+                      )}
+
+                      {usageCount > 0 && onViewUsagesClick && (
+                        <button
+                          type="button"
+                          onClick={() => onViewUsagesClick(link)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 hover:bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                        >
+                          {recentUsages.length > 0 && (
+                            <span className="flex -space-x-1.5">
+                              {recentUsages.slice(0, 3).map((usage) => (
+                                <UserAvatar
+                                  key={usage.id}
+                                  name={usage.userName}
+                                  avatarUrl={usage.userAvatarUrl}
+                                  size="xs"
+                                  rounded="full"
+                                  className="ring-1 ring-background"
+                                />
+                              ))}
+                            </span>
+                          )}
+                          <span>
+                            {t("members.viewUsageHistory", {
+                              count: usageCount,
+                            })}
+                          </span>
+                        </button>
                       )}
                     </div>
 
                     <p className="text-[11px] text-muted-foreground">
-                      {link.usesCount}/
-                      {link.maxUses !== null ? link.maxUses : "∞"}{" "}
-                      {t("candidates.columns.applications").toLowerCase()}
-                      {" • "}
-                      {t("members.expiresInLabel")} {daysRemaining}
-                      {" • "}
-                      {t("common.created")}:{" "}
-                      {link.createdByName || t("members.roleAdmin")}
+                      {metaLine}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {!isFull && (
+                  {!isInactive && (
                     <SettingsButton
                       type="button"
                       variant="outline"

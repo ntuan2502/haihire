@@ -28,6 +28,8 @@ describe("OrganizationsController", () => {
     getMembers: vi.fn(),
     getInterviewers: vi.fn(),
     updateMemberRole: vi.fn(),
+    removeMember: vi.fn(),
+    leaveOrganization: vi.fn(),
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
@@ -35,6 +37,10 @@ describe("OrganizationsController", () => {
     uploadMyOrgLogo: vi.fn(),
     deleteMyOrgLogo: vi.fn(),
     preparePublicOrgLogo: vi.fn(),
+    getInviteLinks: vi.fn(),
+    resendInviteLink: vi.fn(),
+    getInviteLinkUsages: vi.fn(),
+    getPublicInvite: vi.fn(),
   };
 
   const mockAuthService = {
@@ -790,6 +796,95 @@ describe("OrganizationsController", () => {
           OrganizationsController.prototype.getPublicOrgLogo,
         ),
       ).toBeUndefined();
+    });
+  });
+
+  describe("Invite Tracking & Resend Endpoints", () => {
+    it("passes includeRevoked query flag, forwards callerId on public preview, and delegates resend/usages", async () => {
+      mockService.getInviteLinks.mockResolvedValueOnce([]);
+      await controller.getInviteLinks(ownerReq, { includeRevoked: true });
+      expect(mockService.getInviteLinks).toHaveBeenCalledWith(
+        "user-owner",
+        "org-1",
+        true,
+      );
+
+      mockService.resendInviteLink.mockResolvedValueOnce({ id: "link-new" });
+      await controller.resendInviteLink(
+        ownerReq,
+        "00000000-0000-4000-8000-000000000010",
+      );
+      expect(mockService.resendInviteLink).toHaveBeenCalledWith(
+        "user-owner",
+        "00000000-0000-4000-8000-000000000010",
+        "org-1",
+      );
+
+      mockService.getInviteLinkUsages.mockResolvedValueOnce([]);
+      await controller.getInviteLinkUsages(
+        ownerReq,
+        "00000000-0000-4000-8000-000000000010",
+      );
+      expect(mockService.getInviteLinkUsages).toHaveBeenCalledWith(
+        "user-owner",
+        "00000000-0000-4000-8000-000000000010",
+        "org-1",
+      );
+
+      mockService.getPublicInvite.mockResolvedValueOnce({ valid: true });
+      await controller.getPublicInvite("tok-123", ownerReq);
+      expect(mockService.getPublicInvite).toHaveBeenCalledWith(
+        "tok-123",
+        "user-owner",
+      );
+
+      mockService.getPublicInvite.mockResolvedValueOnce({ valid: true });
+      await controller.getPublicInvite("tok-123", undefined);
+      expect(mockService.getPublicInvite).toHaveBeenCalledWith("tok-123", null);
+    });
+  });
+
+  describe("POST /organizations/my/leave", () => {
+    it("leaves active org and syncs session cookies to next remaining organization when user belongs to another org", async () => {
+      const nextOrg = { id: "org-2", name: "Beta Inc", slug: "beta-inc" };
+      mockService.leaveOrganization.mockResolvedValueOnce({
+        success: true,
+        organizationId: "org-1",
+        organizationName: "Acme Corp",
+        message: "Successfully left the organization",
+      });
+      mockService.getMyOrg.mockResolvedValueOnce(nextOrg);
+
+      const res = await controller.leaveMyOrg(nonOwnerAdminReq);
+
+      expect(mockService.leaveOrganization).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-1",
+      );
+      expect(mockService.getMyOrg).toHaveBeenCalledWith("user-admin-other");
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-2",
+      );
+      expect(res.nextOrganization).toEqual(nextOrg);
+    });
+
+    it("syncs session cookies to null when caller has no remaining organizations", async () => {
+      mockService.leaveOrganization.mockResolvedValueOnce({
+        success: true,
+        organizationId: "org-1",
+        organizationName: "Acme Corp",
+        message: "Successfully left the organization",
+      });
+      mockService.getMyOrg.mockResolvedValueOnce(null);
+
+      const res = await controller.leaveMyOrg(memberReq);
+
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-member",
+        null,
+      );
+      expect(res.nextOrganization).toBeNull();
     });
   });
 });

@@ -21,7 +21,7 @@ NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
    ├── Security Pipeline: CorrelationIdMiddleware -> ThrottlerGuard (ThrottlerStorageRedisService)
    │                      -> JwtAuthGuard -> RolesGuard (PermissionResolverService 2-tier cache)
    │                      -> TenantGuard -> DtoPipe (Zod validation coverage)
-   ├── Error Handling:    GlobalExceptionFilter + AppException (64 APP_ERROR_CODES)
+   ├── Error Handling:    GlobalExceptionFilter + AppException (67 APP_ERROR_CODES)
    │
    ├── PostgreSQL 17.6 ◄── Prisma 7.10.1 (@prisma/adapter-pg + pg.Pool + AsyncLocalStorage tx)
    ├── Valkey 8.0.2     ◄── ioredis + BullMQ (email-queue, email-dlq-queue, orphan-cleanup-queue,
@@ -39,7 +39,7 @@ NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
 Consumed directly by both `apps/api` and `apps/web` without build drift:
 
 - `permissions.ts`: `5` roles (`ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), `41` permission strings, `PERMISSIONS` default matrix, and `hasPermission`.
-- `errors.ts`: `64` `APP_ERROR_CODES`, `ApiErrorPayload`, `ErrorLocaleDictionary`.
+- `errors.ts`: `67` `APP_ERROR_CODES`, `ApiErrorPayload`, `ErrorLocaleDictionary`.
 - `events.ts`: `17` `APP_EVENT_TYPES` powering server SSE broadcasts and frontend cache invalidation.
 - `schemas/`: Zod contracts (`auth`, `job`, `candidate`, `application`) plus domain helpers (`applications`, `candidates`, `jobs`, `interviews`, `sourcing`, `email-templates`, `webhooks`, `person-name`, `organizations`).
 

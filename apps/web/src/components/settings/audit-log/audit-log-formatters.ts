@@ -51,6 +51,11 @@ const ACTION_BADGE_CONFIG: Record<
     className:
       "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
   },
+  MEMBER_LEFT: {
+    labelKey: "settings.auditLog.actionMemberLeft",
+    className:
+      "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  },
   OWNERSHIP_TRANSFERRED: {
     labelKey: "settings.auditLog.actionOwnershipTransferred",
     className:

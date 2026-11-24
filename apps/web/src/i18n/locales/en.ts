@@ -96,12 +96,18 @@ export const en: TranslationSchema = {
     ORG_INVITE_INVALID: "Invalid invitation code or link.",
     ORG_INVITE_EXPIRED: "This invitation link has expired.",
     ORG_INVITE_REVOKED: "This invitation link has been revoked.",
+    ORG_INVITE_MAX_USES_REACHED:
+      "This invitation link has reached its maximum allowed uses.",
+    ORG_INVITE_EMAIL_MISMATCH:
+      "This invitation was sent to a different email address. Please sign in with the invited account.",
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Cannot change the role of the organization owner.",
     ORG_CANNOT_CHANGE_SELF_ROLE: "You cannot change your own role.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
+    ORG_OWNER_CANNOT_LEAVE:
+      "Organization owner cannot leave. Transfer ownership or delete the organization first.",
     ORG_CANNOT_TRANSFER_TO_SELF:
       "Cannot transfer organization ownership to yourself.",
     ORG_TRANSFER_TARGET_NOT_MEMBER:
@@ -226,7 +232,7 @@ export const en: TranslationSchema = {
     loginTitle: "Sign in to your account",
     loginSubtitle: "Enter your details to continue.",
     emailLabel: "Work Email",
-    emailPlaceholder: "name@company.com",
+    emailPlaceholder: "name@example.com",
     passwordLabel: "Password",
     passwordPlaceholder: "••••••••",
     signInButton: "Sign in",
@@ -806,7 +812,7 @@ export const en: TranslationSchema = {
       firstName: "e.g. Jane",
       lastName: "e.g. Doe",
       displayName: "e.g. Jane Doe",
-      email: "e.g. jane.doe@example.com",
+      email: "name@example.com",
       phone: "e.g. +1 (555) 123-4567",
       dob: "mm/dd/yyyy",
     },
@@ -1151,7 +1157,7 @@ export const en: TranslationSchema = {
     title: "Team Members",
     subtitle: "Manage your team members and invitation links.",
     inviteMemberTitle: "Invite a team member",
-    inviteEmailPlaceholder: "colleague@company.com",
+    inviteEmailPlaceholder: "name@example.com",
     sendInvite: "Send Invitation",
     sendingInvite: "Sending invitation...",
     createLinkTitle: "Create shareable invite link",
@@ -1202,6 +1208,45 @@ export const en: TranslationSchema = {
     memberActionsTitle: "Member actions",
     inviteEmailRequired: "Please enter an email address.",
     inviteSentSuccess: 'Invitation sent to {email} with role "{role}".',
+    usesCount: "{used}/{max} uses",
+    expiresInDays: "Expires in {days}d",
+    noExpiration: "No expiration",
+    linkExpired: "Expired",
+    linkLimitReached: "Limit reached",
+    linkCreatedOn: "Created {date}",
+    createLinkSuccess: "Invitation link created successfully.",
+    revokeLinkSuccess: "Invitation link revoked successfully.",
+    removeMemberSuccess: "Member removed from organization.",
+    searchPlaceholder: "Search by name or email...",
+    allRoles: "All roles",
+    filterByRole: "Filter by role",
+    noMatchingMembers: "No members match your search or filter.",
+    joinedOn: "Joined {date}",
+    tabMembers: "Members",
+    tabEmailInvites: "Email Invitations",
+    tabShareableLinks: "Shareable Links",
+    statusPending: "Pending",
+    statusAccepted: "Accepted",
+    statusRevoked: "Revoked",
+    allActiveStatuses: "Active & completed",
+    allStatuses: "All statuses",
+    resendInvite: "Resend",
+    resendInviteSuccess: "Invitation resent to {email}.",
+    acceptedByOn: "Accepted by {name} on {date}",
+    invitedByLabel: "Invited by {name}",
+    emailInvitesTitle: "Email Invitations",
+    emailInvitesSubtitle:
+      "Track single-use invitations sent directly to a colleague's inbox.",
+    noEmailInvites: "No email invitations yet",
+    noEmailInvitesDesc:
+      "Send an invitation directly to a colleague's email address to track when they accept it.",
+    noMatchingInvites: "No invitations match this filter.",
+    viewUsageHistory: "{count} joined",
+    usageHistoryTitle: "Invite Link Usage History",
+    usageHistorySubtitle:
+      "Accounts that joined the organization using this invite link.",
+    noLinkUsages: "No one has used this invite link yet.",
+    joinedAtLabel: "Joined at {date}",
   },
   onboarding: {
     selectOrgTitle: "Select an organization",
@@ -1228,7 +1273,7 @@ export const en: TranslationSchema = {
       "Paste your invite link or token to join your team workspace.",
     inviteLinkBoxTitle: "Invite link",
     inviteLinkPlaceholder:
-      "Paste invite link (e.g. http://.../auth/join/...) or token",
+      "Paste invite link (e.g. https://example.com/auth/join/...) or token",
     joinButton: "Join",
     inviteLinkHint:
       "Ask an organization owner or administrator to create and send you an invite link.",
@@ -1252,6 +1297,13 @@ export const en: TranslationSchema = {
     goToDashboard: "Go to dashboard",
     joinOrgButton: "Join {org}",
     joiningButton: "Joining organization...",
+    emailRestrictedNotice:
+      "This invitation is restricted to {email}. Sign in or register with that email address to accept.",
+    emailMismatchTitle: "Signed in with a different email",
+    emailMismatchDesc:
+      "You are currently signed in as {currentEmail}, which does not match the invited email ({invitedEmail}).",
+    switchAccountButton: "Sign out & switch account",
+    switchingAccount: "Signing out...",
   },
   notificationInbox: {
     all: "All",
@@ -1311,6 +1363,19 @@ export const en: TranslationSchema = {
     deleteOrgConfirmPrompt:
       "This action cannot be undone. To confirm deletion, type your workspace slug {slug} below:",
     deleteOrgButton: "Delete Organization",
+    leaveOrg: "Leave Organization",
+    leaveOrgDesc:
+      "Leave this workspace and lose access to its jobs, candidates, and settings. You will need a new invitation to rejoin.",
+    leaveOrgButton: "Leave organization",
+    leaveOrgConfirmTitle: "Leave {name}?",
+    leaveOrgConfirmDesc:
+      "You will immediately lose access to all workspaces, jobs, and candidate records in this organization. This action cannot be undone without a new invitation.",
+    leaveOrgSuccess: "You have left {name}.",
+    ownerLeaveHint:
+      "As the organization owner, transfer ownership to another member before leaving.",
+    goToMembersTransfer: "Manage members",
+    currentOrgSectionTitle: "Current Workspace",
+    currentOrgSectionDesc: "Manage your membership in the active organization.",
     publicJobBoardLink: "Public Job Board Link",
     emailAddress: "Email Address",
     changePasswordTitle: "Change Password",
@@ -1363,6 +1428,29 @@ export const en: TranslationSchema = {
       saveError: "Failed to update profile information. Please try again.",
       nameRequiredError: "Please enter your first and last name.",
     },
+    accountAvatar: {
+      title: "Profile Photo",
+      description:
+        "Upload an image or sync your Gravatar from your account email.",
+      hint: "PNG, JPG or WebP up to 2 MB. Images are cropped to 256×256 automatically.",
+      sourceDefault: "Initials",
+      sourceUpload: "Uploaded",
+      sourceGravatar: "Gravatar",
+      uploadButton: "Upload photo",
+      changeButton: "Change photo",
+      useGravatarButton: "Use Gravatar",
+      gravatarActive: "Using Gravatar",
+      gravatarNotFoundHint:
+        "No Gravatar image found for {email}. Falling back to initials until you set one on",
+      removeButton: "Remove",
+      removing: "Removing...",
+      invalidTypeError: "Please select a PNG, JPG, or WebP image.",
+      fileTooLargeError: "Profile photo must be 2 MB or smaller.",
+      uploadSuccess: "Profile photo updated.",
+      gravatarSuccess: "Switched profile photo to Gravatar.",
+      removeSuccess: "Profile photo removed.",
+      saveError: "Failed to update profile photo. Please try again.",
+    },
     openPublicCareers: "Open Careers Page",
     workspaceSummaryDesc:
       "Summary of your organization workspace and public career board URL.",
@@ -1403,7 +1491,7 @@ export const en: TranslationSchema = {
     },
     placeholders: {
       orgName: "e.g. Acme Corp",
-      orgSlug: "company-slug",
+      orgSlug: "acme-corp",
     },
     localization: {
       title: "Language & Region",
@@ -1615,6 +1703,7 @@ export const en: TranslationSchema = {
       actionRolePermissionsReset: "Permissions Reset",
       actionMemberRoleChanged: "Member Role Changed",
       actionMemberRemoved: "Member Removed",
+      actionMemberLeft: "Member Left",
       actionOwnershipTransferred: "Ownership Transferred",
       actionOrgDeleted: "Organization Deleted",
       actionOrgLocalizationUpdated: "Localization Updated",
@@ -1744,7 +1833,7 @@ export const en: TranslationSchema = {
     placeholders: {
       lastName: "e.g. Doe",
       firstName: "e.g. Jane",
-      email: "jane.doe@example.com",
+      email: "name@example.com",
       phone: "+1 (555) 123-4567",
       notes:
         "Share more about yourself, your availability, or why you are interested in this position...",
@@ -1811,7 +1900,7 @@ export const en: TranslationSchema = {
     testEmailSection: "Send Test Email",
     testEmailDesc:
       "Verify server connection and delivery to a specific inbox before going live.",
-    testEmailPlaceholder: "recipient@example.com",
+    testEmailPlaceholder: "name@example.com",
     sendTestBtn: "Send Test Email",
     testSentSuccess:
       "Test email dispatched. Please check your inbox or spam folder.",
@@ -2049,7 +2138,7 @@ export const en: TranslationSchema = {
       customSourcePlaceholder: "e.g. University Career Fair",
       jobLabel: "Target Job",
       allJobsOption: "All jobs (Company Career Portal)",
-      campaignPlaceholder: "e.g. engineering-q2",
+      campaignPlaceholder: "e.g. spring-2026",
       previewLabel: "Link Preview",
       createBtn: "Create Link",
       creatingBtn: "Creating...",
@@ -2121,8 +2210,8 @@ export const en: TranslationSchema = {
       utmCampaignLabel: "utm_campaign",
       utmTermLabel: "utm_term",
       utmContentLabel: "utm_content",
-      utmTermPlaceholder: "keyword",
-      utmContentPlaceholder: "sponsored-post",
+      utmTermPlaceholder: "e.g. frontend-engineer",
+      utmContentPlaceholder: "e.g. job-post-banner",
       editSuccess: "Tracking link updated successfully",
       notFoundTitle: "Link Not Found",
       notFoundDesc: "This tracking link does not exist or has been deleted.",

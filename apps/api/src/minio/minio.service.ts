@@ -58,25 +58,12 @@ export class MinioService implements OnModuleInit {
       return false;
     }
   }
-  async uploadFile(
+  private async putNamespacedFile(
     file: Express.Multer.File,
-    folder = "resumes",
-    tenantOrgId?: string | null,
-    allowedExtensions: ReadonlySet<string> = new Set([".pdf"]),
+    namespacePrefix: string,
+    folder: string,
+    allowedExtensions: ReadonlySet<string>,
   ): Promise<UploadResult> {
-    if (!tenantOrgId || !tenantOrgId.trim()) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
-        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
-      );
-    }
-    const safeTenant = tenantOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-    if (!safeTenant) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
-        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
-      );
-    }
     const ext = extname(file.originalname).toLowerCase();
     if (!ext || !allowedExtensions.has(ext)) {
       throw new AppBadRequestException(
@@ -84,8 +71,7 @@ export class MinioService implements OnModuleInit {
         `Disallowed or missing file extension: ${ext || "(none)"}`,
       );
     }
-    const orgPrefix = `tenants/${safeTenant}/`;
-    const uniqueFileName = `${orgPrefix}${folder}/${Date.now()}-${randomUUID()}${ext}`;
+    const uniqueFileName = `${namespacePrefix}${folder}/${Date.now()}-${randomUUID()}${ext}`;
     try {
       await this.client.putObject(
         this.bucketName,
@@ -113,6 +99,57 @@ export class MinioService implements OnModuleInit {
       size: file.size,
       mimeType: file.mimetype,
     };
+  }
+  async uploadFile(
+    file: Express.Multer.File,
+    folder = "resumes",
+    tenantOrgId?: string | null,
+    allowedExtensions: ReadonlySet<string> = new Set([".pdf"]),
+  ): Promise<UploadResult> {
+    if (!tenantOrgId || !tenantOrgId.trim()) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
+        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
+      );
+    }
+    const safeTenant = tenantOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!safeTenant) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
+        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
+      );
+    }
+    return this.putNamespacedFile(
+      file,
+      `tenants/${safeTenant}/`,
+      folder,
+      allowedExtensions,
+    );
+  }
+  async uploadUserFile(
+    file: Express.Multer.File,
+    userId: string,
+    folder = "avatars",
+    allowedExtensions: ReadonlySet<string> = new Set([
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+    ]),
+  ): Promise<UploadResult> {
+    const safeUserId = userId?.trim().replace(/[^a-zA-Z0-9_-]/g, "") || "";
+    if (!safeUserId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "User ID is required for user file uploads.",
+      );
+    }
+    return this.putNamespacedFile(
+      file,
+      `users/${safeUserId}/`,
+      folder,
+      allowedExtensions,
+    );
   }
   async deleteFile(fileName: string): Promise<void> {
     try {
@@ -177,12 +214,36 @@ export class MinioService implements OnModuleInit {
       );
     }
   }
+  assertUserAccess(objectName: string, userId: string): void {
+    const safeUserId = userId?.trim().replace(/[^a-zA-Z0-9_-]/g, "") || "";
+    if (!safeUserId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: missing user context",
+      );
+    }
+    const expectedPrefix = `users/${safeUserId}/`;
+    if (!objectName.startsWith(expectedPrefix)) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: file does not belong to this user",
+      );
+    }
+  }
   async getObjectStream(
     urlOrPath: string,
     tenantOrgId?: string | null,
   ): Promise<Readable> {
     const objectName = this.extractObjectName(urlOrPath);
     this.assertTenantAccess(objectName, tenantOrgId);
+    return await this.client.getObject(this.bucketName, objectName);
+  }
+  async getUserObjectStream(
+    urlOrPath: string,
+    userId: string,
+  ): Promise<Readable> {
+    const objectName = this.extractObjectName(urlOrPath);
+    this.assertUserAccess(objectName, userId);
     return await this.client.getObject(this.bucketName, objectName);
   }
   async getPresignedUrl(

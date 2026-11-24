@@ -96,6 +96,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.githubusercontent.com",
       },
+      {
+        protocol: "https",
+        hostname: "www.gravatar.com",
+      },
     ],
   },
   async rewrites() {

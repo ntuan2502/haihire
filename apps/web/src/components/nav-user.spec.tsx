@@ -10,6 +10,7 @@ vi.mock("@/lib/api/client", () => ({
   api: {
     get: vi.fn().mockResolvedValue({ data: { items: [], unreadCount: 0 } }),
   },
+  resolveUserAvatarUrl: (url?: string | null) => url ?? null,
 }));
 
 const { mockPush, mockLogout, mockSetOpenMobile } = vi.hoisted(() => ({

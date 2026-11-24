@@ -31,7 +31,10 @@ interface AuthContextType {
     email: string,
     password: string,
   ) => Promise<User>;
-  logout: () => Promise<void> | void;
+  logout: {
+    (options?: { redirectTo?: string }): Promise<void> | void;
+    (event?: unknown): Promise<void> | void;
+  };
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
   updateUser: (updatedFields: Partial<User>) => void;
   refreshUser: () => Promise<User | null>;
@@ -139,23 +142,34 @@ export function AuthProvider({
     [user],
   );
 
-  const logout = useCallback(async () => {
-    sessionEpochRef.current += 1;
-    userRef.current = null;
-    setToken(null);
-    setUser(null);
-    setSsrPermissions(null);
-    localStorage.removeItem(USER_KEY);
-    queryClient?.clear();
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      // Best-effort cleanup of HttpOnly session cookies
-    }
-    clearAuthCookies();
-    routerRef.current.replace("/auth/login");
-    routerRef.current.refresh?.();
-  }, [queryClient]);
+  const logout = useCallback(
+    async (optionsOrEvent?: { redirectTo?: string } | unknown) => {
+      const redirectTo =
+        optionsOrEvent &&
+        typeof optionsOrEvent === "object" &&
+        "redirectTo" in optionsOrEvent &&
+        typeof (optionsOrEvent as { redirectTo?: unknown }).redirectTo ===
+          "string"
+          ? (optionsOrEvent as { redirectTo: string }).redirectTo
+          : "/auth/login";
+      sessionEpochRef.current += 1;
+      userRef.current = null;
+      setToken(null);
+      setUser(null);
+      setSsrPermissions(null);
+      localStorage.removeItem(USER_KEY);
+      queryClient?.clear();
+      try {
+        await api.post("/auth/logout");
+      } catch {
+        // Best-effort cleanup of HttpOnly session cookies
+      }
+      clearAuthCookies();
+      routerRef.current.replace(redirectTo);
+      routerRef.current.refresh?.();
+    },
+    [queryClient],
+  );
 
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {

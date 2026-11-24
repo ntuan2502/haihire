@@ -95,6 +95,10 @@ export const vi: TranslationSchema = {
     ORG_INVITE_INVALID: "Mã hoặc liên kết mời tham gia không hợp lệ.",
     ORG_INVITE_EXPIRED: "Liên kết mời tham gia này đã hết hạn.",
     ORG_INVITE_REVOKED: "Liên kết mời tham gia này đã bị thu hồi.",
+    ORG_INVITE_MAX_USES_REACHED:
+      "Liên kết mời tham gia này đã đạt giới hạn số lượt sử dụng tối đa.",
+    ORG_INVITE_EMAIL_MISMATCH:
+      "Lời mời này được gửi cho một địa chỉ email khác. Vui lòng đăng nhập bằng đúng tài khoản được mời.",
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
@@ -102,6 +106,8 @@ export const vi: TranslationSchema = {
       "Bạn không thể tự thay đổi vai trò của chính mình.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
+    ORG_OWNER_CANNOT_LEAVE:
+      "Chủ sở hữu không thể rời khỏi tổ chức. Vui lòng chuyển quyền sở hữu hoặc xóa tổ chức trước.",
     ORG_CANNOT_TRANSFER_TO_SELF:
       "Không thể chuyển quyền sở hữu tổ chức cho chính mình.",
     ORG_TRANSFER_TARGET_NOT_MEMBER:
@@ -224,7 +230,7 @@ export const vi: TranslationSchema = {
     loginTitle: "Đăng nhập tài khoản",
     loginSubtitle: "Vui lòng nhập thông tin để tiếp tục.",
     emailLabel: "Email công việc",
-    emailPlaceholder: "name@company.com",
+    emailPlaceholder: "name@example.com",
     passwordLabel: "Mật khẩu",
     passwordPlaceholder: "••••••••",
     signInButton: "Đăng nhập",
@@ -808,7 +814,7 @@ export const vi: TranslationSchema = {
       firstName: "VD: An",
       lastName: "VD: Nguyễn Văn",
       displayName: "VD: Nguyễn Văn An",
-      email: "VD: an.nguyen@example.com",
+      email: "name@example.com",
       phone: "VD: 0912 345 678",
       dob: "dd/mm/yyyy",
     },
@@ -1153,7 +1159,7 @@ export const vi: TranslationSchema = {
     title: "Thành viên nhóm",
     subtitle: "Quản lý thành viên trong tổ chức và các liên kết mời tham gia.",
     inviteMemberTitle: "Mời thành viên mới",
-    inviteEmailPlaceholder: "dongnghiep@congty.com",
+    inviteEmailPlaceholder: "name@example.com",
     sendInvite: "Gửi lời mời",
     sendingInvite: "Đang gửi lời mời...",
     createLinkTitle: "Tạo liên kết mời có thể chia sẻ",
@@ -1203,6 +1209,45 @@ export const vi: TranslationSchema = {
     memberActionsTitle: "Thao tác thành viên",
     inviteEmailRequired: "Vui lòng nhập địa chỉ email.",
     inviteSentSuccess: 'Đã gửi lời mời đến {email} với vai trò "{role}".',
+    usesCount: "{used}/{max} lượt dùng",
+    expiresInDays: "Hết hạn sau {days} ngày",
+    noExpiration: "Không giới hạn thời gian",
+    linkExpired: "Đã hết hạn",
+    linkLimitReached: "Đã hết lượt dùng",
+    linkCreatedOn: "Tạo ngày {date}",
+    createLinkSuccess: "Đã tạo liên kết mời thành công.",
+    revokeLinkSuccess: "Đã thu hồi liên kết mời thành công.",
+    removeMemberSuccess: "Đã xóa thành viên khỏi tổ chức.",
+    searchPlaceholder: "Tìm theo tên hoặc email...",
+    allRoles: "Tất cả vai trò",
+    filterByRole: "Lọc theo vai trò",
+    noMatchingMembers: "Không tìm thấy thành viên phù hợp.",
+    joinedOn: "Tham gia {date}",
+    tabMembers: "Thành viên",
+    tabEmailInvites: "Lời mời qua Email",
+    tabShareableLinks: "Liên kết chia sẻ",
+    statusPending: "Đang chờ",
+    statusAccepted: "Đã chấp nhận",
+    statusRevoked: "Đã thu hồi",
+    allActiveStatuses: "Hiệu lực & đã nhận",
+    allStatuses: "Tất cả trạng thái",
+    resendInvite: "Gửi lại",
+    resendInviteSuccess: "Đã gửi lại lời mời đến {email}.",
+    acceptedByOn: "Được {name} chấp nhận lúc {date}",
+    invitedByLabel: "Mời bởi {name}",
+    emailInvitesTitle: "Danh sách lời mời qua email",
+    emailInvitesSubtitle:
+      "Theo dõi các lời mời định danh được gửi trực tiếp qua email đồng nghiệp.",
+    noEmailInvites: "Chưa có lời mời qua email nào",
+    noEmailInvitesDesc:
+      "Gửi lời mời trực tiếp đến email đồng nghiệp để theo dõi thời điểm họ chấp nhận.",
+    noMatchingInvites: "Không có lời mời nào khớp bộ lọc này.",
+    viewUsageHistory: "{count} người đã tham gia",
+    usageHistoryTitle: "Lịch sử sử dụng liên kết mời",
+    usageHistorySubtitle:
+      "Các tài khoản đã tham gia tổ chức thông qua liên kết mời này.",
+    noLinkUsages: "Chưa có tài khoản nào sử dụng liên kết mời này.",
+    joinedAtLabel: "Tham gia lúc {date}",
   },
   onboarding: {
     selectOrgTitle: "Chọn tổ chức làm việc",
@@ -1218,7 +1263,7 @@ export const vi: TranslationSchema = {
     createOrgSubtitle:
       "Thiết lập không gian làm việc mới để bắt đầu quản lý tin tuyển dụng và ứng viên.",
     orgNameLabel: "Tên tổ chức",
-    orgNamePlaceholder: "Ví dụ: Acme Corp",
+    orgNamePlaceholder: "VD: Acme Corp",
     slugLabel: "Đường dẫn định danh",
     slugPlaceholder: "acme-corp",
     slugHint: "Mã định danh duy nhất cho không gian làm việc của tổ chức.",
@@ -1229,7 +1274,7 @@ export const vi: TranslationSchema = {
       "Dán liên kết mời hoặc mã token để gia nhập không gian làm việc của đội ngũ.",
     inviteLinkBoxTitle: "Liên kết mời",
     inviteLinkPlaceholder:
-      "Dán liên kết mời (ví dụ: http://.../auth/join/...) hoặc token",
+      "Dán liên kết mời (VD: https://example.com/auth/join/...) hoặc token",
     joinButton: "Tham gia",
     inviteLinkHint:
       "Hãy yêu cầu quản trị viên hoặc chủ sở hữu tổ chức gửi cho bạn liên kết mời.",
@@ -1253,6 +1298,13 @@ export const vi: TranslationSchema = {
     goToDashboard: "Vào Bảng điều khiển",
     joinOrgButton: "Tham gia {org}",
     joiningButton: "Đang tham gia tổ chức...",
+    emailRestrictedNotice:
+      "Lời mời này chỉ dành riêng cho email {email}. Vui lòng đăng nhập hoặc tạo tài khoản bằng đúng địa chỉ này.",
+    emailMismatchTitle: "Đang đăng nhập bằng tài khoản khác",
+    emailMismatchDesc:
+      "Bạn đang đăng nhập bằng {currentEmail}, không khớp với email được mời ({invitedEmail}).",
+    switchAccountButton: "Đăng xuất & chuyển tài khoản",
+    switchingAccount: "Đang đăng xuất...",
   },
   notificationInbox: {
     all: "Tất cả",
@@ -1314,6 +1366,20 @@ export const vi: TranslationSchema = {
     deleteOrgConfirmPrompt:
       "Hành động này không thể hoàn tác. Để xác nhận xóa, hãy nhập mã slug {slug} của bạn bên dưới:",
     deleteOrgButton: "Xóa tổ chức vĩnh viễn",
+    leaveOrg: "Rời khỏi tổ chức",
+    leaveOrgDesc:
+      "Rời khỏi không gian làm việc này và mất quyền truy cập vào tin tuyển dụng, ứng viên và cài đặt. Bạn sẽ cần lời mời mới để tham gia lại.",
+    leaveOrgButton: "Rời khỏi tổ chức",
+    leaveOrgConfirmTitle: "Rời khỏi {name}?",
+    leaveOrgConfirmDesc:
+      "Bạn sẽ mất quyền truy cập ngay lập tức vào toàn bộ không gian làm việc, tin tuyển dụng và hồ sơ ứng viên của tổ chức này. Để quay lại, bạn cần được mời lại.",
+    leaveOrgSuccess: "Bạn đã rời khỏi tổ chức {name}.",
+    ownerLeaveHint:
+      "Với tư cách Chủ sở hữu, bạn cần chuyển quyền sở hữu cho thành viên khác trước khi rời tổ chức.",
+    goToMembersTransfer: "Chuyển quyền sở hữu",
+    currentOrgSectionTitle: "Tổ chức hiện tại",
+    currentOrgSectionDesc:
+      "Quản lý tư cách thành viên tại tổ chức bạn đang làm việc.",
     publicJobBoardLink: "Liên kết trang tuyển dụng công khai",
     emailAddress: "Địa chỉ email",
     changePasswordTitle: "Đổi mật khẩu",
@@ -1367,6 +1433,29 @@ export const vi: TranslationSchema = {
       saveError: "Không thể cập nhật thông tin cá nhân. Vui lòng thử lại.",
       nameRequiredError: "Vui lòng nhập đầy đủ họ và tên.",
     },
+    accountAvatar: {
+      title: "Ảnh đại diện",
+      description:
+        "Tải ảnh lên hoặc đồng bộ Gravatar theo email tài khoản của bạn.",
+      hint: "PNG, JPG hoặc WebP tối đa 2 MB. Ảnh được tự động cắt vuông 256×256.",
+      sourceDefault: "Chữ viết tắt",
+      sourceUpload: "Ảnh tải lên",
+      sourceGravatar: "Ảnh từ Gravatar",
+      uploadButton: "Tải ảnh lên",
+      changeButton: "Đổi ảnh",
+      useGravatarButton: "Dùng Gravatar",
+      gravatarActive: "Đang dùng Gravatar",
+      gravatarNotFoundHint:
+        "Chưa tìm thấy ảnh Gravatar cho {email}. Tạm thời hiển thị chữ viết tắt đến khi bạn đặt ảnh tại",
+      removeButton: "Gỡ ảnh",
+      removing: "Đang gỡ...",
+      invalidTypeError: "Vui lòng chọn ảnh định dạng PNG, JPG hoặc WebP.",
+      fileTooLargeError: "Ảnh đại diện không được vượt quá 2 MB.",
+      uploadSuccess: "Đã cập nhật ảnh đại diện.",
+      gravatarSuccess: "Đã chuyển ảnh đại diện sang Gravatar.",
+      removeSuccess: "Đã gỡ ảnh đại diện về mặc định.",
+      saveError: "Không thể cập nhật ảnh đại diện. Vui lòng thử lại.",
+    },
     openPublicCareers: "Mở trang tuyển dụng",
     workspaceSummaryDesc:
       "Thông tin tóm tắt về không gian làm việc và đường dẫn cổng tuyển dụng công khai của tổ chức.",
@@ -1407,7 +1496,7 @@ export const vi: TranslationSchema = {
     },
     placeholders: {
       orgName: "VD: Acme Corp",
-      orgSlug: "ten-to-chuc",
+      orgSlug: "acme-corp",
     },
     localization: {
       title: "Ngôn ngữ & Khu vực",
@@ -1618,6 +1707,7 @@ export const vi: TranslationSchema = {
       actionRolePermissionsReset: "Khôi phục phân quyền",
       actionMemberRoleChanged: "Thay đổi vai trò thành viên",
       actionMemberRemoved: "Xóa thành viên",
+      actionMemberLeft: "Thành viên rời tổ chức",
       actionOwnershipTransferred: "Chuyển giao quyền sở hữu",
       actionOrgDeleted: "Xóa tổ chức",
       actionOrgLocalizationUpdated: "Cập nhật ngôn ngữ & khu vực",
@@ -1746,9 +1836,9 @@ export const vi: TranslationSchema = {
     fileInvalidType:
       "Định dạng tệp không được hỗ trợ. Vui lòng tải lên tệp PDF.",
     placeholders: {
-      lastName: "Ví dụ: Nguyễn Văn",
-      firstName: "Ví dụ: An",
-      email: "nguyenvana@example.com",
+      lastName: "VD: Nguyễn Văn",
+      firstName: "VD: An",
+      email: "name@example.com",
       phone: "0912 345 678",
       notes:
         "Chia sẻ thêm về bản thân, thời gian có thể bắt đầu làm việc, hoặc lý do bạn quan tâm đến vị trí này...",
@@ -1814,7 +1904,7 @@ export const vi: TranslationSchema = {
     testEmailSection: "Gửi Email Thử Nghiệm",
     testEmailDesc:
       "Kiểm tra kết nối và tính năng gửi email đến một hòm thư cụ thể trước khi áp dụng thực tế.",
-    testEmailPlaceholder: "nhap-email-nhan@example.com",
+    testEmailPlaceholder: "name@example.com",
     sendTestBtn: "Gửi email thử nghiệm",
     testSentSuccess:
       "Đã gửi email thử nghiệm. Vui lòng kiểm tra hộp thư đến hoặc thư mục Spam.",
@@ -2047,13 +2137,13 @@ export const vi: TranslationSchema = {
       createDesc:
         "Tạo một liên kết tuyển dụng độc nhất để chia sẻ và đo lường số lượt nhấp cùng hồ sơ nộp về.",
       linkNameLabel: "Tên liên kết",
-      linkNamePlaceholder: "Ví dụ: LinkedIn Tuyển dụng Kỹ sư Phần mềm Q2",
+      linkNamePlaceholder: "VD: LinkedIn Tuyển dụng Kỹ sư Phần mềm Q2",
       sourceLabel: "Kênh tuyển dụng",
       customSourceLabel: "Tên kênh tùy chỉnh",
-      customSourcePlaceholder: "Ví dụ: Hội thảo việc làm Bách Khoa",
+      customSourcePlaceholder: "VD: Hội thảo việc làm Bách Khoa",
       jobLabel: "Vị trí tuyển dụng áp dụng",
       allJobsOption: "Tất cả tin tuyển dụng (Trang tuyển dụng chung)",
-      campaignPlaceholder: "Ví dụ: tuyen-dung-he-2026",
+      campaignPlaceholder: "Ví dụ: spring-2026",
       previewLabel: "Xem trước liên kết",
       createBtn: "Tạo liên kết",
       creatingBtn: "Đang tạo...",
@@ -2125,8 +2215,8 @@ export const vi: TranslationSchema = {
       utmCampaignLabel: "Chiến dịch (utm_campaign)",
       utmTermLabel: "Từ khóa (utm_term)",
       utmContentLabel: "Nội dung (utm_content)",
-      utmTermPlaceholder: "Ví dụ: ky-su-phan-mem",
-      utmContentPlaceholder: "Ví dụ: bai-dang-tuyen-dung",
+      utmTermPlaceholder: "Ví dụ: frontend-engineer",
+      utmContentPlaceholder: "Ví dụ: job-post-banner",
       editSuccess: "Đã cập nhật liên kết thành công",
       notFoundTitle: "Không tìm thấy liên kết",
       notFoundDesc: "Liên kết nguồn này không tồn tại hoặc đã bị xóa.",

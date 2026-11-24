@@ -82,6 +82,10 @@ export const queryKeys = {
     orgId !== undefined
       ? (["organization", "invite-links", { orgId }] as const)
       : (["organization", "invite-links"] as const),
+  inviteLinkUsages: (linkId: string, orgId?: string | null) =>
+    orgId !== undefined
+      ? (["organization", "invite-links", "usages", linkId, { orgId }] as const)
+      : (["organization", "invite-links", "usages", linkId] as const),
   rolePermissionsMatrix: (orgId?: string | null) =>
     orgId !== undefined
       ? (["organization", "roles", "permissions", { orgId }] as const)

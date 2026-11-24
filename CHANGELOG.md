@@ -6,6 +6,13 @@ All notable architectural milestones and releases for **HaiHire Platform** are d
 
 ## [Unreleased]
 
+### Added
+
+- User avatar management supporting MinIO image uploads and Gravatar (`POST /auth/me/avatar`, `PATCH /auth/me/avatar`, `GET /auth/avatars/:userId`) with zero-flash client hydration on reload.
+- Email-bound organization invitations and `InviteLinkUsage` tracking (`POST /organizations/my/invite-links/:id/resend`, `GET /organizations/my/invite-links/:id/usages`), 3-tab members management UI (`/settings/members`), and localized error codes (`ORG_INVITE_MAX_USES_REACHED`, `ORG_INVITE_EMAIL_MISMATCH`).
+- Non-owner organization leave workflow (`POST /organizations/my/leave`, `ORG_OWNER_CANNOT_LEAVE`, `MEMBER_LEFT` audit log entry, session cookie resync, `/settings` Danger Zone, and `/account` Current Workspace card).
+- Standardized `example.com`-style input placeholders across English and Vietnamese translation dictionaries and form components.
+
 ### Security
 
 - Closed three cross-tenant IDOR gaps in interview query filtering/enrichment (`interviews-query.service.ts`), attribution logging (`sourcing-metrics.service.ts`), and tracking link updates (`sourcing-links.service.ts`), backed by cross-tenant unit tests.

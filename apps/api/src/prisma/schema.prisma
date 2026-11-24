@@ -177,6 +177,7 @@ model Organization {
   interviews       Interview[]
   trackingClicks   TrackingClick[]
   inviteLinks      InviteLink[]
+  inviteLinkUsages InviteLinkUsage[]
   members          OrganizationMember[]
   emailTemplates   EmailTemplate[]
   emailFlows       EmailFlowConfig[]
@@ -210,12 +211,17 @@ model User {
   lastName           String                 @default("")
   password           String?
   avatarUrl          String?
+  avatarSource       String                 @default("NONE")
+  avatarObjectKey    String?
+  avatarMimeType     String?
+  avatarUpdatedAt    DateTime?
   preferredLanguage  String?
   preferredTimezone  String?
   tokenVersion       Int                    @default(0)
   ownedOrganizations Organization[]         @relation("OrganizationOwner")
   jobs               Job[]
   inviteLinks        InviteLink[]
+  inviteLinkUsages   InviteLinkUsage[]
   trackingLinks      TrackingLink[]
   assignedInterviews Interview[]            @relation("InterviewAssignee")
   memberships        OrganizationMember[]
@@ -262,22 +268,41 @@ model OrganizationRolePermission {
 }
 
 model InviteLink {
-  id             String       @id @default(uuid())
-  token          String       @unique
-  role           Role         @default(MEMBER)
+  id             String            @id @default(uuid())
+  token          String            @unique
+  role           Role              @default(MEMBER)
+  invitedEmail   String?
   expiresAt      DateTime?
   maxUses        Int?
-  usesCount      Int          @default(0)
-  status         InviteStatus @default(ACTIVE)
+  usesCount      Int               @default(0)
+  status         InviteStatus      @default(ACTIVE)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String?
-  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdBy      User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  usages         InviteLinkUsage[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([organizationId, status])
+  @@index([organizationId, invitedEmail, status])
   @@map("invite_link")
+}
+
+model InviteLinkUsage {
+  id                String       @id @default(uuid())
+  inviteLinkId      String
+  inviteLink        InviteLink   @relation(fields: [inviteLinkId], references: [id], onDelete: Cascade)
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId            String?
+  user              User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmailSnapshot String
+  usedAt            DateTime     @default(now())
+
+  @@index([inviteLinkId, usedAt])
+  @@index([organizationId, usedAt])
+  @@map("invite_link_usage")
 }
 
 model Job {

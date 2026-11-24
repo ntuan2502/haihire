@@ -9,6 +9,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   let service: OrganizationsService;
@@ -270,6 +271,52 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(links.length).toBe(0);
     });
 
+    it("9a. Should order invite links newest first and pass orderBy createdAt desc to Prisma", async () => {
+      mockLinks.push(
+        {
+          id: "link-older",
+          token: "tok-older",
+          organizationId: "org-1",
+          role: "MEMBER",
+          expiresAt: new Date(Date.now() + 86_400_000),
+          maxUses: 5,
+          usesCount: 0,
+          status: "ACTIVE",
+          createdById: "usr-2",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "link-newer",
+          token: "tok-newer",
+          organizationId: "org-1",
+          role: "RECRUITER",
+          expiresAt: new Date(Date.now() + 86_400_000),
+          maxUses: 3,
+          usesCount: 0,
+          status: "ACTIVE",
+          createdById: "usr-2",
+          createdAt: new Date("2026-02-01T00:00:00Z"),
+        },
+      );
+
+      const inviteLinkModel = (
+        mockPrismaService as {
+          inviteLink: { findMany: (...args: unknown[]) => unknown };
+        }
+      ).inviteLink;
+      const findManySpy = vi.spyOn(inviteLinkModel, "findMany");
+
+      const links = await service.getInviteLinks("usr-2", "org-1");
+
+      expect(findManySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { organizationId: "org-1" },
+          orderBy: { createdAt: "desc" },
+        }),
+      );
+      expect(links.map((l) => l.id)).toEqual(["link-newer", "link-older"]);
+    });
+
     it("10. Should allow external user to get public invite preview", async () => {
       const link = await service.createInviteLink("usr-2", {
         role: "Member",
@@ -278,6 +325,47 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const preview = await service.getPublicInvite(link.token);
       expect(preview.valid).toBe(true);
       expect(preview.organization?.name).toBe("Acme Corp");
+    });
+
+    it("10a. Should return machine-readable error codes on getPublicInvite for invalid, revoked, expired, and max-uses links", async () => {
+      const missingRes = await service.getPublicInvite("non-existent-token");
+      expect(missingRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_INVALID,
+      });
+
+      const revokedLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      await service.revokeInviteLink("usr-2", revokedLink.id);
+      const revokedRes = await service.getPublicInvite(revokedLink.token);
+      expect(revokedRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_REVOKED,
+      });
+
+      const expiredLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      mockLinks.find((l) => l.id === expiredLink.id)!.expiresAt = new Date(
+        Date.now() - 60_000,
+      );
+      const expiredRes = await service.getPublicInvite(expiredLink.token);
+      expect(expiredRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_EXPIRED,
+      });
+
+      const maxedLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+      mockLinks.find((l) => l.id === maxedLink.id)!.usesCount = 1;
+      const maxedRes = await service.getPublicInvite(maxedLink.token);
+      expect(maxedRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
+      });
     });
 
     it("rejects revocation of another organization's invite link", async () => {
@@ -897,6 +985,125 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       });
       await service.join("usr-3", { inviteCodeOrSlug: secondLink.token });
       expect(withSystemRlsBypass).toHaveBeenCalledTimes(2);
+    });
+
+    it("enforces email-bound invites across joinByToken & join, tracks InviteLinkUsage, supports resend, and masks public preview PII", async () => {
+      // 1. Blocks inviting an email that already belongs to a workspace member
+      await expect(
+        service.createInviteLink(
+          "usr-2",
+          { email: "member@tun.io.vn", role: "RECRUITER" },
+          "org-1",
+        ),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_MEMBER_ALREADY_EXISTS,
+      });
+
+      // 2. Creates email-bound invitation with normalized email, maxUses=1, and derived PENDING status
+      const newInviteeId = "usr-invitee";
+      mockUsers.push({
+        id: newInviteeId,
+        email: "invitee@haihire.vn",
+        firstName: "Invitee",
+        lastName: "Person",
+        role: "MEMBER",
+        organizationId: null,
+        createdAt: new Date("2026-01-04T00:00:00Z"),
+      });
+
+      const firstInvite = await service.createInviteLink(
+        "usr-2",
+        { email: " Invitee@HaiHire.vn ", role: "RECRUITER" },
+        "org-1",
+      );
+      expect(firstInvite.invitedEmail).toBe("invitee@haihire.vn");
+      expect(firstInvite.inviteType).toBe("EMAIL");
+      expect(firstInvite.maxUses).toBe(1);
+      expect(firstInvite.derivedStatus).toBe("PENDING");
+
+      // 3. Re-inviting / resending revokes previous ACTIVE invite and issues fresh token
+      const resentInvite = await service.resendInviteLink(
+        "usr-2",
+        firstInvite.id,
+        "org-1",
+      );
+      expect(resentInvite.id).not.toBe(firstInvite.id);
+      expect(resentInvite.token).not.toBe(firstInvite.token);
+
+      const defaultLinks = await service.getInviteLinks("usr-2", "org-1");
+      expect(defaultLinks.some((l) => l.id === firstInvite.id)).toBe(false);
+      expect(defaultLinks.some((l) => l.id === resentInvite.id)).toBe(true);
+
+      const withRevoked = await service.getInviteLinks("usr-2", "org-1", true);
+      expect(
+        withRevoked.find((l) => l.id === firstInvite.id)?.derivedStatus,
+      ).toBe("REVOKED");
+
+      // 4. Public preview masks raw email and detects mismatched signed-in caller email
+      const anonPreview = await service.getPublicInvite(resentInvite.token);
+      expect(anonPreview.valid).toBe(true);
+      expect(anonPreview.isEmailRestricted).toBe(true);
+      expect(anonPreview.maskedInvitedEmail).toBe("i***e@haihire.vn");
+      expect(anonPreview.emailMismatch).toBe(false);
+      expect(JSON.stringify(anonPreview)).not.toContain("invitee@haihire.vn");
+
+      const wrongCallerPreview = await service.getPublicInvite(
+        resentInvite.token,
+        "usr-3",
+      );
+      expect(wrongCallerPreview.emailMismatch).toBe(true);
+
+      const rightCallerPreview = await service.getPublicInvite(
+        resentInvite.token,
+        newInviteeId,
+      );
+      expect(rightCallerPreview.emailMismatch).toBe(false);
+
+      // 5. Blocks wrong-email caller in BOTH joinByToken AND join BEFORE existing-member check
+      await expect(
+        service.joinByToken("usr-3", resentInvite.token),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_INVITE_EMAIL_MISMATCH,
+      });
+
+      await expect(
+        service.join("usr-3", { inviteCodeOrSlug: resentInvite.token }),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_INVITE_EMAIL_MISMATCH,
+      });
+
+      // 6. Matching user accepts -> recorded in InviteLinkUsage & surfaced in ACCEPTED invite + usages endpoint
+      const joined = await service.joinByToken(
+        newInviteeId,
+        resentInvite.token,
+      );
+      expect(joined.success).toBe(true);
+
+      const linksAfterAccept = await service.getInviteLinks("usr-2", "org-1");
+      const acceptedRow = linksAfterAccept.find(
+        (l) => l.id === resentInvite.id,
+      );
+      expect(acceptedRow?.derivedStatus).toBe("ACCEPTED");
+      expect(acceptedRow?.recentUsages).toHaveLength(1);
+      expect(acceptedRow?.recentUsages?.[0]).toMatchObject({
+        userId: newInviteeId,
+        userEmail: "invitee@haihire.vn",
+      });
+
+      const fullUsages = await service.getInviteLinkUsages(
+        "usr-2",
+        resentInvite.id,
+        "org-1",
+      );
+      expect(fullUsages).toHaveLength(1);
+      expect(fullUsages[0].userEmail).toBe("invitee@haihire.vn");
+
+      // 7. Cannot resend an already-accepted invitation
+      await expect(
+        service.resendInviteLink("usr-2", resentInvite.id, "org-1"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
+      });
     });
   });
 });

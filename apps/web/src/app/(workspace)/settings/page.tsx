@@ -7,11 +7,13 @@ import {
   Trash2,
   Globe,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsReadOnlyBanner } from "@/components/settings/settings-read-only-banner";
 import { OrgLogoCard } from "@/components/settings/general/org-logo-card";
+import { LeaveOrganizationModal } from "@/components/settings/leave-organization-modal";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, type FormEvent } from "react";
@@ -56,6 +58,7 @@ export default function GeneralSettingsPage() {
   const orgName = orgNameDraft ?? (savedOrg?.name || "");
   const orgSlug = orgSlugDraft ?? (savedOrg?.slug || "");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const [isFinalizingDelete, setIsFinalizingDelete] = useState(false);
   const [appHost] = useState(() =>
     typeof window !== "undefined" ? window.location.host : "",
@@ -304,44 +307,81 @@ export default function GeneralSettingsPage() {
             </Link>
           </SettingsCard>
 
-          {isOwner && (
-            <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-4">
-              {/* Danger Header */}
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 border border-destructive/20 text-destructive shrink-0">
-                  <AlertTriangle className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-destructive">
-                    {t("settings.dangerZone")}
-                  </h2>
-                  <p className="text-xs text-destructive/80 mt-0.5">
-                    {t("settings.dangerZoneDesc")}
-                  </p>
-                </div>
+          <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-5 sm:p-6 shadow-xs space-y-4">
+            {/* Danger Header */}
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 border border-destructive/20 text-destructive shrink-0">
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
               </div>
+              <div>
+                <h2 className="text-sm font-semibold text-destructive">
+                  {t("settings.dangerZone")}
+                </h2>
+                <p className="text-xs text-destructive/80 mt-0.5">
+                  {t("settings.dangerZoneDesc")}
+                </p>
+              </div>
+            </div>
 
+            {isOwner ? (
+              <>
+                <div className="border-t border-destructive/20 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xs font-semibold text-foreground">
+                      {t("settings.deleteOrg")}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {t("settings.deleteOrgDesc")}
+                    </p>
+                  </div>
+
+                  <SettingsButton
+                    type="button"
+                    variant="destructive"
+                    icon={Trash2}
+                    onClick={() => setDeleteModalOpen(true)}
+                  >
+                    {t("common.delete")}
+                  </SettingsButton>
+                </div>
+
+                <div className="border-t border-destructive/15 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("settings.ownerLeaveHint")}
+                  </p>
+                  <Link
+                    href="/settings/members"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "text-xs font-medium shrink-0",
+                    )}
+                  >
+                    {t("settings.goToMembersTransfer")}
+                  </Link>
+                </div>
+              </>
+            ) : (
               <div className="border-t border-destructive/20 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-xs font-semibold text-foreground">
-                    {t("settings.deleteOrg")}
+                    {t("settings.leaveOrg")}
                   </h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {t("settings.deleteOrgDesc")}
+                    {t("settings.leaveOrgDesc")}
                   </p>
                 </div>
 
                 <SettingsButton
                   type="button"
                   variant="destructive"
-                  icon={Trash2}
-                  onClick={() => setDeleteModalOpen(true)}
+                  icon={LogOut}
+                  onClick={() => setLeaveModalOpen(true)}
                 >
-                  {t("common.delete")}
+                  {t("settings.leaveOrgButton")}
                 </SettingsButton>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -360,6 +400,13 @@ export default function GeneralSettingsPage() {
         cancelButtonLabel={t("common.cancel")}
         isLoading={deleteOrgMutation.isPending || isFinalizingDelete}
         variant="danger"
+      />
+
+      {/* ================= LEAVE ORGANIZATION CONFIRMATION MODAL ================= */}
+      <LeaveOrganizationModal
+        isOpen={leaveModalOpen}
+        organizationName={savedOrg?.name}
+        onClose={() => setLeaveModalOpen(false)}
       />
     </div>
   );

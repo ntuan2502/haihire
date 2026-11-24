@@ -8,9 +8,8 @@ import { useLocalization } from "@/components/providers/localization-provider";
 import { useAuth } from "@/context/auth-context";
 import { useNotificationsQuery } from "@/hooks/use-notification-queries";
 import { useI18n } from "@/i18n";
-import { getInitials, getUserDisplayName } from "@/lib/utils";
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserDisplayName } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,8 +56,6 @@ export function NavUser() {
     ? getUserDisplayName(user, localization)
     : t("common.unknownUserFallback");
   const email = user?.email ?? "";
-  const avatarUrl = user?.avatarUrl ?? undefined;
-  const initials = getInitials(displayName);
 
   return (
     <SidebarMenu>
@@ -70,12 +67,12 @@ export function NavUser() {
               data-testid="user-menu-trigger"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={avatarUrl} alt={displayName} />
-                <AvatarFallback className="rounded-lg">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={displayName}
+                avatarUrl={user?.avatarUrl}
+                size="sm"
+                rounded="lg"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayName}</span>
                 <span className="truncate text-xs">{email}</span>
@@ -91,12 +88,12 @@ export function NavUser() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback className="rounded-lg">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={displayName}
+                  avatarUrl={user?.avatarUrl}
+                  size="sm"
+                  rounded="lg"
+                />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{displayName}</span>
                   <span className="truncate text-xs">{email}</span>

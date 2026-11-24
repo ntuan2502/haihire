@@ -64,4 +64,20 @@ export const authApi = {
     const response = await api.patch<User>("/auth/me/profile", data);
     return response.data;
   },
+
+  uploadAvatar: async (file: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post<User>("/auth/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+  updateAvatarSource: async (source: "NONE" | "GRAVATAR"): Promise<User> => {
+    const response = await api.patch<User>("/auth/me/avatar", { source });
+    return response.data;
+  },
 };

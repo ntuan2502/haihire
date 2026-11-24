@@ -63,7 +63,7 @@ export function WizardMobileFooter({
             onClick={onBackToStep1}
             className="text-xs cursor-pointer"
           >
-            {t("jobs.wizard.backAction")}
+            {t("common.back")}
           </Button>
           {mode === "create" && (
             <Button
@@ -74,7 +74,7 @@ export function WizardMobileFooter({
               className="text-xs font-semibold px-4 gap-1.5 cursor-pointer"
             >
               {isSaving
-                ? t("jobs.wizard.saving")
+                ? t("common.saving")
                 : publishMode === "publish"
                   ? t("jobs.wizard.publishNow")
                   : t("jobs.wizard.saveDraft")}

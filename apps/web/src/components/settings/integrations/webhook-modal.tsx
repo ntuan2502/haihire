@@ -211,7 +211,7 @@ export function WebhookModal({
               disabled={isBusy}
               onClick={onClose}
             >
-              {t("settings.integrations.webhooks.modal.cancel")}
+              {t("common.cancel")}
             </SettingsButton>
             <SettingsButton
               type="submit"
@@ -220,7 +220,7 @@ export function WebhookModal({
               disabled={isBusy}
             >
               {isSaving
-                ? t("settings.integrations.webhooks.modal.saving")
+                ? t("common.saving")
                 : t("settings.integrations.webhooks.modal.save")}
             </SettingsButton>
           </div>

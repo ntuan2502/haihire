@@ -244,14 +244,12 @@ export function TrackingLinkModal({
       noValidate={true}
       isSubmitting={isPending}
       submitLabel={
-        isEdit ? t("sourcing.details.editSave") : t("sourcing.modal.createBtn")
+        isEdit ? t("common.saveChanges") : t("sourcing.modal.createBtn")
       }
       savingLabel={
-        isEdit
-          ? t("sourcing.details.editSaving")
-          : t("sourcing.modal.creatingBtn")
+        isEdit ? t("common.saving") : t("sourcing.modal.creatingBtn")
       }
-      cancelLabel={t("sourcing.modal.cancelBtn")}
+      cancelLabel={t("common.cancel")}
       error={formError}
       bodyClassName="space-y-4"
     >

@@ -171,7 +171,7 @@ describe("GeneralSettingsPage - Ownership Controls", () => {
 
     expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "settings.saveChanges" }),
+      screen.queryByRole("button", { name: "common.saveChanges" }),
     ).not.toBeInTheDocument();
   });
 

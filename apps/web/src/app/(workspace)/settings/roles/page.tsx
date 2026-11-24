@@ -174,11 +174,7 @@ export default function RolesPermissionsPage() {
           dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
         }
       >
-        {t(
-          isSaving
-            ? "settings.rolesMatrix.savingButton"
-            : "settings.rolesMatrix.saveButton",
-        )}
+        {t(isSaving ? "common.saving" : "common.saveChanges")}
       </SettingsButton>
     </>
   );
@@ -267,7 +263,7 @@ export default function RolesPermissionsPage() {
         title={t("settings.rolesMatrix.resetDefaultConfirmTitle")}
         description={t("settings.rolesMatrix.resetDefaultConfirmMessage")}
         confirmButtonLabel={t("settings.rolesMatrix.resetDefaultConfirmButton")}
-        cancelButtonLabel={t("settings.rolesMatrix.resetDefaultCancelButton")}
+        cancelButtonLabel={t("common.cancel")}
         isLoading={resetDefaultMutation.isPending}
         variant="warning"
       />

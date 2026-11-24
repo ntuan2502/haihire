@@ -34,7 +34,7 @@ vi.mock("@/i18n", () => ({
         "email.thRecipient": "Người nhận",
         "email.thTemplate": "Mẫu sử dụng",
         "email.thSubject": "Tiêu đề",
-        "email.thStatus": "Trạng thái",
+        "common.status": "Trạng thái",
         "email.thAction": "Thao tác",
         "email.viewDetails": "Chi tiết",
         "email.optOffer": "Đề nghị nhận việc",

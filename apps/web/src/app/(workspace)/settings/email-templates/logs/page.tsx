@@ -131,10 +131,10 @@ export default function EmailLogsPage() {
                 {t("email.thSubject")}
               </th>
               <th scope="col" className="px-4 py-3">
-                {t("email.thStatus")}
+                {t("common.status")}
               </th>
               <th scope="col" className="px-4 py-3 text-right">
-                {t("email.thActions")}
+                {t("common.actions")}
               </th>
             </tr>
           </thead>

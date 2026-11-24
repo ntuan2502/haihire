@@ -74,7 +74,7 @@ export function AttributionLogTab({
                     {t("sourcing.attribution.campaign")}
                   </th>
                   <th scope="col" className="py-3.5 px-4 text-center">
-                    {t("sourcing.attribution.status")}
+                    {t("common.status")}
                   </th>
                   <th scope="col" className="py-3.5 px-5 text-right">
                     {t("sourcing.attribution.applied")}

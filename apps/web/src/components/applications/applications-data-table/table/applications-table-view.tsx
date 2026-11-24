@@ -227,7 +227,7 @@ export function ApplicationsTableView({
                         : "font-semibold text-muted-foreground hover:text-foreground"
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded cursor-pointer`}
                   >
-                    <span>{t("applications.columns.status")}</span>
+                    <span>{t("common.status")}</span>
                     {sortField === "status" ? (
                       <ArrowDown
                         className={`h-3 w-3 text-foreground transition-transform ${

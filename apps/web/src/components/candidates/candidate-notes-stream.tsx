@@ -245,7 +245,7 @@ export function CandidateNotesStream({
                     disabled={addNoteMutation.isPending}
                     className="px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {t("applications.notesStream.cancel")}
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="button"
@@ -258,7 +258,7 @@ export function CandidateNotesStream({
                     {addNoteMutation.isPending ? (
                       <>
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>{t("applications.notesStream.saving")}</span>
+                        <span>{t("common.saving")}</span>
                       </>
                     ) : (
                       <>
@@ -351,7 +351,7 @@ export function CandidateNotesStream({
                           type="button"
                           onClick={() => handleStartEdit(note)}
                           className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                          title={t("applications.notesStream.editNote")}
+                          title={t("common.edit")}
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -362,7 +362,7 @@ export function CandidateNotesStream({
                             setEditingNoteId(null);
                           }}
                           className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          title={t("applications.notesStream.deleteNote")}
+                          title={t("common.delete")}
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
@@ -384,7 +384,7 @@ export function CandidateNotesStream({
                         disabled={deleteNoteMutation.isPending}
                         className="px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-background rounded-md transition-colors"
                       >
-                        {t("applications.notesStream.cancel")}
+                        {t("common.cancel")}
                       </button>
                       <button
                         type="button"
@@ -395,7 +395,7 @@ export function CandidateNotesStream({
                         {deleteNoteMutation.isPending && (
                           <Loader2 className="h-2.5 w-2.5 animate-spin" />
                         )}
-                        <span>{t("applications.notesStream.deleteNote")}</span>
+                        <span>{t("common.delete")}</span>
                       </button>
                     </div>
                   </div>
@@ -422,7 +422,7 @@ export function CandidateNotesStream({
                           disabled={updateNoteMutation.isPending}
                           className="px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          {t("applications.notesStream.cancel")}
+                          {t("common.cancel")}
                         </button>
                         <button
                           type="button"

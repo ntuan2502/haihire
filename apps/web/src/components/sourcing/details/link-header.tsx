@@ -79,9 +79,7 @@ export function LinkHeader({
                   link.isActive ? "bg-emerald-500" : "bg-muted-foreground"
                 }`}
               />
-              {link.isActive
-                ? t("sourcing.details.active")
-                : t("sourcing.details.inactive")}
+              {link.isActive ? t("common.active") : t("common.inactive")}
             </span>
           </div>
 
@@ -134,7 +132,7 @@ export function LinkHeader({
               className="h-8 px-3 rounded-md border-input text-foreground text-xs font-semibold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{t("sourcing.details.edit")}</span>
+              <span>{t("common.edit")}</span>
             </Button>
           )}
 
@@ -150,7 +148,7 @@ export function LinkHeader({
               <>
                 <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  {t("sourcing.details.copied")}
+                  {t("common.copied")}
                 </span>
               </>
             ) : (

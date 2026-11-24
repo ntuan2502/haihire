@@ -71,7 +71,7 @@ export function CandidatesColumnPicker({
       }))}
       onToggle={(key) => toggleColumn(key as keyof CandidateVisibleColumns)}
       label={t("common.columns")}
-      menuTitle={t("candidates.toggleColumns")}
+      menuTitle={t("common.toggleColumns")}
       align="end"
     />
   );

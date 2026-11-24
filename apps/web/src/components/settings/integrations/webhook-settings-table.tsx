@@ -89,13 +89,13 @@ export function WebhookSettingsTable({
                   {t("settings.integrations.webhooks.table.provider")}
                 </th>
                 <th scope="col" className="py-3 px-4">
-                  {t("settings.integrations.webhooks.table.status")}
+                  {t("common.status")}
                 </th>
                 <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
                 <th scope="col" className="py-3 px-4 text-right">
-                  {t("settings.integrations.webhooks.table.actions")}
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -131,7 +131,7 @@ export function WebhookSettingsTable({
                         className="border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit"
                       >
                         <CheckCircle2 className="h-3 w-3" />
-                        {t("settings.integrations.webhooks.enabled")}
+                        {t("common.active")}
                       </Badge>
                     ) : (
                       <Badge

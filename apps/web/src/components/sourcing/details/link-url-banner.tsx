@@ -32,7 +32,7 @@ export function LinkUrlBanner({ url, onCopy, isCopied }: LinkUrlBannerProps) {
           <>
             <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
             <span className="text-emerald-600 dark:text-emerald-400">
-              {t("sourcing.details.copied")}
+              {t("common.copied")}
             </span>
           </>
         ) : (

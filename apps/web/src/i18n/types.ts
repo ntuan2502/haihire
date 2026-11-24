@@ -2,6 +2,7 @@ export interface TranslationSchema {
   common: {
     dashboard: string;
     save: string;
+    saveChanges: string;
     cancel: string;
     delete: string;
     edit: string;
@@ -37,6 +38,7 @@ export interface TranslationSchema {
     required: string;
     views: string;
     columns: string;
+    toggleColumns: string;
     showing: string;
     of: string;
     page: string;
@@ -549,7 +551,6 @@ export interface TranslationSchema {
     department: string;
     location: string;
     type: string;
-    status: string;
     applicants: string;
     createJob: string;
     editJob: string;
@@ -630,12 +631,9 @@ export interface TranslationSchema {
     resetAll: string;
     saveAsView: string;
     done: string;
-    activePipeline: string;
     newApplicants: string;
-    toggleColumns: string;
     columns: {
       title: string;
-      status: string;
       pipeline: string;
       applicants: string;
     };
@@ -678,8 +676,6 @@ export interface TranslationSchema {
       draftSaved: string;
       autoSaved: string;
       candidatePreview: string;
-      saving: string;
-      saveChanges: string;
       continueEditing: string;
       saveSuccess: string;
       jobDetailsTitle: string;
@@ -833,8 +829,6 @@ export interface TranslationSchema {
       deletePermanentTitle: string;
       deletePermanentDesc: string;
       deleteJobAction: string;
-      deletingAction: string;
-      backAction: string;
       publishAndCopyLink: string;
       linkCopied: string;
       savedAndLinkCopied: string;
@@ -859,8 +853,6 @@ export interface TranslationSchema {
       noReqEntered: string;
       securityGuaranteed: string;
       screeningQuestionsPreviewTitle: string;
-      yesOption: string;
-      noOption: string;
       answerPlaceholder: string;
       placeholders: {
         title: string;
@@ -899,7 +891,6 @@ export interface TranslationSchema {
     filterByStage: string;
     addCandidate: string;
     addNote: string;
-    toggleColumns: string;
     columns: {
       name: string;
       email: string;
@@ -912,7 +903,6 @@ export interface TranslationSchema {
     withCv: string;
     hasApplications: string;
     unassigned: string;
-    fullscreen: string;
     importCsv: string;
     noCandidatesYet: string;
     noCandidatesYetDesc: string;
@@ -996,7 +986,6 @@ export interface TranslationSchema {
     candidate: string;
     email: string;
     job: string;
-    status: string;
     score: string;
     matchScore: string;
     matchScoreUnrated: string;
@@ -1020,7 +1009,6 @@ export interface TranslationSchema {
       confirmButton: string;
     };
     applied: string;
-    actions: string;
     noApplicationsFound: string;
     searchApplications: string;
     filterByJob: string;
@@ -1038,27 +1026,20 @@ export interface TranslationSchema {
       subtitle: string;
       placeholder: string;
       addNote: string;
-      editNote: string;
-      deleteNote: string;
       deleteConfirm: string;
       edited: string;
       empty: string;
       emptyCompact: string;
-      cancel: string;
       save: string;
       keyboardHint: string;
-      saving: string;
-      deleting: string;
     };
     toggleSections: string;
     comingSoonTooltip: string;
     views: string;
-    columnsToggle: string;
     columns: {
       candidate: string;
       email: string;
       job: string;
-      status: string;
       score: string;
       applied: string;
     };
@@ -1070,7 +1051,6 @@ export interface TranslationSchema {
       review: string;
     };
     compare: string;
-    fullscreen: string;
     noApplicationsYet: string;
     noApplicationsYetDesc: string;
     viewActiveJobs: string;
@@ -1187,7 +1167,6 @@ export interface TranslationSchema {
     detailedFeedback: string;
     feedbackPlaceholder: string;
     saveScorecard: string;
-    savingScorecard: string;
     scorecardNoPermission: string;
     recommendations: {
       strongYes: string;
@@ -1258,17 +1237,13 @@ export interface TranslationSchema {
       schedule: string;
       interviewer: string;
       rounds: string;
-      status: string;
       rating: string;
-      actions: string;
     };
-    toggleColumns: string;
     columns: {
       candidate: string;
       job: string;
       schedule: string;
       interviewer: string;
-      status: string;
       rating: string;
     };
     atTime: string;
@@ -1276,8 +1251,6 @@ export interface TranslationSchema {
     roundsCount: string;
     joinMeetingShort: string;
     showingPagination: string;
-    previous: string;
-    next: string;
     modalTitle: string;
     targetJob: string;
     noJobsAvailable: string;
@@ -1363,7 +1336,6 @@ export interface TranslationSchema {
     openMeetingShort: string;
     viewEvaluation: string;
     rateStar: string;
-    close: string;
     cancelInterviewTitle: string;
     cancelInterviewWarning: string;
     interviewEventAria: string;
@@ -1396,7 +1368,6 @@ export interface TranslationSchema {
     memberCountOther: string;
     pendingInvites: string;
     copyLink: string;
-    copied: string;
     revokeLink: string;
     removeMember: string;
     removeMemberConfirmTitle: string;
@@ -1518,7 +1489,6 @@ export interface TranslationSchema {
     saved: string;
     saveError: string;
     loadError: string;
-    save: string;
   };
   settings: {
     title: string;
@@ -1528,7 +1498,6 @@ export interface TranslationSchema {
     roles: string;
     notifications: string;
     workspaceName: string;
-    saveChanges: string;
     inviteMember: string;
     memberRole: string;
     owner: string;
@@ -1584,7 +1553,6 @@ export interface TranslationSchema {
       uploadButton: string;
       changeButton: string;
       removeButton: string;
-      uploading: string;
       removing: string;
       hint: string;
       invalidTypeError: string;
@@ -1604,8 +1572,6 @@ export interface TranslationSchema {
       firstNamePlaceholder: string;
       lastNameLabel: string;
       lastNamePlaceholder: string;
-      saveBtn: string;
-      savingBtn: string;
       saveSuccess: string;
       saveError: string;
       nameRequiredError: string;
@@ -1624,7 +1590,6 @@ export interface TranslationSchema {
       currentTimezone: string;
       personalSource: string;
       saveBtn: string;
-      savingBtn: string;
       saveSuccess: string;
       saveError: string;
     };
@@ -1704,7 +1669,6 @@ export interface TranslationSchema {
       resetButton: string;
       saveSuccess: string;
       saveError: string;
-      adminOnlyHint: string;
       unsavedChanges: string;
       currencies: {
         VND: string;
@@ -1729,9 +1693,7 @@ export interface TranslationSchema {
         table: {
           eventType: string;
           provider: string;
-          status: string;
           lastUpdated: string;
-          actions: string;
         };
         modal: {
           addTitle: string;
@@ -1754,14 +1716,11 @@ export interface TranslationSchema {
           testSuccess: string;
           testFailed: string;
           save: string;
-          saving: string;
-          cancel: string;
         };
         deleteConfirm: {
           title: string;
           message: string;
           confirm: string;
-          cancel: string;
         };
         eventTypes: {
           DLQ_ALERT: string;
@@ -1774,8 +1733,6 @@ export interface TranslationSchema {
           GENERIC: string;
         };
         emptyState: string;
-        adminOnly: string;
-        enabled: string;
         disabled: string;
       };
     };
@@ -1783,9 +1740,6 @@ export interface TranslationSchema {
       title: string;
       description: string;
       readOnlyBadge: string;
-      readOnlyNotice: string;
-      saveButton: string;
-      savingButton: string;
       resetButton: string;
       saveSuccess: string;
       saveError: string;
@@ -1805,7 +1759,6 @@ export interface TranslationSchema {
       resetDefaultConfirmTitle: string;
       resetDefaultConfirmMessage: string;
       resetDefaultConfirmButton: string;
-      resetDefaultCancelButton: string;
       resetDefaultSuccess: string;
       resetDefaultError: string;
       roleAdmin: string;
@@ -1871,8 +1824,6 @@ export interface TranslationSchema {
       emptyTitle: string;
       emptyDescription: string;
       paginationShowing: string;
-      paginationPrev: string;
-      paginationNext: string;
       systemActor: string;
       noMetadata: string;
       actionRolePermissionsUpdated: string;
@@ -1925,7 +1876,6 @@ export interface TranslationSchema {
     goToDashboard: string;
     allCompanies: string;
     share: string;
-    copied: string;
     copyLink: string;
     copyPortalLink: string;
     copyJobLink: string;
@@ -2103,14 +2053,11 @@ export interface TranslationSchema {
     thRecipient: string;
     thTemplate: string;
     thSubject: string;
-    thStatus: string;
-    thActions: string;
     viewDetails: string;
     noLogsFound: string;
     showingLogs: string;
     page: string;
     of: string;
-    prevPage: string;
     nextPage: string;
     modalTitle: string;
     selectTemplate: string;
@@ -2118,7 +2065,6 @@ export interface TranslationSchema {
     sendBtn: string;
     sendingBtn: string;
     sendSuccessToast: string;
-    cancel: string;
     recipient: string;
     logDetailTitle: string;
     logDetailFrom: string;
@@ -2127,7 +2073,6 @@ export interface TranslationSchema {
     logDetailStatus: string;
     logDetailError: string;
     logDetailBody: string;
-    close: string;
     sendEmailAction: string;
     sendEmailInviteCheckbox: string;
     templateSaveError: string;
@@ -2297,18 +2242,12 @@ export interface TranslationSchema {
       clicks: string;
       apps: string;
       cvr: string;
-      status: string;
-      actions: string;
       copyLink: string;
       linkCopied: string;
-      active: string;
-      inactive: string;
       emptyTitle: string;
       emptyDesc: string;
       searchPlaceholder: string;
       filterAllStatus: string;
-      filterActive: string;
-      filterInactive: string;
       toggleStatus: string;
       deleteConfirm: string;
     };
@@ -2317,7 +2256,6 @@ export interface TranslationSchema {
       job: string;
       source: string;
       campaign: string;
-      status: string;
       applied: string;
       via: string;
       emptyTitle: string;
@@ -2338,7 +2276,6 @@ export interface TranslationSchema {
       campaignLabel: string;
       campaignPlaceholder: string;
       previewLabel: string;
-      cancelBtn: string;
       createBtn: string;
       creatingBtn: string;
       nameRequired: string;
@@ -2365,11 +2302,7 @@ export interface TranslationSchema {
     };
     details: {
       backToTracking: string;
-      edit: string;
       copyUrl: string;
-      copied: string;
-      active: string;
-      inactive: string;
       allJobs: string;
       createdOn: string;
       clicks: string;
@@ -2392,7 +2325,6 @@ export interface TranslationSchema {
       colJob: string;
       colReferrer: string;
       colCampaign: string;
-      colStatus: string;
       colApplied: string;
       noCandidates: string;
       configTitle: string;
@@ -2412,8 +2344,6 @@ export interface TranslationSchema {
       editSourceChannelLabel: string;
       editJobLabel: string;
       editStatusLabel: string;
-      editStatusActive: string;
-      editStatusInactive: string;
       editUtmAccordion: string;
       utmSourceLabel: string;
       utmMediumLabel: string;
@@ -2422,8 +2352,6 @@ export interface TranslationSchema {
       utmContentLabel: string;
       utmTermPlaceholder: string;
       utmContentPlaceholder: string;
-      editSave: string;
-      editSaving: string;
       editSuccess: string;
       notFoundTitle: string;
       notFoundDesc: string;

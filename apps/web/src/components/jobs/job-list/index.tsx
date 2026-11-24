@@ -125,7 +125,7 @@ export function JobList(props: JobListProps) {
                   )}
                   {visibleColumns.status && (
                     <th scope="col" className="py-3.5 px-4 min-w-[110px]">
-                      {t("jobs.status")}
+                      {t("common.status")}
                     </th>
                   )}
                   <th

@@ -12,8 +12,8 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.backToPipeline": "Quay lại Pipeline",
         "jobs.wizard.autoSaved": "Đã tự động lưu nháp",
         "jobs.wizard.candidatePreview": "Xem trước với tư cách ứng viên",
-        "jobs.wizard.saveChanges": "Lưu thay đổi",
-        "jobs.wizard.saving": "Đang lưu...",
+        "common.saveChanges": "Lưu thay đổi",
+        "common.saving": "Đang lưu...",
         "jobs.wizard.comingSoon": "Sắp ra mắt",
       };
       return translations[key] || key;

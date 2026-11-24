@@ -195,7 +195,7 @@ export function InterviewScorecardModal({
       isSubmitting={isSaving}
       submitDisabled={!canSubmitScorecard || !interview.id}
       submitLabel={t("interviews.saveScorecard")}
-      savingLabel={t("interviews.savingScorecard")}
+      savingLabel={t("common.saving")}
       cancelLabel={t("common.close")}
       error={errorMsg}
       bodyClassName="p-0 space-y-0 bg-background"

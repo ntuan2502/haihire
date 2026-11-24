@@ -60,7 +60,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
                   {t("sourcing.details.colCampaign")}
                 </th>
                 <th scope="col" className="py-3 px-4 text-center">
-                  {t("sourcing.details.colStatus")}
+                  {t("common.status")}
                 </th>
                 <th scope="col" className="py-3 px-5 text-right">
                   {t("sourcing.details.colApplied")}

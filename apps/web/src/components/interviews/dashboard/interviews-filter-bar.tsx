@@ -164,7 +164,7 @@ export function InterviewsFilterBar({
                 },
                 {
                   key: "status",
-                  label: t("interviews.columns.status"),
+                  label: t("common.status"),
                   checked: visibleColumns.status,
                 },
                 {
@@ -179,7 +179,7 @@ export function InterviewsFilterBar({
                 )
               }
               label={t("common.columns")}
-              menuTitle={t("interviews.toggleColumns")}
+              menuTitle={t("common.toggleColumns")}
               align="end"
             />
           )}

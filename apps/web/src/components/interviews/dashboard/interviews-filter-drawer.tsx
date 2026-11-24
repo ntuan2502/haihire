@@ -84,7 +84,7 @@ export function InterviewsFilterDrawer({
         <>
           {/* 2. STATUS TAB PILLS */}
           <FilterPillGroup
-            label={t("interviews.tableHeaders.status")}
+            label={t("common.status")}
             options={[
               {
                 value: "ALL",

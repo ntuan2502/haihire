@@ -18,7 +18,7 @@ vi.mock("@/i18n", () => ({
         "applications.columns.candidate": "Candidate",
         "applications.columns.email": "Email",
         "applications.columns.job": "Job",
-        "applications.columns.status": "Status",
+        "common.status": "Status",
         "applications.columns.score": "Score",
         "applications.columns.applied": "Applied",
         "common.actions": "Actions",

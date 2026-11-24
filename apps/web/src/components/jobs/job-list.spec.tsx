@@ -290,7 +290,7 @@ describe("JobList Component - Characterization Tests", () => {
       expect(headers).toEqual([
         en.jobs.jobTitle,
         en.dashboard.hiringPipeline,
-        en.jobs.status,
+        en.common.status,
         en.common.actions,
       ]);
       expect(screen.queryByText(/5 new/i)).toBeNull();
@@ -308,11 +308,11 @@ describe("JobList Component - Characterization Tests", () => {
       fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      expect(await screen.findByText(en.jobs.toggleColumns)).toBeDefined();
+      expect(await screen.findByText(en.common.toggleColumns)).toBeDefined();
 
       // Find menuitemcheckbox for Status
       const statusItem = screen.getByRole("menuitemcheckbox", {
-        name: en.jobs.columns.status,
+        name: en.common.status,
       });
       expect(statusItem).toHaveAttribute("aria-checked", "true");
 

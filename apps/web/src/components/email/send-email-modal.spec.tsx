@@ -38,7 +38,7 @@ vi.mock("@/i18n", () => ({
         "email.subject": "Tiêu đề Email",
         "email.sendBtn": "Gửi Email",
         "email.sendingBtn": "Đang gửi...",
-        "email.cancel": "Hủy",
+        "common.cancel": "Hủy",
         "email.sendSuccessToast": "Đã gửi",
         "email.tabCompose": "Soạn thảo",
         "email.livePreview": "Xem trước",

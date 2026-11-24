@@ -6,7 +6,6 @@ import {
   OrganizationsMembersService,
   OrganizationsInvitesService,
   OrganizationsRolesService,
-  OrganizationsAuditLogService,
 } from "./services";
 
 import { CommonModule } from "../common/common.module";
@@ -25,10 +24,6 @@ import { MinioModule } from "../minio/minio.module";
     OrganizationsInvitesService,
     OrganizationsRolesService,
   ],
-  exports: [
-    OrganizationsService,
-    OrganizationsRolesService,
-    OrganizationsAuditLogService,
-  ],
+  exports: [OrganizationsService, OrganizationsRolesService],
 })
 export class OrganizationsModule {}

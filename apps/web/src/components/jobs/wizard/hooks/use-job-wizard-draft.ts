@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import { formatTime } from "@/lib/utils";
 import type { Job } from "@/types";
 import type { StepId } from "../types";
@@ -51,10 +52,22 @@ export function useJobWizardDraft({
               form.setExperienceLevel(draft.experienceLevel);
             if (draft.workplace !== undefined)
               form.setWorkplace(draft.workplace);
-            if (draft.description !== undefined)
-              form.setDescription(draft.description);
-            if (draft.requirements !== undefined)
-              form.setRequirements(draft.requirements);
+            if (draft.scheduleOpen !== undefined)
+              form.setScheduleOpen(draft.scheduleOpen);
+            if (draft.applicationDeadline !== undefined)
+              form.setApplicationDeadline(draft.applicationDeadline);
+            if (draft.startDate !== undefined)
+              form.setStartDate(draft.startDate);
+            if (draft.openings !== undefined) form.setOpenings(draft.openings);
+            if (draft.description !== undefined || draft.requirements) {
+              const mergedDescription = [
+                draft.description || "",
+                draft.requirements || "",
+              ]
+                .filter(Boolean)
+                .join("\n\n");
+              form.setDescription(mergedDescription);
+            }
             if (draft.compensationOpen !== undefined)
               form.setCompensationOpen(draft.compensationOpen);
             if (draft.payNegotiable !== undefined)
@@ -92,7 +105,7 @@ export function useJobWizardDraft({
       return;
     if (
       !form.jobTitle.trim() &&
-      !form.description.trim() &&
+      !extractPlainTextFromHtml(form.description) &&
       !form.location.trim()
     )
       return;
@@ -107,6 +120,10 @@ export function useJobWizardDraft({
           employmentType: form.employmentType,
           experienceLevel: form.experienceLevel,
           workplace: form.workplace,
+          scheduleOpen: form.scheduleOpen,
+          applicationDeadline: form.applicationDeadline,
+          startDate: form.startDate,
+          openings: form.openings,
           compensationOpen: form.compensationOpen,
           payNegotiable: form.payNegotiable,
           minSalary: form.minSalary,
@@ -114,7 +131,6 @@ export function useJobWizardDraft({
           currency: form.currency,
           salaryPer: form.salaryPer,
           description: form.description,
-          requirements: form.requirements,
           publishMode: form.publishMode,
           currentStep,
           savedAt: Date.now(),
@@ -137,6 +153,10 @@ export function useJobWizardDraft({
     form.employmentType,
     form.experienceLevel,
     form.workplace,
+    form.scheduleOpen,
+    form.applicationDeadline,
+    form.startDate,
+    form.openings,
     form.compensationOpen,
     form.payNegotiable,
     form.minSalary,
@@ -144,7 +164,6 @@ export function useJobWizardDraft({
     form.currency,
     form.salaryPer,
     form.description,
-    form.requirements,
     form.publishMode,
     currentStep,
   ]);

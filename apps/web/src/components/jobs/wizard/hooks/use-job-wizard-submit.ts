@@ -85,6 +85,10 @@ export function useJobWizardSubmit({
           ? "CLOSED"
           : "DRAFT";
 
+    const parsedOpenings = form.openings.trim()
+      ? Number(form.openings.trim())
+      : 1;
+
     try {
       form.setFormError(null);
 
@@ -98,10 +102,12 @@ export function useJobWizardSubmit({
             (form.experienceLevel as ExperienceLevel) || undefined,
           workplace: (form.workplace as WorkplaceType) || undefined,
           type: typeMapped,
+          applicationDeadline: form.applicationDeadline || undefined,
+          startDate: form.startDate || undefined,
+          openings: parsedOpenings,
           description:
             form.description ||
             "We are seeking a talented professional to join our team.",
-          requirements: form.requirements || undefined,
           salaryRange: salaryRange || undefined,
           status: statusMapped,
           organizationId: user?.organizationId ?? null,
@@ -120,10 +126,12 @@ export function useJobWizardSubmit({
             experienceLevel: (form.experienceLevel as ExperienceLevel) || null,
             workplace: (form.workplace as WorkplaceType) || null,
             type: typeMapped,
+            applicationDeadline: form.applicationDeadline || null,
+            startDate: form.startDate || null,
+            openings: parsedOpenings,
             description:
               form.description ||
               "We are seeking a talented professional to join our team.",
-            requirements: form.requirements || null,
             salaryRange: salaryRange || null,
             status: statusMapped,
           },

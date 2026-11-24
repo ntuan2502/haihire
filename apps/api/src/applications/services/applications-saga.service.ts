@@ -9,6 +9,7 @@ import {
   SourcingChannel,
   formatCandidateDisplayName,
   hasPermission,
+  isJobApplicationDeadlinePassed,
   normalizeNameInput,
   resolveChannelFromDomain,
 } from "@haihire/shared";
@@ -123,6 +124,7 @@ export class ApplicationsSagaService {
         id: true,
         title: true,
         status: true,
+        applicationDeadline: true,
         organizationId: true,
         department: true,
         location: true,
@@ -175,6 +177,13 @@ export class ApplicationsSagaService {
       throw new AppBadRequestException(
         APP_ERROR_CODES.JOB_NOT_ACCEPTING_APPLICATIONS,
         "This job is not currently accepting applications.",
+      );
+    }
+
+    if (isJobApplicationDeadlinePassed(job.applicationDeadline)) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.JOB_NOT_ACCEPTING_APPLICATIONS,
+        "The application deadline for this job has passed.",
       );
     }
 

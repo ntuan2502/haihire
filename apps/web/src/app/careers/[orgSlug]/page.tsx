@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import { OrgCareersClient } from "@/components/careers/org-careers-client";
 import type { Organization, Job } from "@/types";
 
@@ -7,7 +8,7 @@ interface PageProps {
   params: Promise<{ orgSlug: string }>;
 }
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const getApiBase = () => {
   return (
@@ -22,7 +23,7 @@ async function fetchOrg(slug: string): Promise<Organization | null> {
     const res = await fetch(
       `${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
       },
     );
     if (!res.ok) return null;
@@ -36,7 +37,7 @@ async function fetchJobs(orgSlug: string): Promise<Job[]> {
   try {
     const res = await fetch(
       `${getApiBase()}/jobs?organizationSlug=${encodeURIComponent(orgSlug)}&status=PUBLISHED&limit=1000`,
-      { next: { revalidate: 60 } },
+      { cache: "no-store" },
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -98,7 +99,7 @@ export default async function OrgCareersPage({ params }: PageProps) {
                 href={`/careers/${orgSlug}/${job.id}`}
                 tabIndex={-1}
               >{`${job.title} - ${job.department} (${job.location})`}</a>
-              <p>{job.description}</p>
+              <p>{extractPlainTextFromHtml(job.description || "")}</p>
             </li>
           ))}
         </ul>

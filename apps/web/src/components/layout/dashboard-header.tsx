@@ -57,7 +57,7 @@ export function buildWorkspaceBreadcrumbs(
         { label: t("jobs.tabs.table") },
       ];
     }
-    if (subTab === "tracking") {
+    if (subTab === "source-tracking") {
       return [
         { label: t("nav.jobs"), href: "/jobs" },
         { label: t("jobs.tabs.sourceTracking") },

@@ -14,7 +14,6 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.jobDetailsTitle": "Chi tiết công việc",
         "jobs.wizard.jobDetailsDesc":
           "Điền các thông tin cơ bản cho vị trí tuyển dụng.",
-        "jobs.wizard.saveChangesLink": "Lưu thay đổi",
         "jobs.wizard.jobTitleLabel": "Tiêu đề công việc",
         "jobs.wizard.departmentLabel": "Phòng ban",
         "jobs.wizard.departmentHint": "Ví dụ: Kỹ thuật, Marketing",
@@ -37,13 +36,22 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.maxSalary": "Lương tối đa",
         "jobs.wizard.currency": "Tiền tệ",
         "jobs.wizard.perPeriod": "Kỳ hạn",
-        "jobs.wizard.descriptionTitle": "Mô tả công việc",
+        "jobs.wizard.descriptionTitle": "Mô tả",
         "jobs.wizard.descriptionHelpText":
           "Tóm tắt trách nhiệm chính và mục tiêu của vai trò này",
+        "jobs.wizard.scheduleHeadcountTitle":
+          "Hạn nộp hồ sơ, ngày bắt đầu & số lượng",
+        "jobs.wizard.scheduleHeadcountHintClosed":
+          "Chưa thiết lập — mặc định nhận hồ sơ cho đến khi đóng tin.",
+        "jobs.wizard.applicationDeadlineLabel": "Hạn nộp hồ sơ",
+        "jobs.wizard.applicationDeadlineHint": "Hiển thị trên tin tuyển dụng.",
+        "jobs.wizard.startDateLabel": "Ngày bắt đầu dự kiến",
+        "jobs.wizard.startDateHint": "Để trống nếu có thể đi làm ngay.",
+        "jobs.wizard.openingsLabel": "Số lượng cần tuyển",
+        "jobs.wizard.openingsHint": "Số lượng nhân sự dự kiến tuyển.",
+        "jobs.wizard.openingsError":
+          "Số lượng tuyển phải là số nguyên từ 1 trở lên.",
         "jobs.wizard.charsCount": "ký tự",
-        "jobs.wizard.requirementsTitle": "Yêu cầu ứng viên",
-        "jobs.wizard.requirementsNotice":
-          "Liệt kê kỹ năng chuyên môn, kinh nghiệm cần thiết",
         "jobs.wizard.continueToPublish": "Tiếp tục sang bước xuất bản",
         "jobs.wizard.errors.titleRequired":
           "Tiêu đề công việc không được để trống",
@@ -73,6 +81,7 @@ describe("WizardStepDetails Component Tests", () => {
     workplace: false,
     currency: false,
     salaryPer: false,
+    openings: false,
   };
 
   const createProps = (
@@ -92,6 +101,15 @@ describe("WizardStepDetails Component Tests", () => {
     setExperienceLevel: vi.fn(),
     workplace: "",
     setWorkplace: vi.fn(),
+    scheduleOpen: false,
+    setScheduleOpen: vi.fn(),
+    applicationDeadline: "",
+    setApplicationDeadline: vi.fn(),
+    startDate: "",
+    setStartDate: vi.fn(),
+    openings: "1",
+    setOpenings: vi.fn(),
+    showOpeningsError: false,
     compensationOpen: false,
     setCompensationOpen: vi.fn(),
     payNegotiable: false,
@@ -106,8 +124,6 @@ describe("WizardStepDetails Component Tests", () => {
     setSalaryPer: vi.fn(),
     description: "",
     setDescription: vi.fn(),
-    requirements: "",
-    setRequirements: vi.fn(),
     touched: defaultTouched,
     setTouched: vi.fn(),
     showTitleError: false,
@@ -133,8 +149,35 @@ describe("WizardStepDetails Component Tests", () => {
     expect(screen.getByText("Tiêu đề công việc")).toBeInTheDocument();
     expect(screen.getByText("Phòng ban")).toBeInTheDocument();
     expect(screen.getByText("Địa điểm")).toBeInTheDocument();
-    expect(screen.getByText("Mô tả công việc")).toBeInTheDocument();
-    expect(screen.getByText("Yêu cầu ứng viên")).toBeInTheDocument();
+    expect(screen.getByText("Mô tả")).toBeInTheDocument();
+    expect(
+      screen.getByText("Hạn nộp hồ sơ, ngày bắt đầu & số lượng"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Yêu cầu ứng viên")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "jobs.wizard.editor.bold" }),
+    ).toBeInTheDocument();
+  });
+
+  it("toggles schedule & headcount accordion and renders date/openings inputs when open", () => {
+    const setScheduleOpen = vi.fn();
+    const { rerender } = render(
+      <WizardStepDetails
+        {...createProps({ scheduleOpen: false, setScheduleOpen })}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Hạn nộp hồ sơ, ngày bắt đầu & số lượng"));
+    expect(setScheduleOpen).toHaveBeenCalledWith(true);
+
+    rerender(
+      <WizardStepDetails
+        {...createProps({ scheduleOpen: true, setScheduleOpen })}
+      />,
+    );
+    expect(screen.getByLabelText("Hạn nộp hồ sơ")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ngày bắt đầu dự kiến")).toBeInTheDocument();
+    expect(screen.getByLabelText("Số lượng cần tuyển")).toBeInTheDocument();
   });
 
   it("displays validation error when showTitleError is true", () => {

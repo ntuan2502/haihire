@@ -24,3 +24,5 @@ export * from "./filter-drawer";
 export * from "./column-picker";
 export * from "./error-fallback";
 export * from "./authenticated-document-viewer";
+export * from "./rich-text-editor";
+export * from "./rich-text-content";

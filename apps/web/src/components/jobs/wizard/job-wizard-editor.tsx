@@ -48,6 +48,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     maxSalary: form.maxSalary,
     currency: form.currency,
     salaryPer: form.salaryPer,
+    openings: form.openings,
   });
 
   const draft = useJobWizardDraft({
@@ -106,7 +107,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     <div className="flex-1 flex flex-col min-h-0 bg-background text-foreground font-sans transition-colors duration-200 overflow-y-auto">
       <WizardHeader
         mode={mode}
-        publishMode={form.publishMode}
         initialJob={initialJob}
         currentStep={currentStep}
         steps={steps}
@@ -152,6 +152,15 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             setExperienceLevel={form.setExperienceLevel}
             workplace={form.workplace}
             setWorkplace={form.setWorkplace}
+            scheduleOpen={form.scheduleOpen}
+            setScheduleOpen={form.setScheduleOpen}
+            applicationDeadline={form.applicationDeadline}
+            setApplicationDeadline={form.setApplicationDeadline}
+            startDate={form.startDate}
+            setStartDate={form.setStartDate}
+            openings={form.openings}
+            setOpenings={form.setOpenings}
+            showOpeningsError={validation.showOpeningsError}
             compensationOpen={form.compensationOpen}
             setCompensationOpen={form.setCompensationOpen}
             payNegotiable={form.payNegotiable}
@@ -166,8 +175,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             setSalaryPer={form.setSalaryPer}
             description={form.description}
             setDescription={form.setDescription}
-            requirements={form.requirements}
-            setRequirements={form.setRequirements}
             touched={validation.touched}
             setTouched={validation.setTouched}
             showTitleError={validation.showTitleError}
@@ -271,8 +278,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           workplace={(form.workplace as WorkplaceType) || null}
           experienceLevel={(form.experienceLevel as ExperienceLevel) || null}
           salaryRange={submit.formattedSalaryRange}
+          applicationDeadline={form.applicationDeadline}
+          startDate={form.startDate}
+          openings={Number(form.openings) || 1}
           description={form.description}
-          requirements={form.requirements}
           phoneSetting={form.phoneSetting}
           resumeSetting={form.resumeSetting}
           coverLetterSetting={form.coverLetterSetting}

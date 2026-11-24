@@ -6,7 +6,13 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
-import { JobStatus, JobType } from "./dto/create-job.dto";
+import {
+  JobStatus,
+  JobType,
+  ExperienceLevel,
+  WorkplaceType,
+} from "./dto/create-job.dto";
+import { updateJobSchema } from "@haihire/shared";
 
 describe("JobsService - Multi-Tenant Job Management", () => {
   let service: JobsService;
@@ -19,7 +25,9 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     location: string;
     type: string;
     description: string;
-    requirements: string;
+    applicationDeadline?: Date | null;
+    startDate?: Date | null;
+    openings?: number;
     salaryRange: string;
     status: string;
     organizationId: string;
@@ -47,8 +55,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         department: "Engineering",
         location: "Hanoi / Remote",
         type: "FULL_TIME",
-        description: "Develop scalable apps",
-        requirements: "5+ years TS/React",
+        description: "Develop scalable apps\n\n5+ years TS/React",
         salaryRange: "$2,500 - $4,000",
         status: "PUBLISHED",
         organizationId: "org-1",
@@ -62,8 +69,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         department: "Design",
         location: "Remote",
         type: "FULL_TIME",
-        description: "Design UI/UX",
-        requirements: "Figma expert",
+        description: "Design UI/UX\n\nFigma expert",
         salaryRange: "$2,000 - $3,000",
         status: "DRAFT",
         organizationId: "org-1",
@@ -77,8 +83,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         department: "Marketing",
         location: "HCM City",
         type: "FULL_TIME",
-        description: "Grow brand awareness",
-        requirements: "SEO / Ads",
+        description: "Grow brand awareness\n\nSEO / Ads",
         salaryRange: "$2,000 - $3,500",
         status: "PUBLISHED",
         organizationId: "org-2", // Different organization!
@@ -292,7 +297,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           location: "Remote",
           type: "FULL_TIME",
           description: "Closed",
-          requirements: "None",
           salaryRange: "$1000",
           status: "CLOSED",
           organizationId: "org-1",
@@ -305,7 +309,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           location: "Remote",
           type: "FULL_TIME",
           description: "Archived",
-          requirements: "None",
           salaryRange: "$1000",
           status: "ARCHIVED",
           organizationId: "org-1",
@@ -415,7 +418,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           location: "HCM",
           type: "FULL_TIME",
           description: "Old closed opening",
-          requirements: "TS",
           salaryRange: "$2,000 - $3,000",
           status: "CLOSED",
           organizationId: "org-1",
@@ -430,7 +432,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           location: "Hanoi",
           type: "FULL_TIME",
           description: "New published opening",
-          requirements: "TS",
           salaryRange: "$2,000 - $3,000",
           status: "PUBLISHED",
           organizationId: "org-1",
@@ -543,6 +544,99 @@ describe("JobsService - Multi-Tenant Job Management", () => {
           "org-1",
         ),
       ).rejects.toThrow(/another job/i);
+    });
+
+    it("creates and updates jobs with schedule/headcount fields, expanded enums, and sanitized rich-text descriptions", async () => {
+      const created = await service.create(
+        {
+          title: "Field Operations Manager",
+          department: "Operations",
+          location: "Da Nang",
+          type: JobType.FREELANCE,
+          experienceLevel: ExperienceLevel.MANAGER,
+          workplace: WorkplaceType.FIELD,
+          applicationDeadline: "2026-12-31",
+          startDate: "2027-01-15",
+          openings: 4,
+          description:
+            '<h2 style="color:red">Role</h2><p>Lead field ops<script>alert(1)</script></p>',
+          status: JobStatus.PUBLISHED,
+          organizationId: "org-1",
+        },
+        "org-1",
+      );
+
+      expect(created.type).toBe(JobType.FREELANCE);
+      expect(created.experienceLevel).toBe(ExperienceLevel.MANAGER);
+      expect(created.workplace).toBe(WorkplaceType.FIELD);
+      expect(created.openings).toBe(4);
+      expect((created.applicationDeadline as Date).toISOString()).toBe(
+        "2026-12-31T00:00:00.000Z",
+      );
+      expect((created.startDate as Date).toISOString()).toBe(
+        "2027-01-15T00:00:00.000Z",
+      );
+      expect(created.description).toBe("<h2>Role</h2><p>Lead field ops</p>");
+
+      const updated = await service.update(
+        created.id,
+        {
+          openings: 6,
+          applicationDeadline: null,
+          description: "<p>Updated <strong>scope</strong></p>",
+        },
+        "org-1",
+      );
+      expect(updated.openings).toBe(6);
+      expect(updated.applicationDeadline).toBeNull();
+      expect(updated.description).toBe("<p>Updated <strong>scope</strong></p>");
+
+      await expect(
+        service.create(
+          {
+            title: "Empty JD",
+            department: "Operations",
+            location: "Hanoi",
+            description: "<p>   </p><script>alert(1)</script>",
+            organizationId: "org-1",
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow("Job description is required");
+
+      await expect(
+        service.create(
+          {
+            title: "Invalid Date Job",
+            department: "Operations",
+            location: "Hanoi",
+            description: "<p>Valid description</p>",
+            applicationDeadline: "2026-02-31",
+            organizationId: "org-1",
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow("Invalid calendar date");
+    });
+
+    it("accepts null optional fields in updateJobSchema when editing and clearing values", () => {
+      const parsed = updateJobSchema.safeParse({
+        title: "Senior Full-Stack Engineer",
+        department: "Engineering",
+        location: "Ho Chi Minh City",
+        postalCode: null,
+        experienceLevel: null,
+        workplace: null,
+        type: JobType.FULL_TIME,
+        applicationDeadline: null,
+        startDate: null,
+        openings: 1,
+        description: "<p>Updated description</p>",
+        salaryRange: null,
+        status: JobStatus.PUBLISHED,
+      });
+
+      expect(parsed.success).toBe(true);
     });
   });
 });

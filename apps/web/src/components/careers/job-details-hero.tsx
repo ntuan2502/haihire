@@ -1,10 +1,20 @@
 "use client";
 
-import { Briefcase, Clock, DollarSign, Globe2, MapPin } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  Clock,
+  DollarSign,
+  Globe2,
+  MapPin,
+  Users,
+} from "lucide-react";
 import { OrganizationLogo } from "@/components/shared/organization-logo";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import {
+  formatDateOnlyDisplay,
   getExperienceLevelLabel,
   getJobTypeLabel,
   getWorkplaceLabel,
@@ -24,7 +34,18 @@ export function JobDetailsHero({
   orgLogoUrl,
   onApplyClick,
 }: JobDetailsHeroProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { localization } = useLocalization();
+  const formattedDeadline = formatDateOnlyDisplay(
+    job.applicationDeadline,
+    localization,
+    locale,
+  );
+  const formattedStartDate = formatDateOnlyDisplay(
+    job.startDate,
+    localization,
+    locale,
+  );
 
   return (
     <div className="p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border space-y-6">
@@ -74,6 +95,34 @@ export function JobDetailsHero({
               <div className="flex items-center gap-1.5 font-medium font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
                 <DollarSign className="h-4 w-4 stroke-[1.5]" />
                 <span>{job.salaryRange}</span>
+              </div>
+            )}
+            {formattedDeadline && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
+                <span>
+                  {t("careers.applicationDeadline", {
+                    date: formattedDeadline,
+                  })}
+                </span>
+              </div>
+            )}
+            {formattedStartDate && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
+                <span>
+                  {t("careers.startDate", {
+                    date: formattedStartDate,
+                  })}
+                </span>
+              </div>
+            )}
+            {job.openings !== undefined && job.openings > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
+                <span>
+                  {t("careers.openingsCount", { count: job.openings })}
+                </span>
               </div>
             )}
           </div>

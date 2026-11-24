@@ -11,7 +11,6 @@ import type { StepId } from "./types";
 
 interface WizardHeaderProps {
   mode: "create" | "edit";
-  publishMode?: "publish" | "draft" | "closed";
   initialJob?: Job | null;
   currentStep: StepId;
   steps: Array<{ id: StepId; label: string; implemented: boolean }>;
@@ -25,7 +24,6 @@ interface WizardHeaderProps {
 
 export function WizardHeader({
   mode,
-  publishMode = "publish",
   initialJob,
   currentStep,
   steps,
@@ -155,32 +153,22 @@ export function WizardHeader({
               {t("jobs.wizard.candidatePreview")}
             </span>
           </button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onSaveJob}
-            disabled={isSaving || (currentStep === 1 && !isStep1Valid)}
-            className="h-8 px-3.5 text-xs font-semibold gap-1.5 cursor-pointer"
-          >
-            {mode === "create" ? (
+          {mode === "edit" && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onSaveJob}
+              disabled={isSaving || (currentStep === 1 && !isStep1Valid)}
+              className="h-8 px-3.5 text-xs font-semibold gap-1.5 cursor-pointer"
+            >
+              <Save className="h-3.5 w-3.5" />
               <span>
                 {isSaving
                   ? t("jobs.wizard.saving")
-                  : publishMode === "draft"
-                    ? t("jobs.wizard.saveDraft")
-                    : t("jobs.wizard.saveAndPublish")}
+                  : t("jobs.wizard.saveChanges")}
               </span>
-            ) : (
-              <>
-                <Save className="h-3.5 w-3.5" />
-                <span>
-                  {isSaving
-                    ? t("jobs.wizard.saving")
-                    : t("jobs.wizard.saveChanges")}
-                </span>
-              </>
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </header>

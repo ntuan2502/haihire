@@ -65,21 +65,21 @@ export function WizardMobileFooter({
           >
             {t("jobs.wizard.backAction")}
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onSaveJob}
-            disabled={isSaving}
-            className="text-xs font-semibold px-4 gap-1.5 cursor-pointer"
-          >
-            {isSaving
-              ? t("jobs.wizard.saving")
-              : mode === "create"
-                ? publishMode === "publish"
+          {mode === "create" && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onSaveJob}
+              disabled={isSaving}
+              className="text-xs font-semibold px-4 gap-1.5 cursor-pointer"
+            >
+              {isSaving
+                ? t("jobs.wizard.saving")
+                : publishMode === "publish"
                   ? t("jobs.wizard.publishNow")
-                  : t("jobs.wizard.saveDraft")
-                : t("jobs.wizard.saveChanges")}
-          </Button>
+                  : t("jobs.wizard.saveDraft")}
+            </Button>
+          )}
         </>
       )}
     </div>

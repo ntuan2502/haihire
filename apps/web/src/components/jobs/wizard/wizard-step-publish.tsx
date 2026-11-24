@@ -13,7 +13,6 @@ import {
   Target,
   AlertTriangle,
   Trash2,
-  Save,
 } from "lucide-react";
 import type { Job } from "@/types";
 
@@ -318,16 +317,16 @@ export function WizardStepPublish({
           >
             {t("jobs.wizard.backAction")}
           </Button>
-          <Button
-            type="button"
-            onClick={onSaveJob}
-            disabled={isSaving}
-            className="text-xs font-semibold px-6 gap-1.5 cursor-pointer"
-          >
-            {isSaving ? (
-              t("jobs.wizard.saving")
-            ) : mode === "create" ? (
-              publishMode === "publish" ? (
+          {mode === "create" && (
+            <Button
+              type="button"
+              onClick={onSaveJob}
+              disabled={isSaving}
+              className="text-xs font-semibold px-6 gap-1.5 cursor-pointer"
+            >
+              {isSaving ? (
+                t("jobs.wizard.saving")
+              ) : publishMode === "publish" ? (
                 <>
                   <Send className="h-3.5 w-3.5" />
                   {t("jobs.wizard.publishNow")}
@@ -337,14 +336,9 @@ export function WizardStepPublish({
                   <FileEdit className="h-3.5 w-3.5" />
                   {t("jobs.wizard.saveDraft")}
                 </>
-              )
-            ) : (
-              <>
-                <Save className="h-3.5 w-3.5" />
-                {t("jobs.wizard.saveAndUpdateJob")}
-              </>
-            )}
-          </Button>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>

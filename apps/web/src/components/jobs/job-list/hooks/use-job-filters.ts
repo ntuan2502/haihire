@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { extractPlainTextFromHtml } from "@haihire/shared";
 import type { Job } from "@/types";
 import type { JobListProps, JobFilterCriteria } from "../types";
 import { useI18n } from "@/i18n";
@@ -231,7 +232,9 @@ export function useJobFilters({
           !search ||
           job.title.toLowerCase().includes(search.toLowerCase()) ||
           job.location.toLowerCase().includes(search.toLowerCase()) ||
-          job.description.toLowerCase().includes(search.toLowerCase());
+          extractPlainTextFromHtml(job.description)
+            .toLowerCase()
+            .includes(search.toLowerCase());
 
         const matchStatus =
           statusFilters.length === 0 ||

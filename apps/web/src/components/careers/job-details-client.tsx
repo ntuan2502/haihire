@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, ChevronLeft } from "lucide-react";
+import { isJobApplicationDeadlinePassed } from "@haihire/shared";
 import { sourcingApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { CareersHeader } from "@/components/careers/careers-header";
@@ -70,17 +71,27 @@ export function JobDetailsClient({
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  if (job.status !== "PUBLISHED") {
+  const isExpired =
+    job.status === "PUBLISHED" &&
+    isJobApplicationDeadlinePassed(job.applicationDeadline);
+
+  if (job.status !== "PUBLISHED" || isExpired) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
         <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
         <h1 className="text-xl font-bold text-foreground">
-          {t("careers.jobClosed.title")}
+          {t(
+            isExpired ? "careers.jobExpired.title" : "careers.jobClosed.title",
+          )}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground max-w-md leading-relaxed">
-          {t("careers.jobClosed.description")}
+          {t(
+            isExpired
+              ? "careers.jobExpired.description"
+              : "careers.jobClosed.description",
+          )}
         </p>
         <Button
           onClick={() => router.push(`/careers/${orgSlug}`)}

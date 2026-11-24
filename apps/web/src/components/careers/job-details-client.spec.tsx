@@ -52,11 +52,13 @@ describe("JobDetailsClient Accessibility", () => {
     slug: "senior-full-stack-engineer",
     department: "Engineering",
     location: "Hanoi",
-    workplaceType: "HYBRID",
-    employmentType: "FULL_TIME",
+    workplace: "HYBRID",
+    type: "FULL_TIME",
     status: "PUBLISHED",
-    description: "Build high performance applications.",
-    requirements: "TypeScript, React, Node.js",
+    applicationDeadline: "2099-12-31",
+    startDate: "2099-01-15",
+    openings: 2,
+    description: "<p>Build high performance applications.</p>",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -123,5 +125,25 @@ describe("JobDetailsClient Accessibility", () => {
 
     fireEvent.click(removeBtn);
     expect(screen.queryByText("resume.pdf")).not.toBeInTheDocument();
+  });
+
+  it("blocks application submission and shows expired message when applicationDeadline has passed", () => {
+    render(
+      <JobDetailsClient
+        initialJob={{
+          ...mockJob,
+          applicationDeadline: "2020-01-01",
+        }}
+        initialOrg={mockOrg}
+        orgSlug="haihire-tech"
+        jobSlug="senior-full-stack-engineer"
+      />,
+    );
+
+    expect(screen.getByText("careers.jobExpired.title")).toBeInTheDocument();
+    expect(
+      screen.getByText("careers.jobExpired.description"),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("careers.resume")).not.toBeInTheDocument();
   });
 });

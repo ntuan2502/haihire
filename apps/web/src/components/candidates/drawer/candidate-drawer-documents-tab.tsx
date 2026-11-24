@@ -2,7 +2,6 @@
 
 import { useRef, type ChangeEvent } from "react";
 import {
-  ArrowLeft,
   Download,
   Eye,
   FileText,
@@ -10,8 +9,6 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
-import { CustomSelect } from "@/components/shared/custom-select";
-import { AuthenticatedDocumentViewer } from "@/components/shared/authenticated-document-viewer";
 import { formatDate } from "@/lib/utils";
 import { getDocumentTypeLabel } from "@/lib/roles";
 import type { CandidateDocument } from "@/types";
@@ -21,14 +18,11 @@ import { useI18n } from "@/i18n";
 export interface CandidateDrawerDocumentsTabProps {
   candidateId?: string;
   canEdit: boolean;
-  docFilter: string;
-  onDocFilterChange: (filter: string) => void;
   documents: CandidateDocument[];
-  previewDoc: CandidateDocument | null;
-  onPreviewDoc: (doc: CandidateDocument | null) => void;
+  onPreviewDoc: (doc: CandidateDocument) => void;
   onDownloadDoc: (
     docUrl: string,
-    docName: string,
+    docName?: string,
     appId?: string,
   ) => Promise<void>;
   onDeleteDoc: (doc: CandidateDocument) => void;
@@ -37,12 +31,9 @@ export interface CandidateDrawerDocumentsTabProps {
 }
 
 export function CandidateDrawerDocumentsTab({
-  candidateId,
+  candidateId: _candidateId,
   canEdit: _canEdit,
-  docFilter,
-  onDocFilterChange,
   documents,
-  previewDoc,
   onPreviewDoc,
   onDownloadDoc,
   onDeleteDoc,
@@ -69,71 +60,10 @@ export function CandidateDrawerDocumentsTab({
     }
   };
 
-  if (previewDoc) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => onPreviewDoc(null)}
-            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("candidates.backToDocuments")}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              onDownloadDoc(
-                previewDoc.url,
-                previewDoc.name,
-                previewDoc.sourceApplicationId,
-              )
-            }
-            className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
-            title={t("common.download")}
-          >
-            <Download className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground truncate">
-          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="truncate">{previewDoc.name}</span>
-        </div>
-
-        <div className="w-full h-[500px] rounded-xl border border-border overflow-hidden bg-muted/40 shadow-inner">
-          <AuthenticatedDocumentViewer
-            document={previewDoc}
-            candidateId={candidateId}
-            onDownload={onDownloadDoc}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <CustomSelect
-          value={docFilter}
-          onChange={onDocFilterChange}
-          options={[
-            { value: "All", label: t("common.all") },
-            { value: "Resume", label: t("candidates.resume") },
-            {
-              value: "Cover Letter",
-              label: t("candidates.coverLetter"),
-            },
-            { value: "Other", label: t("common.other") },
-          ]}
-          size="sm"
-          triggerClassName="h-7 w-28 text-xs font-normal"
-        />
-
-        {canUploadDoc && (
+      {canUploadDoc && (
+        <div className="flex items-center justify-end gap-2">
           <div>
             <button
               type="button"
@@ -159,8 +89,8 @@ export function CandidateDrawerDocumentsTab({
               onChange={handleFileChange}
             />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {documents.length > 0 ? (
         <div className="space-y-2.5">
@@ -181,14 +111,6 @@ export function CandidateDrawerDocumentsTab({
                     <span>{getDocumentTypeLabel(doc.type, t)}</span>
                     <span>•</span>
                     <span>{formatDate(doc.createdAt, "short")}</span>
-                    <span>•</span>
-                    <button
-                      type="button"
-                      onClick={() => onPreviewDoc(doc)}
-                      className="text-foreground font-medium underline underline-offset-4 hover:opacity-80 cursor-pointer"
-                    >
-                      {t("candidates.clickToPreview")}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -198,6 +120,7 @@ export function CandidateDrawerDocumentsTab({
                   type="button"
                   onClick={() => onPreviewDoc(doc)}
                   className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  aria-label={t("common.preview")}
                   title={t("common.preview")}
                 >
                   <Eye className="h-3.5 w-3.5" />

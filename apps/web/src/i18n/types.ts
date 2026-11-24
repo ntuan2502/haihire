@@ -36,7 +36,6 @@ export interface TranslationSchema {
     page: string;
     rows: string;
     created: string;
-    other: string;
     updated: string;
     details: string;
     yes: string;
@@ -645,7 +644,6 @@ export interface TranslationSchema {
     stage: string;
     appliedDate: string;
     resume: string;
-    viewResume: string;
     noCandidatesFound: string;
     searchCandidates: string;
     addCandidate: string;
@@ -687,7 +685,6 @@ export interface TranslationSchema {
     overviewTab: string;
     applicationsTab: string;
     documentsTab: string;
-    coverLetter: string;
     uploadDoc: string;
     applyToJob: string;
     noApplications: string;
@@ -695,8 +692,6 @@ export interface TranslationSchema {
     candidateDetail: string;
     openFullPage: string;
     allStages: string;
-    backToDocuments: string;
-    clickToPreview: string;
     loadingPreview: string;
     previewUnavailable: string;
     previewUnsupportedFormat: string;

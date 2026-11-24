@@ -36,7 +36,6 @@ export function useCandidateDetailState() {
     "applications" | "documents" | "notes"
   >("applications");
   const [stageFilter, setStageFilter] = useState("ALL");
-  const [documentFilter, setDocumentFilter] = useState("Resume");
 
   const candidateApps = useMemo(() => {
     return candidate?.applications || [];
@@ -86,14 +85,6 @@ export function useCandidateDetailState() {
     return allDocs;
   }, [candidate, candidateApps]);
 
-  const filteredDocuments = useMemo(() => {
-    if (!documentFilter || documentFilter === "All") return candidateDocuments;
-    return candidateDocuments.filter(
-      (d) =>
-        (d.type || "Resume").toLowerCase() === documentFilter.toLowerCase(),
-    );
-  }, [candidateDocuments, documentFilter]);
-
   const parsedNotes = resolveCandidateProfile(
     candidate?.name,
     candidate,
@@ -130,12 +121,9 @@ export function useCandidateDetailState() {
     setActiveTab,
     stageFilter,
     setStageFilter,
-    documentFilter,
-    setDocumentFilter,
     candidateApps,
     filteredCandidateApps,
     candidateDocuments,
-    filteredDocuments,
     parsedNotes,
     gender,
     dob,

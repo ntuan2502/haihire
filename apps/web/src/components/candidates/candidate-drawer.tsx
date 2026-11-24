@@ -2,6 +2,7 @@
 
 import { SlideOver } from "@/components/shared/slide-over";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
+import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { CandidateNotesStream } from "./candidate-notes-stream";
 import {
   CandidateDrawerHeader,
@@ -42,8 +43,6 @@ export function CandidateDrawer({
     setDrawerTab,
     drawerStageFilter,
     setDrawerStageFilter,
-    drawerDocFilter,
-    setDrawerDocFilter,
     drawerPreviewDoc,
     setDrawerPreviewDoc,
     drawerDocToDelete,
@@ -54,7 +53,6 @@ export function CandidateDrawer({
     selectedCandidateApps,
     filteredDrawerApps,
     drawerCandidateDocuments,
-    filteredDrawerDocuments,
     drawerNotesCount,
     handleDownloadDoc,
     handleUploadDoc,
@@ -144,10 +142,7 @@ export function CandidateDrawer({
               <CandidateDrawerDocumentsTab
                 candidateId={candidate.id}
                 canEdit={canEdit}
-                docFilter={drawerDocFilter}
-                onDocFilterChange={setDrawerDocFilter}
-                documents={filteredDrawerDocuments}
-                previewDoc={drawerPreviewDoc}
+                documents={drawerCandidateDocuments}
                 onPreviewDoc={setDrawerPreviewDoc}
                 onDownloadDoc={handleDownloadDoc}
                 onDeleteDoc={setDrawerDocToDelete}
@@ -174,6 +169,14 @@ export function CandidateDrawer({
         onConfirm={handleConfirmDeleteDrawerDoc}
         documentName={drawerDocToDelete?.name}
         isLoading={isDeletingDoc}
+      />
+
+      <DocumentPreviewModal
+        isOpen={Boolean(drawerPreviewDoc)}
+        onClose={() => setDrawerPreviewDoc(null)}
+        document={drawerPreviewDoc}
+        candidateId={candidate.id}
+        onDownload={handleDownloadDoc}
       />
     </>
   );

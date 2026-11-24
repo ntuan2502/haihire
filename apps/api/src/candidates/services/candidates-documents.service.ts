@@ -17,6 +17,7 @@ import {
   sanitizeFilename,
 } from "../../common/upload-utils";
 import { toInstant } from "../../common/date.util";
+import { hasRemainingDocumentUrlReference } from "../../common/document-ref";
 import { EventsService } from "../../events/events.service";
 
 @Injectable()
@@ -323,30 +324,8 @@ export class CandidatesDocumentsService {
       });
     }
 
-    if (
-      typeof this.minioService?.extractObjectName === "function" &&
-      typeof this.minioService?.deleteFile === "function"
-    ) {
-      for (const doc of docsToDelete) {
-        if (!doc.url) continue;
-        const objectName = this.minioService.extractObjectName(doc.url);
-        if (objectName) {
-          await this.minioService.deleteFile(objectName).catch(() => {});
-        }
-      }
-      if (
-        docsToDelete.length === 0 &&
-        candidate.resumeUrl &&
-        (isSyntheticId || (opts?.url && opts.url === candidate.resumeUrl))
-      ) {
-        const objectName = this.minioService.extractObjectName(
-          candidate.resumeUrl,
-        );
-        if (objectName) {
-          await this.minioService.deleteFile(objectName).catch(() => {});
-        }
-      }
-    }
+    const orgId = candidate.organizationId || tenantOrgId || "";
+    let urlsToDeleteFromMinio: string[] = [];
 
     await runInTransaction(this.prisma, async (tx) => {
       if (deleteWhere) {
@@ -402,7 +381,39 @@ export class CandidatesDocumentsService {
           },
         });
       }
+
+      const candidateUrlsToCheck = new Set<string>();
+      for (const doc of docsToDelete) {
+        if (doc.url) candidateUrlsToCheck.add(doc.url);
+      }
+      if (deletedPrimaryResume && candidate.resumeUrl) {
+        candidateUrlsToCheck.add(candidate.resumeUrl);
+      }
+
+      const unreferenced: string[] = [];
+      for (const url of candidateUrlsToCheck) {
+        if (
+          !orgId ||
+          !(await hasRemainingDocumentUrlReference(tx, orgId, url))
+        ) {
+          unreferenced.push(url);
+        }
+      }
+      urlsToDeleteFromMinio = unreferenced;
     });
+
+    if (
+      urlsToDeleteFromMinio.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const url of urlsToDeleteFromMinio) {
+        const objectName = this.minioService.extractObjectName(url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+    }
 
     this.eventsService?.emit({
       type: "CANDIDATES_CHANGED",

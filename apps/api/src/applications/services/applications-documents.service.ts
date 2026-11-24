@@ -16,6 +16,7 @@ import {
 } from "../../common/upload-utils";
 import { fixUtf8String, resolveDocumentMimeType } from "../../common/doc-utils";
 import { toTimestamp, toInstant } from "../../common/date.util";
+import { hasRemainingDocumentUrlReference } from "../../common/document-ref";
 import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
@@ -339,30 +340,7 @@ export class ApplicationsDocumentsService {
       });
     }
 
-    if (
-      typeof this.minioService?.extractObjectName === "function" &&
-      typeof this.minioService?.deleteFile === "function"
-    ) {
-      for (const doc of docsToDelete) {
-        if (!doc.url) continue;
-        const objectName = this.minioService.extractObjectName(doc.url);
-        if (objectName) {
-          await this.minioService.deleteFile(objectName).catch(() => {});
-        }
-      }
-      if (
-        docsToDelete.length === 0 &&
-        app.resumeUrl &&
-        (isSyntheticId ||
-          (!opts?.documentId && !opts?.url) ||
-          opts?.url === app.resumeUrl)
-      ) {
-        const objectName = this.minioService.extractObjectName(app.resumeUrl);
-        if (objectName) {
-          await this.minioService.deleteFile(objectName).catch(() => {});
-        }
-      }
-    }
+    let urlsToDeleteFromMinio: string[] = [];
 
     await runInTransaction(this.prisma, async (tx) => {
       if (deleteWhere) {
@@ -401,7 +379,38 @@ export class ApplicationsDocumentsService {
           },
         });
       }
+
+      const candidateUrlsToCheck = new Set<string>();
+      for (const doc of docsToDelete) {
+        if (doc.url) candidateUrlsToCheck.add(doc.url);
+      }
+      if (app.resumeUrl) {
+        candidateUrlsToCheck.add(app.resumeUrl);
+      }
+
+      const unreferenced: string[] = [];
+      for (const url of candidateUrlsToCheck) {
+        if (
+          !(await hasRemainingDocumentUrlReference(tx, organizationId, url))
+        ) {
+          unreferenced.push(url);
+        }
+      }
+      urlsToDeleteFromMinio = unreferenced;
     });
+
+    if (
+      urlsToDeleteFromMinio.length > 0 &&
+      typeof this.minioService?.extractObjectName === "function" &&
+      typeof this.minioService?.deleteFile === "function"
+    ) {
+      for (const url of urlsToDeleteFromMinio) {
+        const objectName = this.minioService.extractObjectName(url);
+        if (objectName) {
+          await this.minioService.deleteFile(objectName).catch(() => {});
+        }
+      }
+    }
 
     this.eventsService?.emit({
       type: "APPLICATIONS_CHANGED",

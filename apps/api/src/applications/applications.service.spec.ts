@@ -559,6 +559,104 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(created).not.toHaveProperty("candidateName");
       expect(created.jobId).toBe("job-org1-a");
     });
+
+    it("rejects duplicate (email, jobId) before uploading file to MinIO", async () => {
+      const mockFile = {
+        originalname: "alice-dup.pdf",
+        mimetype: "application/pdf",
+        size: 1024,
+        buffer: Buffer.from("%PDF-1.4\ndup pdf\n%%EOF"),
+      } as Express.Multer.File;
+
+      await expect(
+        service.create(
+          {
+            jobId: "job-org1-a",
+            firstName: "Alice",
+            lastName: "Nguyen",
+            candidateEmail: "  ALICE@GMAIL.COM  ",
+          },
+          mockFile,
+        ),
+      ).rejects.toThrow(AppConflictException);
+
+      expect(mockMinioService.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it("retries transaction on concurrent Candidate email P2002 without deleting MinIO upload", async () => {
+      const mockFile = {
+        originalname: "race-cv.pdf",
+        mimetype: "application/pdf",
+        size: 1024,
+        buffer: Buffer.from("%PDF-1.4\nrace pdf\n%%EOF"),
+      } as Express.Multer.File;
+
+      const candidateDelegate = (
+        mockPrismaService as unknown as {
+          candidate: {
+            create: ReturnType<
+              typeof vi.fn<(...args: unknown[]) => Promise<unknown>>
+            >;
+            findFirst: ReturnType<
+              typeof vi.fn<(...args: unknown[]) => Promise<unknown>>
+            >;
+          };
+        }
+      ).candidate;
+
+      const p2002Error = Object.assign(
+        new Error("Unique constraint failed on uq_candidate_org_email_active"),
+        {
+          code: "P2002",
+          meta: { target: ["uq_candidate_org_email_active"] },
+        },
+      );
+
+      // Call 1 (precheck): null; Call 2 (attempt 1 in-tx): null;
+      // Attempt 1 create fails with P2002 after transaction snapshot rollback,
+      // then Call 3 (attempt 2 in-tx) observes the concurrently committed candidate.
+      const origFindFirst = candidateDelegate.findFirst.getMockImplementation();
+      candidateDelegate.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockImplementationOnce(async (args: unknown) => {
+          mockCandidates.push({
+            id: "cand-race-winner",
+            organizationId: "org-1",
+            name: "Race Candidate",
+            firstName: "Race",
+            lastName: "Candidate",
+            email: "race.candidate@example.com",
+            phone: "0900000111",
+            deletedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          return typeof origFindFirst === "function"
+            ? origFindFirst(args)
+            : null;
+        });
+
+      candidateDelegate.create.mockRejectedValueOnce(p2002Error);
+
+      const created = await service.create(
+        {
+          jobId: "job-org1-b",
+          firstName: "Race",
+          lastName: "Candidate",
+          candidateEmail: "race.candidate@example.com",
+        },
+        mockFile,
+      );
+
+      expect(created).toBeDefined();
+      expect(mockApps.find((a) => a.id === created.id)?.candidateId).toBe(
+        "cand-race-winner",
+      );
+      expect(created.jobId).toBe("job-org1-b");
+      expect(mockMinioService.uploadFile).toHaveBeenCalledTimes(1);
+      expect(mockMinioService.deleteFile).not.toHaveBeenCalled();
+    });
   });
 
   describe("Document Management & Downloads", () => {
@@ -700,6 +798,40 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       });
       expect(result).toBeDefined();
       expect(result.id).toBe("app-2");
+    });
+
+    it("preserves MinIO object when another application still references the same URL and deletes when 0 references remain", async () => {
+      const sharedUrl = "https://s3.local/resumes/bob.pdf";
+      mockApps.push({
+        id: "app-bob-2",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        resumeUrl: sharedUrl,
+        resumeFileName: "bob.pdf",
+        resumeFileSize: 2048,
+        resumeMimeType: "application/pdf",
+        orderIndex: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.deleteDocument(
+        "app-2",
+        { documentId: "doc-app-2", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinioService.deleteFile).not.toHaveBeenCalled();
+
+      // Now delete the remaining reference on app-bob-2 -> 0 refs left
+      await service.deleteDocument(
+        "app-bob-2",
+        { documentId: "doc-app-bob-2", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinioService.deleteFile).toHaveBeenCalledTimes(1);
+      expect(mockMinioService.deleteFile).toHaveBeenCalledWith("bob.pdf");
     });
   });
 

@@ -231,6 +231,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       getObjectStream: vi
         .fn()
         .mockResolvedValue(Readable.from(["mock stream content"])),
+      deleteFile: vi.fn().mockResolvedValue(true),
     } as unknown as MinioService;
 
     mockActivities = {
@@ -893,6 +894,31 @@ describe("CandidatesService (Characterization Tests)", () => {
         "org-1",
       );
       expect(otherTenantEmail.matches).toEqual([]);
+    });
+
+    it("preserves MinIO object on deleteDocument when an application still references the URL and deletes when 0 references remain", async () => {
+      const sharedUrl = "https://minio.local/resumes/org-1/resume-1.pdf";
+      applicationTable.store[0].resumeUrl = sharedUrl;
+
+      await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-cand-1", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinio.deleteFile).not.toHaveBeenCalled();
+
+      // Restore candidate resumeUrl, unlink from application, then delete again -> 0 refs
+      candidateTable.store[0].resumeUrl = sharedUrl;
+      applicationTable.store[0].resumeUrl =
+        "https://minio.local/resumes/org-1/other-app-cv.pdf";
+
+      await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-cand-1", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinio.deleteFile).toHaveBeenCalledTimes(1);
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith("resume-1.pdf");
     });
   });
 });

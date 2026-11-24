@@ -38,6 +38,39 @@ import { toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 
+function isCandidateEmailUniqueViolation(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  if ((err as { code?: string }).code !== "P2002") return false;
+
+  const message =
+    err instanceof Error
+      ? err.message
+      : typeof (err as { message?: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : "";
+  let metaText = "";
+  try {
+    const meta = (err as { meta?: unknown }).meta;
+    if (meta !== undefined) {
+      metaText = JSON.stringify(meta);
+    }
+  } catch {
+    metaText = "";
+  }
+
+  const combined = `${message} ${metaText}`.toLowerCase();
+  if (
+    combined.includes("jobid") ||
+    combined.includes("application_candidateid_jobid_key")
+  ) {
+    return false;
+  }
+  return (
+    combined.includes("uq_candidate_org_email_active") ||
+    combined.includes("email")
+  );
+}
+
 @Injectable()
 export class ApplicationsSagaService {
   private readonly query: ApplicationsQueryService;
@@ -187,6 +220,55 @@ export class ApplicationsSagaService {
       );
     }
 
+    // Fast pre-check for duplicate (candidate, job) before uploading CV to MinIO.
+    // The in-transaction check + DB unique index remain the authoritative concurrency guard.
+    const precheckCandidateId = isAnonymousPublicApply
+      ? undefined
+      : dto.candidateId;
+    const precheckEmail = (
+      (dto as unknown as { email?: string }).email || dto.candidateEmail
+    )
+      ?.trim()
+      .toLowerCase();
+
+    if (
+      job.organizationId &&
+      typeof this.prisma.application?.findFirst === "function"
+    ) {
+      let existingCandidateId = precheckCandidateId;
+      if (
+        !existingCandidateId &&
+        precheckEmail &&
+        typeof this.prisma.candidate?.findFirst === "function"
+      ) {
+        const matchedCandidate = await this.prisma.candidate.findFirst({
+          where: {
+            organizationId: job.organizationId,
+            email: precheckEmail,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        existingCandidateId = matchedCandidate?.id;
+      }
+
+      if (existingCandidateId) {
+        const duplicateApp = await this.prisma.application.findFirst({
+          where: {
+            candidateId: existingCandidateId,
+            jobId: dto.jobId,
+          },
+          select: { id: true },
+        });
+        if (duplicateApp) {
+          throw new AppConflictException(
+            APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+            "Candidate has already applied to this job.",
+          );
+        }
+      }
+    }
+
     // 1. Upload CV to MinIO S3 Object Storage if file is provided (SAGA Step 1: Pre-transaction storage upload)
     let uploadResult: {
       url: string;
@@ -239,7 +321,7 @@ export class ApplicationsSagaService {
     }
 
     // SAGA Step 2 & 3: Database writes inside atomic transaction with compensating action on failure
-    let created: {
+    let created!: {
       id: string;
       sourceChannel?: string | null;
       sourceDetails?: string | null;
@@ -249,412 +331,444 @@ export class ApplicationsSagaService {
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
-    let utmSource: string | null = rawUtmSource?.trim() || null;
-    let utmMedium: string | null = rawUtmMedium?.trim() || null;
-    let utmCampaign: string | null = rawUtmCampaign?.trim() || null;
-    let utmTerm: string | null = rawUtmTerm?.trim() || null;
-    let utmContent: string | null = rawUtmContent?.trim() || null;
+    const baseUtmSource: string | null = rawUtmSource?.trim() || null;
+    const baseUtmMedium: string | null = rawUtmMedium?.trim() || null;
+    const baseUtmCampaign: string | null = rawUtmCampaign?.trim() || null;
+    const baseUtmTerm: string | null = rawUtmTerm?.trim() || null;
+    const baseUtmContent: string | null = rawUtmContent?.trim() || null;
+    let utmSource: string | null = baseUtmSource;
+    let utmMedium: string | null = baseUtmMedium;
+    let utmCampaign: string | null = baseUtmCampaign;
+    let utmTerm: string | null = baseUtmTerm;
+    let utmContent: string | null = baseUtmContent;
 
-    try {
-      created = await runInTransaction(this.prisma, async (tx) => {
-        const orgId = job.organizationId;
-        if (!orgId) {
-          throw new AppBadRequestException(
-            APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-            "Target job does not belong to a valid organization.",
-          );
-        }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      trackingLinkId = null;
+      sourceChannel = SourcingChannel.DIRECT;
+      sourceDetails = null;
+      referrerDomain = null;
+      utmSource = baseUtmSource;
+      utmMedium = baseUtmMedium;
+      utmCampaign = baseUtmCampaign;
+      utmTerm = baseUtmTerm;
+      utmContent = baseUtmContent;
 
-        // 2. Resolve or create Candidate
-        const candidateEmail = (
-          (dto as unknown as { email?: string }).email || dto.candidateEmail
-        )
-          ?.trim()
-          .toLowerCase();
-        const candidatePhone =
-          (
-            (dto as unknown as { phone?: string }).phone || dto.candidatePhone
-          )?.trim() || null;
-        const trackingToken =
-          (
-            (dto as unknown as { trackingToken?: string }).trackingToken ||
-            dto.ref
-          )?.trim() || null;
-
-        // Strip caller-supplied admin fields if caller is anonymous / public apply
-        let candidateId = isAnonymousPublicApply ? undefined : dto.candidateId;
-        const nameOrder = await resolveOrgNameDisplayOrder(tx, orgId);
-        let applicantName = "";
-
-        if (!candidateId) {
-          const firstName = normalizeNameInput(dto.firstName);
-          const lastName = normalizeNameInput(dto.lastName);
-          if (!candidateEmail || !firstName || !lastName) {
+      try {
+        created = await runInTransaction(this.prisma, async (tx) => {
+          const orgId = job.organizationId;
+          if (!orgId) {
             throw new AppBadRequestException(
-              APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-              "Either candidateId or both firstName/lastName and candidateEmail are required.",
+              APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+              "Target job does not belong to a valid organization.",
             );
           }
 
-          const displayName =
-            (dto as CreateApplicationDto).displayName?.trim() || null;
-          applicantName = formatCandidateDisplayName(
-            { firstName, lastName, displayName },
-            nameOrder,
-          );
+          // 2. Resolve or create Candidate
+          const candidateEmail = (
+            (dto as unknown as { email?: string }).email || dto.candidateEmail
+          )
+            ?.trim()
+            .toLowerCase();
+          const candidatePhone =
+            (
+              (dto as unknown as { phone?: string }).phone || dto.candidatePhone
+            )?.trim() || null;
+          const trackingToken =
+            (
+              (dto as unknown as { trackingToken?: string }).trackingToken ||
+              dto.ref
+            )?.trim() || null;
 
-          const existingCandidate = await tx.candidate.findFirst({
-            where: {
-              organizationId: orgId,
-              email: candidateEmail,
-              deletedAt: null,
-            },
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              displayName: true,
-              phone: true,
-            },
-          });
+          // Strip caller-supplied admin fields if caller is anonymous / public apply
+          let candidateId = isAnonymousPublicApply
+            ? undefined
+            : dto.candidateId;
+          const nameOrder = await resolveOrgNameDisplayOrder(tx, orgId);
+          let applicantName = "";
 
-          if (existingCandidate) {
-            candidateId = existingCandidate.id;
+          if (!candidateId) {
+            const firstName = normalizeNameInput(dto.firstName);
+            const lastName = normalizeNameInput(dto.lastName);
+            if (!candidateEmail || !firstName || !lastName) {
+              throw new AppBadRequestException(
+                APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+                "Either candidateId or both firstName/lastName and candidateEmail are required.",
+              );
+            }
+
+            const displayName =
+              (dto as CreateApplicationDto).displayName?.trim() || null;
+            applicantName = formatCandidateDisplayName(
+              { firstName, lastName, displayName },
+              nameOrder,
+            );
+
+            const existingCandidate = await tx.candidate.findFirst({
+              where: {
+                organizationId: orgId,
+                email: candidateEmail,
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                displayName: true,
+                phone: true,
+              },
+            });
+
+            if (existingCandidate) {
+              candidateId = existingCandidate.id;
+              applicantName = formatCandidateDisplayName(
+                existingCandidate,
+                nameOrder,
+              );
+              if (!existingCandidate.phone && candidatePhone) {
+                await tx.candidate.updateMany({
+                  where: {
+                    id: existingCandidate.id,
+                    organizationId: orgId,
+                    deletedAt: null,
+                  },
+                  data: {
+                    phone: candidatePhone,
+                    updatedAt: toInstant(),
+                  },
+                });
+              }
+            } else {
+              const newCandidate = await tx.candidate.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  organizationId: orgId,
+                  firstName,
+                  lastName,
+                  displayName,
+                  email: candidateEmail,
+                  phone: candidatePhone,
+                  resumeUrl: uploadResult.url || null,
+                  resumeFileName: uploadResult.originalName || null,
+                  resumeFileSize: uploadResult.size || null,
+                  resumeMimeType: uploadResult.mimeType || "application/pdf",
+                  updatedAt: toInstant(),
+                },
+              });
+              candidateId = newCandidate.id;
+            }
+          } else {
+            // Validate candidate exists and belongs to the same organization as the target job
+            const existingCandidate = await tx.candidate.findFirst({
+              where: { id: candidateId as string, deletedAt: null },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                displayName: true,
+                organizationId: true,
+                resumeUrl: true,
+                resumeFileName: true,
+                resumeFileSize: true,
+                resumeMimeType: true,
+              },
+            });
+
+            if (!existingCandidate) {
+              throw new AppNotFoundException(
+                APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+                `Candidate with ID ${candidateId} not found`,
+              );
+            }
             applicantName = formatCandidateDisplayName(
               existingCandidate,
               nameOrder,
             );
-            if (!existingCandidate.phone && candidatePhone) {
-              await tx.candidate.updateMany({
-                where: {
-                  id: existingCandidate.id,
-                  organizationId: orgId,
-                  deletedAt: null,
-                },
-                data: {
-                  phone: candidatePhone,
-                  updatedAt: toInstant(),
-                },
-              });
-            }
-          } else {
-            const newCandidate = await tx.candidate.create({
-              data: {
-                id: crypto.randomUUID(),
-                organizationId: orgId,
-                firstName,
-                lastName,
-                displayName,
-                email: candidateEmail,
-                phone: candidatePhone,
-                resumeUrl: uploadResult.url || null,
-                resumeFileName: uploadResult.originalName || null,
-                resumeFileSize: uploadResult.size || null,
-                resumeMimeType: uploadResult.mimeType || "application/pdf",
-                updatedAt: toInstant(),
-              },
-            });
-            candidateId = newCandidate.id;
-          }
-        } else {
-          // Validate candidate exists and belongs to the same organization as the target job
-          const existingCandidate = await tx.candidate.findFirst({
-            where: { id: candidateId as string, deletedAt: null },
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              displayName: true,
-              organizationId: true,
-              resumeUrl: true,
-              resumeFileName: true,
-              resumeFileSize: true,
-              resumeMimeType: true,
-            },
-          });
-
-          if (!existingCandidate) {
-            throw new AppNotFoundException(
-              APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
-              `Candidate with ID ${candidateId} not found`,
-            );
-          }
-          applicantName = formatCandidateDisplayName(
-            existingCandidate,
-            nameOrder,
-          );
-          if (
-            job.organizationId &&
-            existingCandidate.organizationId !== job.organizationId
-          ) {
-            throw new AppForbiddenException(
-              APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-              "Candidate does not belong to the target job's organization.",
-            );
-          }
-
-          if (!uploadedFileInMinio && rawResumeUrl) {
-            const matchesPrimary = existingCandidate.resumeUrl === rawResumeUrl;
-            let matchesDoc = false;
-            if (!matchesPrimary) {
-              const doc = await tx.candidateDocument.findFirst({
-                where: {
-                  candidateId: existingCandidate.id,
-                  url: rawResumeUrl,
-                },
-                select: { id: true },
-              });
-              matchesDoc = Boolean(doc);
-            }
-            if (!matchesPrimary && !matchesDoc) {
+            if (
+              job.organizationId &&
+              existingCandidate.organizationId !== job.organizationId
+            ) {
               throw new AppForbiddenException(
-                APP_ERROR_CODES.FORBIDDEN,
-                "Referenced resume does not belong to this candidate.",
+                APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+                "Candidate does not belong to the target job's organization.",
               );
             }
-            if (matchesPrimary) {
-              uploadResult.size = existingCandidate.resumeFileSize || 0;
-              uploadResult.mimeType =
-                existingCandidate.resumeMimeType || "application/pdf";
-            }
-          }
-        }
 
-        const existingApplication = await tx.application.findFirst({
-          where: {
-            candidateId: candidateId as string,
-            jobId: dto.jobId,
-          },
-          select: { id: true },
-        });
-
-        if (existingApplication) {
-          throw new AppConflictException(
-            APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
-            "Candidate has already applied to this job.",
-          );
-        }
-
-        let maxOrder = -1;
-        if (
-          typeof (tx.application as { aggregate?: unknown }).aggregate ===
-          "function"
-        ) {
-          const orderAgg = await tx.application.aggregate({
-            where: { jobId: dto.jobId },
-            _max: { orderIndex: true },
-          });
-          maxOrder = orderAgg._max.orderIndex ?? -1;
-        } else {
-          const existingApps = await tx.application.findMany({
-            where: { jobId: dto.jobId },
-            select: { orderIndex: true },
-          });
-          maxOrder =
-            existingApps.length > 0
-              ? Math.max(...existingApps.map((a) => a.orderIndex || 0))
-              : -1;
-        }
-
-        // 5. Resolve Sourcing / Attribution
-        if (trackingToken) {
-          const link = await tx.trackingLink.findFirst({
-            where: { token: trackingToken as string },
-            select: {
-              id: true,
-              organizationId: true,
-              source: true,
-              customSource: true,
-              campaign: true,
-              utmSource: true,
-              utmMedium: true,
-              utmCampaign: true,
-              utmTerm: true,
-              utmContent: true,
-              isActive: true,
-              deletedAt: true,
-            },
-          });
-
-          if (
-            link &&
-            !link.deletedAt &&
-            link.isActive &&
-            (!job.organizationId || link.organizationId === job.organizationId)
-          ) {
-            trackingLinkId = link.id;
-            sourceChannel =
-              (link.source as SourcingChannel) || SourcingChannel.DIRECT;
-            sourceDetails = link.customSource || null;
-            if (!utmSource && link.utmSource) {
-              utmSource = link.utmSource;
-            }
-            if (!utmMedium && link.utmMedium) {
-              utmMedium = link.utmMedium;
-            }
-            if (!utmCampaign && (link.utmCampaign || link.campaign)) {
-              utmCampaign = link.utmCampaign || link.campaign;
-            }
-            if (!utmTerm && link.utmTerm) {
-              utmTerm = link.utmTerm;
-            }
-            if (!utmContent && link.utmContent) {
-              utmContent = link.utmContent;
-            }
-          }
-        }
-
-        if (!trackingLinkId && dto.referrer) {
-          referrerDomain = parseDomain(dto.referrer);
-          if (referrerDomain) {
-            sourceChannel = resolveChannelFromDomain(referrerDomain);
-          }
-        }
-
-        if (
-          !isAnonymousPublicApply &&
-          !trackingLinkId &&
-          !referrerDomain &&
-          (dto as CreateApplicationDto).sourceChannel
-        ) {
-          sourceChannel = (dto as CreateApplicationDto)
-            .sourceChannel as SourcingChannel;
-        }
-
-        if (isAnonymousPublicApply && !trackingLinkId && !referrerDomain) {
-          sourceChannel = SourcingChannel.DIRECT;
-        }
-
-        // 6. Resolve APPLIED pipeline stage if initialized and save Application record
-        const appliedPipelineStage =
-          typeof (
-            tx as unknown as {
-              pipelineStage?: {
-                findFirst?: (args: unknown) => Promise<{ id: string } | null>;
-              };
-            }
-          ).pipelineStage?.findFirst === "function"
-            ? await (
-                tx as unknown as {
-                  pipelineStage: {
-                    findFirst: (
-                      args: unknown,
-                    ) => Promise<{ id: string } | null>;
-                  };
-                }
-              ).pipelineStage.findFirst({
-                where: {
-                  organizationId: orgId,
-                  jobId: dto.jobId,
-                  category: "APPLIED",
-                },
-                select: { id: true },
-              })
-            : null;
-
-        const savedApp = await tx.application.create({
-          data: {
-            id: crypto.randomUUID(),
-            organizationId: orgId,
-            candidateId: candidateId as string,
-            jobId: dto.jobId,
-            stage: "APPLIED",
-            ...(appliedPipelineStage
-              ? { stageId: appliedPipelineStage.id }
-              : {}),
-            resumeUrl: uploadResult.url || null,
-            resumeFileName: uploadResult.originalName || null,
-            resumeFileSize: uploadResult.size || null,
-            resumeMimeType: uploadResult.mimeType || "application/pdf",
-            orderIndex: maxOrder + 1,
-            trackingLinkId,
-            sourceChannel,
-            sourceDetails,
-            referrerDomain,
-            utmSource,
-            utmMedium,
-            utmCampaign,
-            utmTerm,
-            utmContent,
-            updatedAt: toInstant(),
-          },
-        });
-
-        if (dto.notes && dto.notes.trim()) {
-          await tx.applicationNote.create({
-            data: {
-              organizationId: orgId,
-              applicationId: savedApp.id,
-              authorId: candidateId as string,
-              authorName: applicantName || "Applicant",
-              authorRole: "APPLICANT",
-              content: dto.notes.trim(),
-            },
-          });
-        }
-
-        return savedApp;
-      });
-    } catch (dbError) {
-      // Step 3: Compensating action — rollback MinIO uploaded file
-      if (uploadedFileInMinio && (uploadResult.fileName || uploadResult.url)) {
-        const objectToDelete =
-          uploadResult.fileName ||
-          this.minioService.extractObjectName(uploadResult.url);
-        if (objectToDelete) {
-          try {
-            await this.minioService.deleteFile(objectToDelete);
-          } catch (compensationErr: unknown) {
-            const errMsg =
-              compensationErr instanceof Error
-                ? compensationErr.message
-                : String(compensationErr);
-            if (this.orphanCleanupQueue) {
-              try {
-                await this.orphanCleanupQueue.add(
-                  "cleanup",
-                  {
-                    objectName: objectToDelete,
-                    reason: "transaction-rollback-compensation-failed",
-                    originalError: errMsg,
-                    enqueuedAt: new Date().toISOString(),
-                    organizationId: job.organizationId || undefined,
+            if (!uploadedFileInMinio && rawResumeUrl) {
+              const matchesPrimary =
+                existingCandidate.resumeUrl === rawResumeUrl;
+              let matchesDoc = false;
+              if (!matchesPrimary) {
+                const doc = await tx.candidateDocument.findFirst({
+                  where: {
+                    candidateId: existingCandidate.id,
+                    url: rawResumeUrl,
                   },
-                  {
-                    attempts: 5,
-                    backoff: {
-                      type: "exponential",
-                      delay: 1000,
-                    },
-                    removeOnComplete: true,
-                    removeOnFail: false,
-                  },
-                );
-                console.warn(
-                  `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
-                );
-              } catch (queueErr: unknown) {
-                console.error(
-                  "Failed to enqueue orphan file to cleanup queue:",
-                  queueErr,
+                  select: { id: true },
+                });
+                matchesDoc = Boolean(doc);
+              }
+              if (!matchesPrimary && !matchesDoc) {
+                throw new AppForbiddenException(
+                  APP_ERROR_CODES.FORBIDDEN,
+                  "Referenced resume does not belong to this candidate.",
                 );
               }
-            } else {
-              console.warn(
-                "Failed to delete MinIO file during transaction compensation:",
-                compensationErr,
-              );
+              if (matchesPrimary) {
+                uploadResult.size = existingCandidate.resumeFileSize || 0;
+                uploadResult.mimeType =
+                  existingCandidate.resumeMimeType || "application/pdf";
+              }
+            }
+          }
+
+          const existingApplication = await tx.application.findFirst({
+            where: {
+              candidateId: candidateId as string,
+              jobId: dto.jobId,
+            },
+            select: { id: true },
+          });
+
+          if (existingApplication) {
+            throw new AppConflictException(
+              APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+              "Candidate has already applied to this job.",
+            );
+          }
+
+          let maxOrder = -1;
+          if (
+            typeof (tx.application as { aggregate?: unknown }).aggregate ===
+            "function"
+          ) {
+            const orderAgg = await tx.application.aggregate({
+              where: { jobId: dto.jobId },
+              _max: { orderIndex: true },
+            });
+            maxOrder = orderAgg._max.orderIndex ?? -1;
+          } else {
+            const existingApps = await tx.application.findMany({
+              where: { jobId: dto.jobId },
+              select: { orderIndex: true },
+            });
+            maxOrder =
+              existingApps.length > 0
+                ? Math.max(...existingApps.map((a) => a.orderIndex || 0))
+                : -1;
+          }
+
+          // 5. Resolve Sourcing / Attribution
+          if (trackingToken) {
+            const link = await tx.trackingLink.findFirst({
+              where: { token: trackingToken as string },
+              select: {
+                id: true,
+                organizationId: true,
+                source: true,
+                customSource: true,
+                campaign: true,
+                utmSource: true,
+                utmMedium: true,
+                utmCampaign: true,
+                utmTerm: true,
+                utmContent: true,
+                isActive: true,
+                deletedAt: true,
+              },
+            });
+
+            if (
+              link &&
+              !link.deletedAt &&
+              link.isActive &&
+              (!job.organizationId ||
+                link.organizationId === job.organizationId)
+            ) {
+              trackingLinkId = link.id;
+              sourceChannel =
+                (link.source as SourcingChannel) || SourcingChannel.DIRECT;
+              sourceDetails = link.customSource || null;
+              if (!utmSource && link.utmSource) {
+                utmSource = link.utmSource;
+              }
+              if (!utmMedium && link.utmMedium) {
+                utmMedium = link.utmMedium;
+              }
+              if (!utmCampaign && (link.utmCampaign || link.campaign)) {
+                utmCampaign = link.utmCampaign || link.campaign;
+              }
+              if (!utmTerm && link.utmTerm) {
+                utmTerm = link.utmTerm;
+              }
+              if (!utmContent && link.utmContent) {
+                utmContent = link.utmContent;
+              }
+            }
+          }
+
+          if (!trackingLinkId && dto.referrer) {
+            referrerDomain = parseDomain(dto.referrer);
+            if (referrerDomain) {
+              sourceChannel = resolveChannelFromDomain(referrerDomain);
+            }
+          }
+
+          if (
+            !isAnonymousPublicApply &&
+            !trackingLinkId &&
+            !referrerDomain &&
+            (dto as CreateApplicationDto).sourceChannel
+          ) {
+            sourceChannel = (dto as CreateApplicationDto)
+              .sourceChannel as SourcingChannel;
+          }
+
+          if (isAnonymousPublicApply && !trackingLinkId && !referrerDomain) {
+            sourceChannel = SourcingChannel.DIRECT;
+          }
+
+          // 6. Resolve APPLIED pipeline stage if initialized and save Application record
+          const appliedPipelineStage =
+            typeof (
+              tx as unknown as {
+                pipelineStage?: {
+                  findFirst?: (args: unknown) => Promise<{ id: string } | null>;
+                };
+              }
+            ).pipelineStage?.findFirst === "function"
+              ? await (
+                  tx as unknown as {
+                    pipelineStage: {
+                      findFirst: (
+                        args: unknown,
+                      ) => Promise<{ id: string } | null>;
+                    };
+                  }
+                ).pipelineStage.findFirst({
+                  where: {
+                    organizationId: orgId,
+                    jobId: dto.jobId,
+                    category: "APPLIED",
+                  },
+                  select: { id: true },
+                })
+              : null;
+
+          const savedApp = await tx.application.create({
+            data: {
+              id: crypto.randomUUID(),
+              organizationId: orgId,
+              candidateId: candidateId as string,
+              jobId: dto.jobId,
+              stage: "APPLIED",
+              ...(appliedPipelineStage
+                ? { stageId: appliedPipelineStage.id }
+                : {}),
+              resumeUrl: uploadResult.url || null,
+              resumeFileName: uploadResult.originalName || null,
+              resumeFileSize: uploadResult.size || null,
+              resumeMimeType: uploadResult.mimeType || "application/pdf",
+              orderIndex: maxOrder + 1,
+              trackingLinkId,
+              sourceChannel,
+              sourceDetails,
+              referrerDomain,
+              utmSource,
+              utmMedium,
+              utmCampaign,
+              utmTerm,
+              utmContent,
+              updatedAt: toInstant(),
+            },
+          });
+
+          if (dto.notes && dto.notes.trim()) {
+            await tx.applicationNote.create({
+              data: {
+                organizationId: orgId,
+                applicationId: savedApp.id,
+                authorId: candidateId as string,
+                authorName: applicantName || "Applicant",
+                authorRole: "APPLICANT",
+                content: dto.notes.trim(),
+              },
+            });
+          }
+
+          return savedApp;
+        });
+        break;
+      } catch (dbError) {
+        if (
+          attempt === 0 &&
+          isCandidateEmailUniqueViolation(dbError) &&
+          (isAnonymousPublicApply || !dto.candidateId)
+        ) {
+          continue;
+        }
+        // Step 3: Compensating action — rollback MinIO uploaded file
+        if (
+          uploadedFileInMinio &&
+          (uploadResult.fileName || uploadResult.url)
+        ) {
+          const objectToDelete =
+            uploadResult.fileName ||
+            this.minioService.extractObjectName(uploadResult.url);
+          if (objectToDelete) {
+            try {
+              await this.minioService.deleteFile(objectToDelete);
+            } catch (compensationErr: unknown) {
+              const errMsg =
+                compensationErr instanceof Error
+                  ? compensationErr.message
+                  : String(compensationErr);
+              if (this.orphanCleanupQueue) {
+                try {
+                  await this.orphanCleanupQueue.add(
+                    "cleanup",
+                    {
+                      objectName: objectToDelete,
+                      reason: "transaction-rollback-compensation-failed",
+                      originalError: errMsg,
+                      enqueuedAt: new Date().toISOString(),
+                      organizationId: job.organizationId || undefined,
+                    },
+                    {
+                      attempts: 5,
+                      backoff: {
+                        type: "exponential",
+                        delay: 1000,
+                      },
+                      removeOnComplete: true,
+                      removeOnFail: false,
+                    },
+                  );
+                  console.warn(
+                    `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
+                  );
+                } catch (queueErr: unknown) {
+                  console.error(
+                    "Failed to enqueue orphan file to cleanup queue:",
+                    queueErr,
+                  );
+                }
+              } else {
+                console.warn(
+                  "Failed to delete MinIO file during transaction compensation:",
+                  compensationErr,
+                );
+              }
             }
           }
         }
+        if ((dbError as { code?: string })?.code === "P2002") {
+          throw new AppConflictException(
+            APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+            "This candidate has already applied to this job.",
+          );
+        }
+        throw dbError;
       }
-      if ((dbError as { code?: string })?.code === "P2002") {
-        throw new AppConflictException(
-          APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
-          "This candidate has already applied to this job.",
-        );
-      }
-      throw dbError;
     }
 
     const result = await this.query.findOne(created.id, job.organizationId);

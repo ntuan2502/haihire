@@ -115,7 +115,6 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.drawerTitle": "Audit Event Details",
         "settings.auditLog.sectionChanges": "Changes (Before → After)",
         "settings.auditLog.noChangesRecorded": "No diff recorded",
-        "settings.auditLog.colField": "Field",
         "settings.auditLog.colBefore": "Before",
         "settings.auditLog.colAfter": "After",
         "settings.auditLog.sectionContext": "Event & Trace Context",

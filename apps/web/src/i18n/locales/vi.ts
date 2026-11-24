@@ -1720,7 +1720,6 @@ export const vi: TranslationSchema = {
       drawerTitle: "Chi tiết sự kiện kiểm toán",
       sectionChanges: "Thay đổi (Trước → Sau)",
       noChangesRecorded: "Sự kiện này không ghi nhận thay đổi từng trường.",
-      colField: "Trường dữ liệu",
       colBefore: "Giá trị trước",
       colAfter: "Giá trị sau",
       sectionContext: "Ngữ cảnh sự kiện & truy vết",

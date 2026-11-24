@@ -1716,7 +1716,6 @@ export const en: TranslationSchema = {
       drawerTitle: "Audit Event Details",
       sectionChanges: "Changes (Before → After)",
       noChangesRecorded: "No field-level diff recorded for this event.",
-      colField: "Field",
       colBefore: "Before",
       colAfter: "After",
       sectionContext: "Event & Trace Context",

@@ -113,7 +113,6 @@ export function AuditLogFilters({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 flex-1">
           <CustomSelect
-            size="sm"
             aria-label={t("settings.auditLog.filterResource")}
             icon={Layers}
             value={resource}
@@ -123,7 +122,6 @@ export function AuditLogFilters({
           />
 
           <CustomSelect
-            size="sm"
             aria-label={t("settings.auditLog.filterAction")}
             icon={Filter}
             value={action}
@@ -133,7 +131,6 @@ export function AuditLogFilters({
           />
 
           <CustomSelect
-            size="sm"
             aria-label={t("settings.auditLog.filterActor")}
             icon={UserIcon}
             value={actorId}
@@ -143,7 +140,6 @@ export function AuditLogFilters({
           />
 
           <CustomSelect
-            size="sm"
             aria-label={t("settings.auditLog.filterDateRange")}
             icon={Calendar}
             value={dateRange}

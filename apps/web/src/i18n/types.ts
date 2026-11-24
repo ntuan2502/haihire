@@ -1538,7 +1538,6 @@ export interface TranslationSchema {
       drawerTitle: string;
       sectionChanges: string;
       noChangesRecorded: string;
-      colField: string;
       colBefore: string;
       colAfter: string;
       sectionContext: string;

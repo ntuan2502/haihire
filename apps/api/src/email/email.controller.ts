@@ -59,13 +59,14 @@ export class EmailController {
   @RequirePermission("email:manage_templates")
   createTemplate(
     @Body(DtoPipe(CreateEmailTemplateDto)) dto: CreateEmailTemplateDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.createTemplate(
       organizationId,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -74,7 +75,7 @@ export class EmailController {
   duplicateTemplate(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(DuplicateEmailTemplateDto)) dto: DuplicateEmailTemplateDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.duplicateTemplate(
@@ -82,6 +83,7 @@ export class EmailController {
       id,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -90,7 +92,7 @@ export class EmailController {
   updateTemplateByType(
     @Param("type") type: string,
     @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.updateTemplate(
@@ -98,6 +100,7 @@ export class EmailController {
       type,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -106,7 +109,7 @@ export class EmailController {
   updateTemplate(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.updateTemplate(
@@ -114,6 +117,7 @@ export class EmailController {
       id,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -121,13 +125,14 @@ export class EmailController {
   @RequirePermission("email:manage_templates")
   deleteTemplate(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.deleteTemplate(
       organizationId,
       id,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -145,7 +150,7 @@ export class EmailController {
   updateFlow(
     @Param("flowKey") flowKey: string,
     @Body(DtoPipe(UpdateEmailFlowDto)) dto: UpdateEmailFlowDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.updateFlow(
@@ -153,6 +158,7 @@ export class EmailController {
       flowKey,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 
@@ -172,13 +178,14 @@ export class EmailController {
   @RequirePermission("email:manage_settings")
   updateSettings(
     @Body(DtoPipe(UpdateEmailSettingDto)) dto: UpdateEmailSettingDto,
-    @Request() req: { user: { organizationId?: string | null } },
+    @Request() req: { user: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
     return this.emailService.updateSettings(
       organizationId,
       dto,
       req.user.organizationId,
+      req.user.id,
     );
   }
 

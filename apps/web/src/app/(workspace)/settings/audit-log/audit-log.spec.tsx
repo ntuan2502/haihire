@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import AuditLogPage from "./page";
+import { organizationsApi } from "@/lib/api/organizations";
+import { toast } from "@/lib/toast";
 
 let mockSearchParamString = "";
 vi.mock("next/navigation", () => ({
@@ -9,50 +17,47 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(mockSearchParamString),
 }));
 
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock("@/lib/api/organizations", () => ({
+  organizationsApi: {
+    exportAuditLogs: vi.fn(),
+  },
+}));
+
 let mockCanViewAuditLog = true;
 vi.mock("@/hooks/use-has-permission", () => ({
   useHasPermission: () => mockCanViewAuditLog,
 }));
 
+const mockMembers = [
+  {
+    id: "user-1",
+    firstName: "Alice",
+    lastName: "Admin",
+    name: "Alice Admin",
+    email: "alice@haihire.local",
+    role: "ADMIN",
+    avatarUrl: null,
+  },
+];
+
 let mockAuditLogLoading = false;
 let mockAuditLogError: Error | null = null;
 let mockAuditLogData = {
-  data: [
-    {
-      id: "log-1",
-      organizationId: "org-1",
-      actorId: "user-1",
-      action: "ROLE_PERMISSIONS_UPDATED",
-      resource: "ROLE_PERMISSIONS",
-      metadata: { role: "RECRUITER", changes: 2 },
-      createdAt: "2026-10-23T10:00:00Z",
-      actor: {
-        id: "user-1",
-        firstName: "Alice",
-        lastName: "Admin",
-        name: "Alice Admin",
-        email: "alice@haihire.local",
-        role: "ADMIN",
-        avatarUrl: null,
-      },
-    },
-    {
-      id: "log-2",
-      organizationId: "org-1",
-      actorId: null,
-      action: "MEMBER_ROLE_CHANGED",
-      resource: "MEMBER",
-      metadata: { memberId: "user-2", oldRole: "MEMBER", newRole: "RECRUITER" },
-      createdAt: "2026-10-23T09:30:00Z",
-      actor: null,
-    },
-  ],
-  total: 2,
+  data: [] as Array<Record<string, unknown>>,
+  total: 0,
   limit: 20,
   offset: 0,
 };
 
 let capturedQueryParams: unknown = null;
+let capturedMembersOptions: unknown = null;
 
 vi.mock("@/hooks/use-organization-queries", () => ({
   useAuditLogsQuery: (params?: unknown) => {
@@ -64,79 +69,131 @@ vi.mock("@/hooks/use-organization-queries", () => ({
       error: mockAuditLogError,
     };
   },
+  useOrgMembers: (options?: unknown) => {
+    capturedMembersOptions = options;
+    return {
+      data: mockCanViewAuditLog ? mockMembers : [],
+    };
+  },
 }));
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, params?: Record<string, string | number>) => {
       const translations: Record<string, string> = {
         "settings.auditLog.title": "Audit Log",
         "settings.auditLog.description":
           "Track administrative changes and security events.",
         "settings.auditLog.filterAllActions": "All Actions",
         "settings.auditLog.filterAction": "Filter by action",
+        "settings.auditLog.searchPlaceholder":
+          "Search actor, target, action, or request ID...",
+        "settings.auditLog.filterResource": "Filter by resource",
+        "settings.auditLog.filterAllResources": "All Resources",
+        "settings.auditLog.filterActor": "Filter by actor",
+        "settings.auditLog.filterAllActors": "All Actors",
+        "settings.auditLog.filterDateRange": "Date range",
+        "settings.auditLog.dateRangeAll": "All time",
+        "settings.auditLog.dateRange24h": "Last 24 hours",
+        "settings.auditLog.dateRange7d": "Last 7 days",
+        "settings.auditLog.dateRange30d": "Last 30 days",
+        "settings.auditLog.resetFilters": "Reset filters",
+        "settings.auditLog.exportButton": "Export",
+        "settings.auditLog.exportCsv": "Export CSV",
+        "settings.auditLog.exportJson": "Export JSON",
+        "settings.auditLog.exportSuccess": "Audit log exported successfully.",
+        "settings.auditLog.exportError": "Failed to export audit log.",
+        "settings.auditLog.targetTimelineBanner":
+          "Showing event timeline for target: {target}",
+        "settings.auditLog.clearTargetTimeline": "Show all targets",
         "settings.auditLog.colTimestamp": "Timestamp",
         "settings.auditLog.colActor": "Actor",
         "settings.auditLog.colAction": "Action",
-        "settings.auditLog.colResource": "Resource",
+        "settings.auditLog.colSummary": "Summary",
         "settings.auditLog.colMetadata": "Details",
+        "settings.auditLog.viewDetails": "Inspect",
+        "settings.auditLog.drawerTitle": "Audit Event Details",
+        "settings.auditLog.sectionChanges": "Changes (Before → After)",
+        "settings.auditLog.noChangesRecorded": "No diff recorded",
+        "settings.auditLog.colField": "Field",
+        "settings.auditLog.colBefore": "Before",
+        "settings.auditLog.colAfter": "After",
+        "settings.auditLog.sectionContext": "Event & Trace Context",
+        "settings.auditLog.labelActor": "Actor",
+        "settings.auditLog.labelTarget": "Target",
+        "settings.auditLog.labelTargetId": "Target ID",
+        "settings.auditLog.labelIpAddress": "IP Address",
+        "settings.auditLog.labelClient": "Client / Browser",
+        "settings.auditLog.labelRequestId": "Request ID",
+        "settings.auditLog.viewEntityTimeline": "View full entity timeline",
+        "settings.auditLog.rawPayload": "Raw JSON Payload",
+        "settings.auditLog.showRawJson": "Show raw JSON",
+        "settings.auditLog.hideRawJson": "Hide raw JSON",
+        "settings.auditLog.valueEmpty": "Empty",
+        "settings.auditLog.valueRedacted": "Redacted",
+        "settings.auditLog.permissionGranted": "Granted",
+        "settings.auditLog.permissionRevoked": "Revoked",
         "settings.auditLog.emptyTitle": "No audit events found",
         "settings.auditLog.emptyDescription": "No actions matching the filter.",
-        "settings.auditLog.paginationShowing":
-          "Showing {offset} to {end} of {total} events",
-        "common.previous": "Previous",
-        "common.next": "Next",
         "settings.auditLog.systemActor": "System",
-        "settings.auditLog.noMetadata": "No details",
         "settings.auditLog.actionRolePermissionsUpdated": "Permissions Updated",
-        "settings.auditLog.actionRolePermissionsReset": "Permissions Reset",
         "settings.auditLog.actionMemberRoleChanged": "Member Role Changed",
-        "settings.auditLog.actionOwnershipTransferred": "Ownership Transferred",
-        "settings.auditLog.actionOrgDeleted": "Organization Deleted",
-        "settings.auditLog.actionOrgLocalizationUpdated":
-          "Localization Updated",
+        "settings.auditLog.actionInviteCreated": "Invitation Created",
         "settings.auditLog.resources.ORGANIZATION": "Organization",
         "settings.auditLog.resources.MEMBER": "Member",
+        "settings.auditLog.resources.INVITATION": "Invitation",
         "settings.auditLog.resources.ROLE_PERMISSIONS": "Role Permissions",
+        "settings.auditLog.resources.EMAIL": "Email",
+        "settings.auditLog.resources.WEBHOOK": "Webhook",
         "settings.auditLog.resources.SYSTEM": "System",
         "settings.auditLog.resources.OTHER": "Other",
+        "settings.auditLog.fieldLabels.role": "Role",
         "settings.auditLog.metadataLabels.roleTarget": "Role: {role}",
         "settings.auditLog.metadataLabels.allRoles": "All roles",
-        "settings.auditLog.metadataLabels.roleChanged": "{oldRole} → {newRole}",
         "settings.auditLog.metadataLabels.permissionsUpdated":
           "{count} permissions updated",
-        "settings.auditLog.metadataLabels.ownershipTransferred":
-          "Organization ownership transferred",
-        "settings.auditLog.metadataLabels.localizationUpdated":
-          "Updated localization: {fields}",
+        "settings.auditLog.metadataLabels.summaryMemberRoleChanged":
+          "Changed role of {target}: {oldRole} → {newRole}",
+        "settings.auditLog.metadataLabels.summaryRolePermissionsUpdated":
+          "Updated {count} permissions for role {target}",
+        "settings.rolesMatrix.permissions.job_create": "Create jobs",
         "settings.backToSettings": "Back to Settings",
         "errors.forbidden.title": "Access Denied",
+        "common.copy": "Copy",
+        "common.copied": "Copied",
+        "common.clearSearch": "Clear search",
         "common.pagination": "Pagination",
         "common.showing": "Showing",
         "common.of": "of",
         "common.rows": "Rows",
         "common.page": "Page",
+        "common.next": "Next",
+        "common.previous": "Previous",
         "common.noData": "No data",
-        "members.roleOwner": "Owner",
-        "members.roleAdmin": "Admin",
         "members.roleRecruiter": "Recruiter",
-        "members.roleHiringManager": "Hiring Manager",
-        "members.roleInterviewer": "Interviewer",
         "members.roleMember": "Member",
       };
-      return translations[key] ?? key;
+      let text = translations[key] ?? key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          text = text.replaceAll(`{${k}}`, String(v));
+        }
+      }
+      return text;
     },
   }),
 }));
 
 describe("AuditLogPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mockSearchParamString = "";
     window.history.replaceState(null, "", "/settings/audit-log");
     mockCanViewAuditLog = true;
     mockAuditLogLoading = false;
     mockAuditLogError = null;
     capturedQueryParams = null;
+    capturedMembersOptions = null;
     mockAuditLogData = {
       data: [
         {
@@ -145,7 +202,14 @@ describe("AuditLogPage", () => {
           actorId: "user-1",
           action: "ROLE_PERMISSIONS_UPDATED",
           resource: "ROLE_PERMISSIONS",
-          metadata: { role: "RECRUITER", changes: 2 },
+          targetId: "RECRUITER",
+          targetLabel: "Recruiter",
+          changes: [{ field: "job:create", before: false, after: true }],
+          metadata: { role: "RECRUITER", changes: 1 },
+          ipAddress: "203.0.113.10",
+          userAgent:
+            "Mozilla/5.0 (Windows NT 10.0) Chrome/131.0.0.0 Safari/537.36",
+          requestId: "req-abc-123",
           createdAt: "2026-10-23T10:00:00Z",
           actor: {
             id: "user-1",
@@ -161,6 +225,9 @@ describe("AuditLogPage", () => {
           actorId: null,
           action: "MEMBER_ROLE_CHANGED",
           resource: "MEMBER",
+          targetId: "user-2",
+          targetLabel: "Tran Minh",
+          changes: [{ field: "role", before: "MEMBER", after: "RECRUITER" }],
           metadata: {
             memberId: "user-2",
             oldRole: "MEMBER",
@@ -176,114 +243,140 @@ describe("AuditLogPage", () => {
     };
   });
 
-  it("renders access denied banner when user lacks org:view_audit_log", () => {
+  it("renders access denied banner and disables queries when user lacks org:view_audit_log", () => {
     mockCanViewAuditLog = false;
     render(<AuditLogPage />);
 
+    expect(capturedQueryParams).toBeUndefined();
+    expect(capturedMembersOptions).toEqual({ enabled: false });
     expect(screen.getByText("Access Denied")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "You do not have permission to access this section. Please contact your administrator if you need access.",
-      ),
-    ).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
-  it("renders audit log table with actor, action badge, and resource when authorized", () => {
+  it("renders audit log table with actor avatar, action badge, resource, and natural summary", () => {
     render(<AuditLogPage />);
 
     expect(screen.getByText("Audit Log")).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Security & Governance|settings\.auditLog\.badge/),
-    ).not.toBeInTheDocument();
     expect(screen.getByText("Alice Admin")).toBeInTheDocument();
     expect(screen.getByText("alice@haihire.local")).toBeInTheDocument();
     expect(screen.getAllByText("Permissions Updated").length).toBeGreaterThan(
       0,
     );
-    expect(screen.getByText("Role Permissions")).toBeInTheDocument();
+    expect(
+      screen.getByText("Updated 1 permissions for role Recruiter"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Changed role of Tran Minh: Member → Recruiter"),
+    ).toBeInTheDocument();
     expect(screen.getByText("System")).toBeInTheDocument();
-    expect(screen.getAllByText("Member Role Changed").length).toBeGreaterThan(
-      0,
-    );
   });
 
-  it("allows filtering by action via custom select dropdown", () => {
+  it("supports multi-criteria filtering (resource, action, actor, date range) and resets filters", () => {
     render(<AuditLogPage />);
 
-    const trigger = screen.getByRole("button", { name: "Filter by action" });
-    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("button", { name: "Filter by resource" }));
+    fireEvent.click(screen.getByRole("option", { name: "Invitation" }));
+    expect(capturedQueryParams).toMatchObject({ resource: "INVITATION" });
 
-    const option = screen.getByRole("option", { name: "Permissions Updated" });
-    fireEvent.click(option);
+    fireEvent.click(screen.getByRole("button", { name: "Filter by actor" }));
+    fireEvent.click(
+      screen.getByRole("option", {
+        name: /alice@haihire\.local/,
+      }),
+    );
+    expect(capturedQueryParams).toMatchObject({ actorId: "user-1" });
 
+    fireEvent.click(screen.getByRole("button", { name: "Date range" }));
+    fireEvent.click(screen.getByRole("option", { name: "Last 7 days" }));
     expect(capturedQueryParams).toMatchObject({
-      action: "ROLE_PERMISSIONS_UPDATED",
-      limit: 20,
-      offset: 0,
+      from: expect.any(String),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(capturedQueryParams).toMatchObject({
+      resource: undefined,
+      actorId: undefined,
+      from: undefined,
     });
   });
 
-  it("expands and collapses inline metadata sub-row when details button is clicked", () => {
+  it("opens Detail Drawer with Before -> After diff, trace context, raw JSON toggle, and entity timeline filter", async () => {
     render(<AuditLogPage />);
 
-    const detailsButtons = screen.getAllByRole("button", { name: "Details" });
-    expect(detailsButtons.length).toBeGreaterThan(0);
-    expect(detailsButtons[0]).toHaveAttribute("aria-expanded", "false");
+    const inspectButtons = screen.getAllByRole("button", { name: "Inspect" });
+    fireEvent.click(inspectButtons[0]);
 
-    fireEvent.click(detailsButtons[0]);
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Audit Event Details")).toBeInTheDocument();
+    expect(within(dialog).getByText("Create jobs")).toBeInTheDocument();
+    expect(within(dialog).getByText("Revoked")).toBeInTheDocument();
+    expect(within(dialog).getByText("Granted")).toBeInTheDocument();
+    expect(within(dialog).getByText("203.0.113.10")).toBeInTheDocument();
+    expect(within(dialog).getByText("Chrome · Windows")).toBeInTheDocument();
+    expect(within(dialog).getByText("req-abc-123")).toBeInTheDocument();
 
-    expect(detailsButtons[0]).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText("Role: Recruiter")).toBeInTheDocument();
-    expect(screen.getByText("2 permissions updated")).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Show raw JSON" }),
+    );
+    expect(
+      within(dialog).getByLabelText("Raw JSON Payload"),
+    ).toBeInTheDocument();
 
-    fireEvent.click(detailsButtons[0]);
-    expect(detailsButtons[0]).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Role: Recruiter")).not.toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "View full entity timeline",
+      }),
+    );
+
+    expect(capturedQueryParams).toMatchObject({
+      targetId: "RECRUITER",
+    });
+    expect(
+      screen.getByText(/Showing event timeline for target: Recruiter/),
+    ).toBeInTheDocument();
   });
 
-  it("paginates via Pagination controls and resets offset on page size change", () => {
+  it("exports filtered audit logs as CSV", async () => {
+    const createObjectUrlSpy = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:audit-csv");
+    const revokeObjectUrlSpy = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => {});
+    vi.mocked(organizationsApi.exportAuditLogs).mockResolvedValueOnce(
+      new Blob(["id\nlog-1"], { type: "text/csv" }),
+    );
+
+    render(<AuditLogPage />);
+
+    const exportTrigger = screen.getByRole("button", { name: "Export" });
+    fireEvent.pointerDown(exportTrigger, { button: 0, ctrlKey: false });
+    fireEvent.click(exportTrigger);
+    const exportCsvItem = await screen.findByRole("menuitem", {
+      name: "Export CSV",
+    });
+    fireEvent.click(exportCsvItem);
+
+    await waitFor(() => {
+      expect(organizationsApi.exportAuditLogs).toHaveBeenCalledWith(
+        expect.any(Object),
+        "csv",
+      );
+      expect(toast.success).toHaveBeenCalledWith(
+        "Audit log exported successfully.",
+      );
+    });
+
+    createObjectUrlSpy.mockRestore();
+    revokeObjectUrlSpy.mockRestore();
+  });
+
+  it("paginates via Pagination controls and syncs URL query parameters", () => {
+    mockSearchParamString = "action=ROLE_PERMISSIONS_UPDATED&page=2&limit=50";
     mockAuditLogData = {
       ...mockAuditLogData,
-      total: 45,
+      total: 145,
     };
-
-    render(<AuditLogPage />);
-
-    expect(screen.getByText(/Showing 1–20 of 45/)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(capturedQueryParams).toMatchObject({
-      limit: 20,
-      offset: 20,
-    });
-
-    const pageSizeTrigger = screen.getByRole("button", { name: "20" });
-    fireEvent.click(pageSizeTrigger);
-    fireEvent.click(screen.getByRole("option", { name: "50" }));
-
-    expect(capturedQueryParams).toMatchObject({
-      limit: 50,
-      offset: 0,
-    });
-  });
-
-  it("renders empty state when there are zero audit logs", () => {
-    mockAuditLogData = {
-      data: [],
-      total: 0,
-      limit: 20,
-      offset: 0,
-    };
-
-    render(<AuditLogPage />);
-
-    expect(screen.getByText("No audit events found")).toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
-  });
-
-  it("hydrates action, page, and limit from URL and syncs filter/pagination changes to URL query params", () => {
-    mockSearchParamString = "action=ROLE_PERMISSIONS_UPDATED&page=2&limit=50";
 
     render(<AuditLogPage />);
 
@@ -301,5 +394,19 @@ describe("AuditLogPage", () => {
 
     expect(window.location.search).toContain("action=MEMBER_ROLE_CHANGED");
     expect(window.location.search).not.toContain("page=");
+  });
+
+  it("renders empty state when there are zero audit logs", () => {
+    mockAuditLogData = {
+      data: [],
+      total: 0,
+      limit: 20,
+      offset: 0,
+    };
+
+    render(<AuditLogPage />);
+
+    expect(screen.getByText("No audit events found")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 });

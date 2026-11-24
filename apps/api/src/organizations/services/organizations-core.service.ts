@@ -22,6 +22,7 @@ import {
   type Role,
 } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
+import { computeAuditDiff } from "../../common/audit-diff.util";
 import { EventsService } from "../../events/events.service";
 import { MinioService, type UploadResult } from "../../minio/minio.service";
 import { fixUtf8String } from "../../common/doc-utils";
@@ -476,9 +477,16 @@ export class OrganizationsCoreService {
       where: { id: orgId },
       select: {
         id: true,
+        name: true,
         slug: true,
         ownerId: true,
         logoObjectKey: true,
+        defaultLanguage: true,
+        timezone: true,
+        dateFormat: true,
+        timeFormat: true,
+        nameDisplayOrder: true,
+        defaultCurrency: true,
       },
     });
 
@@ -600,20 +608,71 @@ export class OrganizationsCoreService {
       }
     }
 
+    let auditWritten = false;
     if (Object.keys(updateData).length > 0) {
       await this.prisma.organization.update({
         where: { id: orgId },
         data: updateData,
       });
 
+      const targetLabel = updateData.name ?? currentOrg.name ?? orgId;
+      const coreFields = [
+        ...(updateData.name !== undefined ? ["name"] : []),
+        ...(updateData.slug !== undefined ? ["slug"] : []),
+      ];
+      const coreChanges =
+        coreFields.length > 0
+          ? computeAuditDiff(
+              currentOrg as unknown as Record<string, unknown>,
+              {
+                ...(updateData.name !== undefined
+                  ? { name: updateData.name }
+                  : {}),
+                ...(updateData.slug !== undefined
+                  ? { slug: updateData.slug }
+                  : {}),
+              },
+              { fields: coreFields },
+            )
+          : [];
+
+      if (coreChanges.length > 0) {
+        await this.auditLog?.logOrg(
+          orgId,
+          userId,
+          "ORG_UPDATED",
+          "ORGANIZATION",
+          Object.fromEntries(coreChanges.map((c) => [c.field, c.after])),
+          undefined,
+          {
+            targetId: orgId,
+            targetLabel,
+            changes: coreChanges,
+          },
+        );
+        auditWritten = true;
+      }
+
       if (Object.keys(localizationChanges).length > 0) {
+        const locDiffs = computeAuditDiff(
+          currentOrg as unknown as Record<string, unknown>,
+          localizationChanges,
+          { fields: Object.keys(localizationChanges) },
+        );
         await this.auditLog?.logOrg(
           orgId,
           userId,
           "ORG_LOCALIZATION_UPDATED",
           "ORGANIZATION",
           localizationChanges,
+          undefined,
+          {
+            targetId: orgId,
+            targetLabel,
+            changes: locDiffs.length > 0 ? locDiffs : null,
+          },
         );
+        auditWritten = true;
       }
     }
 
@@ -628,7 +687,7 @@ export class OrganizationsCoreService {
         organizationId: orgId,
         data: { updatedBy: userId },
       });
-      if (Object.keys(localizationChanges).length > 0) {
+      if (auditWritten) {
         this.eventsService?.emit({
           type: "AUDIT_LOGS_CHANGED",
           organizationId: orgId,
@@ -723,6 +782,18 @@ export class OrganizationsCoreService {
         mimeType: validated.mimeType,
         sizeBytes: file!.size ?? file!.buffer?.length ?? 0,
       },
+      undefined,
+      {
+        targetId: orgId,
+        targetLabel: updatedOrg?.name ?? currentOrg.name ?? orgId,
+        changes: [
+          {
+            field: "logoObjectKey",
+            before: currentOrg.logoObjectKey ?? null,
+            after: uploadResult.fileName,
+          },
+        ],
+      },
     );
 
     this.eventsService?.emit({
@@ -769,6 +840,18 @@ export class OrganizationsCoreService {
         "ORG_LOGO_REMOVED",
         "ORGANIZATION",
         null,
+        undefined,
+        {
+          targetId: orgId,
+          targetLabel: updatedOrg?.name ?? currentOrg.name ?? orgId,
+          changes: [
+            {
+              field: "logoObjectKey",
+              before: currentOrg.logoObjectKey ?? null,
+              after: null,
+            },
+          ],
+        },
       );
 
       this.eventsService?.emit({
@@ -1022,11 +1105,11 @@ export class OrganizationsCoreService {
       const ownedOrg = activeOrgId
         ? await tx.organization.findFirst({
             where: { id: activeOrgId, ownerId: userId },
-            select: { id: true, ownerId: true },
+            select: { id: true, ownerId: true, name: true },
           })
         : await tx.organization.findFirst({
             where: { ownerId: userId },
-            select: { id: true, ownerId: true },
+            select: { id: true, ownerId: true, name: true },
           });
 
       if (!ownedOrg) {
@@ -1116,6 +1199,17 @@ export class OrganizationsCoreService {
         "ORGANIZATION",
         { previousOwnerId: userId, newOwnerId: newOwnerUserId },
         tx,
+        {
+          targetId: organizationId,
+          targetLabel: ownedOrg.name ?? organizationId,
+          changes: [
+            {
+              field: "ownerId",
+              before: userId,
+              after: newOwnerUserId,
+            },
+          ],
+        },
       );
 
       return organizationId;

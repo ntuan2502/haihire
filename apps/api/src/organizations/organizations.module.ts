@@ -9,13 +9,14 @@ import {
   OrganizationsAuditLogService,
 } from "./services";
 
+import { CommonModule } from "../common/common.module";
 import { AuthModule } from "../auth/auth.module";
 import { EventsModule } from "../events/events.module";
 import { EmailModule } from "../email/email.module";
 import { MinioModule } from "../minio/minio.module";
 
 @Module({
-  imports: [AuthModule, EventsModule, EmailModule, MinioModule],
+  imports: [CommonModule, AuthModule, EventsModule, EmailModule, MinioModule],
   controllers: [OrganizationsController],
   providers: [
     OrganizationsService,
@@ -23,7 +24,6 @@ import { MinioModule } from "../minio/minio.module";
     OrganizationsMembersService,
     OrganizationsInvitesService,
     OrganizationsRolesService,
-    OrganizationsAuditLogService,
   ],
   exports: [
     OrganizationsService,

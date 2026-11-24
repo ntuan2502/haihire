@@ -1,50 +1,118 @@
 "use client";
 
-import { SettingsButton } from "@/components/settings/settings-button";
-import { SettingsLogTable } from "@/components/settings/settings-log-table";
-import { Fragment, Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { Download, Eye, History } from "lucide-react";
 import { useTableParams } from "@/hooks/use-table-params";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
-import { History, Filter, Info, ChevronDown, ChevronUp } from "lucide-react";
-import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
+import {
+  useAuditLogsQuery,
+  useOrgMembers,
+} from "@/hooks/use-organization-queries";
+import {
+  organizationsApi,
+  type OrganizationAuditLogRecord,
+} from "@/lib/api/organizations";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { formatDateTime, getInitials, getUserDisplayName } from "@/lib/utils";
+import { formatDateTime, getUserDisplayName } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 import {
-  formatAuditMetadataLines,
-  getAuditActionBadge,
-  getAuditResourceLabel,
-} from "@/components/settings/audit-log/audit-log-formatters";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsLogTable } from "@/components/settings/settings-log-table";
 import {
-  CustomSelect,
   LoadingSpinner,
   PageHeader,
   StatusState,
-  type CustomSelectOption,
+  UserAvatar,
 } from "@/components/shared";
 import { Pagination } from "@/components/shared/pagination";
+import {
+  AuditLogFilters,
+  type AuditDateRangePreset,
+} from "@/components/settings/audit-log/audit-log-filters";
+import { AuditLogDetailDrawer } from "@/components/settings/audit-log/audit-log-detail-drawer";
+import {
+  formatAuditSummary,
+  getAuditActionBadge,
+  getAuditResourceLabel,
+} from "@/components/settings/audit-log/audit-log-formatters";
 
 const PAGE_SIZE = 20;
 
+const DATE_PRESET_MS: Record<Exclude<AuditDateRangePreset, "all">, number> = {
+  "24h": 24 * 60 * 60 * 1000,
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
+};
+
 function AuditLogPageContent() {
   const { t } = useI18n();
+  const { localization } = useLocalization();
   const canViewAuditLog = useHasPermission("org:view_audit_log");
   const {
     page,
     limit: pageSize,
+    search,
+    setSearch,
     setPage,
     setLimit: setPageSize,
     getParam,
     setParam,
+    setParams,
   } = useTableParams({ defaultLimit: PAGE_SIZE });
+
+  const selectedResource = getParam("resource", "");
   const selectedAction = getParam("action", "");
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const selectedActorId = getParam("actorId", "");
+  const selectedTargetId = getParam("targetId", "");
+  const rawRange = getParam("range", "all");
+  const selectedDateRange: AuditDateRangePreset =
+    rawRange === "24h" || rawRange === "7d" || rawRange === "30d"
+      ? rawRange
+      : "all";
+
+  // Anchor cutoffs stably across renders so query keys never churn each ms
+  const [anchorNow] = useState(() => Date.now());
+  const fromTimestamp = useMemo(() => {
+    if (selectedDateRange === "all") return undefined;
+    return new Date(
+      anchorNow - DATE_PRESET_MS[selectedDateRange],
+    ).toISOString();
+  }, [selectedDateRange, anchorNow]);
+
+  const [inspectingLog, setInspectingLog] =
+    useState<OrganizationAuditLogRecord | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const filterParams = useMemo(
+    () => ({
+      action: selectedAction || undefined,
+      resource: selectedResource || undefined,
+      actorId: selectedActorId || undefined,
+      targetId: selectedTargetId || undefined,
+      search: search.trim() || undefined,
+      from: fromTimestamp,
+    }),
+    [
+      selectedAction,
+      selectedResource,
+      selectedActorId,
+      selectedTargetId,
+      search,
+      fromTimestamp,
+    ],
+  );
 
   const { data, isLoading, isError, error } = useAuditLogsQuery(
     canViewAuditLog
       ? {
-          action: selectedAction || undefined,
+          ...filterParams,
           limit: pageSize,
           offset: (page - 1) * pageSize,
         }
@@ -52,54 +120,38 @@ function AuditLogPageContent() {
     { enabled: canViewAuditLog },
   );
 
-  const handleActionChange = (action: string) => {
-    setParam("action", action || null, true);
-    setExpandedRowId(null);
-  };
+  const { data: members = [] } = useOrgMembers({ enabled: canViewAuditLog });
 
-  const toggleRow = (id: string) => {
-    setExpandedRowId((prev) => (prev === id ? null : id));
-  };
+  const logs = useMemo(() => data?.data ?? [], [data?.data]);
+  const total = data?.total ?? 0;
 
-  const actionOptions: CustomSelectOption<string>[] = [
-    { value: "", label: t("settings.auditLog.filterAllActions") },
-    {
-      value: "ROLE_PERMISSIONS_UPDATED",
-      label: t("settings.auditLog.actionRolePermissionsUpdated"),
-    },
-    {
-      value: "ROLE_PERMISSIONS_RESET",
-      label: t("settings.auditLog.actionRolePermissionsReset"),
-    },
-    {
-      value: "MEMBER_ROLE_CHANGED",
-      label: t("settings.auditLog.actionMemberRoleChanged"),
-    },
-    {
-      value: "MEMBER_REMOVED",
-      label: t("settings.auditLog.actionMemberRemoved"),
-    },
-    {
-      value: "MEMBER_LEFT",
-      label: t("settings.auditLog.actionMemberLeft"),
-    },
-    {
-      value: "OWNERSHIP_TRANSFERRED",
-      label: t("settings.auditLog.actionOwnershipTransferred"),
-    },
-    {
-      value: "ORG_LOCALIZATION_UPDATED",
-      label: t("settings.auditLog.actionOrgLocalizationUpdated"),
-    },
-    {
-      value: "ORG_LOGO_UPDATED",
-      label: t("settings.auditLog.actionOrgLogoUpdated"),
-    },
-    {
-      value: "ORG_LOGO_REMOVED",
-      label: t("settings.auditLog.actionOrgLogoRemoved"),
-    },
-  ];
+  const targetBannerLabel = useMemo(() => {
+    if (!selectedTargetId) return undefined;
+    const match = logs.find(
+      (l) => l.targetId === selectedTargetId && Boolean(l.targetLabel),
+    );
+    return match?.targetLabel ?? undefined;
+  }, [logs, selectedTargetId]);
+
+  const handleExport = async (format: "csv" | "json") => {
+    try {
+      setIsExporting(true);
+      const blob = await organizationsApi.exportAuditLogs(filterParams, format);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `audit-log-${new Date().toISOString().slice(0, 10)}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(t("settings.auditLog.exportSuccess"));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t, "settings.auditLog.exportError"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!canViewAuditLog) {
     return (
@@ -120,9 +172,6 @@ function AuditLogPageContent() {
     );
   }
 
-  const logs = data?.data ?? [];
-  const total = data?.total ?? 0;
-
   if (isLoading && !data) {
     return <LoadingSpinner />;
   }
@@ -135,22 +184,78 @@ function AuditLogPageContent() {
         icon={History}
         bordered
         actions={
-          <CustomSelect
-            size="sm"
-            aria-label={t("settings.auditLog.filterAction")}
-            icon={Filter}
-            value={selectedAction}
-            onChange={handleActionChange}
-            options={actionOptions}
-            className="w-full sm:w-64"
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SettingsButton
+                type="button"
+                variant="outline"
+                size="sm"
+                icon={Download}
+                pending={isExporting}
+                disabled={isExporting}
+              >
+                {t("settings.auditLog.exportButton")}
+              </SettingsButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                {t("settings.auditLog.exportCsv")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("json")}>
+                {t("settings.auditLog.exportJson")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
       />
 
-      {/* Loading */}
+      <AuditLogFilters
+        searchInput={search}
+        onSearchChange={setSearch}
+        resource={selectedResource}
+        onResourceChange={(nextRes) => {
+          setParams(
+            {
+              resource: nextRes || null,
+              ...(selectedAction ? { action: null } : {}),
+            },
+            true,
+          );
+        }}
+        action={selectedAction}
+        onActionChange={(nextAction) =>
+          setParam("action", nextAction || null, true)
+        }
+        actorId={selectedActorId}
+        onActorChange={(nextActor) =>
+          setParam("actorId", nextActor || null, true)
+        }
+        dateRange={selectedDateRange}
+        onDateRangeChange={(nextRange) =>
+          setParam("range", nextRange === "all" ? null : nextRange, true)
+        }
+        targetId={selectedTargetId}
+        targetLabel={targetBannerLabel}
+        onClearTargetId={() => setParam("targetId", null, true)}
+        onResetAll={() => {
+          setSearch("");
+          setParams(
+            {
+              resource: null,
+              action: null,
+              actorId: null,
+              targetId: null,
+              range: null,
+              search: null,
+            },
+            true,
+          );
+        }}
+        members={members}
+      />
+
       {isLoading && <LoadingSpinner />}
 
-      {/* Error State */}
       {isError && (
         <div
           role="alert"
@@ -160,7 +265,6 @@ function AuditLogPageContent() {
         </div>
       )}
 
-      {/* Table Content */}
       {!isLoading && !isError && (
         <>
           {logs.length === 0 ? (
@@ -178,26 +282,17 @@ function AuditLogPageContent() {
           ) : (
             <SettingsLogTable
               footer={
-                <>
-                  {/* Shared Pagination Footer */}
-                  {total > 0 && (
-                    <Pagination
-                      currentPage={page}
-                      totalPages={Math.max(1, Math.ceil(total / pageSize))}
-                      totalItems={total}
-                      pageSize={pageSize}
-                      onPageChange={(nextPage) => {
-                        setPage(nextPage);
-                        setExpandedRowId(null);
-                      }}
-                      onPageSizeChange={(nextSize) => {
-                        setPageSize(nextSize);
-                        setExpandedRowId(null);
-                      }}
-                      className="px-4 py-3 border-t border-border bg-muted/30"
-                    />
-                  )}
-                </>
+                total > 0 ? (
+                  <Pagination
+                    currentPage={page}
+                    totalPages={Math.max(1, Math.ceil(total / pageSize))}
+                    totalItems={total}
+                    pageSize={pageSize}
+                    onPageChange={(nextPage) => setPage(nextPage)}
+                    onPageSizeChange={(nextSize) => setPageSize(nextSize)}
+                    className="px-4 py-3 border-t border-border bg-muted/30"
+                  />
+                ) : undefined
               }
             >
               <table className="w-full text-left text-xs border-collapse">
@@ -213,7 +308,7 @@ function AuditLogPageContent() {
                       {t("settings.auditLog.colAction")}
                     </th>
                     <th scope="col" className="py-3 px-4">
-                      {t("settings.auditLog.colResource")}
+                      {t("settings.auditLog.colSummary")}
                     </th>
                     <th scope="col" className="py-3 px-4 text-right">
                       {t("settings.auditLog.colMetadata")}
@@ -223,109 +318,80 @@ function AuditLogPageContent() {
                 <tbody className="divide-y divide-border">
                   {logs.map((log: OrganizationAuditLogRecord) => {
                     const badge = getAuditActionBadge(log.action, t);
-                    const isExpanded = expandedRowId === log.id;
-                    const hasMetadata =
-                      log.metadata !== null &&
-                      typeof log.metadata === "object" &&
-                      Object.keys(log.metadata).length > 0;
-                    const summaryLines = isExpanded
-                      ? formatAuditMetadataLines(log, t)
-                      : [];
+                    const actorName = log.actor
+                      ? getUserDisplayName(log.actor, localization)
+                      : log.actorNameSnapshot || log.actorEmailSnapshot || null;
+                    const actorEmail =
+                      log.actor?.email || log.actorEmailSnapshot || null;
 
                     return (
-                      <Fragment key={log.id}>
-                        <tr className="hover:bg-muted/40 transition-colors">
-                          <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
-                            {formatDateTime(log.createdAt)}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            {log.actor ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-secondary text-secondary-foreground font-semibold text-xs flex items-center justify-center shrink-0">
-                                  {getInitials(getUserDisplayName(log.actor))}
+                      <tr
+                        key={log.id}
+                        onClick={() => setInspectingLog(log)}
+                        className="hover:bg-muted/40 transition-colors cursor-pointer"
+                      >
+                        <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                          {formatDateTime(log.createdAt, localization)}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {actorName ? (
+                            <div className="flex items-center gap-2.5">
+                              <UserAvatar
+                                name={actorName}
+                                avatarUrl={log.actor?.avatarUrl}
+                                size="xs"
+                                rounded="full"
+                              />
+                              <div className="leading-tight">
+                                <div className="font-semibold text-foreground text-xs">
+                                  {actorName}
                                 </div>
-                                <div className="leading-tight">
-                                  <div className="font-semibold text-foreground text-xs">
-                                    {getUserDisplayName(log.actor)}
-                                  </div>
+                                {actorEmail && (
                                   <div className="text-[11px] text-muted-foreground">
-                                    {log.actor.email}
+                                    {actorEmail}
                                   </div>
-                                </div>
+                                )}
                               </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {t("settings.auditLog.systemActor")}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {t("settings.auditLog.systemActor")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="space-y-1">
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}
                             >
                               {badge.label}
                             </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-xs font-medium text-foreground whitespace-nowrap">
-                            {getAuditResourceLabel(log.resource, t)}
-                          </td>
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            {hasMetadata ? (
-                              <SettingsButton
-                                variant="ghost"
-                                type="button"
-                                onClick={() => toggleRow(log.id)}
-                                aria-label={t("settings.auditLog.colMetadata")}
-                                aria-expanded={isExpanded}
-                              >
-                                <span>
-                                  {t("settings.auditLog.colMetadata")}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                )}
-                              </SettingsButton>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                {t("settings.auditLog.noMetadata")}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr className="bg-muted/30">
-                            <td
-                              colSpan={5}
-                              className="p-4 border-t border-border"
-                            >
-                              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
-                                <Info
-                                  className="w-3.5 h-3.5"
-                                  aria-hidden="true"
-                                />
-                                <span>
-                                  {t("settings.auditLog.colMetadata")}
-                                </span>
-                              </div>
-                              {summaryLines.length > 0 ? (
-                                <ul className="space-y-1 p-3 rounded-lg bg-card border border-border text-xs text-foreground list-disc list-inside">
-                                  {summaryLines.map((line, index) => (
-                                    <li key={`${log.id}-line-${index}`}>
-                                      {line}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-xs text-muted-foreground p-3 rounded-lg bg-card border border-border">
-                                  {t("settings.auditLog.noMetadata")}
-                                </p>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
+                            <div className="text-[11px] text-muted-foreground">
+                              {getAuditResourceLabel(log.resource, t)}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-foreground max-w-md">
+                          <div className="line-clamp-2 font-medium">
+                            {formatAuditSummary(log, t)}
+                          </div>
+                        </td>
+                        <td
+                          className="py-3.5 px-4 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SettingsButton
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            icon={Eye}
+                            onClick={() => setInspectingLog(log)}
+                            aria-label={t("settings.auditLog.viewDetails")}
+                          >
+                            {t("settings.auditLog.viewDetails")}
+                          </SettingsButton>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -334,6 +400,14 @@ function AuditLogPageContent() {
           )}
         </>
       )}
+
+      <AuditLogDetailDrawer
+        log={inspectingLog}
+        onClose={() => setInspectingLog(null)}
+        onViewEntityTimeline={(targetId) => {
+          setParam("targetId", targetId, true);
+        }}
+      />
     </div>
   );
 }

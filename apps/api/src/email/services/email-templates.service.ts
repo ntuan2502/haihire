@@ -22,6 +22,8 @@ import {
 } from "../dto/update-template.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
+import { computeAuditDiff } from "../../common/audit-diff.util";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 export interface EnrichedEmailTemplate {
   id: string;
@@ -142,6 +144,9 @@ export class EmailTemplatesService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   async getTemplates(
@@ -242,6 +247,7 @@ export class EmailTemplatesService {
     organizationId: string | undefined,
     dto: CreateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
     const targetOrgId = this.settingsService.resolveOrgId(
       userOrgId,
@@ -272,10 +278,32 @@ export class EmailTemplatesService {
       },
     });
 
+    await this.auditLog?.logOrg(
+      targetOrgId,
+      actorId || null,
+      "EMAIL_TEMPLATE_CREATED",
+      "EMAIL",
+      { templateId: created.id, type: created.type },
+      undefined,
+      {
+        targetId: created.id,
+        targetLabel: created.name,
+        changes: [
+          { field: "name", before: null, after: created.name },
+          { field: "type", before: null, after: created.type },
+          { field: "enabled", before: null, after: created.enabled },
+        ],
+      },
+    );
+
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",
       organizationId: targetOrgId,
       data: { templateId: created.id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
     });
 
     return toEnrichedTemplate(created);
@@ -286,6 +314,7 @@ export class EmailTemplatesService {
     idOrType: string,
     dto: UpdateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
     const targetOrgId = this.settingsService.resolveOrgId(
       userOrgId,
@@ -357,6 +386,35 @@ export class EmailTemplatesService {
       data: updateData,
     });
 
+    const templateChanges = computeAuditDiff(
+      current as unknown as Record<string, unknown>,
+      {
+        name: updateData.name ?? current.name,
+        type: updateData.type ?? current.type,
+        subject: updateData.subject ?? current.subject,
+        body: updateData.body ?? current.body,
+        enabled: updateData.enabled ?? current.enabled,
+      },
+      { fields: ["name", "type", "subject", "body", "enabled"] },
+    );
+
+    await this.auditLog?.logOrg(
+      targetOrgId,
+      actorId || null,
+      "EMAIL_TEMPLATE_UPDATED",
+      "EMAIL",
+      {
+        templateId: current.id,
+        templateType: updateData.type ?? current.type,
+      },
+      undefined,
+      {
+        targetId: current.id,
+        targetLabel: updateData.name ?? current.name,
+        changes: templateChanges.length > 0 ? templateChanges : null,
+      },
+    );
+
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",
       organizationId: targetOrgId,
@@ -364,6 +422,10 @@ export class EmailTemplatesService {
         templateId: current.id,
         templateType: updateData.type ?? current.type,
       },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
     });
 
     const updated = await this.prisma.emailTemplate.findFirst({
@@ -378,6 +440,7 @@ export class EmailTemplatesService {
     id: string,
     dto?: DuplicateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
     const targetOrgId = this.settingsService.resolveOrgId(
       userOrgId,
@@ -415,10 +478,32 @@ export class EmailTemplatesService {
       },
     });
 
+    await this.auditLog?.logOrg(
+      targetOrgId,
+      actorId || null,
+      "EMAIL_TEMPLATE_CREATED",
+      "EMAIL",
+      { templateId: created.id, duplicatedFrom: id, type: created.type },
+      undefined,
+      {
+        targetId: created.id,
+        targetLabel: created.name,
+        changes: [
+          { field: "name", before: null, after: created.name },
+          { field: "type", before: null, after: created.type },
+          { field: "enabled", before: null, after: created.enabled },
+        ],
+      },
+    );
+
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",
       organizationId: targetOrgId,
       data: { templateId: created.id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
     });
 
     return toEnrichedTemplate(created);
@@ -428,6 +513,7 @@ export class EmailTemplatesService {
     organizationId: string | undefined,
     id: string,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<{ deleted: true; id: string }> {
     const targetOrgId = this.settingsService.resolveOrgId(
       userOrgId,
@@ -468,12 +554,32 @@ export class EmailTemplatesService {
       await tx.emailTemplate.deleteMany({
         where: { id, organizationId: targetOrgId },
       });
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        actorId || null,
+        "EMAIL_TEMPLATE_DELETED",
+        "EMAIL",
+        { templateId: id, type: current.type },
+        tx as unknown as PrismaService,
+        {
+          targetId: id,
+          targetLabel: current.name,
+          changes: [
+            { field: "name", before: current.name, after: null },
+            { field: "type", before: current.type, after: null },
+          ],
+        },
+      );
     });
 
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",
       organizationId: targetOrgId,
       data: { deletedTemplateId: id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
     });
 
     return { deleted: true, id };

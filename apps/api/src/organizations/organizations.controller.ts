@@ -36,7 +36,10 @@ import {
   GetInviteLinksQueryDto,
 } from "./dto/org-actions.dto";
 import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
-import { AuditLogQueryDto } from "./dto/audit-log-query.dto";
+import {
+  AuditLogQueryDto,
+  AuditLogExportQueryDto,
+} from "./dto/audit-log-query.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
@@ -285,11 +288,48 @@ export class OrganizationsController {
       {
         action: query?.action,
         resource: query?.resource,
+        ...(query?.actorId !== undefined ? { actorId: query.actorId } : {}),
+        ...(query?.targetId !== undefined ? { targetId: query.targetId } : {}),
+        ...(query?.search !== undefined ? { search: query.search } : {}),
+        ...(query?.from !== undefined ? { from: query.from } : {}),
+        ...(query?.to !== undefined ? { to: query.to } : {}),
         limit: query?.limit,
         offset: query?.offset,
       },
       req.user.organizationId,
     );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:view_audit_log")
+  @Get("my/audit-log/export")
+  async exportAuditLogs(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Query(DtoPipe(AuditLogExportQueryDto))
+    query: AuditLogExportQueryDto | undefined,
+    @Res() res: Response,
+  ) {
+    const format = query?.format === "json" ? "json" : "csv";
+    const exported = await this.orgsService.exportAuditLogs(
+      req.user.id,
+      {
+        action: query?.action,
+        resource: query?.resource,
+        actorId: query?.actorId,
+        targetId: query?.targetId,
+        search: query?.search,
+        from: query?.from,
+        to: query?.to,
+      },
+      format,
+      req.user.organizationId,
+    );
+    res.setHeader("Content-Type", exported.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${exported.filename}"`,
+    );
+    res.send(exported.content);
   }
 
   @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)

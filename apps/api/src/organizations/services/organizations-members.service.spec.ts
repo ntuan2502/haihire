@@ -280,6 +280,15 @@ describe("OrganizationsMembersService concurrency", () => {
         "MEMBER",
         { memberId: "mem-1" },
         expect.anything(),
+        expect.objectContaining({
+          targetId: "mem-1",
+          changes: [
+            expect.objectContaining({
+              field: "membership",
+              after: null,
+            }),
+          ],
+        }),
       );
       expect(emit).toHaveBeenCalledWith({
         type: "MEMBERS_CHANGED",

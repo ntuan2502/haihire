@@ -24,6 +24,7 @@ import {
 } from "@haihire/shared";
 import { EventsService } from "../../events/events.service";
 import { EmailSystemService } from "../../email/services/email-system.service";
+import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { env } from "../../config/env";
 import {
   attachOrganizationLogoUrl,
@@ -135,6 +136,9 @@ export class OrganizationsInvitesService {
     @Optional()
     @Inject(EmailSystemService)
     private readonly emailSystemService?: EmailSystemService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   private resolveValidInviteRole(rawRole?: string | null): Role {
@@ -317,6 +321,8 @@ export class OrganizationsInvitesService {
       email?: string;
     },
     activeOrgId?: string | null,
+    auditAction: "INVITE_CREATED" | "INVITE_RESENT" = "INVITE_CREATED",
+    previousLinkId?: string,
   ): Promise<InviteLinkRecord> {
     const ctx = await this.resolveMemberInviteContext(userId, activeOrgId);
     if (!ctx) {
@@ -478,6 +484,58 @@ export class OrganizationsInvitesService {
 
     const inviteType: InviteType = invitedEmail ? "EMAIL" : "LINK";
 
+    await this.auditLog?.logOrg(
+      org.id,
+      user.id,
+      auditAction,
+      "INVITATION",
+      auditAction === "INVITE_RESENT"
+        ? {
+            linkId: id,
+            previousLinkId: previousLinkId ?? null,
+            invitedEmail,
+            role: linkRole,
+          }
+        : {
+            linkId: id,
+            inviteType,
+            role: linkRole,
+            ...(invitedEmail ? { invitedEmail } : {}),
+          },
+      undefined,
+      {
+        targetId: id,
+        targetLabel: invitedEmail ?? linkRole,
+        changes:
+          auditAction === "INVITE_RESENT"
+            ? [
+                {
+                  field: "previousLinkId",
+                  before: previousLinkId ?? null,
+                  after: id,
+                },
+              ]
+            : [
+                { field: "inviteType", before: null, after: inviteType },
+                { field: "role", before: null, after: linkRole },
+                ...(invitedEmail
+                  ? [
+                      {
+                        field: "invitedEmail",
+                        before: null,
+                        after: invitedEmail,
+                      },
+                    ]
+                  : []),
+              ],
+      },
+    );
+
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: org.id,
+    });
+
     return {
       id,
       token,
@@ -566,6 +624,8 @@ export class OrganizationsInvitesService {
         maxUses: "1",
       },
       orgId,
+      "INVITE_RESENT",
+      linkId,
     );
   }
 
@@ -876,6 +936,14 @@ export class OrganizationsInvitesService {
       );
     }
 
+    const existingInvite =
+      typeof this.prisma.inviteLink?.findFirst === "function"
+        ? await this.prisma.inviteLink.findFirst({
+            where: { id: linkId, organizationId: orgId },
+            select: { id: true, invitedEmail: true, role: true, status: true },
+          })
+        : null;
+
     const { count } = await this.prisma.inviteLink.updateMany({
       where: {
         id: linkId,
@@ -891,10 +959,40 @@ export class OrganizationsInvitesService {
       );
     }
 
+    await this.auditLog?.logOrg(
+      orgId,
+      userId,
+      "INVITE_REVOKED",
+      "INVITATION",
+      {
+        linkId,
+        ...(existingInvite?.invitedEmail
+          ? { invitedEmail: existingInvite.invitedEmail }
+          : {}),
+      },
+      undefined,
+      {
+        targetId: linkId,
+        targetLabel:
+          existingInvite?.invitedEmail ?? existingInvite?.role ?? linkId,
+        changes: [
+          {
+            field: "status",
+            before: existingInvite?.status ?? "ACTIVE",
+            after: "REVOKED",
+          },
+        ],
+      },
+    );
+
     this.eventsService?.emit({
       type: "INVITE_LINKS_CHANGED",
       organizationId: orgId,
       data: { linkId },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: orgId,
     });
 
     return { success: true, message: "Invite link revoked successfully" };
@@ -1246,6 +1344,21 @@ export class OrganizationsInvitesService {
         });
       }
 
+      const memberTargetLabel = user?.email ?? link.invitedEmail ?? userId;
+      await this.auditLog?.logOrg(
+        link.organizationId,
+        userId,
+        "MEMBER_JOINED",
+        "MEMBER",
+        { memberId: userId, role: assignedRole, inviteLinkId: link.id },
+        tx as unknown as PrismaService,
+        {
+          targetId: userId,
+          targetLabel: memberTargetLabel,
+          changes: [{ field: "role", before: null, after: assignedRole }],
+        },
+      );
+
       const orgRecord = await tx.organization.findFirst({
         where: { id: link.organizationId },
         select: {
@@ -1286,6 +1399,10 @@ export class OrganizationsInvitesService {
     });
     this.eventsService?.emit({
       type: "INVITE_LINKS_CHANGED",
+      organizationId: result.organization?.id,
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
       organizationId: result.organization?.id,
     });
 
@@ -1496,6 +1613,26 @@ export class OrganizationsInvitesService {
         });
       }
 
+      const memberTargetLabel =
+        callerUser?.email ?? inviteLink.invitedEmail ?? userId;
+      await this.auditLog?.logOrg(
+        org.id,
+        userId,
+        "MEMBER_JOINED",
+        "MEMBER",
+        {
+          memberId: userId,
+          role: assignedRole,
+          inviteLinkId: inviteLink.id,
+        },
+        tx as unknown as PrismaService,
+        {
+          targetId: userId,
+          targetLabel: memberTargetLabel,
+          changes: [{ field: "role", before: null, after: assignedRole }],
+        },
+      );
+
       joinedNewMember = true;
 
       return {
@@ -1513,6 +1650,10 @@ export class OrganizationsInvitesService {
       });
       this.eventsService?.emit({
         type: "INVITE_LINKS_CHANGED",
+        organizationId: result.organization.id,
+      });
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
         organizationId: result.organization.id,
       });
     } else {

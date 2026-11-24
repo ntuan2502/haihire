@@ -101,7 +101,7 @@ export class WebhookSettingsController {
     @Request() req: AuthenticatedRequest,
   ) {
     const orgId = this.getOrgId(req);
-    return this.service.delete(id, orgId);
+    return this.service.delete(id, orgId, req.user.id);
   }
 
   @Post("test")

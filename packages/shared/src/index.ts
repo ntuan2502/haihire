@@ -12,6 +12,7 @@ export * from "./common";
 export * from "./errors";
 export * from "./sourcing";
 export * from "./webhooks";
+export * from "./audit-log";
 export * from "./schemas";
 
 export * from "./notifications";

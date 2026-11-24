@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi, authApi } from "@/lib/api";
+import type { AuditLogsQueryParams } from "@/lib/api/organizations";
 import { useAuth } from "@/context/auth-context";
 import type {
   Organization,
@@ -344,12 +345,7 @@ export function useResetRolePermissionsMutation() {
 }
 
 export function useAuditLogsQuery(
-  params?: {
-    action?: string;
-    resource?: string;
-    limit?: number;
-    offset?: number;
-  },
+  params?: AuditLogsQueryParams,
   options?: { enabled?: boolean },
 ) {
   const { user } = useAuth();

@@ -10,6 +10,8 @@ import {
 import { AppNotFoundException } from "../../common/app-exception";
 import { toInstant, toTimestamp } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
+import { computeAuditDiff } from "../../common/audit-diff.util";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { UpdateEmailFlowDto } from "../dto/update-flow.dto";
 import { EmailSettingsService } from "./email-settings.service";
@@ -41,6 +43,9 @@ export class EmailFlowsService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   async getFlows(
@@ -140,6 +145,7 @@ export class EmailFlowsService {
     flowKeyParam: string,
     dto: UpdateEmailFlowDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailFlowConfig> {
     if (!EMAIL_FLOW_KEYS.includes(flowKeyParam as EmailFlowKey)) {
       throw new AppNotFoundException(
@@ -203,10 +209,34 @@ export class EmailFlowsService {
       },
     });
 
+    const flowChanges = computeAuditDiff(
+      { templateId: existing.templateId ?? null, enabled: existing.enabled },
+      { templateId: nextTemplateId ?? null, enabled: nextEnabled },
+      { fields: ["templateId", "enabled"] },
+    );
+
+    await this.auditLog?.logOrg(
+      targetOrgId,
+      actorId || null,
+      "EMAIL_FLOW_UPDATED",
+      "EMAIL",
+      { flowKey, templateId: nextTemplateId, enabled: nextEnabled },
+      undefined,
+      {
+        targetId: existing.id,
+        targetLabel: flowKey,
+        changes: flowChanges.length > 0 ? flowChanges : null,
+      },
+    );
+
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",
       organizationId: targetOrgId,
       data: { flowKey },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId: targetOrgId,
     });
 
     const refreshed = await this.getFlows(targetOrgId);

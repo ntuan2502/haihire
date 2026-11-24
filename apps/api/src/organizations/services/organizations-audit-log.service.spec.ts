@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { createMockPrismaService } from "../../test/helpers/prisma-composer-mock";
+import { correlationStorage } from "../../common/middleware/correlation-id.middleware";
 
 describe("OrganizationsAuditLogService", () => {
   let service: OrganizationsAuditLogService;
@@ -83,6 +84,43 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.metadata).toBeNull();
       expect(mockOrgLogs).toHaveLength(1);
     });
+
+    it("auto-captures requestId, ipAddress, userAgent from correlationStorage and stores event envelope fields", async () => {
+      const result = await correlationStorage.run(
+        {
+          requestId: "req-xyz-789",
+          ipAddress: "198.51.100.42",
+          userAgent: "Mozilla/5.0 Chrome/131.0.0.0",
+        },
+        () =>
+          service.logOrg(
+            "org-1",
+            "user-1",
+            "INVITE_CREATED",
+            "INVITATION",
+            { role: "RECRUITER" },
+            undefined,
+            {
+              targetId: "inv-1",
+              targetLabel: "candidate@example.com",
+              changes: [
+                {
+                  field: "invitedEmail",
+                  before: null,
+                  after: "candidate@example.com",
+                },
+              ],
+            },
+          ),
+      );
+
+      expect(result.requestId).toBe("req-xyz-789");
+      expect(result.ipAddress).toBe("198.51.100.42");
+      expect(result.userAgent).toBe("Mozilla/5.0 Chrome/131.0.0.0");
+      expect(result.targetId).toBe("inv-1");
+      expect(result.targetLabel).toBe("candidate@example.com");
+      expect(result.actorEmailSnapshot).toBe("admin@test.com");
+    });
   });
 
   describe("logPlatform", () => {
@@ -139,6 +177,79 @@ describe("OrganizationsAuditLogService", () => {
 
       expect(result.total).toBe(1);
       expect(result.data[0].action).toBe("MEMBER_ROLE_CHANGED");
+    });
+
+    it("filters logs by actorId, targetId, search, and date range, with actor snapshot fallback", async () => {
+      await service.logOrg(
+        "org-1",
+        "former-user",
+        "WEBHOOK_CREATED",
+        "WEBHOOK",
+        { provider: "SLACK" },
+        undefined,
+        {
+          targetId: "wh-1",
+          targetLabel: "=HYPERLINK(bad)",
+          actorNameSnapshot: "Former Admin",
+          actorEmailSnapshot: "former@example.com",
+          changes: [{ field: "provider", before: null, after: "DISCORD" }],
+        },
+      );
+
+      const searchMatch = await service.findAllOrg("org-1", {
+        search: "former@example.com",
+        targetId: "wh-1",
+      });
+
+      expect(searchMatch.total).toBe(1);
+      expect(searchMatch.data[0].actor?.name).toBe("Former Admin");
+      expect(searchMatch.data[0].actor?.email).toBe("former@example.com");
+      expect(searchMatch.data[0].changes).toEqual([
+        { field: "provider", before: null, after: "DISCORD" },
+      ]);
+
+      const futureCutoff = new Date(Date.now() + 86_400_000).toISOString();
+      const emptyFuture = await service.findAllOrg("org-1", {
+        from: futureCutoff,
+      });
+      expect(emptyFuture.total).toBe(0);
+    });
+  });
+
+  describe("exportOrgLogs", () => {
+    it("exports filtered CSV with formula-injection neutralization and JSON format", async () => {
+      await service.logOrg(
+        "org-1",
+        "user-1",
+        "ORG_UPDATED",
+        "ORGANIZATION",
+        null,
+        undefined,
+        {
+          targetId: "org-1",
+          targetLabel: "=SUM(1,2)",
+          changes: [{ field: "name", before: "Old", after: "New" }],
+        },
+      );
+
+      const csv = await service.exportOrgLogs(
+        "org-1",
+        { action: "ORG_UPDATED" },
+        "csv",
+      );
+      expect(csv.mimeType).toContain("text/csv");
+      expect(csv.filename).toMatch(/^audit-log-\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(csv.content).toContain('"\'=SUM(1,2)"');
+
+      const json = await service.exportOrgLogs(
+        "org-1",
+        { action: "ORG_UPDATED" },
+        "json",
+      );
+      expect(json.mimeType).toContain("application/json");
+      const parsed = JSON.parse(json.content) as Array<{ action: string }>;
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].action).toBe("ORG_UPDATED");
     });
   });
 

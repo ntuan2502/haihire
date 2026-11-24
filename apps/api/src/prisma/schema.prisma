@@ -660,13 +660,21 @@ model OrganizationWebhookSetting {
 }
 
 model OrganizationAuditLog {
-  id             String   @id @default(uuid())
-  organizationId String
-  actorId        String?
-  action         String
-  resource       String
-  metadata       Json?    @db.JsonB
-  createdAt      DateTime @default(now())
+  id                 String   @id @default(uuid())
+  organizationId     String
+  actorId            String?
+  action             String
+  resource           String
+  targetId           String?
+  targetLabel        String?
+  actorNameSnapshot  String?
+  actorEmailSnapshot String?
+  changes            Json?    @db.JsonB
+  metadata           Json?    @db.JsonB
+  ipAddress          String?
+  userAgent          String?
+  requestId          String?
+  createdAt          DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
@@ -674,6 +682,7 @@ model OrganizationAuditLog {
   @@index([organizationId, resource])
   @@index([organizationId, createdAt])
   @@index([organizationId, action])
+  @@index([organizationId, targetId, createdAt])
   @@map("organization_audit_log")
 }
 

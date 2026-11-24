@@ -450,6 +450,9 @@ export const vi: TranslationSchema = {
     jobTitle: "Chức danh",
     applicants: "Ứng viên",
     createJob: "Tạo tin tuyển dụng",
+    noJobsYet: "Chưa có tin tuyển dụng nào",
+    noJobsYetDesc:
+      "Tạo tin tuyển dụng đầu tiên để bắt đầu quản lý quy trình tuyển dụng của bạn.",
     noJobsFound: "Không tìm thấy tin tuyển dụng nào",
     noJobsDesc:
       "Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc để tìm kiếm công việc phù hợp.",
@@ -840,7 +843,6 @@ export const vi: TranslationSchema = {
     title: "Hồ sơ ứng tuyển",
     score: "Điểm đánh giá",
     matchScore: "Điểm tương thích",
-    matchScoreUnrated: "Chưa đánh giá",
     rejectionReasonLabel: "Lý do từ chối",
     rejectModal: {
       title: "Từ chối ứng viên",
@@ -886,7 +888,6 @@ export const vi: TranslationSchema = {
       save: "Lưu ghi chú",
       keyboardHint: "Ctrl+Enter để lưu",
     },
-    comingSoonTooltip: "{action} (Sắp ra mắt)",
     columns: {
       candidate: "Ứng viên",
       email: "Email",
@@ -910,11 +911,8 @@ export const vi: TranslationSchema = {
     openFullPage: "Mở toàn trang",
     viewApplication: "Xem đơn ứng tuyển",
     scheduleInterview: "Lên lịch phỏng vấn",
-    noAiAnalysis: "Chưa có phân tích AI",
-    runAnalysis: "Chạy phân tích AI",
     noInterviews: "Chưa có lịch phỏng vấn nào",
     noInterviewsDesc: "Lên lịch phỏng vấn để bắt đầu tiến trình đánh giá.",
-    noResponses: "Chưa có phản hồi từ biểu mẫu ứng tuyển.",
     noDocumentsUploaded: "Chưa có tài liệu nào được tải lên.",
     applyingForPosition: "Ứng tuyển vào vị trí",
     applyToJobTitle: "Ứng tuyển vào vị trí",
@@ -931,9 +929,6 @@ export const vi: TranslationSchema = {
     deleteDocumentHeading: "Xóa tài liệu",
     deleteDocumentWarning:
       "Bạn có chắc chắn muốn xóa tài liệu này không? Thao tác này không thể hoàn tác.",
-    noMessagesYet: "Chưa có tin nhắn nào",
-    noMessagesYetDesc:
-      "Các trao đổi qua email với ứng viên sẽ hiển thị tại đây.",
     timelineTitle: "Dòng thời gian hồ sơ",
     applicationNotFound: "Không tìm thấy hồ sơ ứng tuyển",
     invalidAppId: "Mã định danh hồ sơ không hợp lệ. Yêu cầu UUID chuẩn.",
@@ -941,17 +936,13 @@ export const vi: TranslationSchema = {
       "Hồ sơ ứng tuyển bạn đang tìm không tồn tại hoặc đã bị gỡ bỏ.",
     tabs: {
       overview: "Tổng quan",
-      inbox: "Hộp thư",
-      ai: "Phân tích AI",
       interviews: "Phỏng vấn",
       documents: "Tài liệu",
-      responses: "Câu trả lời",
       notes: "Ghi chú",
       timeline: "Dòng thời gian",
     },
     sections: {
       interviews: "Phỏng vấn",
-      responses: "Câu trả lời",
     },
   },
   interviews: {

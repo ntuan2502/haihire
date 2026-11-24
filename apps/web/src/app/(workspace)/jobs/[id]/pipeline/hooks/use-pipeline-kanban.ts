@@ -7,6 +7,7 @@ import {
   useJobApplications,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
@@ -37,11 +38,8 @@ type PipelineSortBy = (typeof VALID_SORT_BY)[number];
 
 const VALID_CANDIDATE_TABS = [
   "overview",
-  "inbox",
-  "ai",
   "interviews",
   "documents",
-  "responses",
   "notes",
   "timeline",
 ] as const;
@@ -73,6 +71,7 @@ export function usePipelineKanban(jobId: string) {
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const updatePipelineUrl = useCallback(
     (
@@ -185,6 +184,7 @@ export function usePipelineKanban(jobId: string) {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   useEffect(() => {
     const targetId =
@@ -221,6 +221,7 @@ export function usePipelineKanban(jobId: string) {
     (candidateId: string) => {
       setSelectedAppId(candidateId);
       setMobileDetailOpen(true);
+      setIsSendEmailOpen(false);
       updatePipelineUrl({
         stage: selectedStage,
         applicationId: candidateId,
@@ -232,6 +233,7 @@ export function usePipelineKanban(jobId: string) {
 
   const handleSelectStage = (stage: ApplicationStage) => {
     setSelectedStage(stage);
+    setIsSendEmailOpen(false);
     updatePipelineUrl(
       {
         stage,
@@ -515,6 +517,38 @@ export function usePipelineKanban(jobId: string) {
     );
   };
 
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
+    if (!selectedCandidate) return;
+    try {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (
+        selectedCandidate.interviews &&
+        selectedCandidate.interviews.length > 0 &&
+        selectedCandidate.interviews[0]?.id
+      ) {
+        targetId = selectedCandidate.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
+    }
+  };
+
   const candidateCountText =
     filteredCandidates.length === 0
       ? `${t("common.showing")} 0-0 ${t("common.of")} 0 ${t("nav.candidates").toLowerCase()}`
@@ -563,6 +597,9 @@ export function usePipelineKanban(jobId: string) {
     setScheduleModalOpen,
     editingInterview,
     setEditingInterview,
+    handleCancelInterview,
+    isSendEmailOpen,
+    setIsSendEmailOpen,
     mobileDetailOpen,
     setMobileDetailOpen,
     candidateTab,

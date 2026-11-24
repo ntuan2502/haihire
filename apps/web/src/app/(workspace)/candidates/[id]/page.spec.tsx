@@ -121,7 +121,6 @@ const mockDeleteCandidateMutateAsync = vi.fn();
 const mockDeleteCandidateDocMutateAsync = vi.fn();
 const mockDeleteAppDocMutateAsync = vi.fn();
 const mockDeleteInterviewMutateAsync = vi.fn();
-const mockSendEmailMutateAsync = vi.fn();
 
 vi.mock("@/hooks/use-queries", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -169,7 +168,7 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       isLoading: false,
     }),
     useSendEmailMutation: () => ({
-      mutateAsync: mockSendEmailMutateAsync,
+      mutateAsync: vi.fn(),
       isPending: false,
     }),
     useUploadCandidateDocumentMutation: () => ({
@@ -464,15 +463,12 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
 
   // A.1.7: Modals
   describe("A.1.7: Modals", () => {
-    it("opens send email modal when clicking Send Email button", () => {
+    it("does not render Send Email button in candidate detail header", () => {
       renderWithClient(<CandidateDetailPage />);
 
-      const sendEmailBtn = screen.getByRole("button", { name: /Gửi Email/i });
-      fireEvent.click(sendEmailBtn);
-
       expect(
-        screen.getByRole("heading", { name: /Gửi Email cho ứng viên/i }),
-      ).toBeInTheDocument();
+        screen.queryByRole("button", { name: /Gửi Email/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("opens apply to job modal when clicking Apply to Job button", () => {

@@ -82,6 +82,10 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useDeleteInterviewMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 describe("usePipelineKanban", () => {

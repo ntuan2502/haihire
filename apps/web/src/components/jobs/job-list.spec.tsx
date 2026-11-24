@@ -146,8 +146,9 @@ describe("JobList Component - Characterization Tests", () => {
     it("shows empty state when no jobs match or jobs array is empty", () => {
       render(<JobList jobs={[]} loading={false} onDeleteJob={vi.fn()} />);
 
-      expect(screen.getByText(en.jobs.noJobsFound)).toBeDefined();
-      expect(screen.getByText(en.jobs.noJobsDesc)).toBeDefined();
+      expect(screen.getByText(en.jobs.noJobsYet)).toBeDefined();
+      expect(screen.getByText(en.jobs.noJobsYetDesc)).toBeDefined();
+      expect(screen.queryByText(en.jobs.resetAll)).toBeNull();
     });
   });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Briefcase, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
@@ -58,6 +58,9 @@ export function JobList(props: JobListProps) {
   } = useJobFilters(props);
 
   const { getJobStageCounts } = useJobStageCounts(jobs);
+  const hasActiveFilters = Boolean(
+    search.trim() || statusFilters.length > 0 || hasSecondaryFilters,
+  );
 
   return (
     <div className="space-y-4">
@@ -85,28 +88,40 @@ export function JobList(props: JobListProps) {
         onResetFilters={handleResetFilters}
       />
 
-      {/* If No Matching Jobs from Search / Filters */}
+      {/* Empty state: distinguish zero jobs vs filtered search mismatch */}
       {filteredJobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card text-card-foreground px-6 py-12 sm:p-16 text-center shadow-xs w-full my-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-4">
-            <Search className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
+            {hasActiveFilters ? (
+              <Search className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
+            ) : (
+              <Briefcase className="h-7 w-7 stroke-[1.5]" aria-hidden="true" />
+            )}
           </div>
           <h3 className="text-base font-semibold text-foreground">
-            {t("jobs.noJobsFound")}
+            {hasActiveFilters ? t("jobs.noJobsFound") : t("jobs.noJobsYet")}
           </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
-            {t("jobs.noJobsDesc")}
-          </p>
-          <Button
-            onClick={() => {
-              setSearch("");
-              handleResetFilters();
-            }}
-            variant="outline"
-            className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
+          <p
+            className={
+              hasActiveFilters
+                ? "text-xs text-muted-foreground max-w-sm mt-1 mb-6"
+                : "text-xs text-muted-foreground max-w-sm mt-1"
+            }
           >
-            {t("jobs.resetAll")}
-          </Button>
+            {hasActiveFilters ? t("jobs.noJobsDesc") : t("jobs.noJobsYetDesc")}
+          </p>
+          {hasActiveFilters && (
+            <Button
+              onClick={() => {
+                setSearch("");
+                handleResetFilters();
+              }}
+              variant="outline"
+              className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
+            >
+              {t("jobs.resetAll")}
+            </Button>
+          )}
         </div>
       ) : (
         /* Unified Rich Table View matching Dashboard visual language */

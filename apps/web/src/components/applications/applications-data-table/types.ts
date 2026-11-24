@@ -35,11 +35,4 @@ export interface ApplicationsDataTableProps {
 }
 
 export type DrawerTabId =
-  | "overview"
-  | "inbox"
-  | "ai"
-  | "interviews"
-  | "documents"
-  | "responses"
-  | "notes"
-  | "timeline";
+  "overview" | "interviews" | "documents" | "notes" | "timeline";

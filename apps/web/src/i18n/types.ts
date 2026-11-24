@@ -382,6 +382,8 @@ export interface TranslationSchema {
     jobTitle: string;
     applicants: string;
     createJob: string;
+    noJobsYet: string;
+    noJobsYetDesc: string;
     noJobsFound: string;
     noJobsDesc: string;
     searchJobs: string;
@@ -736,7 +738,6 @@ export interface TranslationSchema {
     title: string;
     score: string;
     matchScore: string;
-    matchScoreUnrated: string;
     rejectionReasonLabel: string;
     rejectModal: {
       title: string;
@@ -776,7 +777,6 @@ export interface TranslationSchema {
       save: string;
       keyboardHint: string;
     };
-    comingSoonTooltip: string;
     columns: {
       candidate: string;
       email: string;
@@ -799,11 +799,8 @@ export interface TranslationSchema {
     openFullPage: string;
     viewApplication: string;
     scheduleInterview: string;
-    noAiAnalysis: string;
-    runAnalysis: string;
     noInterviews: string;
     noInterviewsDesc: string;
-    noResponses: string;
     noDocumentsUploaded: string;
     applyingForPosition: string;
     applyToJobTitle: string;
@@ -817,25 +814,19 @@ export interface TranslationSchema {
     deleteCandidateWarning: string;
     deleteDocumentHeading: string;
     deleteDocumentWarning: string;
-    noMessagesYet: string;
-    noMessagesYetDesc: string;
     timelineTitle: string;
     applicationNotFound: string;
     invalidAppId: string;
     appNotFoundDesc: string;
     tabs: {
       overview: string;
-      inbox: string;
-      ai: string;
       interviews: string;
       documents: string;
-      responses: string;
       notes: string;
       timeline: string;
     };
     sections: {
       interviews: string;
-      responses: string;
     };
   };
   interviews: {

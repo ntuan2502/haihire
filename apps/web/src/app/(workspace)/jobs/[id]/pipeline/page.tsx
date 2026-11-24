@@ -8,7 +8,10 @@ import { RejectApplicationModal } from "@/components/applications/reject-applica
 import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { SendEmailModal } from "@/components/email/send-email-modal";
 import { getCandidateDisplayName, normalizeEmailAddress } from "@/lib/utils";
+import { BRAND_CONFIG } from "@haihire/shared";
+import { useI18n } from "@/i18n";
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
 import { PipelineCandidatesSidebar } from "@/components/jobs/pipeline/page-components";
 import { PipelineCandidateDetail } from "@/components/jobs/pipeline/pipeline-candidate-detail";
@@ -18,6 +21,7 @@ function JobPipelinePageContent() {
   const params = useParams();
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
+  const { t } = useI18n();
 
   const pipeline = usePipelineKanban(jobId);
 
@@ -63,6 +67,7 @@ function JobPipelinePageContent() {
           job={pipeline.job}
           canEdit={pipeline.canEdit}
           isMovingStage={pipeline.isMovingStage}
+          isDeletingApp={pipeline.isDeletingApp}
           onMoveStage={pipeline.handleMoveCandidateStage}
           currentIndex={pipeline.currentIndex}
           totalCandidates={pipeline.filteredCandidates.length}
@@ -78,6 +83,8 @@ function JobPipelinePageContent() {
             pipeline.setEditingInterview(intv || null);
             pipeline.setScheduleModalOpen(true);
           }}
+          onCancelInterview={pipeline.handleCancelInterview}
+          onOpenSendEmail={() => pipeline.setIsSendEmailOpen(true)}
           onDeleteApplication={() => pipeline.setDeleteAppModalOpen(true)}
         />
       </div>
@@ -152,6 +159,33 @@ function JobPipelinePageContent() {
           selectedJobId={pipeline.job.id}
           selectedApplicationId={pipeline.selectedCandidate?.id}
           editingInterview={pipeline.editingInterview}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {pipeline.selectedCandidate && (
+        <SendEmailModal
+          isOpen={pipeline.isSendEmailOpen}
+          onClose={() => pipeline.setIsSendEmailOpen(false)}
+          candidate={{
+            id: pipeline.selectedCandidate.candidateId,
+            name: getCandidateDisplayName(pipeline.selectedCandidate),
+            email: normalizeEmailAddress(
+              pipeline.selectedCandidate.candidateEmail ??
+                pipeline.selectedCandidate.candidate?.email,
+            ),
+            phone:
+              pipeline.selectedCandidate.candidatePhone ??
+              pipeline.selectedCandidate.candidate?.phone,
+          }}
+          jobTitle={pipeline.job.title}
+          organizationName={
+            pipeline.job.department
+              ? t("common.departmentSuffix", {
+                  department: pipeline.job.department,
+                })
+              : BRAND_CONFIG.name
+          }
         />
       )}
     </div>

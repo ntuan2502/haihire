@@ -231,7 +231,6 @@ export default function IntegrationsSettingsPage() {
             webhookSettings={webhookSettings}
             isLoading={isLoading}
             isAdmin={canManageIntegrations}
-            onOpenAdd={handleOpenAdd}
             onOpenEdit={handleOpenEdit}
             onDelete={(id) => {
               const found = webhookSettings.find((s) => s.id === id);

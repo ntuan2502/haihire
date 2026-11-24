@@ -4,7 +4,6 @@ import { SettingsButton } from "@/components/settings/settings-button";
 import { useI18n } from "@/i18n";
 import type { WebhookSettingResponse } from "@haihire/shared";
 import {
-  Plus,
   Trash2,
   Pencil,
   Send,
@@ -19,7 +18,6 @@ export interface WebhookSettingsTableProps {
   webhookSettings: WebhookSettingResponse[];
   isLoading: boolean;
   isAdmin: boolean;
-  onOpenAdd: () => void;
   onOpenEdit: (setting: WebhookSettingResponse) => void;
   onDelete: (id: string) => void;
   onTest: (setting: WebhookSettingResponse) => void;
@@ -30,7 +28,6 @@ export function WebhookSettingsTable({
   webhookSettings,
   isLoading,
   isAdmin,
-  onOpenAdd,
   onOpenEdit,
   onDelete,
   onTest,
@@ -65,17 +62,6 @@ export function WebhookSettingsTable({
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("settings.integrations.webhooks.emptyState")}
           </p>
-          {isAdmin && (
-            <SettingsButton
-              variant="outline"
-              size="sm"
-              onClick={onOpenAdd}
-              icon={Plus}
-              className="mt-2"
-            >
-              {t("settings.integrations.webhooks.addButton")}
-            </SettingsButton>
-          )}
         </div>
       ) : (
         <div className="overflow-x-auto">

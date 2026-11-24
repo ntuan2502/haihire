@@ -5,7 +5,6 @@ import { CandidateInterviewsList } from "@/components/interviews/candidate-inter
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, CandidateDocument } from "@/types";
-import { getCandidateDisplayName } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 interface CandidateOverviewTabProps {
@@ -32,33 +31,24 @@ export function CandidateOverviewTab({
   canEdit,
 }: CandidateOverviewTabProps) {
   const { t } = useI18n();
+  const hasMatchScore =
+    currentApp.matchScore !== null && currentApp.matchScore !== undefined;
 
   return (
     <div className="space-y-4">
       {/* Match Score Card */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            {t("applications.matchScore")}:
-          </span>
-          <span className="font-semibold font-mono tabular-nums text-sm text-foreground">
-            {currentApp.matchScore !== null &&
-            currentApp.matchScore !== undefined
-              ? `${currentApp.matchScore}%`
-              : t("applications.matchScoreUnrated")}
-          </span>
+      {hasMatchScore && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("applications.matchScore")}:
+            </span>
+            <span className="font-semibold font-mono tabular-nums text-sm text-foreground">
+              {currentApp.matchScore}%
+            </span>
+          </div>
         </div>
-        <button
-          type="button"
-          disabled
-          title={t("applications.comingSoonTooltip", {
-            action: t("applications.runAnalysis"),
-          })}
-          className="text-xs text-muted-foreground opacity-60 cursor-not-allowed font-medium"
-        >
-          <span>{t("applications.runAnalysis")}</span>
-        </button>
-      </div>
+      )}
 
       {/* Interviews Card */}
       <CandidateInterviewsList
@@ -77,41 +67,6 @@ export function CandidateOverviewTab({
         onPreview={onPreviewDoc}
         onDownload={onDownloadDoc}
       />
-
-      {/* Responses Card */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3">
-        <h3 className="text-xs font-medium text-foreground">
-          {t("applications.sections.responses")}
-        </h3>
-        <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2 text-muted-foreground">
-          <div>
-            <p className="text-[11px] text-muted-foreground">
-              {t("candidates.displayName")}
-            </p>
-            <p className="font-semibold text-foreground">
-              {getCandidateDisplayName(currentApp)}
-            </p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground">
-              {t("candidates.email")}
-            </p>
-            <p className="font-semibold text-foreground">
-              {currentApp.candidateEmail}
-            </p>
-          </div>
-          {currentApp.candidatePhone && (
-            <div>
-              <p className="text-[11px] text-muted-foreground">
-                {t("candidates.phone")}
-              </p>
-              <p className="font-semibold text-foreground">
-                {currentApp.candidatePhone}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Notes Card */}
       <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs">

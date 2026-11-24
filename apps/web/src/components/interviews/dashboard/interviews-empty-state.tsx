@@ -1,18 +1,9 @@
 "use client";
 
 import { useI18n } from "@/i18n";
-import { Calendar, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Calendar } from "lucide-react";
 
-export interface InterviewsEmptyStateProps {
-  canEdit: boolean;
-  onOpenScheduleModal: () => void;
-}
-
-export function InterviewsEmptyState({
-  canEdit,
-  onOpenScheduleModal,
-}: InterviewsEmptyStateProps) {
+export function InterviewsEmptyState() {
   const { t } = useI18n();
 
   return (
@@ -23,18 +14,9 @@ export function InterviewsEmptyState({
       <h3 className="text-base font-semibold text-foreground">
         {t("interviews.noInterviewsFound")}
       </h3>
-      <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
+      <p className="text-xs text-muted-foreground max-w-sm mt-1">
         {t("interviews.noInterviewsFoundDesc")}
       </p>
-      {canEdit && (
-        <Button
-          onClick={onOpenScheduleModal}
-          className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          <span>{t("interviews.scheduleNew")}</span>
-        </Button>
-      )}
     </div>
   );
 }

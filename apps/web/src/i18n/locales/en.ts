@@ -450,6 +450,9 @@ export const en: TranslationSchema = {
     jobTitle: "Job Title",
     applicants: "Applicants",
     createJob: "Create New Job",
+    noJobsYet: "No jobs yet",
+    noJobsYetDesc:
+      "Create your first job posting to start managing your hiring pipeline.",
     noJobsFound: "No jobs found",
     noJobsDesc:
       "Try adjusting your search query or filters to find what you're looking for.",
@@ -839,7 +842,6 @@ export const en: TranslationSchema = {
     title: "Applications",
     score: "Score",
     matchScore: "Match score",
-    matchScoreUnrated: "Not evaluated",
     rejectionReasonLabel: "Rejection reason",
     rejectModal: {
       title: "Reject Candidate",
@@ -883,7 +885,6 @@ export const en: TranslationSchema = {
       save: "Save note",
       keyboardHint: "Ctrl+Enter to save",
     },
-    comingSoonTooltip: "{action} (Coming soon)",
     columns: {
       candidate: "Candidate",
       email: "Email",
@@ -907,11 +908,8 @@ export const en: TranslationSchema = {
     openFullPage: "Open full page",
     viewApplication: "View application",
     scheduleInterview: "Schedule interview",
-    noAiAnalysis: "No AI analysis yet",
-    runAnalysis: "Run Analysis",
     noInterviews: "No interviews scheduled",
     noInterviewsDesc: "Schedule an interview to start the process.",
-    noResponses: "No application form responses.",
     noDocumentsUploaded: "No documents uploaded.",
     applyingForPosition: "Applying For Position",
     applyToJobTitle: "Apply to Job",
@@ -929,8 +927,6 @@ export const en: TranslationSchema = {
     deleteDocumentHeading: "Delete Document",
     deleteDocumentWarning:
       "Are you sure you want to delete this document? This action cannot be undone.",
-    noMessagesYet: "No messages yet",
-    noMessagesYetDesc: "Email communications will appear here.",
     timelineTitle: "Application Timeline",
     applicationNotFound: "Application Not Found",
     invalidAppId:
@@ -939,17 +935,13 @@ export const en: TranslationSchema = {
       "The application you are looking for does not exist or has been removed.",
     tabs: {
       overview: "Overview",
-      inbox: "Inbox",
-      ai: "AI Analysis",
       interviews: "Interviews",
       documents: "Documents",
-      responses: "Responses",
       notes: "Notes",
       timeline: "Timeline",
     },
     sections: {
       interviews: "Interviews",
-      responses: "Responses",
     },
   },
   interviews: {

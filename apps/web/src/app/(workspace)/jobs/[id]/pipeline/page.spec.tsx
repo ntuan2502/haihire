@@ -33,8 +33,18 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    user: { id: "user-1", organizationId: "org-1" },
+    user: { id: "user-1", organizationId: "org-1", role: "ADMIN" },
+    canEdit: true,
   }),
+}));
+
+vi.mock("@/hooks/use-organization-queries", () => ({
+  useRolePermissionsMatrix: () => ({ data: undefined }),
+  useMyPermissions: () => ({ data: undefined }),
+}));
+
+vi.mock("@/hooks/use-email-queries", () => ({
+  useEmailFlows: () => ({ data: [], isLoading: false }),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -83,6 +93,27 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useDeleteInterviewMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useApplicationNotes: () => ({ data: [], isLoading: false }),
+  useAddApplicationNoteMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useUpdateApplicationNoteMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useDeleteApplicationNoteMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+  useApplicationActivities: () => ({ data: { data: [] }, isLoading: false }),
+  useCandidateActivities: () => ({ data: { data: [] }, isLoading: false }),
+  useEmailTemplates: () => ({ data: [], isLoading: false }),
+  useSendEmailMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useOrgInterviewers: () => ({ data: [], isLoading: false }),
 }));
 
@@ -160,7 +191,7 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     });
   });
 
-  it("renders unrated matchScore state instead of fake 75% fallback and displays 0% for zero score", () => {
+  it("hides Match Score card when unrated and displays 0% for zero score", () => {
     mockUseJobApplications.mockReturnValue({
       data: [
         {
@@ -183,11 +214,52 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     expect(screen.queryByText("75%")).not.toBeInTheDocument();
     expect(
-      screen.getByText("applications.matchScoreUnrated"),
-    ).toBeInTheDocument();
+      screen.queryByText("applications.matchScore"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Zero Score Candidate"));
+    expect(screen.getByText("applications.matchScore")).toBeInTheDocument();
     expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders unified 5 tabs without placeholder tabs and opens SendEmailModal", () => {
+    mockUseJobApplications.mockReturnValue({
+      data: mockApplications,
+      isLoading: false,
+    });
+
+    render(<JobPipelinePage />);
+
+    expect(
+      screen.getByRole("button", { name: "applications.tabs.overview" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /applications\.tabs\.interviews/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /applications\.tabs\.documents/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "applications.tabs.notes" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "applications.tabs.timeline" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /applications\.tabs\.inbox/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /applications\.tabs\.ai/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /applications\.tabs\.responses/i }),
+    ).not.toBeInTheDocument();
+
+    const sendEmailBtn = screen.getByRole("button", {
+      name: /email\.sendEmailAction/i,
+    });
+    fireEvent.click(sendEmailBtn);
+    expect(screen.getByText("email.modalTitle")).toBeInTheDocument();
   });
 
   it("opens RejectApplicationModal instead of bypassing confirmation when moving candidate to REJECTED", () => {

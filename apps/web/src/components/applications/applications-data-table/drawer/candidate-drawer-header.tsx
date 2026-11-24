@@ -6,7 +6,6 @@ import {
   Columns3,
   ExternalLink,
   X,
-  Calendar,
   Trash2,
   Mail,
   Phone,
@@ -30,7 +29,6 @@ export interface CandidateDrawerSummaryProps {
   selectedJobTitle: string;
   onStageChange: (newStage: ApplicationStage) => void;
   isStageUpdatePending: boolean;
-  onOpenScheduleModal: () => void;
   onOpenDeleteModal: (app: Application) => void;
   isDeleting: boolean;
 }
@@ -98,13 +96,11 @@ export function CandidateDrawerSummary({
   selectedJobTitle,
   onStageChange,
   isStageUpdatePending,
-  onOpenScheduleModal,
   onOpenDeleteModal,
   isDeleting,
 }: CandidateDrawerSummaryProps) {
   const { t } = useI18n();
   const canUpdateStage = useHasPermission("application:update_stage");
-  const canCreateInterview = useHasPermission("interview:create");
   const canDeleteApplication = useHasPermission("application:delete");
 
   return (
@@ -121,17 +117,6 @@ export function CandidateDrawerSummary({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {canCreateInterview && (
-            <button
-              type="button"
-              onClick={onOpenScheduleModal}
-              className="h-8 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
-            >
-              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{t("applications.scheduleInterview")}</span>
-            </button>
-          )}
-
           {canDeleteApplication && (
             <button
               type="button"

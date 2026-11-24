@@ -23,11 +23,8 @@ const VALID_SORT_FIELDS: readonly SortField[] = [
 ];
 const VALID_DRAWER_TABS: readonly DrawerTabId[] = [
   "overview",
-  "inbox",
-  "ai",
   "interviews",
   "documents",
-  "responses",
   "notes",
   "timeline",
 ];

@@ -99,7 +99,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         onDownloadDoc={drawer.handleDownloadDoc}
         onStageChange={drawer.handleStageChange}
         isStageUpdatePending={drawer.isStageUpdatePending}
-        onOpenScheduleModal={() => table.setIsScheduleModalOpen(true)}
         onOpenDeleteModal={(app) => table.setDeleteModalApp(app)}
         isDeleting={table.isDeleting}
         canEdit={canEdit}

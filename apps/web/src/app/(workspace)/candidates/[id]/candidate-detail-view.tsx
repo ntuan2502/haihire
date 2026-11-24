@@ -57,7 +57,6 @@ export function CandidateDetailView() {
     useState<Application | null>(null);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
-  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   const handleConfirmDeleteCandidate = async () => {
     if (!state.candidate) return;
@@ -148,7 +147,6 @@ export function CandidateDetailView() {
         candidatePhone={state.candidatePhone}
         canEdit={state.canEdit}
         isDeleting={isDeletingCandidate}
-        onOpenSendEmail={() => setIsSendEmailOpen(true)}
         onOpenDeleteModal={() => setIsDeleteModalOpen(true)}
       />
 
@@ -256,8 +254,6 @@ export function CandidateDetailView() {
       <CandidateDetailModals
         candidate={state.candidate}
         candidateName={state.candidateName}
-        candidateEmail={state.candidateEmail}
-        candidatePhone={state.candidatePhone}
         jobs={state.jobs}
         candidateApps={state.candidateApps}
         applyModalOpen={applyModalOpen}
@@ -274,8 +270,6 @@ export function CandidateDetailView() {
         setScheduleInterviewApp={setScheduleInterviewApp}
         editingInterview={editingInterview}
         setEditingInterview={setEditingInterview}
-        isSendEmailOpen={isSendEmailOpen}
-        setIsSendEmailOpen={setIsSendEmailOpen}
       />
 
       <DocumentPreviewModal

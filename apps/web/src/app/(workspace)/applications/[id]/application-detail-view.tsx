@@ -7,10 +7,12 @@ import { useI18n } from "@/i18n";
 
 import { useApplicationDetailState } from "./hooks/use-application-detail-state";
 import { useApplicationStageActions } from "./hooks/use-application-stage-actions";
-import { ApplicationStageBar } from "./sections/application-stage-bar";
-import { ApplicationDetailHeader } from "./sections/application-detail-header";
-import { ApplicationNavTabs } from "./sections/application-nav-tabs";
-import { ApplicationTabContent } from "./sections/application-tab-content";
+import {
+  ApplicationStageBar,
+  ApplicationDetailHeader,
+  ApplicationDetailTabs,
+  ApplicationDetailTabContent,
+} from "@/components/applications/detail";
 import { ApplicationDetailModals } from "./modals/application-detail-modals";
 
 export function ApplicationDetailView() {
@@ -68,10 +70,6 @@ export function ApplicationDetailView() {
         isUpdatingStage={actions.isUpdatingStage}
         isDeleting={actions.isDeleting}
         onSelectStage={actions.handleStageChange}
-        onOpenScheduleModal={() => {
-          state.setEditingInterview(null);
-          state.setScheduleModalOpen(true);
-        }}
         onOpenDeleteModal={() => state.setIsDeleteModalOpen(true)}
       />
 
@@ -89,14 +87,15 @@ export function ApplicationDetailView() {
       />
 
       {/* Sub-Navigation Tabs */}
-      <ApplicationNavTabs
+      <ApplicationDetailTabs
         activeTab={state.activeTab}
-        setActiveTab={state.setActiveTab}
-        candidateDocumentsCount={state.candidateDocuments.length}
+        onSelectTab={state.setActiveTab}
+        interviewsCount={state.app?.interviews?.length ?? 0}
+        documentsCount={state.candidateDocuments.length}
       />
 
       {/* Active Tab Body Content */}
-      <ApplicationTabContent
+      <ApplicationDetailTabContent
         activeTab={state.activeTab}
         app={state.app}
         canEdit={state.canEdit}

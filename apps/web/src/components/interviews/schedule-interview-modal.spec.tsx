@@ -70,6 +70,7 @@ vi.mock("@/i18n", () => ({
           "Vui lòng nhập tên người phỏng vấn.",
         "interviews.errors.candidateNotFound": "Không tìm thấy ứng viên.",
         "interviews.errors.saveFailed": "Lưu lịch phỏng vấn thất bại.",
+        "pipeline.stages.applied": "Ứng tuyển",
       };
       return dict[key] || key;
     },
@@ -149,6 +150,8 @@ describe("ScheduleInterviewModal Component", () => {
 
     expect(screen.getByText("Lên lịch phỏng vấn")).toBeInTheDocument();
     expect(screen.getByText(/Nguyen Van A/)).toBeInTheDocument();
+    expect(screen.getByText("Ứng tuyển")).toBeInTheDocument();
+    expect(screen.queryByText("APPLIED")).not.toBeInTheDocument();
   });
 
   it("validates missing date or time before submitting", async () => {

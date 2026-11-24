@@ -98,6 +98,8 @@ export const en: TranslationSchema = {
     ORG_INVITE_REVOKED: "This invitation link has been revoked.",
     ORG_INVITE_MAX_USES_REACHED:
       "This invitation link has reached its maximum allowed uses.",
+    ORG_INVITE_EMAIL_MISMATCH:
+      "This invitation was sent to a different email address. Please sign in with the invited account.",
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Cannot change the role of the organization owner.",
@@ -1218,6 +1220,31 @@ export const en: TranslationSchema = {
     filterByRole: "Filter by role",
     noMatchingMembers: "No members match your search or filter.",
     joinedOn: "Joined {date}",
+    tabMembers: "Members",
+    tabEmailInvites: "Email Invitations",
+    tabShareableLinks: "Shareable Links",
+    statusPending: "Pending",
+    statusAccepted: "Accepted",
+    statusRevoked: "Revoked",
+    allActiveStatuses: "Active & completed",
+    allStatuses: "All statuses",
+    resendInvite: "Resend",
+    resendInviteSuccess: "Invitation resent to {email}.",
+    acceptedByOn: "Accepted by {name} on {date}",
+    invitedByLabel: "Invited by {name}",
+    emailInvitesTitle: "Email Invitations",
+    emailInvitesSubtitle:
+      "Track single-use invitations sent directly to a colleague's inbox.",
+    noEmailInvites: "No email invitations yet",
+    noEmailInvitesDesc:
+      "Send an invitation directly to a colleague's email address to track when they accept it.",
+    noMatchingInvites: "No invitations match this filter.",
+    viewUsageHistory: "{count} joined",
+    usageHistoryTitle: "Invite Link Usage History",
+    usageHistorySubtitle:
+      "Accounts that joined the organization using this invite link.",
+    noLinkUsages: "No one has used this invite link yet.",
+    joinedAtLabel: "Joined at {date}",
   },
   onboarding: {
     selectOrgTitle: "Select an organization",
@@ -1268,6 +1295,13 @@ export const en: TranslationSchema = {
     goToDashboard: "Go to dashboard",
     joinOrgButton: "Join {org}",
     joiningButton: "Joining organization...",
+    emailRestrictedNotice:
+      "This invitation is restricted to {email}. Sign in or register with that email address to accept.",
+    emailMismatchTitle: "Signed in with a different email",
+    emailMismatchDesc:
+      "You are currently signed in as {currentEmail}, which does not match the invited email ({invitedEmail}).",
+    switchAccountButton: "Sign out & switch account",
+    switchingAccount: "Signing out...",
   },
   notificationInbox: {
     all: "All",

@@ -143,8 +143,25 @@ export class OrganizationsService implements OnModuleInit {
   getInviteLinks(
     userId: string,
     activeOrgId?: string | null,
+    includeRevoked = false,
   ): Promise<InviteLinkRecord[]> {
-    return this.invites.getInviteLinks(userId, activeOrgId);
+    return this.invites.getInviteLinks(userId, activeOrgId, includeRevoked);
+  }
+
+  resendInviteLink(
+    userId: string,
+    linkId: string,
+    activeOrgId?: string | null,
+  ): Promise<InviteLinkRecord> {
+    return this.invites.resendInviteLink(userId, linkId, activeOrgId);
+  }
+
+  getInviteLinkUsages(
+    userId: string,
+    linkId: string,
+    activeOrgId?: string | null,
+  ) {
+    return this.invites.getInviteLinkUsages(userId, linkId, activeOrgId);
   }
 
   revokeInviteLink(
@@ -155,8 +172,8 @@ export class OrganizationsService implements OnModuleInit {
     return this.invites.revokeInviteLink(userId, linkId, activeOrgId);
   }
 
-  getPublicInvite(token: string) {
-    return this.invites.getPublicInvite(token);
+  getPublicInvite(token: string, currentUserId?: string | null) {
+    return this.invites.getPublicInvite(token, currentUserId);
   }
 
   joinByToken(userId: string, token: string) {

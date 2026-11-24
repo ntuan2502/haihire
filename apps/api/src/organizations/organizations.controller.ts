@@ -33,10 +33,12 @@ import {
   SwitchOrgDto,
   UpdateMemberRoleDto,
   CreateInviteLinkDto,
+  GetInviteLinksQueryDto,
 } from "./dto/org-actions.dto";
 import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
 import { AuditLogQueryDto } from "./dto/audit-log-query.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import { DtoPipe } from "../common/dto-validation.pipe";
@@ -371,9 +373,40 @@ export class OrganizationsController {
   @Get("my/invite-links")
   getInviteLinks(
     @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Query(DtoPipe(GetInviteLinksQueryDto)) query?: GetInviteLinksQueryDto,
   ) {
     return this.orgsService.getInviteLinks(
       req.user.id,
+      req.user.organizationId,
+      Boolean(query?.includeRevoked),
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
+  @Post("my/invite-links/:id/resend")
+  @HttpCode(HttpStatus.OK)
+  resendInviteLink(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Param("id", new ParseUUIDPipe()) id: string,
+  ) {
+    return this.orgsService.resendInviteLink(
+      req.user.id,
+      id,
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
+  @Get("my/invite-links/:id/usages")
+  getInviteLinkUsages(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Param("id", new ParseUUIDPipe()) id: string,
+  ) {
+    return this.orgsService.getInviteLinkUsages(
+      req.user.id,
+      id,
       req.user.organizationId,
     );
   }
@@ -392,10 +425,14 @@ export class OrganizationsController {
     );
   }
 
-  // Public endpoint to view invite link details (no auth needed)
+  // Public endpoint to view invite link details (optional auth to detect email mismatch)
+  @UseGuards(OptionalJwtAuthGuard)
   @Get("invite-links/public/:token")
-  getPublicInvite(@Param("token") token: string) {
-    return this.orgsService.getPublicInvite(token);
+  getPublicInvite(
+    @Param("token") token: string,
+    @Request() req?: { user?: { id?: string } | null },
+  ) {
+    return this.orgsService.getPublicInvite(token, req?.user?.id ?? null);
   }
 
   // Auth endpoint to accept invite and join org

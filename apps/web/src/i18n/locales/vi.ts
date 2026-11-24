@@ -97,6 +97,8 @@ export const vi: TranslationSchema = {
     ORG_INVITE_REVOKED: "Liên kết mời tham gia này đã bị thu hồi.",
     ORG_INVITE_MAX_USES_REACHED:
       "Liên kết mời tham gia này đã đạt giới hạn số lượt sử dụng tối đa.",
+    ORG_INVITE_EMAIL_MISMATCH:
+      "Lời mời này được gửi cho một địa chỉ email khác. Vui lòng đăng nhập bằng đúng tài khoản được mời.",
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
@@ -1219,6 +1221,31 @@ export const vi: TranslationSchema = {
     filterByRole: "Lọc theo vai trò",
     noMatchingMembers: "Không tìm thấy thành viên phù hợp.",
     joinedOn: "Tham gia {date}",
+    tabMembers: "Thành viên",
+    tabEmailInvites: "Lời mời qua Email",
+    tabShareableLinks: "Liên kết chia sẻ",
+    statusPending: "Đang chờ",
+    statusAccepted: "Đã chấp nhận",
+    statusRevoked: "Đã thu hồi",
+    allActiveStatuses: "Hiệu lực & đã nhận",
+    allStatuses: "Tất cả trạng thái",
+    resendInvite: "Gửi lại",
+    resendInviteSuccess: "Đã gửi lại lời mời đến {email}.",
+    acceptedByOn: "Được {name} chấp nhận lúc {date}",
+    invitedByLabel: "Mời bởi {name}",
+    emailInvitesTitle: "Danh sách lời mời qua email",
+    emailInvitesSubtitle:
+      "Theo dõi các lời mời định danh được gửi trực tiếp qua email đồng nghiệp.",
+    noEmailInvites: "Chưa có lời mời qua email nào",
+    noEmailInvitesDesc:
+      "Gửi lời mời trực tiếp đến email đồng nghiệp để theo dõi thời điểm họ chấp nhận.",
+    noMatchingInvites: "Không có lời mời nào khớp bộ lọc này.",
+    viewUsageHistory: "{count} người đã tham gia",
+    usageHistoryTitle: "Lịch sử sử dụng liên kết mời",
+    usageHistorySubtitle:
+      "Các tài khoản đã tham gia tổ chức thông qua liên kết mời này.",
+    noLinkUsages: "Chưa có tài khoản nào sử dụng liên kết mời này.",
+    joinedAtLabel: "Tham gia lúc {date}",
   },
   onboarding: {
     selectOrgTitle: "Chọn tổ chức làm việc",
@@ -1269,6 +1296,13 @@ export const vi: TranslationSchema = {
     goToDashboard: "Vào Bảng điều khiển",
     joinOrgButton: "Tham gia {org}",
     joiningButton: "Đang tham gia tổ chức...",
+    emailRestrictedNotice:
+      "Lời mời này chỉ dành riêng cho email {email}. Vui lòng đăng nhập hoặc tạo tài khoản bằng đúng địa chỉ này.",
+    emailMismatchTitle: "Đang đăng nhập bằng tài khoản khác",
+    emailMismatchDesc:
+      "Bạn đang đăng nhập bằng {currentEmail}, không khớp với email được mời ({invitedEmail}).",
+    switchAccountButton: "Đăng xuất & chuyển tài khoản",
+    switchingAccount: "Đang đăng xuất...",
   },
   notificationInbox: {
     all: "Tất cả",

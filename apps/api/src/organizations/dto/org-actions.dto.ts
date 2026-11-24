@@ -1,5 +1,6 @@
 import { Transform } from "class-transformer";
 import {
+  IsBoolean,
   IsEmail,
   IsIn,
   IsNotEmpty,
@@ -9,6 +10,13 @@ import {
 import { ROLE_LIST, Role } from "@haihire/shared";
 
 const VALID_ROLE_MESSAGE = `Role must be one of: ${ROLE_LIST.join(", ")}`;
+
+export class GetInviteLinksQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  includeRevoked?: boolean;
+}
 
 export class SwitchOrgDto {
   @IsString()

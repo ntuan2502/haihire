@@ -35,6 +35,10 @@ describe("OrganizationsController", () => {
     uploadMyOrgLogo: vi.fn(),
     deleteMyOrgLogo: vi.fn(),
     preparePublicOrgLogo: vi.fn(),
+    getInviteLinks: vi.fn(),
+    resendInviteLink: vi.fn(),
+    getInviteLinkUsages: vi.fn(),
+    getPublicInvite: vi.fn(),
   };
 
   const mockAuthService = {
@@ -790,6 +794,51 @@ describe("OrganizationsController", () => {
           OrganizationsController.prototype.getPublicOrgLogo,
         ),
       ).toBeUndefined();
+    });
+  });
+
+  describe("Invite Tracking & Resend Endpoints", () => {
+    it("passes includeRevoked query flag, forwards callerId on public preview, and delegates resend/usages", async () => {
+      mockService.getInviteLinks.mockResolvedValueOnce([]);
+      await controller.getInviteLinks(ownerReq, { includeRevoked: true });
+      expect(mockService.getInviteLinks).toHaveBeenCalledWith(
+        "user-owner",
+        "org-1",
+        true,
+      );
+
+      mockService.resendInviteLink.mockResolvedValueOnce({ id: "link-new" });
+      await controller.resendInviteLink(
+        ownerReq,
+        "00000000-0000-4000-8000-000000000010",
+      );
+      expect(mockService.resendInviteLink).toHaveBeenCalledWith(
+        "user-owner",
+        "00000000-0000-4000-8000-000000000010",
+        "org-1",
+      );
+
+      mockService.getInviteLinkUsages.mockResolvedValueOnce([]);
+      await controller.getInviteLinkUsages(
+        ownerReq,
+        "00000000-0000-4000-8000-000000000010",
+      );
+      expect(mockService.getInviteLinkUsages).toHaveBeenCalledWith(
+        "user-owner",
+        "00000000-0000-4000-8000-000000000010",
+        "org-1",
+      );
+
+      mockService.getPublicInvite.mockResolvedValueOnce({ valid: true });
+      await controller.getPublicInvite("tok-123", ownerReq);
+      expect(mockService.getPublicInvite).toHaveBeenCalledWith(
+        "tok-123",
+        "user-owner",
+      );
+
+      mockService.getPublicInvite.mockResolvedValueOnce({ valid: true });
+      await controller.getPublicInvite("tok-123", undefined);
+      expect(mockService.getPublicInvite).toHaveBeenCalledWith("tok-123", null);
     });
   });
 });

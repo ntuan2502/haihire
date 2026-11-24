@@ -1084,6 +1084,20 @@ export interface Organization {
   createdAt: string;
 }
 
+export type InviteType = "EMAIL" | "LINK";
+
+export type DerivedInviteStatus =
+  "PENDING" | "ACTIVE" | "ACCEPTED" | "LIMIT_REACHED" | "EXPIRED" | "REVOKED";
+
+export interface InviteLinkUsageItem {
+  id: string;
+  userId: string | null;
+  userName: string;
+  userEmail: string;
+  userAvatarUrl?: string | null;
+  usedAt: string;
+}
+
 export interface InviteLink {
   id: string;
   token: string;
@@ -1091,6 +1105,8 @@ export interface InviteLink {
   organizationName: string;
   organizationSlug: string;
   role: Role;
+  invitedEmail?: string | null;
+  inviteType?: InviteType;
   expiresInDays: number | null;
   expiresAt: string | null;
   maxUses: number | null;
@@ -1098,7 +1114,28 @@ export interface InviteLink {
   createdById: string;
   createdByName: string;
   status: InviteStatus;
+  derivedStatus?: DerivedInviteStatus;
+  recentUsages?: InviteLinkUsageItem[];
   createdAt: string;
+}
+
+export interface PublicInvitePreview {
+  valid: boolean;
+  token?: string;
+  role?: string;
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl?: string | null;
+  };
+  createdByName?: string;
+  expiresAt?: string | null;
+  isEmailRestricted?: boolean;
+  maskedInvitedEmail?: string | null;
+  emailMismatch?: boolean;
+  code?: string;
+  message?: string;
 }
 
 export interface UpdateUserPreferencesPayload {

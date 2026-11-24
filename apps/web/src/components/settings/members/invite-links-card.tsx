@@ -10,6 +10,7 @@ import {
 } from "@/components/shared/custom-select";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Link2, Plus, X, Shield, Copy, Check, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { toast } from "@/lib/toast";
@@ -19,6 +20,10 @@ import { useCreateInviteLinkMutation } from "@/hooks/use-queries";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { formatDate } from "@/lib/utils";
 import type { InviteLink } from "@/types";
+import {
+  formatInviteExpiry,
+  resolveDerivedInviteStatus,
+} from "./invite-format";
 
 interface InviteLinksCardProps {
   canEdit: boolean;
@@ -28,6 +33,7 @@ interface InviteLinksCardProps {
   isLoading?: boolean;
   refetchLinks: () => void;
   onRevokeClick: (linkId: string) => void;
+  onViewUsagesClick?: (link: InviteLink) => void;
   revokingId: string | null;
   onError: (msg: string) => void;
   displayHost: string;
@@ -42,6 +48,7 @@ export function InviteLinksCard({
   isLoading = false,
   refetchLinks,
   onRevokeClick,
+  onViewUsagesClick,
   revokingId,
   onError,
   displayHost,
@@ -89,19 +96,6 @@ export function InviteLinksCard({
     navigator.clipboard.writeText(fullUrl);
     setCopiedLinkId(link.id);
     setTimeout(() => setCopiedLinkId(null), 2000);
-  };
-
-  const formatLinkExpiry = (
-    expiresAt: string | null | undefined,
-    status?: string,
-  ): string => {
-    if (status === "EXPIRED") return t("members.linkExpired");
-    if (!expiresAt) return t("members.noExpiration");
-    if (!mountedTime) return "";
-    const diff = new Date(expiresAt).getTime() - mountedTime;
-    if (diff <= 0) return t("members.linkExpired");
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return t("members.expiresInDays", { days });
   };
 
   return (
@@ -240,20 +234,15 @@ export function InviteLinksCard({
         <div className="divide-y divide-border pt-1">
           {serverInviteLinks.map((link) => {
             const isCopied = copiedLinkId === link.id;
-            const isFull = Boolean(
-              link.maxUses !== null && link.usesCount >= link.maxUses,
+            const derived = resolveDerivedInviteStatus(link, mountedTime);
+            const isLimitReached = derived === "LIMIT_REACHED";
+            const isInactive = derived !== "ACTIVE";
+            const expiryText = formatInviteExpiry(
+              link.expiresAt,
+              link.status,
+              mountedTime,
+              t,
             );
-            const isExpiredByDate = Boolean(
-              link.status === "EXPIRED" ||
-              (mountedTime > 0 &&
-                link.expiresAt &&
-                new Date(link.expiresAt).getTime() <= mountedTime),
-            );
-            const isInactive =
-              isFull ||
-              isExpiredByDate ||
-              Boolean(link.status && link.status !== "ACTIVE");
-            const expiryText = formatLinkExpiry(link.expiresAt, link.status);
             const usesText = t("members.usesCount", {
               used: link.usesCount,
               max: link.maxUses !== null ? link.maxUses : "∞",
@@ -272,27 +261,29 @@ export function InviteLinksCard({
             ]
               .filter(Boolean)
               .join(" • ");
+            const recentUsages = link.recentUsages ?? [];
+            const usageCount = Math.max(link.usesCount, recentUsages.length);
 
             return (
               <div
                 key={link.id}
-                className={`py-3 flex items-center justify-between gap-4 transition-opacity ${
-                  isInactive ? "opacity-60" : ""
+                className={`py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-opacity ${
+                  isInactive ? "opacity-65" : ""
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-start gap-3 min-w-0">
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full shrink-0 mt-0.5 ${
                       isInactive
                         ? "bg-muted text-muted-foreground"
                         : "bg-secondary text-foreground"
-                    } shrink-0`}
+                    }`}
                   >
                     <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </div>
 
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-xs font-semibold text-foreground flex items-center gap-1">
                         <Shield
                           className="h-3 w-3 text-muted-foreground"
@@ -313,10 +304,38 @@ export function InviteLinksCard({
                           variant="secondary"
                           className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground"
                         >
-                          {isFull
+                          {isLimitReached
                             ? t("members.linkLimitReached")
                             : t("members.linkExpired")}
                         </Badge>
+                      )}
+
+                      {usageCount > 0 && onViewUsagesClick && (
+                        <button
+                          type="button"
+                          onClick={() => onViewUsagesClick(link)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 hover:bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                        >
+                          {recentUsages.length > 0 && (
+                            <span className="flex -space-x-1.5">
+                              {recentUsages.slice(0, 3).map((usage) => (
+                                <UserAvatar
+                                  key={usage.id}
+                                  name={usage.userName}
+                                  avatarUrl={usage.userAvatarUrl}
+                                  size="xs"
+                                  rounded="full"
+                                  className="ring-1 ring-background"
+                                />
+                              ))}
+                            </span>
+                          )}
+                          <span>
+                            {t("members.viewUsageHistory", {
+                              count: usageCount,
+                            })}
+                          </span>
+                        </button>
                       )}
                     </div>
 

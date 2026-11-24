@@ -18,12 +18,21 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 const mockCreateInviteMutateAsync = vi.fn();
+const mockResendInviteMutateAsync = vi.fn();
 const mockRevokeInviteMutateAsync = vi.fn();
 const mockUpdateRoleMutateAsync = vi.fn();
 const mockRemoveMemberMutateAsync = vi.fn();
 const mockTransferOwnershipMutateAsync = vi.fn();
 const mockRefetchLinks = vi.fn();
 const mockRefreshUser = vi.fn();
+let mockLinkUsagesList: Array<{
+  id: string;
+  userId: string | null;
+  userName: string;
+  userEmail: string;
+  userAvatarUrl?: string | null;
+  usedAt: string;
+}> = [];
 
 let mockAuthUser = {
   id: "user-admin",
@@ -93,7 +102,8 @@ const mockMembersList = [
 ];
 
 let capturedMembersOptions: { enabled?: boolean } | undefined;
-let capturedInviteLinksOptions: { enabled?: boolean } | undefined;
+let capturedInviteLinksOptions:
+  { enabled?: boolean; includeRevoked?: boolean } | undefined;
 
 vi.mock("@/hooks/use-queries", () => ({
   useOrgMembers: (options?: { enabled?: boolean }) => {
@@ -104,15 +114,26 @@ vi.mock("@/hooks/use-queries", () => ({
       refetch: vi.fn(),
     };
   },
-  useInviteLinks: (options?: { enabled?: boolean }) => {
+  useInviteLinks: (options?: {
+    enabled?: boolean;
+    includeRevoked?: boolean;
+  }) => {
     capturedInviteLinksOptions = options;
     return {
       data: mockInviteLinks,
       refetch: mockRefetchLinks,
     };
   },
+  useInviteLinkUsages: () => ({
+    data: mockLinkUsagesList,
+    isLoading: false,
+  }),
   useCreateInviteLinkMutation: () => ({
     mutateAsync: mockCreateInviteMutateAsync,
+    isPending: false,
+  }),
+  useResendInviteLinkMutation: () => ({
+    mutateAsync: mockResendInviteMutateAsync,
     isPending: false,
   }),
   useRevokeInviteLinkMutation: () => ({
@@ -177,6 +198,30 @@ vi.mock("@/i18n", () => ({
         "members.filterByRole": "Lọc theo vai trò",
         "members.noMatchingMembers": "Không tìm thấy thành viên phù hợp.",
         "members.joinedOn": "Tham gia {date}",
+        "members.tabMembers": "Thành viên",
+        "members.tabEmailInvites": "Lời mời qua Email",
+        "members.tabShareableLinks": "Liên kết chia sẻ",
+        "members.statusPending": "Đang chờ",
+        "members.statusAccepted": "Đã chấp nhận",
+        "members.statusRevoked": "Đã thu hồi",
+        "members.allActiveStatuses": "Hiệu lực & đã nhận",
+        "members.allStatuses": "Tất cả trạng thái",
+        "members.resendInvite": "Gửi lại",
+        "members.resendInviteSuccess": "Đã gửi lại lời mời đến {email}.",
+        "members.acceptedByOn": "Được {name} chấp nhận lúc {date}",
+        "members.invitedByLabel": "Mời bởi {name}",
+        "members.emailInvitesTitle": "Danh sách lời mời qua email",
+        "members.emailInvitesSubtitle":
+          "Theo dõi các lời mời định danh qua email.",
+        "members.noEmailInvites": "Chưa có lời mời qua email nào",
+        "members.noEmailInvitesDesc": "Gửi lời mời trực tiếp qua email.",
+        "members.noMatchingInvites": "Không có lời mời nào khớp bộ lọc này.",
+        "members.viewUsageHistory": "{count} người đã tham gia",
+        "members.usageHistoryTitle": "Lịch sử sử dụng liên kết mời",
+        "members.usageHistorySubtitle": "Các tài khoản đã tham gia tổ chức.",
+        "members.noLinkUsages":
+          "Chưa có tài khoản nào sử dụng liên kết mời này.",
+        "members.joinedAtLabel": "Tham gia lúc {date}",
         "common.active": "Đang hoạt động",
         "common.clearSearch": "Xóa tìm kiếm",
         "common.created": "Ngày tạo",
@@ -209,6 +254,7 @@ describe("MembersSettingsPage Component", () => {
     };
     mockCanEdit = true;
     mockIsOwner = true;
+    mockLinkUsagesList = [];
     mockInviteLinks = [
       {
         id: "link-1",
@@ -262,6 +308,9 @@ describe("MembersSettingsPage Component", () => {
     mockCreateInviteMutateAsync.mockResolvedValueOnce({ id: "link-new" });
 
     render(<MembersSettingsPage />);
+
+    // Open Shareable Links tab
+    fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
 
     // Click "+ Create link" button to reveal form
     const openCreateBtn = screen.getByRole("button", { name: /Tạo liên kết/ });
@@ -385,7 +434,10 @@ describe("MembersSettingsPage Component", () => {
       render(<MembersSettingsPage />);
 
       expect(capturedMembersOptions).toEqual({ enabled: false });
-      expect(capturedInviteLinksOptions).toEqual({ enabled: false });
+      expect(capturedInviteLinksOptions).toEqual({
+        enabled: false,
+        includeRevoked: true,
+      });
       const alert = screen.getByRole("alert");
       expect(alert).toHaveTextContent(
         "You do not have permission to access this section. Please contact your administrator if you need access.",
@@ -470,6 +522,8 @@ describe("MembersSettingsPage Component", () => {
 
       render(<MembersSettingsPage />);
 
+      fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
+
       expect(screen.getByText("Hiring Manager")).toBeInTheDocument();
       expect(screen.getByText("Recruiter")).toBeInTheDocument();
       expect(screen.queryByText("HIRING_MANAGER")).not.toBeInTheDocument();
@@ -527,6 +581,8 @@ describe("MembersSettingsPage Component", () => {
       );
 
       // 2. Test InviteLinksCard dropdown + submit with HIRING_MANAGER
+      fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
+
       const openCreateBtn = screen.getByRole("button", {
         name: /Tạo liên kết/,
       });
@@ -615,6 +671,8 @@ describe("MembersSettingsPage Component", () => {
 
         // Close InviteMemberCard listbox before opening InviteLinksCard listbox
         fireEvent.click(screen.getByRole("option", { name: "Recruiter" }));
+
+        fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
 
         const openCreateBtn = screen.getByRole("button", {
           name: /Tạo liên kết/,
@@ -728,6 +786,8 @@ describe("MembersSettingsPage Component", () => {
 
       render(<MembersSettingsPage />);
 
+      fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
+
       expect(screen.getByText("Đang hoạt động")).toBeInTheDocument();
       expect(screen.getByText("Đã hết hạn")).toBeInTheDocument();
       expect(screen.getByText("Đã hết lượt dùng")).toBeInTheDocument();
@@ -749,6 +809,8 @@ describe("MembersSettingsPage Component", () => {
       );
 
       render(<MembersSettingsPage />);
+
+      fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
 
       // First submit succeeds
       fireEvent.click(screen.getByRole("button", { name: /Tạo liên kết/ }));
@@ -799,6 +861,158 @@ describe("MembersSettingsPage Component", () => {
 
       expect(screen.getByText("Tran Interviewer")).toBeInTheDocument();
       expect(screen.queryByText("Nguyen Recruiter")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("3-Tab Invitations Tracking & Usage History Drawer", () => {
+    it("displays email invitations tab with pending/accepted/expired statuses, accepter attribution, revoked filter, and resend action", async () => {
+      mockResendInviteMutateAsync.mockResolvedValueOnce({
+        id: "inv-resent",
+        invitedEmail: "pending@haihire.vn",
+      });
+
+      mockInviteLinks = [
+        {
+          id: "email-pending",
+          token: "tok-p",
+          role: "RECRUITER",
+          inviteType: "EMAIL",
+          invitedEmail: "pending@haihire.vn",
+          status: "ACTIVE",
+          derivedStatus: "PENDING",
+          expiresAt: new Date(Date.now() + 86_400_000 * 5).toISOString(),
+          maxUses: 1,
+          usesCount: 0,
+          createdByName: "Le Owner",
+          recentUsages: [],
+          createdAt: "2026-01-10T08:00:00Z",
+        } as never,
+        {
+          id: "email-accepted",
+          token: "tok-a",
+          role: "HIRING_MANAGER",
+          inviteType: "EMAIL",
+          invitedEmail: "accepted@haihire.vn",
+          status: "EXPIRED",
+          derivedStatus: "ACCEPTED",
+          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+          maxUses: 1,
+          usesCount: 1,
+          createdByName: "Le Owner",
+          recentUsages: [
+            {
+              id: "use-1",
+              userId: "u-acc",
+              userName: "Nguyen An",
+              userEmail: "accepted@haihire.vn",
+              userAvatarUrl: null,
+              usedAt: "2026-01-11T09:30:00Z",
+            },
+          ],
+          createdAt: "2026-01-09T08:00:00Z",
+        } as never,
+        {
+          id: "email-revoked",
+          token: "tok-r",
+          role: "MEMBER",
+          inviteType: "EMAIL",
+          invitedEmail: "revoked@haihire.vn",
+          status: "REVOKED",
+          derivedStatus: "REVOKED",
+          expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+          maxUses: 1,
+          usesCount: 0,
+          createdByName: "Le Owner",
+          recentUsages: [],
+          createdAt: "2026-01-08T08:00:00Z",
+        } as never,
+      ];
+
+      render(<MembersSettingsPage />);
+
+      // Switch to Email Invitations tab
+      fireEvent.click(screen.getByRole("tab", { name: /Lời mời qua Email/ }));
+
+      expect(screen.getByText("pending@haihire.vn")).toBeInTheDocument();
+      expect(screen.getByText("accepted@haihire.vn")).toBeInTheDocument();
+      // Accepter name and timestamp shown for ACCEPTED invitation
+      expect(
+        screen.getByText(/Được Nguyen An chấp nhận lúc 11\/01\/2026/),
+      ).toBeInTheDocument();
+      // Revoked hidden by default filter
+      expect(screen.queryByText("revoked@haihire.vn")).not.toBeInTheDocument();
+
+      // Resend action on Pending invite
+      fireEvent.click(screen.getByRole("button", { name: "Gửi lại" }));
+      await waitFor(() => {
+        expect(mockResendInviteMutateAsync).toHaveBeenCalledWith(
+          "email-pending",
+        );
+        expect(toast.success).toHaveBeenCalledWith(
+          "Đã gửi lại lời mời đến pending@haihire.vn.",
+        );
+      });
+
+      // Switch filter to Revoked reveals revoked row
+      fireEvent.click(screen.getByRole("button", { name: "Đã thu hồi" }));
+      expect(screen.getByText("revoked@haihire.vn")).toBeInTheDocument();
+      expect(screen.queryByText("pending@haihire.vn")).not.toBeInTheDocument();
+    });
+
+    it("opens invite link usage drawer showing users and join timestamps when clicking usage badge", async () => {
+      mockLinkUsagesList = [
+        {
+          id: "usage-1",
+          userId: "u-joined-1",
+          userName: "Tran Minh",
+          userEmail: "minh@haihire.vn",
+          userAvatarUrl: null,
+          usedAt: "2026-01-12T10:15:00Z",
+        },
+        {
+          id: "usage-2",
+          userId: "u-joined-2",
+          userName: "Le Hoa",
+          userEmail: "hoa@haihire.vn",
+          userAvatarUrl: null,
+          usedAt: "2026-01-12T11:45:00Z",
+        },
+      ];
+
+      mockInviteLinks = [
+        {
+          id: "link-shared",
+          token: "tok-shared",
+          role: "MEMBER",
+          inviteType: "LINK",
+          invitedEmail: null,
+          status: "ACTIVE",
+          derivedStatus: "ACTIVE",
+          expiresAt: null,
+          maxUses: 10,
+          usesCount: 2,
+          createdByName: "Le Owner",
+          recentUsages: mockLinkUsagesList,
+          createdAt: "2026-01-10T08:00:00Z",
+        } as never,
+      ];
+
+      render(<MembersSettingsPage />);
+
+      fireEvent.click(screen.getByRole("tab", { name: /Liên kết chia sẻ/ }));
+
+      const historyBtn = screen.getByRole("button", {
+        name: /2 người đã tham gia/,
+      });
+      fireEvent.click(historyBtn);
+
+      expect(
+        await screen.findByText("Lịch sử sử dụng liên kết mời"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Tran Minh")).toBeInTheDocument();
+      expect(screen.getByText("minh@haihire.vn")).toBeInTheDocument();
+      expect(screen.getByText("Le Hoa")).toBeInTheDocument();
+      expect(screen.getAllByText(/Tham gia lúc 12\/01\/2026/)).toHaveLength(2);
     });
   });
 });

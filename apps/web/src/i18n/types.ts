@@ -91,6 +91,7 @@ export interface TranslationSchema {
     ORG_INVITE_EXPIRED: string;
     ORG_INVITE_REVOKED: string;
     ORG_INVITE_MAX_USES_REACHED: string;
+    ORG_INVITE_EMAIL_MISMATCH: string;
     ORG_USER_NO_ORG: string;
     ORG_CANNOT_CHANGE_OWNER_ROLE: string;
     ORG_CANNOT_CHANGE_SELF_ROLE: string;
@@ -1087,6 +1088,28 @@ export interface TranslationSchema {
     filterByRole: string;
     noMatchingMembers: string;
     joinedOn: string;
+    tabMembers: string;
+    tabEmailInvites: string;
+    tabShareableLinks: string;
+    statusPending: string;
+    statusAccepted: string;
+    statusRevoked: string;
+    allActiveStatuses: string;
+    allStatuses: string;
+    resendInvite: string;
+    resendInviteSuccess: string;
+    acceptedByOn: string;
+    invitedByLabel: string;
+    emailInvitesTitle: string;
+    emailInvitesSubtitle: string;
+    noEmailInvites: string;
+    noEmailInvitesDesc: string;
+    noMatchingInvites: string;
+    viewUsageHistory: string;
+    usageHistoryTitle: string;
+    usageHistorySubtitle: string;
+    noLinkUsages: string;
+    joinedAtLabel: string;
   };
   onboarding: {
     selectOrgTitle: string;
@@ -1133,6 +1156,11 @@ export interface TranslationSchema {
     goToDashboard: string;
     joinOrgButton: string;
     joiningButton: string;
+    emailRestrictedNotice: string;
+    emailMismatchTitle: string;
+    emailMismatchDesc: string;
+    switchAccountButton: string;
+    switchingAccount: string;
   };
   notificationInbox: {
     all: string;

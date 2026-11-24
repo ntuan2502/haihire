@@ -273,7 +273,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
   describe("Multi-Tenant Isolation", () => {
     it("should return ONLY applications belonging to org-1", async () => {
-      const results = await service.findAll("org-1");
+      const results = await service.listPaginated("org-1");
 
       expect(results.total).toBe(2);
       expect(results.data.length).toBe(2);
@@ -292,7 +292,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     });
 
     it("should return ONLY applications belonging to org-2", async () => {
-      const results = await service.findAll("org-2");
+      const results = await service.listPaginated("org-2");
 
       expect(results.total).toBe(1);
       expect(results.data.length).toBe(1);
@@ -302,42 +302,46 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     });
 
     it("should return empty array if organizationId is not provided", async () => {
-      const results = await service.findAll(undefined);
+      const results = await service.listPaginated(undefined);
       expect(results.data).toEqual([]);
       expect(results.total).toBe(0);
     });
 
     it("should return empty array if organization has no jobs", async () => {
-      const results = await service.findAll("non-existent-org");
+      const results = await service.listPaginated("non-existent-org");
       expect(results.data).toEqual([]);
       expect(results.total).toBe(0);
     });
 
     it("should filter applications by stage using SQL-level filtering (M-01)", async () => {
-      const results = await service.findAll("org-1", { stage: "APPLIED" });
+      const results = await service.listPaginated("org-1", {
+        stage: "APPLIED",
+      });
       expect(results.total).toBe(1);
       expect(results.data[0].candidateName).toBe("Alice Nguyen");
     });
 
     it("should filter applications by jobId (M-01)", async () => {
-      const results = await service.findAll("org-1", { jobId: "job-org1-b" });
+      const results = await service.listPaginated("org-1", {
+        jobId: "job-org1-b",
+      });
       expect(results.total).toBe(1);
       expect(results.data[0].candidateName).toBe("Bob Tran");
     });
 
     it("should filter applications by search across candidate name (M-01)", async () => {
-      const results = await service.findAll("org-1", { search: "Alice" });
+      const results = await service.listPaginated("org-1", { search: "Alice" });
       expect(results.total).toBe(1);
       expect(results.data[0].candidateName).toBe("Alice Nguyen");
     });
 
     it("should paginate applications with page and limit pushed to database (M-01)", async () => {
-      const page1 = await service.findAll("org-1", { page: 1, limit: 1 });
+      const page1 = await service.listPaginated("org-1", { page: 1, limit: 1 });
       expect(page1.total).toBe(2);
       expect(page1.totalPages).toBe(2);
       expect(page1.data.length).toBe(1);
 
-      const page2 = await service.findAll("org-1", { page: 2, limit: 1 });
+      const page2 = await service.listPaginated("org-1", { page: 2, limit: 1 });
       expect(page2.total).toBe(2);
       expect(page2.totalPages).toBe(2);
       expect(page2.data.length).toBe(1);
@@ -345,8 +349,89 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     });
 
     it("should cap requested limit at 100 to prevent OOM spikes (F14)", async () => {
-      const result = await service.findAll("org-1", { page: 1, limit: 1000 });
+      const result = await service.listPaginated("org-1", {
+        page: 1,
+        limit: 1000,
+      });
       expect(result.limit).toBe(100);
+    });
+
+    it("filters by SQL matchScore bucket and excludes null scores from BELOW_60", async () => {
+      mockApps[0].matchScore = 88;
+      mockApps[1].matchScore = 65;
+      mockApps.push({
+        id: "app-low",
+        organizationId: "org-1",
+        candidateId: "cand-1",
+        jobId: "job-org1-b",
+        stage: "SCREENING",
+        matchScore: 42,
+        createdAt: new Date("2026-03-01T10:00:00.000Z"),
+        updatedAt: new Date("2026-03-01T10:00:00.000Z"),
+      });
+      mockApps.push({
+        id: "app-unscored",
+        organizationId: "org-1",
+        candidateId: "cand-2",
+        jobId: "job-org1-a",
+        stage: "APPLIED",
+        matchScore: null,
+        createdAt: new Date("2026-03-02T10:00:00.000Z"),
+        updatedAt: new Date("2026-03-02T10:00:00.000Z"),
+      });
+
+      const high = await service.listPaginated("org-1", { score: "80" });
+      expect(high.data.map((a) => a.id)).toEqual(["app-1"]);
+
+      const mid = await service.listPaginated("org-1", { score: "60" });
+      expect(mid.data.map((a) => a.id)).toEqual(["app-2"]);
+
+      const low = await service.listPaginated("org-1", { score: "BELOW_60" });
+      expect(low.data.map((a) => a.id)).toEqual(["app-low"]);
+    });
+
+    it("sorts SQL-side by job, status, score, email, candidate, and ignores candidate PII sort when !fullCandidateAccess", async () => {
+      mockCandidates[0].firstName = "Alice";
+      mockCandidates[0].lastName = "Nguyen";
+      mockCandidates[1].firstName = "Bob";
+      mockCandidates[1].lastName = "Tran";
+      mockApps[0].matchScore = 50;
+      mockApps[0].createdAt = new Date("2026-03-01T10:00:00.000Z");
+      mockApps[1].matchScore = 90;
+      mockApps[1].createdAt = new Date("2026-03-05T10:00:00.000Z");
+
+      const byJobAsc = await service.listPaginated("org-1", {
+        sortBy: "job",
+        sortOrder: "asc",
+      });
+      expect(byJobAsc.data.map((a) => a.id)).toEqual(["app-2", "app-1"]);
+
+      const byScoreDesc = await service.listPaginated("org-1", {
+        sortBy: "score",
+        sortOrder: "desc",
+      });
+      expect(byScoreDesc.data.map((a) => a.id)).toEqual(["app-2", "app-1"]);
+
+      const byEmailDesc = await service.listPaginated("org-1", {
+        sortBy: "email",
+        sortOrder: "desc",
+      });
+      expect(byEmailDesc.data.map((a) => a.id)).toEqual(["app-2", "app-1"]);
+
+      const byCandidateAsc = await service.listPaginated("org-1", {
+        sortBy: "candidate",
+        sortOrder: "asc",
+      });
+      expect(byCandidateAsc.data.map((a) => a.id)).toEqual(["app-1", "app-2"]);
+
+      // Non-privileged member without candidate:view falls back to createdAt desc instead of sorting by email asc
+      const maskedEmailSort = await service.listPaginated(
+        "org-1",
+        { sortBy: "email", sortOrder: "asc" },
+        "org-1",
+        false,
+      );
+      expect(maskedEmailSort.data.map((a) => a.id)).toEqual(["app-2", "app-1"]);
     });
   });
 
@@ -997,11 +1082,11 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       );
     });
 
-    it("excludes soft-deleted jobs and candidates from findAll, findByJob, findOne, and getStats", async () => {
+    it("excludes soft-deleted jobs and candidates from listPaginated, findByJob, findOne, and getStats", async () => {
       mockJobs[1].deletedAt = new Date();
       mockCandidates[0].deletedAt = new Date();
 
-      const all = await service.findAll("org-1");
+      const all = await service.listPaginated("org-1");
       expect(all.data).toHaveLength(0);
 
       await expect(service.findByJob("job-org1-b", "org-1")).rejects.toThrow();
@@ -1138,7 +1223,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   });
 
   describe("Candidate PII Masking without candidate:view", () => {
-    it("masks candidate PII, resume metadata, and interviews in findByJob, findAll, and findOne when fullCandidateAccess is false", async () => {
+    it("masks candidate PII, resume metadata, and interviews in findByJob, listPaginated, and findOne when fullCandidateAccess is false", async () => {
       const byJob = await service.findByJob(
         "job-org1-a",
         "org-1",
@@ -1156,7 +1241,12 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(byJob[0].candidate?.phone).toBeNull();
       expect(byJob[0].candidate?.name).toBe("[Masked]");
 
-      const all = await service.findAll("org-1", undefined, "org-1", false);
+      const all = await service.listPaginated(
+        "org-1",
+        undefined,
+        "org-1",
+        false,
+      );
       expect(all.data.length).toBeGreaterThan(0);
       for (const row of all.data) {
         expect(row.candidateName).toBe("[Masked]");
@@ -1170,7 +1260,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       }
 
       // Oracle search against candidate PII must not return hits when !fullCandidateAccess
-      const emailSearch = await service.findAll(
+      const emailSearch = await service.listPaginated(
         "org-1",
         { search: "alice@gmail.com" },
         "org-1",
@@ -1178,7 +1268,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       );
       expect(emailSearch.total).toBe(0);
 
-      const jobSearch = await service.findAll(
+      const jobSearch = await service.listPaginated(
         "org-1",
         { search: "Frontend" },
         "org-1",

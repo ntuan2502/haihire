@@ -30,7 +30,7 @@ describe("ApplicationsController", () => {
   } as unknown as Response;
 
   const mockService = {
-    findAll: vi.fn(),
+    listPaginated: vi.fn(),
     getStats: vi.fn(),
     findByJob: vi.fn(),
     findOne: vi.fn(),
@@ -196,16 +196,16 @@ describe("ApplicationsController", () => {
       },
     };
 
-    it("findAll: allows authenticated user with application:view and rejects unauthenticated/unauthorized", () => {
+    it("listPaginated: allows authenticated user with application:view and rejects unauthenticated/unauthorized", () => {
       const allowedContext = createMockContext(
         recruiterReq,
-        controller.findAll,
+        controller.listPaginated,
       );
       expect(rolesGuard.canActivate(allowedContext)).toBe(true);
 
       const unauthContext = createMockContext(
         unauthenticatedReq,
-        controller.findAll,
+        controller.listPaginated,
       );
       expect(() => rolesGuard.canActivate(unauthContext)).toThrow(
         AppUnauthorizedException,
@@ -213,7 +213,7 @@ describe("ApplicationsController", () => {
 
       const forbiddenContext = createMockContext(
         invalidRoleReq,
-        controller.findAll,
+        controller.listPaginated,
       );
       expect(() => rolesGuard.canActivate(forbiddenContext)).toThrow(
         AppForbiddenException,
@@ -303,13 +303,17 @@ describe("ApplicationsController", () => {
   });
 
   describe("Application Read Endpoints Candidate PII Masking (candidate:view)", () => {
-    it("passes fullCandidateAccess = false for Role.MEMBER and true for Role.RECRUITER on findAll, findByJob, and findOne", async () => {
-      mockService.findAll.mockResolvedValue({ data: [], total: 0 });
+    it("passes fullCandidateAccess = false for Role.MEMBER and true for Role.RECRUITER on listPaginated, findByJob, and findOne", async () => {
+      mockService.listPaginated.mockResolvedValue({ data: [], total: 0 });
       mockService.findByJob.mockResolvedValue([]);
       mockService.findOne.mockResolvedValue({ id: "app-1" });
 
-      await controller.findAll(memberReq as never, "org-1", "1", "20");
-      expect(mockService.findAll).toHaveBeenCalledWith(
+      await controller.listPaginated(memberReq as never, {
+        organizationId: "org-1",
+        page: 1,
+        limit: 20,
+      });
+      expect(mockService.listPaginated).toHaveBeenCalledWith(
         "org-1",
         {
           page: 1,
@@ -317,6 +321,9 @@ describe("ApplicationsController", () => {
           search: undefined,
           jobId: undefined,
           stage: undefined,
+          score: undefined,
+          sortBy: undefined,
+          sortOrder: undefined,
         },
         "org-1",
         false,
@@ -333,10 +340,19 @@ describe("ApplicationsController", () => {
       await controller.findOne("app-1", memberReq as never);
       expect(mockService.findOne).toHaveBeenCalledWith("app-1", "org-1", false);
 
-      await controller.findAll(recruiterReq as never, "org-1");
-      expect(mockService.findAll).toHaveBeenLastCalledWith(
+      await controller.listPaginated(recruiterReq as never, {
+        organizationId: "org-1",
+        score: "80",
+        sortBy: "score",
+        sortOrder: "desc",
+      });
+      expect(mockService.listPaginated).toHaveBeenLastCalledWith(
         "org-1",
-        expect.any(Object),
+        expect.objectContaining({
+          score: "80",
+          sortBy: "score",
+          sortOrder: "desc",
+        }),
         "org-1",
         true,
       );

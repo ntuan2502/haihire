@@ -15,6 +15,8 @@ import {
   fixUtf8String,
 } from "./services";
 
+import type { ApplicationListOptions } from "./services/applications-query.service";
+
 export { fixUtf8String };
 export {
   ApplicationsQueryService,
@@ -56,19 +58,13 @@ export class ApplicationsService {
     );
   }
 
-  findAll(
+  listPaginated(
     organizationId?: string,
-    options?: {
-      page?: number;
-      limit?: number;
-      search?: string;
-      jobId?: string;
-      stage?: string;
-    },
+    options?: ApplicationListOptions,
     tenantOrgId?: string | null,
     fullCandidateAccess = true,
   ) {
-    return this.query.findAll(
+    return this.query.listPaginated(
       organizationId,
       options,
       tenantOrgId,

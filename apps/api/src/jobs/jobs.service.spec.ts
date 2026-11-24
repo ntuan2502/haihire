@@ -132,7 +132,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
   describe("Multi-Tenant Isolation", () => {
     it("should return only jobs belonging to org-1 when filtered by org-1", async () => {
-      const results = await service.findAll({
+      const results = await service.listPaginated({
         organizationId: "org-1",
         tenantOrgId: "org-1",
       });
@@ -148,7 +148,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should return only jobs belonging to org-2 when filtered by org-2", async () => {
-      const results = await service.findAll({
+      const results = await service.listPaginated({
         organizationId: "org-2",
         tenantOrgId: "org-2",
       });
@@ -160,7 +160,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should compute application metrics correctly per job", async () => {
-      const results = await service.findAll({ tenantOrgId: "org-1" });
+      const results = await service.listPaginated({ tenantOrgId: "org-1" });
       const job1 = results.data.find((j) => j.id === "job-1");
 
       expect(job1?.applicationsCount).toBe(2);
@@ -169,7 +169,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should paginate jobs correctly", async () => {
-      const paged = await service.findAll({
+      const paged = await service.listPaginated({
         tenantOrgId: "org-1",
         page: 1,
         limit: 1,
@@ -185,7 +185,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
   describe("Filtering & Searching", () => {
     it("should filter by status", async () => {
-      const published = await service.findAll({
+      const published = await service.listPaginated({
         tenantOrgId: "org-1",
         status: "PUBLISHED",
       });
@@ -193,7 +193,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       expect(published.data.length).toBe(1);
       expect(published.data[0].id).toBe("job-1");
 
-      const drafts = await service.findAll({
+      const drafts = await service.listPaginated({
         tenantOrgId: "org-1",
         status: "DRAFT",
       });
@@ -203,7 +203,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should search jobs by keyword", async () => {
-      const searchResults = await service.findAll({
+      const searchResults = await service.listPaginated({
         tenantOrgId: "org-1",
         search: "Full-Stack",
       });
@@ -321,7 +321,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       const controller = new JobsController(service);
       const request = { user: { organizationId: null } };
 
-      const results = await controller.findAll(request);
+      const results = await controller.listPaginated(request);
       expect(results.data.map((job) => job.status)).toEqual([
         "PUBLISHED",
         "PUBLISHED",
@@ -335,7 +335,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("applies public visibility when an authenticated user lists another organization's jobs", async () => {
-      const results = await service.findAll({
+      const results = await service.listPaginated({
         organizationSlug: "acme-corp",
         tenantOrgId: "org-2",
       });
@@ -344,7 +344,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should return ONLY PUBLISHED jobs for unauthenticated career page requests", async () => {
-      const results = await service.findAll({
+      const results = await service.listPaginated({
         organizationSlug: "acme-corp",
       });
 
@@ -356,14 +356,14 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should reject exposing DRAFT/CLOSED jobs even if unauthenticated user requests status query param", async () => {
-      const draftReq = await service.findAll({
+      const draftReq = await service.listPaginated({
         organizationSlug: "acme-corp",
         status: "DRAFT",
       });
       // Should not return draft jobs
       expect(draftReq.data.some((j) => j.status === "DRAFT")).toBe(false);
 
-      const closedReq = await service.findAll({
+      const closedReq = await service.listPaginated({
         organizationSlug: "acme-corp",
         status: "CLOSED",
       });
@@ -394,7 +394,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("BUG-12 & BUG-14: findAll sorts by applicants count and findBySlug prefers PUBLISHED over CLOSED with same title", async () => {
-      const desc = await service.findAll({
+      const desc = await service.listPaginated({
         tenantOrgId: "org-1",
         sortBy: "applicants",
         sortOrder: "desc",
@@ -402,7 +402,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       expect(desc.data[0]?.id).toBe("job-1");
       expect(desc.data[0]?.applicationsCount).toBe(2);
 
-      const asc = await service.findAll({
+      const asc = await service.listPaginated({
         tenantOrgId: "org-1",
         sortBy: "applicants",
         sortOrder: "asc",

@@ -208,7 +208,7 @@ describe("InterviewsService", () => {
   });
 
   it("should return all interviews enriched with application, candidate, and job info", async () => {
-    const list = await service.findAll({ organizationId: "org-1" });
+    const list = await service.listPaginated({ organizationId: "org-1" });
     expect(list.data).toHaveLength(1);
     expect(list.total).toBe(1);
     expect(list.data[0].id).toBe("intv-1");
@@ -564,7 +564,7 @@ describe("InterviewsService", () => {
 
   describe("cross-tenant isolation on findAll filters", () => {
     it("should return empty results when filtering by another organization's applicationId", async () => {
-      const list = await service.findAll({
+      const list = await service.listPaginated({
         applicationId: "app-1",
         tenantOrgId: "org-2",
       });
@@ -573,7 +573,7 @@ describe("InterviewsService", () => {
     });
 
     it("should return empty results when filtering by another organization's jobId", async () => {
-      const list = await service.findAll({
+      const list = await service.listPaginated({
         jobId: "job-1",
         tenantOrgId: "org-2",
       });

@@ -6,10 +6,14 @@ import type {
   CandidateDuplicateCheckResult,
   CheckCandidateDuplicateSchema,
 } from "@haihire/shared";
-import { candidatesApi } from "@/lib/api";
+import {
+  candidatesApi,
+  type CandidatePaginatedResult,
+  type CandidateSortBy,
+} from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { useHasPermission } from "./use-has-permission";
-import type { Candidate, CandidateNote, PaginatedResult } from "@/types";
+import type { Candidate, CandidateNote } from "@/types";
 import { keepPreviousDataForSameOrg, queryKeys } from "./query-keys";
 
 export function useCandidates(
@@ -18,6 +22,10 @@ export function useCandidates(
     page?: number;
     limit?: number;
     search?: string;
+    filter?: string;
+    jobId?: string;
+    sortBy?: CandidateSortBy;
+    sortOrder?: "asc" | "desc";
     enabled?: boolean;
   },
 ) {
@@ -26,12 +34,16 @@ export function useCandidates(
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
-  return useQuery<PaginatedResult<Candidate>>({
+  return useQuery<CandidatePaginatedResult>({
     queryKey: [
       ...queryKeys.candidates(effectiveOrgId),
       options?.page,
       options?.limit,
       options?.search,
+      options?.filter,
+      options?.jobId,
+      options?.sortBy,
+      options?.sortOrder,
     ],
     queryFn: () => {
       if (!effectiveOrgId) {
@@ -41,13 +53,18 @@ export function useCandidates(
           page: 1,
           limit: options?.limit || 10,
           totalPages: 0,
+          counts: { all: 0, withResume: 0, hasApplications: 0, unassigned: 0 },
         };
       }
-      return candidatesApi.getAll({
+      return candidatesApi.listPaginated({
         organizationId: effectiveOrgId,
         page: options?.page,
         limit: options?.limit,
         search: options?.search,
+        filter: options?.filter,
+        jobId: options?.jobId,
+        sortBy: options?.sortBy,
+        sortOrder: options?.sortOrder,
       });
     },
     enabled:
@@ -55,7 +72,7 @@ export function useCandidates(
       canViewCandidates &&
       (options?.enabled ?? true),
     placeholderData:
-      keepPreviousDataForSameOrg<PaginatedResult<Candidate>>(effectiveOrgId),
+      keepPreviousDataForSameOrg<CandidatePaginatedResult>(effectiveOrgId),
   });
 }
 

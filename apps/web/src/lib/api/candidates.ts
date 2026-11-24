@@ -10,14 +10,32 @@ import type {
   PaginatedResult,
 } from "@/types";
 
+export interface CandidateTabCounts {
+  all: number;
+  withResume: number;
+  hasApplications: number;
+  unassigned: number;
+}
+
+export type CandidatePaginatedResult = PaginatedResult<Candidate> & {
+  counts?: CandidateTabCounts;
+};
+
+export type CandidateSortBy =
+  "name" | "email" | "phone" | "applications" | "added";
+
 export const candidatesApi = {
-  getAll: async (params?: {
+  listPaginated: async (params?: {
     organizationId?: string | null;
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<PaginatedResult<Candidate>> => {
-    const response = await api.get<PaginatedResult<Candidate>>("/candidates", {
+    filter?: string;
+    jobId?: string;
+    sortBy?: CandidateSortBy;
+    sortOrder?: "asc" | "desc";
+  }): Promise<CandidatePaginatedResult> => {
+    const response = await api.get<CandidatePaginatedResult>("/candidates", {
       params,
     });
     return response.data;

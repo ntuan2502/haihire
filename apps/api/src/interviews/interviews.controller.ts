@@ -33,7 +33,7 @@ export class InterviewsController {
 
   @Get()
   @RequirePermission("interview:view")
-  findAll(
+  listPaginated(
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
     @Query("jobId") jobId?: string,
@@ -48,7 +48,7 @@ export class InterviewsController {
   ) {
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.interviewsService.findAll({
+    return this.interviewsService.listPaginated({
       organizationId,
       jobId,
       applicationId,

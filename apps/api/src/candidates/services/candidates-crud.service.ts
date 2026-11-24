@@ -46,6 +46,22 @@ function toIsoDateKey(raw?: Date | string | null): string | null {
   return d.toISOString().slice(0, 10);
 }
 
+export interface CandidateListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  filter?: string;
+  jobId?: string;
+  sortBy?: "name" | "email" | "phone" | "applications" | "added";
+  sortOrder?: "asc" | "desc";
+}
+
+const VALID_CANDIDATE_TAB_FILTERS = new Set([
+  "WITH_RESUME",
+  "HAS_APPLICATIONS",
+  "UNASSIGNED",
+]);
+
 @Injectable()
 export class CandidatesCrudService {
   constructor(
@@ -75,9 +91,59 @@ export class CandidatesCrudService {
     }
   }
 
-  async findAll(
+  private buildHasResumeWhere(): Prisma.CandidateWhereInput {
+    return {
+      OR: [
+        { AND: [{ resumeUrl: { not: null } }, { resumeUrl: { not: "" } }] },
+        {
+          AND: [
+            { resumeFileName: { not: null } },
+            { resumeFileName: { not: "" } },
+            { resumeFileName: { not: "—" } },
+          ],
+        },
+      ],
+    };
+  }
+
+  private async countOrgCandidateTabs(targetOrgId: string) {
+    const activeAppWhere = {
+      organizationId: targetOrgId,
+      job: { deletedAt: null },
+    };
+    const [all, withResume, hasApplications, unassigned] = await Promise.all([
+      this.prisma.candidate.count({
+        where: { organizationId: targetOrgId, deletedAt: null },
+      }),
+      this.prisma.candidate.count({
+        where: {
+          organizationId: targetOrgId,
+          deletedAt: null,
+          ...this.buildHasResumeWhere(),
+        },
+      }),
+      this.prisma.candidate.count({
+        where: {
+          organizationId: targetOrgId,
+          deletedAt: null,
+          applications: { some: activeAppWhere },
+        },
+      }),
+      this.prisma.candidate.count({
+        where: {
+          organizationId: targetOrgId,
+          deletedAt: null,
+          applications: { none: activeAppWhere },
+        },
+      }),
+    ]);
+
+    return { all, withResume, hasApplications, unassigned };
+  }
+
+  async listPaginated(
     organizationId?: string,
-    options?: { page?: number; limit?: number; search?: string },
+    options?: CandidateListOptions,
     tenantOrgId?: string | null,
   ) {
     if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
@@ -88,52 +154,155 @@ export class CandidatesCrudService {
       );
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
+    const rawLimit = options?.limit && options.limit > 0 ? options.limit : 20;
+    const limit = Math.min(rawLimit, 100);
+    const page = options?.page && options.page > 0 ? options.page : 1;
+
     if (!targetOrgId) {
       return {
         data: [],
         total: 0,
         page: 1,
-        limit: options?.limit || 20,
+        limit,
         totalPages: 0,
+        counts: { all: 0, withResume: 0, hasApplications: 0, unassigned: 0 },
       };
     }
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.CandidateWhereInput = {
       organizationId: targetOrgId,
       deletedAt: null,
     };
 
-    const page = options?.page && options.page > 0 ? options.page : 1;
-    const limit = options?.limit && options.limit > 0 ? options.limit : 20;
+    const andClauses: Prisma.CandidateWhereInput[] = [];
+    const activeAppWhere = {
+      organizationId: targetOrgId,
+      job: { deletedAt: null },
+    };
 
-    if (options?.search && options.search.trim() !== "") {
+    if (options?.jobId) {
+      andClauses.push({
+        applications: {
+          some: {
+            organizationId: targetOrgId,
+            jobId: options.jobId,
+            job: { deletedAt: null },
+          },
+        },
+      });
+    }
+
+    const filterTokens = (options?.filter || "")
+      .split(",")
+      .map((token) => token.trim().toUpperCase())
+      .filter((token) => VALID_CANDIDATE_TAB_FILTERS.has(token));
+
+    if (filterTokens.length > 0) {
+      const tabClauses: Prisma.CandidateWhereInput[] = [];
+      for (const token of filterTokens) {
+        if (token === "WITH_RESUME") {
+          tabClauses.push(this.buildHasResumeWhere());
+        } else if (token === "HAS_APPLICATIONS") {
+          tabClauses.push({ applications: { some: activeAppWhere } });
+        } else if (token === "UNASSIGNED") {
+          tabClauses.push({ applications: { none: activeAppWhere } });
+        }
+      }
+      if (tabClauses.length === 1) {
+        andClauses.push(tabClauses[0]);
+      } else if (tabClauses.length > 1) {
+        andClauses.push({ OR: tabClauses });
+      }
+    }
+
+    if (andClauses.length > 0) {
+      where.AND = andClauses;
+    }
+
+    const hasSearch = Boolean(options?.search && options.search.trim() !== "");
+    if (hasSearch && options?.search) {
       const matchedIds = await findMatchingCandidateIds(this.prisma, {
         organizationId: targetOrgId,
         rawSearch: options.search,
         includeNotes: true,
       });
       if (matchedIds.length === 0) {
+        const counts = await this.countOrgCandidateTabs(targetOrgId);
         return {
           data: [],
           total: 0,
           page,
           limit,
           totalPages: 1,
+          counts,
         };
       }
       where.id = { in: matchedIds };
     }
 
-    const [total, candidates, nameOrder] = await Promise.all([
-      this.prisma.candidate.count({ where }),
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      targetOrgId,
+    );
+    const sortOrder: Prisma.SortOrder =
+      options?.sortOrder === "asc" ? "asc" : "desc";
+
+    let orderBy:
+      | Prisma.CandidateOrderByWithRelationInput
+      | Prisma.CandidateOrderByWithRelationInput[];
+    switch (options?.sortBy) {
+      case "name":
+        orderBy =
+          nameOrder === "LAST_FIRST"
+            ? [
+                { lastName: { sort: sortOrder, nulls: "last" } },
+                { firstName: { sort: sortOrder, nulls: "last" } },
+                { displayName: { sort: sortOrder, nulls: "last" } },
+                { id: "asc" },
+              ]
+            : [
+                { firstName: { sort: sortOrder, nulls: "last" } },
+                { lastName: { sort: sortOrder, nulls: "last" } },
+                { displayName: { sort: sortOrder, nulls: "last" } },
+                { id: "asc" },
+              ];
+        break;
+      case "email":
+        orderBy = [{ email: sortOrder }, { id: "asc" }];
+        break;
+      case "phone":
+        orderBy = [
+          { phone: { sort: sortOrder, nulls: "last" } },
+          { id: "asc" },
+        ];
+        break;
+      case "applications":
+        orderBy = [
+          { applications: { _count: sortOrder } },
+          { createdAt: "desc" },
+          { id: "asc" },
+        ];
+        break;
+      case "added":
+        orderBy = [{ createdAt: sortOrder }, { id: "asc" }];
+        break;
+      default:
+        orderBy = { createdAt: "desc" };
+        break;
+    }
+
+    const hasFilters = hasSearch || andClauses.length > 0;
+    const [counts, filteredTotal, candidates] = await Promise.all([
+      this.countOrgCandidateTabs(targetOrgId),
+      hasFilters ? this.prisma.candidate.count({ where }) : Promise.resolve(-1),
       this.prisma.candidate.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy,
       }),
-      resolveOrgNameDisplayOrder(this.prisma, targetOrgId),
     ]);
+    const total = hasFilters ? filteredTotal : counts.all;
 
     const totalPages = Math.ceil(total / limit) || 1;
     const candidateIds = candidates.map((c) => c.id);
@@ -252,6 +421,7 @@ export class CandidatesCrudService {
       page,
       limit,
       totalPages,
+      counts,
     };
   }
 

@@ -15,6 +15,8 @@ import type { CreateCandidateNoteDto } from "./dto/create-candidate-note.dto";
 import type { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
 import type { AuthenticatedUser } from "./services/candidates-notes.service";
 
+import type { CandidateListOptions } from "./services/candidates-crud.service";
+
 @Injectable()
 export class CandidatesService {
   private readonly crud: CandidatesCrudService;
@@ -41,8 +43,9 @@ export class CandidatesService {
   ) {
     if (
       crudOrPrisma &&
-      "findAll" in crudOrPrisma &&
-      typeof (crudOrPrisma as CandidatesCrudService).findAll === "function"
+      "listPaginated" in crudOrPrisma &&
+      typeof (crudOrPrisma as CandidatesCrudService).listPaginated ===
+        "function"
     ) {
       // NestJS DI path
       this.crud = crudOrPrisma as CandidatesCrudService;
@@ -68,12 +71,12 @@ export class CandidatesService {
     }
   }
 
-  async findAll(
+  async listPaginated(
     organizationId?: string,
-    options?: { page?: number; limit?: number; search?: string },
+    options?: CandidateListOptions,
     tenantOrgId?: string | null,
   ) {
-    return this.crud.findAll(organizationId, options, tenantOrgId);
+    return this.crud.listPaginated(organizationId, options, tenantOrgId);
   }
 
   async findOne(

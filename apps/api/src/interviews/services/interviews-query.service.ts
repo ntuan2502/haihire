@@ -15,7 +15,7 @@ import { findMatchingCandidateIds } from "../../common/person-search.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { formatInterviewRecord } from "../constants";
 
-export interface FindAllInterviewsOptions {
+export interface ListPaginatedInterviewsOptions {
   organizationId?: string;
   jobId?: string;
   applicationId?: string;
@@ -36,7 +36,7 @@ export class InterviewsQueryService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async findAll(options?: FindAllInterviewsOptions) {
+  async listPaginated(options?: ListPaginatedInterviewsOptions) {
     if (
       options?.organizationId &&
       options?.tenantOrgId &&

@@ -28,6 +28,7 @@ import {
 } from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
 import { PublicApplyDto } from "./dto/public-apply.dto";
+import { QueryApplicationsDto } from "./dto/query-applications.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { CreateApplicationNoteDto } from "./dto/create-application-note.dto";
@@ -79,7 +80,7 @@ export class ApplicationsController {
   @Get()
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, TenantGuard, RolesGuard)
   @RequirePermission("application:view")
-  async findAll(
+  async listPaginated(
     @Request()
     req: {
       user?: {
@@ -89,27 +90,23 @@ export class ApplicationsController {
         organizationId?: string | null;
       };
     },
-    @Query("organizationId") organizationId?: string,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("search") search?: string,
-    @Query("jobId") jobId?: string,
-    @Query("stage") stage?: string,
+    @Query(DtoPipe(QueryApplicationsDto)) query?: QueryApplicationsDto,
   ) {
-    const pageNum = page ? parseInt(page, 10) : undefined;
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
     const fullCandidateAccess = await this.resolveCandidateAccess(
       req,
-      organizationId,
+      query?.organizationId,
     );
-    return this.applicationsService.findAll(
-      organizationId,
+    return this.applicationsService.listPaginated(
+      query?.organizationId,
       {
-        page: pageNum,
-        limit: limitNum,
-        search,
-        jobId,
-        stage,
+        page: query?.page,
+        limit: query?.limit,
+        search: query?.search,
+        jobId: query?.jobId,
+        stage: query?.stage,
+        score: query?.score,
+        sortBy: query?.sortBy,
+        sortOrder: query?.sortOrder,
       },
       req?.user?.organizationId,
       fullCandidateAccess,

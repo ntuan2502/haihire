@@ -8,7 +8,10 @@ import {
   useApplicationStats,
 } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
-import { useTableParams } from "@/hooks/use-table-params";
+import {
+  buildStageCounts,
+  useApplicationsUrlParams,
+} from "@/components/applications/applications-data-table/hooks/use-applications-url-params";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { PageHeader } from "@/components/shared/page-header";
 import { useI18n } from "@/i18n";
@@ -16,19 +19,7 @@ import { useI18n } from "@/i18n";
 function ApplicationsPageContent() {
   const { user } = useAuth();
   const { t } = useI18n();
-  const {
-    page: currentPage,
-    limit: rowsPerPage,
-    search,
-    setSearch,
-    setPage: setCurrentPage,
-    setLimit: setRowsPerPage,
-    getParam,
-    setParams,
-  } = useTableParams();
-
-  const stage = getParam("stage", "");
-  const jobId = getParam("jobId", "");
+  const urlState = useApplicationsUrlParams();
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
@@ -36,27 +27,24 @@ function ApplicationsPageContent() {
 
   const { data: applicationsData, isLoading: appsLoading } = useApplications({
     organizationId: user?.organizationId,
-    page: currentPage,
-    limit: rowsPerPage,
-    search: search.trim() || undefined,
-    stage: stage || undefined,
-    jobId: jobId || undefined,
+    ...urlState.queryParams,
+    jobId: urlState.jobId || undefined,
   });
 
   const { data: appStats } = useApplicationStats(user?.organizationId);
 
-  const stageCounts = useMemo(() => {
-    if (!appStats) return undefined;
-    return {
-      ALL: appStats.totalApplications ?? 0,
-      APPLIED: appStats.byStage.APPLIED ?? 0,
-      SCREENING: appStats.byStage.SCREENING ?? 0,
-      INTERVIEW: appStats.byStage.INTERVIEW ?? 0,
-      OFFER: appStats.byStage.OFFER ?? 0,
-      HIRED: appStats.byStage.HIRED ?? 0,
-      REJECTED: appStats.byStage.REJECTED ?? 0,
-    };
-  }, [appStats]);
+  const stageCounts = useMemo(
+    () =>
+      buildStageCounts(
+        appStats
+          ? {
+              total: appStats.totalApplications ?? 0,
+              byStage: appStats.byStage,
+            }
+          : null,
+      ),
+    [appStats],
+  );
 
   if ((jobsLoading || appsLoading) && !applicationsData) {
     return <LoadingSpinner />;
@@ -76,21 +64,26 @@ function ApplicationsPageContent() {
         loading={jobsLoading || appsLoading}
         totalCount={applicationsData?.total ?? 0}
         totalPages={applicationsData?.totalPages ?? 1}
-        currentPage={currentPage}
-        rowsPerPage={rowsPerPage}
-        search={search}
-        stageFilter={stage}
-        jobFilter={jobId}
+        currentPage={urlState.currentPage}
+        rowsPerPage={urlState.rowsPerPage}
+        search={urlState.search}
+        stageFilter={urlState.stage}
+        jobFilter={urlState.jobId}
+        scoreFilter={urlState.score}
+        sortField={urlState.sortField}
+        sortDirection={urlState.sortDirection}
+        selectedAppId={urlState.selectedAppId}
+        drawerTab={urlState.drawerTab}
         stageCounts={stageCounts}
-        onPageChange={setCurrentPage}
-        onLimitChange={setRowsPerPage}
-        onSearchChange={setSearch}
-        onStageFilterChange={(newStage) =>
-          setParams({ stage: newStage || null, page: 1 })
-        }
-        onJobFilterChange={(newJobId) =>
-          setParams({ jobId: newJobId || null, page: 1 })
-        }
+        onPageChange={urlState.onPageChange}
+        onLimitChange={urlState.onLimitChange}
+        onSearchChange={urlState.onSearchChange}
+        onStageFilterChange={urlState.onStageFilterChange}
+        onJobFilterChange={urlState.onJobFilterChange}
+        onScoreFilterChange={urlState.onScoreFilterChange}
+        onSortChange={urlState.onSortChange}
+        onSelectedAppIdChange={urlState.onSelectedAppIdChange}
+        onDrawerTabChange={urlState.onDrawerTabChange}
       />
     </div>
   );

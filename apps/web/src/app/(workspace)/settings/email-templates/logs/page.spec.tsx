@@ -3,19 +3,31 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import EmailLogsPage from "./page";
 import type { EmailLog } from "@/lib/email-templates";
 
+let mockSearchParamString = "";
+let capturedEmailLogsParams: Record<string, unknown> | undefined;
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/settings/email-templates/logs",
+  useSearchParams: () => new URLSearchParams(mockSearchParamString),
+}));
+
 let mockLogs: EmailLog[] = [];
 
 vi.mock("@/hooks/use-queries", () => ({
-  useEmailLogs: () => ({
-    data: {
-      data: mockLogs,
-      total: mockLogs.length,
-      page: 1,
-      limit: 20,
-      totalPages: 1,
-    },
-    isLoading: false,
-  }),
+  useEmailLogs: (params?: Record<string, unknown>) => {
+    capturedEmailLogsParams = params;
+    return {
+      data: {
+        data: mockLogs,
+        total: mockLogs.length,
+        page: (params?.page as number) ?? 1,
+        limit: (params?.limit as number) ?? 20,
+        totalPages: 1,
+      },
+      isLoading: false,
+    };
+  },
 }));
 
 vi.mock("@/i18n", () => ({
@@ -47,6 +59,9 @@ vi.mock("@/i18n", () => ({
 describe("EmailLogsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParamString = "";
+    capturedEmailLogsParams = undefined;
+    window.history.replaceState(null, "", "/settings/email-templates/logs");
     mockLogs = [
       {
         id: "log-snapshot",
@@ -91,5 +106,25 @@ describe("EmailLogsPage", () => {
     expect(
       screen.getAllByText("Thư mời Tech Lead VIP").length,
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("hydrates search, status, page, and limit from URL and syncs changes to URL query params", () => {
+    mockSearchParamString = "search=snap&status=SENT&page=2&limit=50";
+
+    render(<EmailLogsPage />);
+
+    expect(capturedEmailLogsParams).toMatchObject({
+      search: "snap",
+      status: "SENT",
+      page: 2,
+      limit: 50,
+    });
+
+    const statusTrigger = screen.getByRole("button", { name: /Đã gửi/i });
+    fireEvent.click(statusTrigger);
+    fireEvent.click(screen.getByRole("option", { name: "Thất bại" }));
+
+    expect(window.location.search).toContain("status=FAILED");
+    expect(window.location.search).not.toContain("page=");
   });
 });

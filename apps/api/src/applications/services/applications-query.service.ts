@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   APPLICATION_STAGES,
@@ -81,6 +82,17 @@ function maskApplicationFields<
     resumeFileId: null as string | null,
     interviews: [] as Array<Record<string, unknown>>,
   };
+}
+
+export interface ApplicationListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  jobId?: string;
+  stage?: string;
+  score?: "80" | "60" | "BELOW_60";
+  sortBy?: "candidate" | "email" | "job" | "status" | "score" | "applied";
+  sortOrder?: "asc" | "desc";
 }
 
 @Injectable()
@@ -264,15 +276,9 @@ export class ApplicationsQueryService {
     });
   }
 
-  async findAll(
+  async listPaginated(
     organizationId?: string,
-    options?: {
-      page?: number;
-      limit?: number;
-      search?: string;
-      jobId?: string;
-      stage?: string;
-    },
+    options?: ApplicationListOptions,
     tenantOrgId?: string | null,
     fullCandidateAccess = true,
   ) {
@@ -285,95 +291,169 @@ export class ApplicationsQueryService {
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
     const rawLimit = options?.limit && options.limit > 0 ? options.limit : 20;
-    const defaultLimit = Math.min(rawLimit, 100);
-    const defaultPage = options?.page && options.page > 0 ? options.page : 1;
+    const limit = Math.min(rawLimit, 100);
+    const page = options?.page && options.page > 0 ? options.page : 1;
 
     if (!targetOrgId) {
       return {
         data: [],
         total: 0,
-        page: defaultPage,
-        limit: defaultLimit,
+        page,
+        limit,
         totalPages: 0,
       };
     }
 
-    const [jobs, activeCandidates] = await Promise.all([
-      this.prisma.job.findMany({
-        where: { organizationId: targetOrgId, deletedAt: null },
-        select: {
-          id: true,
-          title: true,
-          department: true,
-          location: true,
-        },
-      }),
-      this.prisma.candidate.findMany({
-        where: { organizationId: targetOrgId, deletedAt: null },
-        select: { id: true },
-      }),
-    ]);
-
-    const jobMap = new Map(jobs.map((j) => [j.id, j]));
-    const activeCandidateIds = activeCandidates.map((c) => c.id);
-    if (jobMap.size === 0 || activeCandidateIds.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page: defaultPage,
-        limit: defaultLimit,
-        totalPages: 0,
-      };
-    }
-
-    let jobIds = jobs.map((j) => j.id);
-    if (options?.jobId) {
-      jobIds = jobIds.filter((id) => id === options.jobId);
-      if (jobIds.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page: defaultPage,
-          limit: defaultLimit,
-          totalPages: 0,
-        };
-      }
-    }
-
-    const appWhere: Record<string, unknown> = {
-      jobId: { in: jobIds },
-      candidateId: { in: activeCandidateIds },
+    const appWhere: Prisma.ApplicationWhereInput = {
+      organizationId: targetOrgId,
+      job: { deletedAt: null },
+      candidate: { deletedAt: null },
     };
+
+    if (options?.jobId) {
+      appWhere.jobId = options.jobId;
+    }
 
     if (options?.stage) {
       const stages = options.stage
         .split(",")
-        .map((s) => s.trim().toUpperCase());
-      appWhere.stage = { in: stages };
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
+      if (stages.length > 0) {
+        appWhere.stage = { in: stages as ApplicationStage[] };
+      }
+    }
+
+    if (options?.score === "80") {
+      appWhere.matchScore = { gte: 80 };
+    } else if (options?.score === "60") {
+      appWhere.matchScore = { gte: 60, lt: 80 };
+    } else if (options?.score === "BELOW_60") {
+      appWhere.matchScore = { not: null, lt: 60 };
     }
 
     if (options?.search && options.search.trim() !== "") {
       const q = foldVietnameseAccents(options.search);
       // Do not oracle-match candidate PII when the caller lacks candidate:view
-      const matchedCandidateIds = fullCandidateAccess
-        ? await findMatchingCandidateIds(this.prisma, {
-            organizationId: targetOrgId,
-            rawSearch: options.search,
-          })
-        : [];
-      const matchingJobIds = jobs
+      const [matchedCandidateIds, orgJobs] = await Promise.all([
+        fullCandidateAccess
+          ? findMatchingCandidateIds(this.prisma, {
+              organizationId: targetOrgId,
+              rawSearch: options.search,
+            })
+          : Promise.resolve([]),
+        this.prisma.job.findMany({
+          where: { organizationId: targetOrgId, deletedAt: null },
+          select: { id: true, title: true },
+        }),
+      ]);
+
+      const matchingJobIds = orgJobs
         .filter((j) => foldVietnameseAccents(j.title).includes(q))
         .map((j) => j.id);
 
+      if (matchedCandidateIds.length === 0 && matchingJobIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        };
+      }
+
       appWhere.OR = [
-        { candidateId: { in: matchedCandidateIds } },
-        { jobId: { in: matchingJobIds } },
+        ...(matchedCandidateIds.length > 0
+          ? [{ candidateId: { in: matchedCandidateIds } }]
+          : []),
+        ...(matchingJobIds.length > 0
+          ? [{ jobId: { in: matchingJobIds } }]
+          : []),
       ];
     }
 
-    const total = await this.prisma.application.count({ where: appWhere });
-    const page = defaultPage;
-    const limit = defaultLimit;
+    const nameOrder = fullCandidateAccess
+      ? await resolveOrgNameDisplayOrder(this.prisma, targetOrgId)
+      : "LAST_FIRST";
+
+    const sortOrder: Prisma.SortOrder =
+      options?.sortOrder === "asc" ? "asc" : "desc";
+
+    let orderBy:
+      | Prisma.ApplicationOrderByWithRelationInput
+      | Prisma.ApplicationOrderByWithRelationInput[];
+
+    switch (options?.sortBy) {
+      case "score":
+        orderBy = [
+          { matchScore: { sort: sortOrder, nulls: "last" } },
+          { createdAt: "desc" },
+          { id: "asc" },
+        ];
+        break;
+      case "status":
+        orderBy = [{ stage: sortOrder }, { createdAt: "desc" }, { id: "asc" }];
+        break;
+      case "job":
+        orderBy = [
+          { job: { title: sortOrder } },
+          { createdAt: "desc" },
+          { id: "asc" },
+        ];
+        break;
+      case "candidate":
+        orderBy = fullCandidateAccess
+          ? nameOrder === "LAST_FIRST"
+            ? [
+                { candidate: { lastName: { sort: sortOrder, nulls: "last" } } },
+                {
+                  candidate: { firstName: { sort: sortOrder, nulls: "last" } },
+                },
+                {
+                  candidate: {
+                    displayName: { sort: sortOrder, nulls: "last" },
+                  },
+                },
+                { createdAt: "desc" },
+              ]
+            : [
+                {
+                  candidate: { firstName: { sort: sortOrder, nulls: "last" } },
+                },
+                { candidate: { lastName: { sort: sortOrder, nulls: "last" } } },
+                {
+                  candidate: {
+                    displayName: { sort: sortOrder, nulls: "last" },
+                  },
+                },
+                { createdAt: "desc" },
+              ]
+          : { createdAt: "desc" };
+        break;
+      case "email":
+        orderBy = fullCandidateAccess
+          ? [{ candidate: { email: sortOrder } }, { createdAt: "desc" }]
+          : { createdAt: "desc" };
+        break;
+      case "applied":
+        orderBy = [{ createdAt: sortOrder }, { id: "asc" }];
+        break;
+      default:
+        orderBy = { createdAt: "desc" };
+        break;
+    }
+
+    const [total, pagedApps] = await Promise.all([
+      this.prisma.application.count({
+        where: { ...appWhere, organizationId: targetOrgId },
+      }),
+      this.prisma.application.findMany({
+        where: { ...appWhere, organizationId: targetOrgId },
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
     const totalPages = Math.ceil(total / limit) || 1;
 
     if (total === 0) {
@@ -386,36 +466,46 @@ export class ApplicationsQueryService {
       };
     }
 
-    const pagedApps = await this.prisma.application.findMany({
-      where: appWhere,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
     const neededCandidateIds = [
       ...new Set(pagedApps.map((a) => a.candidateId)),
     ];
+    const neededJobIds = [...new Set(pagedApps.map((a) => a.jobId))];
+    const appIds = pagedApps.map((a) => a.id);
 
-    const candidates =
+    const [candidates, pagedJobs, allInterviews] = await Promise.all([
       neededCandidateIds.length > 0
-        ? await this.prisma.candidate.findMany({
+        ? this.prisma.candidate.findMany({
             where: {
               id: { in: neededCandidateIds },
               organizationId: targetOrgId,
               deletedAt: null,
             },
           })
-        : [];
-    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
-
-    const appIds = pagedApps.map((a) => a.id);
-    const allInterviews =
+        : Promise.resolve([]),
+      neededJobIds.length > 0
+        ? this.prisma.job.findMany({
+            where: {
+              id: { in: neededJobIds },
+              organizationId: targetOrgId,
+              deletedAt: null,
+            },
+            select: {
+              id: true,
+              title: true,
+              department: true,
+              location: true,
+            },
+          })
+        : Promise.resolve([]),
       fullCandidateAccess && appIds.length > 0
-        ? await this.prisma.interview.findMany({
+        ? this.prisma.interview.findMany({
             where: { applicationId: { in: appIds } },
           })
-        : [];
+        : Promise.resolve([]),
+    ]);
+
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const jobMap = new Map(pagedJobs.map((j) => [j.id, j]));
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
@@ -441,10 +531,6 @@ export class ApplicationsQueryService {
       };
     }
 
-    const nameOrder = await resolveOrgNameDisplayOrder(
-      this.prisma,
-      targetOrgId,
-    );
     const data = pagedApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);

@@ -46,7 +46,7 @@ export class JobsController {
 
   @Get()
   @UseGuards(OptionalJwtAuthGuard, TenantGuard)
-  findAll(
+  listPaginated(
     @Request()
     req: {
       user?: { id?: string; role?: string; organizationId?: string | null };
@@ -64,7 +64,7 @@ export class JobsController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
-    return this.jobsService.findAll({
+    return this.jobsService.listPaginated({
       status,
       department,
       search,
@@ -83,7 +83,7 @@ export class JobsController {
 
   @Get("public")
   findPublic(@Query("limit") limit?: string) {
-    return this.jobsService.findAll({
+    return this.jobsService.listPaginated({
       status: "PUBLISHED",
       limit: limit ? parseInt(limit, 10) : undefined,
     });

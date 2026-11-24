@@ -40,7 +40,7 @@ export class JobsService {
     private readonly eventsService?: EventsService,
   ) {}
 
-  async findAll(filter?: {
+  async listPaginated(filter?: {
     status?: string;
     department?: string;
     search?: string;

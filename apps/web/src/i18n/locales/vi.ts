@@ -228,7 +228,7 @@ export const vi: TranslationSchema = {
     loginTitle: "Đăng nhập tài khoản",
     loginSubtitle: "Vui lòng nhập thông tin để tiếp tục.",
     emailLabel: "Email công việc",
-    emailPlaceholder: "name@company.com",
+    emailPlaceholder: "name@example.com",
     passwordLabel: "Mật khẩu",
     passwordPlaceholder: "••••••••",
     signInButton: "Đăng nhập",
@@ -812,7 +812,7 @@ export const vi: TranslationSchema = {
       firstName: "VD: An",
       lastName: "VD: Nguyễn Văn",
       displayName: "VD: Nguyễn Văn An",
-      email: "VD: an.nguyen@example.com",
+      email: "name@example.com",
       phone: "VD: 0912 345 678",
       dob: "dd/mm/yyyy",
     },
@@ -1157,7 +1157,7 @@ export const vi: TranslationSchema = {
     title: "Thành viên nhóm",
     subtitle: "Quản lý thành viên trong tổ chức và các liên kết mời tham gia.",
     inviteMemberTitle: "Mời thành viên mới",
-    inviteEmailPlaceholder: "dongnghiep@congty.com",
+    inviteEmailPlaceholder: "name@example.com",
     sendInvite: "Gửi lời mời",
     sendingInvite: "Đang gửi lời mời...",
     createLinkTitle: "Tạo liên kết mời có thể chia sẻ",
@@ -1261,7 +1261,7 @@ export const vi: TranslationSchema = {
     createOrgSubtitle:
       "Thiết lập không gian làm việc mới để bắt đầu quản lý tin tuyển dụng và ứng viên.",
     orgNameLabel: "Tên tổ chức",
-    orgNamePlaceholder: "Ví dụ: Acme Corp",
+    orgNamePlaceholder: "VD: Acme Corp",
     slugLabel: "Đường dẫn định danh",
     slugPlaceholder: "acme-corp",
     slugHint: "Mã định danh duy nhất cho không gian làm việc của tổ chức.",
@@ -1272,7 +1272,7 @@ export const vi: TranslationSchema = {
       "Dán liên kết mời hoặc mã token để gia nhập không gian làm việc của đội ngũ.",
     inviteLinkBoxTitle: "Liên kết mời",
     inviteLinkPlaceholder:
-      "Dán liên kết mời (ví dụ: http://.../auth/join/...) hoặc token",
+      "Dán liên kết mời (VD: https://example.com/auth/join/...) hoặc token",
     joinButton: "Tham gia",
     inviteLinkHint:
       "Hãy yêu cầu quản trị viên hoặc chủ sở hữu tổ chức gửi cho bạn liên kết mời.",
@@ -1480,7 +1480,7 @@ export const vi: TranslationSchema = {
     },
     placeholders: {
       orgName: "VD: Acme Corp",
-      orgSlug: "ten-to-chuc",
+      orgSlug: "acme-corp",
     },
     localization: {
       title: "Ngôn ngữ & Khu vực",
@@ -1819,9 +1819,9 @@ export const vi: TranslationSchema = {
     fileInvalidType:
       "Định dạng tệp không được hỗ trợ. Vui lòng tải lên tệp PDF.",
     placeholders: {
-      lastName: "Ví dụ: Nguyễn Văn",
-      firstName: "Ví dụ: An",
-      email: "nguyenvana@example.com",
+      lastName: "VD: Nguyễn Văn",
+      firstName: "VD: An",
+      email: "name@example.com",
       phone: "0912 345 678",
       notes:
         "Chia sẻ thêm về bản thân, thời gian có thể bắt đầu làm việc, hoặc lý do bạn quan tâm đến vị trí này...",
@@ -1887,7 +1887,7 @@ export const vi: TranslationSchema = {
     testEmailSection: "Gửi Email Thử Nghiệm",
     testEmailDesc:
       "Kiểm tra kết nối và tính năng gửi email đến một hòm thư cụ thể trước khi áp dụng thực tế.",
-    testEmailPlaceholder: "nhap-email-nhan@example.com",
+    testEmailPlaceholder: "name@example.com",
     sendTestBtn: "Gửi email thử nghiệm",
     testSentSuccess:
       "Đã gửi email thử nghiệm. Vui lòng kiểm tra hộp thư đến hoặc thư mục Spam.",
@@ -2120,13 +2120,13 @@ export const vi: TranslationSchema = {
       createDesc:
         "Tạo một liên kết tuyển dụng độc nhất để chia sẻ và đo lường số lượt nhấp cùng hồ sơ nộp về.",
       linkNameLabel: "Tên liên kết",
-      linkNamePlaceholder: "Ví dụ: LinkedIn Tuyển dụng Kỹ sư Phần mềm Q2",
+      linkNamePlaceholder: "VD: LinkedIn Tuyển dụng Kỹ sư Phần mềm Q2",
       sourceLabel: "Kênh tuyển dụng",
       customSourceLabel: "Tên kênh tùy chỉnh",
-      customSourcePlaceholder: "Ví dụ: Hội thảo việc làm Bách Khoa",
+      customSourcePlaceholder: "VD: Hội thảo việc làm Bách Khoa",
       jobLabel: "Vị trí tuyển dụng áp dụng",
       allJobsOption: "Tất cả tin tuyển dụng (Trang tuyển dụng chung)",
-      campaignPlaceholder: "Ví dụ: tuyen-dung-he-2026",
+      campaignPlaceholder: "Ví dụ: spring-2026",
       previewLabel: "Xem trước liên kết",
       createBtn: "Tạo liên kết",
       creatingBtn: "Đang tạo...",
@@ -2198,8 +2198,8 @@ export const vi: TranslationSchema = {
       utmCampaignLabel: "Chiến dịch (utm_campaign)",
       utmTermLabel: "Từ khóa (utm_term)",
       utmContentLabel: "Nội dung (utm_content)",
-      utmTermPlaceholder: "Ví dụ: ky-su-phan-mem",
-      utmContentPlaceholder: "Ví dụ: bai-dang-tuyen-dung",
+      utmTermPlaceholder: "Ví dụ: frontend-engineer",
+      utmContentPlaceholder: "Ví dụ: job-post-banner",
       editSuccess: "Đã cập nhật liên kết thành công",
       notFoundTitle: "Không tìm thấy liên kết",
       notFoundDesc: "Liên kết nguồn này không tồn tại hoặc đã bị xóa.",

@@ -163,7 +163,7 @@ vi.mock("@/i18n", () => ({
         "members.inviteMemberTitle": "Mời thành viên",
         "members.createLinkTitle": "Tạo liên kết",
         "members.createLinkButton": "Tạo liên kết",
-        "members.inviteEmailPlaceholder": "colleague@company.com",
+        "members.inviteEmailPlaceholder": "name@example.com",
         "members.sendInvite": "Gửi lời mời",
         "members.inviteEmailRequired": "Please enter an email address.",
         "members.inviteSentSuccess":
@@ -286,7 +286,7 @@ describe("MembersSettingsPage Component", () => {
       fireEvent.click(inviteBtn);
     }
 
-    const emailInput = screen.getByPlaceholderText("colleague@company.com");
+    const emailInput = screen.getByPlaceholderText("name@example.com");
     fireEvent.change(emailInput, { target: { value: "newbie@haihire.vn" } });
 
     const sendBtn = screen.getByText("Gửi lời mời").closest("button");
@@ -540,7 +540,7 @@ describe("MembersSettingsPage Component", () => {
       expect(inviteBtn).toBeTruthy();
       fireEvent.click(inviteBtn!);
 
-      const emailInput = screen.getByPlaceholderText("colleague@company.com");
+      const emailInput = screen.getByPlaceholderText("name@example.com");
       const inviteForm = emailInput.closest("form");
       expect(inviteForm).toBeTruthy();
 
@@ -646,7 +646,7 @@ describe("MembersSettingsPage Component", () => {
 
         const inviteBtn = screen.getByText("Mời thành viên").closest("button");
         fireEvent.click(inviteBtn!);
-        const emailInput = screen.getByPlaceholderText("colleague@company.com");
+        const emailInput = screen.getByPlaceholderText("name@example.com");
         const inviteForm = emailInput.closest("form")!;
         const inviteTrigger = within(inviteForm).getByRole("button", {
           name: "Member",

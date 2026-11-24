@@ -227,7 +227,7 @@ export default function EmailSettingsPage() {
                       fromEmail: e.target.value,
                     }))
                   }
-                  placeholder="careers@nexus.com"
+                  placeholder="careers@example.com"
                   className="h-9 text-xs"
                 />
               </div>

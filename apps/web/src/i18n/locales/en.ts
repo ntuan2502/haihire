@@ -230,7 +230,7 @@ export const en: TranslationSchema = {
     loginTitle: "Sign in to your account",
     loginSubtitle: "Enter your details to continue.",
     emailLabel: "Work Email",
-    emailPlaceholder: "name@company.com",
+    emailPlaceholder: "name@example.com",
     passwordLabel: "Password",
     passwordPlaceholder: "••••••••",
     signInButton: "Sign in",
@@ -810,7 +810,7 @@ export const en: TranslationSchema = {
       firstName: "e.g. Jane",
       lastName: "e.g. Doe",
       displayName: "e.g. Jane Doe",
-      email: "e.g. jane.doe@example.com",
+      email: "name@example.com",
       phone: "e.g. +1 (555) 123-4567",
       dob: "mm/dd/yyyy",
     },
@@ -1155,7 +1155,7 @@ export const en: TranslationSchema = {
     title: "Team Members",
     subtitle: "Manage your team members and invitation links.",
     inviteMemberTitle: "Invite a team member",
-    inviteEmailPlaceholder: "colleague@company.com",
+    inviteEmailPlaceholder: "name@example.com",
     sendInvite: "Send Invitation",
     sendingInvite: "Sending invitation...",
     createLinkTitle: "Create shareable invite link",
@@ -1271,7 +1271,7 @@ export const en: TranslationSchema = {
       "Paste your invite link or token to join your team workspace.",
     inviteLinkBoxTitle: "Invite link",
     inviteLinkPlaceholder:
-      "Paste invite link (e.g. http://.../auth/join/...) or token",
+      "Paste invite link (e.g. https://example.com/auth/join/...) or token",
     joinButton: "Join",
     inviteLinkHint:
       "Ask an organization owner or administrator to create and send you an invite link.",
@@ -1476,7 +1476,7 @@ export const en: TranslationSchema = {
     },
     placeholders: {
       orgName: "e.g. Acme Corp",
-      orgSlug: "company-slug",
+      orgSlug: "acme-corp",
     },
     localization: {
       title: "Language & Region",
@@ -1817,7 +1817,7 @@ export const en: TranslationSchema = {
     placeholders: {
       lastName: "e.g. Doe",
       firstName: "e.g. Jane",
-      email: "jane.doe@example.com",
+      email: "name@example.com",
       phone: "+1 (555) 123-4567",
       notes:
         "Share more about yourself, your availability, or why you are interested in this position...",
@@ -1884,7 +1884,7 @@ export const en: TranslationSchema = {
     testEmailSection: "Send Test Email",
     testEmailDesc:
       "Verify server connection and delivery to a specific inbox before going live.",
-    testEmailPlaceholder: "recipient@example.com",
+    testEmailPlaceholder: "name@example.com",
     sendTestBtn: "Send Test Email",
     testSentSuccess:
       "Test email dispatched. Please check your inbox or spam folder.",
@@ -2122,7 +2122,7 @@ export const en: TranslationSchema = {
       customSourcePlaceholder: "e.g. University Career Fair",
       jobLabel: "Target Job",
       allJobsOption: "All jobs (Company Career Portal)",
-      campaignPlaceholder: "e.g. engineering-q2",
+      campaignPlaceholder: "e.g. spring-2026",
       previewLabel: "Link Preview",
       createBtn: "Create Link",
       creatingBtn: "Creating...",
@@ -2194,8 +2194,8 @@ export const en: TranslationSchema = {
       utmCampaignLabel: "utm_campaign",
       utmTermLabel: "utm_term",
       utmContentLabel: "utm_content",
-      utmTermPlaceholder: "keyword",
-      utmContentPlaceholder: "sponsored-post",
+      utmTermPlaceholder: "e.g. frontend-engineer",
+      utmContentPlaceholder: "e.g. job-post-banner",
       editSuccess: "Tracking link updated successfully",
       notFoundTitle: "Link Not Found",
       notFoundDesc: "This tracking link does not exist or has been deleted.",

@@ -1,6 +1,11 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { Readable } from "node:stream";
-import { APP_ERROR_CODES, normalizeCandidatePhone } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
+  normalizeCandidatePhone,
+} from "@haihire/shared";
 import { CandidatesService } from "./candidates.service";
 import {
   CandidatesCrudService,
@@ -996,6 +1001,83 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
       expect(mockMinio.deleteFile).toHaveBeenCalledTimes(1);
       expect(mockMinio.deleteFile).toHaveBeenCalledWith("resume-1.pdf");
+    });
+
+    it("records event-envelope audit logs on candidate create, update diff, and delete", async () => {
+      const mockAuditLog = { logOrg: vi.fn().mockResolvedValue({}) };
+      const auditedService = new CandidatesService(
+        mockPrisma,
+        mockMinio,
+        mockActivities,
+        undefined,
+        undefined,
+        mockAuditLog as never,
+      );
+
+      const created = await auditedService.create(
+        {
+          firstName: "Minh",
+          lastName: "Pham",
+          email: "minh.pham@example.com",
+          phone: "+84901112223",
+          organizationId: "org-1",
+        },
+        undefined,
+        "org-1",
+        "actor-1",
+      );
+
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "actor-1",
+        AUDIT_ACTIONS.CANDIDATE_CREATED,
+        AUDIT_RESOURCES.CANDIDATE,
+        { email: "minh.pham@example.com" },
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.update(
+        created.id,
+        { phone: "+84909998887" },
+        "org-1",
+        "actor-2",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "actor-2",
+        AUDIT_ACTIONS.CANDIDATE_UPDATED,
+        AUDIT_RESOURCES.CANDIDATE,
+        { email: "minh.pham@example.com" },
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          changes: [
+            {
+              field: "phone",
+              before: "+84901112223",
+              after: "+84909998887",
+            },
+          ],
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.remove(created.id, "org-1", "actor-2");
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "actor-2",
+        AUDIT_ACTIONS.CANDIDATE_DELETED,
+        AUDIT_RESOURCES.CANDIDATE,
+        { email: "minh.pham@example.com" },
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+        }),
+      );
     });
   });
 });

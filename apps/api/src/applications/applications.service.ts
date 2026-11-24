@@ -88,8 +88,8 @@ export class ApplicationsService {
     return this.query.updateCandidate(id, dto, tenantOrgId);
   }
 
-  remove(id: string, tenantOrgId?: string | null) {
-    return this.query.remove(id, tenantOrgId);
+  remove(id: string, tenantOrgId?: string | null, actorId?: string | null) {
+    return this.query.remove(id, tenantOrgId, actorId);
   }
 
   // ==========================================
@@ -98,7 +98,12 @@ export class ApplicationsService {
   create(
     dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
-    currentUser?: { role?: string; organizationId?: string | null } | null,
+    currentUser?: {
+      id?: string;
+      role?: string;
+      organizationId?: string | null;
+      isOwner?: boolean;
+    } | null,
   ) {
     return this.saga.create(dto, file, currentUser);
   }

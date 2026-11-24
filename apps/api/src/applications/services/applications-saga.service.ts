@@ -5,6 +5,8 @@ import type { Queue } from "bullmq";
 import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   Role,
   SourcingChannel,
   formatCandidateDisplayName,
@@ -37,6 +39,7 @@ import { fixUtf8String } from "../../common/doc-utils";
 import { toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 function isCandidateEmailUniqueViolation(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -99,6 +102,9 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -108,6 +114,7 @@ export class ApplicationsSagaService {
     dto: CreateApplicationDto | PublicApplyDto,
     file?: Express.Multer.File,
     currentUser?: {
+      id?: string;
       role?: string;
       organizationId?: string | null;
       isOwner?: boolean;
@@ -886,6 +893,31 @@ export class ApplicationsSagaService {
         organizationId: orgId,
         data: { jobId: job.id },
       });
+
+      const targetCandidateName =
+        result.candidateName || result.candidate?.name || "Candidate";
+      const targetJobTitle = job.title || result.job?.title || "Job";
+      try {
+        await this.auditLog?.logOrg(
+          orgId,
+          currentUser?.id ?? null,
+          AUDIT_ACTIONS.APPLICATION_CREATED,
+          AUDIT_RESOURCES.APPLICATION,
+          {
+            jobId: result.jobId,
+            candidateId: result.candidate?.id,
+            stage: result.stage,
+            sourceChannel,
+          },
+          undefined,
+          {
+            targetId: result.id,
+            targetLabel: `${targetCandidateName} — ${targetJobTitle}`,
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
     }
 
     if (!currentUser) {

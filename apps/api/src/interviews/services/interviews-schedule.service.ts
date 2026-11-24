@@ -4,11 +4,14 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   formatCandidateDisplayName,
   formatUserDisplayName,
   formatInterviewDateTimeInTimezone,
   type NameDisplayOrder,
 } from "@haihire/shared";
+import { computeAuditDiff } from "../../common/audit-diff.util";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -24,6 +27,7 @@ import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { InterviewsQueryService } from "./interviews-query.service";
 import { InterviewsScorecardService } from "./interviews-scorecard.service";
 import { EventsService } from "../../events/events.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 export type InterviewType =
   "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
@@ -62,7 +66,24 @@ export class InterviewsScheduleService {
     @Optional()
     @Inject(NotificationsService)
     private readonly notifications?: NotificationsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
+
+  private toIsoTimestamp(val?: Date | string | null): string | null {
+    if (!val) return null;
+    const d = val instanceof Date ? val : new Date(val);
+    return Number.isNaN(d.getTime()) ? String(val) : d.toISOString();
+  }
+
+  private buildTargetLabel(
+    candidateName?: string | null,
+    jobTitle?: string | null,
+  ): string {
+    const candidateLabel = candidateName || "Candidate";
+    return jobTitle ? `${candidateLabel} — ${jobTitle}` : candidateLabel;
+  }
 
   private async resolveInterviewer(
     interviewerId: string,
@@ -87,7 +108,11 @@ export class InterviewsScheduleService {
     return formatUserDisplayName(user) || user.email;
   }
 
-  async create(dto: CreateInterviewDto, organizationId?: string | null) {
+  async create(
+    dto: CreateInterviewDto,
+    organizationId?: string | null,
+    actorId?: string | null,
+  ) {
     const app = await this.prisma.application.findFirst({
       where: { id: dto.applicationId },
       select: {
@@ -411,6 +436,35 @@ export class InterviewsScheduleService {
       });
     }
 
+    const logOrgId = orgId || app.organizationId || organizationId;
+    if (logOrgId) {
+      try {
+        await this.auditLog?.logOrg(
+          logOrgId,
+          actorId ?? null,
+          AUDIT_ACTIONS.INTERVIEW_SCHEDULED,
+          AUDIT_RESOURCES.INTERVIEW,
+          {
+            applicationId: createdInterview.applicationId,
+            type: createdInterview.type,
+            format: createdInterview.format,
+            scheduledAt: scheduledInstant.toISOString(),
+            interviewer: createdInterview.interviewer,
+          },
+          undefined,
+          {
+            targetId: createdInterview.id,
+            targetLabel: this.buildTargetLabel(
+              createdInterview.candidateName,
+              createdInterview.jobTitle || job?.title,
+            ),
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
+    }
+
     return createdInterview;
   }
 
@@ -421,6 +475,16 @@ export class InterviewsScheduleService {
     actor?: { id?: string; name?: string; role?: string },
   ) {
     const existing = await this.queryService.findOne(id, tenantOrgId);
+
+    const beforeSnapshot = {
+      scheduledAt: this.toIsoTimestamp(existing.scheduledAt),
+      type: existing.type,
+      format: existing.format,
+      linkOrLocation: existing.linkOrLocation || null,
+      interviewer: existing.interviewer,
+      round: existing.round ?? 1,
+      notes: existing.notes ?? null,
+    };
 
     if (
       dto.scorecard !== undefined &&
@@ -565,12 +629,55 @@ export class InterviewsScheduleService {
           },
         });
       }
+
+      const afterSnapshot = {
+        scheduledAt: this.toIsoTimestamp(updated.scheduledAt),
+        type: updated.type,
+        format: updated.format,
+        linkOrLocation: updated.linkOrLocation || null,
+        interviewer: updated.interviewer,
+        round: updated.round ?? 1,
+        notes: updated.notes ?? null,
+      };
+      const changes = computeAuditDiff(beforeSnapshot, afterSnapshot);
+      const scorecardSubmitted = dto.scorecard !== undefined;
+      if (changes.length > 0 || scorecardSubmitted) {
+        try {
+          await this.auditLog?.logOrg(
+            updateOrgId,
+            actor?.id ?? null,
+            AUDIT_ACTIONS.INTERVIEW_UPDATED,
+            AUDIT_RESOURCES.INTERVIEW,
+            {
+              applicationId: updated.applicationId,
+              scorecardSubmitted,
+              type: updated.type,
+              interviewer: updated.interviewer,
+            },
+            undefined,
+            {
+              targetId: updated.id,
+              targetLabel: this.buildTargetLabel(
+                updated.candidateName,
+                updated.jobTitle,
+              ),
+              changes: changes.length > 0 ? changes : null,
+            },
+          );
+        } catch {
+          // Fail-open audit logging
+        }
+      }
     }
 
     return updated;
   }
 
-  async remove(id: string, tenantOrgId?: string | null) {
+  async remove(
+    id: string,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
     const existing = await this.queryService.findOne(id, tenantOrgId);
     await this.prisma.interview.delete({
       where: { id },
@@ -599,6 +706,30 @@ export class InterviewsScheduleService {
         organizationId: orgId,
         data: { applicationId: existing.applicationId },
       });
+
+      try {
+        await this.auditLog?.logOrg(
+          orgId,
+          actorId ?? null,
+          AUDIT_ACTIONS.INTERVIEW_CANCELED,
+          AUDIT_RESOURCES.INTERVIEW,
+          {
+            applicationId: existing.applicationId,
+            type: existing.type,
+            scheduledAt: scheduledIso,
+          },
+          undefined,
+          {
+            targetId: existing.id,
+            targetLabel: this.buildTargetLabel(
+              existing.candidateName,
+              existing.jobTitle,
+            ),
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
     }
     return { success: true, message: `Interview ${id} deleted successfully` };
   }

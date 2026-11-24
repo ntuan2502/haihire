@@ -129,7 +129,7 @@ export class SourcingController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("sourcing:update")
   async updateLink(
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(updateTrackingLinkSchema)) dto: UpdateTrackingLinkSchema,
   ) {
@@ -140,7 +140,7 @@ export class SourcingController {
         "Organization ID is required",
       );
     }
-    await this.sourcingService.updateLink(orgId, id, dto);
+    await this.sourcingService.updateLink(orgId, id, dto, req.user?.id);
     return { success: true };
   }
 
@@ -148,7 +148,7 @@ export class SourcingController {
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("sourcing:delete")
   async deleteLink(
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Param("id", new ParseUUIDPipe()) id: string,
   ) {
     const orgId = req.user?.organizationId;
@@ -158,7 +158,7 @@ export class SourcingController {
         "Organization ID is required",
       );
     }
-    await this.sourcingService.deleteLink(orgId, id);
+    await this.sourcingService.deleteLink(orgId, id, req.user?.id);
     return { success: true };
   }
 

@@ -118,12 +118,13 @@ export class CandidatesController {
   create(
     @Body(DtoPipe(createCandidateSchema)) dto: CreateCandidateSchema,
     @UploadedFile() file: Express.Multer.File,
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
   ) {
     return this.candidatesService.create(
       dto,
       file,
       req?.user?.organizationId || undefined,
+      req?.user?.id,
     );
   }
 
@@ -133,9 +134,14 @@ export class CandidatesController {
   update(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(updateCandidateSchema)) dto: UpdateCandidateSchema,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.candidatesService.update(id, dto, req?.user?.organizationId);
+    return this.candidatesService.update(
+      id,
+      dto,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Post(":id/documents")
@@ -239,9 +245,13 @@ export class CandidatesController {
   @RequirePermission("candidate:delete")
   remove(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.candidatesService.remove(id, req?.user?.organizationId);
+    return this.candidatesService.remove(
+      id,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Get(":id/notes")

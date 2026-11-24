@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   Check,
   ChevronDown,
   ChevronUp,
   Copy,
+  ExternalLink,
   History,
   Info,
 } from "lucide-react";
@@ -22,6 +24,7 @@ import {
   formatAuditSummary,
   formatAuditValue,
   getAuditActionBadge,
+  getAuditEntityHref,
   getAuditResourceLabel,
   parseUserAgent,
 } from "./audit-log-formatters";
@@ -68,6 +71,7 @@ export function AuditLogDetailDrawer({
   }
 
   const badge = getAuditActionBadge(log.action, t);
+  const entityHref = getAuditEntityHref(log);
   const changes = Array.isArray(log.changes) ? log.changes : [];
   const legacyLines =
     changes.length === 0 ? formatAuditMetadataLines(log, t) : [];
@@ -301,21 +305,33 @@ export function AuditLogDetailDrawer({
               </div>
             )}
 
-            {log.targetId && (
-              <div className="px-4 py-3 bg-muted/20">
-                <SettingsButton
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  icon={History}
-                  onClick={() => {
-                    onViewEntityTimeline(log.targetId!);
-                    onClose();
-                  }}
-                  className="w-full justify-center"
-                >
-                  {t("settings.auditLog.viewEntityTimeline")}
-                </SettingsButton>
+            {(entityHref || log.targetId) && (
+              <div className="px-4 py-3 bg-muted/20 flex flex-col sm:flex-row gap-2">
+                {log.targetId && (
+                  <SettingsButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    icon={History}
+                    onClick={() => {
+                      onViewEntityTimeline(log.targetId!);
+                      onClose();
+                    }}
+                    className="flex-1 justify-center"
+                  >
+                    {t("settings.auditLog.viewEntityTimeline")}
+                  </SettingsButton>
+                )}
+                {entityHref && (
+                  <Link
+                    href={entityHref}
+                    onClick={onClose}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 h-8 text-xs font-medium text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground transition-colors flex-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>{t("settings.auditLog.openEntity")}</span>
+                  </Link>
+                )}
               </div>
             )}
           </div>

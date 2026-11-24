@@ -3,10 +3,13 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   SourcingChannel,
   type PaginatedResult,
   type TrackingLinkItem,
 } from "@haihire/shared";
+import { computeAuditDiff } from "../../common/audit-diff.util";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -18,6 +21,7 @@ import { CreateTrackingLinkDto } from "../dto/create-tracking-link.dto";
 import { UpdateTrackingLinkDto } from "../dto/update-tracking-link.dto";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 export function parseDomain(urlStr?: string | null): string | null {
   if (!urlStr) return null;
@@ -47,6 +51,9 @@ export class SourcingLinksService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   async getLinks(
@@ -271,6 +278,27 @@ export class SourcingLinksService {
       data: { linkId: created.id },
     });
 
+    try {
+      await this.auditLog?.logOrg(
+        created.organizationId,
+        userId || null,
+        AUDIT_ACTIONS.SOURCING_LINK_CREATED,
+        AUDIT_RESOURCES.SOURCING_LINK,
+        {
+          source: created.source,
+          token: created.token,
+          jobId: created.jobId,
+        },
+        undefined,
+        {
+          targetId: created.id,
+          targetLabel: created.name,
+        },
+      );
+    } catch {
+      // Fail-open audit logging
+    }
+
     return {
       id: created.id,
       organizationId: created.organizationId,
@@ -300,6 +328,7 @@ export class SourcingLinksService {
     organizationId: string,
     id: string,
     dto: UpdateTrackingLinkDto,
+    actorId?: string | null,
   ): Promise<void> {
     const link = await this.prisma.trackingLink.findFirst({
       where: { id },
@@ -307,6 +336,16 @@ export class SourcingLinksService {
         id: true,
         organizationId: true,
         deletedAt: true,
+        name: true,
+        source: true,
+        customSource: true,
+        jobId: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        isActive: true,
       },
     });
 
@@ -371,15 +410,87 @@ export class SourcingLinksService {
       organizationId,
       data: { linkId: id },
     });
+
+    const beforeSnapshot = {
+      name: link.name,
+      source: link.source,
+      customSource: link.customSource ?? null,
+      jobId: link.jobId ?? null,
+      utmSource: link.utmSource ?? null,
+      utmMedium: link.utmMedium ?? null,
+      utmCampaign: link.utmCampaign ?? null,
+      utmTerm: link.utmTerm ?? null,
+      utmContent: link.utmContent ?? null,
+      isActive: link.isActive,
+    };
+    const afterSnapshot = {
+      name: dto.name !== undefined ? dto.name.trim() : link.name,
+      source: dto.source !== undefined ? dto.source : link.source,
+      customSource:
+        dto.customSource !== undefined
+          ? dto.customSource?.trim() || null
+          : (link.customSource ?? null),
+      jobId: dto.jobId !== undefined ? dto.jobId || null : (link.jobId ?? null),
+      utmSource:
+        dto.utmSource !== undefined
+          ? dto.utmSource?.trim() || null
+          : (link.utmSource ?? null),
+      utmMedium:
+        dto.utmMedium !== undefined
+          ? dto.utmMedium?.trim() || null
+          : (link.utmMedium ?? null),
+      utmCampaign:
+        dto.utmCampaign !== undefined
+          ? dto.utmCampaign?.trim() || null
+          : (link.utmCampaign ?? null),
+      utmTerm:
+        dto.utmTerm !== undefined
+          ? dto.utmTerm?.trim() || null
+          : (link.utmTerm ?? null),
+      utmContent:
+        dto.utmContent !== undefined
+          ? dto.utmContent?.trim() || null
+          : (link.utmContent ?? null),
+      isActive: dto.isActive !== undefined ? dto.isActive : link.isActive,
+    };
+    const changes = computeAuditDiff(beforeSnapshot, afterSnapshot);
+    if (changes.length > 0) {
+      try {
+        await this.auditLog?.logOrg(
+          organizationId,
+          actorId ?? null,
+          AUDIT_ACTIONS.SOURCING_LINK_UPDATED,
+          AUDIT_RESOURCES.SOURCING_LINK,
+          {
+            source: afterSnapshot.source,
+          },
+          undefined,
+          {
+            targetId: id,
+            targetLabel: afterSnapshot.name,
+            changes,
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
+    }
   }
 
-  async deleteLink(organizationId: string, id: string): Promise<void> {
+  async deleteLink(
+    organizationId: string,
+    id: string,
+    actorId?: string | null,
+  ): Promise<void> {
     const link = await this.prisma.trackingLink.findFirst({
       where: { id },
       select: {
         id: true,
         organizationId: true,
         deletedAt: true,
+        name: true,
+        source: true,
+        token: true,
       },
     });
 
@@ -411,6 +522,26 @@ export class SourcingLinksService {
       organizationId,
       data: { linkId: id },
     });
+
+    try {
+      await this.auditLog?.logOrg(
+        organizationId,
+        actorId ?? null,
+        AUDIT_ACTIONS.SOURCING_LINK_DELETED,
+        AUDIT_RESOURCES.SOURCING_LINK,
+        {
+          source: link.source,
+          token: link.token,
+        },
+        undefined,
+        {
+          targetId: id,
+          targetLabel: link.name,
+        },
+      );
+    } catch {
+      // Fail-open audit logging
+    }
   }
 
   async findLinkByToken(token: string) {

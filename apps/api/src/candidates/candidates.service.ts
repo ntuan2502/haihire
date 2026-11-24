@@ -16,6 +16,7 @@ import type { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
 import type { AuthenticatedUser } from "./services/candidates-notes.service";
 
 import type { CandidateListOptions } from "./services/candidates-crud.service";
+import { OrganizationsAuditLogService } from "../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class CandidatesService {
@@ -40,6 +41,9 @@ export class CandidatesService {
     @Optional()
     @Inject(CandidatesNotesService)
     notesService?: CandidatesNotesService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    auditLog?: OrganizationsAuditLogService,
   ) {
     if (
       crudOrPrisma &&
@@ -66,7 +70,13 @@ export class CandidatesService {
         this.profile,
         activities,
       );
-      this.crud = new CandidatesCrudService(prisma, minio, this.profile);
+      this.crud = new CandidatesCrudService(
+        prisma,
+        minio,
+        this.profile,
+        undefined,
+        auditLog,
+      );
       this.notes = new CandidatesNotesService(prisma, activities);
     }
   }
@@ -91,16 +101,18 @@ export class CandidatesService {
     dto: CreateCandidateDto,
     file?: Express.Multer.File,
     defaultOrgId?: string,
+    actorId?: string | null,
   ) {
-    return this.crud.create(dto, file, defaultOrgId);
+    return this.crud.create(dto, file, defaultOrgId, actorId);
   }
 
   async update(
     id: string,
     dto: UpdateCandidateDto,
     tenantOrgId?: string | null,
+    actorId?: string | null,
   ) {
-    return this.crud.update(id, dto, tenantOrgId);
+    return this.crud.update(id, dto, tenantOrgId, actorId);
   }
 
   async uploadDocument(
@@ -136,8 +148,12 @@ export class CandidatesService {
     return this.documents.deleteDocument(id, opts, tenantOrgId);
   }
 
-  async remove(id: string, tenantOrgId?: string | null) {
-    return this.crud.remove(id, tenantOrgId);
+  async remove(
+    id: string,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
+    return this.crud.remove(id, tenantOrgId, actorId);
   }
 
   async checkDuplicates(

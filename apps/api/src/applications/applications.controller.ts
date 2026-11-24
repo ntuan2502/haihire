@@ -362,9 +362,13 @@ export class ApplicationsController {
   @RequirePermission("application:delete")
   remove(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.applicationsService.remove(id, req?.user?.organizationId);
+    return this.applicationsService.remove(
+      id,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   // ==========================================

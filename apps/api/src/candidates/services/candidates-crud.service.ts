@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   formatCandidateDisplayName,
   normalizeCandidatePhone,
   normalizeNameInput,
@@ -11,6 +13,7 @@ import {
   type CandidateDuplicateReason,
   type CheckCandidateDuplicateSchema,
 } from "@haihire/shared";
+import { computeAuditDiff } from "../../common/audit-diff.util";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { findMatchingCandidateIds } from "../../common/person-search.util";
 import {
@@ -26,6 +29,7 @@ import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { validateUploadedFile } from "../../common/upload-utils";
 import { toInstant, toTimestamp } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 function parseCalendarDate(raw?: string | null): Date | null {
   if (!raw) return null;
@@ -74,6 +78,9 @@ export class CandidatesCrudService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   private assertValidTenantResumeUrl(resumeUrl: string, orgId: string): void {
@@ -429,6 +436,7 @@ export class CandidatesCrudService {
     dto: CreateCandidateDto,
     file?: Express.Multer.File,
     defaultOrgId?: string,
+    actorId?: string | null,
   ) {
     if (
       defaultOrgId &&
@@ -551,9 +559,27 @@ export class CandidatesCrudService {
       data: { candidateId: created.id },
     });
 
+    const formattedName = formatCandidateDisplayName(created, nameOrder);
+    try {
+      await this.auditLog?.logOrg(
+        orgId,
+        actorId ?? null,
+        AUDIT_ACTIONS.CANDIDATE_CREATED,
+        AUDIT_RESOURCES.CANDIDATE,
+        { email: created.email },
+        undefined,
+        {
+          targetId: created.id,
+          targetLabel: formattedName || created.email,
+        },
+      );
+    } catch {
+      // Fail-open audit logging
+    }
+
     return {
       ...created,
-      name: formatCandidateDisplayName(created, nameOrder),
+      name: formattedName,
     };
   }
 
@@ -561,8 +587,20 @@ export class CandidatesCrudService {
     id: string,
     dto: UpdateCandidateDto,
     tenantOrgId?: string | null,
+    actorId?: string | null,
   ) {
     const existing = await this.profileService.findOne(id, tenantOrgId);
+
+    const beforeSnapshot = {
+      firstName: existing.firstName ?? null,
+      lastName: existing.lastName ?? null,
+      displayName: existing.displayName ?? null,
+      email: existing.email ?? null,
+      phone: existing.phone ?? null,
+      gender: existing.gender ?? null,
+      dateOfBirth: toIsoDateKey(existing.dateOfBirth),
+      resumeFileName: existing.resumeFileName ?? null,
+    };
 
     const updatePayload: Record<string, unknown> = {};
     if (dto.firstName !== undefined) {
@@ -662,10 +700,48 @@ export class CandidatesCrudService {
       });
     }
 
-    return this.profileService.findOne(id, tenantOrgId);
+    const updated = await this.profileService.findOne(id, tenantOrgId);
+    if (orgId) {
+      const afterSnapshot = {
+        firstName: updated.firstName ?? null,
+        lastName: updated.lastName ?? null,
+        displayName: updated.displayName ?? null,
+        email: updated.email ?? null,
+        phone: updated.phone ?? null,
+        gender: updated.gender ?? null,
+        dateOfBirth: toIsoDateKey(updated.dateOfBirth),
+        resumeFileName: updated.resumeFileName ?? null,
+      };
+      const changes = computeAuditDiff(beforeSnapshot, afterSnapshot);
+      if (changes.length > 0) {
+        try {
+          await this.auditLog?.logOrg(
+            orgId,
+            actorId ?? null,
+            AUDIT_ACTIONS.CANDIDATE_UPDATED,
+            AUDIT_RESOURCES.CANDIDATE,
+            { email: updated.email },
+            undefined,
+            {
+              targetId: updated.id,
+              targetLabel: updated.name || updated.email,
+              changes,
+            },
+          );
+        } catch {
+          // Fail-open audit logging
+        }
+      }
+    }
+
+    return updated;
   }
 
-  async remove(id: string, tenantOrgId?: string | null) {
+  async remove(
+    id: string,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
     const existing = await this.profileService.findOne(id, tenantOrgId);
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
@@ -701,6 +777,23 @@ export class CandidatesCrudService {
         organizationId: orgId,
         data: { candidateId: id },
       });
+
+      try {
+        await this.auditLog?.logOrg(
+          orgId,
+          actorId ?? null,
+          AUDIT_ACTIONS.CANDIDATE_DELETED,
+          AUDIT_RESOURCES.CANDIDATE,
+          { email: existing.email },
+          undefined,
+          {
+            targetId: existing.id,
+            targetLabel: existing.name || existing.email,
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
     }
 
     return { success: true, message: `Candidate ${id} deleted successfully` };

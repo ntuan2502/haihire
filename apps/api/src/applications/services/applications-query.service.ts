@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
   APPLICATION_STAGES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   foldVietnameseAccents,
   formatCandidateDisplayName,
   normalizeNameInput,
@@ -22,6 +24,7 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
 import { EventsService } from "../../events/events.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 function createEmptyStageCounts(): Record<ApplicationStage, number> {
   return APPLICATION_STAGES.reduce(
@@ -106,6 +109,9 @@ export class ApplicationsQueryService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   async findByJob(
@@ -916,7 +922,11 @@ export class ApplicationsQueryService {
     return this.findOne(id, tenantOrgId);
   }
 
-  async remove(id: string, tenantOrgId?: string | null) {
+  async remove(
+    id: string,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
     const existing = await this.findOne(id, tenantOrgId);
     if (
       tenantOrgId &&
@@ -1009,6 +1019,32 @@ export class ApplicationsQueryService {
         organizationId: orgId,
         data: { candidateId: existing.candidate?.id },
       });
+
+      const candidateLabel =
+        existing.candidateName || existing.candidate?.name || "Candidate";
+      const jobLabel = existing.job?.title || "Job";
+      try {
+        await this.auditLog?.logOrg(
+          orgId,
+          actorId ?? null,
+          AUDIT_ACTIONS.APPLICATION_DELETED,
+          AUDIT_RESOURCES.APPLICATION,
+          {
+            jobId: existing.jobId,
+            candidateId: existing.candidateId,
+            stage: existing.stage,
+            jobTitle: existing.job?.title,
+            candidateName: candidateLabel,
+          },
+          undefined,
+          {
+            targetId: existing.id,
+            targetLabel: `${candidateLabel} — ${jobLabel}`,
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
     }
     return { success: true, message: `Application ${id} deleted successfully` };
   }

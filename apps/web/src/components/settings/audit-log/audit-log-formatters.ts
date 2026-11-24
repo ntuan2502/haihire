@@ -9,6 +9,11 @@ const RESOURCE_KEYS = new Set([
   "ROLE_PERMISSIONS",
   "EMAIL",
   "WEBHOOK",
+  "JOB",
+  "CANDIDATE",
+  "APPLICATION",
+  "INTERVIEW",
+  "SOURCING_LINK",
   "SYSTEM",
 ]);
 
@@ -48,6 +53,67 @@ const KNOWN_FIELD_LABELS = new Set([
   "timeFormat",
   "nameDisplayOrder",
   "defaultCurrency",
+  "title",
+  "department",
+  "location",
+  "workplace",
+  "experienceLevel",
+  "openings",
+  "salaryRange",
+  "salaryMin",
+  "salaryMax",
+  "salaryCurrency",
+  "applicationDeadline",
+  "startDate",
+  "firstName",
+  "lastName",
+  "displayName",
+  "email",
+  "phone",
+  "gender",
+  "dateOfBirth",
+  "resumeFileName",
+  "stage",
+  "rejectionReason",
+  "scheduledAt",
+  "format",
+  "linkOrLocation",
+  "interviewer",
+  "round",
+  "notes",
+  "source",
+  "customSource",
+  "jobId",
+  "utmSource",
+  "utmMedium",
+  "utmCampaign",
+  "utmTerm",
+  "utmContent",
+  "isActive",
+]);
+
+const JOB_STATUS_I18N_MAP: Record<string, string> = {
+  PUBLISHED: "jobs.openStatus",
+  DRAFT: "jobs.draftStatus",
+  CLOSED: "jobs.closed",
+  ARCHIVED: "jobs.archivedStatus",
+};
+
+const STAGE_I18N_MAP: Record<string, string> = {
+  APPLIED: "pipeline.stages.applied",
+  SCREENING: "pipeline.stages.screening",
+  INTERVIEW: "pipeline.stages.interview",
+  OFFER: "pipeline.stages.offer",
+  HIRED: "pipeline.stages.hired",
+  REJECTED: "pipeline.stages.rejected",
+};
+
+const DELETED_ENTITY_ACTIONS = new Set([
+  "JOB_DELETED",
+  "CANDIDATE_DELETED",
+  "APPLICATION_DELETED",
+  "INTERVIEW_CANCELED",
+  "SOURCING_LINK_DELETED",
 ]);
 
 const ROLE_VALUE_SET = new Set([
@@ -223,7 +289,138 @@ const ACTION_BADGE_CONFIG: Record<string, AuditActionMeta> = {
     className:
       "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
   },
+  JOB_CREATED: {
+    resource: "JOB",
+    labelKey: "settings.auditLog.actionJobCreated",
+    className:
+      "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  },
+  JOB_UPDATED: {
+    resource: "JOB",
+    labelKey: "settings.auditLog.actionJobUpdated",
+    className:
+      "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+  },
+  JOB_STATUS_CHANGED: {
+    resource: "JOB",
+    labelKey: "settings.auditLog.actionJobStatusChanged",
+    className:
+      "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  },
+  JOB_DELETED: {
+    resource: "JOB",
+    labelKey: "settings.auditLog.actionJobDeleted",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  CANDIDATE_CREATED: {
+    resource: "CANDIDATE",
+    labelKey: "settings.auditLog.actionCandidateCreated",
+    className:
+      "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  },
+  CANDIDATE_UPDATED: {
+    resource: "CANDIDATE",
+    labelKey: "settings.auditLog.actionCandidateUpdated",
+    className:
+      "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+  },
+  CANDIDATE_DELETED: {
+    resource: "CANDIDATE",
+    labelKey: "settings.auditLog.actionCandidateDeleted",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  APPLICATION_CREATED: {
+    resource: "APPLICATION",
+    labelKey: "settings.auditLog.actionApplicationCreated",
+    className:
+      "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  },
+  APPLICATION_STAGE_CHANGED: {
+    resource: "APPLICATION",
+    labelKey: "settings.auditLog.actionApplicationStageChanged",
+    className:
+      "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  },
+  APPLICATION_DELETED: {
+    resource: "APPLICATION",
+    labelKey: "settings.auditLog.actionApplicationDeleted",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  INTERVIEW_SCHEDULED: {
+    resource: "INTERVIEW",
+    labelKey: "settings.auditLog.actionInterviewScheduled",
+    className:
+      "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+  },
+  INTERVIEW_UPDATED: {
+    resource: "INTERVIEW",
+    labelKey: "settings.auditLog.actionInterviewUpdated",
+    className:
+      "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+  },
+  INTERVIEW_CANCELED: {
+    resource: "INTERVIEW",
+    labelKey: "settings.auditLog.actionInterviewCanceled",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  SOURCING_LINK_CREATED: {
+    resource: "SOURCING_LINK",
+    labelKey: "settings.auditLog.actionSourcingLinkCreated",
+    className:
+      "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  },
+  SOURCING_LINK_UPDATED: {
+    resource: "SOURCING_LINK",
+    labelKey: "settings.auditLog.actionSourcingLinkUpdated",
+    className:
+      "bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+  },
+  SOURCING_LINK_DELETED: {
+    resource: "SOURCING_LINK",
+    labelKey: "settings.auditLog.actionSourcingLinkDeleted",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
 };
+
+function formatJobStatusLabel(status: string, t: TranslateFn): string {
+  const key = JOB_STATUS_I18N_MAP[status.toUpperCase()];
+  if (!key) return status;
+  const translated = t(key);
+  return translated && translated !== key ? translated : status;
+}
+
+function formatStageLabel(stage: string, t: TranslateFn): string {
+  const key = STAGE_I18N_MAP[stage.toUpperCase()];
+  if (!key) return stage;
+  const translated = t(key);
+  return translated && translated !== key ? translated : stage;
+}
+
+/**
+ * Resolves the workspace deep-link for active ATS entity audit records.
+ */
+export function getAuditEntityHref(
+  log: Pick<OrganizationAuditLogRecord, "resource" | "action" | "targetId">,
+): string | null {
+  if (!log.targetId || DELETED_ENTITY_ACTIONS.has(log.action)) {
+    return null;
+  }
+  switch (log.resource) {
+    case "JOB":
+      return `/jobs/${log.targetId}`;
+    case "CANDIDATE":
+      return `/candidates/${log.targetId}`;
+    case "APPLICATION":
+      return `/applications/${log.targetId}`;
+    default:
+      return null;
+  }
+}
 
 function interpolate(
   template: string,
@@ -352,6 +549,12 @@ export function formatAuditValue(
       ROLE_VALUE_SET.has(value.toUpperCase())
     ) {
       return getOrgRoleLabel(value, t);
+    }
+    if (field === "status" && value.toUpperCase() in JOB_STATUS_I18N_MAP) {
+      return formatJobStatusLabel(value, t);
+    }
+    if (field === "stage" && value.toUpperCase() in STAGE_I18N_MAP) {
+      return formatStageLabel(value, t);
     }
     if (value.length > 120) {
       return `${value.slice(0, 117)}...`;
@@ -610,6 +813,138 @@ export function formatAuditSummary(
     case "WEBHOOK_DELETED":
       return interpolate(
         t("settings.auditLog.metadataLabels.summaryWebhookDeleted", { target }),
+        { target },
+      );
+    case "JOB_CREATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryJobCreated", { target }),
+        { target },
+      );
+    case "JOB_UPDATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryJobUpdated", { target }),
+        { target },
+      );
+    case "JOB_STATUS_CHANGED": {
+      const statusChange = log.changes?.find((c) => c.field === "status");
+      const rawOld =
+        (typeof statusChange?.before === "string"
+          ? statusChange.before
+          : null) ?? (typeof meta.oldStatus === "string" ? meta.oldStatus : "");
+      const rawNew =
+        (typeof statusChange?.after === "string" ? statusChange.after : null) ??
+        (typeof meta.newStatus === "string" ? meta.newStatus : "");
+      const oldStatus = rawOld ? formatJobStatusLabel(rawOld, t) : "—";
+      const newStatus = rawNew ? formatJobStatusLabel(rawNew, t) : "—";
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryJobStatusChanged", {
+          target,
+          oldStatus,
+          newStatus,
+        }),
+        { target, oldStatus, newStatus },
+      );
+    }
+    case "JOB_DELETED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryJobDeleted", { target }),
+        { target },
+      );
+    case "CANDIDATE_CREATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryCandidateCreated", {
+          target,
+        }),
+        { target },
+      );
+    case "CANDIDATE_UPDATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryCandidateUpdated", {
+          target,
+        }),
+        { target },
+      );
+    case "CANDIDATE_DELETED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryCandidateDeleted", {
+          target,
+        }),
+        { target },
+      );
+    case "APPLICATION_CREATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryApplicationCreated", {
+          target,
+        }),
+        { target },
+      );
+    case "APPLICATION_STAGE_CHANGED": {
+      const stageChange = log.changes?.find((c) => c.field === "stage");
+      const rawOld =
+        (typeof stageChange?.before === "string" ? stageChange.before : null) ??
+        (typeof meta.oldStage === "string" ? meta.oldStage : "");
+      const rawNew =
+        (typeof stageChange?.after === "string" ? stageChange.after : null) ??
+        (typeof meta.newStage === "string" ? meta.newStage : "");
+      const oldStage = rawOld ? formatStageLabel(rawOld, t) : "—";
+      const newStage = rawNew ? formatStageLabel(rawNew, t) : "—";
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryApplicationStageChanged", {
+          target,
+          oldStage,
+          newStage,
+        }),
+        { target, oldStage, newStage },
+      );
+    }
+    case "APPLICATION_DELETED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryApplicationDeleted", {
+          target,
+        }),
+        { target },
+      );
+    case "INTERVIEW_SCHEDULED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryInterviewScheduled", {
+          target,
+        }),
+        { target },
+      );
+    case "INTERVIEW_UPDATED": {
+      const key =
+        meta.scorecardSubmitted === true &&
+        (!log.changes || log.changes.length === 0)
+          ? "settings.auditLog.metadataLabels.summaryInterviewScorecardSubmitted"
+          : "settings.auditLog.metadataLabels.summaryInterviewUpdated";
+      return interpolate(t(key, { target }), { target });
+    }
+    case "INTERVIEW_CANCELED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryInterviewCanceled", {
+          target,
+        }),
+        { target },
+      );
+    case "SOURCING_LINK_CREATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summarySourcingLinkCreated", {
+          target,
+        }),
+        { target },
+      );
+    case "SOURCING_LINK_UPDATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summarySourcingLinkUpdated", {
+          target,
+        }),
+        { target },
+      );
+    case "SOURCING_LINK_DELETED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summarySourcingLinkDeleted", {
+          target,
+        }),
         { target },
       );
     default:

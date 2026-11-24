@@ -125,6 +125,7 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.labelClient": "Client / Browser",
         "settings.auditLog.labelRequestId": "Request ID",
         "settings.auditLog.viewEntityTimeline": "View full entity timeline",
+        "settings.auditLog.openEntity": "Open record",
         "settings.auditLog.rawPayload": "Raw JSON Payload",
         "settings.auditLog.showRawJson": "Show raw JSON",
         "settings.auditLog.hideRawJson": "Hide raw JSON",
@@ -138,12 +139,14 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.actionRolePermissionsUpdated": "Permissions Updated",
         "settings.auditLog.actionMemberRoleChanged": "Member Role Changed",
         "settings.auditLog.actionInviteCreated": "Invitation Created",
+        "settings.auditLog.actionJobStatusChanged": "Job Status Changed",
         "settings.auditLog.resources.ORGANIZATION": "Organization",
         "settings.auditLog.resources.MEMBER": "Member",
         "settings.auditLog.resources.INVITATION": "Invitation",
         "settings.auditLog.resources.ROLE_PERMISSIONS": "Role Permissions",
         "settings.auditLog.resources.EMAIL": "Email",
         "settings.auditLog.resources.WEBHOOK": "Webhook",
+        "settings.auditLog.resources.JOB": "Job Opening",
         "settings.auditLog.resources.SYSTEM": "System",
         "settings.auditLog.resources.OTHER": "Other",
         "settings.auditLog.fieldLabels.role": "Role",
@@ -155,7 +158,11 @@ vi.mock("@/i18n", () => ({
           "Changed role of {target}: {oldRole} → {newRole}",
         "settings.auditLog.metadataLabels.summaryRolePermissionsUpdated":
           "Updated {count} permissions for role {target}",
+        "settings.auditLog.metadataLabels.summaryJobStatusChanged":
+          "Changed status of {target}: {oldStatus} → {newStatus}",
         "settings.rolesMatrix.permissions.job_create": "Create jobs",
+        "jobs.openStatus": "Published",
+        "jobs.closed": "Closed",
         "settings.backToSettings": "Back to Settings",
         "errors.forbidden.title": "Access Denied",
         "common.copy": "Copy",
@@ -299,6 +306,43 @@ describe("AuditLogPage", () => {
     });
   });
 
+  it("renders entity deep-link in Detail Drawer only for navigable non-deleted ATS entities", async () => {
+    mockAuditLogData = {
+      data: [
+        {
+          id: "log-job-1",
+          organizationId: "org-1",
+          actorId: "user-1",
+          action: "JOB_STATUS_CHANGED",
+          resource: "JOB",
+          targetId: "job-42",
+          targetLabel: "Lead Product Designer",
+          changes: [{ field: "status", before: "PUBLISHED", after: "CLOSED" }],
+          metadata: null,
+          createdAt: "2026-10-23T12:00:00.000Z",
+          actor: {
+            id: "user-1",
+            firstName: "Alice",
+            lastName: "Admin",
+            name: "Alice Admin",
+            email: "alice@haihire.local",
+            avatarUrl: null,
+          },
+        },
+      ],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    };
+
+    render(<AuditLogPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Inspect" }));
+    const dialog = await screen.findByRole("dialog");
+    const openLink = within(dialog).getByRole("link", { name: "Open record" });
+    expect(openLink).toHaveAttribute("href", "/jobs/job-42");
+  });
+
   it("opens Detail Drawer with Before -> After diff, trace context, raw JSON toggle, and entity timeline filter", async () => {
     render(<AuditLogPage />);
 
@@ -307,6 +351,9 @@ describe("AuditLogPage", () => {
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Audit Event Details")).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("link", { name: "Open record" }),
+    ).not.toBeInTheDocument();
     expect(within(dialog).getByText("Create jobs")).toBeInTheDocument();
     expect(within(dialog).getByText("Revoked")).toBeInTheDocument();
     expect(within(dialog).getByText("Granted")).toBeInTheDocument();

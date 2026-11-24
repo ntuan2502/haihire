@@ -2,7 +2,7 @@ import {
   createMockTable,
   createMockPrismaService,
 } from "../test/helpers/prisma-composer-mock";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
@@ -12,7 +12,11 @@ import {
   ExperienceLevel,
   WorkplaceType,
 } from "./dto/create-job.dto";
-import { updateJobSchema } from "@haihire/shared";
+import {
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
+  updateJobSchema,
+} from "@haihire/shared";
 
 describe("JobsService - Multi-Tenant Job Management", () => {
   let service: JobsService;
@@ -637,6 +641,111 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       });
 
       expect(parsed.success).toBe(true);
+    });
+
+    it("records event-envelope audit logs on job create, status change, update, and remove", async () => {
+      const mockAuditLog = {
+        logOrg: vi.fn().mockResolvedValue({}),
+      };
+      const auditedService = new JobsService(
+        mockPrismaService as never,
+        undefined,
+        mockAuditLog as never,
+      );
+
+      const created = await auditedService.create(
+        {
+          title: "Platform Architect",
+          department: "Engineering",
+          location: "Hanoi",
+          description: "<p>Lead platform scale</p>",
+          organizationId: "org-1",
+        },
+        "org-1",
+        "usr-1",
+      );
+
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "usr-1",
+        AUDIT_ACTIONS.JOB_CREATED,
+        AUDIT_RESOURCES.JOB,
+        expect.objectContaining({
+          department: "Engineering",
+          status: "PUBLISHED",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: "Platform Architect",
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.update(
+        created.id,
+        { status: JobStatus.CLOSED },
+        "org-1",
+        "usr-2",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "usr-2",
+        AUDIT_ACTIONS.JOB_STATUS_CHANGED,
+        AUDIT_RESOURCES.JOB,
+        expect.objectContaining({
+          oldStatus: "PUBLISHED",
+          newStatus: "CLOSED",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          changes: [{ field: "status", before: "PUBLISHED", after: "CLOSED" }],
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.update(
+        created.id,
+        { title: "Principal Platform Architect", openings: 3 },
+        "org-1",
+        "usr-2",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "usr-2",
+        AUDIT_ACTIONS.JOB_UPDATED,
+        AUDIT_RESOURCES.JOB,
+        expect.any(Object),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: "Principal Platform Architect",
+          changes: expect.arrayContaining([
+            {
+              field: "title",
+              before: "Platform Architect",
+              after: "Principal Platform Architect",
+            },
+            { field: "openings", before: 1, after: 3 },
+          ]),
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.remove(created.id, "org-1", "usr-2");
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "usr-2",
+        AUDIT_ACTIONS.JOB_DELETED,
+        AUDIT_RESOURCES.JOB,
+        expect.any(Object),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: "Principal Platform Architect",
+        }),
+      );
     });
   });
 });

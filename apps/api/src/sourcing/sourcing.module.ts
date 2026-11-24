@@ -8,11 +8,12 @@ import {
   SourcingQueryService,
 } from "./services";
 import { PrismaModule } from "../prisma/prisma.module";
+import { CommonModule } from "../common/common.module";
 import { ActivitiesModule } from "../activities/activities.module";
 import { RedisModule } from "../redis/redis.module";
 
 @Module({
-  imports: [PrismaModule, ActivitiesModule, RedisModule],
+  imports: [PrismaModule, CommonModule, ActivitiesModule, RedisModule],
   controllers: [SourcingController],
   providers: [
     SourcingService,

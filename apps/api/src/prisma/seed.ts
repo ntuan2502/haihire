@@ -1758,20 +1758,31 @@ export async function runSeed(): Promise<void> {
     "Tokyo, Japan / Remote",
     "Global Remote",
   ] as const;
-  const WORKPLACES = ["HYBRID", "REMOTE", "ON_SITE"] as const;
+  const WORKPLACES = ["ON_SITE", "HYBRID", "REMOTE", "FIELD"] as const;
   const JOB_TYPES = [
     "FULL_TIME",
     "PART_TIME",
     "CONTRACT",
+    "TEMPORARY",
+    "SEASONAL",
+    "FREELANCE",
     "INTERNSHIP",
+    "APPRENTICESHIP",
+    "PER_DIEM",
+    "VOLUNTEER",
   ] as const;
   const EXP_LEVELS = [
+    "INTERN",
     "ENTRY_LEVEL",
+    "JUNIOR",
     "MID_LEVEL",
     "SENIOR_LEVEL",
     "LEAD",
+    "MANAGER",
+    "DIRECTOR",
     "EXECUTIVE",
   ] as const;
+  const OPENINGS_POOL = [1, 2, 3, 1, 5, 2, 1, 4] as const;
   const SALARY_RANGES = [
     "$1,200 - $1,800 / month",
     "$1,800 - $2,800 / month",
@@ -1907,6 +1918,30 @@ export async function runSeed(): Promise<void> {
       const type = JOB_TYPES[(seedIdx + 1) % JOB_TYPES.length];
       const experienceLevel = EXP_LEVELS[(seedIdx + 2) % EXP_LEVELS.length];
       const salaryRange = SALARY_RANGES[(seedIdx + 3) % SALARY_RANGES.length];
+      const openings = OPENINGS_POOL[(seedIdx + 4) % OPENINGS_POOL.length];
+      const applicationDeadline =
+        seedIdx % 4 === 0
+          ? null
+          : new Date(Date.UTC(2027, (seedIdx % 6) + 1, 10 + (seedIdx % 18)));
+      const startDate =
+        seedIdx % 3 === 0
+          ? null
+          : new Date(
+              Date.UTC(2027, ((seedIdx + 1) % 6) + 2, 1 + (seedIdx % 15)),
+            );
+      const overviewParagraphs = baseConfig.description
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => `<p>${line}</p>`)
+        .join("");
+      const requirementItems = baseConfig.requirements
+        .split(/\r?\n+/)
+        .map((line) => line.replace(/^-\s*/, "").trim())
+        .filter(Boolean)
+        .map((line) => `<li><p>${line}</p></li>`)
+        .join("");
+      const richDescription = `<h2>Mô tả công việc</h2>${overviewParagraphs}<h2>Yêu cầu ứng viên</h2><ul>${requirementItems}</ul>`;
 
       const jobId =
         bp.orgIndex === 1 && i === 1
@@ -1932,10 +1967,11 @@ export async function runSeed(): Promise<void> {
         workplace,
         type,
         experienceLevel,
+        applicationDeadline,
+        startDate,
+        openings,
         salaryRange,
-        description: [baseConfig.description, baseConfig.requirements]
-          .filter(Boolean)
-          .join("\n\n"),
+        description: richDescription,
         status,
         organizationId: bp.id,
         createdById: creatorId,

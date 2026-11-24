@@ -163,6 +163,23 @@ vi.mock("@/i18n", () => ({
         "members.transferOwnershipConfirmButton": "Chuyển giao",
         "members.transferOwnershipSuccess": "Thành công",
         "members.memberActionsTitle": "Thao tác thành viên",
+        "members.usesCount": "{used}/{max} lượt dùng",
+        "members.expiresInDays": "Hết hạn sau {days} ngày",
+        "members.noExpiration": "Không giới hạn thời gian",
+        "members.linkExpired": "Đã hết hạn",
+        "members.linkLimitReached": "Đã hết lượt dùng",
+        "members.linkCreatedOn": "Tạo ngày {date}",
+        "members.createLinkSuccess": "Đã tạo liên kết mời thành công.",
+        "members.revokeLinkSuccess": "Đã thu hồi liên kết mời thành công.",
+        "members.removeMemberSuccess": "Đã xóa thành viên khỏi tổ chức.",
+        "members.searchPlaceholder": "Tìm theo tên hoặc email...",
+        "members.allRoles": "Tất cả vai trò",
+        "members.filterByRole": "Lọc theo vai trò",
+        "members.noMatchingMembers": "Không tìm thấy thành viên phù hợp.",
+        "members.joinedOn": "Tham gia {date}",
+        "common.active": "Đang hoạt động",
+        "common.clearSearch": "Xóa tìm kiếm",
+        "common.created": "Ngày tạo",
         "common.cancel": "Hủy",
         "common.you": "Bạn",
       };
@@ -619,6 +636,169 @@ describe("MembersSettingsPage Component", () => {
       } finally {
         myPermsSpy.mockRestore();
       }
+    });
+
+    it("locks ADMIN target role dropdowns and action menus for non-admin/non-owner users with org:manage_members", () => {
+      mockAuthUser = {
+        id: "user-recruiter",
+        firstName: "Recruiter",
+        lastName: "User",
+        name: "Recruiter User",
+        email: "recruiter2@haihire.vn",
+        role: "RECRUITER",
+        isOwner: false,
+        organization: { id: "org-1", ownerId: "mem-owner" },
+      };
+      mockIsOwner = false;
+      mockCanEdit = true;
+
+      const myPermsSpy = vi
+        .spyOn(OrgQueriesModule, "useMyPermissions")
+        .mockReturnValue({
+          data: { permissions: ["org:manage_members"] },
+        } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      try {
+        render(<MembersSettingsPage />);
+
+        const dropdowns = screen.getAllByLabelText("Role");
+        expect(dropdowns).toHaveLength(4);
+
+        // mem-owner (Owner) -> disabled
+        expect(dropdowns[0]).toBeDisabled();
+        // user-admin (ADMIN target) -> disabled for RECRUITER caller, still shows Admin label
+        expect(dropdowns[1]).toBeDisabled();
+        expect(dropdowns[1]).toHaveTextContent("Admin");
+        // mem-1 (ADMIN target) -> disabled for RECRUITER caller
+        expect(dropdowns[2]).toBeDisabled();
+        expect(dropdowns[2]).toHaveTextContent("Admin");
+        // mem-2 (MEMBER target) -> enabled, and ADMIN option excluded when opened
+        expect(dropdowns[3]).not.toBeDisabled();
+        fireEvent.click(dropdowns[3]);
+        expect(
+          screen.queryByRole("option", { name: "Admin" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.getByRole("option", { name: "Recruiter" }),
+        ).toBeInTheDocument();
+
+        // Only mem-2 (non-ADMIN, non-owner, non-self) should expose an action menu button
+        const actionButtons = screen.getAllByTitle("Thao tác thành viên");
+        expect(actionButtons).toHaveLength(1);
+      } finally {
+        myPermsSpy.mockRestore();
+      }
+    });
+  });
+
+  describe("Invite Links Display, Toasts, and Member Filtering", () => {
+    it("displays localized uses label, expiry, created date, and distinct status badges while hiding Copy on inactive links", () => {
+      mockInviteLinks = [
+        {
+          id: "link-active",
+          token: "tok-active",
+          role: "MEMBER",
+          status: "ACTIVE",
+          expiresAt: null,
+          maxUses: null,
+          usesCount: 2,
+          createdAt: "2026-01-10T00:00:00Z",
+        } as never,
+        {
+          id: "link-expired-date",
+          token: "tok-expired",
+          role: "RECRUITER",
+          status: "ACTIVE",
+          expiresAt: new Date(Date.now() - 86_400_000).toISOString(),
+          maxUses: 5,
+          usesCount: 1,
+          createdAt: "2026-01-05T00:00:00Z",
+        } as never,
+        {
+          id: "link-full-uses",
+          token: "tok-full",
+          role: "INTERVIEWER",
+          status: "EXPIRED",
+          expiresAt: new Date(Date.now() + 86_400_000 * 3).toISOString(),
+          maxUses: 1,
+          usesCount: 1,
+          createdAt: "2026-01-06T00:00:00Z",
+        } as never,
+      ];
+
+      render(<MembersSettingsPage />);
+
+      expect(screen.getByText("Đang hoạt động")).toBeInTheDocument();
+      expect(screen.getByText("Đã hết hạn")).toBeInTheDocument();
+      expect(screen.getByText("Đã hết lượt dùng")).toBeInTheDocument();
+
+      expect(screen.getByText(/2\/∞ lượt dùng/)).toBeInTheDocument();
+      expect(screen.getByText(/Không giới hạn thời gian/)).toBeInTheDocument();
+      expect(screen.getByText(/1\/5 lượt dùng/)).toBeInTheDocument();
+      expect(screen.getByText(/1\/1 lượt dùng/)).toBeInTheDocument();
+
+      // Copy link is only shown for the 1 active link (not expired-by-date or full-uses links)
+      const copyButtons = screen.getAllByText("members.copyLink");
+      expect(copyButtons).toHaveLength(1);
+    });
+
+    it("fires toast.success once on create link and toast.error exactly once on create failure", async () => {
+      mockCreateInviteMutateAsync.mockResolvedValueOnce({ id: "link-ok" });
+      mockCreateInviteMutateAsync.mockRejectedValueOnce(
+        new Error("Invite creation failed"),
+      );
+
+      render(<MembersSettingsPage />);
+
+      // First submit succeeds
+      fireEvent.click(screen.getByRole("button", { name: /Tạo liên kết/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Tạo liên kết/ }));
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          "Đã tạo liên kết mời thành công.",
+        );
+      });
+
+      // Re-open form and trigger error
+      fireEvent.click(screen.getByRole("button", { name: /Tạo liên kết/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Tạo liên kết/ }));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("filters members by search query and role and shows empty state plus join dates", () => {
+      render(<MembersSettingsPage />);
+
+      // Join date rendered from createdAt (DEFAULT_ORG_LOCALIZATION uses DD/MM/YYYY)
+      expect(screen.getByText(/Tham gia 04\/01\/2026/)).toBeInTheDocument();
+
+      const searchInput = screen.getByPlaceholderText(
+        "Tìm theo tên hoặc email...",
+      );
+      fireEvent.change(searchInput, { target: { value: "interviewer" } });
+
+      expect(screen.getByText("Tran Interviewer")).toBeInTheDocument();
+      expect(screen.queryByText("Nguyen Recruiter")).not.toBeInTheDocument();
+
+      // Search with no results shows empty filter message
+      fireEvent.change(searchInput, { target: { value: "does-not-exist" } });
+      expect(
+        screen.getByText("Không tìm thấy thành viên phù hợp."),
+      ).toBeInTheDocument();
+
+      // Clear search restores members, then filter by role
+      fireEvent.click(screen.getByRole("button", { name: "Xóa tìm kiếm" }));
+      expect(screen.getByText("Nguyen Recruiter")).toBeInTheDocument();
+
+      const roleFilterBtn = screen.getByLabelText("Lọc theo vai trò");
+      fireEvent.click(roleFilterBtn);
+      fireEvent.click(screen.getByRole("option", { name: "Member" }));
+
+      expect(screen.getByText("Tran Interviewer")).toBeInTheDocument();
+      expect(screen.queryByText("Nguyen Recruiter")).not.toBeInTheDocument();
     });
   });
 });

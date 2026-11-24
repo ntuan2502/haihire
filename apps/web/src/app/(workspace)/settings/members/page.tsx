@@ -15,6 +15,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { Role } from "@haihire/shared";
 import { Users, UserPlus } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel, getOrgRoleOptions } from "@/lib/roles";
@@ -33,13 +34,14 @@ import { LoadingSpinner, PageHeader, StatusState } from "@/components/shared";
 export default function MembersSettingsPage() {
   const { user, isOwner, refreshUser } = useAuth();
   const { t } = useI18n();
+  const { localization } = useLocalization();
   const canManageMembers = useHasPermission("org:manage_members");
-  const canInviteAdmin = Boolean(isOwner || user?.role === Role.ADMIN);
+  const canManageAdminTargets = Boolean(isOwner || user?.role === Role.ADMIN);
 
   const roleOptions = useMemo(() => getOrgRoleOptions(t), [t]);
   const inviteRoleOptions = useMemo(
-    () => getOrgRoleOptions(t, { excludeAdmin: !canInviteAdmin }),
-    [t, canInviteAdmin],
+    () => getOrgRoleOptions(t, { excludeAdmin: !canManageAdminTargets }),
+    [t, canManageAdminTargets],
   );
 
   const getRoleLabel = useCallback(
@@ -99,6 +101,7 @@ export default function MembersSettingsPage() {
     try {
       setRevokingId(linkToRevoke);
       await revokeInviteMutation.mutateAsync(linkToRevoke);
+      toast.success(t("members.revokeLinkSuccess"));
       await refetchLinks();
       setIsRevokeModalOpen(false);
     } catch (err) {
@@ -148,6 +151,7 @@ export default function MembersSettingsPage() {
     try {
       setActionLoadingId(memberToRemove.id);
       await removeMemberMutation.mutateAsync(memberToRemove.id);
+      toast.success(t("members.removeMemberSuccess"));
       setIsRemoveModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -163,7 +167,7 @@ export default function MembersSettingsPage() {
       return members
         .map((m) => ({
           id: m.id,
-          name: getUserDisplayName(m),
+          name: getUserDisplayName(m, localization),
           firstName: m.firstName ?? null,
           lastName: m.lastName ?? null,
           email: m.email,
@@ -190,7 +194,7 @@ export default function MembersSettingsPage() {
       return [
         {
           id: user.id,
-          name: getUserDisplayName(user),
+          name: getUserDisplayName(user, localization),
           firstName: user.firstName ?? null,
           lastName: user.lastName ?? null,
           email: user.email,
@@ -207,7 +211,7 @@ export default function MembersSettingsPage() {
     }
 
     return [];
-  }, [members, user]);
+  }, [members, user, localization]);
 
   const header = (
     <PageHeader
@@ -291,9 +295,11 @@ export default function MembersSettingsPage() {
         canManageMembers={canManageMembers}
         canEdit={canManageMembers}
         isOwner={isOwner}
+        canManageAdminTargets={canManageAdminTargets}
         currentUserId={user?.id}
         actionLoadingId={actionLoadingId}
-        roleOptions={roleOptions}
+        roleOptions={inviteRoleOptions}
+        filterRoleOptions={roleOptions}
         getRoleLabel={getRoleLabel}
         onRoleChange={handleRoleChange}
         onTransferOwnershipClick={(m) => {

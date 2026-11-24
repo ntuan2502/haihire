@@ -405,6 +405,7 @@ export class OrganizationsInvitesService {
 
     const allLinks = await this.prisma.inviteLink.findMany({
       where: { organizationId: orgId },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         token: true,
@@ -419,7 +420,9 @@ export class OrganizationsInvitesService {
       },
     });
 
-    const links = allLinks.filter((l) => l.status !== "REVOKED");
+    const links = allLinks
+      .filter((l) => l.status !== "REVOKED")
+      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 
     const orgOrder: NameDisplayOrder =
       org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";

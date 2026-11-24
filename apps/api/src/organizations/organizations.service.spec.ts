@@ -271,6 +271,52 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(links.length).toBe(0);
     });
 
+    it("9a. Should order invite links newest first and pass orderBy createdAt desc to Prisma", async () => {
+      mockLinks.push(
+        {
+          id: "link-older",
+          token: "tok-older",
+          organizationId: "org-1",
+          role: "MEMBER",
+          expiresAt: new Date(Date.now() + 86_400_000),
+          maxUses: 5,
+          usesCount: 0,
+          status: "ACTIVE",
+          createdById: "usr-2",
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "link-newer",
+          token: "tok-newer",
+          organizationId: "org-1",
+          role: "RECRUITER",
+          expiresAt: new Date(Date.now() + 86_400_000),
+          maxUses: 3,
+          usesCount: 0,
+          status: "ACTIVE",
+          createdById: "usr-2",
+          createdAt: new Date("2026-02-01T00:00:00Z"),
+        },
+      );
+
+      const inviteLinkModel = (
+        mockPrismaService as {
+          inviteLink: { findMany: (...args: unknown[]) => unknown };
+        }
+      ).inviteLink;
+      const findManySpy = vi.spyOn(inviteLinkModel, "findMany");
+
+      const links = await service.getInviteLinks("usr-2", "org-1");
+
+      expect(findManySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { organizationId: "org-1" },
+          orderBy: { createdAt: "desc" },
+        }),
+      );
+      expect(links.map((l) => l.id)).toEqual(["link-newer", "link-older"]);
+    });
+
     it("10. Should allow external user to get public invite preview", async () => {
       const link = await service.createInviteLink("usr-2", {
         role: "Member",

@@ -146,4 +146,81 @@ describe("OrganizationsMembersService concurrency", () => {
     ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION });
     expect(deleteMany).not.toHaveBeenCalled();
   });
+
+  it("uses OrganizationMember.createdAt as each member's join date and sorts non-owners by membership join time", async () => {
+    const olderJoin = new Date("2026-02-01T00:00:00Z");
+    const newerJoin = new Date("2026-03-01T00:00:00Z");
+
+    const prisma = {
+      organization: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "org-1",
+          ownerId: "u-owner",
+          nameDisplayOrder: "FIRST_LAST",
+        }),
+      },
+      organizationMember: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "mem-owner",
+            userId: "u-owner",
+            role: "ADMIN",
+            createdAt: new Date("2026-01-01T00:00:00Z"),
+          },
+          {
+            id: "mem-newer-user-older-join",
+            userId: "u-b",
+            role: "RECRUITER",
+            createdAt: olderJoin,
+          },
+          {
+            id: "mem-older-user-newer-join",
+            userId: "u-a",
+            role: "MEMBER",
+            createdAt: newerJoin,
+          },
+        ]),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "u-owner",
+            firstName: "Owner",
+            lastName: "One",
+            email: "owner@haihire.vn",
+            avatarUrl: null,
+            createdAt: new Date("2025-12-01T00:00:00Z"),
+          },
+          {
+            id: "u-a",
+            firstName: "Early",
+            lastName: "Signup",
+            email: "early@haihire.vn",
+            avatarUrl: null,
+            // Signed up earlier globally, but joined org-1 later
+            createdAt: new Date("2025-01-01T00:00:00Z"),
+          },
+          {
+            id: "u-b",
+            firstName: "Joined",
+            lastName: "First",
+            email: "first@haihire.vn",
+            avatarUrl: null,
+            // Signed up later globally, but joined org-1 first
+            createdAt: new Date("2026-01-15T00:00:00Z"),
+          },
+        ]),
+      },
+    };
+
+    const service = new OrganizationsMembersService(
+      prisma as unknown as PrismaService,
+    );
+
+    const members = await service.getMembers("u-owner", "org-1");
+
+    expect(members.map((m) => m.id)).toEqual(["u-owner", "u-b", "u-a"]);
+    expect(members[1].createdAt).toEqual(olderJoin);
+    expect(members[2].createdAt).toEqual(newerJoin);
+  });
 });

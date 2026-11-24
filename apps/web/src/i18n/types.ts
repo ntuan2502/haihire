@@ -1073,6 +1073,20 @@ export interface TranslationSchema {
     memberActionsTitle: string;
     inviteEmailRequired: string;
     inviteSentSuccess: string;
+    usesCount: string;
+    expiresInDays: string;
+    noExpiration: string;
+    linkExpired: string;
+    linkLimitReached: string;
+    linkCreatedOn: string;
+    createLinkSuccess: string;
+    revokeLinkSuccess: string;
+    removeMemberSuccess: string;
+    searchPlaceholder: string;
+    allRoles: string;
+    filterByRole: string;
+    noMatchingMembers: string;
+    joinedOn: string;
   };
   onboarding: {
     selectOrgTitle: string;

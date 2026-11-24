@@ -250,8 +250,12 @@ export class OrganizationsMembersService {
         : [];
 
     const roleMap = new Map<string, string>();
+    const joinedAtMap = new Map<string, Date>();
     for (const m of memberships) {
       roleMap.set(m.userId, m.role);
+      if (m.createdAt) {
+        joinedAtMap.set(m.userId, m.createdAt);
+      }
     }
     if (org?.ownerId) {
       roleMap.set(org.ownerId, "ADMIN");
@@ -269,7 +273,7 @@ export class OrganizationsMembersService {
         email: u.email,
         role,
         avatarUrl: u.avatarUrl,
-        createdAt: u.createdAt,
+        createdAt: joinedAtMap.get(u.id) ?? u.createdAt,
         isOwner,
       };
     });

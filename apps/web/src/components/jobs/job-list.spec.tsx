@@ -146,8 +146,9 @@ describe("JobList Component - Characterization Tests", () => {
     it("shows empty state when no jobs match or jobs array is empty", () => {
       render(<JobList jobs={[]} loading={false} onDeleteJob={vi.fn()} />);
 
-      expect(screen.getByText(en.jobs.noJobsFound)).toBeDefined();
-      expect(screen.getByText(en.jobs.noJobsDesc)).toBeDefined();
+      expect(screen.getByText(en.jobs.noJobsYet)).toBeDefined();
+      expect(screen.getByText(en.jobs.noJobsYetDesc)).toBeDefined();
+      expect(screen.queryByText(en.jobs.resetAll)).toBeNull();
     });
   });
 
@@ -290,7 +291,7 @@ describe("JobList Component - Characterization Tests", () => {
       expect(headers).toEqual([
         en.jobs.jobTitle,
         en.dashboard.hiringPipeline,
-        en.jobs.status,
+        en.common.status,
         en.common.actions,
       ]);
       expect(screen.queryByText(/5 new/i)).toBeNull();
@@ -308,11 +309,11 @@ describe("JobList Component - Characterization Tests", () => {
       fireEvent.pointerDown(columnsBtn, { button: 0, ctrlKey: false });
       fireEvent.click(columnsBtn);
 
-      expect(await screen.findByText(en.jobs.toggleColumns)).toBeDefined();
+      expect(await screen.findByText(en.common.toggleColumns)).toBeDefined();
 
       // Find menuitemcheckbox for Status
       const statusItem = screen.getByRole("menuitemcheckbox", {
-        name: en.jobs.columns.status,
+        name: en.common.status,
       });
       expect(statusItem).toHaveAttribute("aria-checked", "true");
 
@@ -379,7 +380,7 @@ describe("JobList Component - Characterization Tests", () => {
 
       fireEvent.click(screen.getByText(en.common.filter));
       const drawer = screen.getByRole("dialog");
-      expect(within(drawer).queryByText(en.jobs.saveAsView)).toBeNull();
+      expect(within(drawer).queryByText("Save as view")).toBeNull();
 
       fireEvent.click(within(drawer).getByText(en.jobs.done));
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -437,7 +438,7 @@ describe("JobList Component - Characterization Tests", () => {
       const publicLinks = screen.getAllByTitle(en.jobs.viewPublicPage);
       expect(publicLinks.length).toBeGreaterThan(0);
       expect(publicLinks[0].getAttribute("href")).toContain("/careers/");
-      expect(screen.queryByTitle(en.jobs.copyPublicApplyLink)).toBeNull();
+      expect(screen.queryByTitle("Copy public application link")).toBeNull();
     });
   });
 

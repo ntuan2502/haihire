@@ -67,8 +67,11 @@ export function useApplicationDetailState() {
   const candidateName = getCandidateDisplayName(app);
   const candidateEmail = app?.candidateEmail || "—";
   const candidatePhone = app?.candidatePhone || "";
+  const jobTypeLabel = job?.type ? getJobTypeLabel(job.type, t) : "";
   const jobTitle = job
-    ? `${job.title} (${getJobTypeLabel(job.type, t)})`
+    ? jobTypeLabel
+      ? `${job.title} (${jobTypeLabel})`
+      : job.title
     : app?.jobId
       ? `${t("jobs.jobTitle")} #${app.jobId}`
       : t("candidates.role");

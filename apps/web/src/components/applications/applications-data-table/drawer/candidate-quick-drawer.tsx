@@ -10,12 +10,7 @@ import { CandidateOverviewTab } from "./candidate-overview-tab";
 import { CandidateNotesTab } from "./candidate-notes-tab";
 import { CandidateInterviewsTab } from "./candidate-interviews-tab";
 import { CandidateDocumentsTab } from "./candidate-documents-tab";
-import {
-  CandidateAiTab,
-  CandidateResponsesTab,
-  CandidateInboxTab,
-  CandidateTimelineTab,
-} from "./candidate-misc-tabs";
+import { CandidateTimelineTab } from "./candidate-misc-tabs";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 import { useI18n } from "@/i18n";
@@ -40,7 +35,6 @@ interface CandidateQuickDrawerProps {
   ) => Promise<void>;
   onStageChange: (newStage: ApplicationStage) => void;
   isStageUpdatePending: boolean;
-  onOpenScheduleModal: () => void;
   onOpenDeleteModal: (app: Application) => void;
   isDeleting: boolean;
   canEdit?: boolean;
@@ -62,7 +56,6 @@ export function CandidateQuickDrawer({
   onDownloadDoc,
   onStageChange,
   isStageUpdatePending,
-  onOpenScheduleModal,
   onOpenDeleteModal,
   isDeleting,
   canEdit,
@@ -92,7 +85,6 @@ export function CandidateQuickDrawer({
           selectedJobTitle={selectedJobTitle}
           onStageChange={onStageChange}
           isStageUpdatePending={isStageUpdatePending}
-          onOpenScheduleModal={onOpenScheduleModal}
           onOpenDeleteModal={onOpenDeleteModal}
           isDeleting={isDeleting}
         />
@@ -100,8 +92,6 @@ export function CandidateQuickDrawer({
         <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
           {[
             { id: "overview", label: t("applications.tabs.overview") },
-            { id: "inbox", label: t("applications.tabs.inbox") },
-            { id: "ai", label: t("applications.tabs.ai") },
             {
               id: "interviews",
               label:
@@ -113,7 +103,6 @@ export function CandidateQuickDrawer({
               id: "documents",
               label: `${t("applications.tabs.documents")} (${drawerCandidateDocuments.length})`,
             },
-            { id: "responses", label: t("applications.tabs.responses") },
             { id: "notes", label: t("applications.tabs.notes") },
             { id: "timeline", label: t("applications.tabs.timeline") },
           ].map((tab) => (
@@ -164,17 +153,9 @@ export function CandidateQuickDrawer({
             />
           )}
 
-          {drawerTab === "ai" && <CandidateAiTab />}
-
-          {drawerTab === "responses" && (
-            <CandidateResponsesTab currentApp={currentApp} />
-          )}
-
           {drawerTab === "notes" && (
             <CandidateNotesTab applicationId={currentApp.id} />
           )}
-
-          {drawerTab === "inbox" && <CandidateInboxTab />}
 
           {drawerTab === "timeline" && (
             <CandidateTimelineTab currentApp={currentApp} />

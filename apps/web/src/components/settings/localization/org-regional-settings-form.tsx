@@ -75,7 +75,7 @@ export function OrgRegionalSettingsForm({
       </div>
 
       {!canEdit && (
-        <SettingsReadOnlyBanner messageKey="settings.localization.adminOnlyHint" />
+        <SettingsReadOnlyBanner messageKey="settings.readOnlyAdmin" />
       )}
 
       {/* 1. Organization Default Language */}
@@ -325,7 +325,7 @@ export function OrgRegionalSettingsForm({
               pending={isSaving}
               disabled={!isDirty}
             >
-              {isSaving ? t("common.saving") : t("settings.saveChanges")}
+              {isSaving ? t("common.saving") : t("common.saveChanges")}
             </SettingsButton>
           </div>
         </div>

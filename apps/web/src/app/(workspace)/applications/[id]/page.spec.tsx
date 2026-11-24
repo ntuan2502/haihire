@@ -363,40 +363,42 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     });
   });
 
-  // A.1.4: 9-tab switcher (3 tests)
-  describe("A.1.4: 9-tab switcher", () => {
-    it("renders overview tab as active by default", () => {
+  // A.1.4: 5-tab switcher (4 tests)
+  describe("A.1.4: 5-tab switcher", () => {
+    it("renders overview tab as active by default and hides removed placeholder tabs", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       const overviewTab = screen.getByRole("button", { name: "Tổng quan" });
       expect(overviewTab).toBeInTheDocument();
-    });
-
-    it("switches active tab when clicking other tabs", () => {
-      renderWithClient(<ApplicationDetailPage />);
-
-      const inboxTab = screen.getByRole("button", { name: "Hộp thư" });
-      fireEvent.click(inboxTab);
-
-      expect(screen.getByText("Chưa có tin nhắn nào")).toBeInTheDocument();
-
-      const responsesTab = screen.getByRole("button", {
-        name: "Câu trả lời",
-      });
-      fireEvent.click(responsesTab);
-
       expect(
-        screen.getByText("Chưa có phản hồi từ biểu mẫu ứng tuyển."),
-      ).toBeInTheDocument();
+        screen.queryByRole("button", { name: "Hộp thư" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Phân tích AI" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Câu trả lời" }),
+      ).not.toBeInTheDocument();
     });
 
-    it("switches to other tab panels: ai, notes, timeline, documents", () => {
+    it("switches active tab between interviews and documents", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      // AI tab
-      const aiTab = screen.getByRole("button", { name: "Phân tích AI" });
-      fireEvent.click(aiTab);
-      expect(screen.getByText("Chưa có phân tích AI")).toBeInTheDocument();
+      const interviewsTab = screen.getByRole("button", {
+        name: /^Phỏng vấn(\s*\(\d+\))?$/i,
+      });
+      fireEvent.click(interviewsTab);
+
+      expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
+
+      // Documents tab
+      const docsTab = screen.getByRole("button", { name: /Tài liệu \(1\)/i });
+      fireEvent.click(docsTab);
+      expect(screen.getByText("tran-van-b-cv.pdf")).toBeInTheDocument();
+    });
+
+    it("switches to notes and timeline tab panels", () => {
+      renderWithClient(<ApplicationDetailPage />);
 
       // Notes tab
       const notesTab = screen.getByRole("button", { name: "Ghi chú" });
@@ -411,19 +413,16 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       });
       fireEvent.click(timelineTab);
       expect(document.querySelector(".space-y-4")).toBeInTheDocument();
-
-      // Documents tab
-      const docsTab = screen.getByRole("button", { name: /Tài liệu \(1\)/i });
-      fireEvent.click(docsTab);
-      expect(screen.getByText("tran-van-b-cv.pdf")).toBeInTheDocument();
     });
 
-    it("renders overview tab without sections toggle popover and displays all overview sections", () => {
+    it("renders overview tab without sections toggle popover and displays active overview sections", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       expect(screen.queryByLabelText("Hiển thị phần")).not.toBeInTheDocument();
       expect(screen.queryByText("Các phần hiển thị")).not.toBeInTheDocument();
-      expect(screen.getByText("Chưa có phân tích AI")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Chưa có phân tích AI"),
+      ).not.toBeInTheDocument();
       expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Tài liệu").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Ghi chú").length).toBeGreaterThan(0);
@@ -432,13 +431,10 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
 
   // A.1.5: Overview tab (2 tests)
   describe("A.1.5: Overview tab", () => {
-    it("renders AI analysis section in overview tab", () => {
+    it("renders interviews section in overview tab", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getByText("Chưa có phân tích AI")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /Chạy phân tích AI/i }),
-      ).toBeInTheDocument();
+      expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
     });
 
     it("renders documents and notes sections in overview tab", () => {
@@ -497,11 +493,12 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     it("opens schedule interview modal from interviews section", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      const scheduleBtn = screen
-        .getAllByRole("button", { name: /Lên lịch phỏng vấn/i })
-        .find((btn) => !btn.hasAttribute("disabled"))!;
-      expect(scheduleBtn).toBeDefined();
-      fireEvent.click(scheduleBtn);
+      const scheduleBtns = screen.getAllByRole("button", {
+        name: /Lên lịch phỏng vấn/i,
+      });
+      expect(scheduleBtns).toHaveLength(1);
+      expect(scheduleBtns[0]).not.toHaveAttribute("disabled");
+      fireEvent.click(scheduleBtns[0]);
 
       expect(
         screen.getByRole("heading", { name: /Lên lịch phỏng vấn/i }),

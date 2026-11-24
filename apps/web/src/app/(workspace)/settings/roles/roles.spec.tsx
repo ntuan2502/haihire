@@ -86,8 +86,8 @@ vi.mock("@/i18n", () => ({
         "settings.rolesMatrix.tableSummary":
           "Matrix of roles and permissions in this organization",
         "settings.rolesMatrix.permissionColumn": "Permission",
-        "settings.rolesMatrix.saveButton": "Save Changes",
-        "settings.rolesMatrix.savingButton": "Saving...",
+        "common.saveChanges": "Save Changes",
+        "common.saving": "Saving...",
         "settings.rolesMatrix.resetButton": "Reset",
         "settings.rolesMatrix.resetDefaultButton": "Reset to Default",
         "settings.rolesMatrix.resetDefaultConfirmTitle":
@@ -95,7 +95,7 @@ vi.mock("@/i18n", () => ({
         "settings.rolesMatrix.resetDefaultConfirmMessage":
           "This will reset all role permissions to system defaults. Continue?",
         "settings.rolesMatrix.resetDefaultConfirmButton": "Reset Permissions",
-        "settings.rolesMatrix.resetDefaultCancelButton": "Cancel",
+        "common.cancel": "Cancel",
         "settings.rolesMatrix.resetDefaultSuccess":
           "Role permissions have been reset to default values.",
         "settings.rolesMatrix.resetDefaultError":
@@ -103,7 +103,7 @@ vi.mock("@/i18n", () => ({
         "settings.rolesMatrix.saveSuccess": "Permissions updated successfully.",
         "settings.rolesMatrix.saveError": "Failed to update permissions.",
         "settings.rolesMatrix.unsavedChanges": "unsaved changes",
-        "settings.rolesMatrix.readOnlyNotice":
+        "settings.readOnlyAdmin":
           "You are viewing the permission matrix in read-only mode.",
         "settings.rolesMatrix.coreAdminProtected":
           "Core administrative permissions cannot be revoked from the Admin role.",

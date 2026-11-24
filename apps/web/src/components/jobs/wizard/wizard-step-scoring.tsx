@@ -325,7 +325,7 @@ export function WizardStepScoring({
             onClick={onBack}
             className="text-xs cursor-pointer"
           >
-            {t("jobs.wizard.backAction")}
+            {t("common.back")}
           </Button>
           {mode === "create" && onSkip && (
             <Button

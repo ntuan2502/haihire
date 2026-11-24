@@ -171,11 +171,14 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     expect(dbState.applications.length).toBe(1);
 
     // 4. Test Server-Side Pagination on Candidates API
-    const pagedCandidates = await candidatesService.findAll("org-test-1", {
-      page: 1,
-      limit: 10,
-      search: "Nguyen",
-    });
+    const pagedCandidates = await candidatesService.listPaginated(
+      "org-test-1",
+      {
+        page: 1,
+        limit: 10,
+        search: "Nguyen",
+      },
+    );
     expect(pagedCandidates.total).toBe(1);
     expect(pagedCandidates.page).toBe(1);
     expect(pagedCandidates.limit).toBe(10);
@@ -200,9 +203,12 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     );
     expect(candidateInDb?.deletedAt).toBeDefined();
 
-    const pagedAfterDelete = await candidatesService.findAll("org-test-1", {
-      limit: 10,
-    });
+    const pagedAfterDelete = await candidatesService.listPaginated(
+      "org-test-1",
+      {
+        limit: 10,
+      },
+    );
     expect(pagedAfterDelete.data.length).toBe(0);
   });
 });

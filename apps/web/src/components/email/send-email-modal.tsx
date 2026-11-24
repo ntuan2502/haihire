@@ -369,7 +369,7 @@ export function SendEmailModal({
       submitDisabled={!subject.trim() || !body.trim() || !hasEmail}
       submitLabel={t("email.sendBtn")}
       savingLabel={t("email.sendingBtn")}
-      cancelLabel={t("email.cancel")}
+      cancelLabel={t("common.cancel")}
       bodyClassName="space-y-4 bg-background"
     >
       {/* Template Selector */}

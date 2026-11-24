@@ -115,9 +115,7 @@ describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
 
     rerender(<FilterControlsHarness viewMode="table" isDrawerOpen={true} />);
 
-    expect(
-      screen.getByText("interviews.tableHeaders.status"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("common.status")).toBeInTheDocument();
     expect(screen.getByText("jobs.sortByUpper")).toBeInTheDocument();
     expect(
       within(screen.getByRole("dialog")).getByText("interviews.sortNewest"),
@@ -154,9 +152,7 @@ describe("InterviewsFilterBar & InterviewsFilterDrawer", () => {
 
     rerender(<FilterControlsHarness viewMode="calendar" isDrawerOpen={true} />);
 
-    expect(
-      screen.queryByText("interviews.tableHeaders.status"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("common.status")).not.toBeInTheDocument();
     expect(screen.queryByText("jobs.sortByUpper")).not.toBeInTheDocument();
     expect(screen.queryByText("interviews.sortNewest")).not.toBeInTheDocument();
     expect(screen.getByText("applications.filterByJob")).toBeInTheDocument();

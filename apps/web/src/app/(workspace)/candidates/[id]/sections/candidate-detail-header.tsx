@@ -2,7 +2,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Edit2, Trash2 } from "lucide-react";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 
 interface CandidateDetailHeaderProps {
@@ -12,7 +11,6 @@ interface CandidateDetailHeaderProps {
   candidatePhone?: string;
   canEdit: boolean;
   isDeleting: boolean;
-  onOpenSendEmail: () => void;
   onOpenDeleteModal: () => void;
 }
 
@@ -23,13 +21,11 @@ export function CandidateDetailHeader({
   candidatePhone,
   canEdit: _canEdit,
   isDeleting,
-  onOpenSendEmail,
   onOpenDeleteModal,
 }: CandidateDetailHeaderProps) {
   const router = useRouter();
   const { t } = useI18n();
 
-  const canSendEmail = useHasPermission("email:send");
   const canUpdateCandidate = useHasPermission("candidate:update");
   const canDeleteCandidate = useHasPermission("candidate:delete");
 
@@ -76,17 +72,6 @@ export function CandidateDetailHeader({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {canSendEmail && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onOpenSendEmail}
-              className="gap-1.5 cursor-pointer"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              <span>{t("email.sendEmailAction")}</span>
-            </Button>
-          )}
           {canUpdateCandidate && (
             <button
               type="button"

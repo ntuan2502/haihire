@@ -231,6 +231,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       getObjectStream: vi
         .fn()
         .mockResolvedValue(Readable.from(["mock stream content"])),
+      deleteFile: vi.fn().mockResolvedValue(true),
     } as unknown as MinioService;
 
     mockActivities = {
@@ -240,19 +241,19 @@ describe("CandidatesService (Characterization Tests)", () => {
     service = new CandidatesService(mockPrisma, mockMinio, mockActivities);
   });
 
-  describe("A.1.1: findAll", () => {
+  describe("A.1.1: listPaginated", () => {
     it("enforces tenant isolation and throws AppForbiddenException on org mismatch", async () => {
       await expect(
-        service.findAll("org-1", undefined, "org-2"),
+        service.listPaginated("org-1", undefined, "org-2"),
       ).rejects.toThrow(AppForbiddenException);
 
-      const result = await service.findAll("org-1", undefined, "org-1");
+      const result = await service.listPaginated("org-1", undefined, "org-1");
       expect(result.data).toHaveLength(2);
       expect(result.data.every((c) => c.organizationId === "org-1")).toBe(true);
     });
 
     it("filters out soft-deleted candidates", async () => {
-      const result = await service.findAll("org-1");
+      const result = await service.listPaginated("org-1");
       const ids = result.data.map((c) => c.id);
       expect(ids).toContain("cand-1");
       expect(ids).toContain("cand-2");
@@ -260,12 +261,14 @@ describe("CandidatesService (Characterization Tests)", () => {
     });
 
     it("applies search filtering across fields and slices paginated results", async () => {
-      const searchByName = await service.findAll("org-1", { search: "Nguyen" });
+      const searchByName = await service.listPaginated("org-1", {
+        search: "Nguyen",
+      });
       expect(searchByName.data).toHaveLength(1);
       expect(searchByName.data[0].id).toBe("cand-1");
       expect(searchByName.data[0].applicationsCount).toBe(1);
 
-      const paged = await service.findAll("org-1", { page: 2, limit: 1 });
+      const paged = await service.listPaginated("org-1", { page: 2, limit: 1 });
       expect(paged.page).toBe(2);
       expect(paged.limit).toBe(1);
       expect(paged.total).toBe(2);
@@ -274,7 +277,9 @@ describe("CandidatesService (Characterization Tests)", () => {
     });
 
     it("returns latestNote, notesCount, and matches search terms inside candidateNote content", async () => {
-      const result = await service.findAll("org-1", { search: "Strong Rust" });
+      const result = await service.listPaginated("org-1", {
+        search: "Strong Rust",
+      });
 
       expect(result.data).toHaveLength(1);
       expect(result.data[0].id).toBe("cand-1");
@@ -284,6 +289,79 @@ describe("CandidatesService (Characterization Tests)", () => {
         content: "Strong Rust and TypeScript background",
         authorName: "Recruiter Alice",
       });
+    });
+
+    it("computes org-wide tab counts and filters by WITH_RESUME, HAS_APPLICATIONS, UNASSIGNED, and jobId", async () => {
+      const baseline = await service.listPaginated("org-1");
+      expect(baseline.counts).toEqual({
+        all: 2,
+        withResume: 1,
+        hasApplications: 1,
+        unassigned: 1,
+      });
+
+      const withResume = await service.listPaginated("org-1", {
+        filter: "WITH_RESUME",
+      });
+      expect(withResume.data.map((c) => c.id)).toEqual(["cand-1"]);
+      expect(withResume.total).toBe(1);
+      expect(withResume.counts).toEqual(baseline.counts);
+
+      const unassigned = await service.listPaginated("org-1", {
+        filter: "UNASSIGNED",
+      });
+      expect(unassigned.data.map((c) => c.id)).toEqual(["cand-2"]);
+
+      const combined = await service.listPaginated("org-1", {
+        filter: "WITH_RESUME,UNASSIGNED",
+      });
+      expect(combined.total).toBe(2);
+
+      const byJob = await service.listPaginated("org-1", { jobId: "job-1" });
+      expect(byJob.data.map((c) => c.id)).toEqual(["cand-1"]);
+
+      const byOtherJob = await service.listPaginated("org-1", {
+        jobId: "job-missing",
+      });
+      expect(byOtherJob.data).toHaveLength(0);
+    });
+
+    it("sorts candidates SQL-side by name, email, phone, applications count, and added date", async () => {
+      const byEmailDesc = await service.listPaginated("org-1", {
+        sortBy: "email",
+        sortOrder: "desc",
+      });
+      expect(byEmailDesc.data.map((c) => c.id)).toEqual(["cand-2", "cand-1"]);
+
+      const byEmailAsc = await service.listPaginated("org-1", {
+        sortBy: "email",
+        sortOrder: "asc",
+      });
+      expect(byEmailAsc.data.map((c) => c.id)).toEqual(["cand-1", "cand-2"]);
+
+      const byNameAsc = await service.listPaginated("org-1", {
+        sortBy: "name",
+        sortOrder: "asc",
+      });
+      expect(byNameAsc.data.map((c) => c.id)).toEqual(["cand-1", "cand-2"]);
+
+      const byPhoneDesc = await service.listPaginated("org-1", {
+        sortBy: "phone",
+        sortOrder: "desc",
+      });
+      expect(byPhoneDesc.data.map((c) => c.id)).toEqual(["cand-2", "cand-1"]);
+
+      const byAppsDesc = await service.listPaginated("org-1", {
+        sortBy: "applications",
+        sortOrder: "desc",
+      });
+      expect(byAppsDesc.data.map((c) => c.id)).toEqual(["cand-1", "cand-2"]);
+
+      const byAppsAsc = await service.listPaginated("org-1", {
+        sortBy: "applications",
+        sortOrder: "asc",
+      });
+      expect(byAppsAsc.data.map((c) => c.id)).toEqual(["cand-2", "cand-1"]);
     });
   });
 
@@ -666,7 +744,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       const diService = new CandidatesService(crud, docs, profile);
       expect(diService).toBeDefined();
 
-      const list = await diService.findAll("org-1");
+      const list = await diService.listPaginated("org-1");
       expect(list.data).toBeDefined();
     });
 
@@ -725,7 +803,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
     });
 
-    it("excludes applications belonging to soft-deleted jobs in findOne and findAll", async () => {
+    it("excludes applications belonging to soft-deleted jobs in findOne and listPaginated", async () => {
       await jobTable.create({
         id: "job-deleted",
         organizationId: "org-1",
@@ -748,7 +826,7 @@ describe("CandidatesService (Characterization Tests)", () => {
         "app-1",
       ]);
 
-      const list = await service.findAll("org-1", { page: 1, limit: 10 });
+      const list = await service.listPaginated("org-1", { page: 1, limit: 10 });
       const cand1 = list.data.find((c: { id: string }) => c.id === "cand-1");
       expect(cand1?.applicationsCount).toBe(1);
     });
@@ -893,6 +971,31 @@ describe("CandidatesService (Characterization Tests)", () => {
         "org-1",
       );
       expect(otherTenantEmail.matches).toEqual([]);
+    });
+
+    it("preserves MinIO object on deleteDocument when an application still references the URL and deletes when 0 references remain", async () => {
+      const sharedUrl = "https://minio.local/resumes/org-1/resume-1.pdf";
+      applicationTable.store[0].resumeUrl = sharedUrl;
+
+      await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-cand-1", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinio.deleteFile).not.toHaveBeenCalled();
+
+      // Restore candidate resumeUrl, unlink from application, then delete again -> 0 refs
+      candidateTable.store[0].resumeUrl = sharedUrl;
+      applicationTable.store[0].resumeUrl =
+        "https://minio.local/resumes/org-1/other-app-cv.pdf";
+
+      await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-cand-1", url: sharedUrl },
+        "org-1",
+      );
+      expect(mockMinio.deleteFile).toHaveBeenCalledTimes(1);
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith("resume-1.pdf");
     });
   });
 });

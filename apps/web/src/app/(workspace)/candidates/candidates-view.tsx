@@ -118,18 +118,9 @@ export function CandidatesView() {
           <h3 className="text-base font-semibold text-foreground">
             {t("candidates.noCandidatesYet")}
           </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-6">
+          <p className="text-xs text-muted-foreground max-w-sm mt-1">
             {t("candidates.noCandidatesYetDesc")}
           </p>
-          {canCreateCandidate && (
-            <Button
-              onClick={() => router.push("/candidates/new")}
-              className="h-9 px-4 text-xs font-semibold gap-1.5 cursor-pointer"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              <span>{t("candidates.addCandidate")}</span>
-            </Button>
-          )}
         </div>
       ) : (
         <CandidatesTable

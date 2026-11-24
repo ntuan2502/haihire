@@ -105,7 +105,7 @@ export function CareersHeader({
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        {t("careers.copied")}
+                        {t("common.copied")}
                       </span>
                     </>
                   ) : (

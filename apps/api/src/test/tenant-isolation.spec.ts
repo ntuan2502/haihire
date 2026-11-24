@@ -114,7 +114,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
 
   it("returns no candidates and makes no candidate query without a tenant", async () => {
     const query = vi.spyOn(prisma.candidate, "findMany");
-    const result = await candidates.findAll(undefined);
+    const result = await candidates.listPaginated(undefined);
     expect(result.data).toEqual([]);
     expect(result.total).toBe(0);
     expect(query).not.toHaveBeenCalled();
@@ -123,7 +123,11 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
   it("returns only active-tenant candidates from mixed-tenant storage and scopes both queries", async () => {
     const query = vi.spyOn(prisma.candidate, "findMany");
     const count = vi.spyOn(prisma.candidate, "count");
-    const result = await candidates.findAll(undefined, undefined, "org-alpha");
+    const result = await candidates.listPaginated(
+      undefined,
+      undefined,
+      "org-alpha",
+    );
     expect(result.data.map((candidate) => candidate.id)).toEqual([
       "cand-alpha",
     ]);
@@ -141,7 +145,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
   it("rejects a foreign query tenant before reading any candidates", async () => {
     const query = vi.spyOn(prisma.candidate, "findMany");
     await expect(
-      candidates.findAll("org-beta", undefined, "org-alpha"),
+      candidates.listPaginated("org-beta", undefined, "org-alpha"),
     ).rejects.toThrow(AppForbiddenException);
     expect(query).not.toHaveBeenCalled();
   });

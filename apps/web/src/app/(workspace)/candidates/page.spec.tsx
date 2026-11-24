@@ -202,17 +202,95 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
     }),
     useCandidates: (
       _orgId: string,
-      _params: { page: number; limit: number; search?: string },
-    ) => ({
-      data: {
-        data: candidatesDataset.map((c) => c.candidate),
-        total: candidatesTotalCount,
-        page: 1,
-        limit: 20,
-        totalPages: Math.ceil(candidatesTotalCount / 20) || 1,
+      params?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        filter?: string;
+        jobId?: string;
+        sortBy?: string;
+        sortOrder?: "asc" | "desc";
       },
-      isLoading: candidatesLoadingState,
-    }),
+    ) => {
+      const baseItems = candidatesDataset;
+      const withResumeCount = baseItems.filter((c) =>
+        Boolean(c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—")),
+      ).length;
+      const hasApplicationsCount = baseItems.filter(
+        (c) => c.applicationsCount > 0,
+      ).length;
+      const unassignedCount = baseItems.filter(
+        (c) => c.applicationsCount === 0,
+      ).length;
+
+      let filtered = [...baseItems];
+      const filters = params?.filter
+        ? params.filter.split(",").filter(Boolean)
+        : [];
+      if (filters.length > 0) {
+        filtered = filtered.filter((c) => {
+          const hasCv = Boolean(
+            c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"),
+          );
+          const matchCv = filters.includes("WITH_RESUME") ? hasCv : false;
+          const matchApps = filters.includes("HAS_APPLICATIONS")
+            ? c.applicationsCount > 0
+            : false;
+          const matchUnassigned = filters.includes("UNASSIGNED")
+            ? c.applicationsCount === 0
+            : false;
+          return matchCv || matchApps || matchUnassigned;
+        });
+      }
+      if (params?.jobId) {
+        filtered = filtered.filter((c) =>
+          c.candidate?.applications?.some((a) => a.jobId === params.jobId),
+        );
+      }
+      if (params?.search) {
+        const q = params.search.toLowerCase();
+        filtered = filtered.filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.email.toLowerCase().includes(q),
+        );
+      }
+      const sortBy = params?.sortBy || "added";
+      const sortOrder = params?.sortOrder || "desc";
+      filtered.sort((a, b) => {
+        let diff = 0;
+        if (sortBy === "name") diff = a.name.localeCompare(b.name);
+        else if (sortBy === "email") diff = a.email.localeCompare(b.email);
+        else if (sortBy === "phone") diff = a.phone.localeCompare(b.phone);
+        else if (sortBy === "applications")
+          diff = a.applicationsCount - b.applicationsCount;
+        else
+          diff =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return sortOrder === "asc" ? diff : -diff;
+      });
+
+      const total =
+        !params?.filter && !params?.jobId && !params?.search
+          ? candidatesTotalCount
+          : filtered.length;
+      return {
+        data: {
+          data: filtered.map((c) => c.candidate),
+          total,
+          page: params?.page ?? 1,
+          limit: params?.limit ?? 20,
+          totalPages: Math.max(1, Math.ceil(total / (params?.limit ?? 20))),
+          counts: {
+            all: candidatesTotalCount,
+            withResume: withResumeCount,
+            hasApplications: hasApplicationsCount,
+            unassigned: unassignedCount,
+          },
+        },
+        isLoading: candidatesLoadingState,
+      };
+    },
     useCandidate: (id?: string) => ({
       data: mockCandidates.find((c) => c.id === id)?.candidate || null,
       isLoading: false,
@@ -232,6 +310,7 @@ describe("CandidatesPage Component - Characterization Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchParamString = "";
+    window.history.replaceState(null, "", "/candidates");
     candidatesDataset = [...mockCandidates];
     candidatesTotalCount = mockCandidates.length;
     candidatesLoadingState = false;
@@ -292,7 +371,8 @@ describe("CandidatesPage Component - Characterization Tests", () => {
   // A.1.2: URL sync
   describe("A.1.2: URL sync", () => {
     it("reads URL search parameters on mount", () => {
-      mockSearchParamString = "search=Nguyen&page=1&limit=20";
+      mockSearchParamString =
+        "search=Nguyen&page=1&limit=20&filter=WITH_RESUME&jobId=job-1&sortBy=name&sortOrder=asc";
 
       renderWithClient(<CandidatesPage />);
 
@@ -300,6 +380,23 @@ describe("CandidatesPage Component - Characterization Tests", () => {
         /Tìm theo tên, email, vị trí/i,
       );
       expect(searchInput).toHaveValue("Nguyen");
+      expect(
+        screen.getByRole("columnheader", { name: /Họ và tên/i }),
+      ).toHaveAttribute("aria-sort", "ascending");
+      expect(
+        screen.getAllByText("Senior Frontend Engineer").length,
+      ).toBeGreaterThan(0);
+    });
+
+    it("syncs tab filters, job filter, and column sorting to URL query params", () => {
+      renderWithClient(<CandidatesPage />);
+
+      fireEvent.click(screen.getByRole("button", { name: /Có CV/i }));
+      expect(window.location.search).toContain("filter=WITH_RESUME");
+
+      fireEvent.click(screen.getByRole("button", { name: /Họ và tên/i }));
+      expect(window.location.search).toContain("sortBy=name");
+      expect(window.location.search).toContain("sortOrder=asc");
     });
 
     it("updates search input value when user types in search box", () => {

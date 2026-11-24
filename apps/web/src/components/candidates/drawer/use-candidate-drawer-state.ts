@@ -47,7 +47,6 @@ export function useCandidateDrawerState({
     "applications" | "documents" | "notes"
   >("applications");
   const [drawerStageFilter, setDrawerStageFilter] = useState<string>("ALL");
-  const [drawerDocFilter, setDrawerDocFilter] = useState<string>("All");
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
   const [isUploadingDrawerDoc, setIsUploadingDrawerDoc] = useState(false);
@@ -138,17 +137,9 @@ export function useCandidateDrawerState({
     ? candidateNotesList.length
     : (candidate?.notesCount ?? candidate?.candidate?.notesCount ?? 0);
 
-  const filteredDrawerDocuments = useMemo(() => {
-    if (drawerDocFilter === "All") return drawerCandidateDocuments;
-    return drawerCandidateDocuments.filter(
-      (d) =>
-        (d.type || "Resume").toLowerCase() === drawerDocFilter.toLowerCase(),
-    );
-  }, [drawerCandidateDocuments, drawerDocFilter]);
-
   const handleDownloadDoc = async (
     docUrl: string,
-    docName: string,
+    docName?: string,
     appId?: string,
   ) => {
     const cleanName = fixUtf8String(docName || "document.pdf");
@@ -182,7 +173,7 @@ export function useCandidateDrawerState({
       await uploadCandidateDocMutation.mutateAsync({
         id: candidate.id,
         file,
-        type: drawerDocFilter === "All" ? "Resume" : drawerDocFilter,
+        type: "Resume",
       });
     } catch (err) {
       console.error("Failed to upload document in drawer:", err);
@@ -259,8 +250,6 @@ export function useCandidateDrawerState({
     setDrawerTab,
     drawerStageFilter,
     setDrawerStageFilter,
-    drawerDocFilter,
-    setDrawerDocFilter,
     drawerPreviewDoc,
     setDrawerPreviewDoc,
     drawerDocToDelete,
@@ -271,7 +260,6 @@ export function useCandidateDrawerState({
     selectedCandidateApps,
     filteredDrawerApps,
     drawerCandidateDocuments,
-    filteredDrawerDocuments,
     drawerNotesCount,
     handleDownloadDoc,
     handleUploadDoc,

@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useTableParams } from "@/hooks/use-table-params";
 import { useCandidates } from "@/hooks/use-queries";
+import type { CandidateSortBy } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { useLocalization } from "@/components/providers/localization-provider";
 import { getCandidateDisplayName, type CandidateItem } from "@/lib/utils";
 
-export type SortField = "name" | "email" | "phone" | "applications" | "added";
+export type SortField = CandidateSortBy;
 export type SortDirection = "asc" | "desc";
+
+const VALID_SORT_FIELDS = new Set<SortField>([
+  "name",
+  "email",
+  "phone",
+  "applications",
+  "added",
+]);
+
+const VALID_TAB_FILTERS = new Set([
+  "WITH_RESUME",
+  "HAS_APPLICATIONS",
+  "UNASSIGNED",
+]);
 
 export function useCandidatesFilterSort(
   organizationId?: string | null,
@@ -17,7 +32,7 @@ export function useCandidatesFilterSort(
   const { t } = useI18n();
   const { localization } = useLocalization();
 
-  // URL Query State for Pagination & Search
+  // Synchronized URL Query State for Pagination, Search, Filter & Sorting
   const {
     page: currentPage,
     limit: rowsPerPage,
@@ -25,15 +40,42 @@ export function useCandidatesFilterSort(
     setSearch,
     setPage: setCurrentPage,
     setLimit: setRowsPerPage,
+    getParam,
+    setParams,
   } = useTableParams();
 
-  // Fetch server-paginated candidates
+  const rawFilter = getParam("filter", "");
+  const candidateFilter = useMemo(
+    () =>
+      rawFilter
+        ? rawFilter
+            .split(",")
+            .map((x) => x.trim().toUpperCase())
+            .filter((x) => VALID_TAB_FILTERS.has(x))
+        : [],
+    [rawFilter],
+  );
+
+  const selectedJobId = getParam("jobId", "ALL") || "ALL";
+  const rawSortBy = getParam("sortBy", "added") as SortField;
+  const sortField: SortField = VALID_SORT_FIELDS.has(rawSortBy)
+    ? rawSortBy
+    : "added";
+  const rawSortOrder = getParam("sortOrder", "desc");
+  const sortDirection: SortDirection = rawSortOrder === "asc" ? "asc" : "desc";
+
+  // Fetch server-paginated, server-filtered & server-sorted candidates
   const { data: pagedResult, isLoading: candidatesLoading } = useCandidates(
     organizationId || undefined,
     {
       page: currentPage,
       limit: rowsPerPage,
       search: search.trim() || undefined,
+      filter:
+        candidateFilter.length > 0 ? candidateFilter.join(",") : undefined,
+      jobId: selectedJobId !== "ALL" ? selectedJobId : undefined,
+      sortBy: sortField,
+      sortOrder: sortDirection,
       enabled: options?.enabled,
     },
   );
@@ -44,12 +86,6 @@ export function useCandidatesFilterSort(
   );
   const totalCount = pagedResult?.total || 0;
   const totalPages = Math.max(1, pagedResult?.totalPages || 1);
-
-  // Secondary Filter & Sorting State
-  const [selectedJobId, setSelectedJobId] = useState<string>("ALL");
-  const [candidateFilter, setCandidateFilter] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<SortField>("added");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   // Map raw candidates to CandidateItem view models
   const candidateRows: CandidateItem[] = useMemo(() => {
@@ -72,131 +108,120 @@ export function useCandidatesFilterSort(
     }));
   }, [rawCandidates, localization]);
 
-  // Compute status counts for segmented tabs
-  const candidateCounts = useMemo(() => {
-    let withResume = 0;
-    let hasApplications = 0;
-    let unassigned = 0;
-    for (const c of candidateRows) {
-      const hasCv = Boolean(
-        c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"),
-      );
-      if (hasCv) withResume++;
-      if (c.applicationsCount > 0) hasApplications++;
-      else unassigned++;
-    }
-    return {
-      all: totalCount,
-      withResume,
-      hasApplications,
-      unassigned,
-    };
-  }, [candidateRows, totalCount]);
-
   const hasPagedResult = Boolean(pagedResult);
+  const serverCounts = pagedResult?.counts;
   const candidateTabs = useMemo(
     () => [
       {
         id: "ALL",
         label: t("common.all"),
-        count: hasPagedResult ? candidateCounts.all : undefined,
+        count: hasPagedResult ? (serverCounts?.all ?? totalCount) : undefined,
       },
       {
         id: "WITH_RESUME",
         label: t("candidates.withCv"),
-        count: hasPagedResult ? candidateCounts.withResume : undefined,
+        count: hasPagedResult ? (serverCounts?.withResume ?? 0) : undefined,
       },
       {
         id: "HAS_APPLICATIONS",
         label: t("candidates.hasApplications"),
-        count: hasPagedResult ? candidateCounts.hasApplications : undefined,
+        count: hasPagedResult
+          ? (serverCounts?.hasApplications ?? 0)
+          : undefined,
       },
       {
         id: "UNASSIGNED",
         label: t("candidates.unassigned"),
-        count: hasPagedResult ? candidateCounts.unassigned : undefined,
+        count: hasPagedResult ? (serverCounts?.unassigned ?? 0) : undefined,
       },
     ],
-    [t, hasPagedResult, candidateCounts],
+    [t, hasPagedResult, serverCounts, totalCount],
   );
 
-  const toggleCandidateFilter = (filterId: string) => {
-    setCandidateFilter((prev) =>
-      prev.includes(filterId)
-        ? prev.filter((x) => x !== filterId)
-        : [...prev, filterId],
-    );
-  };
+  const setSelectedJobId = useCallback(
+    (jobId: string) => {
+      setParams({ jobId: jobId && jobId !== "ALL" ? jobId : null }, true);
+    },
+    [setParams],
+  );
 
-  const filteredCandidateRows = useMemo(() => {
-    return candidateRows.filter((c) => {
-      if (candidateFilter.length > 0) {
-        const hasCv = Boolean(
-          c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"),
-        );
-        const matchCv = candidateFilter.includes("WITH_RESUME") ? hasCv : false;
-        const matchActive = candidateFilter.includes("HAS_APPLICATIONS")
-          ? c.applicationsCount > 0
-          : false;
-        const matchUnassigned = candidateFilter.includes("UNASSIGNED")
-          ? c.applicationsCount === 0
-          : false;
-        if (!matchCv && !matchActive && !matchUnassigned) return false;
-      }
-      if (selectedJobId !== "ALL") {
-        const matched = c.candidate?.applications?.some(
-          (a) => a.jobId === selectedJobId,
-        );
-        if (!matched) return false;
-      }
-      return true;
-    });
-  }, [candidateRows, candidateFilter, selectedJobId]);
+  const setCandidateFilter = useCallback(
+    (filtersOrUpdater: string[] | ((prev: string[]) => string[])) => {
+      const next =
+        typeof filtersOrUpdater === "function"
+          ? filtersOrUpdater(candidateFilter)
+          : filtersOrUpdater;
+      const valid = next
+        .map((x) => x.trim().toUpperCase())
+        .filter((x) => VALID_TAB_FILTERS.has(x));
+      setParams({ filter: valid.length > 0 ? valid.join(",") : null }, true);
+    },
+    [candidateFilter, setParams],
+  );
+
+  const toggleCandidateFilter = useCallback(
+    (filterId: string) => {
+      const next = candidateFilter.includes(filterId)
+        ? candidateFilter.filter((x) => x !== filterId)
+        : [...candidateFilter, filterId];
+      setCandidateFilter(next);
+    },
+    [candidateFilter, setCandidateFilter],
+  );
+
+  const setSortField = useCallback(
+    (field: SortField) => {
+      setParams({ sortBy: field === "added" ? null : field }, true);
+    },
+    [setParams],
+  );
+
+  const setSortDirection = useCallback(
+    (
+      dirOrUpdater: SortDirection | ((prev: SortDirection) => SortDirection),
+    ) => {
+      const next =
+        typeof dirOrUpdater === "function"
+          ? dirOrUpdater(sortDirection)
+          : dirOrUpdater;
+      setParams({ sortOrder: next === "desc" ? null : next }, true);
+    },
+    [sortDirection, setParams],
+  );
 
   const secondaryFiltersCount = selectedJobId !== "ALL" ? 1 : 0;
   const hasSecondaryFilters = secondaryFiltersCount > 0;
 
-  const handleResetFilters = () => {
-    setSelectedJobId("ALL");
-    setCandidateFilter([]);
-    setSortField("added");
-    setSortDirection("desc");
-  };
+  const handleResetFilters = useCallback(() => {
+    setParams(
+      { jobId: null, filter: null, sortBy: null, sortOrder: null },
+      true,
+    );
+  }, [setParams]);
 
-  const paginatedCandidates = useMemo(() => {
-    return [...filteredCandidateRows].sort((a, b) => {
-      let diff = 0;
-      switch (sortField) {
-        case "name":
-          diff = a.name.localeCompare(b.name);
-          break;
-        case "email":
-          diff = a.email.localeCompare(b.email);
-          break;
-        case "phone":
-          diff = a.phone.localeCompare(b.phone);
-          break;
-        case "applications":
-          diff = a.applicationsCount - b.applicationsCount;
-          break;
-        case "added":
-        default:
-          diff =
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        const nextDir: SortDirection = sortDirection === "asc" ? "desc" : "asc";
+        setParams(
+          {
+            sortBy: field === "added" ? null : field,
+            sortOrder: nextDir === "desc" ? null : nextDir,
+          },
+          true,
+        );
+      } else {
+        setParams(
+          {
+            sortBy: field === "added" ? null : field,
+            sortOrder: "asc",
+          },
+          true,
+        );
       }
-      return sortDirection === "asc" ? diff : -diff;
-    });
-  }, [filteredCandidateRows, sortField, sortDirection]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
+    },
+    [sortField, sortDirection, setParams],
+  );
 
   return {
     currentPage,
@@ -220,8 +245,8 @@ export function useCandidatesFilterSort(
     setSortDirection,
     candidateRows,
     candidateTabs,
-    filteredCandidateRows,
-    paginatedCandidates,
+    filteredCandidateRows: candidateRows,
+    paginatedCandidates: candidateRows,
     secondaryFiltersCount,
     hasSecondaryFilters,
     handleResetFilters,

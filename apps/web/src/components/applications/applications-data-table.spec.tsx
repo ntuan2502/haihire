@@ -662,10 +662,11 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      const scheduleBtn = screen.getByRole("button", {
-        name: "Schedule interview",
+      const scheduleBtns = screen.getAllByRole("button", {
+        name: /\+?\s*Schedule interview/i,
       });
-      fireEvent.click(scheduleBtn);
+      expect(scheduleBtns).toHaveLength(1);
+      fireEvent.click(scheduleBtns[0]);
 
       expect(screen.getByText("Schedule Interview")).toBeInTheDocument();
     });

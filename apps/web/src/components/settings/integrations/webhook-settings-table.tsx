@@ -4,7 +4,6 @@ import { SettingsButton } from "@/components/settings/settings-button";
 import { useI18n } from "@/i18n";
 import type { WebhookSettingResponse } from "@haihire/shared";
 import {
-  Plus,
   Trash2,
   Pencil,
   Send,
@@ -19,7 +18,6 @@ export interface WebhookSettingsTableProps {
   webhookSettings: WebhookSettingResponse[];
   isLoading: boolean;
   isAdmin: boolean;
-  onOpenAdd: () => void;
   onOpenEdit: (setting: WebhookSettingResponse) => void;
   onDelete: (id: string) => void;
   onTest: (setting: WebhookSettingResponse) => void;
@@ -30,7 +28,6 @@ export function WebhookSettingsTable({
   webhookSettings,
   isLoading,
   isAdmin,
-  onOpenAdd,
   onOpenEdit,
   onDelete,
   onTest,
@@ -65,17 +62,6 @@ export function WebhookSettingsTable({
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("settings.integrations.webhooks.emptyState")}
           </p>
-          {isAdmin && (
-            <SettingsButton
-              variant="outline"
-              size="sm"
-              onClick={onOpenAdd}
-              icon={Plus}
-              className="mt-2"
-            >
-              {t("settings.integrations.webhooks.addButton")}
-            </SettingsButton>
-          )}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -89,13 +75,13 @@ export function WebhookSettingsTable({
                   {t("settings.integrations.webhooks.table.provider")}
                 </th>
                 <th scope="col" className="py-3 px-4">
-                  {t("settings.integrations.webhooks.table.status")}
+                  {t("common.status")}
                 </th>
                 <th scope="col" className="py-3 px-4">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
                 <th scope="col" className="py-3 px-4 text-right">
-                  {t("settings.integrations.webhooks.table.actions")}
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -131,7 +117,7 @@ export function WebhookSettingsTable({
                         className="border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit"
                       >
                         <CheckCircle2 className="h-3 w-3" />
-                        {t("settings.integrations.webhooks.enabled")}
+                        {t("common.active")}
                       </Badge>
                     ) : (
                       <Badge

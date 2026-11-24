@@ -48,7 +48,7 @@ export class CandidatesController {
   @Get()
   @UseGuards(RolesGuard)
   @RequirePermission("candidate:view")
-  findAll(
+  listPaginated(
     @Request()
     req: {
       user?: {
@@ -60,12 +60,16 @@ export class CandidatesController {
     },
     @Query(DtoPipe(QueryCandidatesDto)) query?: QueryCandidatesDto,
   ) {
-    return this.candidatesService.findAll(
+    return this.candidatesService.listPaginated(
       query?.organizationId,
       {
         page: query?.page,
         limit: query?.limit,
         search: query?.search,
+        filter: query?.filter,
+        jobId: query?.jobId,
+        sortBy: query?.sortBy,
+        sortOrder: query?.sortOrder,
       },
       req?.user?.organizationId,
     );

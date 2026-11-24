@@ -163,9 +163,7 @@ export function WizardHeader({
             >
               <Save className="h-3.5 w-3.5" />
               <span>
-                {isSaving
-                  ? t("jobs.wizard.saving")
-                  : t("jobs.wizard.saveChanges")}
+                {isSaving ? t("common.saving") : t("common.saveChanges")}
               </span>
             </Button>
           )}

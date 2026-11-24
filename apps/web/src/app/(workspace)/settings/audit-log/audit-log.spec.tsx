@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import AuditLogPage from "./page";
 
+let mockSearchParamString = "";
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/settings/audit-log",
+  useSearchParams: () => new URLSearchParams(mockSearchParamString),
+}));
+
 let mockCanViewAuditLog = true;
 vi.mock("@/hooks/use-has-permission", () => ({
   useHasPermission: () => mockCanViewAuditLog,
@@ -77,8 +84,8 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.emptyDescription": "No actions matching the filter.",
         "settings.auditLog.paginationShowing":
           "Showing {offset} to {end} of {total} events",
-        "settings.auditLog.paginationPrev": "Previous",
-        "settings.auditLog.paginationNext": "Next",
+        "common.previous": "Previous",
+        "common.next": "Next",
         "settings.auditLog.systemActor": "System",
         "settings.auditLog.noMetadata": "No details",
         "settings.auditLog.actionRolePermissionsUpdated": "Permissions Updated",
@@ -109,8 +116,6 @@ vi.mock("@/i18n", () => ({
         "common.of": "of",
         "common.rows": "Rows",
         "common.page": "Page",
-        "common.previous": "Previous",
-        "common.next": "Next",
         "common.noData": "No data",
         "members.roleOwner": "Owner",
         "members.roleAdmin": "Admin",
@@ -126,6 +131,8 @@ vi.mock("@/i18n", () => ({
 
 describe("AuditLogPage", () => {
   beforeEach(() => {
+    mockSearchParamString = "";
+    window.history.replaceState(null, "", "/settings/audit-log");
     mockCanViewAuditLog = true;
     mockAuditLogLoading = false;
     mockAuditLogError = null;
@@ -273,5 +280,26 @@ describe("AuditLogPage", () => {
 
     expect(screen.getByText("No audit events found")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("hydrates action, page, and limit from URL and syncs filter/pagination changes to URL query params", () => {
+    mockSearchParamString = "action=ROLE_PERMISSIONS_UPDATED&page=2&limit=50";
+
+    render(<AuditLogPage />);
+
+    expect(capturedQueryParams).toMatchObject({
+      action: "ROLE_PERMISSIONS_UPDATED",
+      limit: 50,
+      offset: 50,
+    });
+
+    const trigger = screen.getByRole("button", { name: /Filter by action/i });
+    fireEvent.click(trigger);
+    fireEvent.click(
+      screen.getByRole("option", { name: "Member Role Changed" }),
+    );
+
+    expect(window.location.search).toContain("action=MEMBER_ROLE_CHANGED");
+    expect(window.location.search).not.toContain("page=");
   });
 });

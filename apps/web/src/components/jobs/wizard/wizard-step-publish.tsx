@@ -315,7 +315,7 @@ export function WizardStepPublish({
             onClick={onBack}
             className="text-xs cursor-pointer"
           >
-            {t("jobs.wizard.backAction")}
+            {t("common.back")}
           </Button>
           {mode === "create" && (
             <Button
@@ -325,7 +325,7 @@ export function WizardStepPublish({
               className="text-xs font-semibold px-6 gap-1.5 cursor-pointer"
             >
               {isSaving ? (
-                t("jobs.wizard.saving")
+                t("common.saving")
               ) : publishMode === "publish" ? (
                 <>
                   <Send className="h-3.5 w-3.5" />

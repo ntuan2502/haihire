@@ -19,6 +19,9 @@ export function useApplications(params?: {
   search?: string;
   jobId?: string;
   stage?: string;
+  score?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
   enabled?: boolean;
 }) {
   const { user } = useAuth();
@@ -35,6 +38,9 @@ export function useApplications(params?: {
       search: params?.search,
       jobId: params?.jobId,
       stage: params?.stage,
+      score: params?.score,
+      sortBy: params?.sortBy,
+      sortOrder: params?.sortOrder,
     }),
     queryFn: () => {
       if (!effectiveOrgId) {
@@ -46,13 +52,16 @@ export function useApplications(params?: {
           totalPages: 0,
         };
       }
-      return applicationsApi.getAll({
+      return applicationsApi.listPaginated({
         organizationId: effectiveOrgId,
         page: params?.page,
         limit: params?.limit,
         search: params?.search,
         jobId: params?.jobId,
         stage: params?.stage,
+        score: params?.score,
+        sortBy: params?.sortBy,
+        sortOrder: params?.sortOrder,
       });
     },
     enabled: (params?.enabled ?? true) && Boolean(effectiveOrgId),

@@ -106,7 +106,7 @@ describe("InterviewsQueryService", () => {
   });
 
   it("filters tab=UPCOMING by exact current timestamp so earlier same-day meetings are excluded", async () => {
-    const result = await service.findAll({
+    const result = await service.listPaginated({
       organizationId: "org-1",
       tab: "UPCOMING",
     });
@@ -123,7 +123,7 @@ describe("InterviewsQueryService", () => {
   });
 
   it("filters tab=AWAITING strictly before current timestamp with null scorecard", async () => {
-    await service.findAll({
+    await service.listPaginated({
       organizationId: "org-1",
       tab: "AWAITING",
     });
@@ -161,7 +161,7 @@ describe("InterviewsQueryService", () => {
   });
 
   it("BUG-23: calendar date-window query raises take limit above 250 to 1000", async () => {
-    await service.findAll({
+    await service.listPaginated({
       organizationId: "org-1",
       startDate: "2026-10-01T00:00:00.000Z",
       endDate: "2026-11-01T00:00:00.000Z",
@@ -177,7 +177,7 @@ describe("InterviewsQueryService", () => {
 
   it("throws AppBadRequestException when startDate or endDate is invalid", async () => {
     await expect(
-      service.findAll({
+      service.listPaginated({
         organizationId: "org-1",
         startDate: "not-a-valid-date",
         endDate: "2026-11-01T00:00:00.000Z",

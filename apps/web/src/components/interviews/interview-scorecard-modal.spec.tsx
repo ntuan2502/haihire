@@ -40,7 +40,7 @@ vi.mock("@/i18n", () => ({
         "interviews.feedbackPlaceholder":
           "Ghi chú về kỹ năng chuyên môn, thái độ...",
         "interviews.saveScorecard": "Lưu đánh giá",
-        "interviews.savingScorecard": "Đang lưu...",
+        "common.saving": "Đang lưu...",
         "interviews.scorecardNoPermission":
           "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
         "common.close": "Đóng",

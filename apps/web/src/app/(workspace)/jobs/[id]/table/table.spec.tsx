@@ -21,6 +21,8 @@ vi.mock("@/context/auth-context", () => ({
   }),
 }));
 
+let capturedApplicationsParams: Record<string, unknown> | undefined;
+
 vi.mock("@/hooks/use-queries", () => ({
   useJob: (id: string) => ({
     data: { id, title: "Senior Frontend Engineer" },
@@ -30,9 +32,21 @@ vi.mock("@/hooks/use-queries", () => ({
     data: [{ id: "job-1", title: "Senior Frontend Engineer" }],
     isLoading: false,
   }),
-  useJobApplications: () => ({
-    data: [],
-    isLoading: false,
+  useApplications: (params?: Record<string, unknown>) => {
+    capturedApplicationsParams = params;
+    return {
+      data: {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      },
+      isLoading: false,
+    };
+  },
+  useApplicationStats: () => ({
+    data: undefined,
   }),
 }));
 
@@ -71,5 +85,16 @@ describe("JobTablePage", () => {
     expect(capturedTableProps.sortDirection).toBe("asc");
     expect(capturedTableProps.selectedAppId).toBe("app-9");
     expect(capturedTableProps.drawerTab).toBe("documents");
+    expect(capturedApplicationsParams).toEqual({
+      organizationId: "org-1",
+      jobId: "job-1",
+      page: 2,
+      limit: 50,
+      search: "Lan",
+      stage: "SCREENING,INTERVIEW",
+      score: "80",
+      sortBy: "score",
+      sortOrder: "asc",
+    });
   });
 });

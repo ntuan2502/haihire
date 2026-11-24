@@ -108,8 +108,6 @@ vi.mock("@/i18n", () => ({
         "candidates.documentsTab": "Tài liệu",
         "candidates.uploadDoc": "Tải tài liệu lên",
         "candidates.noDocuments": "Chưa có tài liệu nào",
-        "candidates.backToDocuments": "Quay lại danh sách",
-        "candidates.clickToPreview": "Nhấn để xem",
         "candidates.allStages": "Tất cả giai đoạn",
         "candidates.applyToJob": "Gán vào tin tuyển dụng",
         "candidates.noApplicationsYet": "Chưa có hồ sơ nào",
@@ -118,7 +116,6 @@ vi.mock("@/i18n", () => ({
         "candidates.applyCandidateHint": "Gán ứng viên vào công việc",
         "candidates.trySelectingDifferentStage": "Thử chọn giai đoạn khác",
         "candidates.resume": "CV",
-        "candidates.coverLetter": "Thư xin việc",
         "candidates.uploadDocHint": "Kéo thả hoặc nhấn để tải lên",
         "candidates.firstName": "Tên",
         "candidates.lastName": "Họ",
@@ -141,7 +138,6 @@ vi.mock("@/i18n", () => ({
         "common.created": "Ngày tạo",
         "common.updated": "Cập nhật",
         "common.status": "Trạng thái",
-        "common.other": "Khác",
         "common.deleteConfirmWord": "XÓA",
         "common.cancelConfirmWord": "HỦY",
         "interviews.cancelThisSchedule": "Hủy lịch này",
@@ -445,7 +441,7 @@ describe("CandidateDrawer Component", () => {
     });
   });
 
-  it("renders candidate documents and allows filtering by document type", () => {
+  it("renders candidate documents without filter dropdown or inline preview link", () => {
     render(
       <CandidateDrawer
         candidate={mockCandidate}
@@ -460,18 +456,12 @@ describe("CandidateDrawer Component", () => {
     fireEvent.click(screen.getByText(/Tài liệu/));
 
     expect(screen.getByText("Pham_Thi_Ung_Vien_CV.pdf")).toBeInTheDocument();
-
-    // Filter by Cover Letter (should be empty)
-    const filterTrigger = screen.getByText("Tất cả");
-    fireEvent.click(filterTrigger);
-
-    const coverLetterOption = screen.getByText("Thư xin việc");
-    fireEvent.click(coverLetterOption);
-
-    expect(screen.getByText("Chưa có tài liệu nào")).toBeInTheDocument();
+    expect(screen.getByText("Tải tài liệu lên")).toBeInTheDocument();
+    expect(screen.queryByText("Nhấn để xem")).not.toBeInTheDocument();
+    expect(screen.queryByText("Thư xin việc")).not.toBeInTheDocument();
   });
 
-  it("previews a document and returns back to the document list", async () => {
+  it("opens DocumentPreviewModal when clicking preview icon and closes cleanly", async () => {
     render(
       <CandidateDrawer
         candidate={mockCandidate}
@@ -484,10 +474,8 @@ describe("CandidateDrawer Component", () => {
     );
 
     fireEvent.click(screen.getByText(/Tài liệu/));
-    fireEvent.click(screen.getByText("Nhấn để xem"));
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
 
-    // In preview mode
-    expect(screen.getByText("Quay lại danh sách")).toBeInTheDocument();
     await waitFor(() => {
       expect(mockFetchAuthenticatedDocumentPreview).toHaveBeenCalledWith(
         expect.stringMatching(
@@ -508,8 +496,15 @@ describe("CandidateDrawer Component", () => {
     expect(previewIframe).not.toHaveAttribute("sandbox");
     expect(previewIframe).toHaveAttribute("referrerPolicy", "no-referrer");
 
-    // Click back to document list
-    fireEvent.click(screen.getByText("Quay lại danh sách"));
+    // Close preview modal; drawer documents list stays visible
+    fireEvent.click(
+      screen.getByRole("button", { name: /Đóng|common\.close|Close/i }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByTitle("Pham_Thi_Ung_Vien_CV.pdf"),
+      ).not.toBeInTheDocument();
+    });
     expect(screen.getByText("Tải tài liệu lên")).toBeInTheDocument();
   });
 

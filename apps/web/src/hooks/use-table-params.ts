@@ -61,6 +61,7 @@ export function useTableParams(options?: UseTableParamsOptions) {
       setLocalLimit(getUrlLimit(fresh));
       const urlSearch = fresh.get("search") || "";
       setSearchParam(urlSearch);
+      setParamsRevision((v) => v + 1);
 
       // Preserve typing draft (NEVER delete trailing spaces or active edits while user is typing)
       setSearchInput((prevInput) => {
@@ -73,10 +74,15 @@ export function useTableParams(options?: UseTableParamsOptions) {
     [getUrlPage, getUrlLimit],
   );
 
-  // Sync when Next.js searchParams change (initial mount, router navigation)
+  // Sync only when Next.js searchParams string actually changes (prevents overwriting
+  // shallow history.replaceState updates when useSearchParams() yields a new instance).
+  const searchParamsString = searchParams.toString();
+  const lastSyncedSearchRef = useRef<string>(searchParamsString);
   useEffect(() => {
-    syncFromUrl(new URLSearchParams(searchParams.toString()));
-  }, [searchParams, syncFromUrl]);
+    if (lastSyncedSearchRef.current === searchParamsString) return;
+    lastSyncedSearchRef.current = searchParamsString;
+    syncFromUrl(new URLSearchParams(searchParamsString));
+  }, [searchParamsString, syncFromUrl]);
 
   // Sync on browser Back/Forward (popstate)
   useEffect(() => {
@@ -115,9 +121,9 @@ export function useTableParams(options?: UseTableParamsOptions) {
       }
 
       const queryString = current.toString();
-      if (queryString !== prevQueryString) {
-        setParamsRevision((v) => v + 1);
-      }
+      if (queryString === prevQueryString) return;
+
+      setParamsRevision((v) => v + 1);
       const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
       // Use window.history.replaceState for shallow URL updates without triggering

@@ -26,7 +26,7 @@ describe("CandidatesController", () => {
   } as unknown as Response;
 
   const mockService = {
-    findAll: vi.fn(),
+    listPaginated: vi.fn(),
     findOne: vi.fn(),
     checkDuplicates: vi.fn(),
     uploadDocument: vi.fn(),
@@ -70,7 +70,7 @@ describe("CandidatesController", () => {
   describe("GET /candidates (candidate:view permission)", () => {
     it("rejects Role.MEMBER with 403 AppForbiddenException", () => {
       const context = {
-        getHandler: () => controller.findAll,
+        getHandler: () => controller.listPaginated,
         getClass: () => CandidatesController,
         switchToHttp: () => ({ getRequest: () => memberReq }),
       } as unknown as ExecutionContext;
@@ -79,9 +79,9 @@ describe("CandidatesController", () => {
       );
     });
 
-    it("allows Role.RECRUITER and delegates to service.findAll", async () => {
+    it("allows Role.RECRUITER and delegates to service.listPaginated", async () => {
       const context = {
-        getHandler: () => controller.findAll,
+        getHandler: () => controller.listPaginated,
         getClass: () => CandidatesController,
         switchToHttp: () => ({ getRequest: () => recruiterReq }),
       } as unknown as ExecutionContext;
@@ -112,16 +112,20 @@ describe("CandidatesController", () => {
           },
         ],
       };
-      mockService.findAll.mockResolvedValue(mockResult);
+      mockService.listPaginated.mockResolvedValue(mockResult);
 
-      const result = await controller.findAll(recruiterReq);
+      const result = await controller.listPaginated(recruiterReq);
       expect(result).toEqual(mockResult);
-      expect(mockService.findAll).toHaveBeenCalledWith(
+      expect(mockService.listPaginated).toHaveBeenCalledWith(
         undefined,
         {
           page: undefined,
           limit: undefined,
           search: undefined,
+          filter: undefined,
+          jobId: undefined,
+          sortBy: undefined,
+          sortOrder: undefined,
         },
         "org-1",
       );

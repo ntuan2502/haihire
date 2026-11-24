@@ -1,79 +1,44 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { useJob, useAllJobs, useJobApplications } from "@/hooks/use-queries";
-import { useTableParams } from "@/hooks/use-table-params";
+import {
+  useJob,
+  useAllJobs,
+  useApplications,
+  useApplicationStats,
+} from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
-import type {
-  DrawerTabId,
-  SortDirection,
-  SortField,
-} from "@/components/applications/applications-data-table/types";
-
-const VALID_SORT_FIELDS: readonly SortField[] = [
-  "candidate",
-  "email",
-  "job",
-  "status",
-  "score",
-  "applied",
-];
-const VALID_DRAWER_TABS: readonly DrawerTabId[] = [
-  "overview",
-  "inbox",
-  "ai",
-  "interviews",
-  "documents",
-  "responses",
-  "notes",
-  "timeline",
-];
+import {
+  buildStageCounts,
+  useApplicationsUrlParams,
+} from "@/components/applications/applications-data-table/hooks/use-applications-url-params";
 
 function JobTablePageContent() {
   const params = useParams();
   const router = useRouter();
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
-
-  const {
-    page: currentPage,
-    limit: rowsPerPage,
-    search,
-    setPage: setCurrentPage,
-    setLimit: setRowsPerPage,
-    setSearch,
-    getParam,
-    setParams,
-  } = useTableParams({ defaultLimit: 20 });
-
-  const stage = getParam("stage", "");
-  const score = getParam("score", "ALL");
-  const rawSortBy = getParam("sortBy", "applied");
-  const sortField: SortField = VALID_SORT_FIELDS.includes(
-    rawSortBy as SortField,
-  )
-    ? (rawSortBy as SortField)
-    : "applied";
-  const rawSortOrder = getParam("sortOrder", "desc");
-  const sortDirection: SortDirection = rawSortOrder === "asc" ? "asc" : "desc";
-  const selectedAppId = getParam("applicationId", "") || null;
-  const rawTab = getParam("tab", "overview");
-  const drawerTab: DrawerTabId = VALID_DRAWER_TABS.includes(
-    rawTab as DrawerTabId,
-  )
-    ? (rawTab as DrawerTabId)
-    : "overview";
+  const urlState = useApplicationsUrlParams({ defaultLimit: 20 });
 
   const { user } = useAuth();
   const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: jobApplications = [], isLoading: appsLoading } =
-    useJobApplications(jobId);
+  const { data: applicationsData, isLoading: appsLoading } = useApplications({
+    organizationId: user?.organizationId,
+    jobId,
+    ...urlState.queryParams,
+  });
+  const { data: appStats } = useApplicationStats(user?.organizationId);
 
-  if (jobLoading || appsLoading) {
+  const jobStageCounts = useMemo(
+    () => buildStageCounts(appStats?.byJob?.[jobId] ?? null),
+    [appStats, jobId],
+  );
+
+  if (jobLoading || (appsLoading && !applicationsData)) {
     return <LoadingSpinner />;
   }
 
@@ -82,47 +47,30 @@ function JobTablePageContent() {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 w-full space-y-4">
       <ApplicationsDataTable
-        applications={jobApplications}
+        applications={applicationsData?.data || []}
         jobs={jobs}
         loading={jobLoading || appsLoading}
         fixedJobId={job.id}
-        currentPage={currentPage}
-        rowsPerPage={rowsPerPage}
-        search={search}
-        stageFilter={stage}
-        scoreFilter={score}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        selectedAppId={selectedAppId}
-        drawerTab={drawerTab}
-        onPageChange={setCurrentPage}
-        onLimitChange={setRowsPerPage}
-        onSearchChange={setSearch}
-        onStageFilterChange={(newStage) =>
-          setParams({ stage: newStage || null, page: 1 })
-        }
-        onScoreFilterChange={(newScore) =>
-          setParams({ score: newScore || null, page: 1 })
-        }
-        onSortChange={(field, direction) =>
-          setParams({
-            sortBy: field === "applied" ? null : field,
-            sortOrder: direction === "desc" ? null : direction,
-            page: 1,
-          })
-        }
-        onSelectedAppIdChange={(appId) =>
-          setParams(
-            {
-              applicationId: appId || null,
-              tab: appId ? undefined : null,
-            },
-            false,
-          )
-        }
-        onDrawerTabChange={(tab) =>
-          setParams({ tab: tab === "overview" ? null : tab }, false)
-        }
+        totalCount={applicationsData?.total ?? 0}
+        totalPages={applicationsData?.totalPages ?? 1}
+        currentPage={urlState.currentPage}
+        rowsPerPage={urlState.rowsPerPage}
+        search={urlState.search}
+        stageFilter={urlState.stage}
+        scoreFilter={urlState.score}
+        sortField={urlState.sortField}
+        sortDirection={urlState.sortDirection}
+        selectedAppId={urlState.selectedAppId}
+        drawerTab={urlState.drawerTab}
+        stageCounts={jobStageCounts}
+        onPageChange={urlState.onPageChange}
+        onLimitChange={urlState.onLimitChange}
+        onSearchChange={urlState.onSearchChange}
+        onStageFilterChange={urlState.onStageFilterChange}
+        onScoreFilterChange={urlState.onScoreFilterChange}
+        onSortChange={urlState.onSortChange}
+        onSelectedAppIdChange={urlState.onSelectedAppIdChange}
+        onDrawerTabChange={urlState.onDrawerTabChange}
         onViewInPipeline={(appId, appStage) => {
           const query = new URLSearchParams({
             stage: appStage,

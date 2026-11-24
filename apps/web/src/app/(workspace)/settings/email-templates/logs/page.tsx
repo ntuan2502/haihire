@@ -2,7 +2,7 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsLogTable } from "@/components/settings/settings-log-table";
-import { useState, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { CheckCircle2, AlertCircle, Search } from "lucide-react";
 import {
   getEmailTemplateTypeLabel,
@@ -16,15 +16,24 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
 import { EmailPreviewModal } from "@/components/email/email-preview-modal";
 import { useEmailLogs } from "@/hooks/use-queries";
+import { useTableParams } from "@/hooks/use-table-params";
 
-export default function EmailLogsPage() {
+function EmailLogsPageContent() {
   const { t } = useI18n();
 
-  // Outbox / logs pagination & filtering state
-  const [logPage, setLogPage] = useState(1);
-  const [logLimit, setLogLimit] = useState(20);
-  const [logSearch, setLogSearch] = useState("");
-  const [logStatusFilter, setLogStatusFilter] = useState<string>("ALL");
+  // Synchronized URL Query State for Outbox / Logs pagination & filtering
+  const {
+    page: logPage,
+    limit: logLimit,
+    search: logSearch,
+    searchInput,
+    setSearchInput,
+    setPage: setLogPage,
+    setLimit: setLogLimit,
+    getParam,
+    setParam,
+  } = useTableParams({ defaultLimit: 20 });
+  const logStatusFilter = getParam("status", "ALL") || "ALL";
   const [viewingLog, setViewingLog] = useState<EmailLog | null>(null);
 
   const { data: remoteLogsResponse, isLoading: logsLoading } = useEmailLogs({
@@ -37,10 +46,6 @@ export default function EmailLogsPage() {
   const logs = remoteLogsResponse?.data || [];
   const totalLogs = remoteLogsResponse?.total || 0;
   const totalPages = remoteLogsResponse?.totalPages || 1;
-
-  useEffect(() => {
-    setLogPage(1);
-  }, [logSearch, logStatusFilter]);
 
   if (logsLoading && logs.length === 0) {
     return <LoadingSpinner />;
@@ -67,8 +72,8 @@ export default function EmailLogsPage() {
             />
             <Input
               name="email-logs-search"
-              value={logSearch}
-              onChange={(e) => setLogSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t("email.searchRecipient")}
               aria-label={t("email.searchRecipient")}
               className="h-8 pl-8 text-xs w-full"
@@ -77,7 +82,9 @@ export default function EmailLogsPage() {
 
           <CustomSelect
             value={logStatusFilter}
-            onChange={(val) => setLogStatusFilter(val)}
+            onChange={(val) =>
+              setParam("status", val === "ALL" ? null : val, true)
+            }
             options={[
               { value: "ALL", label: t("email.allStatuses") },
               { value: "SENT", label: t("email.statusSent") },
@@ -104,10 +111,7 @@ export default function EmailLogsPage() {
                   pageSize={logLimit}
                   pageSizeOptions={[10, 20, 50, 100]}
                   onPageChange={(p) => setLogPage(p)}
-                  onPageSizeChange={(size) => {
-                    setLogLimit(size);
-                    setLogPage(1);
-                  }}
+                  onPageSizeChange={(size) => setLogLimit(size)}
                   itemLabel={t("email.tabLogs").toLowerCase()}
                 />
               </div>
@@ -131,10 +135,10 @@ export default function EmailLogsPage() {
                 {t("email.thSubject")}
               </th>
               <th scope="col" className="px-4 py-3">
-                {t("email.thStatus")}
+                {t("common.status")}
               </th>
               <th scope="col" className="px-4 py-3 text-right">
-                {t("email.thActions")}
+                {t("common.actions")}
               </th>
             </tr>
           </thead>
@@ -245,5 +249,13 @@ export default function EmailLogsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function EmailLogsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <EmailLogsPageContent />
+    </Suspense>
   );
 }

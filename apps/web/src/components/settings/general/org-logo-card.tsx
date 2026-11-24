@@ -170,7 +170,7 @@ export function OrgLogoCard({
                   onClick={() => logoInputRef.current?.click()}
                 >
                   {uploadLogoMutation.isPending
-                    ? t("settings.logo.uploading")
+                    ? t("common.uploading")
                     : savedOrg?.logoUrl
                       ? t("settings.logo.changeButton")
                       : t("settings.logo.uploadButton")}

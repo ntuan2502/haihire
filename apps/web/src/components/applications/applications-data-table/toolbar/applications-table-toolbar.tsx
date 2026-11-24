@@ -104,7 +104,7 @@ export function ApplicationsTableToolbar({
               },
               {
                 key: "status",
-                label: t("applications.columns.status"),
+                label: t("common.status"),
                 checked: visibleColumns.status,
               },
               {
@@ -124,7 +124,7 @@ export function ApplicationsTableToolbar({
               )
             }
             label={t("common.columns")}
-            menuTitle={t("applications.columnsToggle")}
+            menuTitle={t("common.toggleColumns")}
             align="end"
           />
 

@@ -3,6 +3,7 @@
 import { Briefcase } from "lucide-react";
 import { CustomSelect } from "@/components/shared";
 import { useI18n } from "@/i18n";
+import { getStageLabel } from "@/lib/stages";
 import { getCandidateDisplayName } from "@/lib/utils";
 import type { Application, Job } from "@/types";
 
@@ -88,7 +89,7 @@ export function ScheduleInterviewTargetFields({
               <span className="text-[10px] font-normal text-muted-foreground">
                 {t("interviews.stageLabel")}{" "}
                 <strong className="font-semibold text-primary">
-                  {currentCandidate.stage}
+                  {getStageLabel(currentCandidate.stage, t)}
                 </strong>
               </span>
             )}

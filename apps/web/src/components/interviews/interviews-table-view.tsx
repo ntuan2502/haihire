@@ -136,7 +136,7 @@ export function InterviewsTableView({
               )}
               {visibleColumns?.status !== false && (
                 <th scope="col" className="py-3.5 px-3 text-center">
-                  {t("interviews.tableHeaders.status")}
+                  {t("common.status")}
                 </th>
               )}
               {visibleColumns?.rating !== false && (
@@ -145,7 +145,7 @@ export function InterviewsTableView({
                 </th>
               )}
               <th scope="col" className="py-3.5 px-4 text-right">
-                {t("interviews.tableHeaders.actions")}
+                {t("common.actions")}
               </th>
             </tr>
           </thead>

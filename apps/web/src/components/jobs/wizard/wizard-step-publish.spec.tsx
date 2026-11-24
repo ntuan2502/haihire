@@ -34,8 +34,8 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.deletePermanentDesc":
           "Thao tác này sẽ xóa toàn bộ đơn ứng tuyển liên quan.",
         "jobs.wizard.deleteJobAction": "Xóa tin",
-        "jobs.wizard.backAction": "Quay lại",
-        "jobs.wizard.saving": "Đang lưu...",
+        "common.back": "Quay lại",
+        "common.saving": "Đang lưu...",
         "common.cancel": "Hủy bỏ",
         "jobs.workplace.remote": "Từ xa",
       };

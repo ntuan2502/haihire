@@ -8,13 +8,16 @@ import type {
 } from "@/types";
 
 export const applicationsApi = {
-  getAll: async (params?: {
+  listPaginated: async (params?: {
     organizationId?: string;
     page?: number;
     limit?: number;
     search?: string;
     jobId?: string;
     stage?: string;
+    score?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
   }): Promise<PaginatedResult<Application>> => {
     const response = await api.get<PaginatedResult<Application>>(
       "/applications",

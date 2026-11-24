@@ -124,10 +124,10 @@ export function TrackingLinksTab({
                     {t("sourcing.links.cvr")}
                   </th>
                   <th scope="col" className="py-3.5 px-4 text-center">
-                    {t("sourcing.links.status")}
+                    {t("common.status")}
                   </th>
                   <th scope="col" className="py-3.5 px-5 text-right">
-                    {t("sourcing.links.actions")}
+                    {t("common.actions")}
                   </th>
                 </tr>
               </thead>
@@ -207,8 +207,8 @@ export function TrackingLinksTab({
                             />
                             <span>
                               {link.isActive
-                                ? t("sourcing.links.active")
-                                : t("sourcing.links.inactive")}
+                                ? t("common.active")
+                                : t("common.inactive")}
                             </span>
                           </button>
                         ) : (
@@ -228,8 +228,8 @@ export function TrackingLinksTab({
                             />
                             <span>
                               {link.isActive
-                                ? t("sourcing.links.active")
-                                : t("sourcing.links.inactive")}
+                                ? t("common.active")
+                                : t("common.inactive")}
                             </span>
                           </span>
                         )}

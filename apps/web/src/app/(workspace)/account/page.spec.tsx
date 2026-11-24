@@ -1,6 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import AccountPage from "./page";
 import { authApi } from "@/lib/api/auth";
 import { api } from "@/lib/api/client";
@@ -92,8 +98,8 @@ vi.mock("@/i18n", () => ({
         "settings.accountProfile.firstNamePlaceholder": "Nhập tên",
         "settings.accountProfile.lastNameLabel": "Họ và tên đệm",
         "settings.accountProfile.lastNamePlaceholder": "Nhập họ và tên đệm",
-        "settings.accountProfile.saveBtn": "Lưu thay đổi",
-        "settings.accountProfile.savingBtn": "Đang lưu...",
+        "common.saveChanges": "Lưu thay đổi",
+        "common.saving": "Đang lưu...",
         "settings.accountProfile.saveSuccess": "Đã cập nhật thông tin cá nhân.",
         "settings.accountProfile.saveError":
           "Không thể cập nhật thông tin cá nhân.",
@@ -129,7 +135,6 @@ vi.mock("@/i18n", () => ({
         "settings.accountPreferences.timezoneHint": "Chọn múi giờ ưu tiên.",
         "settings.accountPreferences.followOrgDefault": "Theo mặc định tổ chức",
         "settings.accountPreferences.saveBtn": "Lưu tùy chọn",
-        "settings.accountPreferences.savingBtn": "Đang lưu...",
         "settings.accountPreferences.saveSuccess":
           "Đã lưu tùy chọn ngôn ngữ & múi giờ cá nhân.",
         "settings.accountPreferences.saveError": "Không thể lưu tùy chọn.",
@@ -142,7 +147,6 @@ vi.mock("@/i18n", () => ({
         "notificationSettings.email": "Qua Email",
         "notificationSettings.application": "Hồ sơ ứng tuyển mới",
         "notificationSettings.interview": "Lịch phỏng vấn",
-        "notificationSettings.save": "Lưu cài đặt thông báo",
         "notificationSettings.saved": "Đã lưu cài đặt thông báo.",
         "notificationSettings.saveError": "Không thể lưu cài đặt thông báo.",
         "notificationSettings.loadError": "Không thể tải cài đặt thông báo.",
@@ -231,9 +235,14 @@ describe("AccountPage Component", () => {
     renderAccountPage();
 
     const checkboxes = await screen.findAllByRole("checkbox");
-    const saveNotifBtn = screen.getByRole("button", {
-      name: "Lưu cài đặt thông báo",
-    });
+    const notifSection = document.getElementById("notifications");
+    expect(notifSection).not.toBeNull();
+    const saveNotifBtn = within(notifSection as HTMLElement).getByRole(
+      "button",
+      {
+        name: "Lưu thay đổi",
+      },
+    );
     expect(saveNotifBtn).toBeDisabled();
 
     fireEvent.click(checkboxes[0]);
@@ -267,9 +276,12 @@ describe("AccountPage Component", () => {
 
     const firstNameInput = screen.getByLabelText("Tên");
     const lastNameInput = screen.getByLabelText("Họ và tên đệm");
+    const profileForm = firstNameInput.closest("form") as HTMLElement;
 
     fireEvent.change(firstNameInput, { target: { value: "   " } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Lưu thay đổi" }),
+    );
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -280,7 +292,9 @@ describe("AccountPage Component", () => {
 
     fireEvent.change(firstNameInput, { target: { value: "Tuấn" } });
     fireEvent.change(lastNameInput, { target: { value: "Nguyễn Anh" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(
+      within(profileForm).getByRole("button", { name: "Lưu thay đổi" }),
+    );
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({
@@ -303,15 +317,20 @@ describe("AccountPage Component", () => {
   it("disables account save buttons when nothing has changed", () => {
     renderAccountPage();
 
-    for (const name of ["Lưu thay đổi", "Lưu tùy chọn", "Cập nhật mật khẩu"]) {
+    const firstName = screen.getByLabelText("Tên");
+    const profileForm = firstName.closest("form") as HTMLElement;
+    const profileSaveBtn = within(profileForm).getByRole("button", {
+      name: "Lưu thay đổi",
+    });
+    expect(profileSaveBtn).toBeDisabled();
+    for (const name of ["Lưu tùy chọn", "Cập nhật mật khẩu"]) {
       expect(screen.getByRole("button", { name })).toBeDisabled();
     }
-    const firstName = screen.getByLabelText("Tên");
     const originalName = (firstName as HTMLInputElement).value;
     fireEvent.change(firstName, { target: { value: "Tên mới" } });
-    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeEnabled();
+    expect(profileSaveBtn).toBeEnabled();
     fireEvent.change(firstName, { target: { value: originalName } });
-    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDisabled();
+    expect(profileSaveBtn).toBeDisabled();
   });
 
   it("shows error when new password is less than 6 characters", async () => {

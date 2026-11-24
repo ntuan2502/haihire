@@ -37,9 +37,7 @@ export function DeleteWebhookModal({
       confirmButtonLabel={t(
         "settings.integrations.webhooks.deleteConfirm.confirm",
       )}
-      cancelButtonLabel={t(
-        "settings.integrations.webhooks.deleteConfirm.cancel",
-      )}
+      cancelButtonLabel={t("common.cancel")}
       isLoading={isDeleting}
       variant="danger"
     />

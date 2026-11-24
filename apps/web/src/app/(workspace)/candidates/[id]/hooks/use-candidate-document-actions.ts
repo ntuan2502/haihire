@@ -13,12 +13,10 @@ import type { Candidate, CandidateDocument } from "@/types";
 
 interface UseCandidateDocumentActionsProps {
   candidate: Candidate | null | undefined;
-  documentFilter: string;
 }
 
 export function useCandidateDocumentActions({
   candidate,
-  documentFilter,
 }: UseCandidateDocumentActionsProps) {
   const { t } = useI18n();
   const docInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +40,7 @@ export function useCandidateDocumentActions({
         await uploadCandidateDocMutation.mutateAsync({
           id: candidate.id,
           file,
-          type: documentFilter,
+          type: "Resume",
         });
       } catch (err) {
         console.error("Failed to upload document:", err);

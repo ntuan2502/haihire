@@ -428,6 +428,66 @@ const SCALAR_FILTER_KEYS = new Set([
   "lt",
 ]);
 
+type RelationResolver = (
+  modelName: string,
+  item: MockRecord,
+  relKey: string,
+) => unknown;
+
+interface MatchContext {
+  modelName?: string;
+  resolveRelation?: RelationResolver;
+}
+
+const RELATION_TARGET_MODEL: Record<string, Record<string, string>> = {
+  candidate: {
+    applications: "application",
+    documents: "candidateDocument",
+    candidateNotes: "candidateNote",
+    organization: "organization",
+  },
+  application: {
+    candidate: "candidate",
+    job: "job",
+    interviews: "interview",
+    applicationNotes: "applicationNote",
+    organization: "organization",
+  },
+  job: {
+    applications: "application",
+    organization: "organization",
+  },
+  interview: {
+    application: "application",
+    organization: "organization",
+  },
+};
+
+const tableRelationMeta = new WeakMap<
+  object,
+  { modelName: string; resolveRelation: RelationResolver }
+>();
+
+function inferChildModel(
+  modelName: string | undefined,
+  key: string,
+): string | undefined {
+  if (!modelName) return undefined;
+  return RELATION_TARGET_MODEL[modelName]?.[key];
+}
+
+function resolveFieldOrRelation(
+  item: MockRecord,
+  key: string,
+  context?: MatchContext,
+): unknown {
+  if (item[key] !== undefined) return item[key];
+  if (context?.modelName && context?.resolveRelation) {
+    return context.resolveRelation(context.modelName, item, key);
+  }
+  return undefined;
+}
+
 function isCompositeUniqueWhereKey(
   key: string,
   val: Record<string, unknown>,
@@ -447,25 +507,26 @@ function isCompositeUniqueWhereKey(
 export function matchPrismaWhere<T extends MockRecord>(
   item: T,
   where?: unknown,
+  context?: MatchContext,
 ): boolean {
   if (!where || typeof where !== "object") return true;
   for (const [key, val] of Object.entries(where as Record<string, unknown>)) {
     if (key === "AND") {
       const arr = Array.isArray(val) ? val : [val];
-      if (!arr.every((w) => matchPrismaWhere(item, w))) return false;
+      if (!arr.every((w) => matchPrismaWhere(item, w, context))) return false;
       continue;
     }
     if (key === "OR") {
       const arr = Array.isArray(val) ? val : [val];
-      if (!arr.some((w) => matchPrismaWhere(item, w))) return false;
+      if (!arr.some((w) => matchPrismaWhere(item, w, context))) return false;
       continue;
     }
     if (key === "NOT") {
       const arr = Array.isArray(val) ? val : [val];
-      if (arr.some((w) => matchPrismaWhere(item, w))) return false;
+      if (arr.some((w) => matchPrismaWhere(item, w, context))) return false;
       continue;
     }
-    const itemVal = item[key];
+    const itemVal = resolveFieldOrRelation(item, key, context);
     if (val === null) {
       if (itemVal !== null && itemVal !== undefined) return false;
       continue;
@@ -479,14 +540,20 @@ export function matchPrismaWhere<T extends MockRecord>(
         );
         if (!hasScalarOperator && objKeys.length > 0) {
           if (itemVal === undefined && isCompositeUniqueWhereKey(key, objVal)) {
-            if (!matchPrismaWhere(item, objVal)) return false;
+            if (!matchPrismaWhere(item, objVal, context)) return false;
             continue;
           }
+          const childCtx: MatchContext | undefined = context?.resolveRelation
+            ? {
+                modelName: inferChildModel(context.modelName, key),
+                resolveRelation: context.resolveRelation,
+              }
+            : undefined;
           if (Array.isArray(itemVal)) {
             if (
               "some" in objVal &&
               !itemVal.some((child) =>
-                matchPrismaWhere(child as MockRecord, objVal.some),
+                matchPrismaWhere(child as MockRecord, objVal.some, childCtx),
               )
             ) {
               return false;
@@ -494,7 +561,7 @@ export function matchPrismaWhere<T extends MockRecord>(
             if (
               "none" in objVal &&
               itemVal.some((child) =>
-                matchPrismaWhere(child as MockRecord, objVal.none),
+                matchPrismaWhere(child as MockRecord, objVal.none, childCtx),
               )
             ) {
               return false;
@@ -502,7 +569,7 @@ export function matchPrismaWhere<T extends MockRecord>(
             if (
               "every" in objVal &&
               !itemVal.every((child) =>
-                matchPrismaWhere(child as MockRecord, objVal.every),
+                matchPrismaWhere(child as MockRecord, objVal.every, childCtx),
               )
             ) {
               return false;
@@ -515,7 +582,7 @@ export function matchPrismaWhere<T extends MockRecord>(
             } else if (
               itemVal !== undefined &&
               (itemVal === null ||
-                !matchPrismaWhere(itemVal as MockRecord, objVal.is))
+                !matchPrismaWhere(itemVal as MockRecord, objVal.is, childCtx))
             ) {
               return false;
             }
@@ -527,7 +594,7 @@ export function matchPrismaWhere<T extends MockRecord>(
             } else if (
               itemVal &&
               typeof itemVal === "object" &&
-              matchPrismaWhere(itemVal as MockRecord, objVal.isNot)
+              matchPrismaWhere(itemVal as MockRecord, objVal.isNot, childCtx)
             ) {
               return false;
             }
@@ -539,7 +606,8 @@ export function matchPrismaWhere<T extends MockRecord>(
             typeof itemVal === "object" &&
             !(itemVal instanceof Date)
           ) {
-            if (!matchPrismaWhere(itemVal as MockRecord, objVal)) return false;
+            if (!matchPrismaWhere(itemVal as MockRecord, objVal, childCtx))
+              return false;
           }
           continue;
         }
@@ -553,7 +621,13 @@ export function matchPrismaWhere<T extends MockRecord>(
       )
         return false;
       if ("equals" in val && itemVal !== val.equals) return false;
-      if ("not" in val && itemVal === val.not) return false;
+      if (
+        "not" in val &&
+        (val.not === null
+          ? itemVal === null || itemVal === undefined
+          : itemVal === val.not)
+      )
+        return false;
       const v = val as Record<string, unknown>;
       if ("contains" in v) {
         const str = String(itemVal ?? "");
@@ -713,8 +787,9 @@ export function createMockTable<T = MockRecord>(
     ),
     count: vi.fn(async (args?: { where?: unknown }): Promise<number> => {
       if (!args?.where) return store.length;
+      const matchCtx = tableRelationMeta.get(table);
       return store.filter((item) =>
-        matchPrismaWhere(item as MockRecord, args.where),
+        matchPrismaWhere(item as MockRecord, args.where, matchCtx),
       ).length;
     }),
     groupBy: vi.fn(
@@ -758,11 +833,16 @@ export function createMockTable<T = MockRecord>(
         take?: number;
         orderBy?: unknown;
       }): Promise<T[]> => {
+        const matchCtx = tableRelationMeta.get(table);
         let filtered = store.filter((item) =>
-          matchPrismaWhere(item as MockRecord, args?.where),
+          matchPrismaWhere(item as MockRecord, args?.where, matchCtx),
         );
         if (args?.orderBy) {
-          type OrderSpec = string | { sort: string; nulls?: "first" | "last" };
+          type ScalarOrderSpec =
+            string | { sort: string; nulls?: "first" | "last" };
+          type NestedOrderSpec = Record<string, ScalarOrderSpec>;
+          type OrderSpec = ScalarOrderSpec | NestedOrderSpec;
+
           const orderClauses: Array<[string, OrderSpec]> = Array.isArray(
             args.orderBy,
           )
@@ -771,19 +851,74 @@ export function createMockTable<T = MockRecord>(
               )
             : Object.entries(args.orderBy as Record<string, OrderSpec>);
 
+          const extractOrderTarget = (
+            item: MockRecord,
+            sortKey: string,
+            rawSpec: OrderSpec,
+          ): {
+            val: unknown;
+            sortDir: string;
+            nullsOrder?: "first" | "last";
+          } => {
+            if (typeof rawSpec === "string") {
+              return { val: item[sortKey], sortDir: rawSpec };
+            }
+            if (rawSpec && typeof rawSpec === "object" && "sort" in rawSpec) {
+              const scalarSpec = rawSpec as {
+                sort: string;
+                nulls?: "first" | "last";
+              };
+              return {
+                val: item[sortKey],
+                sortDir: scalarSpec.sort ?? "asc",
+                nullsOrder: scalarSpec.nulls,
+              };
+            }
+            if (rawSpec && typeof rawSpec === "object") {
+              const entries = Object.entries(rawSpec as NestedOrderSpec);
+              if (entries.length > 0) {
+                const [nestedKey, nestedSpec] = entries[0];
+                const relVal = resolveFieldOrRelation(item, sortKey, matchCtx);
+                if (nestedKey === "_count" && typeof nestedSpec === "string") {
+                  return {
+                    val: Array.isArray(relVal) ? relVal.length : 0,
+                    sortDir: nestedSpec,
+                  };
+                }
+                const relRecord =
+                  relVal && typeof relVal === "object" && !Array.isArray(relVal)
+                    ? (relVal as MockRecord)
+                    : undefined;
+                const val = relRecord ? relRecord[nestedKey] : undefined;
+                if (typeof nestedSpec === "string") {
+                  return { val, sortDir: nestedSpec };
+                }
+                return {
+                  val,
+                  sortDir: nestedSpec?.sort ?? "asc",
+                  nullsOrder: nestedSpec?.nulls,
+                };
+              }
+            }
+            return { val: item[sortKey], sortDir: "asc" };
+          };
+
           if (orderClauses.length > 0) {
             filtered.sort((a, b) => {
               for (const [sortKey, rawSpec] of orderClauses) {
-                const sortDir =
-                  typeof rawSpec === "string"
-                    ? rawSpec
-                    : (rawSpec?.sort ?? "asc");
-                const nullsOrder =
-                  typeof rawSpec === "object" && rawSpec !== null
-                    ? rawSpec.nulls
-                    : undefined;
-                const va = (a as MockRecord)[sortKey];
-                const vb = (b as MockRecord)[sortKey];
+                const aTarget = extractOrderTarget(
+                  a as MockRecord,
+                  sortKey,
+                  rawSpec,
+                );
+                const bTarget = extractOrderTarget(
+                  b as MockRecord,
+                  sortKey,
+                  rawSpec,
+                );
+                const { sortDir, nullsOrder } = aTarget;
+                const va = aTarget.val;
+                const vb = bTarget.val;
                 const aIsNull = va === null || va === undefined;
                 const bIsNull = vb === null || vb === undefined;
                 if (nullsOrder && (aIsNull || bIsNull)) {
@@ -906,7 +1041,7 @@ export function createMockPrismaService(
 } {
   const dynamicTables: Record<string, MockTable<object>> = {};
 
-  const getTable = (prop: string): MockTable<object> => {
+  const getRegisteredTable = (prop: string): MockTable<object> | undefined => {
     const lower = prop.charAt(0).toLowerCase() + prop.slice(1);
     const upper = prop.charAt(0).toUpperCase() + prop.slice(1);
     const raw = tableMap[lower] || tableMap[upper];
@@ -919,10 +1054,102 @@ export function createMockPrismaService(
       }
       return raw as MockTable<object>;
     }
-    if (dynamicTables[lower]) return dynamicTables[lower];
-    dynamicTables[lower] = createMockTable();
     return dynamicTables[lower];
   };
+
+  const resolveRelation: RelationResolver = (modelName, item, relKey) => {
+    if (modelName === "candidate") {
+      if (relKey === "applications") {
+        const appTbl = getRegisteredTable("application");
+        return appTbl
+          ? appTbl.store.filter(
+              (a) => (a as MockRecord).candidateId === item.id,
+            )
+          : undefined;
+      }
+      if (relKey === "documents") {
+        const docTbl = getRegisteredTable("candidateDocument");
+        return docTbl
+          ? docTbl.store.filter(
+              (d) => (d as MockRecord).candidateId === item.id,
+            )
+          : undefined;
+      }
+      if (relKey === "candidateNotes") {
+        const noteTbl = getRegisteredTable("candidateNote");
+        return noteTbl
+          ? noteTbl.store.filter(
+              (n) => (n as MockRecord).candidateId === item.id,
+            )
+          : undefined;
+      }
+    }
+    if (modelName === "application") {
+      if (relKey === "job") {
+        const jobTbl = getRegisteredTable("job");
+        if (!jobTbl || jobTbl.store.length === 0) return undefined;
+        return (
+          jobTbl.store.find((j) => (j as MockRecord).id === item.jobId) ?? null
+        );
+      }
+      if (relKey === "candidate") {
+        const candTbl = getRegisteredTable("candidate");
+        if (!candTbl || candTbl.store.length === 0) return undefined;
+        return (
+          candTbl.store.find(
+            (c) => (c as MockRecord).id === item.candidateId,
+          ) ?? null
+        );
+      }
+      if (relKey === "interviews") {
+        const intvTbl = getRegisteredTable("interview");
+        return intvTbl
+          ? intvTbl.store.filter(
+              (i) => (i as MockRecord).applicationId === item.id,
+            )
+          : undefined;
+      }
+    }
+    if (modelName === "job") {
+      if (relKey === "applications") {
+        const appTbl = getRegisteredTable("application");
+        return appTbl
+          ? appTbl.store.filter((a) => (a as MockRecord).jobId === item.id)
+          : undefined;
+      }
+    }
+    if (modelName === "interview") {
+      if (relKey === "application") {
+        const appTbl = getRegisteredTable("application");
+        if (!appTbl || appTbl.store.length === 0) return undefined;
+        return (
+          appTbl.store.find(
+            (a) => (a as MockRecord).id === item.applicationId,
+          ) ?? null
+        );
+      }
+    }
+    return undefined;
+  };
+
+  const getTable = (prop: string): MockTable<object> => {
+    const lower = prop.charAt(0).toLowerCase() + prop.slice(1);
+    const existing = getRegisteredTable(lower);
+    if (existing) {
+      if (!tableRelationMeta.has(existing)) {
+        tableRelationMeta.set(existing, { modelName: lower, resolveRelation });
+      }
+      return existing;
+    }
+    const created = createMockTable();
+    tableRelationMeta.set(created, { modelName: lower, resolveRelation });
+    dynamicTables[lower] = created;
+    return created;
+  };
+
+  for (const key of Object.keys(tableMap)) {
+    getTable(key);
+  }
 
   const ormProxy = new Proxy(
     {},

@@ -74,6 +74,9 @@ export function useApplicationsFilterSort({
   };
 
   const filteredApps = useMemo(() => {
+    if (isServerPaginated) {
+      return baseApplications;
+    }
     let list = baseApplications;
     if (stageFilters.length > 0) {
       list = list.filter((app) => stageFilters.includes(app.stage));
@@ -149,6 +152,7 @@ export function useApplicationsFilterSort({
       return sortDirection === "asc" ? diff : -diff;
     });
   }, [
+    isServerPaginated,
     baseApplications,
     stageFilters,
     fixedJobId,
@@ -179,21 +183,16 @@ export function useApplicationsFilterSort({
 
   const totalCount =
     isServerPaginated && propTotalCount !== undefined
-      ? scoreFilter !== "ALL"
-        ? filteredApps.length
-        : propTotalCount
+      ? propTotalCount
       : filteredApps.length;
   const totalPages =
     isServerPaginated && propTotalPages !== undefined
-      ? scoreFilter !== "ALL"
-        ? Math.max(1, Math.ceil(filteredApps.length / rowsPerPage))
-        : propTotalPages
+      ? Math.max(1, propTotalPages)
       : Math.max(1, Math.ceil(totalCount / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedApps =
-    isServerPaginated && scoreFilter === "ALL"
-      ? filteredApps
-      : filteredApps.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedApps = isServerPaginated
+    ? filteredApps
+    : filteredApps.slice(startIndex, startIndex + rowsPerPage);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {

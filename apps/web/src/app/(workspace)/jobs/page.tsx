@@ -3,16 +3,10 @@
 import { Suspense, useMemo, useState } from "react";
 import { WizardDeleteModal } from "@/components/jobs/wizard";
 import { JobList } from "@/components/jobs/job-list";
-import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useTableParams } from "@/hooks/use-table-params";
-import {
-  useJobs,
-  useAllJobs,
-  useCreateJobMutation,
-  useDeleteJobMutation,
-} from "@/hooks/use-queries";
+import { useJobs, useAllJobs, useDeleteJobMutation } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -101,27 +95,7 @@ function JobsPageContent() {
     };
   }, [allJobs]);
 
-  const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
-
-  // Quick action: Create a test job
-  const handleCreateTestJob = async () => {
-    try {
-      await createJobMutation.mutateAsync({
-        title: "Senior Full-Stack Engineer (Test Role)",
-        department: "Engineering",
-        location: "Remote / Hanoi",
-        type: "FULL_TIME",
-        description:
-          "Internal test role for testing applicant pipeline and candidate screening workflow.",
-        salaryRange: "$2,500 - $4,000 / month",
-        status: "PUBLISHED",
-        organizationId: user?.organizationId ?? null,
-      });
-    } catch (err) {
-      console.error("Create test job error", err);
-    }
-  };
 
   const [jobToDelete, setJobToDelete] = useState<{
     id: string;
@@ -151,20 +125,6 @@ function JobsPageContent() {
     <div className="flex flex-1 flex-col">
       {(jobsLoading && !jobsData) || allJobsLoading ? (
         <LoadingSpinner />
-      ) : !allJobsLoading &&
-        stats.total === 0 &&
-        total === 0 &&
-        currentPage === 1 &&
-        !search &&
-        !status &&
-        !type &&
-        !experience &&
-        !workplace ? (
-        <StartRecruiting
-          onOpenCreateJob={() => router.push("/jobs/new")}
-          onCreateTestJob={handleCreateTestJob}
-          onImportFromFile={() => router.push("/jobs/new")}
-        />
       ) : (
         <div className="w-full p-4 sm:p-6 space-y-4">
           {/* Clean, Non-redundant Header Row with Primary CTA */}

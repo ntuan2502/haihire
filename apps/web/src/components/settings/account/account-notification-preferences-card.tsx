@@ -188,9 +188,7 @@ function AccountNotificationPreferencesForm({
               pending={save.isPending}
               disabled={!hasChanges || save.isPending}
             >
-              {t(
-                save.isPending ? "common.saving" : "notificationSettings.save",
-              )}
+              {t(save.isPending ? "common.saving" : "common.saveChanges")}
             </SettingsButton>
           </div>
         </form>

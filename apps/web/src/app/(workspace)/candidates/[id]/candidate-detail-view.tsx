@@ -23,7 +23,7 @@ import { CandidateDetailHeader } from "./sections/candidate-detail-header";
 import { CandidateProfileCard } from "./sections/candidate-profile-card";
 import { CandidateApplicationsTab } from "./sections/candidate-applications-tab";
 import { CandidateDocumentsTab } from "./sections/candidate-documents-tab";
-import { CandidateDocumentPreview } from "./sections/candidate-document-preview";
+import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { CandidateNotesStream } from "@/components/candidates/candidate-notes-stream";
 import { CandidateDetailModals } from "./modals/candidate-detail-modals";
 
@@ -45,7 +45,6 @@ export function CandidateDetailView() {
   });
   const docActions = useCandidateDocumentActions({
     candidate: state.candidate,
-    documentFilter: state.documentFilter,
   });
 
   const deleteCandidateMutation = useDeleteCandidateMutation();
@@ -58,7 +57,6 @@ export function CandidateDetailView() {
     useState<Application | null>(null);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
-  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   const handleConfirmDeleteCandidate = async () => {
     if (!state.candidate) return;
@@ -149,7 +147,6 @@ export function CandidateDetailView() {
         candidatePhone={state.candidatePhone}
         canEdit={state.canEdit}
         isDeleting={isDeletingCandidate}
-        onOpenSendEmail={() => setIsSendEmailOpen(true)}
         onOpenDeleteModal={() => setIsDeleteModalOpen(true)}
       />
 
@@ -223,35 +220,16 @@ export function CandidateDetailView() {
         )}
 
         {state.activeTab === "documents" && (
-          <>
-            {docActions.previewDoc ? (
-              <CandidateDocumentPreview
-                previewDoc={docActions.previewDoc}
-                candidateId={state.candidate?.id || state.candidateIdStr}
-                onClose={() => docActions.setPreviewDoc(null)}
-                onDownload={() =>
-                  docActions.handleDownloadDoc(
-                    docActions.previewDoc!.url,
-                    docActions.previewDoc!.name,
-                    docActions.previewDoc!.sourceApplicationId,
-                  )
-                }
-              />
-            ) : (
-              <CandidateDocumentsTab
-                documentFilter={state.documentFilter}
-                setDocumentFilter={state.setDocumentFilter}
-                filteredDocuments={state.filteredDocuments}
-                canEdit={state.canEdit}
-                isUploadingDoc={docActions.isUploadingDoc}
-                docInputRef={docActions.docInputRef}
-                onDocumentUpload={docActions.handleDocumentUpload}
-                onPreviewDoc={(doc) => docActions.setPreviewDoc(doc)}
-                onDownloadDoc={docActions.handleDownloadDoc}
-                onDeleteDoc={(doc) => docActions.setDocToDelete(doc)}
-              />
-            )}
-          </>
+          <CandidateDocumentsTab
+            documents={state.candidateDocuments}
+            canEdit={state.canEdit}
+            isUploadingDoc={docActions.isUploadingDoc}
+            docInputRef={docActions.docInputRef}
+            onDocumentUpload={docActions.handleDocumentUpload}
+            onPreviewDoc={(doc) => docActions.setPreviewDoc(doc)}
+            onDownloadDoc={docActions.handleDownloadDoc}
+            onDeleteDoc={(doc) => docActions.setDocToDelete(doc)}
+          />
         )}
 
         {state.activeTab === "notes" && (
@@ -276,8 +254,6 @@ export function CandidateDetailView() {
       <CandidateDetailModals
         candidate={state.candidate}
         candidateName={state.candidateName}
-        candidateEmail={state.candidateEmail}
-        candidatePhone={state.candidatePhone}
         jobs={state.jobs}
         candidateApps={state.candidateApps}
         applyModalOpen={applyModalOpen}
@@ -294,8 +270,14 @@ export function CandidateDetailView() {
         setScheduleInterviewApp={setScheduleInterviewApp}
         editingInterview={editingInterview}
         setEditingInterview={setEditingInterview}
-        isSendEmailOpen={isSendEmailOpen}
-        setIsSendEmailOpen={setIsSendEmailOpen}
+      />
+
+      <DocumentPreviewModal
+        isOpen={Boolean(docActions.previewDoc)}
+        onClose={() => docActions.setPreviewDoc(null)}
+        document={docActions.previewDoc}
+        candidateId={state.candidate?.id || state.candidateIdStr}
+        onDownload={docActions.handleDownloadDoc}
       />
     </div>
   );

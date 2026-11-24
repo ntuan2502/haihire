@@ -254,7 +254,7 @@ export default function GeneralSettingsPage() {
                 >
                   {updateOrgMutation.isPending
                     ? t("common.saving")
-                    : t("settings.saveChanges")}
+                    : t("common.saveChanges")}
                 </SettingsButton>
               </div>
             )}

@@ -122,16 +122,6 @@ export function CandidateInterviewsList({
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {t("applications.noInterviewsDesc")}
           </p>
-          {canScheduleNew && onSchedule && (
-            <Button
-              size="sm"
-              onClick={() => onSchedule?.()}
-              className="mt-2 h-8 px-4 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{t("applications.scheduleInterview")}</span>
-            </Button>
-          )}
         </div>
       </div>
     );

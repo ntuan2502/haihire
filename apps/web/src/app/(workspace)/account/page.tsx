@@ -310,9 +310,7 @@ export default function AccountPage() {
                     pending={isSavingProfile}
                   >
                     {t(
-                      isSavingProfile
-                        ? "settings.accountProfile.savingBtn"
-                        : "settings.accountProfile.saveBtn",
+                      isSavingProfile ? "common.saving" : "common.saveChanges",
                     )}
                   </SettingsButton>
                 </div>
@@ -416,7 +414,7 @@ export default function AccountPage() {
                   >
                     {t(
                       isSavingPrefs
-                        ? "settings.accountPreferences.savingBtn"
+                        ? "common.saving"
                         : "settings.accountPreferences.saveBtn",
                     )}
                   </SettingsButton>

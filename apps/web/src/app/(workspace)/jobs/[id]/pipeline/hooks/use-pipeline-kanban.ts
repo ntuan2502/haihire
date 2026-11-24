@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   useJob,
   useJobApplications,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
@@ -37,11 +38,8 @@ type PipelineSortBy = (typeof VALID_SORT_BY)[number];
 
 const VALID_CANDIDATE_TABS = [
   "overview",
-  "inbox",
-  "ai",
   "interviews",
   "documents",
-  "responses",
   "notes",
   "timeline",
 ] as const;
@@ -59,8 +57,8 @@ function parseCandidateTabParam(value: string | null): string {
 }
 
 export function usePipelineKanban(jobId: string) {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
   const { user } = useAuth();
   const canEdit = useHasPermission("application:update_stage");
   const { t } = useI18n();
@@ -73,17 +71,16 @@ export function usePipelineKanban(jobId: string) {
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
+
+  const handledTargetAppIdRef = useRef<string | null>(null);
+  const lastSyncedSearchRef = useRef<string>(searchParamsString);
+  const selfWrittenSearchesRef = useRef<Set<string>>(new Set());
 
   const updatePipelineUrl = useCallback(
-    (
-      updates: Record<string, string | null | undefined>,
-      useRouterReplace = false,
-    ) => {
-      const baseQuery =
-        typeof window !== "undefined"
-          ? window.location.search
-          : searchParams.toString();
-      const newParams = new URLSearchParams(baseQuery);
+    (updates: Record<string, string | null | undefined>) => {
+      if (typeof window === "undefined") return;
+      const newParams = new URLSearchParams(window.location.search);
       for (const [key, val] of Object.entries(updates)) {
         if (val === null || val === undefined || val === "") {
           newParams.delete(key);
@@ -92,17 +89,16 @@ export function usePipelineKanban(jobId: string) {
         }
       }
       const queryString = newParams.toString();
+      lastSyncedSearchRef.current = queryString;
       const nextUrl = queryString
         ? `/jobs/${jobId}/pipeline?${queryString}`
         : `/jobs/${jobId}/pipeline`;
-
-      if (useRouterReplace) {
-        router.replace(nextUrl, { scroll: false });
-      } else if (typeof window !== "undefined") {
-        window.history.replaceState(null, "", nextUrl);
-      }
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+      if (nextUrl === currentUrl) return;
+      selfWrittenSearchesRef.current.add(queryString);
+      window.history.replaceState(null, "", nextUrl);
     },
-    [jobId, router, searchParams],
+    [jobId],
   );
 
   const initialStageParam = searchParams.get(
@@ -121,7 +117,6 @@ export function usePipelineKanban(jobId: string) {
 
   const initialTargetAppId =
     searchParams.get("applicationId") || searchParams.get("candidateId");
-  const handledTargetAppIdRef = useRef<string | null>(null);
 
   const [searchQuery, setSearchQueryState] = useState(
     () => searchParams.get("search") || "",
@@ -136,18 +131,29 @@ export function usePipelineKanban(jobId: string) {
     parseCandidateTabParam(searchParams.get("tab")),
   );
 
+  // Sync only when Next.js searchParams string genuinely changes externally
   useEffect(() => {
-    const stageParam = searchParams.get("stage") as ApplicationStage | null;
+    if (lastSyncedSearchRef.current === searchParamsString) {
+      selfWrittenSearchesRef.current.clear();
+      return;
+    }
+    if (selfWrittenSearchesRef.current.has(searchParamsString)) {
+      selfWrittenSearchesRef.current.delete(searchParamsString);
+      return;
+    }
+    lastSyncedSearchRef.current = searchParamsString;
+    const paramsSnapshot = new URLSearchParams(searchParamsString);
+    const stageParam = paramsSnapshot.get("stage") as ApplicationStage | null;
     if (stageParam && PIPELINE_STAGES.some((s) => s.id === stageParam)) {
       setSelectedStage(stageParam);
     }
-    const urlSearch = searchParams.get("search") || "";
+    const urlSearch = paramsSnapshot.get("search") || "";
     setSearchQueryState((prev) =>
       prev.trim() === urlSearch ? prev : urlSearch,
     );
-    setSortByState(parseSortByParam(searchParams.get("sortBy")));
-    setCandidateTabState(parseCandidateTabParam(searchParams.get("tab")));
-  }, [searchParams]);
+    setSortByState(parseSortByParam(paramsSnapshot.get("sortBy")));
+    setCandidateTabState(parseCandidateTabParam(paramsSnapshot.get("tab")));
+  }, [searchParamsString]);
 
   const setSearchQuery = useCallback(
     (value: string) => {
@@ -185,10 +191,19 @@ export function usePipelineKanban(jobId: string) {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
+  // One-shot deep-link resolution when arriving with applicationId / candidateId
   useEffect(() => {
+    if (
+      selfWrittenSearchesRef.current.size > 0 &&
+      lastSyncedSearchRef.current !== searchParamsString
+    ) {
+      return;
+    }
+    const paramsSnapshot = new URLSearchParams(searchParamsString);
     const targetId =
-      searchParams.get("applicationId") || searchParams.get("candidateId");
+      paramsSnapshot.get("applicationId") || paramsSnapshot.get("candidateId");
     if (!targetId || jobApplications.length === 0) return;
     if (handledTargetAppIdRef.current === targetId) return;
 
@@ -200,9 +215,9 @@ export function usePipelineKanban(jobId: string) {
 
     if (targetApp) {
       handledTargetAppIdRef.current = targetId;
-      if (targetApp.stage !== selectedStage) {
-        setSelectedStage(targetApp.stage);
-      }
+      setSelectedStage((prev) =>
+        prev === targetApp.stage ? prev : targetApp.stage,
+      );
       setSelectedAppId(targetApp.id);
       setMobileDetailOpen(true);
 
@@ -215,12 +230,14 @@ export function usePipelineKanban(jobId: string) {
         }
       }, 150);
     }
-  }, [searchParams, jobApplications, selectedStage]);
+  }, [searchParamsString, jobApplications]);
 
   const handleSelectCandidate = useCallback(
     (candidateId: string) => {
+      handledTargetAppIdRef.current = candidateId;
       setSelectedAppId(candidateId);
       setMobileDetailOpen(true);
+      setIsSendEmailOpen(false);
       updatePipelineUrl({
         stage: selectedStage,
         applicationId: candidateId,
@@ -231,16 +248,23 @@ export function usePipelineKanban(jobId: string) {
   );
 
   const handleSelectStage = (stage: ApplicationStage) => {
-    setSelectedStage(stage);
-    updatePipelineUrl(
-      {
-        stage,
-        applicationId: null,
-        candidateId: null,
-      },
-      true,
+    const nextCandidates = filterAndSortPipelineApplications(
+      jobApplications,
+      stage,
+      searchQuery,
+      sortBy,
     );
+    const nextAppId = nextCandidates[0]?.id ?? null;
+    handledTargetAppIdRef.current = nextAppId;
+    setSelectedStage(stage);
+    setSelectedAppId(nextAppId);
+    setIsSendEmailOpen(false);
     setMobileDetailOpen(false);
+    updatePipelineUrl({
+      stage,
+      applicationId: nextAppId,
+      candidateId: null,
+    });
   };
 
   const stageCounts = useMemo(
@@ -265,12 +289,23 @@ export function usePipelineKanban(jobId: string) {
     [jobApplications, selectedStage, searchQuery, sortBy],
   );
 
+  // Reconcile selected candidate when list changes (e.g. initial load, search, deletion)
   useEffect(() => {
     if (appsLoading || updateStageMutation.isPending) return;
 
+    const paramsSnapshot = new URLSearchParams(searchParamsString);
     const targetId =
-      searchParams.get("applicationId") || searchParams.get("candidateId");
-    if (targetId && handledTargetAppIdRef.current !== targetId) return;
+      paramsSnapshot.get("applicationId") || paramsSnapshot.get("candidateId");
+    const isPendingSelfFlush =
+      selfWrittenSearchesRef.current.size > 0 &&
+      lastSyncedSearchRef.current !== searchParamsString;
+    if (
+      !isPendingSelfFlush &&
+      targetId &&
+      handledTargetAppIdRef.current !== targetId
+    ) {
+      return;
+    }
 
     if (filteredCandidates.length > 0) {
       const isSelectedInList = filteredCandidates.some(
@@ -280,6 +315,7 @@ export function usePipelineKanban(jobId: string) {
       );
       if (!selectedAppId || !isSelectedInList) {
         const nextId = filteredCandidates[0].id;
+        handledTargetAppIdRef.current = nextId;
         setSelectedAppId(nextId);
         updatePipelineUrl({
           stage: selectedStage,
@@ -288,17 +324,30 @@ export function usePipelineKanban(jobId: string) {
         });
       }
     } else {
-      setSelectedAppId(null);
-      updatePipelineUrl({
-        stage: selectedStage,
-        applicationId: null,
-        candidateId: null,
-      });
+      if (selectedAppId !== null) {
+        handledTargetAppIdRef.current = null;
+        setSelectedAppId(null);
+      }
+      const browserParams =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search)
+          : paramsSnapshot;
+      if (
+        browserParams.has("applicationId") ||
+        browserParams.has("candidateId") ||
+        browserParams.get("stage") !== selectedStage
+      ) {
+        updatePipelineUrl({
+          stage: selectedStage,
+          applicationId: null,
+          candidateId: null,
+        });
+      }
     }
   }, [
     appsLoading,
     updateStageMutation.isPending,
-    searchParams,
+    searchParamsString,
     filteredCandidates,
     selectedAppId,
     selectedStage,
@@ -306,13 +355,9 @@ export function usePipelineKanban(jobId: string) {
   ]);
 
   const selectedCandidate = useMemo(() => {
+    if (filteredCandidates.length === 0) return null;
     return (
       filteredCandidates.find(
-        (c) =>
-          String(c.id) === String(selectedAppId) ||
-          String(c.candidateId) === String(selectedAppId),
-      ) ||
-      jobApplications.find(
         (c) =>
           String(c.id) === String(selectedAppId) ||
           String(c.candidateId) === String(selectedAppId),
@@ -320,7 +365,7 @@ export function usePipelineKanban(jobId: string) {
       filteredCandidates[0] ||
       null
     );
-  }, [filteredCandidates, jobApplications, selectedAppId]);
+  }, [filteredCandidates, selectedAppId]);
 
   const currentIndex = useMemo(() => {
     if (!selectedCandidate) return -1;
@@ -386,16 +431,14 @@ export function usePipelineKanban(jobId: string) {
               )
             : prev,
       );
+      handledTargetAppIdRef.current = candidate.id;
       setSelectedAppId(candidate.id);
       setSelectedStage(newStage);
-      updatePipelineUrl(
-        {
-          stage: newStage,
-          applicationId: candidate.id,
-          candidateId: null,
-        },
-        true,
-      );
+      updatePipelineUrl({
+        stage: newStage,
+        applicationId: candidate.id,
+        candidateId: null,
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["applications"] }),
         queryClient.invalidateQueries({
@@ -515,6 +558,38 @@ export function usePipelineKanban(jobId: string) {
     );
   };
 
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
+    if (!selectedCandidate) return;
+    try {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (
+        selectedCandidate.interviews &&
+        selectedCandidate.interviews.length > 0 &&
+        selectedCandidate.interviews[0]?.id
+      ) {
+        targetId = selectedCandidate.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
+    }
+  };
+
   const candidateCountText =
     filteredCandidates.length === 0
       ? `${t("common.showing")} 0-0 ${t("common.of")} 0 ${t("nav.candidates").toLowerCase()}`
@@ -563,6 +638,9 @@ export function usePipelineKanban(jobId: string) {
     setScheduleModalOpen,
     editingInterview,
     setEditingInterview,
+    handleCancelInterview,
+    isSendEmailOpen,
+    setIsSendEmailOpen,
     mobileDetailOpen,
     setMobileDetailOpen,
     candidateTab,

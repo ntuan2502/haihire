@@ -2,18 +2,12 @@ import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { SendEmailModal } from "@/components/email/send-email-modal";
-import { useI18n } from "@/i18n";
-import { BRAND_CONFIG } from "@haihire/shared";
-import { normalizeEmailAddress } from "@/lib/utils";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Candidate, Application, CandidateDocument, Job } from "@/types";
 
 interface CandidateDetailModalsProps {
   candidate: Candidate | null | undefined;
   candidateName: string;
-  candidateEmail: string;
-  candidatePhone?: string;
   jobs: Job[];
   candidateApps: Application[];
   applyModalOpen: boolean;
@@ -30,15 +24,11 @@ interface CandidateDetailModalsProps {
   setScheduleInterviewApp: (app: Application | null) => void;
   editingInterview: ScheduledInterviewInfo | null;
   setEditingInterview: (intv: ScheduledInterviewInfo | null) => void;
-  isSendEmailOpen: boolean;
-  setIsSendEmailOpen: (open: boolean) => void;
 }
 
 export function CandidateDetailModals({
   candidate,
   candidateName,
-  candidateEmail,
-  candidatePhone,
   jobs,
   candidateApps,
   applyModalOpen,
@@ -55,11 +45,7 @@ export function CandidateDetailModals({
   setScheduleInterviewApp,
   editingInterview,
   setEditingInterview,
-  isSendEmailOpen,
-  setIsSendEmailOpen,
 }: CandidateDetailModalsProps) {
-  const { t } = useI18n();
-
   return (
     <>
       {/* Apply to Job Modal */}
@@ -114,28 +100,6 @@ export function CandidateDetailModals({
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
           editingInterview={editingInterview}
-        />
-      )}
-
-      {/* Send Email Modal */}
-      {candidate && (
-        <SendEmailModal
-          isOpen={isSendEmailOpen}
-          onClose={() => setIsSendEmailOpen(false)}
-          candidate={{
-            id: candidate.id,
-            name: candidateName,
-            email: normalizeEmailAddress(candidateEmail),
-            phone: candidatePhone,
-          }}
-          jobTitle={candidateApps[0]?.job?.title}
-          organizationName={
-            candidateApps[0]?.job?.department
-              ? t("common.departmentSuffix", {
-                  department: candidateApps[0].job.department,
-                })
-              : BRAND_CONFIG.name
-          }
         />
       )}
     </>

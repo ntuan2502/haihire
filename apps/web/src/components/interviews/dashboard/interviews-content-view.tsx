@@ -174,12 +174,7 @@ export function InterviewsContentView({
   }
 
   if (paginatedList.length === 0) {
-    return (
-      <InterviewsEmptyState
-        canEdit={canCreateInterview}
-        onOpenScheduleModal={() => onOpenScheduleModal()}
-      />
-    );
+    return <InterviewsEmptyState />;
   }
 
   return (

@@ -121,7 +121,6 @@ const mockDeleteCandidateMutateAsync = vi.fn();
 const mockDeleteCandidateDocMutateAsync = vi.fn();
 const mockDeleteAppDocMutateAsync = vi.fn();
 const mockDeleteInterviewMutateAsync = vi.fn();
-const mockSendEmailMutateAsync = vi.fn();
 
 vi.mock("@/hooks/use-queries", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -169,7 +168,7 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       isLoading: false,
     }),
     useSendEmailMutation: () => ({
-      mutateAsync: mockSendEmailMutateAsync,
+      mutateAsync: vi.fn(),
       isPending: false,
     }),
     useUploadCandidateDocumentMutation: () => ({
@@ -346,16 +345,18 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
 
   // A.1.4: Documents tab
   describe("A.1.4: Documents tab", () => {
-    it("lists candidate documents when documents tab is clicked", () => {
+    it("lists candidate documents without filter dropdown or inline preview link", () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
       fireEvent.click(docsTab);
 
       expect(screen.getByText("Nguyen_Van_A_Resume.pdf")).toBeInTheDocument();
+      expect(screen.queryByText("Nhấn để xem trước")).not.toBeInTheDocument();
+      expect(screen.queryByText("Thư xin việc")).not.toBeInTheDocument();
     });
 
-    it("switches to PDF preview mode when clicking preview button", async () => {
+    it("opens DocumentPreviewModal dialog when clicking preview button", async () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
@@ -364,6 +365,7 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       const previewBtn = screen.getByRole("button", { name: "Xem trước" });
       fireEvent.click(previewBtn);
 
+      expect(await screen.findByRole("dialog")).toBeInTheDocument();
       expect(
         await screen.findByTitle("Nguyen_Van_A_Resume.pdf"),
       ).toBeInTheDocument();
@@ -387,9 +389,9 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
     });
   });
 
-  // A.1.5: PDF viewer
+  // A.1.5: PDF viewer modal
   describe("A.1.5: PDF viewer", () => {
-    it("renders iframe pointing to document URL in preview mode", async () => {
+    it("renders iframe pointing to document URL inside preview modal", async () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
@@ -419,9 +421,13 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
         "blob:http://localhost/nguyen-van-a.pdf",
       );
       expect(iframe).not.toHaveAttribute("sandbox");
+      // Document list stays rendered underneath the dialog
+      expect(
+        screen.getAllByText("Nguyen_Van_A_Resume.pdf").length,
+      ).toBeGreaterThanOrEqual(1);
     });
 
-    it("closes PDF viewer and returns to document list when clicking back", () => {
+    it("closes PDF preview modal when clicking close button", async () => {
       renderWithClient(<CandidateDetailPage />);
 
       const docsTab = screen.getByRole("button", { name: /Tài liệu/i });
@@ -430,12 +436,18 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
       const previewBtn = screen.getByRole("button", { name: "Xem trước" });
       fireEvent.click(previewBtn);
 
-      const backBtn = screen.getByRole("button", { name: "Quay lại" });
-      fireEvent.click(backBtn);
-
       expect(
-        screen.queryByTitle("Nguyen_Van_A_Resume.pdf"),
-      ).not.toBeInTheDocument();
+        await screen.findByTitle("Nguyen_Van_A_Resume.pdf"),
+      ).toBeInTheDocument();
+
+      const closeBtn = screen.getByRole("button", { name: /Đóng|Close/i });
+      fireEvent.click(closeBtn);
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTitle("Nguyen_Van_A_Resume.pdf"),
+        ).not.toBeInTheDocument();
+      });
       expect(screen.getByText("Nguyen_Van_A_Resume.pdf")).toBeInTheDocument();
     });
   });
@@ -451,15 +463,12 @@ describe("CandidateDetailPage Component - Characterization Tests", () => {
 
   // A.1.7: Modals
   describe("A.1.7: Modals", () => {
-    it("opens send email modal when clicking Send Email button", () => {
+    it("does not render Send Email button in candidate detail header", () => {
       renderWithClient(<CandidateDetailPage />);
 
-      const sendEmailBtn = screen.getByRole("button", { name: /Gửi Email/i });
-      fireEvent.click(sendEmailBtn);
-
       expect(
-        screen.getByRole("heading", { name: /Gửi Email cho ứng viên/i }),
-      ).toBeInTheDocument();
+        screen.queryByRole("button", { name: /Gửi Email/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("opens apply to job modal when clicking Apply to Job button", () => {

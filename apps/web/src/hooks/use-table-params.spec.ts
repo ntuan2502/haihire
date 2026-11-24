@@ -138,4 +138,41 @@ describe("useTableParams hook", () => {
       "/candidates?viewMode=calendar&jobId=job-1&search=an",
     );
   });
+
+  it("does not wipe shallow params when useSearchParams returns a new instance with the same query string", () => {
+    const baseQuery = "filter=WITH_RESUME";
+    mockSearchParams = {
+      toString: () => baseQuery,
+      get: (k: string) => new URLSearchParams(baseQuery).get(k),
+    } as unknown as URLSearchParams;
+
+    const { result, rerender } = renderHook(() => useTableParams());
+    expect(result.current.getParam("filter")).toBe("WITH_RESUME");
+
+    act(() => {
+      result.current.setPage(2);
+      result.current.setParams({ filter: null }, false);
+    });
+    expect(result.current.getParam("filter")).toBe("");
+    expect(result.current.page).toBe(2);
+
+    // Simulate a parent re-render returning a new URLSearchParams object with unchanged query string
+    mockSearchParams = new URLSearchParams(baseQuery);
+    rerender();
+
+    expect(result.current.getParam("filter")).toBe("");
+    expect(result.current.page).toBe(2);
+  });
+
+  it("does not invoke replaceState when setParams is a no-op", () => {
+    mockSearchParams = new URLSearchParams("jobId=job-1");
+    const { result } = renderHook(() => useTableParams());
+    replaceStateSpy.mockClear();
+
+    act(() => {
+      result.current.setParams({ jobId: "job-1" }, true);
+    });
+
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+  });
 });

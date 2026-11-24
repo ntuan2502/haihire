@@ -60,7 +60,6 @@ describe("useCandidateDocumentActions (Caller #2)", () => {
     const { result } = renderHook(() =>
       useCandidateDocumentActions({
         candidate: mockCandidate,
-        documentFilter: "All",
       }),
     );
 

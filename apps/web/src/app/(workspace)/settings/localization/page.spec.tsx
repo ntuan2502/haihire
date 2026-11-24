@@ -153,9 +153,7 @@ describe("LocalizationSettingsPage", () => {
     expect(screen.getByTestId("preview-time")).toHaveTextContent("2:30 PM");
 
     // Submit form
-    fireEvent.click(
-      screen.getByRole("button", { name: "settings.saveChanges" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "common.saveChanges" }));
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -191,11 +189,9 @@ describe("LocalizationSettingsPage", () => {
     render(<LocalizationSettingsPage />);
 
     // Read-only banner shown and Save button omitted without org:update
+    expect(screen.getByText("settings.readOnlyAdmin")).toBeInTheDocument();
     expect(
-      screen.getByText("settings.localization.adminOnlyHint"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "settings.saveChanges" }),
+      screen.queryByRole("button", { name: "common.saveChanges" }),
     ).not.toBeInTheDocument();
 
     expect(

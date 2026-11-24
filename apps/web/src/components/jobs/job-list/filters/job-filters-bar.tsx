@@ -95,13 +95,13 @@ export function JobFiltersBar({
               },
               {
                 key: "status",
-                label: t("jobs.columns.status"),
+                label: t("common.status"),
                 checked: visibleColumns.status,
               },
             ]}
             onToggle={(key) => onToggleColumn(key as keyof VisibleColumns)}
             label={t("common.columns")}
-            menuTitle={t("jobs.toggleColumns")}
+            menuTitle={t("common.toggleColumns")}
             align="end"
           />
 

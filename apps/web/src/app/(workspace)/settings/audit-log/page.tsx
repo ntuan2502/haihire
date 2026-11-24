@@ -2,7 +2,8 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsLogTable } from "@/components/settings/settings-log-table";
-import { Fragment, useState } from "react";
+import { Fragment, Suspense, useState } from "react";
+import { useTableParams } from "@/hooks/use-table-params";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAuditLogsQuery } from "@/hooks/use-organization-queries";
@@ -26,12 +27,18 @@ import { Pagination } from "@/components/shared/pagination";
 
 const PAGE_SIZE = 20;
 
-export default function AuditLogPage() {
+function AuditLogPageContent() {
   const { t } = useI18n();
   const canViewAuditLog = useHasPermission("org:view_audit_log");
-  const [selectedAction, setSelectedAction] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE);
+  const {
+    page,
+    limit: pageSize,
+    setPage,
+    setLimit: setPageSize,
+    getParam,
+    setParam,
+  } = useTableParams({ defaultLimit: PAGE_SIZE });
+  const selectedAction = getParam("action", "");
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   const { data, isLoading, isError, error } = useAuditLogsQuery(
@@ -46,8 +53,7 @@ export default function AuditLogPage() {
   );
 
   const handleActionChange = (action: string) => {
-    setSelectedAction(action);
-    setPage(1);
+    setParam("action", action || null, true);
     setExpandedRowId(null);
   };
 
@@ -182,7 +188,6 @@ export default function AuditLogPage() {
                       }}
                       onPageSizeChange={(nextSize) => {
                         setPageSize(nextSize);
-                        setPage(1);
                         setExpandedRowId(null);
                       }}
                       className="px-4 py-3 border-t border-border bg-muted/30"
@@ -326,5 +331,13 @@ export default function AuditLogPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function AuditLogPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AuditLogPageContent />
+    </Suspense>
   );
 }

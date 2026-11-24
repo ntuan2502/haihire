@@ -215,7 +215,7 @@ export function ApplicationNotesStream({
                       }}
                       className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
                     >
-                      {t("applications.notesStream.cancel")}
+                      {t("common.cancel")}
                     </button>
 
                     <button
@@ -229,7 +229,7 @@ export function ApplicationNotesStream({
                       {addNoteMutation.isPending ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin" />
-                          <span>{t("applications.notesStream.saving")}</span>
+                          <span>{t("common.saving")}</span>
                         </>
                       ) : (
                         <>
@@ -343,7 +343,7 @@ export function ApplicationNotesStream({
                           <button
                             type="button"
                             onClick={() => handleStartEdit(note)}
-                            title={t("applications.notesStream.editNote")}
+                            title={t("common.edit")}
                             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                           >
                             <Pencil className="h-3 w-3" />
@@ -352,7 +352,7 @@ export function ApplicationNotesStream({
                           <button
                             type="button"
                             onClick={() => setDeletingNoteId(note.id)}
-                            title={t("applications.notesStream.deleteNote")}
+                            title={t("common.delete")}
                             className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -373,7 +373,7 @@ export function ApplicationNotesStream({
                             onClick={() => setDeletingNoteId(null)}
                             className="h-6 px-2 rounded-md bg-background border border-input text-foreground hover:bg-accent text-[11px] font-medium transition-colors cursor-pointer"
                           >
-                            {t("applications.notesStream.cancel")}
+                            {t("common.cancel")}
                           </button>
                           <button
                             type="button"
@@ -386,9 +386,7 @@ export function ApplicationNotesStream({
                             ) : (
                               <Trash2 className="h-2.5 w-2.5" />
                             )}
-                            <span>
-                              {t("applications.notesStream.deleteNote")}
-                            </span>
+                            <span>{t("common.delete")}</span>
                           </button>
                         </div>
                       </div>
@@ -422,7 +420,7 @@ export function ApplicationNotesStream({
                               onClick={handleCancelEdit}
                               className="h-6 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                             >
-                              {t("applications.notesStream.cancel")}
+                              {t("common.cancel")}
                             </button>
                             <button
                               type="button"

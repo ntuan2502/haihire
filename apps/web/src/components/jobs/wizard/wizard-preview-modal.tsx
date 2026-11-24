@@ -417,7 +417,7 @@ export function WizardPreviewModal({
                                     name={`q_${q.id}`}
                                     className="h-3 w-3"
                                   />
-                                  <span>{t("jobs.wizard.yesOption")}</span>
+                                  <span>{t("common.yes")}</span>
                                 </label>
                                 <label className="flex items-center gap-1.5">
                                   <input
@@ -426,7 +426,7 @@ export function WizardPreviewModal({
                                     name={`q_${q.id}`}
                                     className="h-3 w-3"
                                   />
-                                  <span>{t("jobs.wizard.noOption")}</span>
+                                  <span>{t("common.no")}</span>
                                 </label>
                               </div>
                             ) : (

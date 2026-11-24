@@ -397,7 +397,7 @@ export function WizardStepForm({
             onClick={onBack}
             className="text-xs cursor-pointer"
           >
-            {t("jobs.wizard.backAction")}
+            {t("common.back")}
           </Button>
           <Button
             type="button"

@@ -7,7 +7,6 @@ import {
   Loader2,
   UploadCloud,
 } from "lucide-react";
-import { CustomSelect } from "@/components/shared/custom-select";
 import { formatDate } from "@/lib/utils";
 import { getDocumentTypeLabel } from "@/lib/roles";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -15,9 +14,7 @@ import { useI18n } from "@/i18n";
 import type { CandidateDocument } from "@/types";
 
 interface CandidateDocumentsTabProps {
-  documentFilter: string;
-  setDocumentFilter: (val: string) => void;
-  filteredDocuments: CandidateDocument[];
+  documents: CandidateDocument[];
   canEdit: boolean;
   isUploadingDoc: boolean;
   docInputRef: RefObject<HTMLInputElement | null>;
@@ -28,9 +25,7 @@ interface CandidateDocumentsTabProps {
 }
 
 export function CandidateDocumentsTab({
-  documentFilter,
-  setDocumentFilter,
-  filteredDocuments,
+  documents,
   canEdit: _canEdit,
   isUploadingDoc,
   docInputRef,
@@ -45,22 +40,9 @@ export function CandidateDocumentsTab({
 
   return (
     <div className="space-y-4">
-      {/* Document Toolbar: Filter + Upload Button */}
-      <div className="flex items-center justify-between gap-3">
-        <CustomSelect
-          value={documentFilter}
-          onChange={(v) => setDocumentFilter(v)}
-          options={[
-            { value: "All", label: t("common.all") },
-            { value: "Resume", label: t("candidates.resume") },
-            { value: "Cover Letter", label: t("candidates.coverLetter") },
-            { value: "Other", label: t("common.other") },
-          ]}
-          size="sm"
-          triggerClassName="h-8 w-32 text-xs font-normal"
-        />
-
-        {hasUploadDoc && (
+      {/* Document Toolbar: Upload Button */}
+      {hasUploadDoc && (
+        <div className="flex items-center justify-end gap-3">
           <div>
             <button
               type="button"
@@ -83,13 +65,13 @@ export function CandidateDocumentsTab({
               onChange={onDocumentUpload}
             />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Document Cards List */}
-      {filteredDocuments.length > 0 ? (
+      {documents.length > 0 ? (
         <div className="space-y-3">
-          {filteredDocuments.map((doc) => (
+          {documents.map((doc) => (
             <div
               key={doc.id || doc.url}
               className="p-4 rounded-xl border border-border bg-card/60 text-card-foreground shadow-xs flex items-center justify-between gap-4"
@@ -106,14 +88,6 @@ export function CandidateDocumentsTab({
                     <span>{getDocumentTypeLabel(doc.type, t)}</span>
                     <span>•</span>
                     <span>{formatDate(doc.createdAt, "short")}</span>
-                    <span>•</span>
-                    <button
-                      type="button"
-                      onClick={() => onPreviewDoc(doc)}
-                      className="text-foreground font-medium underline underline-offset-4 hover:opacity-80 cursor-pointer"
-                    >
-                      {t("candidates.clickToPreview")}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -124,6 +98,7 @@ export function CandidateDocumentsTab({
                   type="button"
                   onClick={() => onPreviewDoc(doc)}
                   className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  aria-label={t("common.preview")}
                   title={t("common.preview")}
                 >
                   <Eye className="h-4 w-4" />

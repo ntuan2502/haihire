@@ -10,7 +10,7 @@ import {
   InterviewsScorecardService,
 } from "./services";
 import type {
-  FindAllInterviewsOptions,
+  ListPaginatedInterviewsOptions,
   InterviewType,
   InterviewFormat,
   InterviewUpdatePayload,
@@ -20,7 +20,7 @@ export type {
   InterviewType,
   InterviewFormat,
   InterviewUpdatePayload,
-  FindAllInterviewsOptions,
+  ListPaginatedInterviewsOptions,
 };
 
 @Injectable()
@@ -60,8 +60,8 @@ export class InterviewsService {
       );
   }
 
-  async findAll(options?: FindAllInterviewsOptions) {
-    return this.queryService.findAll(options);
+  async listPaginated(options?: ListPaginatedInterviewsOptions) {
+    return this.queryService.listPaginated(options);
   }
 
   async findOne(id: string, tenantOrgId?: string | null) {

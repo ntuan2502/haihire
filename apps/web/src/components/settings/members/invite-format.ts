@@ -56,3 +56,30 @@ export function formatInviteExpiry(
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
   return t("members.expiresInDays", { days });
 }
+
+/**
+ * Identifies whether an invitation record targets a specific email address.
+ */
+export function isEmailInvite(link: InviteLink): boolean {
+  return link.inviteType === "EMAIL" || Boolean(link.invitedEmail);
+}
+
+/**
+ * Identifies whether an invitation record has been explicitly revoked.
+ */
+export function isRevokedInvite(link: InviteLink): boolean {
+  return link.derivedStatus === "REVOKED" || link.status === "REVOKED";
+}
+
+/**
+ * Splits organization invites into email invitations, non-revoked email invites,
+ * and active/non-revoked shareable links for consistent counts and lists.
+ */
+export function partitionOrgInvites(links: InviteLink[]) {
+  const emailInvites = links.filter(isEmailInvite);
+  const activeEmailInvites = emailInvites.filter((l) => !isRevokedInvite(l));
+  const shareableLinks = links.filter(
+    (l) => !isEmailInvite(l) && !isRevokedInvite(l),
+  );
+  return { emailInvites, activeEmailInvites, shareableLinks };
+}

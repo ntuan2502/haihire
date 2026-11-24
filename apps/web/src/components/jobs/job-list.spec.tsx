@@ -379,7 +379,7 @@ describe("JobList Component - Characterization Tests", () => {
 
       fireEvent.click(screen.getByText(en.common.filter));
       const drawer = screen.getByRole("dialog");
-      expect(within(drawer).queryByText(en.jobs.saveAsView)).toBeNull();
+      expect(within(drawer).queryByText("Save as view")).toBeNull();
 
       fireEvent.click(within(drawer).getByText(en.jobs.done));
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -437,7 +437,7 @@ describe("JobList Component - Characterization Tests", () => {
       const publicLinks = screen.getAllByTitle(en.jobs.viewPublicPage);
       expect(publicLinks.length).toBeGreaterThan(0);
       expect(publicLinks[0].getAttribute("href")).toContain("/careers/");
-      expect(screen.queryByTitle(en.jobs.copyPublicApplyLink)).toBeNull();
+      expect(screen.queryByTitle("Copy public application link")).toBeNull();
     });
   });
 

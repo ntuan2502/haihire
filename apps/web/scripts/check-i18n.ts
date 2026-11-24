@@ -525,6 +525,228 @@ function scanVietnameseLocaleLeaks(filePath: string): ViLeakHit[] {
   return hits;
 }
 
+const DYNAMIC_KEY_PREFIXES = [
+  "errors.",
+  "notificationInbox.",
+  "notificationSettings.",
+  "pipeline.stages.",
+  "settings.auditLog.resources.",
+  "settings.integrations.webhooks.eventTypes.",
+  "settings.integrations.webhooks.providers.",
+  "settings.localization.languages.",
+  "settings.rolesMatrix.",
+  "sourcing.channels.",
+  "timeline.events.",
+];
+
+const GUARDED_COMMON_ACTION_KEYS = [
+  "common.save",
+  "common.saveChanges",
+  "common.saving",
+  "common.cancel",
+  "common.delete",
+  "common.deleting",
+  "common.edit",
+  "common.back",
+  "common.close",
+  "common.next",
+  "common.previous",
+  "common.copied",
+  "common.fullscreen",
+  "common.uploading",
+  "common.actions",
+  "common.status",
+  "common.active",
+  "common.inactive",
+  "common.toggleColumns",
+];
+
+function walkAllRuntimeFiles(
+  dir: string,
+  excludedFiles: Set<string>,
+): string[] {
+  const results: string[] = [];
+  for (const item of fs.readdirSync(dir)) {
+    const fullPath = path.join(dir, item);
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      if (item === "node_modules" || item === ".next") continue;
+      results.push(...walkAllRuntimeFiles(fullPath, excludedFiles));
+    } else if (
+      (item.endsWith(".tsx") || item.endsWith(".ts")) &&
+      !item.endsWith(".d.ts") &&
+      !item.endsWith(".spec.tsx") &&
+      !item.endsWith(".spec.ts") &&
+      !excludedFiles.has(path.resolve(fullPath))
+    ) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+function getLocalePropertyAccessPath(
+  node: ts.PropertyAccessExpression,
+): { root: string; dotPath: string } | null {
+  const parts: string[] = [];
+  let cur: ts.Expression = node;
+  while (ts.isPropertyAccessExpression(cur)) {
+    parts.unshift(cur.name.text);
+    cur = cur.expression;
+  }
+  if (ts.isIdentifier(cur)) {
+    return { root: cur.text, dotPath: parts.join(".") };
+  }
+  return null;
+}
+
+function scanUnusedDictionaryKeys(schemaKeys: Set<string>): string[] {
+  const excluded = new Set([
+    path.resolve(TYPES_FILE),
+    path.resolve(VI_FILE),
+    path.resolve(EN_FILE),
+  ]);
+  const files = walkAllRuntimeFiles(path.join(ROOT_DIR, "src"), excluded);
+  const referencedStrings = new Set<string>();
+  const referencedPropPaths = new Set<string>();
+  const templateHeads = new Set<string>(DYNAMIC_KEY_PREFIXES);
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, "utf-8");
+    const sf = ts.createSourceFile(
+      file,
+      content,
+      ts.ScriptTarget.Latest,
+      true,
+      file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
+
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isStringLiteral(node) ||
+        ts.isNoSubstitutionTemplateLiteral(node)
+      ) {
+        referencedStrings.add(node.text);
+      } else if (
+        ts.isPropertyAccessExpression(node) &&
+        !ts.isPropertyAccessExpression(node.parent)
+      ) {
+        const info = getLocalePropertyAccessPath(node);
+        if (info && (info.root === "en" || info.root === "vi")) {
+          referencedPropPaths.add(info.dotPath);
+        }
+      } else if (
+        ts.isTemplateExpression(node) &&
+        /^[a-z][a-zA-Z0-9]*(\.[a-zA-Z0-9]+)*\.$/.test(node.head.text)
+      ) {
+        templateHeads.add(node.head.text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+  }
+
+  const unused: string[] = [];
+  for (const key of schemaKeys) {
+    let matchesDynamicPrefix = false;
+    for (const prefix of templateHeads) {
+      if (key.startsWith(prefix)) {
+        matchesDynamicPrefix = true;
+        break;
+      }
+    }
+    if (matchesDynamicPrefix) continue;
+    if (referencedStrings.has(key) || referencedPropPaths.has(key)) continue;
+    unused.push(key);
+  }
+  return unused.sort();
+}
+
+function parseLocaleStringValues(filePath: string): Map<string, string> {
+  const content = fs.readFileSync(filePath, "utf-8");
+  const sf = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const values = new Map<string, string>();
+
+  function walkObj(
+    props: ts.NodeArray<ts.ObjectLiteralElementLike>,
+    prefix: string,
+  ): void {
+    for (const prop of props) {
+      if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+        const keyPath = prefix ? `${prefix}.${prop.name.text}` : prop.name.text;
+        if (
+          ts.isStringLiteral(prop.initializer) ||
+          ts.isNoSubstitutionTemplateLiteral(prop.initializer)
+        ) {
+          values.set(keyPath, prop.initializer.text);
+        } else if (ts.isObjectLiteralExpression(prop.initializer)) {
+          walkObj(prop.initializer.properties, keyPath);
+        }
+      }
+    }
+  }
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isVariableDeclaration(node) &&
+      (node.name.getText(sf) === "en" || node.name.getText(sf) === "vi") &&
+      node.initializer &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      walkObj(node.initializer.properties, "");
+      return;
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sf);
+  return values;
+}
+
+function scanDuplicateCoreCommonKeys(): Array<{
+  key: string;
+  commonKey: string;
+  enVal: string;
+  viVal: string;
+}> {
+  const enValues = parseLocaleStringValues(EN_FILE);
+  const viValues = parseLocaleStringValues(VI_FILE);
+  const guardedPairs = new Map<string, string>();
+
+  for (const commonKey of GUARDED_COMMON_ACTION_KEYS) {
+    const enVal = enValues.get(commonKey);
+    const viVal = viValues.get(commonKey);
+    if (enVal !== undefined && viVal !== undefined) {
+      guardedPairs.set(`${enVal}\0${viVal}`, commonKey);
+    }
+  }
+
+  const hits: Array<{
+    key: string;
+    commonKey: string;
+    enVal: string;
+    viVal: string;
+  }> = [];
+
+  for (const [key, enVal] of enValues.entries()) {
+    if (key.startsWith("common.")) continue;
+    const viVal = viValues.get(key);
+    if (viVal === undefined) continue;
+    const commonKey = guardedPairs.get(`${enVal}\0${viVal}`);
+    if (commonKey) {
+      hits.push({ key, commonKey, enVal, viVal });
+    }
+  }
+
+  return hits;
+}
+
 function main(): void {
   console.log("\n🔍 Running ATS Two-Way i18n Verification Check...\n");
 
@@ -671,6 +893,34 @@ function main(): void {
     errors += viLeaks.length;
   }
 
+  // 5. Direction 4: Guard against unused keys & duplicate common.* action/status keys
+  const unusedKeys = scanUnusedDictionaryKeys(schemaKeys);
+  if (unusedKeys.length > 0) {
+    console.error(
+      `❌ Found ${unusedKeys.length} unused dictionary key(s) in types.ts/locales:`,
+    );
+    for (const k of unusedKeys.slice(0, 30)) {
+      console.error(`   - ${k}`);
+    }
+    if (unusedKeys.length > 30) {
+      console.error(`   ... and ${unusedKeys.length - 30} more`);
+    }
+    errors += unusedKeys.length;
+  }
+
+  const duplicateCommonKeys = scanDuplicateCoreCommonKeys();
+  if (duplicateCommonKeys.length > 0) {
+    console.error(
+      `❌ Found ${duplicateCommonKeys.length} key(s) duplicating core common.* action/status labels:`,
+    );
+    for (const dup of duplicateCommonKeys) {
+      console.error(
+        `   - ${dup.key} duplicates ${dup.commonKey} ("${dup.enVal}" / "${dup.viVal}")`,
+      );
+    }
+    errors += duplicateCommonKeys.length;
+  }
+
   if (errors > 0) {
     console.error(
       `\n❌ Two-Way i18n Check FAILED with ${errors} total issue(s).\n`,
@@ -686,6 +936,9 @@ function main(): void {
   );
   console.log(
     "✅ Direction 3: Zero English UI leaks detected in Vietnamese dictionary!",
+  );
+  console.log(
+    "✅ Direction 4: Zero unused keys and zero duplicate common action/status keys!",
   );
   console.log("🎉 Two-Way i18n Verification PASSED 100%!\n");
   process.exit(0);

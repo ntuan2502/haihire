@@ -226,4 +226,61 @@ describe("usePipelineKanban", () => {
     mockSearchParamString = "";
     replaceStateSpy.mockRestore();
   });
+
+  it("does not snap back or flicker when Next.js useSearchParams lags behind stage switches", () => {
+    mockSearchParamString = "stage=APPLIED&applicationId=app-1";
+    window.history.replaceState(
+      null,
+      "",
+      "/jobs/job-1/pipeline?stage=APPLIED&applicationId=app-1",
+    );
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
+
+    const { result, rerender } = renderHook(() => usePipelineKanban("job-1"));
+    expect(result.current.selectedStage).toBe("APPLIED");
+    expect(result.current.selectedAppId).toBe("app-1");
+    expect(result.current.selectedCandidate?.id).toBe("app-1");
+    replaceStateSpy.mockClear();
+
+    // Switch stage while useSearchParams still reflects the previous stage
+    act(() => {
+      result.current.handleSelectStage("SCREENING");
+    });
+
+    expect(result.current.selectedStage).toBe("SCREENING");
+    expect(result.current.selectedAppId).toBe("app-2");
+    expect(result.current.selectedCandidate?.id).toBe("app-2");
+    expect(replaceStateSpy).toHaveBeenCalledTimes(1);
+
+    // Delayed Next.js flush catches up with SCREENING
+    replaceStateSpy.mockClear();
+    mockSearchParamString = "stage=SCREENING&applicationId=app-2";
+    rerender();
+
+    expect(result.current.selectedStage).toBe("SCREENING");
+    expect(result.current.selectedAppId).toBe("app-2");
+    expect(result.current.selectedCandidate?.id).toBe("app-2");
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+
+    // Switch to empty stage while useSearchParams still lags at SCREENING
+    act(() => {
+      result.current.handleSelectStage("INTERVIEW");
+    });
+
+    expect(result.current.selectedStage).toBe("INTERVIEW");
+    expect(result.current.selectedAppId).toBeNull();
+    expect(result.current.selectedCandidate).toBeNull();
+
+    // Delayed Next.js flush catches up with empty stage
+    replaceStateSpy.mockClear();
+    mockSearchParamString = "stage=INTERVIEW";
+    rerender();
+
+    expect(result.current.selectedStage).toBe("INTERVIEW");
+    expect(result.current.selectedAppId).toBeNull();
+    expect(result.current.selectedCandidate).toBeNull();
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+
+    replaceStateSpy.mockRestore();
+  });
 });

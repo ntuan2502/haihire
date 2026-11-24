@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { webcrypto } from "node:crypto";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { UserAvatar } from "./user-avatar";
+import { UserAvatar, clearFailedAvatarUrlCache } from "./user-avatar";
 import { computeGravatarUrl } from "@/lib/avatar-image";
 
 vi.mock("@/lib/api/client", () => ({
@@ -13,8 +13,12 @@ vi.mock("@/lib/api/client", () => ({
 }));
 
 describe("UserAvatar", () => {
-  it("renders resolved image URL for authenticated MinIO avatar proxy", () => {
-    render(
+  beforeEach(() => {
+    clearFailedAvatarUrlCache();
+  });
+
+  it("renders resolved image URL visibly on initial render without an initials flash on reload", () => {
+    const { container } = render(
       <UserAvatar
         name="Alice Recruiter"
         avatarUrl="/auth/avatars/user-1?v=123"
@@ -23,6 +27,8 @@ describe("UserAvatar", () => {
 
     const img = screen.getByRole("img", { name: "Alice Recruiter" });
     expect(img).toHaveAttribute("src", "/api/auth/avatars/user-1?v=123");
+    expect(img).not.toHaveClass("opacity-0");
+    expect(container).not.toHaveTextContent("AR");
   });
 
   it("renders external Gravatar URL as-is and falls back to initials when loading fails", () => {
@@ -73,7 +79,7 @@ describe("UserAvatar", () => {
     }
   });
 
-  it("hides unloaded image with initials visible and falls back on cached 404 without error event", async () => {
+  it("falls back to initials on cached 404 without firing an error event", async () => {
     const onImageError = vi.fn();
     const originalComplete = Object.getOwnPropertyDescriptor(
       HTMLImageElement.prototype,
@@ -102,9 +108,6 @@ describe("UserAvatar", () => {
         />,
       );
 
-      // Initials are already rendered cleanly underneath while loading/failing
-      expect(container).toHaveTextContent("AD");
-
       await waitFor(() => {
         expect(onImageError).toHaveBeenCalledTimes(1);
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -126,5 +129,27 @@ describe("UserAvatar", () => {
         );
       }
     }
+  });
+
+  it("immediately renders initials for subsequent mounts when URL already failed in session and notifies onImageError", () => {
+    const failedUrl = "https://www.gravatar.com/avatar/missing2?s=256&d=404";
+    const firstRender = render(
+      <UserAvatar name="Admin Demo" avatarUrl={failedUrl} />,
+    );
+    fireEvent.error(screen.getByRole("img", { name: "Admin Demo" }));
+    firstRender.unmount();
+
+    const secondErrorSpy = vi.fn();
+    const { container } = render(
+      <UserAvatar
+        name="Admin Demo"
+        avatarUrl={failedUrl}
+        onImageError={secondErrorSpy}
+      />,
+    );
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(container).toHaveTextContent("AD");
+    expect(secondErrorSpy).toHaveBeenCalledTimes(1);
   });
 });

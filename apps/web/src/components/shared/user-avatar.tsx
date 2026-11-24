@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { User as UserIcon } from "lucide-react";
 import { cn } from "cn";
 import { resolveUserAvatarUrl } from "@/lib/api/client";
@@ -27,9 +33,18 @@ const SIZE_CLASSES: Record<UserAvatarSize, string> = {
   xl: "size-16 text-lg",
 };
 
+const failedAvatarUrls = new Set<string>();
+
+export function clearFailedAvatarUrlCache(): void {
+  failedAvatarUrls.clear();
+}
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 /**
- * Displays a user's profile image (MinIO proxy or Gravatar) with automatic
- * fallback to initials when no avatar is set or the image fails to load.
+ * Displays a user's profile image (MinIO proxy or Gravatar) directly on initial render
+ * without an initials flash on reload, falling back to initials if loading fails.
  */
 export function UserAvatar({
   name,
@@ -53,15 +68,15 @@ export function UserAvatar({
     onImageLoadRef.current = onImageLoad;
   }, [onImageError, onImageLoad]);
 
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const isLoaded = Boolean(resolvedSrc) && loadedSrc === resolvedSrc;
-  const shouldRenderImg = Boolean(resolvedSrc) && failedSrc !== resolvedSrc;
+  const isKnownFailed =
+    Boolean(resolvedSrc) &&
+    (failedSrc === resolvedSrc || failedAvatarUrls.has(resolvedSrc!));
+  const showImage = Boolean(resolvedSrc) && !isKnownFailed;
   const trimmedName = name?.trim() || "";
   const initials = trimmedName ? getInitials(trimmedName) : "";
 
   const handleLoadSuccess = useCallback((src: string) => {
-    setLoadedSrc((prev) => (prev === src ? prev : src));
     if (reportedLoadSrcRef.current !== src) {
       reportedLoadSrcRef.current = src;
       onImageLoadRef.current?.();
@@ -69,6 +84,7 @@ export function UserAvatar({
   }, []);
 
   const handleLoadFailure = useCallback((src: string) => {
+    failedAvatarUrls.add(src);
     setFailedSrc((prev) => (prev === src ? prev : src));
     if (reportedErrorSrcRef.current !== src) {
       reportedErrorSrcRef.current = src;
@@ -76,10 +92,26 @@ export function UserAvatar({
     }
   }, []);
 
-  // Catch cached/pre-hydration 404s where img.complete is already true (naturalWidth === 0)
-  // without waiting for an error event that may not re-fire.
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
+    return () => {
+      reportedErrorSrcRef.current = null;
+      reportedLoadSrcRef.current = null;
+    };
+  }, [resolvedSrc]);
+
+  // Catch cached/pre-hydration 404s synchronously before paint (and notify callers
+  // if another component already recorded this URL as failed in the current session).
+  useIsomorphicLayoutEffect(() => {
     if (!resolvedSrc) return;
+
+    if (isKnownFailed) {
+      if (reportedErrorSrcRef.current !== resolvedSrc) {
+        reportedErrorSrcRef.current = resolvedSrc;
+        onImageErrorRef.current?.();
+      }
+      return;
+    }
+
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
@@ -91,12 +123,11 @@ export function UserAvatar({
         handleLoadFailure(resolvedSrc);
       }
     });
+
     return () => {
       cancelled = true;
-      reportedErrorSrcRef.current = null;
-      reportedLoadSrcRef.current = null;
     };
-  }, [resolvedSrc, handleLoadFailure, handleLoadSuccess]);
+  }, [resolvedSrc, isKnownFailed, handleLoadFailure, handleLoadSuccess]);
 
   return (
     <div
@@ -104,19 +135,13 @@ export function UserAvatar({
         "relative flex shrink-0 items-center justify-center overflow-hidden select-none font-semibold",
         rounded === "lg" ? "rounded-lg" : "rounded-full",
         SIZE_CLASSES[size],
-        isLoaded
+        showImage
           ? "bg-muted ring-1 ring-border"
           : "bg-secondary text-secondary-foreground ring-1 ring-border",
         className,
       )}
     >
-      {!isLoaded &&
-        (initials ? (
-          <span aria-hidden="true">{initials}</span>
-        ) : (
-          <UserIcon className="h-[55%] w-[55%]" aria-hidden="true" />
-        ))}
-      {shouldRenderImg && (
+      {showImage ? (
         <>
           {/* Intentional img element for authenticated proxy & external Gravatar URLs with onError fallback */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -136,14 +161,13 @@ export function UserAvatar({
                 handleLoadFailure(resolvedSrc);
               }
             }}
-            className={cn(
-              "h-full w-full object-cover",
-              isLoaded
-                ? "opacity-100"
-                : "opacity-0 absolute inset-0 pointer-events-none",
-            )}
+            className="h-full w-full object-cover text-transparent"
           />
         </>
+      ) : initials ? (
+        <span aria-hidden="true">{initials}</span>
+      ) : (
+        <UserIcon className="h-[55%] w-[55%]" aria-hidden="true" />
       )}
     </div>
   );

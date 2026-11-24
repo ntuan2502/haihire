@@ -146,6 +146,24 @@ export function useDeleteMyOrgMutation() {
   });
 }
 
+export function useLeaveOrganizationMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => organizationsApi.leaveMyOrg(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myPermissions() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrgs() });
+    },
+  });
+}
+
 export function useOrgMembers(options?: { enabled?: boolean }) {
   const { user } = useAuth();
   return useQuery<User[]>({

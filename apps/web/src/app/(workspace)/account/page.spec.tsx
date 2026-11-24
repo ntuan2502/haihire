@@ -21,13 +21,17 @@ vi.mock("@/lib/toast", () => ({
 
 const mockSetSession = vi.fn();
 const mockUpdateUser = vi.fn();
+const mockRefreshUser = vi.fn().mockResolvedValue(null);
 const mockSetLocale = vi.fn();
+const mockRouterReplace = vi.fn();
+const mockLeaveMyOrg = vi.fn();
 let mockCurrentUser: {
   id: string;
   name: string;
   firstName?: string | null;
   lastName?: string | null;
   email: string;
+  role?: string;
   avatarUrl?: string | null;
   avatarSource?: "NONE" | "UPLOAD" | "GRAVATAR";
   preferredLanguage?: "vi" | "en" | null;
@@ -47,6 +51,7 @@ let mockCurrentUser: {
   firstName: "Alice",
   lastName: "Recruiter",
   email: "alice@example.com",
+  role: "RECRUITER",
   organization: {
     id: "org-1",
     name: "Acme",
@@ -57,13 +62,28 @@ let mockCurrentUser: {
   },
 };
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    replace: mockRouterReplace,
+    push: vi.fn(),
+  }),
+}));
+
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
     user: mockCurrentUser,
+    isOwner: false,
     logout: vi.fn(),
+    refreshUser: mockRefreshUser,
     setSession: mockSetSession,
     updateUser: mockUpdateUser,
   }),
+}));
+
+vi.mock("@/lib/api/organizations", () => ({
+  organizationsApi: {
+    leaveMyOrg: (...args: unknown[]) => mockLeaveMyOrg(...args),
+  },
 }));
 
 vi.mock("@/lib/api/auth", () => ({
@@ -86,6 +106,7 @@ vi.mock("@/lib/api/client", () => ({
     if (url.startsWith("http") || url.startsWith("/api/")) return url;
     return `/api${url.startsWith("/") ? "" : "/"}${url}`;
   },
+  resolveOrganizationLogoUrl: (url?: string | null) => url ?? null,
 }));
 
 vi.mock("@/i18n", () => ({
@@ -186,6 +207,14 @@ vi.mock("@/i18n", () => ({
         "notificationSettings.saved": "Đã lưu cài đặt thông báo.",
         "notificationSettings.saveError": "Không thể lưu cài đặt thông báo.",
         "notificationSettings.loadError": "Không thể tải cài đặt thông báo.",
+        "settings.currentOrgSectionTitle": "Tổ chức hiện tại",
+        "settings.currentOrgSectionDesc": "Quản lý tư cách thành viên.",
+        "settings.leaveOrgButton": "Rời khỏi tổ chức",
+        "settings.leaveOrgConfirmTitle": `Rời khỏi ${params?.name ?? ""}?`,
+        "settings.leaveOrgConfirmDesc": "Bạn sẽ mất quyền truy cập.",
+        "settings.leaveOrgSuccess": `Bạn đã rời khỏi tổ chức ${params?.name ?? ""}.`,
+        "common.cancel": "Hủy",
+        "members.roleRecruiter": "Chuyên viên tuyển dụng",
       };
       return dict[key] || key;
     },
@@ -712,5 +741,38 @@ describe("AccountPage Component", () => {
     expect(toast.success).toHaveBeenCalledWith(
       "Đã gỡ ảnh đại diện về mặc định.",
     );
+  });
+
+  it("renders current workspace section and allows non-owner member to leave organization", async () => {
+    mockLeaveMyOrg.mockResolvedValueOnce({
+      success: true,
+      organizationId: "org-1",
+      organizationName: "Acme",
+      message: "Left",
+      nextOrganization: null,
+    });
+
+    renderAccountPage();
+
+    expect(screen.getByText("Tổ chức hiện tại")).toBeInTheDocument();
+    expect(screen.getByText("Acme")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Rời khỏi tổ chức" }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Rời khỏi Acme?")).toBeInTheDocument();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Rời khỏi tổ chức" }),
+    );
+
+    await waitFor(() => {
+      expect(mockLeaveMyOrg).toHaveBeenCalledTimes(1);
+      expect(mockRefreshUser).toHaveBeenCalledTimes(1);
+      expect(toast.success).toHaveBeenCalledWith(
+        "Bạn đã rời khỏi tổ chức Acme.",
+      );
+      expect(mockRouterReplace).toHaveBeenCalledWith("/auth/onboarding");
+    });
   });
 });

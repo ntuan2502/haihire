@@ -106,6 +106,8 @@ export const en: TranslationSchema = {
     ORG_CANNOT_CHANGE_SELF_ROLE: "You cannot change your own role.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
+    ORG_OWNER_CANNOT_LEAVE:
+      "Organization owner cannot leave. Transfer ownership or delete the organization first.",
     ORG_CANNOT_TRANSFER_TO_SELF:
       "Cannot transfer organization ownership to yourself.",
     ORG_TRANSFER_TARGET_NOT_MEMBER:
@@ -1361,6 +1363,19 @@ export const en: TranslationSchema = {
     deleteOrgConfirmPrompt:
       "This action cannot be undone. To confirm deletion, type your workspace slug {slug} below:",
     deleteOrgButton: "Delete Organization",
+    leaveOrg: "Leave Organization",
+    leaveOrgDesc:
+      "Leave this workspace and lose access to its jobs, candidates, and settings. You will need a new invitation to rejoin.",
+    leaveOrgButton: "Leave organization",
+    leaveOrgConfirmTitle: "Leave {name}?",
+    leaveOrgConfirmDesc:
+      "You will immediately lose access to all workspaces, jobs, and candidate records in this organization. This action cannot be undone without a new invitation.",
+    leaveOrgSuccess: "You have left {name}.",
+    ownerLeaveHint:
+      "As the organization owner, transfer ownership to another member before leaving.",
+    goToMembersTransfer: "Manage members",
+    currentOrgSectionTitle: "Current Workspace",
+    currentOrgSectionDesc: "Manage your membership in the active organization.",
     publicJobBoardLink: "Public Job Board Link",
     emailAddress: "Email Address",
     changePasswordTitle: "Change Password",
@@ -1688,6 +1703,7 @@ export const en: TranslationSchema = {
       actionRolePermissionsReset: "Permissions Reset",
       actionMemberRoleChanged: "Member Role Changed",
       actionMemberRemoved: "Member Removed",
+      actionMemberLeft: "Member Left",
       actionOwnershipTransferred: "Ownership Transferred",
       actionOrgDeleted: "Organization Deleted",
       actionOrgLocalizationUpdated: "Localization Updated",

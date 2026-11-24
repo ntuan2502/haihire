@@ -28,6 +28,8 @@ describe("OrganizationsController", () => {
     getMembers: vi.fn(),
     getInterviewers: vi.fn(),
     updateMemberRole: vi.fn(),
+    removeMember: vi.fn(),
+    leaveOrganization: vi.fn(),
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
@@ -839,6 +841,50 @@ describe("OrganizationsController", () => {
       mockService.getPublicInvite.mockResolvedValueOnce({ valid: true });
       await controller.getPublicInvite("tok-123", undefined);
       expect(mockService.getPublicInvite).toHaveBeenCalledWith("tok-123", null);
+    });
+  });
+
+  describe("POST /organizations/my/leave", () => {
+    it("leaves active org and syncs session cookies to next remaining organization when user belongs to another org", async () => {
+      const nextOrg = { id: "org-2", name: "Beta Inc", slug: "beta-inc" };
+      mockService.leaveOrganization.mockResolvedValueOnce({
+        success: true,
+        organizationId: "org-1",
+        organizationName: "Acme Corp",
+        message: "Successfully left the organization",
+      });
+      mockService.getMyOrg.mockResolvedValueOnce(nextOrg);
+
+      const res = await controller.leaveMyOrg(nonOwnerAdminReq);
+
+      expect(mockService.leaveOrganization).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-1",
+      );
+      expect(mockService.getMyOrg).toHaveBeenCalledWith("user-admin-other");
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-admin-other",
+        "org-2",
+      );
+      expect(res.nextOrganization).toEqual(nextOrg);
+    });
+
+    it("syncs session cookies to null when caller has no remaining organizations", async () => {
+      mockService.leaveOrganization.mockResolvedValueOnce({
+        success: true,
+        organizationId: "org-1",
+        organizationName: "Acme Corp",
+        message: "Successfully left the organization",
+      });
+      mockService.getMyOrg.mockResolvedValueOnce(null);
+
+      const res = await controller.leaveMyOrg(memberReq);
+
+      expect(mockAuthService.issueOrgSessionTokens).toHaveBeenCalledWith(
+        "user-member",
+        null,
+      );
+      expect(res.nextOrganization).toBeNull();
     });
   });
 });

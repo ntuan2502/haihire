@@ -92,6 +92,23 @@ export const organizationsApi = {
     return response.data;
   },
 
+  leaveMyOrg: async (): Promise<{
+    success: boolean;
+    organizationId: string;
+    organizationName: string;
+    message: string;
+    nextOrganization: Organization | null;
+  }> => {
+    const response = await api.post<{
+      success: boolean;
+      organizationId: string;
+      organizationName: string;
+      message: string;
+      nextOrganization: Organization | null;
+    }>("/organizations/my/leave");
+    return response.data;
+  },
+
   transferOwnership: async (
     newOwnerUserId: string,
   ): Promise<{ success: boolean; newOwnerId: string }> => {

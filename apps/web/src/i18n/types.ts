@@ -97,6 +97,7 @@ export interface TranslationSchema {
     ORG_CANNOT_CHANGE_SELF_ROLE: string;
     ORG_CANNOT_REMOVE_SELF: string;
     ORG_CANNOT_REMOVE_OWNER: string;
+    ORG_OWNER_CANNOT_LEAVE: string;
     ORG_CANNOT_TRANSFER_TO_SELF: string;
     ORG_TRANSFER_TARGET_NOT_MEMBER: string;
     ORG_NOT_OWNER: string;
@@ -1215,6 +1216,16 @@ export interface TranslationSchema {
     deleteOrgDesc: string;
     deleteOrgConfirmPrompt: string;
     deleteOrgButton: string;
+    leaveOrg: string;
+    leaveOrgDesc: string;
+    leaveOrgButton: string;
+    leaveOrgConfirmTitle: string;
+    leaveOrgConfirmDesc: string;
+    leaveOrgSuccess: string;
+    ownerLeaveHint: string;
+    goToMembersTransfer: string;
+    currentOrgSectionTitle: string;
+    currentOrgSectionDesc: string;
     publicJobBoardLink: string;
     emailAddress: string;
     changePasswordTitle: string;
@@ -1513,6 +1524,7 @@ export interface TranslationSchema {
       actionRolePermissionsReset: string;
       actionMemberRoleChanged: string;
       actionMemberRemoved: string;
+      actionMemberLeft: string;
       actionOwnershipTransferred: string;
       actionOrgDeleted: string;
       actionOrgLocalizationUpdated: string;

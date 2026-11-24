@@ -124,6 +124,10 @@ export class OrganizationsService implements OnModuleInit {
     return this.members.removeMember(userId, targetMemberId, activeOrgId);
   }
 
+  leaveOrganization(userId: string, activeOrgId?: string | null) {
+    return this.members.leaveOrganization(userId, activeOrgId);
+  }
+
   // ==========================================
   // 3. INVITE LINKS MANAGEMENT
   // ==========================================

@@ -67,6 +67,10 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
+  useLeaveOrganizationMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
   useUploadOrgLogoMutation: () => ({
     mutateAsync: mockUploadLogoMutate,
     isPending: false,
@@ -123,21 +127,29 @@ describe("GeneralSettingsPage - Ownership Controls", () => {
     });
   };
 
-  it("owner sees the Danger Zone card and delete organization action", () => {
+  it("owner sees the Danger Zone card, delete organization action, and transfer ownership hint", () => {
     setupAuthMock(true);
 
     render(<GeneralSettingsPage />);
 
     expect(screen.getByText("settings.dangerZone")).toBeInTheDocument();
     expect(screen.getByText("settings.deleteOrg")).toBeInTheDocument();
+    expect(screen.getByText("settings.ownerLeaveHint")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "settings.leaveOrgButton" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("non-owner admin does NOT see the Danger Zone card", () => {
+  it("non-owner admin sees Leave Organization in Danger Zone without Delete Organization", () => {
     setupAuthMock(false);
 
     render(<GeneralSettingsPage />);
 
-    expect(screen.queryByText("settings.dangerZone")).not.toBeInTheDocument();
+    expect(screen.getByText("settings.dangerZone")).toBeInTheDocument();
+    expect(screen.getByText("settings.leaveOrg")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "settings.leaveOrgButton" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("settings.deleteOrg")).not.toBeInTheDocument();
   });
 

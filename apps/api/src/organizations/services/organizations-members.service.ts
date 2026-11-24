@@ -622,6 +622,128 @@ export class OrganizationsMembersService {
     });
   }
 
+  async leaveOrganization(callerId: string, activeOrgId?: string | null) {
+    return runInTransaction(this.prisma, async (tx) => {
+      const caller = await tx.user.findFirst({
+        where: { id: callerId },
+        select: { id: true },
+      });
+
+      const resolved = caller
+        ? await this.resolveTargetOrgId(tx, callerId, activeOrgId)
+        : { orgId: null };
+
+      if (!caller || !resolved.orgId) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_USER_NO_ORG,
+          "User is not associated with an organization",
+        );
+      }
+
+      const targetOrgId = resolved.orgId;
+      const org = await tx.organization.findFirst({
+        where: { id: targetOrgId },
+        select: {
+          id: true,
+          ownerId: true,
+          name: true,
+        },
+      });
+
+      if (!org) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_NOT_FOUND,
+          "Organization not found",
+        );
+      }
+
+      // Serialize membership departure with ownership transfer on the organization row.
+      const locked = await tx.organization.updateMany({
+        where: { id: targetOrgId, ownerId: org.ownerId },
+        data: { ownerId: org.ownerId },
+      });
+      if (locked.count !== 1) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "Organization ownership changed; retry the request.",
+        );
+      }
+
+      if (org.ownerId === callerId) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_OWNER_CANNOT_LEAVE,
+          "Organization owner must transfer ownership or delete the organization before leaving.",
+        );
+      }
+
+      const deleted = await tx.organizationMember.deleteMany({
+        where: {
+          organizationId: targetOrgId,
+          userId: callerId,
+        },
+      });
+
+      if (deleted.count === 0) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND,
+          "Member not found in this organization",
+        );
+      }
+
+      const txWithPrefs = tx as unknown as {
+        notificationPreference?: {
+          deleteMany?: (args: {
+            where: { organizationId: string; userId: string };
+          }) => Promise<unknown>;
+        };
+      };
+      if (
+        typeof txWithPrefs.notificationPreference?.deleteMany === "function"
+      ) {
+        await txWithPrefs.notificationPreference.deleteMany({
+          where: {
+            organizationId: targetOrgId,
+            userId: callerId,
+          },
+        });
+      }
+
+      const txUserCompat = tx.user as unknown as MockUserTableCompat;
+      if (txUserCompat?.store) {
+        await txUserCompat.updateMany?.({
+          where: { id: callerId, organizationId: targetOrgId },
+          data: { organizationId: null, role: "MEMBER" },
+        });
+      }
+
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        caller.id,
+        "MEMBER_LEFT",
+        "MEMBER",
+        { memberId: callerId },
+        tx as unknown as PrismaService,
+      );
+
+      this.eventsService?.emit({
+        type: "MEMBERS_CHANGED",
+        organizationId: targetOrgId,
+        data: { memberId: callerId },
+      });
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
+        organizationId: targetOrgId,
+      });
+
+      return {
+        success: true,
+        organizationId: targetOrgId,
+        organizationName: org.name,
+        message: "Successfully left the organization",
+      };
+    });
+  }
+
   private async resolveCanManageMembers(
     client: {
       organizationRolePermission?: {

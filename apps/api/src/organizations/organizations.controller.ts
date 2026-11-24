@@ -191,6 +191,25 @@ export class OrganizationsController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard)
+  @Post("my/leave")
+  @HttpCode(HttpStatus.OK)
+  async leaveMyOrg(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const result = await this.orgsService.leaveOrganization(
+      req.user.id,
+      req.user.organizationId,
+    );
+    const remainingOrg = await this.orgsService.getMyOrg(req.user.id);
+    await this.syncOrgCookies(res, req.user.id, remainingOrg?.id ?? null);
+    return {
+      ...result,
+      nextOrganization: remainingOrg,
+    };
+  }
+
   // ==========================================
   // ROLES & PERMISSIONS MATRIX ENDPOINTS
   // ==========================================

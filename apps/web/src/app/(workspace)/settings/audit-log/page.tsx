@@ -80,6 +80,10 @@ function AuditLogPageContent() {
       label: t("settings.auditLog.actionMemberRemoved"),
     },
     {
+      value: "MEMBER_LEFT",
+      label: t("settings.auditLog.actionMemberLeft"),
+    },
+    {
       value: "OWNERSHIP_TRANSFERRED",
       label: t("settings.auditLog.actionOwnershipTransferred"),
     },

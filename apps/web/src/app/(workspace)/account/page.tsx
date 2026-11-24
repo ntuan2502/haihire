@@ -15,24 +15,34 @@ import {
   type UpdateUserPreferencesPayload,
   type UpdateUserProfilePayload,
 } from "@haihire/shared";
-import { CustomSelect, PageHeader } from "@/components/shared";
+import Link from "next/link";
+import {
+  CustomSelect,
+  OrganizationLogo,
+  PageHeader,
+} from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "@/hooks/query-keys";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n";
 import { LOCALE_COOKIE_KEY, LOCALE_STORAGE_KEY } from "@/i18n/config";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { getOrgRoleLabel } from "@/lib/roles";
 import { toast } from "@/lib/toast";
-import { Save, Globe, User as UserIcon } from "lucide-react";
+import { Save, Globe, User as UserIcon, Building2, LogOut } from "lucide-react";
 import { AccountAvatarSection } from "@/components/settings/account/account-avatar-section";
 import { AccountPasswordCard } from "@/components/settings/account/account-password-card";
 import { AccountNotificationPreferencesCard } from "@/components/settings/account/account-notification-preferences-card";
-import { getUserDisplayName } from "@/lib/utils";
+import { LeaveOrganizationModal } from "@/components/settings/leave-organization-modal";
+import { cn, getUserDisplayName } from "@/lib/utils";
 import type { User } from "@/types";
 
 export default function AccountPage() {
-  const { user, setSession, updateUser } = useAuth();
+  const { user, isOwner, setSession, updateUser } = useAuth();
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
   const queryClient = useContext(QueryClientContext) ?? null;
 
@@ -441,9 +451,83 @@ export default function AccountPage() {
             </SettingsCard>
 
             <AccountNotificationPreferencesCard />
+
+            {user?.organization && (
+              <SettingsCard className="space-y-4">
+                <div className="flex items-start gap-3 pb-4 border-b border-border">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+                    <Building2 className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {t("settings.currentOrgSectionTitle")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t("settings.currentOrgSectionDesc")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <OrganizationLogo
+                      name={user.organization.name}
+                      logoUrl={user.organization.logoUrl}
+                      size="md"
+                      decorative
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {user.organization.name}
+                      </p>
+                      <Badge
+                        variant="secondary"
+                        className="mt-1 text-[10px] px-1.5 py-0 h-4"
+                      >
+                        {getOrgRoleLabel(isOwner ? "OWNER" : user.role, t)}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {!isOwner ? (
+                    <SettingsButton
+                      type="button"
+                      variant="destructive"
+                      icon={LogOut}
+                      onClick={() => setLeaveModalOpen(true)}
+                      className="shrink-0"
+                    >
+                      {t("settings.leaveOrgButton")}
+                    </SettingsButton>
+                  ) : (
+                    <Link
+                      href="/settings/members"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "text-xs font-medium shrink-0",
+                      )}
+                    >
+                      {t("settings.goToMembersTransfer")}
+                    </Link>
+                  )}
+                </div>
+
+                {isOwner && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("settings.ownerLeaveHint")}
+                  </p>
+                )}
+              </SettingsCard>
+            )}
           </div>
         </div>
       </section>
+
+      <LeaveOrganizationModal
+        isOpen={leaveModalOpen}
+        organizationName={user?.organization?.name}
+        onClose={() => setLeaveModalOpen(false)}
+      />
     </div>
   );
 }

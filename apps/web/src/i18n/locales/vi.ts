@@ -106,6 +106,8 @@ export const vi: TranslationSchema = {
       "Bạn không thể tự thay đổi vai trò của chính mình.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
+    ORG_OWNER_CANNOT_LEAVE:
+      "Chủ sở hữu không thể rời khỏi tổ chức. Vui lòng chuyển quyền sở hữu hoặc xóa tổ chức trước.",
     ORG_CANNOT_TRANSFER_TO_SELF:
       "Không thể chuyển quyền sở hữu tổ chức cho chính mình.",
     ORG_TRANSFER_TARGET_NOT_MEMBER:
@@ -1364,6 +1366,20 @@ export const vi: TranslationSchema = {
     deleteOrgConfirmPrompt:
       "Hành động này không thể hoàn tác. Để xác nhận xóa, hãy nhập mã slug {slug} của bạn bên dưới:",
     deleteOrgButton: "Xóa tổ chức vĩnh viễn",
+    leaveOrg: "Rời khỏi tổ chức",
+    leaveOrgDesc:
+      "Rời khỏi không gian làm việc này và mất quyền truy cập vào tin tuyển dụng, ứng viên và cài đặt. Bạn sẽ cần lời mời mới để tham gia lại.",
+    leaveOrgButton: "Rời khỏi tổ chức",
+    leaveOrgConfirmTitle: "Rời khỏi {name}?",
+    leaveOrgConfirmDesc:
+      "Bạn sẽ mất quyền truy cập ngay lập tức vào toàn bộ không gian làm việc, tin tuyển dụng và hồ sơ ứng viên của tổ chức này. Để quay lại, bạn cần được mời lại.",
+    leaveOrgSuccess: "Bạn đã rời khỏi tổ chức {name}.",
+    ownerLeaveHint:
+      "Với tư cách Chủ sở hữu, bạn cần chuyển quyền sở hữu cho thành viên khác trước khi rời tổ chức.",
+    goToMembersTransfer: "Chuyển quyền sở hữu",
+    currentOrgSectionTitle: "Tổ chức hiện tại",
+    currentOrgSectionDesc:
+      "Quản lý tư cách thành viên tại tổ chức bạn đang làm việc.",
     publicJobBoardLink: "Liên kết trang tuyển dụng công khai",
     emailAddress: "Địa chỉ email",
     changePasswordTitle: "Đổi mật khẩu",
@@ -1691,6 +1707,7 @@ export const vi: TranslationSchema = {
       actionRolePermissionsReset: "Khôi phục phân quyền",
       actionMemberRoleChanged: "Thay đổi vai trò thành viên",
       actionMemberRemoved: "Xóa thành viên",
+      actionMemberLeft: "Thành viên rời tổ chức",
       actionOwnershipTransferred: "Chuyển giao quyền sở hữu",
       actionOrgDeleted: "Xóa tổ chức",
       actionOrgLocalizationUpdated: "Cập nhật ngôn ngữ & khu vực",

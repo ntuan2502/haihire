@@ -7,6 +7,7 @@ export * from "./theme-toggle";
 export * from "./auth-guard";
 export * from "./brand-logo";
 export * from "./organization-logo";
+export * from "./user-avatar";
 export * from "./device-preview-frame";
 export * from "./device-preview-selector";
 export * from "./page-header";

@@ -1,6 +1,7 @@
 export { Role } from "./permissions";
 export type { Role as RoleType } from "./permissions";
 import type { Role } from "./permissions";
+import type { UserAvatarSource } from "./schemas/auth.schema";
 
 export const InviteStatus = {
   ACTIVE: "ACTIVE",
@@ -1120,6 +1121,7 @@ export interface User {
   role: Role;
   isOwner?: boolean;
   avatarUrl?: string | null;
+  avatarSource?: UserAvatarSource;
   preferredLanguage?: OrgLanguage | null;
   preferredTimezone?: string | null;
   organizationId?: string | null;

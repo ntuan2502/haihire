@@ -14,6 +14,9 @@ describe("AuthController", () => {
     logoutWithRefreshToken: ReturnType<typeof vi.fn>;
     getProfile: ReturnType<typeof vi.fn>;
     updatePreferences: ReturnType<typeof vi.fn>;
+    uploadAvatar: ReturnType<typeof vi.fn>;
+    updateAvatarSource: ReturnType<typeof vi.fn>;
+    prepareUserAvatarStream: ReturnType<typeof vi.fn>;
     getMyPermissions: ReturnType<typeof vi.fn>;
   };
 
@@ -32,6 +35,9 @@ describe("AuthController", () => {
       logoutWithRefreshToken: vi.fn(),
       getProfile: vi.fn(),
       updatePreferences: vi.fn(),
+      uploadAvatar: vi.fn(),
+      updateAvatarSource: vi.fn(),
+      prepareUserAvatarStream: vi.fn(),
       getMyPermissions: vi.fn(),
     };
     mockResponse = {
@@ -322,6 +328,69 @@ describe("AuthController", () => {
       expect(mockAuthService.logoutWithRefreshToken).toHaveBeenCalledWith(
         "valid-refresh-jwt",
       );
+    });
+
+    it("uploadAvatar, updateAvatarSource, and getUserAvatar delegate cleanly and set private cache headers", async () => {
+      const mockFile = { originalname: "pic.webp" } as Express.Multer.File;
+      const expectedUser = { id: "u-1", avatarSource: "UPLOAD" };
+      mockAuthService.uploadAvatar.mockResolvedValue(expectedUser);
+
+      const uploadRes = await controller.uploadAvatar(
+        { user: { id: "u-1", organizationId: "org-1" } },
+        mockFile,
+      );
+      expect(mockAuthService.uploadAvatar).toHaveBeenCalledWith(
+        "u-1",
+        mockFile,
+        "org-1",
+      );
+      expect(uploadRes).toBe(expectedUser);
+
+      mockAuthService.updateAvatarSource.mockResolvedValue({
+        id: "u-1",
+        avatarSource: "GRAVATAR",
+      });
+      await controller.updateAvatarSource(
+        { user: { id: "u-1", organizationId: "org-1" } },
+        { source: "GRAVATAR" },
+      );
+      expect(mockAuthService.updateAvatarSource).toHaveBeenCalledWith(
+        "u-1",
+        "GRAVATAR",
+        "org-1",
+      );
+
+      const mockStream = { on: vi.fn(), pipe: vi.fn() };
+      mockAuthService.prepareUserAvatarStream.mockResolvedValue({
+        stream: mockStream,
+        mimeType: "image/webp",
+      });
+      const res = {
+        setHeader: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        end: vi.fn(),
+      };
+      await controller.getUserAvatar(
+        { user: { id: "u-viewer" } },
+        "00000000-0000-4000-8000-000000000101",
+        res as unknown as Response,
+        "12345",
+      );
+
+      expect(mockAuthService.prepareUserAvatarStream).toHaveBeenCalledWith(
+        "u-viewer",
+        "00000000-0000-4000-8000-000000000101",
+      );
+      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/webp");
+      expect(res.setHeader).toHaveBeenCalledWith(
+        "X-Content-Type-Options",
+        "nosniff",
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        "Cache-Control",
+        "private, max-age=31536000, immutable",
+      );
+      expect(mockStream.pipe).toHaveBeenCalledWith(res);
     });
   });
 });

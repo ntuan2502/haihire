@@ -76,6 +76,11 @@ export async function cleanupOrphans(
         args?: unknown,
       ): Promise<Array<{ logoObjectKey?: string | null }>>;
     };
+    user?: {
+      findMany(
+        args?: unknown,
+      ): Promise<Array<{ avatarObjectKey?: string | null }>>;
+    };
     withSystemRlsBypass?: <T>(
       fn: (tx: DbQueryable) => Promise<T>,
     ) => Promise<T>;
@@ -170,6 +175,30 @@ export async function cleanupOrphans(
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(
         `MinIO Orphan Cleanup aborted: Failed to query Organization references: ${message}`,
+        { cause: err },
+      );
+    }
+
+    try {
+      const users = activeDb.user
+        ? await activeDb.user.findMany({
+            where: { avatarObjectKey: { not: null } },
+            select: { avatarObjectKey: true },
+          })
+        : [];
+      for (const usr of users) {
+        if (usr.avatarObjectKey) {
+          const objName = extractObjectNameFromUrl(
+            usr.avatarObjectKey,
+            bucketName,
+          );
+          if (objName) activeReferencedObjectNames.add(objName);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `MinIO Orphan Cleanup aborted: Failed to query User avatar references: ${message}`,
         { cause: err },
       );
     }

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createHash } from "node:crypto";
 import { AuthService } from "./auth.service";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
@@ -774,6 +775,273 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         "00000000-0000-4000-8000-000000000010",
       );
       expect(loginAfterRemoval.user.role).toBe("ADMIN");
+    });
+  });
+
+  describe("User Avatar Management", () => {
+    const validPngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    ]);
+
+    it("uploadAvatar uploads user-scoped file, updates user metadata, emits SSE, and deletes previous object", async () => {
+      const mockMinio = {
+        uploadUserFile: vi.fn().mockResolvedValue({
+          fileName: "users/usr-1/avatars/new-avatar.png",
+          url: "http://minio:9000/haihire-resumes/users/usr-1/avatars/new-avatar.png",
+          originalName: "avatar.png",
+          size: validPngBuffer.length,
+          mimeType: "image/png",
+        }),
+        deleteFile: vi.fn().mockResolvedValue(undefined),
+        extractObjectName: vi.fn((k: string) => k),
+        getUserObjectStream: vi.fn(),
+      };
+      const mockEvents = { emit: vi.fn() };
+      const storedUser = {
+        id: "usr-1",
+        email: "Alice@Example.com ",
+        firstName: "Alice",
+        lastName: "Recruiter",
+        avatarUrl: "/auth/avatars/usr-1?v=old",
+        avatarSource: "UPLOAD",
+        avatarObjectKey: "users/usr-1/avatars/old-avatar.png",
+        avatarMimeType: "image/png",
+        preferredLanguage: null,
+        preferredTimezone: null,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      };
+      const avatarPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(async () => ({ ...storedUser })),
+          update: vi
+            .fn()
+            .mockImplementation(
+              async ({ data }: { data: Record<string, unknown> }) => {
+                Object.assign(storedUser, data);
+                return { ...storedUser };
+              },
+            ),
+        },
+        organizationMember: { findFirst: vi.fn().mockResolvedValue(null) },
+        organization: { findFirst: vi.fn().mockResolvedValue(null) },
+      };
+
+      const avatarAuth = new AuthService(
+        avatarPrisma as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        mockEvents as never,
+        mockMinio as never,
+      );
+
+      const profile = await avatarAuth.uploadAvatar("usr-1", {
+        originalname: "photo.png",
+        mimetype: "image/png",
+        size: validPngBuffer.length,
+        buffer: validPngBuffer,
+      } as Express.Multer.File);
+
+      expect(mockMinio.uploadUserFile).toHaveBeenCalledWith(
+        expect.anything(),
+        "usr-1",
+        "avatars",
+        expect.any(Set),
+      );
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "users/usr-1/avatars/old-avatar.png",
+      );
+      expect(storedUser.avatarSource).toBe("UPLOAD");
+      expect(profile.avatarUrl).toMatch(/^\/auth\/avatars\/usr-1\?v=\d+$/);
+      expect(mockEvents.emit).toHaveBeenCalledWith({
+        type: "USER_PREFERENCES_CHANGED",
+        targetUserId: "usr-1",
+      });
+    });
+
+    it("uploadAvatar rejects forged magic bytes and >2MB files, and compensates MinIO on DB failure", async () => {
+      const mockMinio = {
+        uploadUserFile: vi.fn().mockResolvedValue({
+          fileName: "users/usr-1/avatars/uploaded.png",
+        }),
+        deleteFile: vi.fn().mockResolvedValue(undefined),
+      };
+      const failingPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ id: "usr-1", avatarObjectKey: null }),
+          update: vi.fn().mockRejectedValue(new Error("DB write error")),
+        },
+      };
+      const avatarAuth = new AuthService(
+        failingPrisma as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        undefined,
+        mockMinio as never,
+      );
+
+      await expect(
+        avatarAuth.uploadAvatar("usr-1", {
+          originalname: "fake.png",
+          mimetype: "image/png",
+          size: 8,
+          buffer: Buffer.from("not-a-png"),
+        } as Express.Multer.File),
+      ).rejects.toThrow();
+
+      await expect(
+        avatarAuth.uploadAvatar("usr-1", {
+          originalname: "big.png",
+          mimetype: "image/png",
+          size: 3 * 1024 * 1024,
+          buffer: validPngBuffer,
+        } as Express.Multer.File),
+      ).rejects.toThrow();
+
+      await expect(
+        avatarAuth.uploadAvatar("usr-1", {
+          originalname: "valid.png",
+          mimetype: "image/png",
+          size: validPngBuffer.length,
+          buffer: validPngBuffer,
+        } as Express.Multer.File),
+      ).rejects.toThrow("DB write error");
+
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "users/usr-1/avatars/uploaded.png",
+      );
+    });
+
+    it("updateAvatarSource computes SHA-256 Gravatar URL or clears to NONE and cleans up previous MinIO object", async () => {
+      const mockMinio = { deleteFile: vi.fn().mockResolvedValue(undefined) };
+      const mockEvents = { emit: vi.fn() };
+      const storedUser: Record<string, unknown> = {
+        id: "usr-1",
+        email: "  Alice@Example.com ",
+        firstName: "Alice",
+        lastName: "Recruiter",
+        avatarUrl: "/auth/avatars/usr-1?v=1",
+        avatarSource: "UPLOAD",
+        avatarObjectKey: "users/usr-1/avatars/old.png",
+        preferredLanguage: null,
+        preferredTimezone: null,
+        createdAt: new Date(),
+      };
+      const avatarPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockImplementation(async () => ({ ...storedUser })),
+          update: vi
+            .fn()
+            .mockImplementation(
+              async ({ data }: { data: Record<string, unknown> }) => {
+                Object.assign(storedUser, data);
+                return { ...storedUser };
+              },
+            ),
+        },
+        organizationMember: { findFirst: vi.fn().mockResolvedValue(null) },
+        organization: { findFirst: vi.fn().mockResolvedValue(null) },
+      };
+
+      const avatarAuth = new AuthService(
+        avatarPrisma as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        mockEvents as never,
+        mockMinio as never,
+      );
+
+      const gravatarProfile = await avatarAuth.updateAvatarSource(
+        "usr-1",
+        "GRAVATAR",
+      );
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "users/usr-1/avatars/old.png",
+      );
+      expect(storedUser.avatarSource).toBe("GRAVATAR");
+      expect(storedUser.avatarObjectKey).toBeNull();
+      const expectedHash = createHash("sha256")
+        .update("alice@example.com")
+        .digest("hex");
+      expect(gravatarProfile.avatarUrl).toBe(
+        `https://www.gravatar.com/avatar/${expectedHash}?s=256&d=404`,
+      );
+
+      const clearedProfile = await avatarAuth.updateAvatarSource(
+        "usr-1",
+        "NONE",
+      );
+      expect(storedUser.avatarSource).toBe("NONE");
+      expect(clearedProfile.avatarUrl).toBeNull();
+    });
+
+    it("prepareUserAvatarStream allows self and shared-org members, rejects cross-org viewers and missing uploads", async () => {
+      const mockStream = { pipe: vi.fn(), on: vi.fn() };
+      const mockMinio = {
+        extractObjectName: vi.fn((k: string) => k),
+        getUserObjectStream: vi.fn().mockResolvedValue(mockStream),
+      };
+      const prismaMock = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "usr-target",
+            avatarSource: "UPLOAD",
+            avatarObjectKey: "users/usr-target/avatars/pic.webp",
+            avatarMimeType: "image/webp",
+          }),
+        },
+        organizationMember: {
+          findMany: vi.fn().mockResolvedValue([{ organizationId: "org-1" }]),
+          findFirst: vi.fn().mockResolvedValue({ id: "mem-shared" }),
+        },
+        organization: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      };
+
+      const avatarAuth = new AuthService(
+        prismaMock as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        undefined,
+        mockMinio as never,
+      );
+
+      // Shared org viewer allowed
+      const res = await avatarAuth.prepareUserAvatarStream(
+        "usr-viewer",
+        "usr-target",
+      );
+      expect(res.mimeType).toBe("image/webp");
+      expect(res.stream).toBe(mockStream);
+
+      // Cross-org viewer forbidden
+      prismaMock.organizationMember.findFirst.mockResolvedValueOnce(null);
+      prismaMock.organization.findFirst.mockResolvedValueOnce(null);
+      await expect(
+        avatarAuth.prepareUserAvatarStream("usr-stranger", "usr-target"),
+      ).rejects.toMatchObject({ status: 403 });
+
+      // Self with GRAVATAR source (no MinIO upload) returns 404
+      prismaMock.user.findUnique.mockResolvedValueOnce({
+        id: "usr-target",
+        avatarSource: "GRAVATAR",
+        avatarObjectKey: null,
+        avatarMimeType: null,
+      });
+      await expect(
+        avatarAuth.prepareUserAvatarStream("usr-target", "usr-target"),
+      ).rejects.toMatchObject({ status: 404 });
     });
   });
 });

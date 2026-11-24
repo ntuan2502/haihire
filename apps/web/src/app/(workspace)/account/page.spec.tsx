@@ -28,6 +28,8 @@ let mockCurrentUser: {
   firstName?: string | null;
   lastName?: string | null;
   email: string;
+  avatarUrl?: string | null;
+  avatarSource?: "NONE" | "UPLOAD" | "GRAVATAR";
   preferredLanguage?: "vi" | "en" | null;
   preferredTimezone?: string | null;
   organization?: {
@@ -69,6 +71,8 @@ vi.mock("@/lib/api/auth", () => ({
     changePassword: vi.fn(),
     updatePreferences: vi.fn(),
     updateProfile: vi.fn(),
+    uploadAvatar: vi.fn(),
+    updateAvatarSource: vi.fn(),
   },
 }));
 
@@ -76,6 +80,11 @@ vi.mock("@/lib/api/client", () => ({
   api: {
     get: vi.fn(),
     put: vi.fn(),
+  },
+  resolveUserAvatarUrl: (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith("http") || url.startsWith("/api/")) return url;
+    return `/api${url.startsWith("/") ? "" : "/"}${url}`;
   },
 }));
 
@@ -105,6 +114,33 @@ vi.mock("@/i18n", () => ({
           "Không thể cập nhật thông tin cá nhân.",
         "settings.accountProfile.nameRequiredError":
           "Vui lòng nhập đầy đủ họ và tên.",
+        "common.uploading": "Đang tải lên...",
+        "settings.accountAvatar.title": "Ảnh đại diện",
+        "settings.accountAvatar.description":
+          "Tải ảnh lên hoặc đồng bộ Gravatar theo email tài khoản của bạn.",
+        "settings.accountAvatar.hint":
+          "PNG, JPG hoặc WebP tối đa 2 MB. Ảnh được tự động cắt vuông 256×256.",
+        "settings.accountAvatar.sourceDefault": "Chữ viết tắt",
+        "settings.accountAvatar.sourceUpload": "Ảnh tải lên",
+        "settings.accountAvatar.sourceGravatar": "Ảnh từ Gravatar",
+        "settings.accountAvatar.uploadButton": "Tải ảnh lên",
+        "settings.accountAvatar.changeButton": "Đổi ảnh",
+        "settings.accountAvatar.useGravatarButton": "Dùng Gravatar",
+        "settings.accountAvatar.gravatarActive": "Đang dùng Gravatar",
+        "settings.accountAvatar.gravatarNotFoundHint": `Chưa tìm thấy ảnh Gravatar cho ${params?.email ?? ""}.`,
+        "settings.accountAvatar.removeButton": "Gỡ ảnh",
+        "settings.accountAvatar.removing": "Đang gỡ...",
+        "settings.accountAvatar.invalidTypeError":
+          "Vui lòng chọn ảnh định dạng PNG, JPG hoặc WebP.",
+        "settings.accountAvatar.fileTooLargeError":
+          "Ảnh đại diện không được vượt quá 2 MB.",
+        "settings.accountAvatar.uploadSuccess": "Đã cập nhật ảnh đại diện.",
+        "settings.accountAvatar.gravatarSuccess":
+          "Đã chuyển ảnh đại diện sang Gravatar.",
+        "settings.accountAvatar.removeSuccess":
+          "Đã gỡ ảnh đại diện về mặc định.",
+        "settings.accountAvatar.saveError":
+          "Không thể cập nhật ảnh đại diện. Vui lòng thử lại.",
         "nav.signOut": "Đăng xuất",
         "settings.changePasswordTitle": "Đổi mật khẩu",
         "settings.changePasswordSub": "Cập nhật mật khẩu tài khoản định kỳ",
@@ -550,5 +586,131 @@ describe("AccountPage Component", () => {
     });
 
     expect(mockSetLocale).toHaveBeenCalledWith("vi");
+  });
+
+  it("uploads valid user avatar image, updates user session, and displays toast", async () => {
+    const updatedUser = {
+      id: "user-1",
+      name: "Alice Recruiter",
+      firstName: "Alice",
+      lastName: "Recruiter",
+      email: "alice@example.com",
+      role: "ADMIN" as const,
+      avatarSource: "UPLOAD" as const,
+      avatarUrl: "/auth/avatars/user-1?v=999",
+      organizationId: "org-1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+    vi.mocked(authApi.uploadAvatar).mockResolvedValueOnce(updatedUser);
+
+    renderAccountPage();
+
+    const fileInput = screen.getByLabelText("Tải ảnh lên") as HTMLInputElement;
+    const validFile = new File(["png-bytes"], "avatar.png", {
+      type: "image/png",
+    });
+
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    await waitFor(() => {
+      expect(authApi.uploadAvatar).toHaveBeenCalledTimes(1);
+    });
+    expect(mockUpdateUser).toHaveBeenCalledWith(updatedUser);
+    expect(toast.success).toHaveBeenCalledWith("Đã cập nhật ảnh đại diện.");
+  });
+
+  it("rejects unsupported avatar file types and files larger than 2 MB", () => {
+    renderAccountPage();
+
+    const fileInput = screen.getByLabelText("Tải ảnh lên") as HTMLInputElement;
+
+    const badTypeFile = new File(["hello"], "resume.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(fileInput, { target: { files: [badTypeFile] } });
+    expect(toast.error).toHaveBeenCalledWith(
+      "Vui lòng chọn ảnh định dạng PNG, JPG hoặc WebP.",
+    );
+
+    const oversizedFile = new File(
+      [new Uint8Array(2 * 1024 * 1024 + 10)],
+      "huge.png",
+      { type: "image/png" },
+    );
+    fireEvent.change(fileInput, { target: { files: [oversizedFile] } });
+    expect(toast.error).toHaveBeenCalledWith(
+      "Ảnh đại diện không được vượt quá 2 MB.",
+    );
+    expect(authApi.uploadAvatar).not.toHaveBeenCalled();
+  });
+
+  it("switches avatar to Gravatar, shows missing-gravatar hint on 404, and removes avatar back to NONE", async () => {
+    vi.mocked(authApi.updateAvatarSource).mockResolvedValueOnce({
+      id: "user-1",
+      name: "Alice Recruiter",
+      firstName: "Alice",
+      lastName: "Recruiter",
+      email: "alice@example.com",
+      role: "ADMIN",
+      avatarSource: "GRAVATAR",
+      avatarUrl: "https://www.gravatar.com/avatar/hash123?s=256&d=404",
+      organizationId: "org-1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const { rerender } = renderAccountPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dùng Gravatar" }));
+
+    await waitFor(() => {
+      expect(authApi.updateAvatarSource).toHaveBeenCalledWith("GRAVATAR");
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      "Đã chuyển ảnh đại diện sang Gravatar.",
+    );
+
+    // Re-render with GRAVATAR active and simulate Gravatar 404 + removal
+    mockCurrentUser.avatarSource = "GRAVATAR";
+    mockCurrentUser.avatarUrl =
+      "https://www.gravatar.com/avatar/hash123?s=256&d=404";
+    rerender(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <AccountPage />
+      </QueryClientProvider>,
+    );
+
+    const avatarImg = screen.getByRole("img", { name: "Recruiter Alice" });
+    fireEvent.error(avatarImg);
+
+    expect(screen.getByRole("link", { name: "gravatar.com" })).toHaveAttribute(
+      "href",
+      "https://gravatar.com",
+    );
+
+    vi.mocked(authApi.updateAvatarSource).mockResolvedValueOnce({
+      id: "user-1",
+      name: "Alice Recruiter",
+      firstName: "Alice",
+      lastName: "Recruiter",
+      email: "alice@example.com",
+      role: "ADMIN",
+      avatarSource: "NONE",
+      avatarUrl: null,
+      organizationId: "org-1",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Gỡ ảnh" }));
+
+    await waitFor(() => {
+      expect(authApi.updateAvatarSource).toHaveBeenCalledWith("NONE");
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      "Đã gỡ ảnh đại diện về mặc định.",
+    );
   });
 });

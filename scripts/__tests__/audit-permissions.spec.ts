@@ -99,7 +99,7 @@ export class MissingJwtController {
 
     expect(result.violations).toHaveLength(0);
     expect(result.controllersScanned).toBe(13);
-    expect(result.endpoints.length).toBe(118);
+    expect(result.endpoints.length).toBe(121);
     expect(result.permissionProtectedCount).toBe(85);
     expect(result.methodExplicitCount).toBe(85);
     expect(result.classInheritedCount).toBe(0);

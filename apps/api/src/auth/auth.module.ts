@@ -7,11 +7,13 @@ import { JwtStrategy } from "./jwt.strategy";
 
 import { PermissionResolverService } from "./permission-resolver.service";
 import { RolesGuard } from "./roles.guard";
+import { MinioModule } from "../minio/minio.module";
 import { env } from "../config/env";
 
 @Global()
 @Module({
   imports: [
+    MinioModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.register({
       global: true,

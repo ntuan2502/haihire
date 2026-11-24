@@ -210,6 +210,10 @@ model User {
   lastName           String                 @default("")
   password           String?
   avatarUrl          String?
+  avatarSource       String                 @default("NONE")
+  avatarObjectKey    String?
+  avatarMimeType     String?
+  avatarUpdatedAt    DateTime?
   preferredLanguage  String?
   preferredTimezone  String?
   tokenVersion       Int                    @default(0)

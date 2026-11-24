@@ -2,7 +2,7 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsCard } from "@/components/settings/settings-card";
-import { useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { QueryClientContext } from "@tanstack/react-query";
 import {
   canonicalizeTimezone,
@@ -25,8 +25,11 @@ import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
 import { Save, Globe, User as UserIcon } from "lucide-react";
+import { AccountAvatarSection } from "@/components/settings/account/account-avatar-section";
 import { AccountPasswordCard } from "@/components/settings/account/account-password-card";
 import { AccountNotificationPreferencesCard } from "@/components/settings/account/account-notification-preferences-card";
+import { getUserDisplayName } from "@/lib/utils";
+import type { User } from "@/types";
 
 export default function AccountPage() {
   const { user, setSession, updateUser } = useAuth();
@@ -54,6 +57,23 @@ export default function AccountPage() {
     activeFirstName.trim() !== resolvedFirstName.trim() ||
     activeLastName.trim() !== resolvedLastName.trim();
 
+  const displayName = user ? getUserDisplayName(user, orgLocalization) : "";
+
+  const syncUpdatedUser = useCallback(
+    (updatedUser: User) => {
+      updateUser?.(updatedUser);
+      queryClient?.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+      queryClient?.invalidateQueries({
+        queryKey: queryKeys.orgInterviewers(),
+      });
+      queryClient?.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+      queryClient?.invalidateQueries({
+        queryKey: ["organization", "audit-logs"],
+      });
+    },
+    [queryClient, updateUser],
+  );
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,17 +93,9 @@ export default function AccountPage() {
         lastName: trimmedLast,
       };
       const updatedUser = await authApi.updateProfile(payload);
-      updateUser?.(updatedUser);
+      syncUpdatedUser(updatedUser);
       setFirstNameDraft(null);
       setLastNameDraft(null);
-      queryClient?.invalidateQueries({ queryKey: queryKeys.orgMembers() });
-      queryClient?.invalidateQueries({
-        queryKey: queryKeys.orgInterviewers(),
-      });
-      queryClient?.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
-      queryClient?.invalidateQueries({
-        queryKey: ["organization", "audit-logs"],
-      });
       toast.success(t("settings.accountProfile.saveSuccess"));
     } catch (err: unknown) {
       toast.error(
@@ -222,6 +234,12 @@ export default function AccountPage() {
                   </p>
                 </div>
               </div>
+
+              <AccountAvatarSection
+                user={user}
+                displayName={displayName}
+                onUserUpdated={syncUpdatedUser}
+              />
 
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">

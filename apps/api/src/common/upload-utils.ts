@@ -5,6 +5,7 @@ import {
   ALLOWED_ORG_LOGO_MIME_TYPES,
   APP_ERROR_CODES,
   MAX_ORG_LOGO_SIZE_BYTES,
+  MAX_USER_AVATAR_SIZE_BYTES,
 } from "@haihire/shared";
 import type { Request } from "express";
 
@@ -178,25 +179,30 @@ export function validateImageMagicBytes(buffer: Buffer, ext: string): boolean {
   return false;
 }
 
-export function validateUploadedLogoFile(file?: Express.Multer.File | null): {
+function validateUploadedImageFile(
+  file: Express.Multer.File | undefined | null,
+  label: "Logo" | "Avatar",
+  maxSizeBytes: number,
+): {
   ext: string;
   mimeType: (typeof ALLOWED_ORG_LOGO_MIME_TYPES)[number];
 } {
   if (!file) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
-      "Logo file is required.",
+      `${label} file is required.`,
     );
   }
 
   const byteSize = file.size ?? file.buffer?.length ?? 0;
   if (
-    byteSize > MAX_ORG_LOGO_SIZE_BYTES ||
-    (file.buffer && file.buffer.length > MAX_ORG_LOGO_SIZE_BYTES)
+    byteSize > maxSizeBytes ||
+    (file.buffer && file.buffer.length > maxSizeBytes)
   ) {
+    const maxMb = Math.round(maxSizeBytes / (1024 * 1024));
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      "Logo file exceeds the 2 MB maximum size limit.",
+      `${label} file exceeds the ${maxMb} MB maximum size limit.`,
     );
   }
 
@@ -204,7 +210,7 @@ export function validateUploadedLogoFile(file?: Express.Multer.File | null): {
   if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      `Logo extension '${ext || "none"}' is not permitted. Only PNG, JPG, and WebP are accepted.`,
+      `${label} extension '${ext || "none"}' is not permitted. Only PNG, JPG, and WebP are accepted.`,
     );
   }
 
@@ -212,7 +218,7 @@ export function validateUploadedLogoFile(file?: Express.Multer.File | null): {
   if (normalizedMime && !ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      `Invalid logo MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
+      `Invalid ${label.toLowerCase()} MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
     );
   }
 
@@ -220,47 +226,77 @@ export function validateUploadedLogoFile(file?: Express.Multer.File | null): {
   if (normalizedMime && normalizedMime !== expectedMime) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      `Logo MIME type '${normalizedMime}' does not match extension '${ext}'.`,
+      `${label} MIME type '${normalizedMime}' does not match extension '${ext}'.`,
     );
   }
 
   if (!file.buffer || !validateImageMagicBytes(file.buffer, ext)) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
-      `Logo content does not match expected binary signature for extension '${ext}'.`,
+      `${label} content does not match expected binary signature for extension '${ext}'.`,
     );
   }
 
   return { ext, mimeType: expectedMime };
 }
 
-export function logoFileFilter(
-  _req: Request,
-  file: Express.Multer.File,
-  callback: (error: Error | null, acceptFile: boolean) => void,
-) {
-  const ext = extname(file.originalname || "").toLowerCase();
-
-  if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
-    return callback(
-      new AppBadRequestException(
-        APP_ERROR_CODES.VALIDATION_ERROR,
-        `Logo file type not allowed. Only PNG, JPG, and WebP formats are accepted (received: ${ext || "none"})`,
-      ),
-      false,
-    );
-  }
-
-  const normalizedMime = file.mimetype?.split(";")[0]?.trim().toLowerCase();
-  if (normalizedMime && !ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)) {
-    return callback(
-      new AppBadRequestException(
-        APP_ERROR_CODES.VALIDATION_ERROR,
-        `Invalid logo MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
-      ),
-      false,
-    );
-  }
-
-  callback(null, true);
+export function validateUploadedLogoFile(file?: Express.Multer.File | null) {
+  return validateUploadedImageFile(file, "Logo", MAX_ORG_LOGO_SIZE_BYTES);
 }
+
+export function validateUploadedAvatarFile(file?: Express.Multer.File | null) {
+  return validateUploadedImageFile(file, "Avatar", MAX_USER_AVATAR_SIZE_BYTES);
+}
+
+export function resolveImageMimeType(
+  objectKey: string,
+  storedMimeType?: string | null,
+): string {
+  const ext = extname(objectKey).toLowerCase();
+  const fallbackMime =
+    ext === ".png"
+      ? "image/png"
+      : ext === ".webp"
+        ? "image/webp"
+        : "image/jpeg";
+  const normalizedMime = storedMimeType?.trim().toLowerCase();
+  return normalizedMime && ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)
+    ? normalizedMime
+    : fallbackMime;
+}
+
+function createImageFileFilter(label: "Logo" | "Avatar") {
+  return (
+    _req: Request,
+    file: Express.Multer.File,
+    callback: (error: Error | null, acceptFile: boolean) => void,
+  ) => {
+    const ext = extname(file.originalname || "").toLowerCase();
+
+    if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
+      return callback(
+        new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          `${label} file type not allowed. Only PNG, JPG, and WebP formats are accepted (received: ${ext || "none"})`,
+        ),
+        false,
+      );
+    }
+
+    const normalizedMime = file.mimetype?.split(";")[0]?.trim().toLowerCase();
+    if (normalizedMime && !ALLOWED_LOGO_MIME_TYPES.has(normalizedMime)) {
+      return callback(
+        new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          `Invalid ${label.toLowerCase()} MIME type: ${file.mimetype}. Only PNG, JPG, and WebP images are permitted.`,
+        ),
+        false,
+      );
+    }
+
+    callback(null, true);
+  };
+}
+
+export const logoFileFilter = createImageFileFilter("Logo");
+export const avatarFileFilter = createImageFileFilter("Avatar");

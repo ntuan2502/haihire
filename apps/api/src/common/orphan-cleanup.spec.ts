@@ -285,6 +285,56 @@ describe("orphan-cleanup", () => {
       );
     });
 
+    it("preserves active user avatars referenced via avatarObjectKey while removing stale replaced avatars", async () => {
+      const now = new Date();
+      const fortyDaysAgo = new Date(now.getTime() - 40 * 24 * 60 * 60 * 1000);
+
+      const mockDb = {
+        candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },
+        application: { findMany: vi.fn().mockResolvedValue([]) },
+        candidate: { findMany: vi.fn().mockResolvedValue([]) },
+        organization: { findMany: vi.fn().mockResolvedValue([]) },
+        user: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              { avatarObjectKey: "users/usr-1/avatars/current-avatar.webp" },
+            ]),
+        },
+      };
+
+      const items = [
+        {
+          name: "users/usr-1/avatars/current-avatar.webp",
+          size: 3072,
+          lastModified: fortyDaysAgo,
+        },
+        {
+          name: "users/usr-1/avatars/stale-avatar.webp",
+          size: 2048,
+          lastModified: fortyDaysAgo,
+        },
+      ];
+
+      mockMinioClient.listObjects.mockReturnValue(createMockStream(items));
+
+      const report = await cleanupOrphans({
+        dryRun: false,
+        thresholdDays: 30,
+        dbClient: mockDb,
+        minioClient: mockMinioClient as unknown as Minio.Client,
+      });
+
+      expect(report.deletedFiles).toEqual([
+        "users/usr-1/avatars/stale-avatar.webp",
+      ]);
+      expect(mockMinioClient.removeObject).toHaveBeenCalledTimes(1);
+      expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
+        "haihire-resumes",
+        "users/usr-1/avatars/stale-avatar.webp",
+      );
+    });
+
     it("wraps reference queries inside withSystemRlsBypass when provided on dbClient", async () => {
       const txDb = {
         candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },

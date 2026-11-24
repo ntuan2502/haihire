@@ -1219,6 +1219,27 @@ export interface TranslationSchema {
       saveError: string;
       nameRequiredError: string;
     };
+    accountAvatar: {
+      title: string;
+      description: string;
+      hint: string;
+      sourceDefault: string;
+      sourceUpload: string;
+      sourceGravatar: string;
+      uploadButton: string;
+      changeButton: string;
+      useGravatarButton: string;
+      gravatarActive: string;
+      gravatarNotFoundHint: string;
+      removeButton: string;
+      removing: string;
+      invalidTypeError: string;
+      fileTooLargeError: string;
+      uploadSuccess: string;
+      gravatarSuccess: string;
+      removeSuccess: string;
+      saveError: string;
+    };
     openPublicCareers: string;
     workspaceSummaryDesc: string;
     accountPreferences: {

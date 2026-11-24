@@ -24,7 +24,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getInitials, getUserDisplayName } from "@/lib/utils";
+import { getUserDisplayName } from "@/lib/utils";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export interface MemberItem {
   id: string;
@@ -106,19 +107,12 @@ export function MembersListCard({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Avatar */}
-                  <div className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground font-semibold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-border">
-                    {m.avatarUrl ? (
-                      // Intentional img for user avatar (Next.js Image not suitable for arbitrary external URLs with signed params).
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={m.avatarUrl}
-                        alt={displayName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{getInitials(displayName)}</span>
-                    )}
-                  </div>
+                  <UserAvatar
+                    name={displayName}
+                    avatarUrl={m.avatarUrl}
+                    size="md"
+                    rounded="full"
+                  />
 
                   {/* Name and Email */}
                   <div className="min-w-0">

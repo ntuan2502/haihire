@@ -5,12 +5,18 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Request,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { AuthService } from "./auth.service";
@@ -28,12 +34,16 @@ import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { env } from "../config/env";
 import { AppUnauthorizedException } from "../common/app-exception";
+import { avatarFileFilter } from "../common/upload-utils";
 import {
   APP_ERROR_CODES,
+  MAX_USER_AVATAR_SIZE_BYTES,
   Role,
   registerSchema,
+  updateUserAvatarSourceSchema,
   updateUserProfileSchema,
   type RegisterSchema,
+  type UpdateUserAvatarSourceSchema,
   type UpdateUserProfileSchema,
 } from "@haihire/shared";
 
@@ -234,6 +244,68 @@ export class AuthController {
       dto,
       req.user.organizationId,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("me/avatar")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_USER_AVATAR_SIZE_BYTES },
+      fileFilter: avatarFileFilter,
+    }),
+  )
+  async uploadAvatar(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.authService.uploadAvatar(
+      req.user.id,
+      file,
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch("me/avatar")
+  async updateAvatarSource(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Body(DtoPipe(updateUserAvatarSourceSchema))
+    dto: UpdateUserAvatarSourceSchema,
+  ) {
+    return this.authService.updateAvatarSource(
+      req.user.id,
+      dto.source,
+      req.user.organizationId,
+    );
+  }
+
+  @Throttle({ default: { limit: 600, ttl: 60000 } })
+  @UseGuards(JwtAuthGuard)
+  @Get("avatars/:userId")
+  async getUserAvatar(
+    @Request() req: { user: { id: string } },
+    @Param("userId", new ParseUUIDPipe()) userId: string,
+    @Res() res: Response,
+    @Query("v") version?: string,
+  ) {
+    const { stream, mimeType } = await this.authService.prepareUserAvatarStream(
+      req.user.id,
+      userId,
+    );
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader("Content-Disposition", "inline");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader(
+      "Cache-Control",
+      version ? "private, max-age=31536000, immutable" : "private, max-age=300",
+    );
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        res.status(404).end();
+      }
+    });
+    stream.pipe(res);
   }
 
   @UseGuards(JwtAuthGuard)

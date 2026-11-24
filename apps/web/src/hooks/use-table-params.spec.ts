@@ -163,4 +163,16 @@ describe("useTableParams hook", () => {
     expect(result.current.getParam("filter")).toBe("");
     expect(result.current.page).toBe(2);
   });
+
+  it("does not invoke replaceState when setParams is a no-op", () => {
+    mockSearchParams = new URLSearchParams("jobId=job-1");
+    const { result } = renderHook(() => useTableParams());
+    replaceStateSpy.mockClear();
+
+    act(() => {
+      result.current.setParams({ jobId: "job-1" }, true);
+    });
+
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+  });
 });

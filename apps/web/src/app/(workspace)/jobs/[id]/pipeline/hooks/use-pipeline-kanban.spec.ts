@@ -91,6 +91,8 @@ vi.mock("@/hooks/use-queries", () => ({
 describe("usePipelineKanban", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParamString = "";
+    window.history.replaceState(null, "", "/jobs/job-1/pipeline");
   });
 
   it("initializes with default state and calculates stageCounts correctly", () => {
@@ -106,18 +108,53 @@ describe("usePipelineKanban", () => {
     );
   });
 
-  it("updates stage and navigates when handleSelectStage is called", () => {
+  it("updates stage and syncs shallow URL without router.replace when handleSelectStage is called", () => {
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
     const { result } = renderHook(() => usePipelineKanban("job-1"));
+    replaceStateSpy.mockClear();
 
     act(() => {
       result.current.handleSelectStage("SCREENING");
     });
 
     expect(result.current.selectedStage).toBe("SCREENING");
-    expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining("stage=SCREENING"),
-      { scroll: false },
+    expect(result.current.selectedAppId).toBe("app-2");
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(replaceStateSpy).toHaveBeenCalledTimes(1);
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/jobs/job-1/pipeline?stage=SCREENING&applicationId=app-2",
     );
+    replaceStateSpy.mockRestore();
+  });
+
+  it("does not loop replaceState when selecting an empty stage with zero candidates", () => {
+    const replaceStateSpy = vi.spyOn(window.history, "replaceState");
+    const { result, rerender } = renderHook(() => usePipelineKanban("job-1"));
+    replaceStateSpy.mockClear();
+
+    act(() => {
+      result.current.handleSelectStage("INTERVIEW");
+    });
+
+    expect(result.current.selectedStage).toBe("INTERVIEW");
+    expect(result.current.filteredCandidates).toHaveLength(0);
+    expect(result.current.selectedAppId).toBeNull();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(replaceStateSpy).toHaveBeenCalledTimes(1);
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/jobs/job-1/pipeline?stage=INTERVIEW",
+    );
+
+    // Rerendering repeatedly with identical URL or fresh searchParams must NOT call replaceState again
+    replaceStateSpy.mockClear();
+    rerender();
+    rerender();
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+    replaceStateSpy.mockRestore();
   });
 
   it("switches candidateTab to interviews and clears tab param when returning to overview", () => {

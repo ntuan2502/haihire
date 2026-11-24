@@ -121,9 +121,9 @@ export function useTableParams(options?: UseTableParamsOptions) {
       }
 
       const queryString = current.toString();
-      if (queryString !== prevQueryString) {
-        setParamsRevision((v) => v + 1);
-      }
+      if (queryString === prevQueryString) return;
+
+      setParamsRevision((v) => v + 1);
       const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
       // Use window.history.replaceState for shallow URL updates without triggering

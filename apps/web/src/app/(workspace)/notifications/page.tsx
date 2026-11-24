@@ -140,9 +140,13 @@ function NotificationsPageContent() {
       if (nextLimit !== DEFAULT_LIMIT) params.set("limit", String(nextLimit));
 
       const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      const targetUrl = qs ? `${pathname}?${qs}` : pathname;
+      const currentQs = searchParams.toString();
+      const currentUrl = currentQs ? `${pathname}?${currentQs}` : pathname;
+      if (targetUrl === currentUrl) return;
+      router.replace(targetUrl, { scroll: false });
     },
-    [kind, limit, page, pathname, router, status],
+    [kind, limit, page, pathname, router, searchParams, status],
   );
 
   const inbox = useNotificationsQuery(organizationId, userId, {

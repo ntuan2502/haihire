@@ -105,6 +105,7 @@ function InterviewsPageContent() {
   const sortBy: SortOption =
     rawSortBy === "newest" || rawSortBy === "name" ? rawSortBy : "upcoming";
 
+  const searchParamsString = searchParams.toString();
   useEffect(() => {
     if (
       viewMode === "calendar" &&
@@ -120,7 +121,7 @@ function InterviewsPageContent() {
     ) {
       setParams({ calendarMode: null, month: null, date: null }, false);
     }
-  }, [viewMode, searchParams, getParam, setParams]);
+  }, [viewMode, searchParamsString, getParam, setParams]);
 
   // Filter Drawer State
   const [isFilterOpen, setIsFilterOpen] = useState(false);

@@ -527,6 +527,7 @@ export class OrganizationsInvitesService {
     if (!link) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_INVALID,
         message: "Invite link not found or invalid",
       };
     }
@@ -534,6 +535,7 @@ export class OrganizationsInvitesService {
     if (link.status === "REVOKED") {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_REVOKED,
         message: "This invitation link has been revoked by an administrator",
         link,
       };
@@ -542,6 +544,7 @@ export class OrganizationsInvitesService {
     if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_EXPIRED,
         message: "This invitation link has expired",
         link,
       };
@@ -550,6 +553,7 @@ export class OrganizationsInvitesService {
     if (link.maxUses !== null && link.usesCount >= link.maxUses) {
       return {
         valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
         message: "This invitation link has reached its maximum allowed uses",
         link,
       };
@@ -666,7 +670,7 @@ export class OrganizationsInvitesService {
 
       if (link.maxUses !== null && link.usesCount >= link.maxUses) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invitation link has reached its maximum allowed uses",
         );
       }
@@ -863,7 +867,7 @@ export class OrganizationsInvitesService {
         inviteLink.usesCount >= inviteLink.maxUses
       ) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invite link has reached its maximum allowed uses.",
         );
       }
@@ -961,7 +965,7 @@ export class OrganizationsInvitesService {
 
       if (incResult.count === 0) {
         throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_INVITE_INVALID,
+          APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
           "This invite link has reached its maximum allowed uses.",
         );
       }

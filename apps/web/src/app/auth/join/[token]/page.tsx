@@ -14,7 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { OrganizationLogo } from "@/components/shared/organization-logo";
-import { useI18n } from "@/i18n";
+import { useI18n, type TranslationKey } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleLabel } from "@/lib/roles";
 import { toast } from "@/lib/toast";
@@ -31,8 +31,14 @@ interface PublicInviteData {
   };
   createdByName?: string;
   expiresAt?: string | null;
+  code?: string;
   message?: string;
 }
+
+type JoinErrorState =
+  | { type: "api"; error: unknown; fallbackKey?: TranslationKey }
+  | { type: "already_member"; orgName: string }
+  | null;
 
 export default function JoinOrganizationPage() {
   const params = useParams();
@@ -46,7 +52,14 @@ export default function JoinOrganizationPage() {
   const [loading, setLoading] = useState(true);
   const [inviteData, setInviteData] = useState<PublicInviteData | null>(null);
   const [joining, setJoining] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<JoinErrorState>(null);
+
+  const error =
+    errorState?.type === "already_member"
+      ? t("join.alreadyMember", { org: errorState.orgName })
+      : errorState?.type === "api"
+        ? getApiErrorMessage(errorState.error, t, errorState.fallbackKey)
+        : null;
 
   const isAlreadyMember = Boolean(
     isAuthenticated &&
@@ -66,33 +79,45 @@ export default function JoinOrganizationPage() {
       if (!token) return;
       try {
         setLoading(true);
+        setErrorState(null);
         const res = await organizationsApi.getPublicInvite(token);
         setInviteData(res);
         if (!res.valid) {
-          setError(res.message || t("auth.invalidInvitation"));
+          setErrorState({
+            type: "api",
+            error: {
+              response: { data: { code: res.code, message: res.message } },
+            },
+            fallbackKey: "auth.invalidInvitation",
+          });
         }
       } catch (err: unknown) {
         console.error(err);
-        setError(getApiErrorMessage(err, t, "auth.invalidInvitation"));
+        setErrorState({
+          type: "api",
+          error: err,
+          fallbackKey: "auth.invalidInvitation",
+        });
       } finally {
         setLoading(false);
       }
     }
     loadInvite();
-  }, [token, t]);
+  }, [token]);
 
   // Handle joining organization when logged in
   const handleJoin = async () => {
     if (!token) return;
     if (isAlreadyMember) {
-      setError(
-        t("join.alreadyMember", { org: inviteData?.organization?.name || "" }),
-      );
+      setErrorState({
+        type: "already_member",
+        orgName: inviteData?.organization?.name || "",
+      });
       return;
     }
     try {
       setJoining(true);
-      setError(null);
+      setErrorState(null);
       const res = await organizationsApi.joinByToken(token);
       if (res.organization) {
         updateUserOrg(res.organization, res.role);
@@ -103,7 +128,7 @@ export default function JoinOrganizationPage() {
       }, 1200);
     } catch (err: unknown) {
       console.error(err);
-      setError(getApiErrorMessage(err, t));
+      setErrorState({ type: "api", error: err });
       setJoining(false);
     }
   };

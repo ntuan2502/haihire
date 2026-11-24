@@ -96,6 +96,8 @@ export const en: TranslationSchema = {
     ORG_INVITE_INVALID: "Invalid invitation code or link.",
     ORG_INVITE_EXPIRED: "This invitation link has expired.",
     ORG_INVITE_REVOKED: "This invitation link has been revoked.",
+    ORG_INVITE_MAX_USES_REACHED:
+      "This invitation link has reached its maximum allowed uses.",
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Cannot change the role of the organization owner.",

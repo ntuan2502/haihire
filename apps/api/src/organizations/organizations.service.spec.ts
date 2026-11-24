@@ -9,6 +9,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   let service: OrganizationsService;
@@ -278,6 +279,47 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const preview = await service.getPublicInvite(link.token);
       expect(preview.valid).toBe(true);
       expect(preview.organization?.name).toBe("Acme Corp");
+    });
+
+    it("10a. Should return machine-readable error codes on getPublicInvite for invalid, revoked, expired, and max-uses links", async () => {
+      const missingRes = await service.getPublicInvite("non-existent-token");
+      expect(missingRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_INVALID,
+      });
+
+      const revokedLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      await service.revokeInviteLink("usr-2", revokedLink.id);
+      const revokedRes = await service.getPublicInvite(revokedLink.token);
+      expect(revokedRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_REVOKED,
+      });
+
+      const expiredLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      mockLinks.find((l) => l.id === expiredLink.id)!.expiresAt = new Date(
+        Date.now() - 60_000,
+      );
+      const expiredRes = await service.getPublicInvite(expiredLink.token);
+      expect(expiredRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_EXPIRED,
+      });
+
+      const maxedLink = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+      mockLinks.find((l) => l.id === maxedLink.id)!.usesCount = 1;
+      const maxedRes = await service.getPublicInvite(maxedLink.token);
+      expect(maxedRes).toMatchObject({
+        valid: false,
+        code: APP_ERROR_CODES.ORG_INVITE_MAX_USES_REACHED,
+      });
     });
 
     it("rejects revocation of another organization's invite link", async () => {

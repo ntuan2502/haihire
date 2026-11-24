@@ -139,6 +139,7 @@ export const organizationsApi = {
     };
     createdByName?: string;
     expiresAt?: string | null;
+    code?: string;
     message?: string;
   }> => {
     const response = await api.get(

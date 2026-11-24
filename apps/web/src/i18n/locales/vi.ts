@@ -95,6 +95,8 @@ export const vi: TranslationSchema = {
     ORG_INVITE_INVALID: "Mã hoặc liên kết mời tham gia không hợp lệ.",
     ORG_INVITE_EXPIRED: "Liên kết mời tham gia này đã hết hạn.",
     ORG_INVITE_REVOKED: "Liên kết mời tham gia này đã bị thu hồi.",
+    ORG_INVITE_MAX_USES_REACHED:
+      "Liên kết mời tham gia này đã đạt giới hạn số lượt sử dụng tối đa.",
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",

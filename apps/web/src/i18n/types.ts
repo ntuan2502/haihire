@@ -90,6 +90,7 @@ export interface TranslationSchema {
     ORG_INVITE_INVALID: string;
     ORG_INVITE_EXPIRED: string;
     ORG_INVITE_REVOKED: string;
+    ORG_INVITE_MAX_USES_REACHED: string;
     ORG_USER_NO_ORG: string;
     ORG_CANNOT_CHANGE_OWNER_ROLE: string;
     ORG_CANNOT_CHANGE_SELF_ROLE: string;

@@ -11,6 +11,10 @@ import {
   DEFAULT_JOB_APPLICATION_FORM_CONFIG,
   jobApplicationFormConfigSchema,
   normalizeJobApplicationFormConfig,
+  screeningAnswerSubmissionSchema,
+  isValidDateOnlyString,
+  isValidHttpUrl,
+  isScreeningFileAnswer,
 } from "../index";
 
 describe("@haihire/shared Contracts", () => {
@@ -213,6 +217,54 @@ describe("@haihire/shared Contracts", () => {
         ],
       });
       expect(invalid.success).toBe(false);
+    });
+
+    it("supports all 9 question types and validates date, url, number, and file answers", () => {
+      const config = normalizeJobApplicationFormConfig({
+        phone: "optional",
+        resume: "required",
+        coverLetter: "hidden",
+        screeningQuestions: [
+          { id: "q1", text: "Years?", type: "number", required: true },
+          { id: "q2", text: "Start date?", type: "date", required: true },
+          { id: "q3", text: "Portfolio?", type: "url", required: false },
+          {
+            id: "q4",
+            text: "Certification PDF",
+            type: "file_upload",
+            required: false,
+          },
+        ],
+      });
+      expect(config.screeningQuestions.map((q) => q.type)).toEqual([
+        "number",
+        "date",
+        "url",
+        "file_upload",
+      ]);
+
+      expect(isValidDateOnlyString("2026-02-28")).toBe(true);
+      expect(isValidDateOnlyString("2026-02-30")).toBe(false);
+      expect(isValidDateOnlyString("25-11-2026")).toBe(false);
+
+      expect(isValidHttpUrl("https://haihire.vn/portfolio")).toBe(true);
+      expect(isValidHttpUrl("javascript:alert(1)")).toBe(false);
+
+      expect(
+        isScreeningFileAnswer({
+          url: "tenants/org-1/screening-files/cert.pdf",
+          fileName: "cert.pdf",
+          mimeType: "application/pdf",
+          size: 1024,
+        }),
+      ).toBe(true);
+      expect(isScreeningFileAnswer("not-a-file")).toBe(false);
+
+      const numSubmission = screeningAnswerSubmissionSchema.safeParse({
+        questionId: "q1",
+        answer: 5,
+      });
+      expect(numSubmission.success).toBe(true);
     });
   });
 });

@@ -12,9 +12,13 @@ export type ApplicationFormFieldMode =
 export const SCREENING_QUESTION_TYPES = [
   "short_text",
   "long_text",
-  "yes_no",
   "single_choice",
   "multiple_choice",
+  "number",
+  "date",
+  "url",
+  "yes_no",
+  "file_upload",
 ] as const;
 
 export type ScreeningQuestionType = (typeof SCREENING_QUESTION_TYPES)[number];
@@ -22,6 +26,57 @@ export type ScreeningQuestionType = (typeof SCREENING_QUESTION_TYPES)[number];
 export const COVER_LETTER_MAX_LENGTH = 10000;
 export const MAX_SCREENING_QUESTIONS = 30;
 export const SCREENING_ANSWER_TEXT_MAX_LENGTH = 4000;
+
+export const screeningFileAnswerSchema = z.object({
+  url: z.string().trim().min(1).max(2048),
+  fileName: z.string().trim().min(1).max(255),
+  mimeType: z.string().trim().min(1).max(100),
+  size: z.number().nonnegative(),
+});
+
+export type ScreeningFileAnswer = z.infer<typeof screeningFileAnswerSchema>;
+
+export function isScreeningFileAnswer(
+  val: unknown,
+): val is ScreeningFileAnswer {
+  if (!val || typeof val !== "object" || Array.isArray(val)) return false;
+  const obj = val as Record<string, unknown>;
+  return (
+    typeof obj.url === "string" &&
+    obj.url.trim().length > 0 &&
+    typeof obj.fileName === "string" &&
+    obj.fileName.trim().length > 0 &&
+    typeof obj.mimeType === "string" &&
+    typeof obj.size === "number" &&
+    Number.isFinite(obj.size)
+  );
+}
+
+export function isValidDateOnlyString(val: string): boolean {
+  const trimmed = val.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return false;
+  const [yStr, mStr, dStr] = trimmed.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const d = Number(dStr);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
+export function isValidHttpUrl(val: string): boolean {
+  const trimmed = val.trim();
+  if (!trimmed) return false;
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export const screeningQuestionSchema = z
   .object({
@@ -72,13 +127,15 @@ export const DEFAULT_JOB_APPLICATION_FORM_CONFIG: JobApplicationFormConfig = {
   screeningQuestions: [],
 };
 
-export type ScreeningAnswerValue = string | boolean | string[] | null;
+export type ScreeningAnswerValue =
+  string | number | boolean | string[] | ScreeningFileAnswer | null;
 
 export const screeningAnswerSubmissionSchema = z.object({
   questionId: z.string().trim().min(1).max(100),
   answer: z
     .union([
       z.string().max(SCREENING_ANSWER_TEXT_MAX_LENGTH),
+      z.number().finite(),
       z.boolean(),
       z.array(z.string().max(200)).max(20),
       z.null(),
@@ -115,9 +172,13 @@ function normalizeQuestionType(value: unknown): ScreeningQuestionType {
   if (
     value === "short_text" ||
     value === "long_text" ||
-    value === "yes_no" ||
     value === "single_choice" ||
-    value === "multiple_choice"
+    value === "multiple_choice" ||
+    value === "number" ||
+    value === "date" ||
+    value === "url" ||
+    value === "yes_no" ||
+    value === "file_upload"
   ) {
     return value;
   }

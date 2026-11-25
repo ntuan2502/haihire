@@ -38,11 +38,15 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.addQuestionAction": "Add question",
         "jobs.wizard.saveQuestionAction": "Save question",
         "jobs.wizard.questionTypeLabel": "Answer type",
-        "jobs.wizard.questionTypes.short_text": "Short answer",
-        "jobs.wizard.questionTypes.long_text": "Long answer",
-        "jobs.wizard.questionTypes.yes_no": "Yes / No",
-        "jobs.wizard.questionTypes.single_choice": "Single choice",
-        "jobs.wizard.questionTypes.multiple_choice": "Multiple choice",
+        "jobs.wizard.questionTypes.short_text": "Short Text",
+        "jobs.wizard.questionTypes.long_text": "Long Text",
+        "jobs.wizard.questionTypes.single_choice": "Single Select",
+        "jobs.wizard.questionTypes.multiple_choice": "Multi Select",
+        "jobs.wizard.questionTypes.number": "Number",
+        "jobs.wizard.questionTypes.date": "Date",
+        "jobs.wizard.questionTypes.url": "URL",
+        "jobs.wizard.questionTypes.yes_no": "Checkbox (Yes/No)",
+        "jobs.wizard.questionTypes.file_upload": "File Upload",
         "jobs.wizard.questionRequiredToggle": "Required question",
         "jobs.wizard.questionOptionsLabel": "Answer options",
         "jobs.wizard.questionOptionsHint": "Enter at least 2 distinct options.",
@@ -227,8 +231,18 @@ describe("WizardStepForm Component", () => {
       { target: { value: "Preferred work model?" } },
     );
     fireEvent.click(
-      within(addEditor).getByRole("radio", { name: "Single choice" }),
+      within(addEditor).getByRole("button", { name: "Answer type" }),
     );
+    expect(screen.getByRole("option", { name: "Number" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Date" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "URL" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Checkbox (Yes/No)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "File Upload" }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "Single Select" }));
 
     fireEvent.change(within(addEditor).getByPlaceholderText("Option 1"), {
       target: { value: "Remote" },

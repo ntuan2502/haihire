@@ -27,6 +27,7 @@ import { SCREENING_QUESTION_TYPES } from "@haihire/shared";
 import {
   AlignLeft,
   BookOpen,
+  Calendar,
   Check,
   CheckSquare,
   Circle,
@@ -35,6 +36,8 @@ import {
   FileText,
   FileUp,
   GripVertical,
+  Hash,
+  Link2,
   Lock,
   Pencil,
   Plus,
@@ -44,6 +47,7 @@ import {
   X,
 } from "lucide-react";
 import { useLocalization } from "@/components/providers/localization-provider";
+import { CustomSelect } from "@/components/shared";
 import { FormModal } from "@/components/shared/form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,9 +65,13 @@ const MAX_QUESTION_OPTIONS = 20;
 const QUESTION_TYPE_ICONS: Record<ScreeningQuestionType, typeof AlignLeft> = {
   short_text: AlignLeft,
   long_text: FileText,
-  yes_no: ToggleLeft,
   single_choice: CircleDot,
   multiple_choice: CheckSquare,
+  number: Hash,
+  date: Calendar,
+  url: Link2,
+  yes_no: ToggleLeft,
+  file_upload: FileUp,
 };
 
 interface FieldModeSegmentedControlProps {
@@ -357,6 +365,12 @@ export function WizardStepForm({
     required: t("jobs.wizard.requiredOption"),
   };
 
+  const questionTypeOptions = SCREENING_QUESTION_TYPES.map((typeKey) => ({
+    value: typeKey,
+    label: t(`jobs.wizard.questionTypes.${typeKey}`),
+    icon: QUESTION_TYPE_ICONS[typeKey],
+  }));
+
   const isChoiceType =
     draftType === "single_choice" || draftType === "multiple_choice";
 
@@ -581,36 +595,20 @@ export function WizardStepForm({
           <span className="block text-xs font-medium text-foreground mb-1.5">
             {t("jobs.wizard.questionTypeLabel")}
           </span>
-          <div
-            role="radiogroup"
+          <CustomSelect
+            value={draftType}
+            onChange={(val) =>
+              handleSelectDraftType(val as ScreeningQuestionType)
+            }
+            options={questionTypeOptions}
             aria-label={t("jobs.wizard.questionTypeLabel")}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"
-          >
-            {SCREENING_QUESTION_TYPES.map((typeKey) => {
-              const Icon = QUESTION_TYPE_ICONS[typeKey];
-              const isSelected = draftType === typeKey;
-              return (
-                <button
-                  key={typeKey}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => handleSelectDraftType(typeKey)}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-xs transition-colors cursor-pointer",
-                    isSelected
-                      ? "border-primary bg-primary/8 text-primary font-semibold shadow-2xs"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground hover:border-foreground/25",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span className="truncate">
-                    {t(`jobs.wizard.questionTypes.${typeKey}`)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          />
+          {draftType === "file_upload" && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <FileUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{t("jobs.wizard.resumeCvDesc")}</span>
+            </p>
+          )}
         </div>
 
         {isChoiceType && (

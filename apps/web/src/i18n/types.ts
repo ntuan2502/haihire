@@ -561,9 +561,13 @@ export interface TranslationSchema {
       questionTypes: {
         short_text: string;
         long_text: string;
-        yes_no: string;
         single_choice: string;
         multiple_choice: string;
+        number: string;
+        date: string;
+        url: string;
+        yes_no: string;
+        file_upload: string;
       };
       questionRequiredToggle: string;
       questionOptionsLabel: string;
@@ -1929,6 +1933,12 @@ export interface TranslationSchema {
     errorPhoneRequired: string;
     errorCoverLetterRequired: string;
     errorScreeningRequired: string;
+    errorInvalidNumber: string;
+    errorInvalidDate: string;
+    errorInvalidUrl: string;
+    uploadScreeningPdf: string;
+    urlAnswerPlaceholder: string;
+    numberAnswerPlaceholder: string;
     phoneRequiredLabel: string;
     coverLetterLabel: string;
     coverLetterPlaceholder: string;

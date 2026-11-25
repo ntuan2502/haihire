@@ -469,6 +469,36 @@ export function WizardPreviewModal({
                                 rows={2}
                                 className="text-xs cursor-not-allowed opacity-80 resize-none"
                               />
+                            ) : q.type === "number" ? (
+                              <Input
+                                type="number"
+                                placeholder={t(
+                                  "careers.numberAnswerPlaceholder",
+                                )}
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "date" ? (
+                              <Input
+                                type="date"
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "url" ? (
+                              <Input
+                                type="url"
+                                placeholder={t("careers.urlAnswerPlaceholder")}
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "file_upload" ? (
+                              <div className="border border-dashed border-border rounded-lg p-3 text-center text-[11px] text-muted-foreground flex items-center justify-center gap-2 bg-muted/25">
+                                <FileUp
+                                  className="h-4 w-4 shrink-0"
+                                  aria-hidden="true"
+                                />
+                                <span>{t("careers.uploadScreeningPdf")}</span>
+                              </div>
                             ) : (
                               <Input
                                 type="text"

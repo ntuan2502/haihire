@@ -22,6 +22,8 @@ import {
 import {
   COVER_LETTER_MAX_LENGTH,
   formatCandidateDisplayName,
+  isValidDateOnlyString,
+  isValidHttpUrl,
   normalizeJobApplicationFormConfig,
   type ScreeningAnswerValue,
   type ScreeningQuestion,
@@ -46,12 +48,19 @@ interface JobPublicApplyFormProps {
 function isQuestionAnswered(
   q: ScreeningQuestion,
   value: ScreeningAnswerValue | undefined,
+  file?: File | null,
 ): boolean {
+  if (q.type === "file_upload") {
+    return Boolean(file);
+  }
   if (q.type === "yes_no") {
     return typeof value === "boolean";
   }
   if (q.type === "multiple_choice") {
     return Array.isArray(value) && value.length > 0;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value);
   }
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -86,6 +95,12 @@ export function JobPublicApplyForm({
   const [coverLetter, setCoverLetter] = useState("");
   const [screeningAnswers, setScreeningAnswers] = useState<
     Record<string, ScreeningAnswerValue>
+  >({});
+  const [screeningFiles, setScreeningFiles] = useState<
+    Record<string, File | null>
+  >({});
+  const [screeningFileErrors, setScreeningFileErrors] = useState<
+    Record<string, string | null>
   >({});
   const [notes, setNotes] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -126,6 +141,29 @@ export function JobPublicApplyForm({
     }
 
     setResumeFile(file);
+  };
+
+  const validateAndSetScreeningFile = (questionId: string, file?: File) => {
+    setScreeningFileErrors((prev) => ({ ...prev, [questionId]: null }));
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setScreeningFileErrors((prev) => ({
+        ...prev,
+        [questionId]: t("careers.fileInvalidType"),
+      }));
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setScreeningFileErrors((prev) => ({
+        ...prev,
+        [questionId]: t("careers.fileTooLarge"),
+      }));
+      return;
+    }
+
+    setScreeningFiles((prev) => ({ ...prev, [questionId]: file }));
   };
 
   const handleToggleMultiOption = (questionId: string, option: string) => {
@@ -183,11 +221,47 @@ export function JobPublicApplyForm({
       return;
     }
     for (const q of screeningQuestions) {
-      if (q.required && !isQuestionAnswered(q, screeningAnswers[q.id])) {
+      const answerVal = screeningAnswers[q.id];
+      const attachedFile = screeningFiles[q.id] ?? null;
+
+      if (q.required && !isQuestionAnswered(q, answerVal, attachedFile)) {
         setSubmitError(
           t("careers.errorScreeningRequired", { question: q.text }),
         );
         return;
+      }
+
+      if (
+        q.type === "number" &&
+        typeof answerVal === "string" &&
+        answerVal.trim()
+      ) {
+        if (!Number.isFinite(Number(answerVal.trim()))) {
+          setSubmitError(t("careers.errorInvalidNumber", { question: q.text }));
+          return;
+        }
+      }
+
+      if (
+        q.type === "date" &&
+        typeof answerVal === "string" &&
+        answerVal.trim()
+      ) {
+        if (!isValidDateOnlyString(answerVal)) {
+          setSubmitError(t("careers.errorInvalidDate", { question: q.text }));
+          return;
+        }
+      }
+
+      if (
+        q.type === "url" &&
+        typeof answerVal === "string" &&
+        answerVal.trim()
+      ) {
+        if (!isValidHttpUrl(answerVal)) {
+          setSubmitError(t("careers.errorInvalidUrl", { question: q.text }));
+          return;
+        }
       }
     }
 
@@ -205,10 +279,31 @@ export function JobPublicApplyForm({
         formData.append("coverLetter", coverLetter.trim());
       }
       if (screeningQuestions.length > 0) {
-        const payload = screeningQuestions.map((q) => ({
-          questionId: q.id,
-          answer: screeningAnswers[q.id] ?? null,
-        }));
+        const payload = screeningQuestions.map((q) => {
+          if (q.type === "file_upload") {
+            const attached = screeningFiles[q.id];
+            if (attached) {
+              formData.append(`screeningFile:${q.id}`, attached);
+            }
+            return { questionId: q.id, answer: null };
+          }
+          const rawVal = screeningAnswers[q.id];
+          if (q.type === "number") {
+            const strVal =
+              typeof rawVal === "string" ? rawVal.trim() : String(rawVal ?? "");
+            return {
+              questionId: q.id,
+              answer:
+                strVal && Number.isFinite(Number(strVal))
+                  ? Number(strVal)
+                  : null,
+            };
+          }
+          return {
+            questionId: q.id,
+            answer: rawVal ?? null,
+          };
+        });
         formData.append("screeningAnswers", JSON.stringify(payload));
       }
       if (notes.trim()) {
@@ -656,6 +751,123 @@ export function JobPublicApplyForm({
                           }
                           className="w-full p-3 text-xs rounded-md bg-background resize-y"
                         />
+                      ) : q.type === "number" ? (
+                        <Input
+                          id={fieldId}
+                          type="number"
+                          step="any"
+                          placeholder={t("careers.numberAnswerPlaceholder")}
+                          value={
+                            typeof val === "string" || typeof val === "number"
+                              ? String(val)
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setScreeningAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          className="h-10 text-xs rounded-md bg-background"
+                        />
+                      ) : q.type === "date" ? (
+                        <Input
+                          id={fieldId}
+                          type="date"
+                          value={typeof val === "string" ? val : ""}
+                          onChange={(e) =>
+                            setScreeningAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          className="h-10 text-xs rounded-md bg-background"
+                        />
+                      ) : q.type === "url" ? (
+                        <Input
+                          id={fieldId}
+                          type="url"
+                          placeholder={t("careers.urlAnswerPlaceholder")}
+                          value={typeof val === "string" ? val : ""}
+                          onChange={(e) =>
+                            setScreeningAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          className="h-10 text-xs rounded-md bg-background"
+                        />
+                      ) : q.type === "file_upload" ? (
+                        <div className="space-y-1.5">
+                          <input
+                            id={fieldId}
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => {
+                              validateAndSetScreeningFile(
+                                q.id,
+                                e.target.files?.[0],
+                              );
+                            }}
+                            className="sr-only"
+                            aria-label={q.text}
+                          />
+                          {screeningFiles[q.id] ? (
+                            <div className="p-3 rounded-lg border border-primary/25 bg-primary/10 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText
+                                  className="h-4 w-4 text-primary shrink-0"
+                                  aria-hidden="true"
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold text-foreground truncate">
+                                    {screeningFiles[q.id]?.name}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {(
+                                      (screeningFiles[q.id]?.size ?? 0) /
+                                      (1024 * 1024)
+                                    ).toFixed(2)}{" "}
+                                    MB
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setScreeningFiles((prev) => ({
+                                    ...prev,
+                                    [q.id]: null,
+                                  }));
+                                  setScreeningFileErrors((prev) => ({
+                                    ...prev,
+                                    [q.id]: null,
+                                  }));
+                                }}
+                                aria-label={t("common.delete")}
+                                className="h-7 w-7 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                              >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor={fieldId}
+                              className="border border-dashed border-border hover:border-primary rounded-lg p-3.5 text-center cursor-pointer transition-colors bg-muted/40 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <UploadCloud
+                                className="h-4 w-4 shrink-0"
+                                aria-hidden="true"
+                              />
+                              <span>{t("careers.uploadScreeningPdf")}</span>
+                            </label>
+                          )}
+                          {screeningFileErrors[q.id] && (
+                            <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                              {screeningFileErrors[q.id]}
+                            </p>
+                          )}
+                        </div>
                       ) : (
                         <Input
                           id={fieldId}

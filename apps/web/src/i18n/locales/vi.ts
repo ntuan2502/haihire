@@ -647,9 +647,13 @@ export const vi: TranslationSchema = {
       questionTypes: {
         short_text: "Trả lời ngắn",
         long_text: "Đoạn văn dài",
-        yes_no: "Có / Không",
         single_choice: "Chọn một đáp án",
         multiple_choice: "Chọn nhiều đáp án",
+        number: "Số",
+        date: "Ngày",
+        url: "Đường dẫn URL",
+        yes_no: "Có / Không",
+        file_upload: "Tải tệp lên",
       },
       questionRequiredToggle: "Bắt buộc trả lời",
       questionOptionsLabel: "Danh sách lựa chọn",
@@ -2142,6 +2146,13 @@ export const vi: TranslationSchema = {
     errorPhoneRequired: "Vui lòng nhập số điện thoại.",
     errorCoverLetterRequired: "Vui lòng nhập thư xin việc.",
     errorScreeningRequired: "Vui lòng trả lời câu hỏi bắt buộc: {question}",
+    errorInvalidNumber: 'Vui lòng nhập số hợp lệ cho "{question}".',
+    errorInvalidDate: 'Vui lòng chọn ngày hợp lệ cho "{question}".',
+    errorInvalidUrl:
+      'Vui lòng nhập đường dẫn hợp lệ (http:// hoặc https://) cho "{question}".',
+    uploadScreeningPdf: "Tải lên tệp PDF (tối đa 10 MB)",
+    urlAnswerPlaceholder: "https://...",
+    numberAnswerPlaceholder: "Nhập số",
     phoneRequiredLabel: "Số điện thoại",
     coverLetterLabel: "Thư xin việc",
     coverLetterPlaceholder:

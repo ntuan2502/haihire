@@ -1,6 +1,10 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  isScreeningFileAnswer,
+  type CandidateDocument,
+} from "@haihire/shared";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -197,6 +201,23 @@ export class ApplicationsDocumentsService {
       }
       if (app.candidate?.resumeUrl) {
         allowedEntries.push({ url: app.candidate.resumeUrl });
+      }
+      if (Array.isArray(app.screeningAnswers)) {
+        for (const item of app.screeningAnswers) {
+          if (
+            item &&
+            typeof item === "object" &&
+            isScreeningFileAnswer((item as { answer?: unknown }).answer)
+          ) {
+            const fileAnswer = (
+              item as { answer: { url: string; mimeType: string } }
+            ).answer;
+            allowedEntries.push({
+              url: fileAnswer.url,
+              mimeType: fileAnswer.mimeType,
+            });
+          }
+        }
       }
       if (app.candidateId) {
         try {

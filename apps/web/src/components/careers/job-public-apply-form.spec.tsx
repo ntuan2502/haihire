@@ -44,6 +44,12 @@ vi.mock("@/i18n", () => ({
         "careers.errorPhoneRequired": "Phone number is required.",
         "careers.errorCoverLetterRequired": "Cover letter is required.",
         "careers.errorScreeningRequired": `Required question: ${params?.question ?? ""}`,
+        "careers.errorInvalidNumber": `Invalid number: ${params?.question ?? ""}`,
+        "careers.errorInvalidDate": `Invalid date: ${params?.question ?? ""}`,
+        "careers.errorInvalidUrl": `Invalid url: ${params?.question ?? ""}`,
+        "careers.uploadScreeningPdf": "Upload PDF (max 10 MB)",
+        "careers.urlAnswerPlaceholder": "https://...",
+        "careers.numberAnswerPlaceholder": "Enter a number",
         "jobs.wizard.optionalOption": "Optional",
         "jobs.wizard.answerPlaceholder": "Your answer...",
         "common.yes": "Yes",
@@ -154,6 +160,100 @@ describe("JobPublicApplyForm", () => {
     ).toEqual([
       { questionId: "q-years", answer: "6 years" },
       { questionId: "q-work", answer: "Remote" },
+    ]);
+  });
+
+  it("renders, validates, and submits number, date, url, and PDF file_upload screening questions", async () => {
+    const jobWithAllTypes: Job = {
+      ...configuredJob,
+      id: "job-all-types",
+      applicationFormConfig: {
+        phone: "hidden",
+        resume: "hidden",
+        coverLetter: "hidden",
+        screeningQuestions: [
+          { id: "q-num", text: "Years exp", type: "number", required: true },
+          { id: "q-date", text: "Start date", type: "date", required: true },
+          { id: "q-url", text: "Portfolio URL", type: "url", required: true },
+          {
+            id: "q-cert",
+            text: "Certificate PDF",
+            type: "file_upload",
+            required: true,
+          },
+        ],
+      },
+    };
+
+    render(
+      <JobPublicApplyForm
+        job={jobWithAllTypes}
+        orgName="Acme"
+        orgSlug="acme"
+        nameDisplayOrder="FIRST_LAST"
+        refParam={null}
+      />,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("Jane"), {
+      target: { value: "Minh" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Doe"), {
+      target: { value: "Le" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("jane@example.com"), {
+      target: { value: "minh@example.com" },
+    });
+
+    fireEvent.change(screen.getByLabelText(/Years exp/), {
+      target: { value: "4" },
+    });
+    fireEvent.change(screen.getByLabelText(/Start date/), {
+      target: { value: "2026-12-01" },
+    });
+    fireEvent.change(screen.getByLabelText(/Portfolio URL/), {
+      target: { value: "not-a-valid-url" },
+    });
+    const pdfFile = new File(["%PDF-1.4\n%%EOF"], "certificate.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(screen.getByLabelText("Certificate PDF"), {
+      target: { files: [pdfFile] },
+    });
+
+    // Invalid URL triggers inline alert
+    fireEvent.click(
+      screen.getByRole("button", { name: "Submit Application Now" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Invalid url: Portfolio URL",
+    );
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+
+    // Fix URL and submit
+    fireEvent.change(screen.getByLabelText(/Portfolio URL/), {
+      target: { value: "https://portfolio.dev" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Submit Application Now" }),
+    );
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedFormData = mockMutateAsync.mock.calls[0][0] as FormData;
+    expect(submittedFormData.get("screeningFile:q-cert")).toBeInstanceOf(File);
+    expect((submittedFormData.get("screeningFile:q-cert") as File).name).toBe(
+      "certificate.pdf",
+    );
+    expect(
+      JSON.parse(String(submittedFormData.get("screeningAnswers"))),
+    ).toEqual([
+      { questionId: "q-num", answer: 4 },
+      { questionId: "q-date", answer: "2026-12-01" },
+      { questionId: "q-url", answer: "https://portfolio.dev" },
+      { questionId: "q-cert", answer: null },
     ]);
   });
 });

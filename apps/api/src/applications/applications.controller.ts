@@ -22,10 +22,7 @@ import { Throttle } from "@nestjs/throttler";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from "@nestjs/platform-express";
+import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
 import { PublicApplyDto } from "./dto/public-apply.dto";
 import { QueryApplicationsDto } from "./dto/query-applications.dto";
@@ -184,21 +181,15 @@ export class ApplicationsController {
   @Post("apply")
   @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(
-    FileFieldsInterceptor(
-      [
-        { name: "resume", maxCount: 1 },
-        { name: "file", maxCount: 1 },
-      ],
-      {
-        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-        fileFilter: resumeFileFilter,
-      },
-    ),
+    AnyFilesInterceptor({
+      limits: { fileSize: 10 * 1024 * 1024, files: 12 }, // 10MB per file, up to 12 attachments
+      fileFilter: resumeFileFilter,
+    }),
   )
   create(
     @Body(DtoPipe(PublicApplyDto)) dto: PublicApplyDto,
     @UploadedFiles()
-    files: { resume?: Express.Multer.File[]; file?: Express.Multer.File[] },
+    files: Express.Multer.File[],
     @Request()
     req?: {
       user?: {
@@ -218,8 +209,27 @@ export class ApplicationsController {
         "Administrative fields (candidateId, resumeUrl, resumeFileName) are not permitted for public applications.",
       );
     }
-    const uploaded = files?.resume?.[0] || files?.file?.[0];
-    return this.applicationsService.create(dto, uploaded, req?.user);
+    const uploadedFiles = Array.isArray(files) ? files : [];
+    const uploaded =
+      uploadedFiles.find((f) => f.fieldname === "resume") ||
+      uploadedFiles.find((f) => f.fieldname === "file");
+
+    const screeningFiles = new Map<string, Express.Multer.File>();
+    for (const f of uploadedFiles) {
+      if (f.fieldname?.startsWith("screeningFile:")) {
+        const qId = f.fieldname.slice("screeningFile:".length).trim();
+        if (qId && !screeningFiles.has(qId)) {
+          screeningFiles.set(qId, f);
+        }
+      }
+    }
+
+    return this.applicationsService.create(
+      dto,
+      uploaded,
+      req?.user,
+      screeningFiles.size > 0 ? screeningFiles : undefined,
+    );
   }
 
   @Patch(":id/stage")

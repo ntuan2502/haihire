@@ -1,6 +1,11 @@
 import { Module } from "@nestjs/common";
+import { BullModule } from "@nestjs/bullmq";
 import { OrganizationsController } from "./organizations.controller";
 import { OrganizationsService } from "./organizations.service";
+import {
+  AUDIT_LOG_RETENTION_QUEUE,
+  AuditLogRetentionProcessor,
+} from "./audit-log-retention.processor";
 import {
   OrganizationsCoreService,
   OrganizationsMembersService,
@@ -15,7 +20,14 @@ import { EmailModule } from "../email/email.module";
 import { MinioModule } from "../minio/minio.module";
 
 @Module({
-  imports: [CommonModule, AuthModule, EventsModule, EmailModule, MinioModule],
+  imports: [
+    CommonModule,
+    AuthModule,
+    EventsModule,
+    EmailModule,
+    MinioModule,
+    BullModule.registerQueue({ name: AUDIT_LOG_RETENTION_QUEUE }),
+  ],
   controllers: [OrganizationsController],
   providers: [
     OrganizationsService,
@@ -23,6 +35,7 @@ import { MinioModule } from "../minio/minio.module";
     OrganizationsMembersService,
     OrganizationsInvitesService,
     OrganizationsRolesService,
+    AuditLogRetentionProcessor,
   ],
   exports: [OrganizationsService, OrganizationsRolesService],
 })

@@ -21,6 +21,7 @@ const KNOWN_FIELD_LABELS = new Set([
   "name",
   "slug",
   "logoObjectKey",
+  "auditLogRetentionDays",
   "ownerId",
   "role",
   "membership",
@@ -222,6 +223,12 @@ const ACTION_BADGE_CONFIG: Record<string, AuditActionMeta> = {
     labelKey: "settings.auditLog.actionOrgLogoRemoved",
     className:
       "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+  },
+  ORG_AUDIT_RETENTION_UPDATED: {
+    resource: "ORGANIZATION",
+    labelKey: "settings.auditLog.actionOrgAuditRetentionUpdated",
+    className:
+      "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
   },
   INVITE_CREATED: {
     resource: "INVITATION",
@@ -529,6 +536,14 @@ export function formatAuditValue(
   value: unknown,
   t: TranslateFn,
 ): string {
+  if (field === "auditLogRetentionDays") {
+    if (value === null || value === undefined || value === "") {
+      return t("settings.auditLog.retentionUnlimitedValue");
+    }
+    if (typeof value === "number") {
+      return t("settings.auditLog.retentionDaysValue", { days: value });
+    }
+  }
   if (value === null || value === undefined || value === "") {
     return t("settings.auditLog.valueEmpty");
   }
@@ -665,6 +680,13 @@ export function formatAuditSummary(
     case "ORG_LOGO_REMOVED":
       return interpolate(
         t("settings.auditLog.metadataLabels.summaryOrgLogoRemoved", { target }),
+        { target },
+      );
+    case "ORG_AUDIT_RETENTION_UPDATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryOrgAuditRetentionUpdated", {
+          target,
+        }),
         { target },
       );
     case "OWNERSHIP_TRANSFERRED":

@@ -170,6 +170,7 @@ model Organization {
   timeFormat       String                       @default("24H")
   nameDisplayOrder String                       @default("LAST_FIRST")
   defaultCurrency  String                       @default("VND")
+  auditLogRetentionDays Int?
   owner            User                         @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   jobs             Job[]
   candidates       Candidate[]
@@ -226,6 +227,8 @@ model User {
   assignedInterviews Interview[]            @relation("InterviewAssignee")
   memberships        OrganizationMember[]
   auditLogs          OrganizationAuditLog[]
+  sessions           UserSession[]
+  securityLogs       UserSecurityLog[]
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
@@ -698,6 +701,40 @@ model PlatformAuditLog {
   @@index([createdAt])
   @@index([action])
   @@map("platform_audit_log")
+}
+
+model UserSession {
+  id           String    @id @default(uuid())
+  userId       String
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime  @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@map("user_session")
+}
+
+model UserSecurityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  status    String   @default("SUCCESS")
+  ipAddress String?
+  userAgent String?
+  requestId String?
+  metadata  Json?    @db.JsonB
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, action])
+  @@map("user_security_log")
 }
 
 model ApplicationNote {

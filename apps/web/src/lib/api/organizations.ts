@@ -278,7 +278,30 @@ export const organizationsApi = {
     );
     return response.data;
   },
+
+  getAuditLogStats: async (): Promise<AuditLogStatsResponse> => {
+    const response = await api.get<AuditLogStatsResponse>(
+      "/organizations/my/audit-log/stats",
+    );
+    return response.data;
+  },
+
+  updateAuditLogRetention: async (
+    retentionDays: number | null,
+  ): Promise<{ retentionDays: number | null }> => {
+    const response = await api.patch<{ retentionDays: number | null }>(
+      "/organizations/my/audit-log/retention",
+      { retentionDays },
+    );
+    return response.data;
+  },
 };
+
+export interface AuditLogStatsResponse {
+  total24h: number;
+  sensitive7d: number;
+  retentionDays: number | null;
+}
 
 export interface AuditLogsQueryParams {
   action?: string;

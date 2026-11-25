@@ -359,3 +359,33 @@ export function useAuditLogsQuery(
     enabled: options?.enabled ?? true,
   });
 }
+
+export function useAuditLogStatsQuery(options?: { enabled?: boolean }) {
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
+  return useQuery({
+    queryKey: queryKeys.auditLogStats(orgId),
+    queryFn: () => organizationsApi.getAuditLogStats(),
+    enabled: (options?.enabled ?? true) && Boolean(orgId),
+  });
+}
+
+export function useUpdateAuditLogRetentionMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const orgId = user?.organizationId;
+  return useMutation({
+    mutationFn: (retentionDays: number | null) =>
+      organizationsApi.updateAuditLogRetention(retentionDays),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.auditLogStats(orgId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["organization", "audit-logs"],
+        }),
+      ]);
+    },
+  });
+}

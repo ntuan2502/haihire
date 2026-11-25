@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface AuditChangeEntry {
   field: string;
   before: unknown;
@@ -70,6 +72,36 @@ export const AUDIT_ACTIONS = {
   SOURCING_LINK_CREATED: "SOURCING_LINK_CREATED",
   SOURCING_LINK_UPDATED: "SOURCING_LINK_UPDATED",
   SOURCING_LINK_DELETED: "SOURCING_LINK_DELETED",
+  ORG_AUDIT_RETENTION_UPDATED: "ORG_AUDIT_RETENTION_UPDATED",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
+
+export const AUDIT_RETENTION_PRESETS = [30, 90, 180, 365] as const;
+
+export const updateAuditRetentionSchema = z.object({
+  retentionDays: z.union([
+    z.literal(30),
+    z.literal(90),
+    z.literal(180),
+    z.literal(365),
+    z.null(),
+  ]),
+});
+
+export type UpdateAuditRetentionSchema = z.infer<
+  typeof updateAuditRetentionSchema
+>;
+
+export const USER_SECURITY_ACTIONS = {
+  AUTH_LOGIN: "AUTH_LOGIN",
+  AUTH_LOGIN_FAILED: "AUTH_LOGIN_FAILED",
+  AUTH_LOGOUT: "AUTH_LOGOUT",
+  AUTH_PASSWORD_CHANGED: "AUTH_PASSWORD_CHANGED",
+  AUTH_SESSION_REVOKED: "AUTH_SESSION_REVOKED",
+  AUTH_ALL_SESSIONS_REVOKED: "AUTH_ALL_SESSIONS_REVOKED",
+  ACCOUNT_PROFILE_UPDATED: "ACCOUNT_PROFILE_UPDATED",
+} as const;
+
+export type UserSecurityAction =
+  (typeof USER_SECURITY_ACTIONS)[keyof typeof USER_SECURITY_ACTIONS];

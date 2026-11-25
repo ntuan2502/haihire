@@ -16,11 +16,7 @@ import {
   type UpdateUserProfilePayload,
 } from "@haihire/shared";
 import Link from "next/link";
-import {
-  CustomSelect,
-  OrganizationLogo,
-  PageHeader,
-} from "@/components/shared";
+import { CustomSelect, OrganizationLogo } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "@/hooks/query-keys";
 import { Badge } from "@/components/ui/badge";
@@ -34,14 +30,12 @@ import { getOrgRoleLabel } from "@/lib/roles";
 import { toast } from "@/lib/toast";
 import { Save, Globe, User as UserIcon, Building2, LogOut } from "lucide-react";
 import { AccountAvatarSection } from "@/components/settings/account/account-avatar-section";
-import { AccountPasswordCard } from "@/components/settings/account/account-password-card";
-import { AccountNotificationPreferencesCard } from "@/components/settings/account/account-notification-preferences-card";
 import { LeaveOrganizationModal } from "@/components/settings/leave-organization-modal";
 import { cn, getUserDisplayName } from "@/lib/utils";
 import type { User } from "@/types";
 
 export default function AccountPage() {
-  const { user, isOwner, setSession, updateUser } = useAuth();
+  const { user, isOwner, updateUser } = useAuth();
   const [leaveModalOpen, setLeaveModalOpen] = useState(false);
   const { t, locale, setLocale } = useI18n();
   const queryClient = useContext(QueryClientContext) ?? null;
@@ -211,323 +205,301 @@ export default function AccountPage() {
   };
 
   return (
-    <div
-      data-testid="account-shell"
-      className="flex flex-1 flex-col bg-background"
-    >
-      <section
-        data-testid="account-content"
-        className="w-full flex-1 min-w-0 p-4 sm:p-6 space-y-6 animate-in fade-in duration-200"
-      >
-        <PageHeader
-          title={t("settings.tabs.account")}
-          subtitle={t("settings.accountProfileDesc")}
-          icon={UserIcon}
-          bordered
-        />
-
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Account Profile + Security Cards */}
-          <div className="xl:col-span-7 space-y-6 min-w-0">
-            {/* Personal Information Card */}
-            <SettingsCard className="space-y-5">
-              <div className="flex items-start gap-3 pb-4 border-b border-border">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
-                  <UserIcon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    {t("settings.tabs.accountSub")}
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("settings.accountInfoSub")}
-                  </p>
-                </div>
+    <>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Account Profile Card */}
+        <div className="xl:col-span-7 space-y-6 min-w-0">
+          {/* Personal Information Card */}
+          <SettingsCard className="space-y-5">
+            <div className="flex items-start gap-3 pb-4 border-b border-border">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+                <UserIcon className="h-5 w-5" aria-hidden="true" />
               </div>
-
-              <AccountAvatarSection
-                user={user}
-                displayName={displayName}
-                onUserUpdated={syncUpdatedUser}
-              />
-
-              <form onSubmit={handleSaveProfile} className="space-y-4">
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {(isLastFirst
-                    ? [
-                        {
-                          id: "account-last-name",
-                          label: t("settings.accountProfile.lastNameLabel"),
-                          placeholder: t(
-                            "settings.accountProfile.lastNamePlaceholder",
-                          ),
-                          value: activeLastName,
-                          onChange: (val: string) => setLastNameDraft(val),
-                        },
-                        {
-                          id: "account-first-name",
-                          label: t("settings.accountProfile.firstNameLabel"),
-                          placeholder: t(
-                            "settings.accountProfile.firstNamePlaceholder",
-                          ),
-                          value: activeFirstName,
-                          onChange: (val: string) => setFirstNameDraft(val),
-                        },
-                      ]
-                    : [
-                        {
-                          id: "account-first-name",
-                          label: t("settings.accountProfile.firstNameLabel"),
-                          placeholder: t(
-                            "settings.accountProfile.firstNamePlaceholder",
-                          ),
-                          value: activeFirstName,
-                          onChange: (val: string) => setFirstNameDraft(val),
-                        },
-                        {
-                          id: "account-last-name",
-                          label: t("settings.accountProfile.lastNameLabel"),
-                          placeholder: t(
-                            "settings.accountProfile.lastNamePlaceholder",
-                          ),
-                          value: activeLastName,
-                          onChange: (val: string) => setLastNameDraft(val),
-                        },
-                      ]
-                  ).map((field) => (
-                    <div key={field.id}>
-                      <label
-                        htmlFor={field.id}
-                        className="block text-xs font-medium text-foreground mb-1.5"
-                      >
-                        {field.label}
-                      </label>
-                      <Input
-                        id={field.id}
-                        type="text"
-                        placeholder={field.placeholder}
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        className="text-xs w-full"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="account-email"
-                    className="block text-xs font-medium text-foreground mb-1.5"
-                  >
-                    {t("settings.emailAddress")}
-                  </label>
-                  <Input
-                    id="account-email"
-                    type="email"
-                    disabled
-                    value={user?.email || ""}
-                    className="text-xs bg-muted/40 w-full"
-                  />
-                </div>
-
-                <div className="pt-1">
-                  <SettingsButton
-                    type="submit"
-                    disabled={!hasProfileChanges}
-                    icon={Save}
-                    pending={isSavingProfile}
-                  >
-                    {t(
-                      isSavingProfile ? "common.saving" : "common.saveChanges",
-                    )}
-                  </SettingsButton>
-                </div>
-              </form>
-            </SettingsCard>
-
-            {/* Change Password Card */}
-            <AccountPasswordCard setSession={setSession} />
-          </div>
-
-          {/* Right Column: Personal Language/Timezone & Notification Preferences */}
-          <div className="xl:col-span-5 space-y-6 min-w-0">
-            <SettingsCard className="space-y-5">
-              <div className="flex items-start gap-3 pb-4 border-b border-border">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
-                  <Globe className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">
-                    {t("settings.accountPreferences.title")}
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("settings.accountPreferences.subtitle")}
-                  </p>
-                </div>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t("settings.tabs.accountSub")}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("settings.accountInfoSub")}
+                </p>
               </div>
+            </div>
 
-              <form onSubmit={handleSavePreferences} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="account-preferred-language-trigger"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    {t("settings.accountPreferences.languageLabel")}
-                  </label>
-                  <CustomSelect
-                    id="account-preferred-language"
-                    aria-label={t("settings.accountPreferences.languageLabel")}
-                    value={activePrefLang}
-                    onChange={(val) => setPrefLangDraft(val)}
-                    disabled={isSavingPrefs}
-                    options={languageOptions}
-                    className="w-full"
-                    triggerClassName="w-full text-xs"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("settings.accountPreferences.languageHint")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("settings.accountPreferences.currentLanguage", {
-                      value: t(
-                        `settings.localization.languages.${locale ?? orgLocalization.defaultLanguage}`,
-                      ),
-                    })}
-                  </p>
-                </div>
+            <AccountAvatarSection
+              user={user}
+              displayName={displayName}
+              onUserUpdated={syncUpdatedUser}
+            />
 
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="account-preferred-timezone-trigger"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    {t("settings.accountPreferences.timezoneLabel")}
-                  </label>
-                  <CustomSelect
-                    id="account-preferred-timezone"
-                    aria-label={t("settings.accountPreferences.timezoneLabel")}
-                    value={activePrefTimezone}
-                    onChange={(val) => setPrefTimezoneDraft(val)}
-                    disabled={isSavingPrefs}
-                    searchable
-                    searchPlaceholder={t(
-                      "settings.localization.timezoneSearchPlaceholder",
-                    )}
-                    emptyText={t("settings.localization.timezoneNoMatch")}
-                    options={timezoneOptions}
-                    className="w-full"
-                    triggerClassName="w-full text-xs"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("settings.accountPreferences.timezoneHint")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("settings.accountPreferences.currentTimezone", {
-                      value: effectiveTimezone,
-                      source: t(
-                        usesPersonalTimezone
-                          ? "settings.accountPreferences.personalSource"
-                          : "settings.accountPreferences.followOrgDefault",
-                      ),
-                    })}
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <SettingsButton
-                    type="submit"
-                    disabled={!hasPreferenceChanges}
-                    icon={Save}
-                    pending={isSavingPrefs}
-                  >
-                    {t(
-                      isSavingPrefs
-                        ? "common.saving"
-                        : "settings.accountPreferences.saveBtn",
-                    )}
-                  </SettingsButton>
-                </div>
-              </form>
-            </SettingsCard>
-
-            <AccountNotificationPreferencesCard />
-
-            {user?.organization && (
-              <SettingsCard className="space-y-4">
-                <div className="flex items-start gap-3 pb-4 border-b border-border">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
-                    <Building2 className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-foreground">
-                      {t("settings.currentOrgSectionTitle")}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {t("settings.currentOrgSectionDesc")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <OrganizationLogo
-                      name={user.organization.name}
-                      logoUrl={user.organization.logoUrl}
-                      size="md"
-                      decorative
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(isLastFirst
+                  ? [
+                      {
+                        id: "account-last-name",
+                        label: t("settings.accountProfile.lastNameLabel"),
+                        placeholder: t(
+                          "settings.accountProfile.lastNamePlaceholder",
+                        ),
+                        value: activeLastName,
+                        onChange: (val: string) => setLastNameDraft(val),
+                      },
+                      {
+                        id: "account-first-name",
+                        label: t("settings.accountProfile.firstNameLabel"),
+                        placeholder: t(
+                          "settings.accountProfile.firstNamePlaceholder",
+                        ),
+                        value: activeFirstName,
+                        onChange: (val: string) => setFirstNameDraft(val),
+                      },
+                    ]
+                  : [
+                      {
+                        id: "account-first-name",
+                        label: t("settings.accountProfile.firstNameLabel"),
+                        placeholder: t(
+                          "settings.accountProfile.firstNamePlaceholder",
+                        ),
+                        value: activeFirstName,
+                        onChange: (val: string) => setFirstNameDraft(val),
+                      },
+                      {
+                        id: "account-last-name",
+                        label: t("settings.accountProfile.lastNameLabel"),
+                        placeholder: t(
+                          "settings.accountProfile.lastNamePlaceholder",
+                        ),
+                        value: activeLastName,
+                        onChange: (val: string) => setLastNameDraft(val),
+                      },
+                    ]
+                ).map((field) => (
+                  <div key={field.id}>
+                    <label
+                      htmlFor={field.id}
+                      className="block text-xs font-medium text-foreground mb-1.5"
+                    >
+                      {field.label}
+                    </label>
+                    <Input
+                      id={field.id}
+                      type="text"
+                      placeholder={field.placeholder}
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="text-xs w-full"
                     />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">
-                        {user.organization.name}
-                      </p>
-                      <Badge
-                        variant="secondary"
-                        className="mt-1 text-[10px] px-1.5 py-0 h-4"
-                      >
-                        {getOrgRoleLabel(isOwner ? "OWNER" : user.role, t)}
-                      </Badge>
-                    </div>
                   </div>
+                ))}
+              </div>
 
-                  {!isOwner ? (
-                    <SettingsButton
-                      type="button"
-                      variant="destructive"
-                      icon={LogOut}
-                      onClick={() => setLeaveModalOpen(true)}
-                      className="shrink-0"
-                    >
-                      {t("settings.leaveOrgButton")}
-                    </SettingsButton>
-                  ) : (
-                    <Link
-                      href="/settings/members"
-                      className={cn(
-                        buttonVariants({ variant: "outline", size: "sm" }),
-                        "text-xs font-medium shrink-0",
-                      )}
-                    >
-                      {t("settings.goToMembersTransfer")}
-                    </Link>
+              <div>
+                <label
+                  htmlFor="account-email"
+                  className="block text-xs font-medium text-foreground mb-1.5"
+                >
+                  {t("settings.emailAddress")}
+                </label>
+                <Input
+                  id="account-email"
+                  type="email"
+                  disabled
+                  value={user?.email || ""}
+                  className="text-xs bg-muted/40 w-full"
+                />
+              </div>
+
+              <div className="pt-1">
+                <SettingsButton
+                  type="submit"
+                  disabled={!hasProfileChanges}
+                  icon={Save}
+                  pending={isSavingProfile}
+                >
+                  {t(isSavingProfile ? "common.saving" : "common.saveChanges")}
+                </SettingsButton>
+              </div>
+            </form>
+          </SettingsCard>
+        </div>
+
+        {/* Right Column: Personal Language/Timezone & Current Organization */}
+        <div className="xl:col-span-5 space-y-6 min-w-0">
+          <SettingsCard className="space-y-5">
+            <div className="flex items-start gap-3 pb-4 border-b border-border">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+                <Globe className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t("settings.accountPreferences.title")}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("settings.accountPreferences.subtitle")}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSavePreferences} className="space-y-4">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="account-preferred-language-trigger"
+                  className="block text-xs font-medium text-foreground"
+                >
+                  {t("settings.accountPreferences.languageLabel")}
+                </label>
+                <CustomSelect
+                  id="account-preferred-language"
+                  aria-label={t("settings.accountPreferences.languageLabel")}
+                  value={activePrefLang}
+                  onChange={(val) => setPrefLangDraft(val)}
+                  disabled={isSavingPrefs}
+                  options={languageOptions}
+                  className="w-full"
+                  triggerClassName="w-full text-xs"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {t("settings.accountPreferences.languageHint")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.accountPreferences.currentLanguage", {
+                    value: t(
+                      `settings.localization.languages.${locale ?? orgLocalization.defaultLanguage}`,
+                    ),
+                  })}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="account-preferred-timezone-trigger"
+                  className="block text-xs font-medium text-foreground"
+                >
+                  {t("settings.accountPreferences.timezoneLabel")}
+                </label>
+                <CustomSelect
+                  id="account-preferred-timezone"
+                  aria-label={t("settings.accountPreferences.timezoneLabel")}
+                  value={activePrefTimezone}
+                  onChange={(val) => setPrefTimezoneDraft(val)}
+                  disabled={isSavingPrefs}
+                  searchable
+                  searchPlaceholder={t(
+                    "settings.localization.timezoneSearchPlaceholder",
                   )}
+                  emptyText={t("settings.localization.timezoneNoMatch")}
+                  options={timezoneOptions}
+                  className="w-full"
+                  triggerClassName="w-full text-xs"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {t("settings.accountPreferences.timezoneHint")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.accountPreferences.currentTimezone", {
+                    value: effectiveTimezone,
+                    source: t(
+                      usesPersonalTimezone
+                        ? "settings.accountPreferences.personalSource"
+                        : "settings.accountPreferences.followOrgDefault",
+                    ),
+                  })}
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <SettingsButton
+                  type="submit"
+                  disabled={!hasPreferenceChanges}
+                  icon={Save}
+                  pending={isSavingPrefs}
+                >
+                  {t(
+                    isSavingPrefs
+                      ? "common.saving"
+                      : "settings.accountPreferences.saveBtn",
+                  )}
+                </SettingsButton>
+              </div>
+            </form>
+          </SettingsCard>
+
+          {user?.organization && (
+            <SettingsCard className="space-y-4">
+              <div className="flex items-start gap-3 pb-4 border-b border-border">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
+                  <Building2 className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {t("settings.currentOrgSectionTitle")}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t("settings.currentOrgSectionDesc")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <OrganizationLogo
+                    name={user.organization.name}
+                    logoUrl={user.organization.logoUrl}
+                    size="md"
+                    decorative
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">
+                      {user.organization.name}
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 text-[10px] px-1.5 py-0 h-4"
+                    >
+                      {getOrgRoleLabel(isOwner ? "OWNER" : user.role, t)}
+                    </Badge>
+                  </div>
                 </div>
 
-                {isOwner && (
-                  <p className="text-[11px] text-muted-foreground">
-                    {t("settings.ownerLeaveHint")}
-                  </p>
+                {!isOwner ? (
+                  <SettingsButton
+                    type="button"
+                    variant="destructive"
+                    icon={LogOut}
+                    onClick={() => setLeaveModalOpen(true)}
+                    className="shrink-0"
+                  >
+                    {t("settings.leaveOrgButton")}
+                  </SettingsButton>
+                ) : (
+                  <Link
+                    href="/settings/members"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                      "text-xs font-medium shrink-0",
+                    )}
+                  >
+                    {t("settings.goToMembersTransfer")}
+                  </Link>
                 )}
-              </SettingsCard>
-            )}
-          </div>
+              </div>
+
+              {isOwner && (
+                <p className="text-[11px] text-muted-foreground">
+                  {t("settings.ownerLeaveHint")}
+                </p>
+              )}
+            </SettingsCard>
+          )}
         </div>
-      </section>
+      </div>
 
       <LeaveOrganizationModal
         isOpen={leaveModalOpen}
         organizationName={user?.organization?.name}
         onClose={() => setLeaveModalOpen(false)}
       />
-    </div>
+    </>
   );
 }

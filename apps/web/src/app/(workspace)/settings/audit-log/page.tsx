@@ -37,6 +37,8 @@ import {
   type AuditDateRangePreset,
 } from "@/components/settings/audit-log/audit-log-filters";
 import { AuditLogDetailDrawer } from "@/components/settings/audit-log/audit-log-detail-drawer";
+import { AuditLogEntityTimeline } from "@/components/settings/audit-log/audit-log-entity-timeline";
+import { AuditLogStatsBar } from "@/components/settings/audit-log/audit-log-stats-bar";
 import {
   formatAuditSummary,
   getAuditActionBadge,
@@ -209,6 +211,8 @@ function AuditLogPageContent() {
         }
       />
 
+      <AuditLogStatsBar />
+
       <AuditLogFilters
         searchInput={search}
         onSearchChange={setSearch}
@@ -279,6 +283,18 @@ function AuditLogPageContent() {
                 {t("settings.auditLog.emptyDescription")}
               </p>
             </div>
+          ) : selectedTargetId ? (
+            <AuditLogEntityTimeline
+              logs={logs}
+              targetLabel={targetBannerLabel || selectedTargetId}
+              total={total}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={(nextPage) => setPage(nextPage)}
+              onPageSizeChange={(nextSize) => setPageSize(nextSize)}
+              onInspect={(log) => setInspectingLog(log)}
+              onClearTargetId={() => setParam("targetId", null, true)}
+            />
           ) : (
             <SettingsLogTable
               footer={

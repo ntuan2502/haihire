@@ -23,6 +23,12 @@ describe("OrganizationsAuditLogService", () => {
     metadata: string | null;
     createdAt: string;
   }>;
+  let mockOrgs: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    auditLogRetentionDays: number | null;
+  }>;
   let mockUsers: Array<{
     id: string;
     name: string;
@@ -34,6 +40,20 @@ describe("OrganizationsAuditLogService", () => {
   beforeEach(() => {
     mockOrgLogs = [];
     mockPlatformLogs = [];
+    mockOrgs = [
+      {
+        id: "org-1",
+        name: "Acme Corp",
+        slug: "acme-corp",
+        auditLogRetentionDays: 90,
+      },
+      {
+        id: "org-2",
+        name: "Beta Corp",
+        slug: "beta-corp",
+        auditLogRetentionDays: null,
+      },
+    ];
     mockUsers = [
       {
         id: "user-1",
@@ -47,6 +67,7 @@ describe("OrganizationsAuditLogService", () => {
     const mockPrisma = createMockPrismaService({
       organizationAuditLog: mockOrgLogs,
       platformAuditLog: mockPlatformLogs,
+      organization: mockOrgs,
       user: mockUsers,
     });
 
@@ -275,6 +296,84 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.total).toBe(1);
       expect(result.data[0].organizationId).toBe("org-1");
       expect(result.data[0].metadata).toEqual({ name: "Org 1" });
+    });
+  });
+
+  describe("stats, retention policy, and cleanup", () => {
+    it("getOrgLogStats returns 24h count, 7d sensitive changes, and configured retentionDays", async () => {
+      await service.logOrg(
+        "org-1",
+        "user-1",
+        "ROLE_PERMISSIONS_UPDATED",
+        "ROLE_PERMISSIONS",
+      );
+      await service.logOrg("org-1", "user-1", "JOB_CREATED", "JOB");
+
+      const stats = await service.getOrgLogStats("org-1");
+
+      expect(stats.total24h).toBe(2);
+      expect(stats.sensitive7d).toBe(1);
+      expect(stats.retentionDays).toBe(90);
+    });
+
+    it("updateRetentionPolicy updates org retention and records ORG_AUDIT_RETENTION_UPDATED diff", async () => {
+      const updated = await service.updateRetentionPolicy(
+        "org-1",
+        "user-1",
+        180,
+      );
+
+      expect(updated).toEqual({ retentionDays: 180 });
+      expect(mockOrgs[0].auditLogRetentionDays).toBe(180);
+      expect(mockOrgLogs).toHaveLength(1);
+      expect(mockOrgLogs[0].action).toBe("ORG_AUDIT_RETENTION_UPDATED");
+    });
+
+    it("purgeExpiredOrgLogs deletes logs older than configured retentionDays", async () => {
+      const oldDate = new Date(
+        Date.now() - 120 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const recentDate = new Date(
+        Date.now() - 5 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      mockOrgLogs.push(
+        {
+          id: "old-log",
+          organizationId: "org-1",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: oldDate,
+        },
+        {
+          id: "recent-log",
+          organizationId: "org-1",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: recentDate,
+        },
+        {
+          id: "unlimited-old-log",
+          organizationId: "org-2",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: oldDate,
+        },
+      );
+
+      const res = await service.purgeExpiredOrgLogs();
+
+      expect(res.deletedCount).toBe(1);
+      expect(mockOrgLogs.map((l) => l.id)).toEqual([
+        "recent-log",
+        "unlimited-old-log",
+      ]);
     });
   });
 });

@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
+  Optional,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -20,6 +22,8 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { AuthService } from "./auth.service";
+import { UserSecurityService } from "./user-security.service";
+import { SecurityLogsQueryDto } from "./dto/security-logs-query.dto";
 import {
   clearAuthCookies,
   setAuthCookies,
@@ -52,6 +56,9 @@ export class AuthController {
   constructor(
     @Inject(AuthService)
     private readonly authService: AuthService,
+    @Optional()
+    @Inject(UserSecurityService)
+    private readonly userSecurity?: UserSecurityService,
   ) {}
 
   @Throttle({
@@ -161,14 +168,26 @@ export class AuthController {
   async logout(
     @Request()
     req: {
-      user?: { id?: string; organizationId?: string | null };
+      user?: {
+        id?: string;
+        organizationId?: string | null;
+        sessionId?: string | null;
+      };
       cookies?: Record<string, string>;
       headers?: { cookie?: string };
     },
     @Res({ passthrough: true }) res: Response,
   ) {
     if (req?.user?.id) {
-      await this.authService.logout(req.user.id, req.user.organizationId);
+      if (req.user.sessionId) {
+        await this.authService.logout(
+          req.user.id,
+          req.user.organizationId,
+          req.user.sessionId,
+        );
+      } else {
+        await this.authService.logout(req.user.id, req.user.organizationId);
+      }
     } else {
       const refreshToken = this.extractRefreshToken(req);
       if (
@@ -322,5 +341,65 @@ export class AuthController {
     },
   ) {
     return this.authService.getMyPermissions(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("sessions")
+  listSessions(
+    @Request()
+    req: {
+      user: { id: string; sessionId?: string | null };
+    },
+  ) {
+    return (
+      this.userSecurity?.listActiveSessions(req.user.id, req.user.sessionId) ??
+      []
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete("sessions/:sessionId")
+  revokeSession(
+    @Request() req: { user: { id: string } },
+    @Param("sessionId", new ParseUUIDPipe()) sessionId: string,
+  ) {
+    return (
+      this.userSecurity?.revokeSession(req.user.id, sessionId) ?? {
+        success: true,
+      }
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("sessions/revoke-others")
+  @HttpCode(HttpStatus.OK)
+  revokeOtherSessions(
+    @Request()
+    req: {
+      user: { id: string; sessionId?: string | null };
+    },
+  ) {
+    return (
+      this.userSecurity?.revokeOtherSessions(
+        req.user.id,
+        req.user.sessionId,
+      ) ?? { success: true, revokedCount: 0 }
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("security-logs")
+  listSecurityLogs(
+    @Request() req: { user: { id: string } },
+    @Query(DtoPipe(SecurityLogsQueryDto)) query: SecurityLogsQueryDto,
+  ) {
+    return (
+      this.userSecurity?.listSecurityLogs(req.user.id, query) ?? {
+        data: [],
+        total: 0,
+        limit: query.limit ?? 20,
+        offset: query.offset ?? 0,
+      }
+    );
   }
 }

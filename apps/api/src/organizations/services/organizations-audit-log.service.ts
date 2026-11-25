@@ -2,6 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   formatUserDisplayName,
   type AuditChangeEntry,
   type AuditLogEnvelopeInput,
@@ -33,6 +35,21 @@ export interface PlatformAuditLogFilter {
 
 const EXPORT_MAX_ROWS = 1000;
 const CSV_FORMULA_PREFIX_REGEX = /^[=+\-@\t\r]/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const SENSITIVE_AUDIT_ACTIONS = new Set<string>([
+  AUDIT_ACTIONS.OWNERSHIP_TRANSFERRED,
+  AUDIT_ACTIONS.ROLE_PERMISSIONS_UPDATED,
+  AUDIT_ACTIONS.ROLE_PERMISSIONS_RESET,
+  AUDIT_ACTIONS.MEMBER_REMOVED,
+  AUDIT_ACTIONS.ORG_DELETED,
+  AUDIT_ACTIONS.ORG_AUDIT_RETENTION_UPDATED,
+  AUDIT_ACTIONS.JOB_DELETED,
+  AUDIT_ACTIONS.CANDIDATE_DELETED,
+  AUDIT_ACTIONS.APPLICATION_DELETED,
+  AUDIT_ACTIONS.WEBHOOK_DELETED,
+  AUDIT_ACTIONS.EMAIL_SETTINGS_UPDATED,
+]);
 
 function sanitizeCsvCell(value: unknown): string {
   const raw =
@@ -401,5 +418,121 @@ export class OrganizationsAuditLogService {
       limit,
       offset,
     };
+  }
+
+  async getOrgLogStats(organizationId: string) {
+    const now = toInstant();
+    const since24h = new Date(now.getTime() - DAY_MS);
+    const since7d = new Date(now.getTime() - 7 * DAY_MS);
+
+    const [total24h, sensitive7d, org] = await Promise.all([
+      this.prisma.organizationAuditLog.count({
+        where: {
+          organizationId,
+          createdAt: { gte: since24h },
+        },
+      }),
+      this.prisma.organizationAuditLog.count({
+        where: {
+          organizationId,
+          action: { in: Array.from(SENSITIVE_AUDIT_ACTIONS) },
+          createdAt: { gte: since7d },
+        },
+      }),
+      this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { auditLogRetentionDays: true },
+      }),
+    ]);
+
+    return {
+      total24h,
+      sensitive7d,
+      retentionDays: org?.auditLogRetentionDays ?? null,
+    };
+  }
+
+  async updateRetentionPolicy(
+    organizationId: string,
+    actorId: string | null,
+    retentionDays: number | null,
+  ) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        id: true,
+        name: true,
+        auditLogRetentionDays: true,
+      },
+    });
+
+    const previousRetentionDays = org?.auditLogRetentionDays ?? null;
+
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { auditLogRetentionDays: retentionDays },
+    });
+
+    if (previousRetentionDays !== retentionDays) {
+      await this.logOrg(
+        organizationId,
+        actorId,
+        AUDIT_ACTIONS.ORG_AUDIT_RETENTION_UPDATED,
+        AUDIT_RESOURCES.ORGANIZATION,
+        {
+          previousRetentionDays,
+          retentionDays,
+        },
+        undefined,
+        {
+          targetId: organizationId,
+          targetLabel: org?.name ?? organizationId,
+          changes: [
+            {
+              field: "auditLogRetentionDays",
+              before: previousRetentionDays,
+              after: retentionDays,
+            },
+          ],
+        },
+      );
+    }
+
+    return { retentionDays };
+  }
+
+  async purgeExpiredOrgLogs(): Promise<{
+    scannedOrgs: number;
+    deletedCount: number;
+  }> {
+    if (
+      typeof this.prisma.organization?.findMany !== "function" ||
+      typeof this.prisma.organizationAuditLog?.deleteMany !== "function"
+    ) {
+      return { scannedOrgs: 0, deletedCount: 0 };
+    }
+
+    const orgs = await this.prisma.organization.findMany({
+      where: { auditLogRetentionDays: { not: null } },
+      select: { id: true, auditLogRetentionDays: true },
+    });
+
+    const nowMs = toInstant().getTime();
+    let deletedCount = 0;
+
+    for (const org of orgs) {
+      const days = org.auditLogRetentionDays;
+      if (!days || days <= 0) continue;
+      const cutoff = new Date(nowMs - days * DAY_MS);
+      const res = await this.prisma.organizationAuditLog.deleteMany({
+        where: {
+          organizationId: org.id,
+          createdAt: { lt: cutoff },
+        },
+      });
+      deletedCount += res?.count ?? 0;
+    }
+
+    return { scannedOrgs: orgs.length, deletedCount };
   }
 }

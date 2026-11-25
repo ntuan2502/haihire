@@ -22,6 +22,7 @@ import {
 } from "../common/app-exception";
 import {
   APP_ERROR_CODES,
+  USER_SECURITY_ACTIONS,
   canonicalizeTimezone,
   formatUserDisplayName,
   normalizeNameInput,
@@ -51,6 +52,7 @@ import {
   getPreferredOwnedOrgOrderBy,
   serializeOrganizationSummary,
 } from "../organizations/organization-logo.util";
+import { UserSecurityService } from "./user-security.service";
 
 const USER_PROFILE_SELECT = {
   id: true,
@@ -85,6 +87,9 @@ export class AuthService {
     @Optional()
     @Inject(MinioService)
     private readonly minioService?: MinioService,
+    @Optional()
+    @Inject(UserSecurityService)
+    private readonly userSecurity?: UserSecurityService,
   ) {}
 
   async validateRecruiter(dto: LoginDto) {
@@ -131,6 +136,12 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
+      await this.userSecurity?.logEvent(
+        user.id,
+        USER_SECURITY_ACTIONS.AUTH_LOGIN_FAILED,
+        "WARNING",
+        { reason: "invalid_password" },
+      );
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.INVALID_CREDENTIALS,
         "Invalid email or password",
@@ -220,6 +231,7 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateRecruiter(dto);
+    const sessionId = await this.userSecurity?.createSession(user.id);
 
     const tokenVersion = user.tokenVersion ?? 0;
     const payload = {
@@ -228,6 +240,7 @@ export class AuthService {
       role: user.role,
       organizationId: user.organizationId ?? undefined,
       tokenVersion,
+      ...(sessionId ? { sid: sessionId } : {}),
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -237,9 +250,20 @@ export class AuthService {
         type: "refresh",
         ...(user.organizationId ? { organizationId: user.organizationId } : {}),
         tokenVersion,
+        ...(sessionId ? { sid: sessionId } : {}),
         jti: crypto.randomUUID(),
       },
       { expiresIn: "7d" },
+    );
+
+    await this.userSecurity?.logEvent(
+      user.id,
+      USER_SECURITY_ACTIONS.AUTH_LOGIN,
+      "SUCCESS",
+      {
+        method: "password",
+        ...(sessionId ? { sessionId } : {}),
+      },
     );
 
     return {
@@ -329,6 +353,7 @@ export class AuthService {
   async issueOrgSessionTokens(
     userId: string,
     targetOrgId: string | null,
+    sessionId?: string | null,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -383,6 +408,7 @@ export class AuthService {
       role: activeRole,
       organizationId: activeOrgId ?? undefined,
       tokenVersion,
+      ...(sessionId ? { sid: sessionId } : {}),
     });
     const refreshToken = this.jwtService.sign(
       {
@@ -390,6 +416,7 @@ export class AuthService {
         type: "refresh",
         ...(activeOrgId ? { organizationId: activeOrgId } : {}),
         tokenVersion,
+        ...(sessionId ? { sid: sessionId } : {}),
         jti: crypto.randomUUID(),
       },
       { expiresIn: "7d" },
@@ -471,11 +498,13 @@ export class AuthService {
       createdAt: new Date(),
     };
 
+    const sessionId = await this.userSecurity?.createSession(user.id);
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       tokenVersion: 0,
+      ...(sessionId ? { sid: sessionId } : {}),
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -484,9 +513,20 @@ export class AuthService {
         sub: user.id,
         type: "refresh",
         tokenVersion: 0,
+        ...(sessionId ? { sid: sessionId } : {}),
         jti: crypto.randomUUID(),
       },
       { expiresIn: "7d" },
+    );
+
+    await this.userSecurity?.logEvent(
+      user.id,
+      USER_SECURITY_ACTIONS.AUTH_LOGIN,
+      "SUCCESS",
+      {
+        method: "register",
+        ...(sessionId ? { sessionId } : {}),
+      },
     );
 
     return {
@@ -509,6 +549,7 @@ export class AuthService {
       type?: string;
       organizationId?: string | null;
       tokenVersion?: number;
+      sid?: string;
       jti?: string;
     };
     try {
@@ -568,6 +609,7 @@ export class AuthService {
             where: { id: user.id },
             data: { tokenVersion: { increment: 1 } },
           });
+          await this.userSecurity?.revokeAllSessions(user.id);
           throw new AppUnauthorizedException(
             APP_ERROR_CODES.USER_SESSION_EXPIRED,
             "Compromised refresh token reuse detected. All sessions revoked.",
@@ -576,6 +618,10 @@ export class AuthService {
       } catch (err) {
         if (err instanceof AppUnauthorizedException) throw err;
       }
+    }
+
+    if (decoded.sid && this.userSecurity) {
+      await this.userSecurity.refreshSession(decoded.sid, user.id);
     }
 
     const legacyOrgId = (user as unknown as { organizationId?: string | null })
@@ -594,6 +640,7 @@ export class AuthService {
       role: activeRole,
       organizationId: activeOrgId ?? undefined,
       tokenVersion: userTokenVersion,
+      ...(decoded.sid ? { sid: decoded.sid } : {}),
     };
 
     const newAccessToken = this.jwtService.sign(payload);
@@ -603,6 +650,7 @@ export class AuthService {
         type: "refresh",
         ...(activeOrgId ? { organizationId: activeOrgId } : {}),
         tokenVersion: userTokenVersion,
+        ...(decoded.sid ? { sid: decoded.sid } : {}),
         jti: crypto.randomUUID(),
       },
       { expiresIn: "7d" },
@@ -615,7 +663,11 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string, activeOrgId?: string | null): Promise<void> {
+  async logout(
+    userId: string,
+    activeOrgId?: string | null,
+    sessionId?: string | null,
+  ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -626,13 +678,21 @@ export class AuthService {
 
     if (user) {
       const now = toInstant();
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          tokenVersion: { increment: 1 },
-          updatedAt: now,
-        },
-      });
+      const singleSessionRevoked =
+        sessionId && this.userSecurity
+          ? await this.userSecurity.revokeSessionQuietly(userId, sessionId)
+          : false;
+
+      if (!singleSessionRevoked) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            tokenVersion: { increment: 1 },
+            updatedAt: now,
+          },
+        });
+      }
+
       if (
         activeOrgId &&
         typeof this.prisma.organizationMember?.updateMany === "function"
@@ -642,6 +702,13 @@ export class AuthService {
           data: { lastAccessedAt: now },
         });
       }
+
+      await this.userSecurity?.logEvent(
+        userId,
+        USER_SECURITY_ACTIONS.AUTH_LOGOUT,
+        "SUCCESS",
+        sessionId ? { sessionId } : null,
+      );
     }
   }
 
@@ -652,9 +719,10 @@ export class AuthService {
         sub?: string;
         type?: string;
         organizationId?: string | null;
+        sid?: string;
       }>(refreshToken);
       if (decoded?.sub && decoded.type === "refresh") {
-        await this.logout(decoded.sub, decoded.organizationId);
+        await this.logout(decoded.sub, decoded.organizationId, decoded.sid);
       }
     } catch {
       // Ignore expired or invalid refresh tokens during logout
@@ -734,6 +802,11 @@ export class AuthService {
       legacyRole,
     );
 
+    await this.userSecurity?.revokeAllSessions(userId);
+    const nextSessionId = await this.userSecurity?.createSession(
+      updatedUser.id,
+    );
+
     const tokenVersion = updatedUser.tokenVersion ?? 0;
     const payload = {
       sub: updatedUser.id,
@@ -741,6 +814,7 @@ export class AuthService {
       role: activeRole,
       organizationId: activeOrgId ?? undefined,
       tokenVersion,
+      ...(nextSessionId ? { sid: nextSessionId } : {}),
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -750,9 +824,19 @@ export class AuthService {
         type: "refresh",
         ...(activeOrgId ? { organizationId: activeOrgId } : {}),
         tokenVersion,
+        ...(nextSessionId ? { sid: nextSessionId } : {}),
         jti: crypto.randomUUID(),
       },
       { expiresIn: "7d" },
+    );
+
+    await this.userSecurity?.logEvent(
+      updatedUser.id,
+      USER_SECURITY_ACTIONS.AUTH_PASSWORD_CHANGED,
+      "SUCCESS",
+      {
+        revokedPreviousSessions: true,
+      },
     );
 
     const org = activeOrgId
@@ -920,6 +1004,13 @@ export class AuthService {
       },
       select: { id: true },
     });
+
+    await this.userSecurity?.logEvent(
+      userId,
+      USER_SECURITY_ACTIONS.ACCOUNT_PROFILE_UPDATED,
+      "SUCCESS",
+      { firstName, lastName },
+    );
 
     return this.getProfile(userId, requestedOrgId);
   }

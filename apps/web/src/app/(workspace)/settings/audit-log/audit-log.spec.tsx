@@ -58,6 +58,14 @@ let mockAuditLogData = {
 
 let capturedQueryParams: unknown = null;
 let capturedMembersOptions: unknown = null;
+const mockUpdateRetentionMutate = vi
+  .fn()
+  .mockResolvedValue({ retentionDays: 180 });
+const mockStatsData = {
+  total24h: 14,
+  sensitive7d: 3,
+  retentionDays: 90 as number | null,
+};
 
 vi.mock("@/hooks/use-organization-queries", () => ({
   useAuditLogsQuery: (params?: unknown) => {
@@ -75,6 +83,14 @@ vi.mock("@/hooks/use-organization-queries", () => ({
       data: mockCanViewAuditLog ? mockMembers : [],
     };
   },
+  useAuditLogStatsQuery: () => ({
+    data: mockStatsData,
+    isLoading: false,
+  }),
+  useUpdateAuditLogRetentionMutation: () => ({
+    mutateAsync: mockUpdateRetentionMutate,
+    isPending: false,
+  }),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -136,6 +152,30 @@ vi.mock("@/i18n", () => ({
         "settings.auditLog.emptyTitle": "No audit events found",
         "settings.auditLog.emptyDescription": "No actions matching the filter.",
         "settings.auditLog.systemActor": "System",
+        "settings.auditLog.statsEvents24h": "Events (24h)",
+        "settings.auditLog.statsEvents24hSub": "Recorded across workspace",
+        "settings.auditLog.statsSensitive7d": "Sensitive Changes (7d)",
+        "settings.auditLog.statsSensitive7dSub":
+          "Permissions, members, retention",
+        "settings.auditLog.statsRetentionLabel": "Retention Policy",
+        "settings.auditLog.retentionDaysValue": "{days} days",
+        "settings.auditLog.retentionUnlimitedValue": "Unlimited",
+        "settings.auditLog.retentionSubtitle": "Daily cleanup at 03:00",
+        "settings.auditLog.retentionConfigureBtn": "Configure",
+        "settings.auditLog.retentionModalTitle":
+          "Configure Audit Log Retention",
+        "settings.auditLog.retentionModalDesc":
+          "Automatically purge old entries.",
+        "settings.auditLog.retentionOptionLabel": "Retention period",
+        "settings.auditLog.retentionOptionDesc": "Applies to daily cleanup.",
+        "settings.auditLog.retentionSaveBtn": "Save policy",
+        "settings.auditLog.retentionSaveSuccess":
+          "Audit log retention policy updated.",
+        "settings.auditLog.timelineHeaderTitle": "Entity Event Timeline",
+        "settings.auditLog.timelineHeaderSubtitle":
+          "{count} recorded event(s) for this target",
+        "settings.auditLog.timelineBackToTable": "Full table view",
+        "settings.auditLog.timelineChangesCount": "{count} change(s)",
         "settings.auditLog.actionRolePermissionsUpdated": "Permissions Updated",
         "settings.auditLog.actionMemberRoleChanged": "Member Role Changed",
         "settings.auditLog.actionInviteCreated": "Invitation Created",
@@ -454,5 +494,61 @@ describe("AuditLogPage", () => {
 
     expect(screen.getByText("No audit events found")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("renders KPI stats bar and updates retention policy through configure modal", async () => {
+    render(<AuditLogPage />);
+
+    const statsBar = screen.getByTestId("audit-log-stats-bar");
+    expect(within(statsBar).getByText("Events (24h)")).toBeInTheDocument();
+    expect(within(statsBar).getByText("14")).toBeInTheDocument();
+    expect(
+      within(statsBar).getByText("Sensitive Changes (7d)"),
+    ).toBeInTheDocument();
+    expect(within(statsBar).getByText("3")).toBeInTheDocument();
+    expect(screen.getByTestId("audit-retention-value")).toHaveTextContent(
+      "90 days",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Configure" }));
+
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "180 days" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save policy" }),
+    );
+
+    await waitFor(() => {
+      expect(mockUpdateRetentionMutate).toHaveBeenCalledWith(180);
+      expect(toast.success).toHaveBeenCalledWith(
+        "Audit log retention policy updated.",
+      );
+    });
+  });
+
+  it("renders vertical entity timeline when targetId filter is active and supports switching back to table", () => {
+    mockSearchParamString = "targetId=user-2";
+    mockAuditLogData = {
+      ...mockAuditLogData,
+      data: [mockAuditLogData.data[1]],
+      total: 1,
+    };
+
+    render(<AuditLogPage />);
+
+    const timeline = screen.getByTestId("audit-entity-timeline");
+    expect(timeline).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(
+      within(timeline).getByText("Entity Event Timeline: Tran Minh"),
+    ).toBeInTheDocument();
+    expect(
+      within(timeline).getByTestId("timeline-event-log-2"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      within(timeline).getByRole("button", { name: "Full table view" }),
+    );
+    expect(window.location.search).not.toContain("targetId=");
   });
 });

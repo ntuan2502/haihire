@@ -379,7 +379,7 @@ export class OrganizationsAuditLogService {
     return {
       filename: `audit-log-${timestamp}.csv`,
       mimeType: "text/csv; charset=utf-8",
-      content: lines.join("\n"),
+      content: `\uFEFF${lines.join("\r\n")}`,
     };
   }
 

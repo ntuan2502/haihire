@@ -628,7 +628,9 @@ describe("OrganizationsController", () => {
         "Content-Disposition",
         'attachment; filename="audit-log-2026-11-25.csv"',
       );
-      expect(mockRes.send).toHaveBeenCalledWith("id,action\nlog-1,ORG_UPDATED");
+      expect(mockRes.send).toHaveBeenCalledWith(
+        Buffer.from("id,action\nlog-1,ORG_UPDATED", "utf8"),
+      );
     });
 
     it("rejects regular MEMBER without org:view_audit_log -> 403 Forbidden", () => {

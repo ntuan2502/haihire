@@ -238,10 +238,10 @@ describe("OrganizationsAuditLogService", () => {
   });
 
   describe("exportOrgLogs", () => {
-    it("exports filtered CSV with formula-injection neutralization and JSON format", async () => {
+    it("exports filtered CSV with UTF-8 BOM, CRLF line endings, formula-injection neutralization, and clean JSON format", async () => {
       await service.logOrg(
         "org-1",
-        "user-1",
+        null,
         "ORG_UPDATED",
         "ORGANIZATION",
         null,
@@ -249,7 +249,8 @@ describe("OrganizationsAuditLogService", () => {
         {
           targetId: "org-1",
           targetLabel: "=SUM(1,2)",
-          changes: [{ field: "name", before: "Old", after: "New" }],
+          actorNameSnapshot: "Nguyễn Anh Tuấn",
+          changes: [{ field: "name", before: "Cũ", after: "Mới" }],
         },
       );
 
@@ -258,8 +259,11 @@ describe("OrganizationsAuditLogService", () => {
         { action: "ORG_UPDATED" },
         "csv",
       );
-      expect(csv.mimeType).toContain("text/csv");
+      expect(csv.mimeType).toContain("text/csv; charset=utf-8");
       expect(csv.filename).toMatch(/^audit-log-\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(csv.content.startsWith("\uFEFF")).toBe(true);
+      expect(csv.content).toContain("\r\n");
+      expect(csv.content).toContain("Nguyễn Anh Tuấn");
       expect(csv.content).toContain('"\'=SUM(1,2)"');
 
       const json = await service.exportOrgLogs(
@@ -267,10 +271,15 @@ describe("OrganizationsAuditLogService", () => {
         { action: "ORG_UPDATED" },
         "json",
       );
-      expect(json.mimeType).toContain("application/json");
-      const parsed = JSON.parse(json.content) as Array<{ action: string }>;
+      expect(json.mimeType).toContain("application/json; charset=utf-8");
+      expect(json.content.startsWith("\uFEFF")).toBe(false);
+      const parsed = JSON.parse(json.content) as Array<{
+        action: string;
+        actorNameSnapshot?: string;
+      }>;
       expect(parsed).toHaveLength(1);
       expect(parsed[0].action).toBe("ORG_UPDATED");
+      expect(parsed[0].actorNameSnapshot).toBe("Nguyễn Anh Tuấn");
     });
   });
 

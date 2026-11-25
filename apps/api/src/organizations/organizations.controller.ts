@@ -340,7 +340,7 @@ export class OrganizationsController {
       "Content-Disposition",
       `attachment; filename="${exported.filename}"`,
     );
-    res.send(exported.content);
+    res.send(Buffer.from(exported.content, "utf8"));
   }
 
   @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)

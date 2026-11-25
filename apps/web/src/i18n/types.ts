@@ -568,10 +568,15 @@ export interface TranslationSchema {
       questionRequiredToggle: string;
       questionOptionsLabel: string;
       questionOptionsHint: string;
+      newQuestionTitle: string;
+      editQuestionTitle: string;
+      questionPromptLabel: string;
+      addOptionAction: string;
+      optionPlaceholder: string;
+      removeOption: string;
+      dragToReorder: string;
       editQuestion: string;
       saveQuestionAction: string;
-      moveQuestionUp: string;
-      moveQuestionDown: string;
       deleteQuestion: string;
       addQuestionAction: string;
       pasteExistingBtn: string;

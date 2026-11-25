@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
   DEFAULT_JOB_APPLICATION_FORM_CONFIG,
   normalizeJobApplicationFormConfig,
@@ -253,19 +254,16 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setScreeningQuestions((prev) => [...prev, ...valid].slice(0, 30));
   };
 
-  const handleMoveScreeningQuestion = (
-    id: string,
-    direction: "up" | "down",
+  const handleReorderScreeningQuestions = (
+    activeId: string,
+    overId: string,
   ) => {
+    if (activeId === overId) return;
     setScreeningQuestions((prev) => {
-      const idx = prev.findIndex((q) => q.id === id);
-      if (idx === -1) return prev;
-      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
-      const copy = [...prev];
-      const [moved] = copy.splice(idx, 1);
-      copy.splice(targetIdx, 0, moved);
-      return copy;
+      const oldIndex = prev.findIndex((q) => q.id === activeId);
+      const newIndex = prev.findIndex((q) => q.id === overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
@@ -379,7 +377,7 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     handleAddScreeningQuestion,
     handleUpdateScreeningQuestion,
     handleBulkAddScreeningQuestions,
-    handleMoveScreeningQuestion,
+    handleReorderScreeningQuestions,
     handleRemoveQuestion,
     criteria,
     setCriteria,

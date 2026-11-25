@@ -46,10 +46,15 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.questionRequiredToggle": "Required question",
         "jobs.wizard.questionOptionsLabel": "Answer options",
         "jobs.wizard.questionOptionsHint": "Enter at least 2 distinct options.",
+        "jobs.wizard.newQuestionTitle": "New screening question",
+        "jobs.wizard.editQuestionTitle": "Edit screening question",
+        "jobs.wizard.questionPromptLabel": "Question",
+        "jobs.wizard.addOptionAction": "Add option",
+        "jobs.wizard.optionPlaceholder": `Option ${params?.index ?? 1}`,
+        "jobs.wizard.removeOption": "Remove option",
+        "jobs.wizard.dragToReorder": "Drag to reorder",
         "jobs.wizard.editQuestion": "Edit question",
         "jobs.wizard.deleteQuestion": "Delete question",
-        "jobs.wizard.moveQuestionUp": "Move up",
-        "jobs.wizard.moveQuestionDown": "Move down",
         "jobs.wizard.pasteExistingBtn": "Paste existing",
         "jobs.wizard.pasteModalTitle": "Paste screening questions",
         "jobs.wizard.pasteModalDesc": "One per line.",
@@ -89,7 +94,7 @@ describe("WizardStepForm Component", () => {
       onAddQuestion: (q: Omit<ScreeningQuestion, "id">) => void;
       onUpdateQuestion: (id: string, q: Omit<ScreeningQuestion, "id">) => void;
       onBulkAddQuestions: (items: Array<Omit<ScreeningQuestion, "id">>) => void;
-      onMoveQuestion: (id: string, dir: "up" | "down") => void;
+      onReorderQuestions: (activeId: string, overId: string) => void;
       onRemoveQuestion: (id: string) => void;
     }> = {},
   ) => {
@@ -104,7 +109,7 @@ describe("WizardStepForm Component", () => {
       onAddQuestion: vi.fn(),
       onUpdateQuestion: vi.fn(),
       onBulkAddQuestions: vi.fn(),
-      onMoveQuestion: vi.fn(),
+      onReorderQuestions: vi.fn(),
       onRemoveQuestion: vi.fn(),
       onCancel: vi.fn(),
       onBack: vi.fn(),
@@ -149,15 +154,15 @@ describe("WizardStepForm Component", () => {
     expect(setCoverLetterSetting).toHaveBeenCalledWith("required");
   });
 
-  it("supports adding a choice question, pasting multi-line questions, and reordering/editing", () => {
+  it("renders drag handles, supports interactive single-choice creation, in-place editing, and paste import", () => {
     const onAddQuestion = vi.fn();
+    const onUpdateQuestion = vi.fn();
     const onBulkAddQuestions = vi.fn();
-    const onMoveQuestion = vi.fn();
 
     renderStepForm({
       onAddQuestion,
+      onUpdateQuestion,
       onBulkAddQuestions,
-      onMoveQuestion,
       screeningQuestions: [
         {
           id: "q1",
@@ -169,33 +174,83 @@ describe("WizardStepForm Component", () => {
       ],
     });
 
-    // Move second question up
+    // Each card renders a drag handle button for sorting
+    const q1Row = screen.getByTestId("screening-question-item-q1");
     const q2Row = screen.getByTestId("screening-question-item-q2");
-    fireEvent.click(within(q2Row).getByRole("button", { name: "Move up" }));
-    expect(onMoveQuestion).toHaveBeenCalledWith("q2", "up");
+    expect(
+      within(q1Row).getByRole("button", { name: "Drag to reorder" }),
+    ).toBeInTheDocument();
+    expect(
+      within(q2Row).getByRole("button", { name: "Drag to reorder" }),
+    ).toBeInTheDocument();
 
-    // Add single_choice question with 2 options
-    fireEvent.click(screen.getByRole("button", { name: "Add question" }));
-    fireEvent.change(screen.getByPlaceholderText("Enter your question..."), {
-      target: { value: "Preferred work model?" },
+    // Edit second question in-place
+    fireEvent.click(
+      within(q2Row).getByRole("button", { name: "Edit question" }),
+    );
+    const editContainer = within(q2Row).getByTestId(
+      "screening-question-editor",
+    );
+    expect(
+      within(editContainer).getByText("Edit screening question"),
+    ).toBeInTheDocument();
+
+    const requiredSwitch = within(editContainer).getByRole("switch", {
+      name: "Required question",
     });
-    fireEvent.click(screen.getByRole("button", { name: "Answer type" }));
-    fireEvent.click(screen.getByRole("option", { name: "Single choice" }));
+    expect(requiredSwitch).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(requiredSwitch);
+    expect(requiredSwitch).toHaveAttribute("aria-checked", "true");
 
     fireEvent.change(
-      screen.getByPlaceholderText("Enter at least 2 distinct options."),
-      { target: { value: "Remote\nHybrid" } },
+      within(editContainer).getByPlaceholderText("Enter your question..."),
+      { target: { value: "Second question updated" } },
+    );
+    fireEvent.click(
+      within(editContainer).getByRole("button", { name: "Save question" }),
+    );
+    expect(onUpdateQuestion).toHaveBeenCalledWith("q2", {
+      text: "Second question updated",
+      type: "yes_no",
+      required: true,
+    });
+
+    // Add single_choice question using visual radio chips and individual option rows
+    fireEvent.click(screen.getByRole("button", { name: "Add question" }));
+    const addEditor = screen.getByTestId("screening-question-editor");
+    expect(
+      within(addEditor).getByText("New screening question"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(
+      within(addEditor).getByPlaceholderText("Enter your question..."),
+      { target: { value: "Preferred work model?" } },
+    );
+    fireEvent.click(
+      within(addEditor).getByRole("radio", { name: "Single choice" }),
     );
 
-    const editor = screen.getByTestId("screening-question-editor");
+    fireEvent.change(within(addEditor).getByPlaceholderText("Option 1"), {
+      target: { value: "Remote" },
+    });
+    fireEvent.change(within(addEditor).getByPlaceholderText("Option 2"), {
+      target: { value: "Hybrid" },
+    });
     fireEvent.click(
-      within(editor).getByRole("button", { name: "Add question" }),
+      within(addEditor).getByRole("button", { name: "Add option" }),
+    );
+    fireEvent.change(within(addEditor).getByPlaceholderText("Option 3"), {
+      target: { value: "On-site" },
+    });
+
+    fireEvent.click(
+      within(addEditor).getByRole("button", { name: "Add question" }),
     );
     expect(onAddQuestion).toHaveBeenCalledWith({
       text: "Preferred work model?",
       type: "single_choice",
       required: true,
-      options: ["Remote", "Hybrid"],
+      options: ["Remote", "Hybrid", "On-site"],
     });
 
     // Paste existing bulk questions

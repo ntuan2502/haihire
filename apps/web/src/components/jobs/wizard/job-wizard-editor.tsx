@@ -211,7 +211,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             onAddQuestion={form.handleAddScreeningQuestion}
             onUpdateQuestion={form.handleUpdateScreeningQuestion}
             onBulkAddQuestions={form.handleBulkAddScreeningQuestions}
-            onMoveQuestion={form.handleMoveScreeningQuestion}
+            onReorderQuestions={form.handleReorderScreeningQuestions}
             onRemoveQuestion={form.handleRemoveQuestion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(1)}

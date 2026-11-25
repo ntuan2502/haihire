@@ -14,6 +14,9 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { Throttle } from "@nestjs/throttler";
+import { AiGenerationService } from "../ai/ai-generation.service";
+import { AppForbiddenException } from "../common/app-exception";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
@@ -22,12 +25,15 @@ import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import {
+  APP_ERROR_CODES,
   hasPermission,
   Role,
   createJobSchema,
+  generateScreeningQuestionsSchema,
   updateJobSchema,
   upsertPipelineStagesSchema,
   type CreateJobSchema,
+  type GenerateScreeningQuestionsInput,
   type UpdateJobSchema,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
@@ -42,6 +48,9 @@ export class JobsController {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(AiGenerationService)
+    private readonly aiGenerationService?: AiGenerationService,
   ) {}
 
   @Get()
@@ -127,6 +136,31 @@ export class JobsController {
       !tenantOrgId,
       Boolean(fullAccess),
     );
+  }
+
+  @Post("screening-questions/generate")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RequirePermission("job:create")
+  generateScreeningQuestions(
+    @Body(DtoPipe(generateScreeningQuestionsSchema))
+    dto: GenerateScreeningQuestionsInput,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const orgId = req?.user?.organizationId;
+    if (!orgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Active organization context is required.",
+      );
+    }
+    if (!this.aiGenerationService) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.AI_NOT_CONFIGURED,
+        "AI generation service is unavailable.",
+      );
+    }
+    return this.aiGenerationService.generateScreeningQuestions(orgId, dto);
   }
 
   @Post()

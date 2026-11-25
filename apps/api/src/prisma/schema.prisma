@@ -156,6 +156,14 @@ enum WebhookProviderType {
   GENERIC
 }
 
+enum AiProvider {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  OPENROUTER
+  OPENAI_COMPATIBLE
+}
+
 model Organization {
   id               String                       @id @default(uuid())
   name             String
@@ -188,6 +196,7 @@ model Organization {
   documents        CandidateDocument[]
   trackingLinks    TrackingLink[]
   webhookSettings  OrganizationWebhookSetting[]
+  aiSetting        OrganizationAiSetting?
   rolePermissions  OrganizationRolePermission[]
   auditLogs        OrganizationAuditLog[]
   applicationNotes ApplicationNote[]
@@ -870,4 +879,20 @@ model Notification {
   @@index([organizationId, userId, createdAt])
   @@index([userId])
   @@map("notification")
+}
+
+model OrganizationAiSetting {
+  id              String       @id @default(uuid())
+  organizationId  String       @unique
+  provider        AiProvider
+  modelId         String
+  encryptedApiKey String?
+  apiKeyLast4     String?
+  baseUrl         String?
+  isEnabled       Boolean      @default(true)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("organization_ai_setting")
 }

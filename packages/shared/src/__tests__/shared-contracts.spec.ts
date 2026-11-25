@@ -15,6 +15,9 @@ import {
   isValidDateOnlyString,
   isValidHttpUrl,
   isScreeningFileAnswer,
+  upsertAiSettingSchema,
+  testAiConnectionSchema,
+  generateScreeningQuestionsSchema,
 } from "../index";
 
 describe("@haihire/shared Contracts", () => {
@@ -265,6 +268,48 @@ describe("@haihire/shared Contracts", () => {
         answer: 5,
       });
       expect(numSubmission.success).toBe(true);
+    });
+  });
+
+  describe("BYOK AI configuration & generation schemas", () => {
+    it("validates upsertAiSettingSchema and requires baseUrl for OPENAI_COMPATIBLE", () => {
+      expect(
+        upsertAiSettingSchema.safeParse({
+          provider: "GEMINI",
+          modelId: "gemini-2.5-flash",
+          apiKey: "AIza-test",
+        }).success,
+      ).toBe(true);
+
+      expect(
+        upsertAiSettingSchema.safeParse({
+          provider: "OPENAI_COMPATIBLE",
+          modelId: "llama3.1",
+          baseUrl: "",
+        }).success,
+      ).toBe(false);
+
+      expect(
+        upsertAiSettingSchema.safeParse({
+          provider: "OPENAI_COMPATIBLE",
+          modelId: "llama3.1",
+          baseUrl: "http://localhost:11434/v1",
+        }).success,
+      ).toBe(true);
+
+      expect(
+        testAiConnectionSchema.safeParse({
+          provider: "OPENAI",
+          modelId: "gpt-4o-mini",
+        }).success,
+      ).toBe(true);
+
+      const genParsed = generateScreeningQuestionsSchema.safeParse({
+        title: "Senior Backend Engineer",
+        description: "<p>NestJS and Postgres</p>",
+        language: "en",
+      });
+      expect(genParsed.success).toBe(true);
     });
   });
 });

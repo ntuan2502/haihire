@@ -41,6 +41,7 @@ export const TENANT_SCOPED_MODULES = [
   "activities",
   "organizations",
   "webhook-settings",
+  "ai",
   "email",
   "notifications",
 ];

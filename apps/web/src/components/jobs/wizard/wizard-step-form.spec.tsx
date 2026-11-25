@@ -1,7 +1,29 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from "@testing-library/react";
 import { WizardStepForm } from "./wizard-step-form";
 import type { ApplicationFormFieldMode, ScreeningQuestion } from "./types";
+
+let mockAiStatus = { configured: true, enabled: true };
+let mockCanManageIntegrations = true;
+const mockGenerateMutateAsync = vi.fn();
+
+vi.mock("@/hooks/use-has-permission", () => ({
+  useHasPermission: () => mockCanManageIntegrations,
+}));
+
+vi.mock("@/hooks/use-ai-setting-queries", () => ({
+  useAiStatusQuery: () => ({ data: mockAiStatus }),
+  useGenerateScreeningQuestionsMutation: () => ({
+    mutateAsync: mockGenerateMutateAsync,
+    isPending: false,
+  }),
+}));
 
 vi.mock("@/components/providers/localization-provider", () => ({
   useLocalization: () => ({
@@ -64,16 +86,18 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.pasteModalDesc": "One per line.",
         "jobs.wizard.pasteModalPlaceholder": "Paste here...",
         "jobs.wizard.pasteModalImportBtn": `Add ${params?.count ?? 0} question(s)`,
-        "jobs.wizard.questionTemplatesBtn": "Question templates",
-        "jobs.wizard.questionTemplatesTitle": "Add from screening templates",
-        "jobs.wizard.questionTemplatesDesc": "Pick a template.",
-        "jobs.wizard.templateWorkAuth": "Authorized to work?",
-        "jobs.wizard.templateNoticePeriod": "Notice period?",
-        "jobs.wizard.templateWorkArrangement": "Work mode?",
-        "jobs.wizard.templateWorkArrangementOpt1": "On-site",
-        "jobs.wizard.templateWorkArrangementOpt2": "Hybrid",
-        "jobs.wizard.templateWorkArrangementOpt3": "Remote",
-        "jobs.wizard.templateExperienceYears": "Years of experience?",
+        "jobs.wizard.aiGenerateBtn": "Generate with AI",
+        "jobs.wizard.aiSafetyBanner": "AI drafts questions safely.",
+        "jobs.wizard.aiModalTitle": "Generate screening questions with AI",
+        "jobs.wizard.aiModalDesc": "Select generated questions.",
+        "jobs.wizard.aiGenerating": "Generating...",
+        "jobs.wizard.aiRegenerateBtn": "Regenerate",
+        "jobs.wizard.aiAddSelectedBtn": `Add ${params?.count ?? 0} selected`,
+        "jobs.wizard.aiNotConfiguredTitle": "AI provider is not configured yet",
+        "jobs.wizard.aiNotConfiguredDesc": "Configure AI in Integrations.",
+        "jobs.wizard.aiOpenSettingsBtn": "Configure AI settings",
+        "jobs.wizard.aiMissingJobDetails": "Missing title or description.",
+        "jobs.wizard.optionalBadge": "Optional",
         "jobs.wizard.placeholders.screeningQuestion": "Enter your question...",
         "jobs.wizard.continueToPublish": "Save & continue",
         "common.cancel": "Cancel",
@@ -86,8 +110,32 @@ vi.mock("@/i18n", () => ({
 }));
 
 describe("WizardStepForm Component", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAiStatus = { configured: true, enabled: true };
+    mockCanManageIntegrations = true;
+    mockGenerateMutateAsync.mockResolvedValue({
+      questions: [
+        {
+          text: "How many years of TypeScript experience do you have?",
+          type: "number",
+          required: true,
+        },
+        {
+          text: "Share your portfolio link",
+          type: "url",
+          required: false,
+        },
+      ],
+      provider: "GEMINI",
+      modelId: "gemini-2.5-flash",
+    });
+  });
+
   const renderStepForm = (
     overrides: Partial<{
+      jobTitle: string;
+      description: string;
       phoneSetting: ApplicationFormFieldMode;
       resumeSetting: ApplicationFormFieldMode;
       coverLetterSetting: ApplicationFormFieldMode;
@@ -280,5 +328,64 @@ describe("WizardStepForm Component", () => {
       { text: "Question A", type: "short_text", required: true },
       { text: "Question B", type: "short_text", required: true },
     ]);
+  });
+
+  it("removes Question templates and supports Generate with AI modal (configured & unconfigured states)", async () => {
+    const onBulkAddQuestions = vi.fn();
+
+    renderStepForm({
+      jobTitle: "Senior Backend Engineer",
+      description: "<p>NestJS and Postgres microservices.</p>",
+      onBulkAddQuestions,
+    });
+
+    expect(
+      screen.queryByRole("button", { name: "Question templates" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
+
+    await waitFor(() => {
+      expect(mockGenerateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Senior Backend Engineer",
+          description: "NestJS and Postgres microservices.",
+        }),
+      );
+    });
+
+    const dialog = screen.getByRole("dialog");
+    expect(
+      within(dialog).getByText(
+        "How many years of TypeScript experience do you have?",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Add 2 selected" }),
+    );
+    expect(onBulkAddQuestions).toHaveBeenCalledWith([
+      {
+        text: "How many years of TypeScript experience do you have?",
+        type: "number",
+        required: true,
+      },
+      {
+        text: "Share your portfolio link",
+        type: "url",
+        required: false,
+      },
+    ]);
+
+    // Unconfigured AI prompts admin to configure Integrations -> AI
+    mockAiStatus = { configured: false, enabled: false };
+    fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
+    const setupDialog = screen.getByRole("dialog");
+    expect(
+      within(setupDialog).getByText("AI provider is not configured yet"),
+    ).toBeInTheDocument();
+    expect(
+      within(setupDialog).getByRole("link", { name: "Configure AI settings" }),
+    ).toHaveAttribute("href", "/settings/integrations?tab=ai");
   });
 });

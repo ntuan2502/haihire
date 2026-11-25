@@ -1,5 +1,7 @@
 import { api } from "./client";
 import type {
+  GenerateScreeningQuestionsInput,
+  GenerateScreeningQuestionsResponse,
   Job,
   CreateJobInput,
   PaginatedResult,
@@ -72,6 +74,16 @@ export const jobsApi = {
   ): Promise<PipelineStageItem[]> => {
     const response = await api.patch<PipelineStageItem[]>(
       `/jobs/${id}/stages`,
+      data,
+    );
+    return response.data;
+  },
+
+  generateScreeningQuestions: async (
+    data: GenerateScreeningQuestionsInput,
+  ): Promise<GenerateScreeningQuestionsResponse> => {
+    const response = await api.post<GenerateScreeningQuestionsResponse>(
+      "/jobs/screening-questions/generate",
       data,
     );
     return response.data;

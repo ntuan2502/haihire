@@ -201,6 +201,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
         {currentStep === 2 && (
           <WizardStepForm
+            jobTitle={form.jobTitle}
+            department={form.department}
+            experienceLevel={form.experienceLevel}
+            workplace={form.workplace}
+            description={form.description}
             phoneSetting={form.phoneSetting}
             setPhoneSetting={form.setPhoneSetting}
             resumeSetting={form.resumeSetting}

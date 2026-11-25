@@ -180,6 +180,12 @@ export const vi: TranslationSchema = {
       "Kiểm tra kết nối webhook thất bại. Vui lòng kiểm tra lại URL và cấu hình.",
     WEBHOOK_PROVIDER_MISMATCH:
       "Cấu hình không khớp với loại nhà cung cấp webhook đã chọn.",
+    AI_NOT_CONFIGURED:
+      "Tổ chức chưa cấu hình hoặc đang tạm tắt nhà cung cấp AI.",
+    AI_CONNECTION_FAILED:
+      "Không thể kết nối đến nhà cung cấp AI. Vui lòng kiểm tra lại khóa API, mô hình hoặc đường dẫn kết nối.",
+    AI_GENERATION_FAILED:
+      "Không thể tạo danh sách câu hỏi hợp lệ từ AI. Vui lòng thử lại.",
     TOO_MANY_REQUESTS:
       "Quá nhiều yêu cầu gửi tới hệ thống. Vui lòng thử lại sau vài giây.",
     GENERIC_ERROR: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
@@ -675,20 +681,21 @@ export const vi: TranslationSchema = {
       pasteModalPlaceholder:
         "Bạn có bao nhiêu năm kinh nghiệm thực tế ở vị trí này?\nBạn có thể bắt đầu nhận việc sớm nhất khi nào?\nMức thu nhập kỳ vọng của bạn là bao nhiêu?",
       pasteModalImportBtn: "Thêm {count} câu hỏi",
-      questionTemplatesBtn: "Mẫu câu hỏi",
-      questionTemplatesTitle: "Chọn từ mẫu câu hỏi sàng lọc",
-      questionTemplatesDesc:
-        "Chọn nhanh các câu hỏi sàng lọc phổ biến để thêm vào vị trí này.",
-      templateWorkAuth:
-        "Bạn có đủ điều kiện làm việc hợp pháp tại địa điểm tuyển dụng không?",
-      templateNoticePeriod:
-        "Bạn có thể bắt đầu đi làm sớm nhất vào thời điểm nào?",
-      templateWorkArrangement: "Hình thức làm việc nào phù hợp nhất với bạn?",
-      templateWorkArrangementOpt1: "Tại văn phòng",
-      templateWorkArrangementOpt2: "Linh hoạt",
-      templateWorkArrangementOpt3: "Từ xa",
-      templateExperienceYears:
-        "Bạn có bao nhiêu năm kinh nghiệm phù hợp với vị trí này?",
+      aiGenerateBtn: "Tạo bằng AI",
+      aiSafetyBanner:
+        "AI gợi ý câu hỏi sàng lọc trực tiếp từ mô tả công việc và tránh các yếu tố nhạy cảm. Hãy kiểm tra lại trước khi xuất bản.",
+      aiModalTitle: "Tạo câu hỏi sàng lọc bằng AI",
+      aiModalDesc:
+        "Chọn các câu hỏi do AI đề xuất để thêm vào biểu mẫu ứng tuyển.",
+      aiGenerating: "Đang phân tích mô tả công việc và tạo câu hỏi...",
+      aiRegenerateBtn: "Tạo lại",
+      aiAddSelectedBtn: "Thêm {count} câu hỏi đã chọn",
+      aiNotConfiguredTitle: "Tổ chức chưa cấu hình nhà cung cấp AI",
+      aiNotConfiguredDesc:
+        "Hãy cấu hình nhà cung cấp AI và khóa API trong phần Tích hợp để sử dụng tính năng gợi ý câu hỏi tự động.",
+      aiOpenSettingsBtn: "Mở cài đặt AI",
+      aiMissingJobDetails:
+        "Vui lòng nhập chức danh và mô tả công việc ở Bước 1 trước khi tạo câu hỏi bằng AI.",
       optionalBadge: "Tùy chọn",
       continueToStep2: "Lưu & tiếp tục",
       scoringTitle: "Chấm điểm ứng viên",
@@ -1648,6 +1655,61 @@ export const vi: TranslationSchema = {
         "Quản lý các kết nối webhook tùy chỉnh để nhận thông báo thời gian thực về sự kiện tuyển dụng và cảnh báo hệ thống.",
       tabs: {
         webhooks: "Webhooks",
+        ai: "Nhà cung cấp AI",
+      },
+      ai: {
+        title: "Cấu hình nhà cung cấp AI",
+        description:
+          "Kết nối mô hình AI và khóa API riêng của tổ chức để kích hoạt các tính năng thông minh như tự động tạo câu hỏi sàng lọc.",
+        providerTitle: "Nhà cung cấp",
+        providerDesc:
+          "Chọn nền tảng chạy mô hình AI. Danh sách mô hình đề xuất sẽ cập nhật tự động.",
+        modelTitle: "Mô hình",
+        modelDesc:
+          "Chọn mô hình được đề xuất hoặc nhập mã định danh mô hình tùy chỉnh.",
+        customModelToggle: "Sử dụng mã mô hình khác",
+        customModelPlaceholder: "Ví dụ: gpt-4o-mini hoặc mã mô hình tùy chỉnh",
+        connectionTitle: "Kết nối & Khóa API",
+        connectionDesc:
+          "Nhập khóa API và kiểm tra kết nối trước khi lưu cấu hình.",
+        enabledLabel: "Kích hoạt tính năng AI cho tổ chức này",
+        baseUrlLabel: "Địa chỉ đường dẫn gốc",
+        baseUrlPlaceholder: "Ví dụ: http://localhost:11434/v1",
+        apiKeyLabel: "Khóa API",
+        apiKeyKeepHint: "Để trống để giữ nguyên khóa đang được mã hóa",
+        apiKeyOptionalHint: "Không bắt buộc với dịch vụ nội bộ không xác thực",
+        apiKeyPlaceholder: "Nhập khóa API...",
+        getKeyLink: "Lấy khóa API",
+        browseModelsLink: "Xem tất cả mô hình",
+        testButton: "Kiểm tra kết nối",
+        testingButton: "Đang kiểm tra...",
+        testSuccess: "Kết nối thành công tới {model} trong {latencyMs} ms.",
+        saveButton: "Lưu cấu hình",
+        deleteButton: "Xóa cấu hình",
+        deleteConfirmTitle: "Xóa cấu hình AI",
+        deleteConfirmMessage:
+          "Bạn có chắc chắn muốn xóa cấu hình AI và khóa API đã mã hóa không? Các tính năng AI sẽ ngừng hoạt động cho đến khi được thiết lập lại.",
+        saveSuccess: "Đã lưu cấu hình AI thành công.",
+        deleteSuccess: "Đã xóa cấu hình AI.",
+        securityNote:
+          "Khóa API được mã hóa lưu trữ bằng AES-256-GCM và không bao giờ gửi lại về trình duyệt.",
+        providers: {
+          OPENAI_DESC: "Các mô hình GPT với khả năng trả về JSON ổn định.",
+          ANTHROPIC_DESC:
+            "Các mô hình Claude mạnh về phân tích ngữ cảnh và tuân thủ chỉ dẫn.",
+          GEMINI_DESC:
+            "Các mô hình Gemini tốc độ cao, hỗ trợ xuất dữ liệu có cấu trúc.",
+          OPENROUTER_DESC:
+            "Cổng kết nối hợp nhất hàng trăm mô hình chỉ với một khóa.",
+          OPENAI_COMPATIBLE_DESC:
+            "Kết nối Ollama, LiteLLM, vLLM hoặc máy chủ tương thích.",
+        },
+        badges: {
+          recommended: "Khuyên dùng",
+          fast: "Tốc độ cao",
+          powerful: "Mạnh mẽ",
+          low_cost: "Tiết kiệm",
+        },
       },
       webhooks: {
         addButton: "Thêm Webhook",

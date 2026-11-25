@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import IntegrationsSettingsPage from "./page";
 
 let mockCanManageIntegrations = true;
@@ -35,6 +35,7 @@ vi.mock("@/hooks/use-webhook-setting-queries", () => ({
 }));
 
 vi.mock("@/components/settings/integrations", () => ({
+  AiSettingsTab: () => <div data-testid="ai-settings-tab" />,
   WebhookSettingsTable: () => <div data-testid="webhooks-table" />,
   WebhookModal: () => null,
   DeleteWebhookModal: () => null,
@@ -47,6 +48,7 @@ vi.mock("@/i18n", () => ({
         "settings.integrations.title": "Integrations & Webhooks",
         "settings.integrations.description": "Manage webhooks",
         "settings.integrations.tabs.webhooks": "Webhooks",
+        "settings.integrations.tabs.ai": "AI Provider",
         "settings.integrations.webhooks.addButton": "Add Webhook",
       };
       return dict[key] || key;
@@ -82,5 +84,9 @@ describe("IntegrationsSettingsPage RBAC Guard", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByTestId("webhooks-table")).toBeInTheDocument();
     expect(screen.getByText("Add Webhook")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "AI Provider" }));
+    expect(screen.getByTestId("ai-settings-tab")).toBeInTheDocument();
+    expect(screen.queryByText("Add Webhook")).not.toBeInTheDocument();
   });
 });

@@ -180,6 +180,12 @@ export const en: TranslationSchema = {
       "Webhook connection test failed. Please verify the URL and credentials.",
     WEBHOOK_PROVIDER_MISMATCH:
       "Configuration does not match the selected webhook provider.",
+    AI_NOT_CONFIGURED:
+      "AI integration is not configured or is disabled for this organization.",
+    AI_CONNECTION_FAILED:
+      "Failed to connect to the AI provider. Please verify your API key, model, and endpoint URL.",
+    AI_GENERATION_FAILED:
+      "Could not generate valid screening questions from AI. Please try again.",
     TOO_MANY_REQUESTS:
       "Too many requests. Please slow down and try again in a few seconds.",
     GENERIC_ERROR: "An unexpected error occurred. Please try again later.",
@@ -675,20 +681,21 @@ export const en: TranslationSchema = {
       pasteModalPlaceholder:
         "How many years of production experience do you have?\nWhen is your earliest available start date?\nWhat is your expected compensation?",
       pasteModalImportBtn: "Add {count} question(s)",
-      questionTemplatesBtn: "Question templates",
-      questionTemplatesTitle: "Add from screening templates",
-      questionTemplatesDesc:
-        "Pick common pre-screening questions to add directly to this role.",
-      templateWorkAuth:
-        "Are you legally authorized to work in this location without sponsorship?",
-      templateNoticePeriod:
-        "What is your earliest available start date or current notice period?",
-      templateWorkArrangement: "Which working arrangement do you prefer?",
-      templateWorkArrangementOpt1: "On-site",
-      templateWorkArrangementOpt2: "Hybrid",
-      templateWorkArrangementOpt3: "Remote",
-      templateExperienceYears:
-        "How many years of relevant experience do you have for this role?",
+      aiGenerateBtn: "Generate with AI",
+      aiSafetyBanner:
+        "AI drafts screening questions directly from your job description while avoiding sensitive or discriminatory topics. Review every question before publishing.",
+      aiModalTitle: "Generate screening questions with AI",
+      aiModalDesc:
+        "Select the AI-drafted questions you want to include in your application form.",
+      aiGenerating: "Generating tailored screening questions...",
+      aiRegenerateBtn: "Regenerate",
+      aiAddSelectedBtn: "Add {count} selected",
+      aiNotConfiguredTitle: "AI provider is not configured yet",
+      aiNotConfiguredDesc:
+        "Configure your organization's AI provider and API key in Integrations settings to generate screening questions with AI.",
+      aiOpenSettingsBtn: "Configure AI settings",
+      aiMissingJobDetails:
+        "Please enter a job title and description in Step 1 before generating questions with AI.",
       optionalBadge: "Optional",
       continueToStep2: "Save & continue",
       scoringTitle: "Candidate scoring",
@@ -1643,6 +1650,62 @@ export const en: TranslationSchema = {
         "Manage custom webhook integrations to receive real-time notifications for hiring events and system alerts.",
       tabs: {
         webhooks: "Webhooks",
+        ai: "AI Provider",
+      },
+      ai: {
+        title: "AI Provider Configuration",
+        description:
+          "Connect your organization's own AI model and API key to power AI features such as screening question generation.",
+        providerTitle: "Provider",
+        providerDesc:
+          "Choose where your organization runs AI requests. Recommended models update automatically.",
+        modelTitle: "Model",
+        modelDesc:
+          "Pick a recommended model or specify any custom model identifier supported by your provider.",
+        customModelToggle: "Use a different model identifier",
+        customModelPlaceholder: "e.g. gpt-4o-mini or custom-model-id",
+        connectionTitle: "Connection & API Key",
+        connectionDesc:
+          "Connect your API key and verify connectivity before saving.",
+        enabledLabel: "Enable AI features for this organization",
+        baseUrlLabel: "Endpoint Base URL",
+        baseUrlPlaceholder: "e.g. http://localhost:11434/v1",
+        apiKeyLabel: "API Key",
+        apiKeyKeepHint: "Leave blank to keep the currently encrypted key",
+        apiKeyOptionalHint: "Optional for local endpoints without auth",
+        apiKeyPlaceholder: "Enter API key...",
+        getKeyLink: "Get a key",
+        browseModelsLink: "Browse all models",
+        testButton: "Test connection",
+        testingButton: "Testing...",
+        testSuccess: "Connected to {model} in {latencyMs} ms.",
+        saveButton: "Save configuration",
+        deleteButton: "Remove configuration",
+        deleteConfirmTitle: "Remove AI Configuration",
+        deleteConfirmMessage:
+          "Are you sure you want to delete this AI configuration and its encrypted API key? AI features will stop working until reconfigured.",
+        saveSuccess: "AI provider configuration saved.",
+        deleteSuccess: "AI provider configuration removed.",
+        securityNote:
+          "API keys are encrypted at rest with AES-256-GCM and never returned to the browser.",
+        providers: {
+          OPENAI_DESC:
+            "Industry-leading GPT models with strong JSON reliability.",
+          ANTHROPIC_DESC:
+            "Claude models with nuanced reasoning and instruction following.",
+          GEMINI_DESC:
+            "Fast Gemini models with generous free tier and structured output.",
+          OPENROUTER_DESC:
+            "Unified gateway supporting hundreds of models with one key.",
+          OPENAI_COMPATIBLE_DESC:
+            "Connect Ollama, LiteLLM, vLLM, or custom endpoints.",
+        },
+        badges: {
+          recommended: "Recommended",
+          fast: "Fast",
+          powerful: "Powerful",
+          low_cost: "Low cost",
+        },
       },
       webhooks: {
         addButton: "Add Webhook",

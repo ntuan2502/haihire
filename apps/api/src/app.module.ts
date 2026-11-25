@@ -22,6 +22,7 @@ import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
+import { AiModule } from "./ai/ai.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -78,6 +79,7 @@ import { MetricsModule } from "./metrics/metrics.module";
     EmailModule,
     SourcingModule,
     WebhookSettingsModule,
+    AiModule,
     MetricsModule,
   ],
   controllers: [AppController],

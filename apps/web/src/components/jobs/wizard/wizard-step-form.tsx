@@ -24,9 +24,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SCREENING_QUESTION_TYPES } from "@haihire/shared";
+import Link from "next/link";
 import {
   AlignLeft,
-  BookOpen,
+  Brain,
   Calendar,
   Check,
   CheckSquare,
@@ -38,9 +39,13 @@ import {
   GripVertical,
   Hash,
   Link2,
+  Loader2,
   Lock,
   Pencil,
   Plus,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
   Square,
   ToggleLeft,
   Trash2,
@@ -52,6 +57,12 @@ import { FormModal } from "@/components/shared/form-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  useAiStatusQuery,
+  useGenerateScreeningQuestionsMutation,
+} from "@/hooks/use-ai-setting-queries";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type {
@@ -281,6 +292,11 @@ function SortableScreeningQuestionItem({
 }
 
 interface WizardStepFormProps {
+  jobTitle?: string;
+  department?: string;
+  experienceLevel?: string;
+  workplace?: string;
+  description?: string;
   phoneSetting: ApplicationFormFieldMode;
   setPhoneSetting: (s: ApplicationFormFieldMode) => void;
   resumeSetting: ApplicationFormFieldMode;
@@ -299,6 +315,11 @@ interface WizardStepFormProps {
 }
 
 export function WizardStepForm({
+  jobTitle = "",
+  department = "",
+  experienceLevel = "",
+  workplace = "",
+  description = "",
   phoneSetting,
   setPhoneSetting,
   resumeSetting,
@@ -315,11 +336,16 @@ export function WizardStepForm({
   onBack,
   onContinue,
 }: WizardStepFormProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { localization } = useLocalization();
   const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
   const dndContextId = useId();
   const questionInputId = useId();
+  const canManageIntegrations = useHasPermission(
+    "settings:manage_integrations",
+  );
+  const { data: aiStatus } = useAiStatusQuery();
+  const generateAiMutation = useGenerateScreeningQuestionsMutation();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -332,7 +358,12 @@ export function WizardStepForm({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
 
-  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<
+    Array<Omit<ScreeningQuestion, "id">>
+  >([]);
+  const [selectedAiIndices, setSelectedAiIndices] = useState<number[]>([]);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -493,33 +524,66 @@ export function WizardStepForm({
     setIsPasteModalOpen(false);
   };
 
-  const templatePresets: Array<Omit<ScreeningQuestion, "id">> = [
-    {
-      text: t("jobs.wizard.templateWorkAuth"),
-      type: "yes_no",
-      required: true,
-    },
-    {
-      text: t("jobs.wizard.templateNoticePeriod"),
-      type: "short_text",
-      required: true,
-    },
-    {
-      text: t("jobs.wizard.templateWorkArrangement"),
-      type: "single_choice",
-      required: true,
-      options: [
-        t("jobs.wizard.templateWorkArrangementOpt1"),
-        t("jobs.wizard.templateWorkArrangementOpt2"),
-        t("jobs.wizard.templateWorkArrangementOpt3"),
-      ],
-    },
-    {
-      text: t("jobs.wizard.templateExperienceYears"),
-      type: "short_text",
-      required: true,
-    },
-  ];
+  const plainDescription = description
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const hasJobDetailsForAi =
+    jobTitle.trim().length > 0 && plainDescription.length > 0;
+
+  const runAiGeneration = async () => {
+    if (!hasJobDetailsForAi) {
+      setAiError(t("jobs.wizard.aiMissingJobDetails"));
+      return;
+    }
+    setAiError(null);
+    setAiSuggestions([]);
+    setSelectedAiIndices([]);
+    try {
+      const res = await generateAiMutation.mutateAsync({
+        title: jobTitle.trim(),
+        description: plainDescription,
+        ...(department.trim() ? { department: department.trim() } : {}),
+        ...(experienceLevel.trim()
+          ? { experienceLevel: experienceLevel.trim() }
+          : {}),
+        ...(workplace.trim() ? { workplace: workplace.trim() } : {}),
+        language: locale === "en" ? "en" : "vi",
+        count: 5,
+        existingQuestions: screeningQuestions.map((q) => q.text),
+      });
+      setAiSuggestions(res.questions);
+      setSelectedAiIndices(res.questions.map((_, i) => i));
+    } catch (err: unknown) {
+      setAiError(getApiErrorMessage(err, t, "errors.AI_GENERATION_FAILED"));
+    }
+  };
+
+  const handleOpenAiModal = () => {
+    setIsAiModalOpen(true);
+    if (aiStatus?.enabled) {
+      void runAiGeneration();
+    }
+  };
+
+  const handleToggleAiSuggestion = (index: number) => {
+    setSelectedAiIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+    );
+  };
+
+  const handleConfirmAiSuggestions = (e: FormEvent) => {
+    e.preventDefault();
+    const chosen = selectedAiIndices
+      .map((i) => aiSuggestions[i])
+      .filter(Boolean);
+    if (chosen.length === 0) return;
+    onBulkAddQuestions(chosen);
+    setIsAiModalOpen(false);
+    setAiSuggestions([]);
+    setSelectedAiIndices([]);
+    setAiError(null);
+  };
 
   const renderQuestionEditor = () => (
     <div
@@ -849,11 +913,14 @@ export function WizardStepForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setIsTemplatesModalOpen(true)}
+              onClick={handleOpenAiModal}
               className="h-8 text-xs gap-1.5 cursor-pointer"
             >
-              <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("jobs.wizard.questionTemplatesBtn")}
+              <Sparkles
+                className="h-3.5 w-3.5 text-primary"
+                aria-hidden="true"
+              />
+              {t("jobs.wizard.aiGenerateBtn")}
             </Button>
             <Button
               type="button"
@@ -866,6 +933,14 @@ export function WizardStepForm({
               {t("jobs.wizard.pasteExistingBtn")}
             </Button>
           </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-muted/35 px-3.5 py-2.5 text-xs text-muted-foreground">
+          <ShieldCheck
+            className="h-4 w-4 text-primary shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <p className="leading-relaxed">{t("jobs.wizard.aiSafetyBanner")}</p>
         </div>
 
         {screeningQuestions.length === 0 && !isEditorOpen ? (
@@ -998,60 +1073,170 @@ export function WizardStepForm({
         />
       </FormModal>
 
-      {/* Screening Question Templates Modal */}
+      {/* Generate Screening Questions with AI Modal */}
       <FormModal
-        isOpen={isTemplatesModalOpen}
-        onClose={() => setIsTemplatesModalOpen(false)}
-        onSubmit={(e) => {
-          e.preventDefault();
-          setIsTemplatesModalOpen(false);
-        }}
-        title={t("jobs.wizard.questionTemplatesTitle")}
-        description={t("jobs.wizard.questionTemplatesDesc")}
-        icon={<BookOpen className="h-4 w-4 text-primary" />}
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onSubmit={handleConfirmAiSuggestions}
+        title={t("jobs.wizard.aiModalTitle")}
+        description={t("jobs.wizard.aiModalDesc")}
+        icon={<Sparkles className="h-4 w-4 text-primary" />}
         size="md"
         footer={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsTemplatesModalOpen(false)}
-            className="text-xs cursor-pointer"
-          >
-            {t("common.close")}
-          </Button>
-        }
-      >
-        <div className="space-y-2.5">
-          {templatePresets.map((preset, idx) => (
-            <div
-              key={idx}
-              className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border bg-background"
-            >
-              <div className="space-y-1 min-w-0">
-                <p className="text-xs font-medium text-foreground">
-                  {preset.text}
-                </p>
-                <span className="inline-flex px-2 py-0.5 rounded bg-muted text-[10px] font-medium text-muted-foreground">
-                  {t(`jobs.wizard.questionTypes.${preset.type}`)}
-                </span>
-              </div>
+          aiStatus?.enabled && aiSuggestions.length > 0 ? (
+            <div className="flex items-center justify-between gap-2 w-full">
               <Button
                 type="button"
-                size="sm"
                 variant="outline"
-                onClick={() => {
-                  onAddQuestion(preset);
-                  setIsTemplatesModalOpen(false);
-                }}
-                className="h-7 px-2.5 text-xs gap-1 shrink-0 cursor-pointer"
+                size="sm"
+                onClick={() => void runAiGeneration()}
+                disabled={generateAiMutation.isPending}
+                className="h-8 text-xs gap-1.5 cursor-pointer"
               >
-                <Plus className="h-3 w-3" aria-hidden="true" />
-                {t("jobs.wizard.addQuestionAction")}
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("jobs.wizard.aiRegenerateBtn")}
               </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="h-8 text-xs cursor-pointer"
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={selectedAiIndices.length === 0}
+                  className="h-8 text-xs gap-1.5 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("jobs.wizard.aiAddSelectedBtn", {
+                    count: selectedAiIndices.length,
+                  })}
+                </Button>
+              </div>
             </div>
-          ))}
-        </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAiModalOpen(false)}
+              className="text-xs cursor-pointer"
+            >
+              {t("common.close")}
+            </Button>
+          )
+        }
+      >
+        {!aiStatus?.enabled ? (
+          <div className="py-4 text-center space-y-3">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-primary">
+              <Brain className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-foreground">
+                {t("jobs.wizard.aiNotConfiguredTitle")}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                {t("jobs.wizard.aiNotConfiguredDesc")}
+              </p>
+            </div>
+            {canManageIntegrations && (
+              <Link
+                href="/settings/integrations?tab=ai"
+                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 h-8 text-xs font-semibold hover:bg-primary/90 transition-colors"
+              >
+                {t("jobs.wizard.aiOpenSettingsBtn")}
+              </Link>
+            )}
+          </div>
+        ) : generateAiMutation.isPending ? (
+          <div className="py-8 flex flex-col items-center justify-center gap-2.5 text-center">
+            <Loader2
+              className="h-6 w-6 animate-spin text-primary"
+              aria-hidden="true"
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("jobs.wizard.aiGenerating")}
+            </p>
+          </div>
+        ) : aiError ? (
+          <div className="space-y-3">
+            <div
+              role="alert"
+              className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs"
+            >
+              {aiError}
+            </div>
+            {hasJobDetailsForAi && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void runAiGeneration()}
+                className="h-8 text-xs gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("jobs.wizard.aiRegenerateBtn")}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {aiSuggestions.map((item, idx) => {
+              const isChecked = selectedAiIndices.includes(idx);
+              return (
+                <label
+                  key={idx}
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                    isChecked
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-border bg-background hover:bg-muted/30",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => handleToggleAiSuggestion(idx)}
+                    className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer shrink-0"
+                  />
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-xs font-medium text-foreground leading-snug">
+                      {item.text}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex px-2 py-0.5 rounded bg-muted text-[10px] font-medium text-muted-foreground">
+                        {t(`jobs.wizard.questionTypes.${item.type}`)}
+                      </span>
+                      <span className="inline-flex px-2 py-0.5 rounded bg-muted text-[10px] font-medium text-muted-foreground">
+                        {item.required
+                          ? t("jobs.wizard.mandatoryBadge")
+                          : t("jobs.wizard.optionalBadge")}
+                      </span>
+                    </div>
+                    {item.options && item.options.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {item.options.map((opt, optIdx) => (
+                          <span
+                            key={optIdx}
+                            className="px-1.5 py-0.5 rounded border border-border/70 bg-muted/30 text-[10px] text-muted-foreground"
+                          >
+                            {opt}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
       </FormModal>
     </div>
   );

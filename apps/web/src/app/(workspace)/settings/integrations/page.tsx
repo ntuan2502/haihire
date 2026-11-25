@@ -2,7 +2,7 @@
 
 import { SettingsButton } from "@/components/settings/settings-button";
 import { SettingsSubTabs } from "@/components/settings/settings-sub-tabs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import {
@@ -17,9 +17,10 @@ import type {
   WebhookEventType,
   WebhookProviderType,
 } from "@haihire/shared";
-import { Plus, Plug } from "lucide-react";
+import { Brain, Plus, Plug } from "lucide-react";
 import { LoadingSpinner, PageHeader, StatusState } from "@/components/shared";
 import {
+  AiSettingsTab,
   WebhookSettingsTable,
   WebhookModal,
   DeleteWebhookModal,
@@ -41,7 +42,15 @@ export default function IntegrationsSettingsPage() {
   const deleteMutation = useDeleteWebhookSettingMutation();
   const testMutation = useTestWebhookSettingMutation();
 
-  const [activeTab, setActiveTab] = useState<"webhooks">("webhooks");
+  const [activeTab, setActiveTab] = useState<"webhooks" | "ai">("webhooks");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "ai") {
+      setActiveTab("ai");
+    }
+  }, []);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -218,8 +227,17 @@ export default function IntegrationsSettingsPage() {
             isActive: activeTab === "webhooks",
             onClick: () => setActiveTab("webhooks"),
           },
+          {
+            id: "ai",
+            label: t("settings.integrations.tabs.ai"),
+            icon: Brain,
+            isActive: activeTab === "ai",
+            onClick: () => setActiveTab("ai"),
+          },
         ]}
       />
+
+      {activeTab === "ai" && <AiSettingsTab />}
 
       {/* Main Content Area */}
       {activeTab === "webhooks" && (

@@ -83,6 +83,8 @@ function maskApplicationFields<
     resumeFileSize: null as number | null,
     resumeMimeType: null as string | null,
     resumeFileId: null as string | null,
+    coverLetter: null as string | null,
+    screeningAnswers: null,
     interviews: [] as Array<Record<string, unknown>>,
   };
 }

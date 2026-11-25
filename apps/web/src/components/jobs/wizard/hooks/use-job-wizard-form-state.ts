@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
+import {
+  DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+  normalizeJobApplicationFormConfig,
+  type ApplicationFormFieldMode,
+  type Job,
+  type JobType,
+  type WorkplaceType,
+  type ExperienceLevel,
+} from "@/types";
 import { getActiveDefaultCurrency } from "@/lib/utils";
 import { formatDateOnlyForInput } from "@/lib/jobs";
 import {
@@ -8,6 +16,16 @@ import {
   DEFAULT_CRITERIA,
   parseSalaryRange,
 } from "../types";
+
+function generateQuestionId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return `q_${crypto.randomUUID().slice(0, 8)}`;
+  }
+  return `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 export function useJobWizardFormState(initialJob?: Job | null) {
   // STEP 1: Job Details State
@@ -63,20 +81,20 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   const [formError, setFormError] = useState<string | null>(null);
 
   // STEP 2: Application Form State
-  const [phoneSetting, setPhoneSetting] = useState<
-    "hidden" | "optional" | "required"
-  >("optional");
-  const [resumeSetting, setResumeSetting] = useState<"required" | "off">(
-    "required",
+  const initialFormConfig = normalizeJobApplicationFormConfig(
+    initialJob?.applicationFormConfig,
   );
-  const [coverLetterSetting, setCoverLetterSetting] = useState<
-    "required" | "off"
-  >("off");
+  const [phoneSetting, setPhoneSetting] = useState<ApplicationFormFieldMode>(
+    initialFormConfig.phone,
+  );
+  const [resumeSetting, setResumeSetting] = useState<ApplicationFormFieldMode>(
+    initialFormConfig.resume,
+  );
+  const [coverLetterSetting, setCoverLetterSetting] =
+    useState<ApplicationFormFieldMode>(initialFormConfig.coverLetter);
   const [screeningQuestions, setScreeningQuestions] = useState<
     ScreeningQuestion[]
-  >([]);
-  const [newQuestionText, setNewQuestionText] = useState("");
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  >(initialFormConfig.screeningQuestions);
 
   // STEP 3: Candidate Scoring State
   const [criteria, setCriteria] =
@@ -155,6 +173,13 @@ export function useJobWizardFormState(initialJob?: Job | null) {
         setCurrency(null);
         setSalaryPer(null);
       }
+      const nextFormConfig = normalizeJobApplicationFormConfig(
+        initialJob.applicationFormConfig,
+      );
+      setPhoneSetting(nextFormConfig.phone);
+      setResumeSetting(nextFormConfig.resume);
+      setCoverLetterSetting(nextFormConfig.coverLetter);
+      setScreeningQuestions(nextFormConfig.screeningQuestions);
       return;
     }
 
@@ -170,17 +195,78 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     }
   }, [initialJob]);
 
-  const handleAddQuestion = () => {
-    if (!newQuestionText.trim()) return;
+  const handleAddScreeningQuestion = (
+    question: Omit<ScreeningQuestion, "id">,
+  ) => {
+    const trimmedText = question.text.trim();
+    if (!trimmedText) return;
     const newQ: ScreeningQuestion = {
-      id: Date.now().toString(),
-      text: newQuestionText.trim(),
-      type: "text",
-      required: true,
+      id: generateQuestionId(),
+      text: trimmedText,
+      type: question.type,
+      required: question.required,
+      ...(question.options && question.options.length > 0
+        ? { options: question.options }
+        : {}),
     };
-    setScreeningQuestions((prev) => [...prev, newQ]);
-    setNewQuestionText("");
-    setIsAddingQuestion(false);
+    setScreeningQuestions((prev) => [...prev, newQ].slice(0, 30));
+  };
+
+  const handleUpdateScreeningQuestion = (
+    id: string,
+    patch: Omit<ScreeningQuestion, "id">,
+  ) => {
+    const trimmedText = patch.text.trim();
+    if (!trimmedText) return;
+    setScreeningQuestions((prev) =>
+      prev.map((q) =>
+        q.id === id
+          ? {
+              id,
+              text: trimmedText,
+              type: patch.type,
+              required: patch.required,
+              ...(patch.options && patch.options.length > 0
+                ? { options: patch.options }
+                : {}),
+            }
+          : q,
+      ),
+    );
+  };
+
+  const handleBulkAddScreeningQuestions = (
+    items: Array<Omit<ScreeningQuestion, "id">>,
+  ) => {
+    const valid = items
+      .map((item) => ({
+        id: generateQuestionId(),
+        text: item.text.trim(),
+        type: item.type,
+        required: item.required,
+        ...(item.options && item.options.length > 0
+          ? { options: item.options }
+          : {}),
+      }))
+      .filter((item) => item.text.length > 0);
+    if (valid.length === 0) return;
+    setScreeningQuestions((prev) => [...prev, ...valid].slice(0, 30));
+  };
+
+  const handleMoveScreeningQuestion = (
+    id: string,
+    direction: "up" | "down",
+  ) => {
+    setScreeningQuestions((prev) => {
+      const idx = prev.findIndex((q) => q.id === id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(idx, 1);
+      copy.splice(targetIdx, 0, moved);
+      return copy;
+    });
   };
 
   const handleRemoveQuestion = (id: string) => {
@@ -237,6 +323,10 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setMaxSalary("");
     setCurrency(getActiveDefaultCurrency());
     setSalaryPer(null);
+    setPhoneSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.phone);
+    setResumeSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.resume);
+    setCoverLetterSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.coverLetter);
+    setScreeningQuestions([]);
   };
 
   return {
@@ -286,11 +376,10 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setCoverLetterSetting,
     screeningQuestions,
     setScreeningQuestions,
-    newQuestionText,
-    setNewQuestionText,
-    isAddingQuestion,
-    setIsAddingQuestion,
-    handleAddQuestion,
+    handleAddScreeningQuestion,
+    handleUpdateScreeningQuestion,
+    handleBulkAddScreeningQuestions,
+    handleMoveScreeningQuestion,
     handleRemoveQuestion,
     criteria,
     setCriteria,

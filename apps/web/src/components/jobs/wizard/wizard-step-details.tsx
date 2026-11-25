@@ -357,7 +357,7 @@ export function WizardStepDetails({
           disabled={!isStep1Valid}
           className="text-xs font-semibold px-6 cursor-pointer"
         >
-          {t("jobs.wizard.continueToPublish")}
+          {t("jobs.wizard.continueToStep2")}
         </Button>
       </div>
     </div>

@@ -8,6 +8,9 @@ import {
   hasPermission,
   Role,
   formatPersonDisplayName,
+  DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+  jobApplicationFormConfigSchema,
+  normalizeJobApplicationFormConfig,
 } from "../index";
 
 describe("@haihire/shared Contracts", () => {
@@ -151,6 +154,65 @@ describe("@haihire/shared Contracts", () => {
           "FIRST_LAST",
         ),
       ).toBe("Jane Doe");
+    });
+  });
+
+  describe("jobApplicationFormConfigSchema & normalizeJobApplicationFormConfig", () => {
+    it("normalizes null, legacy values, and choice question options cleanly", () => {
+      expect(normalizeJobApplicationFormConfig(null)).toEqual(
+        DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+      );
+
+      const legacy = normalizeJobApplicationFormConfig({
+        phone: "required",
+        resume: "off",
+        coverLetter: "optional",
+        screeningQuestions: [
+          {
+            id: "q1",
+            text: "Years of experience?",
+            type: "text",
+            required: true,
+          },
+          {
+            id: "q2",
+            text: "Broken choice",
+            type: "single_choice",
+            required: false,
+            options: ["OnlyOne"],
+          },
+        ],
+      });
+
+      expect(legacy.phone).toBe("required");
+      expect(legacy.resume).toBe("hidden");
+      expect(legacy.coverLetter).toBe("optional");
+      expect(legacy.screeningQuestions).toEqual([
+        {
+          id: "q1",
+          text: "Years of experience?",
+          type: "short_text",
+          required: true,
+        },
+      ]);
+    });
+
+    it("rejects single_choice questions with fewer than 2 options", () => {
+      const invalid = jobApplicationFormConfigSchema.safeParse({
+        phone: "optional",
+        resume: "required",
+        coverLetter: "hidden",
+        screeningQuestions: [
+          {
+            id: "q1",
+            text: "Work mode?",
+            type: "single_choice",
+            required: true,
+            options: ["Remote"],
+          },
+        ],
+      });
+      expect(invalid.success).toBe(false);
     });
   });
 });

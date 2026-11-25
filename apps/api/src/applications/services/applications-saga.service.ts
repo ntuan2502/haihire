@@ -7,14 +7,20 @@ import {
   APP_ERROR_CODES,
   AUDIT_ACTIONS,
   AUDIT_RESOURCES,
+  COVER_LETTER_MAX_LENGTH,
   Role,
   SourcingChannel,
   formatCandidateDisplayName,
   hasPermission,
   isJobApplicationDeadlinePassed,
+  normalizeJobApplicationFormConfig,
   normalizeNameInput,
   resolveChannelFromDomain,
+  screeningAnswerSubmissionSchema,
+  type ScreeningAnswerItem,
+  type ScreeningAnswerValue,
 } from "@haihire/shared";
+import type { Prisma } from "@prisma/client";
 import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
@@ -165,6 +171,7 @@ export class ApplicationsSagaService {
         title: true,
         status: true,
         applicationDeadline: true,
+        applicationFormConfig: true,
         organizationId: true,
         department: true,
         location: true,
@@ -226,6 +233,175 @@ export class ApplicationsSagaService {
         "The application deadline for this job has passed.",
       );
     }
+
+    const rawCoverLetter =
+      "coverLetter" in dto && typeof dto.coverLetter === "string"
+        ? dto.coverLetter.trim()
+        : "";
+    if (rawCoverLetter.length > COVER_LETTER_MAX_LENGTH) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Cover letter must be ${COVER_LETTER_MAX_LENGTH} characters or fewer.`,
+      );
+    }
+
+    const parsedAnswersMap = new Map<string, ScreeningAnswerValue>();
+    const rawScreeningAnswersStr =
+      "screeningAnswers" in dto && typeof dto.screeningAnswers === "string"
+        ? dto.screeningAnswers.trim()
+        : "";
+    if (rawScreeningAnswersStr) {
+      let decoded: unknown;
+      try {
+        decoded = JSON.parse(rawScreeningAnswersStr);
+      } catch {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid screening answers JSON payload.",
+        );
+      }
+      if (!Array.isArray(decoded)) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Screening answers must be an array.",
+        );
+      }
+      for (const item of decoded) {
+        const parsedItem = screeningAnswerSubmissionSchema.safeParse(item);
+        if (!parsedItem.success) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.VALIDATION_ERROR,
+            parsedItem.error.issues[0]?.message ||
+              "Invalid screening answer entry.",
+          );
+        }
+        parsedAnswersMap.set(
+          parsedItem.data.questionId,
+          parsedItem.data.answer,
+        );
+      }
+    }
+
+    const rawJobFormConfig = (job as { applicationFormConfig?: unknown })
+      .applicationFormConfig;
+    const hasExplicitFormConfig =
+      rawJobFormConfig !== null && rawJobFormConfig !== undefined;
+    const formConfig = normalizeJobApplicationFormConfig(rawJobFormConfig);
+    const submittedPhone =
+      (
+        (dto as unknown as { phone?: string }).phone || dto.candidatePhone
+      )?.trim() || null;
+
+    if (!currentUser && hasExplicitFormConfig) {
+      if (formConfig.phone === "required" && !submittedPhone) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Phone number is required for this job application.",
+        );
+      }
+      if (formConfig.resume === "required" && !file && !rawResumeUrl) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Resume / CV file is required for this job application.",
+        );
+      }
+      if (formConfig.coverLetter === "required" && !rawCoverLetter) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Cover letter is required for this job application.",
+        );
+      }
+      for (const question of formConfig.screeningQuestions) {
+        const answer = parsedAnswersMap.get(question.id) ?? null;
+        if (question.type === "yes_no") {
+          if (answer !== null && typeof answer !== "boolean") {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid yes/no answer for "${question.text}".`,
+            );
+          }
+          if (question.required && typeof answer !== "boolean") {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "multiple_choice") {
+          const validOptions = new Set(question.options ?? []);
+          if (answer !== null && !Array.isArray(answer)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice list for "${question.text}".`,
+            );
+          }
+          const normalizedArr = Array.isArray(answer)
+            ? answer.filter((v) => typeof v === "string" && validOptions.has(v))
+            : [];
+          if (Array.isArray(answer) && normalizedArr.length !== answer.length) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice option selected for "${question.text}".`,
+            );
+          }
+          if (question.required && normalizedArr.length === 0) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "single_choice") {
+          const validOptions = new Set(question.options ?? []);
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (strVal && !validOptions.has(strVal)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice option selected for "${question.text}".`,
+            );
+          }
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else {
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        }
+      }
+    }
+
+    const screeningAnswersSnapshot: ScreeningAnswerItem[] | null =
+      formConfig.screeningQuestions.length > 0
+        ? formConfig.screeningQuestions.map((q) => {
+            const rawVal = parsedAnswersMap.get(q.id);
+            let cleanVal: ScreeningAnswerValue = null;
+            if (typeof rawVal === "string") {
+              cleanVal = rawVal.trim() || null;
+            } else if (typeof rawVal === "boolean") {
+              cleanVal = rawVal;
+            } else if (Array.isArray(rawVal)) {
+              const items = rawVal.map((x) => x.trim()).filter(Boolean);
+              cleanVal = items.length > 0 ? items : null;
+            }
+            return {
+              questionId: q.id,
+              questionText: q.text,
+              questionType: q.type,
+              answer: cleanVal,
+            };
+          })
+        : null;
+
+    const effectiveCoverLetter =
+      hasExplicitFormConfig && formConfig.coverLetter === "hidden"
+        ? null
+        : rawCoverLetter || null;
 
     // Fast pre-check for duplicate (candidate, job) before uploading CV to MinIO.
     // The in-transaction check + DB unique index remain the authoritative concurrency guard.
@@ -675,6 +851,13 @@ export class ApplicationsSagaService {
               resumeFileName: uploadResult.originalName || null,
               resumeFileSize: uploadResult.size || null,
               resumeMimeType: uploadResult.mimeType || "application/pdf",
+              coverLetter: effectiveCoverLetter,
+              ...(screeningAnswersSnapshot
+                ? {
+                    screeningAnswers:
+                      screeningAnswersSnapshot as unknown as Prisma.InputJsonValue,
+                  }
+                : {}),
               orderIndex: maxOrder + 1,
               trackingLinkId,
               sourceChannel,

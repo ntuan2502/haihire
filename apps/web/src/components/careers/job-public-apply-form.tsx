@@ -19,10 +19,17 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import { formatCandidateDisplayName } from "@haihire/shared";
+import {
+  COVER_LETTER_MAX_LENGTH,
+  formatCandidateDisplayName,
+  normalizeJobApplicationFormConfig,
+  type ScreeningAnswerValue,
+  type ScreeningQuestion,
+} from "@haihire/shared";
 import { useCreateApplicationMutation } from "@/hooks/use-queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import type { Job } from "@/types";
@@ -34,6 +41,19 @@ interface JobPublicApplyFormProps {
   nameDisplayOrder: "LAST_FIRST" | "FIRST_LAST";
   refParam: string | null;
   formRef?: RefObject<HTMLDivElement | null>;
+}
+
+function isQuestionAnswered(
+  q: ScreeningQuestion,
+  value: ScreeningAnswerValue | undefined,
+): boolean {
+  if (q.type === "yes_no") {
+    return typeof value === "boolean";
+  }
+  if (q.type === "multiple_choice") {
+    return Array.isArray(value) && value.length > 0;
+  }
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export function JobPublicApplyForm({
@@ -49,10 +69,24 @@ export function JobPublicApplyForm({
   const isLastFirst = nameDisplayOrder === "LAST_FIRST";
   const applyMutation = useCreateApplicationMutation();
 
+  const formConfig = normalizeJobApplicationFormConfig(
+    job.applicationFormConfig,
+  );
+  const {
+    phone: phoneMode,
+    resume: resumeMode,
+    coverLetter: coverLetterMode,
+    screeningQuestions,
+  } = formConfig;
+
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
   const [candidatePhone, setCandidatePhone] = useState("");
+  const [coverLetter, setCoverLetter] = useState("");
+  const [screeningAnswers, setScreeningAnswers] = useState<
+    Record<string, ScreeningAnswerValue>
+  >({});
   const [notes, setNotes] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -94,6 +128,19 @@ export function JobPublicApplyForm({
     setResumeFile(file);
   };
 
+  const handleToggleMultiOption = (questionId: string, option: string) => {
+    setScreeningAnswers((prev) => {
+      const current = Array.isArray(prev[questionId])
+        ? (prev[questionId] as string[])
+        : [];
+      const exists = current.includes(option);
+      const next = exists
+        ? current.filter((item) => item !== option)
+        : [...current, option];
+      return { ...prev, [questionId]: next };
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
@@ -123,9 +170,25 @@ export function JobPublicApplyForm({
       setSubmitError(t("careers.errorEmail"));
       return;
     }
-    if (!resumeFile) {
+    if (phoneMode === "required" && !candidatePhone.trim()) {
+      setSubmitError(t("careers.errorPhoneRequired"));
+      return;
+    }
+    if (resumeMode === "required" && !resumeFile) {
       setSubmitError(t("careers.errorResume"));
       return;
+    }
+    if (coverLetterMode === "required" && !coverLetter.trim()) {
+      setSubmitError(t("careers.errorCoverLetterRequired"));
+      return;
+    }
+    for (const q of screeningQuestions) {
+      if (q.required && !isQuestionAnswered(q, screeningAnswers[q.id])) {
+        setSubmitError(
+          t("careers.errorScreeningRequired", { question: q.text }),
+        );
+        return;
+      }
     }
 
     try {
@@ -135,13 +198,25 @@ export function JobPublicApplyForm({
       formData.append("lastName", lastName.trim());
       formData.append("candidateEmail", candidateEmail.trim());
 
-      if (candidatePhone.trim()) {
+      if (phoneMode !== "hidden" && candidatePhone.trim()) {
         formData.append("candidatePhone", candidatePhone.trim());
+      }
+      if (coverLetterMode !== "hidden" && coverLetter.trim()) {
+        formData.append("coverLetter", coverLetter.trim());
+      }
+      if (screeningQuestions.length > 0) {
+        const payload = screeningQuestions.map((q) => ({
+          questionId: q.id,
+          answer: screeningAnswers[q.id] ?? null,
+        }));
+        formData.append("screeningAnswers", JSON.stringify(payload));
       }
       if (notes.trim()) {
         formData.append("notes", notes.trim());
       }
-      formData.append("resume", resumeFile);
+      if (resumeMode !== "hidden" && resumeFile) {
+        formData.append("resume", resumeFile);
+      }
 
       const activeRef =
         refParam ||
@@ -221,7 +296,7 @@ export function JobPublicApplyForm({
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             {submitError && (
               <div
                 role="alert"
@@ -292,7 +367,7 @@ export function JobPublicApplyForm({
               ))}
             </div>
 
-            {/* Email & Phone */}
+            {/* Email */}
             <div className="space-y-1.5">
               <label
                 htmlFor="career-email"
@@ -304,106 +379,303 @@ export function JobPublicApplyForm({
                 id="career-email"
                 type="email"
                 required
-                placeholder="name@example.com"
+                placeholder={t("careers.placeholders.email")}
                 value={candidateEmail}
                 onChange={(e) => setCandidateEmail(e.target.value)}
                 className="h-10 text-xs rounded-md bg-background"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                htmlFor="career-phone"
-                className="text-xs font-medium text-foreground"
-              >
-                {t("careers.phone")}
-              </label>
-              <Input
-                id="career-phone"
-                type="tel"
-                placeholder="0912 345 678"
-                value={candidatePhone}
-                onChange={(e) => setCandidatePhone(e.target.value)}
-                className="h-10 text-xs rounded-md bg-background"
-              />
-            </div>
+            {/* Phone (Hidden / Optional / Required) */}
+            {phoneMode !== "hidden" && (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="career-phone"
+                  className="text-xs font-medium text-foreground"
+                >
+                  {phoneMode === "required" ? (
+                    <>
+                      {t("careers.phoneRequiredLabel")}{" "}
+                      <span className="text-rose-500">*</span>
+                    </>
+                  ) : (
+                    t("careers.phone")
+                  )}
+                </label>
+                <Input
+                  id="career-phone"
+                  type="tel"
+                  required={phoneMode === "required"}
+                  placeholder={t("careers.placeholders.phone")}
+                  value={candidatePhone}
+                  onChange={(e) => setCandidatePhone(e.target.value)}
+                  className="h-10 text-xs rounded-md bg-background"
+                />
+              </div>
+            )}
 
-            {/* Resume Upload Box */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">
-                {t("careers.resume")} <span className="text-rose-500">*</span>
-              </label>
+            {/* Resume Upload Box (Hidden / Optional / Required) */}
+            {resumeMode !== "hidden" && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  {t("careers.resume")}{" "}
+                  {resumeMode === "required" ? (
+                    <span className="text-rose-500">*</span>
+                  ) : (
+                    <span className="text-muted-foreground font-normal">
+                      ({t("jobs.wizard.optionalOption")})
+                    </span>
+                  )}
+                </label>
 
-              <input
-                id={fileInputId}
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="sr-only peer"
-                aria-label={t("careers.resume")}
-              />
+                <input
+                  id={fileInputId}
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  className="sr-only peer"
+                  aria-label={t("careers.resume")}
+                />
 
-              {resumeFile ? (
-                <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 truncate">
-                    <FileText
-                      className="h-5 w-5 text-primary shrink-0"
+                {resumeFile ? (
+                  <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/10 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 truncate">
+                      <FileText
+                        className="h-5 w-5 text-primary shrink-0"
+                        aria-hidden="true"
+                      />
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-foreground truncate">
+                          {resumeFile.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResumeFile(null);
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
+                      }}
+                      aria-label={t("common.delete")}
+                      className="h-7 w-7 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor={fileInputId}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    className="border-2 border-dashed border-border hover:border-primary rounded-xl p-5 text-center cursor-pointer transition-colors bg-muted/40 space-y-2 block peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:border-primary focus-within:ring-2 focus-within:ring-ring focus-within:border-primary"
+                  >
+                    <UploadCloud
+                      className="h-6 w-6 text-muted-foreground mx-auto"
                       aria-hidden="true"
                     />
-                    <div className="truncate">
-                      <p className="text-xs font-bold text-foreground truncate">
-                        {resumeFile.name}
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-foreground">
+                        {t("careers.dropCvHere")}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
+                        {t("careers.cvFormats")}
                       </p>
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResumeFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    }}
-                    aria-label={t("common.delete")}
-                    className="h-7 w-7 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-              ) : (
-                <label
-                  htmlFor={fileInputId}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  className="border-2 border-dashed border-border hover:border-primary rounded-xl p-5 text-center cursor-pointer transition-colors bg-muted/40 space-y-2 block peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:border-primary focus-within:ring-2 focus-within:ring-ring focus-within:border-primary"
-                >
-                  <UploadCloud
-                    className="h-6 w-6 text-muted-foreground mx-auto"
-                    aria-hidden="true"
-                  />
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-foreground">
-                      {t("careers.dropCvHere")}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {t("careers.cvFormats")}
-                    </p>
-                  </div>
-                </label>
-              )}
+                  </label>
+                )}
 
-              {fileError && (
-                <p
-                  role="alert"
-                  aria-live="assertive"
-                  className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1"
-                >
-                  {fileError}
-                </p>
-              )}
-            </div>
+                {fileError && (
+                  <p
+                    role="alert"
+                    aria-live="assertive"
+                    className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1"
+                  >
+                    {fileError}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Cover Letter (Hidden / Optional / Required) */}
+            {coverLetterMode !== "hidden" && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="career-cover-letter"
+                    className="text-xs font-medium text-foreground"
+                  >
+                    {t("careers.coverLetterLabel")}{" "}
+                    {coverLetterMode === "required" ? (
+                      <span className="text-rose-500">*</span>
+                    ) : (
+                      <span className="text-muted-foreground font-normal">
+                        ({t("jobs.wizard.optionalOption")})
+                      </span>
+                    )}
+                  </label>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {t("careers.coverLetterCharsCount", {
+                      count: coverLetter.length,
+                    })}
+                  </span>
+                </div>
+                <Textarea
+                  id="career-cover-letter"
+                  rows={4}
+                  maxLength={COVER_LETTER_MAX_LENGTH}
+                  required={coverLetterMode === "required"}
+                  placeholder={t("careers.coverLetterPlaceholder")}
+                  value={coverLetter}
+                  onChange={(e) => setCoverLetter(e.target.value)}
+                  className="w-full p-3 text-xs rounded-md bg-background resize-y"
+                />
+              </div>
+            )}
+
+            {/* Screening Questions */}
+            {screeningQuestions.length > 0 && (
+              <div className="space-y-3.5 pt-2 border-t border-border">
+                <h3 className="text-xs font-semibold text-foreground">
+                  {t("careers.screeningSectionTitle")}
+                </h3>
+
+                {screeningQuestions.map((q) => {
+                  const val = screeningAnswers[q.id];
+                  const fieldId = `career-q-${q.id}`;
+
+                  return (
+                    <div key={q.id} className="space-y-1.5">
+                      <label
+                        htmlFor={fieldId}
+                        className="block text-xs font-medium text-foreground"
+                      >
+                        {q.text}{" "}
+                        {q.required ? (
+                          <span className="text-rose-500">*</span>
+                        ) : (
+                          <span className="text-muted-foreground font-normal">
+                            ({t("jobs.wizard.optionalOption")})
+                          </span>
+                        )}
+                      </label>
+
+                      {q.type === "yes_no" ? (
+                        <div className="flex items-center gap-4 text-xs text-foreground pt-0.5">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={fieldId}
+                              checked={val === true}
+                              onChange={() =>
+                                setScreeningAnswers((prev) => ({
+                                  ...prev,
+                                  [q.id]: true,
+                                }))
+                              }
+                              className="h-3.5 w-3.5 accent-primary"
+                            />
+                            <span>{t("common.yes")}</span>
+                          </label>
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={fieldId}
+                              checked={val === false}
+                              onChange={() =>
+                                setScreeningAnswers((prev) => ({
+                                  ...prev,
+                                  [q.id]: false,
+                                }))
+                              }
+                              className="h-3.5 w-3.5 accent-primary"
+                            />
+                            <span>{t("common.no")}</span>
+                          </label>
+                        </div>
+                      ) : q.type === "single_choice" ? (
+                        <div className="space-y-1.5 pt-0.5">
+                          {(q.options ?? []).map((opt) => (
+                            <label
+                              key={opt}
+                              className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
+                            >
+                              <input
+                                type="radio"
+                                name={fieldId}
+                                checked={val === opt}
+                                onChange={() =>
+                                  setScreeningAnswers((prev) => ({
+                                    ...prev,
+                                    [q.id]: opt,
+                                  }))
+                                }
+                                className="h-3.5 w-3.5 accent-primary"
+                              />
+                              <span>{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : q.type === "multiple_choice" ? (
+                        <div className="space-y-1.5 pt-0.5">
+                          {(q.options ?? []).map((opt) => {
+                            const selectedList = Array.isArray(val) ? val : [];
+                            return (
+                              <label
+                                key={opt}
+                                className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedList.includes(opt)}
+                                  onChange={() =>
+                                    handleToggleMultiOption(q.id, opt)
+                                  }
+                                  className="h-3.5 w-3.5 accent-primary"
+                                />
+                                <span>{opt}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : q.type === "long_text" ? (
+                        <Textarea
+                          id={fieldId}
+                          rows={3}
+                          placeholder={t("jobs.wizard.answerPlaceholder")}
+                          value={typeof val === "string" ? val : ""}
+                          onChange={(e) =>
+                            setScreeningAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 text-xs rounded-md bg-background resize-y"
+                        />
+                      ) : (
+                        <Input
+                          id={fieldId}
+                          type="text"
+                          placeholder={t("jobs.wizard.answerPlaceholder")}
+                          value={typeof val === "string" ? val : ""}
+                          onChange={(e) =>
+                            setScreeningAnswers((prev) => ({
+                              ...prev,
+                              [q.id]: e.target.value,
+                            }))
+                          }
+                          className="h-10 text-xs rounded-md bg-background"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Notes / Message */}
             <div className="space-y-1.5">

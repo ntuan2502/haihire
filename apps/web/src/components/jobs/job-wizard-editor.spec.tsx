@@ -96,10 +96,10 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       // Implemented wizard header steps
       expect(screen.getByText("Thông tin vị trí")).toBeInTheDocument();
+      expect(screen.getByText("Biểu mẫu ứng tuyển")).toBeInTheDocument();
       expect(screen.getByText("Xuất bản & Phân phối")).toBeInTheDocument();
 
       // Coming soon placeholder steps are hidden
-      expect(screen.queryByText("Biểu mẫu ứng tuyển")).not.toBeInTheDocument();
       expect(
         screen.queryByText("Tiêu chí chấm điểm AI"),
       ).not.toBeInTheDocument();
@@ -133,17 +133,21 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
   // A.1.2: Step Navigation
   describe("A.1.2: Step Navigation & Validation Gate", () => {
-    it("moves to step 4 when continue is clicked with valid required fields", async () => {
+    it("moves through step 2 to step 4 when continue is clicked with valid required fields", async () => {
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // In initialJob, all required fields are pre-populated and valid
-      const continueButtons = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
+      // Step 1 -> Step 2
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
       });
-      const mainContinueBtn = continueButtons[0];
-      fireEvent.click(mainContinueBtn);
 
-      // Successfully navigated to Step 4 (Publish & Distribute)
+      // Step 2 -> Step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
         expect(screen.getByText("Sẵn sàng đăng tuyển?")).toBeInTheDocument();
       });
@@ -179,24 +183,31 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
       ).toBeInTheDocument();
     });
 
-    it("navigates back to step 1 from step 4 using the back button", async () => {
+    it("navigates back to step 1 from step 4 through step 2 using back buttons", async () => {
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // Go to step 4
-      const continueBtn = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
-      })[0];
-      fireEvent.click(continueBtn);
+      // Step 1 -> Step 2 -> Step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
 
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
         expect(screen.getByText("Sẵn sàng đăng tuyển?")).toBeInTheDocument();
       });
 
-      // Click "Quay lại" in step 4
-      const backButtons = screen.getAllByRole("button", { name: /Quay lại/i });
-      fireEvent.click(backButtons[0]);
+      // Step 4 -> Step 2 -> Step 1
+      fireEvent.click(screen.getAllByRole("button", { name: /Quay lại/i })[0]);
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
 
-      // Back on Step 1
+      fireEvent.click(screen.getAllByRole("button", { name: /Quay lại/i })[0]);
       await waitFor(() => {
         expect(screen.getByText("Chức danh công việc")).toBeInTheDocument();
       });
@@ -205,7 +216,7 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
     it("hides unimplemented coming soon steps from header", () => {
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      expect(screen.queryByText("Biểu mẫu ứng tuyển")).not.toBeInTheDocument();
+      expect(screen.getByText("Biểu mẫu ứng tuyển")).toBeInTheDocument();
       expect(
         screen.queryByText("Tiêu chí chấm điểm AI"),
       ).not.toBeInTheDocument();
@@ -410,12 +421,17 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // Navigate to step 4
-      const continueBtn = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
-      })[0];
-      fireEvent.click(continueBtn);
+      // Navigate through step 2 to step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
 
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
         expect(screen.getByText("Sẵn sàng đăng tuyển?")).toBeInTheDocument();
       });
@@ -439,6 +455,12 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
             startDate: "2027-01-15",
             openings: 3,
             organizationId: "org-test-1",
+            applicationFormConfig: expect.objectContaining({
+              phone: "optional",
+              resume: "required",
+              coverLetter: "hidden",
+              screeningQuestions: [],
+            }),
           }),
         );
         expect(mockPush).toHaveBeenCalledWith("/jobs");
@@ -450,12 +472,17 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // Navigate to step 4
-      const continueBtn = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
-      })[0];
-      fireEvent.click(continueBtn);
+      // Navigate through step 2 to step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
 
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
         expect(screen.getByText("Sẵn sàng đăng tuyển?")).toBeInTheDocument();
       });
@@ -535,12 +562,17 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       render(<JobWizardEditor mode="create" initialJob={mockInitialJob} />);
 
-      // Navigate to step 4
-      const continueBtn = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
-      })[0];
-      fireEvent.click(continueBtn);
+      // Navigate through step 2 to step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
 
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
         expect(screen.getByText("Sẵn sàng đăng tuyển?")).toBeInTheDocument();
       });
@@ -562,14 +594,19 @@ describe("JobWizardEditor Component - Characterization Tests", () => {
 
       render(<JobWizardEditor mode="edit" initialJob={mockInitialJob} />);
 
-      // Navigate to step 4
-      const continueBtn = screen.getAllByRole("button", {
-        name: /Lưu & tiếp tục/i,
-      })[0];
-      fireEvent.click(continueBtn);
-
+      // Navigate through step 2 to step 4
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
       await waitFor(() => {
-        expect(screen.getByText("Xuất bản & Trạng thái")).toBeInTheDocument();
+        expect(screen.getByText("Thông tin cá nhân")).toBeInTheDocument();
+      });
+
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Lưu & tiếp tục/i })[0],
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Xóa vị trí")).toBeInTheDocument();
       });
 
       // Click delete button

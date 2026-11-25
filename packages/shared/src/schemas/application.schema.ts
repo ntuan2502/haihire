@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COVER_LETTER_MAX_LENGTH } from "../application-form";
 import { ApplicationStage } from "../applications";
 
 export const createApplicationSchema = z
@@ -17,6 +18,8 @@ export const createApplicationSchema = z
     candidatePhone: z.string().optional(),
     stage: z.nativeEnum(ApplicationStage).optional(),
     notes: z.string().optional(),
+    coverLetter: z.string().max(COVER_LETTER_MAX_LENGTH).optional(),
+    screeningAnswers: z.string().optional(),
     resumeUrl: z.string().optional(),
     resumeFileName: z.string().optional(),
     ref: z.string().optional(),

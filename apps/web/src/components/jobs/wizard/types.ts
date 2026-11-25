@@ -1,13 +1,17 @@
-import type { Job } from "@/types";
+import type {
+  ApplicationFormFieldMode,
+  Job,
+  ScreeningQuestion,
+  ScreeningQuestionType,
+} from "@/types";
 
 export type StepId = 1 | 2 | 3 | 4;
 
-export interface ScreeningQuestion {
-  id: string;
-  text: string;
-  type: "text" | "yes_no";
-  required: boolean;
-}
+export type {
+  ApplicationFormFieldMode,
+  ScreeningQuestion,
+  ScreeningQuestionType,
+};
 
 export interface ScoringCriterion {
   id: string;

@@ -533,6 +533,7 @@ export const vi: TranslationSchema = {
       },
       steps: {
         details: "Thông tin vị trí",
+        applicationForm: "Biểu mẫu ứng tuyển",
         publishDistribute: "Xuất bản & Phân phối",
         publishStatus: "Xuất bản & Trạng thái",
       },
@@ -637,20 +638,50 @@ export const vi: TranslationSchema = {
       resumeCvDesc: "Chỉ định dạng PDF tối đa 10 MB",
       coverLetterTitle: "Thư xin việc",
       coverLetterDesc: "Trường văn bản tự do, tối đa 10.000 ký tự",
-      offOption: "Tắt",
       screeningQuestionsTitle: "Câu hỏi sàng lọc",
       screeningQuestionsDesc:
         "Thêm các câu hỏi để sàng lọc và đánh giá nhanh ứng viên",
       noScreeningQuestions: "Chưa có câu hỏi sàng lọc nào được thêm.",
       addFirstQuestion: "Thêm câu hỏi đầu tiên",
-      openTextAnswer: "Câu trả lời dạng văn bản",
-      yesNoChoice: "Lựa chọn Có / Không",
+      questionTypeLabel: "Kiểu câu trả lời",
+      questionTypes: {
+        short_text: "Trả lời ngắn",
+        long_text: "Đoạn văn dài",
+        yes_no: "Có / Không",
+        single_choice: "Chọn một đáp án",
+        multiple_choice: "Chọn nhiều đáp án",
+      },
+      questionRequiredToggle: "Bắt buộc trả lời",
+      questionOptionsLabel: "Danh sách lựa chọn (mỗi dòng một đáp án)",
+      questionOptionsHint: "Nhập tối thiểu 2 lựa chọn khác nhau.",
+      editQuestion: "Sửa câu hỏi",
+      saveQuestionAction: "Lưu câu hỏi",
+      moveQuestionUp: "Di chuyển lên",
+      moveQuestionDown: "Di chuyển xuống",
       deleteQuestion: "Xóa câu hỏi",
       addQuestionAction: "Thêm câu hỏi",
-      automationKnockoutHint:
-        "Tạo quy tắc tự động hóa và loại trừ từ các câu hỏi này bất cứ lúc nào trong tab Quy tắc tự động.",
-      scoringCriteriaHint:
-        "Tiêu chí chấm điểm được tạo từ mô tả công việc — xem lại chúng trong bước 3.",
+      pasteExistingBtn: "Dán câu hỏi có sẵn",
+      pasteModalTitle: "Dán danh sách câu hỏi sàng lọc",
+      pasteModalDesc: "Dán nhiều câu hỏi vào bên dưới (mỗi dòng một câu hỏi).",
+      pasteModalPlaceholder:
+        "Bạn có bao nhiêu năm kinh nghiệm thực tế ở vị trí này?\nBạn có thể bắt đầu nhận việc sớm nhất khi nào?\nMức thu nhập kỳ vọng của bạn là bao nhiêu?",
+      pasteModalImportBtn: "Thêm {count} câu hỏi",
+      questionTemplatesBtn: "Mẫu câu hỏi",
+      questionTemplatesTitle: "Chọn từ mẫu câu hỏi sàng lọc",
+      questionTemplatesDesc:
+        "Chọn nhanh các câu hỏi sàng lọc phổ biến để thêm vào vị trí này.",
+      templateWorkAuth:
+        "Bạn có đủ điều kiện làm việc hợp pháp tại địa điểm tuyển dụng không?",
+      templateNoticePeriod:
+        "Bạn có thể bắt đầu đi làm sớm nhất vào thời điểm nào?",
+      templateWorkArrangement: "Hình thức làm việc nào phù hợp nhất với bạn?",
+      templateWorkArrangementOpt1: "Tại văn phòng",
+      templateWorkArrangementOpt2: "Linh hoạt",
+      templateWorkArrangementOpt3: "Từ xa",
+      templateExperienceYears:
+        "Bạn có bao nhiêu năm kinh nghiệm phù hợp với vị trí này?",
+      optionalBadge: "Tùy chọn",
+      continueToStep2: "Lưu & tiếp tục",
       scoringTitle: "Chấm điểm ứng viên",
       scoringDesc:
         "Mỗi ứng viên sẽ được xếp hạng dựa trên các tiêu chí bên dưới. Chúng được soạn thảo từ mô tả công việc của bạn, hãy xem xét và chỉnh sửa nếu cần.",
@@ -949,6 +980,9 @@ export const vi: TranslationSchema = {
     },
     sections: {
       interviews: "Phỏng vấn",
+      coverLetter: "Thư xin việc",
+      screeningAnswers: "Câu trả lời sàng lọc",
+      noAnswerProvided: "Không trả lời",
     },
   },
   interviews: {
@@ -2100,6 +2134,15 @@ export const vi: TranslationSchema = {
     errorFirstName: "Vui lòng nhập tên.",
     errorEmail: "Vui lòng nhập địa chỉ email hợp lệ.",
     errorResume: "Vui lòng đính kèm tệp CV của bạn (PDF).",
+    errorPhoneRequired: "Vui lòng nhập số điện thoại.",
+    errorCoverLetterRequired: "Vui lòng nhập thư xin việc.",
+    errorScreeningRequired: "Vui lòng trả lời câu hỏi bắt buộc: {question}",
+    phoneRequiredLabel: "Số điện thoại",
+    coverLetterLabel: "Thư xin việc",
+    coverLetterPlaceholder:
+      "Giới thiệu ngắn gọn về bản thân và lý do bạn phù hợp với vị trí này...",
+    coverLetterCharsCount: "{count} / 10.000 ký tự",
+    screeningSectionTitle: "Câu hỏi sàng lọc",
     errorGeneric: "Đã có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.",
     fileTooLarge: "Kích thước tệp vượt quá giới hạn 10MB.",
     fileInvalidType:

@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   Trash2,
 } from "lucide-react";
-import type { Job } from "@/types";
+import type { ApplicationFormFieldMode, Job } from "@/types";
 
 interface WizardStepPublishProps {
   mode: "create" | "edit";
@@ -23,7 +23,7 @@ interface WizardStepPublishProps {
   setPublishMode: (m: "publish" | "draft" | "closed") => void;
   jobTitle: string;
   location: string;
-  resumeSetting: "required" | "off";
+  resumeSetting: ApplicationFormFieldMode;
   screeningQuestionsCount: number;
   isSaving: boolean;
   onOpenDeleteConfirm: () => void;
@@ -240,7 +240,9 @@ export function WizardStepPublish({
               <span className="font-semibold text-foreground">
                 {resumeSetting === "required"
                   ? t("jobs.wizard.requiredOption")
-                  : t("jobs.wizard.offOption")}
+                  : resumeSetting === "optional"
+                    ? t("jobs.wizard.optionalOption")
+                    : t("jobs.wizard.hiddenOption")}
               </span>
             </div>
           </div>

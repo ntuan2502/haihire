@@ -4,8 +4,10 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   ValidateIf,
 } from "class-validator";
+import { COVER_LETTER_MAX_LENGTH } from "@haihire/shared";
 
 export class PublicApplyDto {
   @IsUUID()
@@ -93,4 +95,13 @@ export class PublicApplyDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(COVER_LETTER_MAX_LENGTH)
+  coverLetter?: string;
+
+  @IsString()
+  @IsOptional()
+  screeningAnswers?: string;
 }

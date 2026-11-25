@@ -459,6 +459,7 @@ export interface TranslationSchema {
       };
       steps: {
         details: string;
+        applicationForm: string;
         publishDistribute: string;
         publishStatus: string;
       };
@@ -552,17 +553,44 @@ export interface TranslationSchema {
       resumeCvDesc: string;
       coverLetterTitle: string;
       coverLetterDesc: string;
-      offOption: string;
       screeningQuestionsTitle: string;
       screeningQuestionsDesc: string;
       noScreeningQuestions: string;
       addFirstQuestion: string;
-      openTextAnswer: string;
-      yesNoChoice: string;
+      questionTypeLabel: string;
+      questionTypes: {
+        short_text: string;
+        long_text: string;
+        yes_no: string;
+        single_choice: string;
+        multiple_choice: string;
+      };
+      questionRequiredToggle: string;
+      questionOptionsLabel: string;
+      questionOptionsHint: string;
+      editQuestion: string;
+      saveQuestionAction: string;
+      moveQuestionUp: string;
+      moveQuestionDown: string;
       deleteQuestion: string;
       addQuestionAction: string;
-      automationKnockoutHint: string;
-      scoringCriteriaHint: string;
+      pasteExistingBtn: string;
+      pasteModalTitle: string;
+      pasteModalDesc: string;
+      pasteModalPlaceholder: string;
+      pasteModalImportBtn: string;
+      questionTemplatesBtn: string;
+      questionTemplatesTitle: string;
+      questionTemplatesDesc: string;
+      templateWorkAuth: string;
+      templateNoticePeriod: string;
+      templateWorkArrangement: string;
+      templateWorkArrangementOpt1: string;
+      templateWorkArrangementOpt2: string;
+      templateWorkArrangementOpt3: string;
+      templateExperienceYears: string;
+      optionalBadge: string;
+      continueToStep2: string;
       scoringTitle: string;
       scoringDesc: string;
       scoringConfiguredBadge: string;
@@ -830,6 +858,9 @@ export interface TranslationSchema {
     };
     sections: {
       interviews: string;
+      coverLetter: string;
+      screeningAnswers: string;
+      noAnswerProvided: string;
     };
   };
   interviews: {
@@ -1890,6 +1921,14 @@ export interface TranslationSchema {
     errorFirstName: string;
     errorEmail: string;
     errorResume: string;
+    errorPhoneRequired: string;
+    errorCoverLetterRequired: string;
+    errorScreeningRequired: string;
+    phoneRequiredLabel: string;
+    coverLetterLabel: string;
+    coverLetterPlaceholder: string;
+    coverLetterCharsCount: string;
+    screeningSectionTitle: string;
     errorGeneric: string;
     fileTooLarge: string;
     fileInvalidType: string;

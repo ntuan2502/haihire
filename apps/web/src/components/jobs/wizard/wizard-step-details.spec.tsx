@@ -52,6 +52,7 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.openingsError":
           "Số lượng tuyển phải là số nguyên từ 1 trở lên.",
         "jobs.wizard.charsCount": "ký tự",
+        "jobs.wizard.continueToStep2": "Lưu & tiếp tục",
         "jobs.wizard.continueToPublish": "Tiếp tục sang bước xuất bản",
         "jobs.wizard.errors.titleRequired":
           "Tiêu đề công việc không được để trống",
@@ -225,7 +226,7 @@ describe("WizardStepDetails Component Tests", () => {
     const props = createProps({ isStep1Valid: true, onContinue });
     render(<WizardStepDetails {...props} />);
 
-    const continueBtn = screen.getByText("Tiếp tục sang bước xuất bản");
+    const continueBtn = screen.getByText("Lưu & tiếp tục");
     expect(continueBtn).not.toBeDisabled();
     fireEvent.click(continueBtn);
 
@@ -236,7 +237,7 @@ describe("WizardStepDetails Component Tests", () => {
     const props = createProps({ isStep1Valid: false });
     render(<WizardStepDetails {...props} />);
 
-    const continueBtn = screen.getByText("Tiếp tục sang bước xuất bản");
+    const continueBtn = screen.getByText("Lưu & tiếp tục");
     expect(continueBtn).toBeDisabled();
   });
 

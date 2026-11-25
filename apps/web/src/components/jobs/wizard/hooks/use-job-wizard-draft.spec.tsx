@@ -40,4 +40,38 @@ describe("useJobWizardDraft", () => {
       currentStep: 4,
     });
   });
+
+  it("persists and restores Step 2 application form config and currentStep === 2", () => {
+    localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        jobTitle: "Backend Engineer",
+        phoneSetting: "required",
+        resumeSetting: "optional",
+        coverLetterSetting: "required",
+        screeningQuestions: [
+          {
+            id: "q1",
+            text: "Expected salary?",
+            type: "short_text",
+            required: true,
+          },
+        ],
+        currentStep: 2,
+      }),
+    );
+
+    const { result } = renderHook(() => {
+      const form = useJobWizardFormState();
+      const [currentStep, setCurrentStep] = useState<StepId>(1);
+      useJobWizardDraft({ mode: "create", form, currentStep, setCurrentStep });
+      return { form, currentStep };
+    });
+
+    expect(result.current.currentStep).toBe(2);
+    expect(result.current.form.phoneSetting).toBe("required");
+    expect(result.current.form.resumeSetting).toBe("optional");
+    expect(result.current.form.coverLetterSetting).toBe("required");
+    expect(result.current.form.screeningQuestions).toHaveLength(1);
+  });
 });

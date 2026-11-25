@@ -533,6 +533,7 @@ export const en: TranslationSchema = {
       },
       steps: {
         details: "Job details",
+        applicationForm: "Application form",
         publishDistribute: "Publish & distribute",
         publishStatus: "Publish & status",
       },
@@ -636,20 +637,51 @@ export const en: TranslationSchema = {
       resumeCvDesc: "PDF only up to 10 MB",
       coverLetterTitle: "Cover letter",
       coverLetterDesc: "Free text field, max 10,000 characters",
-      offOption: "Off",
       screeningQuestionsTitle: "Screening questions",
       screeningQuestionsDesc:
         "Add screening questions to quickly evaluate applicants",
       noScreeningQuestions: "No screening questions added yet.",
       addFirstQuestion: "Add first question",
-      openTextAnswer: "Free text answer",
-      yesNoChoice: "Yes / No choice",
+      questionTypeLabel: "Answer type",
+      questionTypes: {
+        short_text: "Short answer",
+        long_text: "Long answer",
+        yes_no: "Yes / No",
+        single_choice: "Single choice",
+        multiple_choice: "Multiple choice",
+      },
+      questionRequiredToggle: "Required question",
+      questionOptionsLabel: "Answer options (one per line)",
+      questionOptionsHint: "Enter at least 2 distinct options.",
+      editQuestion: "Edit question",
+      saveQuestionAction: "Save question",
+      moveQuestionUp: "Move up",
+      moveQuestionDown: "Move down",
       deleteQuestion: "Delete question",
       addQuestionAction: "Add question",
-      automationKnockoutHint:
-        "Build custom automation and knockout rules from these questions anytime from the role's Automation Rules tab.",
-      scoringCriteriaHint:
-        "Scoring criteria written from your job description — review them in step 3.",
+      pasteExistingBtn: "Paste existing",
+      pasteModalTitle: "Paste screening questions",
+      pasteModalDesc:
+        "Paste multiple screening questions below (one question per line).",
+      pasteModalPlaceholder:
+        "How many years of production experience do you have?\nWhen is your earliest available start date?\nWhat is your expected compensation?",
+      pasteModalImportBtn: "Add {count} question(s)",
+      questionTemplatesBtn: "Question templates",
+      questionTemplatesTitle: "Add from screening templates",
+      questionTemplatesDesc:
+        "Pick common pre-screening questions to add directly to this role.",
+      templateWorkAuth:
+        "Are you legally authorized to work in this location without sponsorship?",
+      templateNoticePeriod:
+        "What is your earliest available start date or current notice period?",
+      templateWorkArrangement: "Which working arrangement do you prefer?",
+      templateWorkArrangementOpt1: "On-site",
+      templateWorkArrangementOpt2: "Hybrid",
+      templateWorkArrangementOpt3: "Remote",
+      templateExperienceYears:
+        "How many years of relevant experience do you have for this role?",
+      optionalBadge: "Optional",
+      continueToStep2: "Save & continue",
       scoringTitle: "Candidate scoring",
       scoringDesc:
         "Every applicant is ranked against the criteria below. They're written from your job description, so read them over and change anything that doesn't fit.",
@@ -948,6 +980,9 @@ export const en: TranslationSchema = {
     },
     sections: {
       interviews: "Interviews",
+      coverLetter: "Cover Letter",
+      screeningAnswers: "Screening Answers",
+      noAnswerProvided: "Not answered",
     },
   },
   interviews: {
@@ -2098,6 +2133,15 @@ export const en: TranslationSchema = {
     errorFirstName: "Please enter your first name.",
     errorEmail: "Please enter a valid email address.",
     errorResume: "Please attach your resume file (PDF).",
+    errorPhoneRequired: "Please enter your phone number.",
+    errorCoverLetterRequired: "Please enter your cover letter.",
+    errorScreeningRequired: "Please answer required question: {question}",
+    phoneRequiredLabel: "Phone number",
+    coverLetterLabel: "Cover letter",
+    coverLetterPlaceholder:
+      "Introduce yourself and explain why you are a strong fit for this role...",
+    coverLetterCharsCount: "{count} / 10,000 characters",
+    screeningSectionTitle: "Screening questions",
     errorGeneric: "An error occurred while submitting. Please try again.",
     fileTooLarge: "File size exceeds the 10MB limit.",
     fileInvalidType: "Unsupported file format. Please upload a PDF file.",

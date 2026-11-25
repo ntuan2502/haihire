@@ -30,7 +30,13 @@ import {
   getWorkplaceLabel,
   getExperienceLevelLabel,
 } from "@/lib/jobs";
-import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
+import type {
+  ApplicationFormFieldMode,
+  Job,
+  JobType,
+  WorkplaceType,
+  ExperienceLevel,
+} from "@/types";
 import type { ScreeningQuestion } from "./types";
 
 interface WizardPreviewModalProps {
@@ -51,9 +57,9 @@ interface WizardPreviewModalProps {
   startDate?: string;
   openings?: number;
   description: string;
-  phoneSetting: "hidden" | "optional" | "required";
-  resumeSetting: "required" | "off";
-  coverLetterSetting: "required" | "off";
+  phoneSetting: ApplicationFormFieldMode;
+  resumeSetting: ApplicationFormFieldMode;
+  coverLetterSetting: ApplicationFormFieldMode;
   screeningQuestions: ScreeningQuestion[];
   orgName?: string;
   orgLogoUrl?: string | null;
@@ -378,15 +384,21 @@ export function WizardPreviewModal({
                       </div>
                     )}
 
-                    {/* Cover Letter / Notes */}
-                    {coverLetterSetting === "required" && (
+                    {/* Cover Letter */}
+                    {coverLetterSetting !== "hidden" && (
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground">
-                          {t("careers.notes")}{" "}
-                          <span className="text-destructive">*</span>
+                          {t("careers.coverLetterLabel")}{" "}
+                          {coverLetterSetting === "required" ? (
+                            <span className="text-destructive">*</span>
+                          ) : (
+                            <span className="text-muted-foreground font-normal">
+                              ({t("jobs.wizard.optionalOption")})
+                            </span>
+                          )}
                         </label>
                         <Textarea
-                          placeholder={t("careers.placeholders.notes")}
+                          placeholder={t("careers.coverLetterPlaceholder")}
                           disabled
                           rows={2}
                           className="text-xs cursor-not-allowed opacity-80 resize-none"
@@ -429,6 +441,34 @@ export function WizardPreviewModal({
                                   <span>{t("common.no")}</span>
                                 </label>
                               </div>
+                            ) : q.type === "single_choice" ||
+                              q.type === "multiple_choice" ? (
+                              <div className="space-y-1 pt-0.5">
+                                {(q.options ?? []).map((opt, optIdx) => (
+                                  <label
+                                    key={optIdx}
+                                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                                  >
+                                    <input
+                                      type={
+                                        q.type === "single_choice"
+                                          ? "radio"
+                                          : "checkbox"
+                                      }
+                                      disabled
+                                      className="h-3 w-3"
+                                    />
+                                    <span>{opt}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            ) : q.type === "long_text" ? (
+                              <Textarea
+                                placeholder={t("jobs.wizard.answerPlaceholder")}
+                                disabled
+                                rows={2}
+                                className="text-xs cursor-not-allowed opacity-80 resize-none"
+                              />
                             ) : (
                               <Input
                                 type="text"
@@ -443,11 +483,17 @@ export function WizardPreviewModal({
                     )}
 
                     {/* Resume / CV Upload Box */}
-                    {resumeSetting === "required" && (
+                    {resumeSetting !== "hidden" && (
                       <div className="space-y-1.5 pt-1">
                         <label className="text-xs font-medium text-foreground">
                           {t("careers.cvResume")}{" "}
-                          <span className="text-destructive">*</span>
+                          {resumeSetting === "required" ? (
+                            <span className="text-destructive">*</span>
+                          ) : (
+                            <span className="text-muted-foreground font-normal">
+                              ({t("jobs.wizard.optionalOption")})
+                            </span>
+                          )}
                         </label>
                         <div className="border-2 border-dashed border-border rounded-xl p-4 text-center space-y-1.5 bg-muted/30">
                           <FileUp className="h-5 w-5 text-muted-foreground mx-auto" />

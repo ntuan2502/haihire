@@ -75,6 +75,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       implemented: true,
     },
     {
+      id: 2 as StepId,
+      label: t("jobs.wizard.steps.applicationForm"),
+      implemented: true,
+    },
+    {
       id: 4 as StepId,
       label:
         mode === "create"
@@ -87,8 +92,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const handleStepClick = (stepId: StepId) => {
     const targetStep = steps.find((s) => s.id === stepId);
     if (!targetStep?.implemented) return;
-    if (currentStep === 1 && !validation.isStep1Valid) {
+    if (stepId !== 1 && !validation.isStep1Valid) {
       validation.touchAllStep1();
+      setCurrentStep(1);
       return;
     }
     setCurrentStep(stepId);
@@ -100,7 +106,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       return;
     }
     form.setFormError(null);
-    setCurrentStep(4);
+    setCurrentStep(2);
   };
 
   return (
@@ -202,15 +208,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             coverLetterSetting={form.coverLetterSetting}
             setCoverLetterSetting={form.setCoverLetterSetting}
             screeningQuestions={form.screeningQuestions}
-            isAddingQuestion={form.isAddingQuestion}
-            setIsAddingQuestion={form.setIsAddingQuestion}
-            newQuestionText={form.newQuestionText}
-            setNewQuestionText={form.setNewQuestionText}
-            onAddQuestion={form.handleAddQuestion}
+            onAddQuestion={form.handleAddScreeningQuestion}
+            onUpdateQuestion={form.handleUpdateScreeningQuestion}
+            onBulkAddQuestions={form.handleBulkAddScreeningQuestions}
+            onMoveQuestion={form.handleMoveScreeningQuestion}
             onRemoveQuestion={form.handleRemoveQuestion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(1)}
-            onContinue={() => setCurrentStep(3)}
+            onContinue={() => setCurrentStep(4)}
           />
         )}
 
@@ -251,7 +256,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             isSaving={submit.isSaving}
             onOpenDeleteConfirm={() => setDeleteConfirmOpen(true)}
             onCancel={submit.handleCancel}
-            onBack={() => setCurrentStep(1)}
+            onBack={() => setCurrentStep(2)}
             onSaveJob={submit.handleSaveJob}
           />
         )}
@@ -300,6 +305,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onCancel={submit.handleCancel}
         onStep1Continue={handleStep1Continue}
         onBackToStep1={() => setCurrentStep(1)}
+        onStep2Continue={() => setCurrentStep(4)}
+        onBackToStep2={() => setCurrentStep(2)}
         onSaveJob={submit.handleSaveJob}
       />
     </div>

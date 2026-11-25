@@ -11,6 +11,8 @@ interface WizardMobileFooterProps {
   onCancel: () => void;
   onStep1Continue: () => void;
   onBackToStep1: () => void;
+  onStep2Continue: () => void;
+  onBackToStep2: () => void;
   onSaveJob: () => void;
 }
 
@@ -23,11 +25,13 @@ export function WizardMobileFooter({
   onCancel,
   onStep1Continue,
   onBackToStep1,
+  onStep2Continue,
+  onBackToStep2,
   onSaveJob,
 }: WizardMobileFooterProps) {
   const { t } = useI18n();
 
-  if (currentStep !== 1 && currentStep !== 4) {
+  if (currentStep !== 1 && currentStep !== 2 && currentStep !== 4) {
     return null;
   }
 
@@ -51,6 +55,26 @@ export function WizardMobileFooter({
             disabled={!isStep1Valid}
             className="text-xs font-semibold px-4 cursor-pointer"
           >
+            {t("jobs.wizard.continueToStep2")}
+          </Button>
+        </>
+      ) : currentStep === 2 ? (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onBackToStep1}
+            className="text-xs cursor-pointer"
+          >
+            {t("common.back")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onStep2Continue}
+            className="text-xs font-semibold px-4 cursor-pointer"
+          >
             {t("jobs.wizard.continueToPublish")}
           </Button>
         </>
@@ -60,7 +84,7 @@ export function WizardMobileFooter({
             type="button"
             variant="outline"
             size="sm"
-            onClick={onBackToStep1}
+            onClick={onBackToStep2}
             className="text-xs cursor-pointer"
           >
             {t("common.back")}

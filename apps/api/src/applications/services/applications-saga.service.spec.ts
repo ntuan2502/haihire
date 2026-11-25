@@ -774,5 +774,93 @@ describe("ApplicationsSagaService", () => {
       });
       expect(candidateTable.store[0].phone).toBe("0909888777");
     });
+
+    it("enforces job applicationFormConfig requirements and persists coverLetter + screeningAnswers snapshot", async () => {
+      await jobTable.create({
+        id: "job-configured",
+        title: "Frontend Architect",
+        status: "PUBLISHED",
+        organizationId: "org-1",
+        applicationFormConfig: {
+          phone: "required",
+          resume: "optional",
+          coverLetter: "required",
+          screeningQuestions: [
+            {
+              id: "q-react",
+              text: "Years of React experience?",
+              type: "short_text",
+              required: true,
+            },
+            {
+              id: "q-remote",
+              text: "Open to remote?",
+              type: "yes_no",
+              required: false,
+            },
+          ],
+        },
+      });
+
+      // Missing required phone -> rejected
+      await expect(
+        service.create({
+          jobId: "job-configured",
+          firstName: "Linh",
+          lastName: "Tran",
+          candidateEmail: "linh@example.com",
+          coverLetter: "Excited to join!",
+          screeningAnswers: JSON.stringify([
+            { questionId: "q-react", answer: "5 years" },
+          ]),
+        }),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Missing required screening question -> rejected
+      await expect(
+        service.create({
+          jobId: "job-configured",
+          firstName: "Linh",
+          lastName: "Tran",
+          candidateEmail: "linh@example.com",
+          candidatePhone: "0901234567",
+          coverLetter: "Excited to join!",
+        }),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Valid submission without CV when resume is optional
+      const created = await service.create({
+        jobId: "job-configured",
+        firstName: "Linh",
+        lastName: "Tran",
+        candidateEmail: "linh2@example.com",
+        candidatePhone: "0901234567",
+        coverLetter: "Excited to contribute!",
+        screeningAnswers: JSON.stringify([
+          { questionId: "q-react", answer: "5 years" },
+          { questionId: "q-remote", answer: true },
+        ]),
+      });
+
+      expect(created).toBeDefined();
+      const storedApp = applicationTable.store.find(
+        (a) => a.jobId === "job-configured",
+      );
+      expect(storedApp?.coverLetter).toBe("Excited to contribute!");
+      expect(storedApp?.screeningAnswers).toEqual([
+        {
+          questionId: "q-react",
+          questionText: "Years of React experience?",
+          questionType: "short_text",
+          answer: "5 years",
+        },
+        {
+          questionId: "q-remote",
+          questionText: "Open to remote?",
+          questionType: "yes_no",
+          answer: true,
+        },
+      ]);
+    });
   });
 });

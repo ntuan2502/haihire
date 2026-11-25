@@ -91,6 +91,12 @@ export function useJobWizardSubmit({
 
     try {
       form.setFormError(null);
+      const applicationFormConfig = {
+        phone: form.phoneSetting,
+        resume: form.resumeSetting,
+        coverLetter: form.coverLetterSetting,
+        screeningQuestions: form.screeningQuestions,
+      };
 
       if (mode === "create") {
         await createJobMutation.mutateAsync({
@@ -110,6 +116,7 @@ export function useJobWizardSubmit({
             "We are seeking a talented professional to join our team.",
           salaryRange: salaryRange || undefined,
           status: statusMapped,
+          applicationFormConfig,
           organizationId: user?.organizationId ?? null,
         });
 
@@ -134,6 +141,7 @@ export function useJobWizardSubmit({
               "We are seeking a talented professional to join our team.",
             salaryRange: salaryRange || null,
             status: statusMapped,
+            applicationFormConfig,
           },
         });
 

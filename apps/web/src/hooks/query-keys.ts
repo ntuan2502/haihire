@@ -99,8 +99,16 @@ export const queryKeys = {
           { orgId, ...(role ? { role } : {}) },
         ] as const)
       : (["auth", "me", "permissions"] as const),
+  userSessions: (userId?: string | null) =>
+    ["auth", "sessions", { userId }] as const,
+  userSecurityLogs: (
+    userId?: string | null,
+    params?: Record<string, unknown>,
+  ) => ["auth", "security-logs", { userId, ...(params ?? {}) }] as const,
   auditLogs: (params?: Record<string, unknown>) =>
     ["organization", "audit-logs", params] as const,
+  auditLogStats: (orgId?: string | null) =>
+    ["organization", "audit-logs", "stats", { orgId }] as const,
   emailTemplates: (orgId?: string | null) =>
     ["email", "templates", { orgId }] as const,
   emailFlows: (orgId?: string | null) => ["email", "flows", { orgId }] as const,

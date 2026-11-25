@@ -86,6 +86,40 @@ describe("DashboardHeader", () => {
       screen.getByText("Thành viên", { selector: '[aria-current="page"]' }),
     ).toBeInTheDocument();
 
+    mockPathname.current = "/settings/members/invitations";
+    rerender(
+      <SidebarProvider>
+        <DashboardHeader />
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: "Thành viên" })).toHaveAttribute(
+      "href",
+      "/settings/members",
+    );
+    expect(
+      screen.getByText("Lời mời qua Email", {
+        selector: '[aria-current="page"]',
+      }),
+    ).toBeInTheDocument();
+
+    mockPathname.current = "/settings/members/links";
+    rerender(
+      <SidebarProvider>
+        <DashboardHeader />
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: "Thành viên" })).toHaveAttribute(
+      "href",
+      "/settings/members",
+    );
+    expect(
+      screen.getByText("Liên kết chia sẻ", {
+        selector: '[aria-current="page"]',
+      }),
+    ).toBeInTheDocument();
+
     mockPathname.current = "/account";
     rerender(
       <SidebarProvider>

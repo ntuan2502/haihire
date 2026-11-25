@@ -1,13 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail, Sliders, History } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { PageHeader, StatusState } from "@/components/shared";
+import { SettingsSubTabs } from "@/components/settings/settings-sub-tabs";
 
 export default function EmailTemplatesLayout({
   children,
@@ -69,26 +69,7 @@ export default function EmailTemplatesLayout({
       ) : (
         <>
           {/* Navigation Sub-Tabs */}
-          <div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-muted border border-border max-w-full">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  aria-current={tab.isActive ? "page" : undefined}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
-                    tab.isActive
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{tab.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+          <SettingsSubTabs ariaLabel={t("email.templatesTitle")} items={tabs} />
 
           {children}
         </>

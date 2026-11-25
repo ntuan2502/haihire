@@ -1044,4 +1044,107 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       ).rejects.toMatchObject({ status: 404 });
     });
   });
+
+  describe("Session-scoped logout and changePassword security logging", () => {
+    it("logout revokes only the active sessionId when provided without bumping global tokenVersion", async () => {
+      const mockSecurity = {
+        revokeSessionQuietly: vi.fn().mockResolvedValue(true),
+        logEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const prismaMock = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ id: "usr-admin", tokenVersion: 0 }),
+          update: vi.fn().mockResolvedValue({ id: "usr-admin" }),
+        },
+        organizationMember: {
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      };
+
+      const sessionAuth = new AuthService(
+        prismaMock as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockSecurity as never,
+      );
+
+      await sessionAuth.logout("usr-admin", "org-1", "sess-only-this");
+      expect(mockSecurity.revokeSessionQuietly).toHaveBeenCalledWith(
+        "usr-admin",
+        "sess-only-this",
+      );
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+      expect(mockSecurity.logEvent).toHaveBeenCalledWith(
+        "usr-admin",
+        "AUTH_LOGOUT",
+        "SUCCESS",
+        { sessionId: "sess-only-this" },
+      );
+    });
+
+    it("changePassword revokes all old sessions, issues a new session, and logs AUTH_PASSWORD_CHANGED", async () => {
+      const mockSecurity = {
+        revokeAllSessions: vi.fn().mockResolvedValue(undefined),
+        createSession: vi.fn().mockResolvedValue("sess-new"),
+        logEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const prismaMock = {
+        user: {
+          findUnique: vi.fn().mockResolvedValue({
+            ...mockUsers[0],
+          }),
+          update: vi.fn().mockResolvedValue({
+            ...mockUsers[0],
+            tokenVersion: 1,
+          }),
+        },
+        organization: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: "org-1",
+            name: "Acme",
+            slug: "acme",
+            ownerId: "usr-admin",
+          }),
+        },
+        organizationMember: {
+          findFirst: vi.fn().mockResolvedValue({
+            organizationId: "org-1",
+            role: "ADMIN",
+          }),
+        },
+      };
+
+      const pwAuth = new AuthService(
+        prismaMock as never,
+        mockJwtService as never,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockSecurity as never,
+      );
+
+      const res = await pwAuth.changePassword(
+        "usr-admin",
+        validPassword,
+        "newStrongPassword9",
+        "org-1",
+      );
+
+      expect(res.success).toBe(true);
+      expect(mockSecurity.revokeAllSessions).toHaveBeenCalledWith("usr-admin");
+      expect(mockSecurity.createSession).toHaveBeenCalledWith("usr-admin");
+      expect(mockSecurity.logEvent).toHaveBeenCalledWith(
+        "usr-admin",
+        "AUTH_PASSWORD_CHANGED",
+        "SUCCESS",
+        expect.objectContaining({ revokedPreviousSessions: true }),
+      );
+    });
+  });
 });

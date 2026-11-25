@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { CommonModule } from "../common/common.module";
 import { MinioModule } from "../minio/minio.module";
 import { ActivitiesModule } from "../activities/activities.module";
 
@@ -12,7 +13,7 @@ import {
 } from "./services";
 
 @Module({
-  imports: [MinioModule, ActivitiesModule],
+  imports: [CommonModule, MinioModule, ActivitiesModule],
   controllers: [CandidatesController],
   providers: [
     CandidatesService,

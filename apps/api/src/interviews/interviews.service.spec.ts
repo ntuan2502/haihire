@@ -8,6 +8,7 @@ import {
   AppBadRequestException,
   AppForbiddenException,
 } from "../common/app-exception";
+import { AUDIT_ACTIONS, AUDIT_RESOURCES } from "@haihire/shared";
 import { InterviewsService } from "./interviews.service";
 import { formatInterviewRecord } from "./constants";
 
@@ -612,6 +613,84 @@ describe("InterviewsService", () => {
             stageId: "stage-intv",
             version: { increment: 1 },
           }),
+        }),
+      );
+    });
+
+    it("records event-envelope audit logs on interview schedule, update diff, and cancel", async () => {
+      const mockAuditLog = { logOrg: vi.fn().mockResolvedValue({}) };
+      const auditedService = new InterviewsService(
+        mockPrismaService as never,
+        { createActivity: vi.fn().mockResolvedValue({}) } as never,
+        mockEmailService as never,
+        undefined,
+        undefined,
+        undefined,
+        mockAuditLog as never,
+      );
+
+      const created = await auditedService.create(
+        {
+          applicationId: "app-1",
+          scheduledAt: "2026-10-05T09:00:00Z",
+          type: "TECHNICAL",
+          interviewer: "Staff Engineer",
+        },
+        "org-1",
+        "user-1",
+      );
+
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-1",
+        AUDIT_ACTIONS.INTERVIEW_SCHEDULED,
+        AUDIT_RESOURCES.INTERVIEW,
+        expect.objectContaining({
+          applicationId: "app-1",
+          type: "TECHNICAL",
+          interviewer: "Staff Engineer",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: expect.stringContaining("Frontend Developer"),
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.update(
+        created.id,
+        { round: 2, notes: "Panel round" },
+        "org-1",
+        { id: "user-2", name: "HR Lead", role: "ADMIN" },
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-2",
+        AUDIT_ACTIONS.INTERVIEW_UPDATED,
+        AUDIT_RESOURCES.INTERVIEW,
+        expect.objectContaining({ applicationId: "app-1" }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          changes: expect.arrayContaining([
+            { field: "round", before: 1, after: 2 },
+            { field: "notes", before: null, after: "Panel round" },
+          ]),
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.remove(created.id, "org-1", "user-2");
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-2",
+        AUDIT_ACTIONS.INTERVIEW_CANCELED,
+        AUDIT_RESOURCES.INTERVIEW,
+        expect.objectContaining({ applicationId: "app-1" }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
         }),
       );
     });

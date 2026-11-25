@@ -1,6 +1,7 @@
 "use client";
 
 import { SettingsButton } from "@/components/settings/settings-button";
+import { SettingsSubTabs } from "@/components/settings/settings-sub-tabs";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -25,7 +26,6 @@ import {
 } from "@/components/settings/integrations";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { toast } from "@/lib/toast";
-import { cn } from "cn";
 
 export default function IntegrationsSettingsPage() {
   const { t } = useI18n();
@@ -208,21 +208,18 @@ export default function IntegrationsSettingsPage() {
       />
 
       {/* Navigation Tabs */}
-      <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted border border-border">
-        <button
-          type="button"
-          onClick={() => setActiveTab("webhooks")}
-          className={cn(
-            "px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2 whitespace-nowrap",
-            activeTab === "webhooks"
-              ? "bg-background text-foreground shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/50",
-          )}
-        >
-          <Plug className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{t("settings.integrations.tabs.webhooks")}</span>
-        </button>
-      </div>
+      <SettingsSubTabs
+        ariaLabel={t("settings.integrations.title")}
+        items={[
+          {
+            id: "webhooks",
+            label: t("settings.integrations.tabs.webhooks"),
+            icon: Plug,
+            isActive: activeTab === "webhooks",
+            onClick: () => setActiveTab("webhooks"),
+          },
+        ]}
+      />
 
       {/* Main Content Area */}
       {activeTab === "webhooks" && (

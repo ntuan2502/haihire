@@ -10,6 +10,7 @@ import type {
   Role,
   Permission,
   OrganizationLocalizationSettings,
+  AuditChangeEntry,
 } from "@haihire/shared";
 
 export type UpdateOrgPayload = {
@@ -238,15 +239,17 @@ export const organizationsApi = {
     return response.data;
   },
 
-  getAuditLogs: async (params?: {
-    action?: string;
-    resource?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<AuditLogsResponse> => {
+  getAuditLogs: async (
+    params?: AuditLogsQueryParams,
+  ): Promise<AuditLogsResponse> => {
     const query = new URLSearchParams();
     if (params?.action) query.set("action", params.action);
     if (params?.resource) query.set("resource", params.resource);
+    if (params?.actorId) query.set("actorId", params.actorId);
+    if (params?.targetId) query.set("targetId", params.targetId);
+    if (params?.search) query.set("search", params.search);
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.offset !== undefined)
       query.set("offset", String(params.offset));
@@ -255,7 +258,62 @@ export const organizationsApi = {
     const response = await api.get<AuditLogsResponse>(url);
     return response.data;
   },
+
+  exportAuditLogs: async (
+    params: Omit<AuditLogsQueryParams, "limit" | "offset"> | undefined,
+    format: "csv" | "json",
+  ): Promise<Blob> => {
+    const query = new URLSearchParams();
+    if (params?.action) query.set("action", params.action);
+    if (params?.resource) query.set("resource", params.resource);
+    if (params?.actorId) query.set("actorId", params.actorId);
+    if (params?.targetId) query.set("targetId", params.targetId);
+    if (params?.search) query.set("search", params.search);
+    if (params?.from) query.set("from", params.from);
+    if (params?.to) query.set("to", params.to);
+    query.set("format", format);
+    const response = await api.get<Blob>(
+      `/organizations/my/audit-log/export?${query.toString()}`,
+      { responseType: "blob" },
+    );
+    return response.data;
+  },
+
+  getAuditLogStats: async (): Promise<AuditLogStatsResponse> => {
+    const response = await api.get<AuditLogStatsResponse>(
+      "/organizations/my/audit-log/stats",
+    );
+    return response.data;
+  },
+
+  updateAuditLogRetention: async (
+    retentionDays: number | null,
+  ): Promise<{ retentionDays: number | null }> => {
+    const response = await api.patch<{ retentionDays: number | null }>(
+      "/organizations/my/audit-log/retention",
+      { retentionDays },
+    );
+    return response.data;
+  },
 };
+
+export interface AuditLogStatsResponse {
+  total24h: number;
+  sensitive7d: number;
+  retentionDays: number | null;
+}
+
+export interface AuditLogsQueryParams {
+  action?: string;
+  resource?: string;
+  actorId?: string;
+  targetId?: string;
+  search?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}
 
 export interface OrganizationAuditLogRecord {
   id: string;
@@ -263,7 +321,15 @@ export interface OrganizationAuditLogRecord {
   actorId: string | null;
   action: string;
   resource: string;
+  targetId?: string | null;
+  targetLabel?: string | null;
+  actorNameSnapshot?: string | null;
+  actorEmailSnapshot?: string | null;
+  changes?: AuditChangeEntry[] | null;
   metadata: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
   createdAt: string;
   actor: {
     id: string;
@@ -271,7 +337,7 @@ export interface OrganizationAuditLogRecord {
     firstName?: string | null;
     lastName?: string | null;
     email: string;
-    role: string;
+    role?: string;
     avatarUrl: string | null;
   } | null;
 }

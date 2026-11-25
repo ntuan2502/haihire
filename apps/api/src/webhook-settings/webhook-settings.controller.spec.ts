@@ -140,7 +140,11 @@ describe("WebhookSettingsController", () => {
       "setting-1",
       adminReq as unknown as ReqParam,
     );
-    expect(mockService.delete).toHaveBeenCalledWith("setting-1", "org-1");
+    expect(mockService.delete).toHaveBeenCalledWith(
+      "setting-1",
+      "org-1",
+      "admin-1",
+    );
     expect(result).toEqual({ success: true });
   });
 

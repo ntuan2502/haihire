@@ -18,6 +18,7 @@ import {
   SourcingMetricsService,
   type RedisLockClient,
 } from "./services";
+import { OrganizationsAuditLogService } from "../organizations/services/organizations-audit-log.service";
 
 export type { RedisLockClient };
 export { SourcingLinksService, SourcingLockService, SourcingMetricsService };
@@ -39,6 +40,9 @@ export class SourcingService {
     @Inject(SourcingMetricsService)
     metricsOrRedis?: SourcingMetricsService | RedisLockClient,
     @Optional() @Inject("REDIS_CLIENT") redisClient?: RedisLockClient,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    auditLog?: OrganizationsAuditLogService,
   ) {
     if (linksOrPrisma instanceof SourcingLinksService) {
       // NestJS Dependency Injection path
@@ -52,7 +56,12 @@ export class SourcingService {
       const activities = lockOrActivities as ActivitiesService;
       const redis = (redisClient ?? metricsOrRedis) as
         RedisLockClient | undefined;
-      this.links = new SourcingLinksService(prisma, activities);
+      this.links = new SourcingLinksService(
+        prisma,
+        activities,
+        undefined,
+        auditLog,
+      );
       this.lock = new SourcingLockService(prisma, redis);
       this.metrics = new SourcingMetricsService(prisma, this.links);
     } else {
@@ -75,12 +84,17 @@ export class SourcingService {
     organizationId: string,
     id: string,
     dto: UpdateTrackingLinkDto,
+    actorId?: string | null,
   ): Promise<void> {
-    return this.links.updateLink(organizationId, id, dto);
+    return this.links.updateLink(organizationId, id, dto, actorId);
   }
 
-  deleteLink(organizationId: string, id: string): Promise<void> {
-    return this.links.deleteLink(organizationId, id);
+  deleteLink(
+    organizationId: string,
+    id: string,
+    actorId?: string | null,
+  ): Promise<void> {
+    return this.links.deleteLink(organizationId, id, actorId);
   }
 
   getLinks(

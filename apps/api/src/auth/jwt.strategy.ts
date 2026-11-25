@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { AppUnauthorizedException } from "../common/app-exception";
 import {
   APP_ERROR_CODES,
@@ -15,6 +15,7 @@ import {
   getPreferredMembershipOrderBy,
   serializeOrganizationSummary,
 } from "../organizations/organization-logo.util";
+import { UserSecurityService } from "./user-security.service";
 
 export interface JwtPayload {
   sub: string;
@@ -22,6 +23,7 @@ export interface JwtPayload {
   role?: string;
   type?: string;
   tokenVersion?: number;
+  sid?: string;
   organizationId?: string | null;
   activeOrgId?: string | null;
 }
@@ -31,6 +33,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(UserSecurityService)
+    private readonly userSecurity?: UserSecurityService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -97,6 +102,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         APP_ERROR_CODES.UNAUTHORIZED,
         "Token has been revoked",
       );
+    }
+
+    if (payload.sid) {
+      if (this.userSecurity) {
+        await this.userSecurity.validateSession(payload.sid, user.id);
+      } else if (typeof this.prisma.userSession?.findUnique === "function") {
+        const session = await this.prisma.userSession.findUnique({
+          where: { id: payload.sid },
+          select: { userId: true, revokedAt: true, expiresAt: true },
+        });
+        if (
+          !session ||
+          session.userId !== user.id ||
+          session.revokedAt !== null ||
+          new Date(session.expiresAt).getTime() <= Date.now()
+        ) {
+          throw new AppUnauthorizedException(
+            APP_ERROR_CODES.UNAUTHORIZED,
+            "Session has been revoked or expired",
+          );
+        }
+      }
     }
 
     const legacyUserOrgId = (
@@ -182,6 +209,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     return {
       ...user,
+      sessionId: payload.sid ?? null,
       organizationId: activeOrgId,
       role: activeRole,
       name: formatUserDisplayName(user, orgOrder),

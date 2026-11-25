@@ -1,12 +1,15 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   extractPlainTextFromHtml,
   formatCandidateDisplayName,
   type NameDisplayOrder,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
 import { sanitizeRichTextHtml } from "../common/html-sanitizer";
+import { computeAuditDiff } from "../common/audit-diff.util";
 import {
   ApplicationStage,
   ExperienceLevel,
@@ -29,6 +32,7 @@ import { formatInterviewRecord } from "../interviews/constants";
 
 import { EventsService } from "../events/events.service";
 import { attachOrganizationLogoUrl } from "../organizations/organization-logo.util";
+import { OrganizationsAuditLogService } from "../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class JobsService {
@@ -38,7 +42,17 @@ export class JobsService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
+
+  private toDateKey(raw?: Date | string | null): string | null {
+    if (!raw) return null;
+    const d = raw instanceof Date ? raw : new Date(raw);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
 
   async listPaginated(filter?: {
     status?: string;
@@ -761,10 +775,37 @@ export class JobsService {
       data: { jobId: created.id },
     });
 
+    try {
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        (userId || dto.createdById) ?? null,
+        AUDIT_ACTIONS.JOB_CREATED,
+        AUDIT_RESOURCES.JOB,
+        {
+          department: created.department,
+          location: created.location,
+          status: created.status,
+          type: created.type,
+        },
+        undefined,
+        {
+          targetId: created.id,
+          targetLabel: created.title,
+        },
+      );
+    } catch {
+      // Fail-open audit logging
+    }
+
     return created;
   }
 
-  async update(id: string, dto: UpdateJobDto, tenantOrgId?: string | null) {
+  async update(
+    id: string,
+    dto: UpdateJobDto,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
     const job = await this.findOne(id, tenantOrgId);
 
     if (
@@ -778,6 +819,23 @@ export class JobsService {
         { id, organizationId: job.organizationId },
       );
     }
+
+    const beforeSnapshot = {
+      title: job.title,
+      department: job.department,
+      location: job.location,
+      workplace: job.workplace ?? null,
+      type: job.type,
+      experienceLevel: job.experienceLevel ?? null,
+      openings: job.openings ?? 1,
+      salaryRange: job.salaryRange ?? null,
+      salaryMin: job.salaryMin ?? null,
+      salaryMax: job.salaryMax ?? null,
+      salaryCurrency: job.salaryCurrency ?? null,
+      status: job.status,
+      applicationDeadline: this.toDateKey(job.applicationDeadline),
+      startDate: this.toDateKey(job.startDate),
+    };
 
     const sanitizedDescription =
       dto.description !== undefined
@@ -829,12 +887,66 @@ export class JobsService {
         organizationId: orgId,
         data: { jobId: updated.id },
       });
+
+      const afterSnapshot = {
+        title: updated.title,
+        department: updated.department,
+        location: updated.location,
+        workplace: updated.workplace ?? null,
+        type: updated.type,
+        experienceLevel: updated.experienceLevel ?? null,
+        openings: updated.openings ?? 1,
+        salaryRange: updated.salaryRange ?? null,
+        salaryMin: updated.salaryMin ?? null,
+        salaryMax: updated.salaryMax ?? null,
+        salaryCurrency: updated.salaryCurrency ?? null,
+        status: updated.status,
+        applicationDeadline: this.toDateKey(updated.applicationDeadline),
+        startDate: this.toDateKey(updated.startDate),
+      };
+      const changes = computeAuditDiff(beforeSnapshot, afterSnapshot);
+      if (changes.length > 0) {
+        const isStatusOnly =
+          changes.length === 1 && changes[0].field === "status";
+        try {
+          await this.auditLog?.logOrg(
+            orgId,
+            actorId ?? null,
+            isStatusOnly
+              ? AUDIT_ACTIONS.JOB_STATUS_CHANGED
+              : AUDIT_ACTIONS.JOB_UPDATED,
+            AUDIT_RESOURCES.JOB,
+            isStatusOnly
+              ? {
+                  oldStatus: beforeSnapshot.status,
+                  newStatus: afterSnapshot.status,
+                  department: updated.department,
+                }
+              : {
+                  department: updated.department,
+                  status: updated.status,
+                },
+            undefined,
+            {
+              targetId: updated.id,
+              targetLabel: updated.title,
+              changes,
+            },
+          );
+        } catch {
+          // Fail-open audit logging
+        }
+      }
     }
 
     return updated;
   }
 
-  async remove(id: string, tenantOrgId?: string | null) {
+  async remove(
+    id: string,
+    tenantOrgId?: string | null,
+    actorId?: string | null,
+  ) {
     const job = await this.findOne(id, tenantOrgId);
 
     if (
@@ -881,6 +993,26 @@ export class JobsService {
         organizationId: orgId,
         data: { jobId: id },
       });
+
+      try {
+        await this.auditLog?.logOrg(
+          orgId,
+          actorId ?? null,
+          AUDIT_ACTIONS.JOB_DELETED,
+          AUDIT_RESOURCES.JOB,
+          {
+            department: job.department,
+            status: job.status,
+          },
+          undefined,
+          {
+            targetId: job.id,
+            targetLabel: job.title,
+          },
+        );
+      } catch {
+        // Fail-open audit logging
+      }
     }
 
     return { success: true, message: `Job ${id} deleted successfully` };

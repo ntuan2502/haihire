@@ -1,6 +1,8 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
   SourcingChannel,
   resolveChannelFromDomain,
 } from "@haihire/shared";
@@ -304,6 +306,83 @@ describe("SourcingLinksService", () => {
       });
       expect(byCampaign.total).toBe(1);
       expect(byCampaign.data[0]?.id).toBe("link-2");
+    });
+
+    it("records event-envelope audit logs on link create, update diff, and delete", async () => {
+      const mockAuditLog = {
+        logOrg: vi.fn().mockResolvedValue({}),
+      };
+      const auditedService = new SourcingLinksService(
+        mockPrisma,
+        undefined,
+        undefined,
+        mockAuditLog as never,
+      );
+
+      const created = await auditedService.createLink("org-1", "user-1", {
+        name: "Campus Fair 2026",
+        source: SourcingChannel.CAREER_SITE,
+        jobId: "job-1",
+      });
+
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-1",
+        AUDIT_ACTIONS.SOURCING_LINK_CREATED,
+        AUDIT_RESOURCES.SOURCING_LINK,
+        expect.objectContaining({
+          source: SourcingChannel.CAREER_SITE,
+          jobId: "job-1",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: "Campus Fair 2026",
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.updateLink(
+        "org-1",
+        "link-1",
+        { name: "LinkedIn Q1 Refresh", isActive: false },
+        "user-2",
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-2",
+        AUDIT_ACTIONS.SOURCING_LINK_UPDATED,
+        AUDIT_RESOURCES.SOURCING_LINK,
+        expect.objectContaining({ source: SourcingChannel.LINKEDIN }),
+        undefined,
+        expect.objectContaining({
+          targetId: "link-1",
+          targetLabel: "LinkedIn Q1 Refresh",
+          changes: expect.arrayContaining([
+            {
+              field: "name",
+              before: "LinkedIn Hiring Campaign",
+              after: "LinkedIn Q1 Refresh",
+            },
+            { field: "isActive", before: true, after: false },
+          ]),
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await auditedService.deleteLink("org-1", "link-2", "user-2");
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "user-2",
+        AUDIT_ACTIONS.SOURCING_LINK_DELETED,
+        AUDIT_RESOURCES.SOURCING_LINK,
+        expect.objectContaining({ token: "tok-indeed-2" }),
+        undefined,
+        expect.objectContaining({
+          targetId: "link-2",
+          targetLabel: "Indeed Sponsored Ads",
+        }),
+      );
     });
   });
 });

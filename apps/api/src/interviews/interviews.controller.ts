@@ -76,9 +76,13 @@ export class InterviewsController {
   @RequirePermission("interview:create")
   create(
     @Body(DtoPipe(CreateInterviewDto)) dto: CreateInterviewDto,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.interviewsService.create(dto, req?.user?.organizationId);
+    return this.interviewsService.create(
+      dto,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Patch(":id/scorecard")
@@ -159,8 +163,12 @@ export class InterviewsController {
   @RequirePermission("interview:delete")
   remove(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.interviewsService.remove(id, req?.user?.organizationId);
+    return this.interviewsService.remove(
+      id,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 }

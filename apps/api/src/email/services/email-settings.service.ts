@@ -14,6 +14,8 @@ import { toInstant } from "../../common/date.util";
 import { validatePublicHost } from "../../common/network.util";
 import { env } from "../../config/env";
 import { EventsService } from "../../events/events.service";
+import { computeAuditDiff } from "../../common/audit-diff.util";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class EmailSettingsService {
@@ -25,6 +27,9 @@ export class EmailSettingsService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   resolveOrgId(
@@ -170,6 +175,7 @@ export class EmailSettingsService {
     organizationId: string | undefined,
     dto: UpdateEmailSettingDto,
     userOrgId?: string | null,
+    actorId?: string,
   ) {
     const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
     const rawCurrent = await this.prisma.emailSetting.findFirst({
@@ -248,6 +254,71 @@ export class EmailSettingsService {
       where: { id: currentId },
       data: updateData,
     });
+
+    const beforeAudit: Record<string, unknown> = {
+      provider: rawCurrent?.provider ?? null,
+      fromName: rawCurrent?.fromName ?? null,
+      fromEmail: rawCurrent?.fromEmail ?? null,
+      smtpHost: rawCurrent?.smtpHost ?? null,
+      smtpPort: rawCurrent?.smtpPort ?? null,
+      smtpUser: rawCurrent?.smtpUser ?? null,
+    };
+    const afterAudit: Record<string, unknown> = {
+      provider: updateData.provider ?? beforeAudit.provider,
+      fromName: updateData.fromName ?? beforeAudit.fromName,
+      fromEmail: updateData.fromEmail ?? beforeAudit.fromEmail,
+      smtpHost:
+        updateData.smtpHost !== undefined
+          ? updateData.smtpHost
+          : beforeAudit.smtpHost,
+      smtpPort:
+        updateData.smtpPort !== undefined
+          ? updateData.smtpPort
+          : beforeAudit.smtpPort,
+      smtpUser:
+        updateData.smtpUser !== undefined
+          ? updateData.smtpUser
+          : beforeAudit.smtpUser,
+    };
+    if (updateData.smtpPass !== undefined) {
+      beforeAudit.smtpPass = rawCurrent?.smtpPass ?? null;
+      afterAudit.smtpPass = updateData.smtpPass;
+    }
+    if (updateData.resendApiKey !== undefined) {
+      beforeAudit.resendApiKey = rawCurrent?.resendApiKey ?? null;
+      afterAudit.resendApiKey = updateData.resendApiKey;
+    }
+    if (updateData.sendgridApiKey !== undefined) {
+      beforeAudit.sendgridApiKey = rawCurrent?.sendgridApiKey ?? null;
+      afterAudit.sendgridApiKey = updateData.sendgridApiKey;
+    }
+
+    const changes = computeAuditDiff(beforeAudit, afterAudit, {
+      redactFields: ["smtpPass", "resendApiKey", "sendgridApiKey"],
+    });
+
+    if (changes.length > 0 || Object.keys(updateData).length > 0) {
+      await this.auditLog?.logOrg(
+        targetOrgId,
+        actorId || null,
+        "EMAIL_SETTINGS_UPDATED",
+        "EMAIL",
+        {
+          settingId: currentId,
+          provider: String(afterAudit.provider ?? "SIMULATED"),
+        },
+        undefined,
+        {
+          targetId: currentId,
+          targetLabel: String(afterAudit.provider ?? "SIMULATED"),
+          changes: changes.length > 0 ? changes : null,
+        },
+      );
+      this.eventsService?.emit({
+        type: "AUDIT_LOGS_CHANGED",
+        organizationId: targetOrgId,
+      });
+    }
 
     this.eventsService?.emit({
       type: "EMAIL_CHANGED",

@@ -14,6 +14,7 @@ import {
 import type { RolePermissionItemDto } from "../dto/role-permissions.dto";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { EventsService } from "../../events/events.service";
+import type { AuditChangeEntry } from "@haihire/shared";
 
 export const CUSTOMIZABLE_ROLES: Role[] = [
   Role.ADMIN,
@@ -113,6 +114,21 @@ export class OrganizationsRolesService {
     }
 
     const role = roleStr as Role;
+    const beforeMatrix = await this.getRolePermissionsMatrix(organizationId);
+    const changes: AuditChangeEntry[] = updates.reduce<AuditChangeEntry[]>(
+      (acc, update) => {
+        const prev = beforeMatrix[role]?.[update.permission];
+        if (prev !== update.granted) {
+          acc.push({
+            field: update.permission,
+            before: prev ?? null,
+            after: update.granted,
+          });
+        }
+        return acc;
+      },
+      [],
+    );
 
     await runInTransaction(this.prisma, async (tx) => {
       await Promise.all(
@@ -151,7 +167,13 @@ export class OrganizationsRolesService {
       actorId || null,
       "ROLE_PERMISSIONS_UPDATED",
       "ROLE_PERMISSIONS",
-      { role: roleStr, permissions: updates },
+      { role: roleStr, permissions: updates, changesCount: changes.length },
+      undefined,
+      {
+        targetId: roleStr,
+        targetLabel: roleStr,
+        changes,
+      },
     );
 
     this.eventsService?.emit({
@@ -234,7 +256,19 @@ export class OrganizationsRolesService {
       actorId || null,
       "ROLE_PERMISSIONS_RESET",
       "ROLE_PERMISSIONS",
-      { role: roleStr || "ALL" },
+      { role: roleStr || "ALL", deletedCount },
+      undefined,
+      {
+        targetId: roleStr || "ALL",
+        targetLabel: roleStr || "ALL",
+        changes: [
+          {
+            field: "overridesCount",
+            before: deletedCount,
+            after: 0,
+          },
+        ],
+      },
     );
 
     this.eventsService?.emit({

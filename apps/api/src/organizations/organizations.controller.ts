@@ -21,7 +21,11 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
-import { MAX_ORG_LOGO_SIZE_BYTES } from "@haihire/shared";
+import {
+  MAX_ORG_LOGO_SIZE_BYTES,
+  updateAuditRetentionSchema,
+  type UpdateAuditRetentionSchema,
+} from "@haihire/shared";
 import { OrganizationsService } from "./organizations.service";
 import { AuthService } from "../auth/auth.service";
 import { setAuthCookies, setHasOrgCookie } from "../auth/auth-cookies";
@@ -36,7 +40,10 @@ import {
   GetInviteLinksQueryDto,
 } from "./dto/org-actions.dto";
 import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
-import { AuditLogQueryDto } from "./dto/audit-log-query.dto";
+import {
+  AuditLogQueryDto,
+  AuditLogExportQueryDto,
+} from "./dto/audit-log-query.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
@@ -59,12 +66,12 @@ export class OrganizationsController {
     res: Response | undefined,
     userId: string,
     orgId: string | null,
+    sessionId?: string | null,
   ) {
     if (this.authService) {
-      const tokens = await this.authService.issueOrgSessionTokens(
-        userId,
-        orgId,
-      );
+      const tokens = sessionId
+        ? await this.authService.issueOrgSessionTokens(userId, orgId, sessionId)
+        : await this.authService.issueOrgSessionTokens(userId, orgId);
       setAuthCookies(
         res,
         tokens.accessToken,
@@ -80,12 +87,17 @@ export class OrganizationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; sessionId?: string | null } },
     @Body(DtoPipe(CreateOrgDto)) dto: CreateOrgDto,
     @Res({ passthrough: true }) res?: Response,
   ) {
     const org = await this.orgsService.create(req.user.id, dto);
-    await this.syncOrgCookies(res, req.user.id, org.organization?.id ?? null);
+    await this.syncOrgCookies(
+      res,
+      req.user.id,
+      org.organization?.id ?? null,
+      req.user.sessionId,
+    );
     return org;
   }
 
@@ -93,7 +105,7 @@ export class OrganizationsController {
   @Post("join")
   @HttpCode(HttpStatus.OK)
   async join(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; sessionId?: string | null } },
     @Body(DtoPipe(JoinOrgDto)) dto: JoinOrgDto,
     @Res({ passthrough: true }) res?: Response,
   ) {
@@ -102,6 +114,7 @@ export class OrganizationsController {
       res,
       req.user.id,
       result.organization?.id ?? null,
+      req.user.sessionId,
     );
     return result;
   }
@@ -124,7 +137,7 @@ export class OrganizationsController {
   @Post("switch")
   @HttpCode(HttpStatus.OK)
   async switchOrg(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; sessionId?: string | null } },
     @Body(DtoPipe(SwitchOrgDto)) body: SwitchOrgDto,
     @Res({ passthrough: true }) res?: Response,
   ) {
@@ -136,6 +149,7 @@ export class OrganizationsController {
       res,
       req.user.id,
       result.organization?.id ?? null,
+      req.user.sessionId,
     );
     return result;
   }
@@ -285,9 +299,72 @@ export class OrganizationsController {
       {
         action: query?.action,
         resource: query?.resource,
+        ...(query?.actorId !== undefined ? { actorId: query.actorId } : {}),
+        ...(query?.targetId !== undefined ? { targetId: query.targetId } : {}),
+        ...(query?.search !== undefined ? { search: query.search } : {}),
+        ...(query?.from !== undefined ? { from: query.from } : {}),
+        ...(query?.to !== undefined ? { to: query.to } : {}),
         limit: query?.limit,
         offset: query?.offset,
       },
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:view_audit_log")
+  @Get("my/audit-log/export")
+  async exportAuditLogs(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Query(DtoPipe(AuditLogExportQueryDto))
+    query: AuditLogExportQueryDto | undefined,
+    @Res() res: Response,
+  ) {
+    const format = query?.format === "json" ? "json" : "csv";
+    const exported = await this.orgsService.exportAuditLogs(
+      req.user.id,
+      {
+        action: query?.action,
+        resource: query?.resource,
+        actorId: query?.actorId,
+        targetId: query?.targetId,
+        search: query?.search,
+        from: query?.from,
+        to: query?.to,
+      },
+      format,
+      req.user.organizationId,
+    );
+    res.setHeader("Content-Type", exported.mimeType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${exported.filename}"`,
+    );
+    res.send(Buffer.from(exported.content, "utf8"));
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:view_audit_log")
+  @Get("my/audit-log/stats")
+  getAuditLogStats(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+  ) {
+    return this.orgsService.getAuditLogStats(
+      req.user.id,
+      req.user.organizationId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, ActiveTenantGuard, RolesGuard)
+  @RequirePermission("org:update")
+  @Patch("my/audit-log/retention")
+  updateAuditLogRetention(
+    @Request() req: { user: { id: string; organizationId?: string | null } },
+    @Body(DtoPipe(updateAuditRetentionSchema)) dto: UpdateAuditRetentionSchema,
+  ) {
+    return this.orgsService.updateAuditLogRetention(
+      req.user.id,
+      dto.retentionDays,
       req.user.organizationId,
     );
   }
@@ -458,7 +535,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post("invite-links/join/:token")
   async joinByToken(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: { id: string; sessionId?: string | null } },
     @Param("token") token: string,
     @Res({ passthrough: true }) res?: Response,
   ) {
@@ -467,6 +544,7 @@ export class OrganizationsController {
       res,
       req.user.id,
       result.organization?.id ?? null,
+      req.user.sessionId,
     );
     return result;
   }

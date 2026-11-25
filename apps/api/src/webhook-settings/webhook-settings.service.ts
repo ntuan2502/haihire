@@ -24,6 +24,8 @@ import {
 import { WebhookProviderFactory } from "../common/webhook/webhook-provider.factory";
 import type { WebhookMessage } from "../common/webhook/webhook-provider.interface";
 import { EventsService } from "../events/events.service";
+import { computeAuditDiff } from "../common/audit-diff.util";
+import { OrganizationsAuditLogService } from "../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class WebhookSettingsService {
@@ -35,6 +37,9 @@ export class WebhookSettingsService {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   private mapToResponse(item: {
@@ -198,10 +203,43 @@ export class WebhookSettingsService {
       },
     });
 
+    await this.auditLog?.logOrg(
+      organizationId,
+      userId,
+      "WEBHOOK_CREATED",
+      "WEBHOOK",
+      {
+        webhookId: setting.id,
+        provider: setting.provider,
+        eventType: setting.eventType,
+      },
+      undefined,
+      {
+        targetId: setting.id,
+        targetLabel: `${setting.provider} (${setting.eventType})`,
+        changes: [
+          { field: "provider", before: null, after: setting.provider },
+          { field: "eventType", before: null, after: setting.eventType },
+          {
+            field: "isEnabled",
+            before: null,
+            after: Boolean(setting.isEnabled),
+          },
+          ...(encryptedSecret
+            ? [{ field: "secretToken", before: null, after: "[REDACTED]" }]
+            : []),
+        ],
+      },
+    );
+
     this.eventsService?.emit({
       type: "WEBHOOKS_CHANGED",
       organizationId,
       data: { webhookId: setting.id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId,
     });
 
     return this.mapToResponse(setting);
@@ -358,10 +396,66 @@ export class WebhookSettingsService {
       );
     }
 
+    const beforeAudit: Record<string, unknown> = {
+      eventType: existing.eventType,
+      provider: existing.provider,
+      chatId: existing.chatId ?? null,
+      isEnabled: Boolean(existing.isEnabled),
+    };
+    const afterAudit: Record<string, unknown> = {
+      eventType: updated.eventType,
+      provider: updated.provider,
+      chatId: updated.chatId ?? null,
+      isEnabled: Boolean(updated.isEnabled),
+    };
+    if (updatePayload.webhookUrl !== undefined) {
+      beforeAudit.webhookUrl = maskWebhookUrl(
+        (() => {
+          try {
+            return this.encryptionService.decrypt(existing.webhookUrl) || "";
+          } catch {
+            return existing.webhookUrl;
+          }
+        })(),
+        existing.provider as WebhookProviderType,
+      );
+      afterAudit.webhookUrl = this.mapToResponse(updated).webhookUrl;
+    }
+    if (updatePayload.secretToken !== undefined) {
+      beforeAudit.secretToken = existing.secretToken ?? null;
+      afterAudit.secretToken = updated.secretToken ?? null;
+    }
+
+    const webhookChanges = computeAuditDiff(beforeAudit, afterAudit, {
+      redactFields: ["secretToken"],
+    });
+
+    await this.auditLog?.logOrg(
+      organizationId,
+      userId,
+      "WEBHOOK_UPDATED",
+      "WEBHOOK",
+      {
+        webhookId: updated.id,
+        provider: updated.provider,
+        eventType: updated.eventType,
+      },
+      undefined,
+      {
+        targetId: updated.id,
+        targetLabel: `${updated.provider} (${updated.eventType})`,
+        changes: webhookChanges.length > 0 ? webhookChanges : null,
+      },
+    );
+
     this.eventsService?.emit({
       type: "WEBHOOKS_CHANGED",
       organizationId,
       data: { webhookId: updated.id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId,
     });
 
     return this.mapToResponse(updated);
@@ -370,6 +464,7 @@ export class WebhookSettingsService {
   async delete(
     id: string,
     organizationId: string,
+    userId?: string,
   ): Promise<{ success: boolean }> {
     if (!organizationId) {
       throw new AppForbiddenException(
@@ -401,10 +496,40 @@ export class WebhookSettingsService {
       where: { id },
     });
 
+    await this.auditLog?.logOrg(
+      organizationId,
+      userId || null,
+      "WEBHOOK_DELETED",
+      "WEBHOOK",
+      {
+        webhookId: id,
+        provider: existing.provider,
+        eventType: existing.eventType,
+      },
+      undefined,
+      {
+        targetId: id,
+        targetLabel: `${existing.provider} (${existing.eventType})`,
+        changes: [
+          { field: "provider", before: existing.provider, after: null },
+          { field: "eventType", before: existing.eventType, after: null },
+          {
+            field: "isEnabled",
+            before: Boolean(existing.isEnabled),
+            after: null,
+          },
+        ],
+      },
+    );
+
     this.eventsService?.emit({
       type: "WEBHOOKS_CHANGED",
       organizationId,
       data: { webhookId: id },
+    });
+    this.eventsService?.emit({
+      type: "AUDIT_LOGS_CHANGED",
+      organizationId,
     });
 
     return { success: true };

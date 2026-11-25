@@ -250,4 +250,46 @@ export class OrganizationsService implements OnModuleInit {
     }
     return this.auditLog.findAllOrg(org.id, filter);
   }
+
+  async exportAuditLogs(
+    userId: string,
+    filter: OrgAuditLogFilter = {},
+    format: "csv" | "json" = "csv",
+    activeOrgId?: string | null,
+  ) {
+    const org = await this.getMyOrg(userId, activeOrgId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.auditLog.exportOrgLogs(org.id, filter, format);
+  }
+
+  async getAuditLogStats(userId: string, activeOrgId?: string | null) {
+    const org = await this.getMyOrg(userId, activeOrgId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.auditLog.getOrgLogStats(org.id);
+  }
+
+  async updateAuditLogRetention(
+    userId: string,
+    retentionDays: number | null,
+    activeOrgId?: string | null,
+  ) {
+    const org = await this.getMyOrg(userId, activeOrgId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.auditLog.updateRetentionPolicy(org.id, userId, retentionDays);
+  }
 }

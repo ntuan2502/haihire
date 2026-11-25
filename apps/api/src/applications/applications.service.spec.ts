@@ -4,11 +4,20 @@ import {
   createMockPrismaService,
 } from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ApplicationsService } from "./applications.service";
+import {
+  ApplicationsService,
+  ApplicationsQueryService,
+  ApplicationsSagaService,
+  ApplicationsStageService,
+} from "./applications.service";
 import { NotFoundException } from "@nestjs/common";
 import { ApplicationStage } from "./dto/update-stage.dto";
 import { AppConflictException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
+} from "@haihire/shared";
 
 describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
   let service: ApplicationsService;
@@ -1295,6 +1304,103 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(single.candidateEmail).toBe("alice@gmail.com");
       expect(single.candidatePhone).toBe("0901234567");
       expect(single.resumeUrl).toBe("https://s3.local/resumes/alice.pdf");
+    });
+
+    it("records event-envelope audit logs on application create, stage transition, and delete", async () => {
+      const mockAuditLog = { logOrg: vi.fn().mockResolvedValue({}) };
+      const querySvc = new ApplicationsQueryService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        undefined,
+        mockAuditLog as never,
+      );
+      const sagaSvc = new ApplicationsSagaService(
+        mockPrismaService as never,
+        mockMinioService as never,
+        mockActivitiesService as never,
+        mockEmailService as never,
+        undefined,
+        querySvc,
+        undefined,
+        undefined,
+        undefined,
+        mockAuditLog as never,
+      );
+      const stageSvc = new ApplicationsStageService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        mockEmailService as never,
+        querySvc,
+        undefined,
+        undefined,
+        mockAuditLog as never,
+      );
+
+      const created = await sagaSvc.create(
+        {
+          jobId: "job-org1-b",
+          candidateId: "cand-1",
+        },
+        undefined,
+        { id: "rec-1", role: "RECRUITER", organizationId: "org-1" },
+      );
+
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "rec-1",
+        AUDIT_ACTIONS.APPLICATION_CREATED,
+        AUDIT_RESOURCES.APPLICATION,
+        expect.objectContaining({
+          jobId: "job-org1-b",
+          candidateId: "cand-1",
+          stage: "APPLIED",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          targetLabel: expect.stringContaining("Backend Developer"),
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await stageSvc.updateStage(
+        created.id,
+        { stage: ApplicationStage.SCREENING },
+        "org-1",
+        { id: "rec-1", name: "Recruiter", role: "RECRUITER" },
+      );
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "rec-1",
+        AUDIT_ACTIONS.APPLICATION_STAGE_CHANGED,
+        AUDIT_RESOURCES.APPLICATION,
+        expect.objectContaining({
+          oldStage: "APPLIED",
+          newStage: "SCREENING",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+          changes: [{ field: "stage", before: "APPLIED", after: "SCREENING" }],
+        }),
+      );
+
+      mockAuditLog.logOrg.mockClear();
+      await querySvc.remove(created.id, "org-1", "rec-2");
+      expect(mockAuditLog.logOrg).toHaveBeenCalledWith(
+        "org-1",
+        "rec-2",
+        AUDIT_ACTIONS.APPLICATION_DELETED,
+        AUDIT_RESOURCES.APPLICATION,
+        expect.objectContaining({
+          jobId: "job-org1-b",
+          candidateId: "cand-1",
+        }),
+        undefined,
+        expect.objectContaining({
+          targetId: created.id,
+        }),
+      );
     });
   });
 });

@@ -621,6 +621,16 @@ describe("OrganizationsCoreService", () => {
         "ORG_LOGO_UPDATED",
         "ORGANIZATION",
         expect.objectContaining({ mimeType: "image/png" }),
+        undefined,
+        expect.objectContaining({
+          targetId: "org-1",
+          changes: [
+            expect.objectContaining({
+              field: "logoObjectKey",
+              after: "tenants/org-1/logos/new.png",
+            }),
+          ],
+        }),
       );
       expect(mockEvents.emit).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -686,6 +696,17 @@ describe("OrganizationsCoreService", () => {
         "ORG_LOGO_REMOVED",
         "ORGANIZATION",
         null,
+        undefined,
+        expect.objectContaining({
+          targetId: "org-1",
+          changes: [
+            expect.objectContaining({
+              field: "logoObjectKey",
+              before: "tenants/org-1/logos/current.png",
+              after: null,
+            }),
+          ],
+        }),
       );
       expect(mockEvents.emit).toHaveBeenCalledWith(
         expect.objectContaining({ type: "ORG_UPDATED" }),

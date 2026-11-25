@@ -7,6 +7,7 @@ import { JwtStrategy } from "./jwt.strategy";
 
 import { PermissionResolverService } from "./permission-resolver.service";
 import { RolesGuard } from "./roles.guard";
+import { UserSecurityService } from "./user-security.service";
 import { MinioModule } from "../minio/minio.module";
 import { env } from "../config/env";
 
@@ -24,13 +25,20 @@ import { env } from "../config/env";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PermissionResolverService, RolesGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    PermissionResolverService,
+    RolesGuard,
+    UserSecurityService,
+  ],
   exports: [
     AuthService,
     JwtModule,
     PassportModule,
     PermissionResolverService,
     RolesGuard,
+    UserSecurityService,
   ],
 })
 export class AuthModule {}

@@ -144,6 +144,43 @@ export class OrganizationsMembersService {
     }));
   }
 
+  private async resolveMemberLabel(
+    client: Pick<PrismaService, "user">,
+    userId: string,
+    fallback?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      email?: string | null;
+    },
+  ): Promise<string> {
+    if (
+      fallback &&
+      (fallback.firstName || fallback.lastName || fallback.email)
+    ) {
+      return (
+        formatUserDisplayName(fallback, "LAST_FIRST") ||
+        fallback.email ||
+        userId
+      );
+    }
+    if (typeof client.user?.findFirst === "function") {
+      try {
+        const found = await client.user.findFirst({
+          where: { id: userId },
+          select: { firstName: true, lastName: true, email: true },
+        });
+        if (found) {
+          return (
+            formatUserDisplayName(found, "LAST_FIRST") || found.email || userId
+          );
+        }
+      } catch {
+        // Fallback to userId if lookup unavailable in isolated mocks
+      }
+    }
+    return userId;
+  }
+
   private async resolveTargetOrgId(
     client: Pick<PrismaService, "organizationMember" | "organization" | "user">,
     userId: string,
@@ -445,12 +482,29 @@ export class OrganizationsMembersService {
       data: { memberId: targetMemberId, role: newRole },
     });
 
+    const memberTargetLabel = await this.resolveMemberLabel(
+      this.prisma,
+      targetMemberId,
+    );
+
     await this.auditLog?.logOrg(
       targetOrgId,
       callerId,
       "MEMBER_ROLE_CHANGED",
       "MEMBER",
       { memberId: targetMemberId, oldRole, newRole },
+      undefined,
+      {
+        targetId: targetMemberId,
+        targetLabel: memberTargetLabel,
+        changes: [
+          {
+            field: "role",
+            before: oldRole,
+            after: newRole,
+          },
+        ],
+      },
     );
 
     this.eventsService?.emit({
@@ -473,7 +527,7 @@ export class OrganizationsMembersService {
     return runInTransaction(this.prisma, async (tx) => {
       const caller = await tx.user.findFirst({
         where: { id: callerId },
-        select: { id: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       });
 
       const resolved = caller
@@ -555,17 +609,18 @@ export class OrganizationsMembersService {
         );
       }
 
+      const targetMembership =
+        typeof tx.organizationMember?.findFirst === "function"
+          ? await tx.organizationMember.findFirst({
+              where: {
+                organizationId: targetOrgId,
+                userId: targetMemberId,
+              },
+              select: { role: true },
+            })
+          : null;
+
       if (!isCallerOwner && effectiveCallerRole !== "ADMIN") {
-        const targetMembership =
-          typeof tx.organizationMember?.findFirst === "function"
-            ? await tx.organizationMember.findFirst({
-                where: {
-                  organizationId: targetOrgId,
-                  userId: targetMemberId,
-                },
-                select: { role: true },
-              })
-            : null;
         if (targetMembership?.role === "ADMIN") {
           throw new AppForbiddenException(
             APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
@@ -573,6 +628,11 @@ export class OrganizationsMembersService {
           );
         }
       }
+
+      const memberTargetLabel = await this.resolveMemberLabel(
+        tx,
+        targetMemberId,
+      );
 
       // Remove from OrganizationMember
       await tx.organizationMember.deleteMany({
@@ -597,6 +657,17 @@ export class OrganizationsMembersService {
         "MEMBER",
         { memberId: targetMemberId },
         tx as unknown as PrismaService,
+        {
+          targetId: targetMemberId,
+          targetLabel: memberTargetLabel,
+          changes: [
+            {
+              field: "membership",
+              before: targetMembership?.role ?? "MEMBER",
+              after: null,
+            },
+          ],
+        },
       );
 
       // Broadcast SSE event
@@ -626,7 +697,7 @@ export class OrganizationsMembersService {
     return runInTransaction(this.prisma, async (tx) => {
       const caller = await tx.user.findFirst({
         where: { id: callerId },
-        select: { id: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       });
 
       const resolved = caller
@@ -676,6 +747,21 @@ export class OrganizationsMembersService {
         );
       }
 
+      const callerMembership =
+        typeof tx.organizationMember?.findFirst === "function"
+          ? await tx.organizationMember.findFirst({
+              where: { organizationId: targetOrgId, userId: callerId },
+              select: { role: true },
+            })
+          : null;
+      const callerRole =
+        callerMembership?.role || resolved.legacyRole || "MEMBER";
+      const callerTargetLabel = await this.resolveMemberLabel(
+        tx,
+        caller.id,
+        caller,
+      );
+
       const deleted = await tx.organizationMember.deleteMany({
         where: {
           organizationId: targetOrgId,
@@ -723,6 +809,17 @@ export class OrganizationsMembersService {
         "MEMBER",
         { memberId: callerId },
         tx as unknown as PrismaService,
+        {
+          targetId: caller.id,
+          targetLabel: callerTargetLabel,
+          changes: [
+            {
+              field: "membership",
+              before: callerRole,
+              after: null,
+            },
+          ],
+        },
       );
 
       this.eventsService?.emit({

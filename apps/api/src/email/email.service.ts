@@ -94,8 +94,14 @@ export class EmailService {
     organizationId: string | undefined,
     dto: CreateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
-    return this.templates.createTemplate(organizationId, dto, userOrgId);
+    return this.templates.createTemplate(
+      organizationId,
+      dto,
+      userOrgId,
+      actorId,
+    );
   }
 
   async updateTemplate(
@@ -103,12 +109,14 @@ export class EmailService {
     idOrType: string,
     dto: UpdateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
     return this.templates.updateTemplate(
       organizationId,
       idOrType,
       dto,
       userOrgId,
+      actorId,
     );
   }
 
@@ -117,16 +125,29 @@ export class EmailService {
     id: string,
     dto?: DuplicateEmailTemplateDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailTemplate> {
-    return this.templates.duplicateTemplate(organizationId, id, dto, userOrgId);
+    return this.templates.duplicateTemplate(
+      organizationId,
+      id,
+      dto,
+      userOrgId,
+      actorId,
+    );
   }
 
   async deleteTemplate(
     organizationId: string | undefined,
     id: string,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<{ deleted: true; id: string }> {
-    return this.templates.deleteTemplate(organizationId, id, userOrgId);
+    return this.templates.deleteTemplate(
+      organizationId,
+      id,
+      userOrgId,
+      actorId,
+    );
   }
 
   async getFlows(
@@ -144,11 +165,18 @@ export class EmailService {
     flowKey: string,
     dto: UpdateEmailFlowDto,
     userOrgId?: string | null,
+    actorId?: string,
   ): Promise<EnrichedEmailFlowConfig> {
     if (!this.flows) {
       throw new Error("EmailFlowsService is not initialized");
     }
-    return this.flows.updateFlow(organizationId, flowKey, dto, userOrgId);
+    return this.flows.updateFlow(
+      organizationId,
+      flowKey,
+      dto,
+      userOrgId,
+      actorId,
+    );
   }
 
   async resolveFlowTemplate(
@@ -188,8 +216,14 @@ export class EmailService {
     organizationId: string | undefined,
     dto: UpdateEmailSettingDto,
     userOrgId?: string | null,
+    actorId?: string,
   ) {
-    return this.settings.updateSettings(organizationId, dto, userOrgId);
+    return this.settings.updateSettings(
+      organizationId,
+      dto,
+      userOrgId,
+      actorId,
+    );
   }
 
   async sendEmail(

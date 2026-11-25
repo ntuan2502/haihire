@@ -34,6 +34,7 @@ describe("OrganizationsController", () => {
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
     getAuditLogs: vi.fn(),
+    exportAuditLogs: vi.fn(),
     uploadMyOrgLogo: vi.fn(),
     deleteMyOrgLogo: vi.fn(),
     preparePublicOrgLogo: vi.fn(),
@@ -588,6 +589,52 @@ describe("OrganizationsController", () => {
 
     it("rejects regular MEMBER without org:view_audit_log -> 403 Forbidden", () => {
       const context = createMockContext(memberReq, controller.getAuditLogs);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+  });
+
+  describe("GET /organizations/my/audit-log/export", () => {
+    it("streams CSV/JSON export headers and delegates filtered export to service", async () => {
+      mockService.exportAuditLogs.mockResolvedValue({
+        filename: "audit-log-2026-11-25.csv",
+        mimeType: "text/csv; charset=utf-8",
+        content: "id,action\nlog-1,ORG_UPDATED",
+      });
+
+      const mockRes = {
+        setHeader: vi.fn(),
+        send: vi.fn(),
+      };
+
+      await controller.exportAuditLogs(
+        ownerReq,
+        { action: "ORG_UPDATED", format: "csv" },
+        mockRes as never,
+      );
+
+      expect(service.exportAuditLogs).toHaveBeenCalledWith(
+        "user-owner",
+        expect.objectContaining({ action: "ORG_UPDATED" }),
+        "csv",
+        "org-1",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "text/csv; charset=utf-8",
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        'attachment; filename="audit-log-2026-11-25.csv"',
+      );
+      expect(mockRes.send).toHaveBeenCalledWith(
+        Buffer.from("id,action\nlog-1,ORG_UPDATED", "utf8"),
+      );
+    });
+
+    it("rejects regular MEMBER without org:view_audit_log -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.exportAuditLogs);
       expect(() => rolesGuard.canActivate(context)).toThrow(
         AppForbiddenException,
       );

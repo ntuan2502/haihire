@@ -1,6 +1,9 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  AUDIT_ACTIONS,
+  AUDIT_RESOURCES,
+  type AuditChangeEntry,
   type EmailFlowKey,
   type EmailTemplateType,
   formatCandidateDisplayName,
@@ -20,6 +23,7 @@ import { UpdateStageDto } from "../dto/update-stage.dto";
 import { EventsService } from "../../events/events.service";
 import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { ApplicationsQueryService } from "./applications-query.service";
+import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class ApplicationsStageService {
@@ -41,6 +45,9 @@ export class ApplicationsStageService {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -320,6 +327,54 @@ export class ApplicationsStageService {
             applicationId: updated.id,
           },
         });
+      }
+
+      if (oldStage !== nextStage) {
+        const changes: AuditChangeEntry[] = [
+          {
+            field: "stage",
+            before: oldStage,
+            after: nextStage,
+          },
+        ];
+        const beforeReason =
+          (existing as { rejectionReason?: string | null }).rejectionReason ??
+          null;
+        const afterReason =
+          (updated as { rejectionReason?: string | null }).rejectionReason ??
+          null;
+        if (beforeReason !== afterReason) {
+          changes.push({
+            field: "rejectionReason",
+            before: beforeReason,
+            after: afterReason,
+          });
+        }
+        const candidateLabel =
+          updated.candidateName || updated.candidate?.name || "Candidate";
+        const jobLabel = updated.job?.title || "Job";
+        try {
+          await this.auditLog?.logOrg(
+            orgId,
+            currentUser?.id ?? null,
+            AUDIT_ACTIONS.APPLICATION_STAGE_CHANGED,
+            AUDIT_RESOURCES.APPLICATION,
+            {
+              oldStage,
+              newStage: nextStage,
+              jobTitle: jobLabel,
+              candidateName: candidateLabel,
+            },
+            undefined,
+            {
+              targetId: updated.id,
+              targetLabel: `${candidateLabel} — ${jobLabel}`,
+              changes,
+            },
+          );
+        } catch {
+          // Fail-open audit logging
+        }
       }
     }
 

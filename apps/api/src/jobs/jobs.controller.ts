@@ -149,9 +149,14 @@ export class JobsController {
   update(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body(DtoPipe(updateJobSchema)) dto: UpdateJobSchema,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.jobsService.update(id, dto, req?.user?.organizationId);
+    return this.jobsService.update(
+      id,
+      dto,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Delete(":id")
@@ -159,9 +164,13 @@ export class JobsController {
   @RequirePermission("job:delete")
   remove(
     @Param("id", new ParseUUIDPipe()) id: string,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.jobsService.remove(id, req?.user?.organizationId);
+    return this.jobsService.remove(
+      id,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Get(":id/stages")

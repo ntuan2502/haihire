@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 
+import { CommonModule } from "../common/common.module";
 import { ActivitiesModule } from "../activities/activities.module";
 import { WebhookModule } from "../common/webhook/webhook.module";
 import { EncryptionService } from "../common/encryption.service";
@@ -21,6 +22,7 @@ import {
 
 @Module({
   imports: [
+    CommonModule,
     ActivitiesModule,
     WebhookModule,
     BullModule.registerQueue(

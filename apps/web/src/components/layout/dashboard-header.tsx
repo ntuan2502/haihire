@@ -157,6 +157,27 @@ export function buildWorkspaceBreadcrumbs(
       ];
     }
 
+    if (section === "members") {
+      if (segments[2] === "invitations") {
+        return [
+          { label: t("nav.settings"), href: "/settings" },
+          { label: t("settings.tabs.members"), href: "/settings/members" },
+          { label: t("members.tabEmailInvites") },
+        ];
+      }
+      if (segments[2] === "links") {
+        return [
+          { label: t("nav.settings"), href: "/settings" },
+          { label: t("settings.tabs.members"), href: "/settings/members" },
+          { label: t("members.tabShareableLinks") },
+        ];
+      }
+      return [
+        { label: t("nav.settings"), href: "/settings" },
+        { label: t("settings.tabs.members") },
+      ];
+    }
+
     const sectionKey = section ? SETTINGS_SEGMENT_KEYS[section] : undefined;
     if (sectionKey) {
       return [

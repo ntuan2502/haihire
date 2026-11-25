@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 import { createMockPrismaService } from "../../test/helpers/prisma-composer-mock";
+import { correlationStorage } from "../../common/middleware/correlation-id.middleware";
 
 describe("OrganizationsAuditLogService", () => {
   let service: OrganizationsAuditLogService;
@@ -22,6 +23,12 @@ describe("OrganizationsAuditLogService", () => {
     metadata: string | null;
     createdAt: string;
   }>;
+  let mockOrgs: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    auditLogRetentionDays: number | null;
+  }>;
   let mockUsers: Array<{
     id: string;
     name: string;
@@ -33,6 +40,20 @@ describe("OrganizationsAuditLogService", () => {
   beforeEach(() => {
     mockOrgLogs = [];
     mockPlatformLogs = [];
+    mockOrgs = [
+      {
+        id: "org-1",
+        name: "Acme Corp",
+        slug: "acme-corp",
+        auditLogRetentionDays: 90,
+      },
+      {
+        id: "org-2",
+        name: "Beta Corp",
+        slug: "beta-corp",
+        auditLogRetentionDays: null,
+      },
+    ];
     mockUsers = [
       {
         id: "user-1",
@@ -46,6 +67,7 @@ describe("OrganizationsAuditLogService", () => {
     const mockPrisma = createMockPrismaService({
       organizationAuditLog: mockOrgLogs,
       platformAuditLog: mockPlatformLogs,
+      organization: mockOrgs,
       user: mockUsers,
     });
 
@@ -82,6 +104,43 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.actorId).toBeNull();
       expect(result.metadata).toBeNull();
       expect(mockOrgLogs).toHaveLength(1);
+    });
+
+    it("auto-captures requestId, ipAddress, userAgent from correlationStorage and stores event envelope fields", async () => {
+      const result = await correlationStorage.run(
+        {
+          requestId: "req-xyz-789",
+          ipAddress: "198.51.100.42",
+          userAgent: "Mozilla/5.0 Chrome/131.0.0.0",
+        },
+        () =>
+          service.logOrg(
+            "org-1",
+            "user-1",
+            "INVITE_CREATED",
+            "INVITATION",
+            { role: "RECRUITER" },
+            undefined,
+            {
+              targetId: "inv-1",
+              targetLabel: "candidate@example.com",
+              changes: [
+                {
+                  field: "invitedEmail",
+                  before: null,
+                  after: "candidate@example.com",
+                },
+              ],
+            },
+          ),
+      );
+
+      expect(result.requestId).toBe("req-xyz-789");
+      expect(result.ipAddress).toBe("198.51.100.42");
+      expect(result.userAgent).toBe("Mozilla/5.0 Chrome/131.0.0.0");
+      expect(result.targetId).toBe("inv-1");
+      expect(result.targetLabel).toBe("candidate@example.com");
+      expect(result.actorEmailSnapshot).toBe("admin@test.com");
     });
   });
 
@@ -140,6 +199,88 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.total).toBe(1);
       expect(result.data[0].action).toBe("MEMBER_ROLE_CHANGED");
     });
+
+    it("filters logs by actorId, targetId, search, and date range, with actor snapshot fallback", async () => {
+      await service.logOrg(
+        "org-1",
+        "former-user",
+        "WEBHOOK_CREATED",
+        "WEBHOOK",
+        { provider: "SLACK" },
+        undefined,
+        {
+          targetId: "wh-1",
+          targetLabel: "=HYPERLINK(bad)",
+          actorNameSnapshot: "Former Admin",
+          actorEmailSnapshot: "former@example.com",
+          changes: [{ field: "provider", before: null, after: "DISCORD" }],
+        },
+      );
+
+      const searchMatch = await service.findAllOrg("org-1", {
+        search: "former@example.com",
+        targetId: "wh-1",
+      });
+
+      expect(searchMatch.total).toBe(1);
+      expect(searchMatch.data[0].actor?.name).toBe("Former Admin");
+      expect(searchMatch.data[0].actor?.email).toBe("former@example.com");
+      expect(searchMatch.data[0].changes).toEqual([
+        { field: "provider", before: null, after: "DISCORD" },
+      ]);
+
+      const futureCutoff = new Date(Date.now() + 86_400_000).toISOString();
+      const emptyFuture = await service.findAllOrg("org-1", {
+        from: futureCutoff,
+      });
+      expect(emptyFuture.total).toBe(0);
+    });
+  });
+
+  describe("exportOrgLogs", () => {
+    it("exports filtered CSV with UTF-8 BOM, CRLF line endings, formula-injection neutralization, and clean JSON format", async () => {
+      await service.logOrg(
+        "org-1",
+        null,
+        "ORG_UPDATED",
+        "ORGANIZATION",
+        null,
+        undefined,
+        {
+          targetId: "org-1",
+          targetLabel: "=SUM(1,2)",
+          actorNameSnapshot: "Nguyễn Anh Tuấn",
+          changes: [{ field: "name", before: "Cũ", after: "Mới" }],
+        },
+      );
+
+      const csv = await service.exportOrgLogs(
+        "org-1",
+        { action: "ORG_UPDATED" },
+        "csv",
+      );
+      expect(csv.mimeType).toContain("text/csv; charset=utf-8");
+      expect(csv.filename).toMatch(/^audit-log-\d{4}-\d{2}-\d{2}\.csv$/);
+      expect(csv.content.startsWith("\uFEFF")).toBe(true);
+      expect(csv.content).toContain("\r\n");
+      expect(csv.content).toContain("Nguyễn Anh Tuấn");
+      expect(csv.content).toContain('"\'=SUM(1,2)"');
+
+      const json = await service.exportOrgLogs(
+        "org-1",
+        { action: "ORG_UPDATED" },
+        "json",
+      );
+      expect(json.mimeType).toContain("application/json; charset=utf-8");
+      expect(json.content.startsWith("\uFEFF")).toBe(false);
+      const parsed = JSON.parse(json.content) as Array<{
+        action: string;
+        actorNameSnapshot?: string;
+      }>;
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].action).toBe("ORG_UPDATED");
+      expect(parsed[0].actorNameSnapshot).toBe("Nguyễn Anh Tuấn");
+    });
   });
 
   describe("findAllPlatform", () => {
@@ -164,6 +305,84 @@ describe("OrganizationsAuditLogService", () => {
       expect(result.total).toBe(1);
       expect(result.data[0].organizationId).toBe("org-1");
       expect(result.data[0].metadata).toEqual({ name: "Org 1" });
+    });
+  });
+
+  describe("stats, retention policy, and cleanup", () => {
+    it("getOrgLogStats returns 24h count, 7d sensitive changes, and configured retentionDays", async () => {
+      await service.logOrg(
+        "org-1",
+        "user-1",
+        "ROLE_PERMISSIONS_UPDATED",
+        "ROLE_PERMISSIONS",
+      );
+      await service.logOrg("org-1", "user-1", "JOB_CREATED", "JOB");
+
+      const stats = await service.getOrgLogStats("org-1");
+
+      expect(stats.total24h).toBe(2);
+      expect(stats.sensitive7d).toBe(1);
+      expect(stats.retentionDays).toBe(90);
+    });
+
+    it("updateRetentionPolicy updates org retention and records ORG_AUDIT_RETENTION_UPDATED diff", async () => {
+      const updated = await service.updateRetentionPolicy(
+        "org-1",
+        "user-1",
+        180,
+      );
+
+      expect(updated).toEqual({ retentionDays: 180 });
+      expect(mockOrgs[0].auditLogRetentionDays).toBe(180);
+      expect(mockOrgLogs).toHaveLength(1);
+      expect(mockOrgLogs[0].action).toBe("ORG_AUDIT_RETENTION_UPDATED");
+    });
+
+    it("purgeExpiredOrgLogs deletes logs older than configured retentionDays", async () => {
+      const oldDate = new Date(
+        Date.now() - 120 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const recentDate = new Date(
+        Date.now() - 5 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      mockOrgLogs.push(
+        {
+          id: "old-log",
+          organizationId: "org-1",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: oldDate,
+        },
+        {
+          id: "recent-log",
+          organizationId: "org-1",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: recentDate,
+        },
+        {
+          id: "unlimited-old-log",
+          organizationId: "org-2",
+          actorId: "user-1",
+          action: "JOB_CREATED",
+          resource: "JOB",
+          metadata: null,
+          createdAt: oldDate,
+        },
+      );
+
+      const res = await service.purgeExpiredOrgLogs();
+
+      expect(res.deletedCount).toBe(1);
+      expect(mockOrgLogs.map((l) => l.id)).toEqual([
+        "recent-log",
+        "unlimited-old-log",
+      ]);
     });
   });
 });

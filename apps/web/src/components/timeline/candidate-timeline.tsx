@@ -18,12 +18,22 @@ import { type ActivityEvent } from "@/lib/email-templates";
 import { getOrgRoleLabel } from "@/lib/roles";
 import { formatDate, formatTime } from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
 import { Button } from "@/components/ui/button";
+import { ApplicationSectionCard } from "@/components/applications/detail/application-section-card";
 
 import {
   useApplicationActivities,
   useCandidateActivities,
 } from "@/hooks/use-queries";
+
+type TimelineFilter = "ALL" | "EMAIL" | "INTERVIEW" | "STAGE";
+
+function getTimelineFilterChipClass(isActive: boolean): string {
+  return isActive
+    ? "px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer bg-primary text-primary-foreground shadow-xs"
+    : "px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+}
 
 interface CandidateTimelineProps {
   candidateId?: string;
@@ -42,7 +52,11 @@ export function CandidateTimeline({
   initialEvents,
   className = "",
 }: CandidateTimelineProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const locOverrides = isConfigured
+    ? { ...localization, defaultLanguage: locale }
+    : { defaultLanguage: locale };
 
   const { data: appActivities } = useApplicationActivities(applicationId, {
     limit: 100,
@@ -53,9 +67,7 @@ export function CandidateTimeline({
   );
   const remoteActivities = applicationId ? appActivities : candidateActivities;
 
-  const [filter, setFilter] = useState<"ALL" | "EMAIL" | "INTERVIEW" | "STAGE">(
-    "ALL",
-  );
+  const [filter, setFilter] = useState<TimelineFilter>("ALL");
   const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(
     new Set(),
   );
@@ -161,9 +173,11 @@ export function CandidateTimeline({
 
     const scheduledIso = meta.scheduledAt ? String(meta.scheduledAt) : "";
     const resolvedDate =
-      (meta.date as string) || (scheduledIso ? formatDate(scheduledIso) : "");
+      (meta.date as string) ||
+      (scheduledIso ? formatDate(scheduledIso, "numeric", locOverrides) : "");
     const resolvedTime =
-      (meta.time as string) || (scheduledIso ? formatTime(scheduledIso) : "");
+      (meta.time as string) ||
+      (scheduledIso ? formatTime(scheduledIso, locOverrides) : "");
 
     const interpolationParams: Record<string, string | number> = {
       userName:
@@ -204,178 +218,165 @@ export function CandidateTimeline({
     };
   };
 
+  const filterChips = (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <button
+        type="button"
+        onClick={() => setFilter("ALL")}
+        className={getTimelineFilterChipClass(filter === "ALL")}
+      >
+        {t("timeline.allEvents")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter("EMAIL")}
+        className={getTimelineFilterChipClass(filter === "EMAIL")}
+      >
+        {t("timeline.filterEmails")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter("INTERVIEW")}
+        className={getTimelineFilterChipClass(filter === "INTERVIEW")}
+      >
+        {t("timeline.filterInterviews")}
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter("STAGE")}
+        className={getTimelineFilterChipClass(filter === "STAGE")}
+      >
+        {t("timeline.filterStages")}
+      </button>
+    </div>
+  );
+
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Header & Filter pills */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-border">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span>{t("timeline.title")}</span>
-          </h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+    <ApplicationSectionCard
+      icon={Clock}
+      title={t("timeline.title")}
+      statusMeta={
+        <span className="text-xs text-muted-foreground">
+          {filteredEvents.length > 0
+            ? t("timeline.eventsCount", { count: filteredEvents.length })
+            : t("timeline.noEvents")}
+        </span>
+      }
+      headerActions={filterChips}
+      collapsible
+      bodyDivider={filteredEvents.length === 0}
+      testId="candidate-timeline-section"
+      className={className}
+    >
+      {filteredEvents.length === 0 ? (
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          {t("timeline.noEventsDesc")}
+        </p>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
             {t("timeline.subtitle")}
           </p>
-        </div>
-
-        {/* Filter Chips */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setFilter("ALL")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-              filter === "ALL"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {t("timeline.allEvents")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("EMAIL")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-              filter === "EMAIL"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {t("timeline.filterEmails")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("INTERVIEW")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-              filter === "INTERVIEW"
-                ? "bg-amber-600 text-white shadow-xs"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {t("timeline.filterInterviews")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("STAGE")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-              filter === "STAGE"
-                ? "bg-purple-600 text-white shadow-xs"
-                : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            }`}
-          >
-            {t("timeline.filterStages")}
-          </button>
-        </div>
-      </div>
-
-      {/* Events List */}
-      {filteredEvents.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card text-card-foreground p-8 text-center shadow-xs space-y-2">
-          <Clock className="h-8 w-8 text-muted-foreground mx-auto" />
-          <h4 className="text-xs font-semibold text-foreground">
-            {t("timeline.noEvents")}
-          </h4>
-          <p className="text-[11px] text-muted-foreground">
-            {t("timeline.noEventsDesc")}
-          </p>
-        </div>
-      ) : (
-        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
-          {filteredEvents.map((event) => {
-            const isExpanded = expandedEventIds.has(event.id);
-            const { title, description } = getLocalizedTimelineEvent(event);
-            return (
-              <div key={event.id} className="relative group">
-                {/* Node icon */}
-                <div className="absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card ring-4 ring-background border border-border shadow-2xs">
-                  {getEventIcon(event.type)}
-                </div>
-
-                {/* Event Card */}
-                <div className="rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs hover:border-ring/40 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${getBadgeClass(
-                            event.type,
-                          )}`}
-                        >
-                          {title}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {event.timestamp ||
-                            ((event as { createdAt?: string }).createdAt
-                              ? formatDate(
-                                  (event as { createdAt?: string }).createdAt,
-                                )
-                              : "")}
-                        </span>
-                      </div>
-                      <p className="text-xs text-foreground/90 leading-relaxed">
-                        {description}
-                      </p>
-                    </div>
-
-                    {event.type === "EMAIL_SENT" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleExpand(event.id)}
-                        className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1"
-                      >
-                        <span>
-                          {isExpanded
-                            ? t("timeline.hideEmailBody")
-                            : t("timeline.viewEmailBody")}
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp className="h-3 w-3" />
-                        ) : (
-                          <ChevronDown className="h-3 w-3" />
-                        )}
-                      </Button>
-                    )}
+          <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
+            {filteredEvents.map((event) => {
+              const isExpanded = expandedEventIds.has(event.id);
+              const { title, description } = getLocalizedTimelineEvent(event);
+              return (
+                <div key={event.id} className="relative group">
+                  {/* Node icon */}
+                  <div className="absolute -left-6 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card ring-4 ring-card border border-border shadow-2xs">
+                    {getEventIcon(event.type)}
                   </div>
 
-                  {/* Expandable Preview for Email body or details */}
-                  {isExpanded && event.type === "EMAIL_SENT" && (
-                    <div className="mt-3 pt-3 border-t border-border animate-in fade-in duration-150">
-                      <div className="rounded-lg bg-muted/40 p-3 border border-border text-xs text-foreground/90 space-y-2 font-mono">
-                        <div className="flex items-center gap-2 text-[11px] font-sans text-muted-foreground">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>{t("timeline.deliveredViaProvider")}</span>
+                  {/* Event Card */}
+                  <div className="rounded-xl border border-border bg-background/40 text-card-foreground p-4 hover:border-ring/40 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${getBadgeClass(
+                              event.type,
+                            )}`}
+                          >
+                            {title}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {event.timestamp ||
+                              ((event as { createdAt?: string }).createdAt
+                                ? formatDate(
+                                    (event as { createdAt?: string }).createdAt,
+                                    "numeric",
+                                    locOverrides,
+                                  )
+                                : "")}
+                          </span>
                         </div>
-                        <p className="text-xs text-foreground">
-                          {(event.metadata?.body as string) ||
-                            (event.metadata?.subject as string) ||
-                            event.description ||
-                            t("timeline.noEmailPreview")}
+                        <p className="text-xs text-foreground/90 leading-relaxed">
+                          {description}
                         </p>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Actor Footer */}
-                  <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <User className="h-3 w-3 text-muted-foreground" />
-                      <span>{t("timeline.performedBy")}:</span>
-                      <strong className="font-semibold text-foreground">
-                        {event.actorName}
-                      </strong>
-                      {event.actorRole && (
-                        <span className="text-[10px] text-muted-foreground">
-                          ({getOrgRoleLabel(event.actorRole, t)})
-                        </span>
+                      {event.type === "EMAIL_SENT" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleExpand(event.id)}
+                          className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <span>
+                            {isExpanded
+                              ? t("timeline.hideEmailBody")
+                              : t("timeline.viewEmailBody")}
+                          </span>
+                          {isExpanded ? (
+                            <ChevronUp className="h-3 w-3" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3" />
+                          )}
+                        </Button>
                       )}
-                    </span>
+                    </div>
+
+                    {/* Expandable Preview for Email body or details */}
+                    {isExpanded && event.type === "EMAIL_SENT" && (
+                      <div className="mt-3 pt-3 border-t border-border animate-in fade-in duration-150">
+                        <div className="rounded-lg bg-muted/40 p-3 border border-border text-xs text-foreground/90 space-y-2 font-mono">
+                          <div className="flex items-center gap-2 text-[11px] font-sans text-muted-foreground">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>{t("timeline.deliveredViaProvider")}</span>
+                          </div>
+                          <p className="text-xs text-foreground">
+                            {(event.metadata?.body as string) ||
+                              (event.metadata?.subject as string) ||
+                              event.description ||
+                              t("timeline.noEmailPreview")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actor Footer */}
+                    <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span>{t("timeline.performedBy")}:</span>
+                        <strong className="font-semibold text-foreground">
+                          {event.actorName}
+                        </strong>
+                        {event.actorRole && (
+                          <span className="text-[10px] text-muted-foreground">
+                            ({getOrgRoleLabel(event.actorRole, t)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
-    </div>
+    </ApplicationSectionCard>
   );
 }

@@ -76,6 +76,9 @@ function JobTablePageContent() {
             stage: appStage,
             applicationId: appId,
           });
+          if (urlState.drawerTab && urlState.drawerTab !== "overview") {
+            query.set("tab", urlState.drawerTab);
+          }
           router.push(`/jobs/${jobId}/pipeline?${query.toString()}`);
         }}
       />

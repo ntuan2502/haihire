@@ -10,6 +10,7 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "applications.formCard.title": "Application Form",
         "applications.formCard.itemsCount": `${params?.count ?? 0} items`,
+        "applications.formCard.emptyBadge": "No data",
         "applications.formCard.answerLabel": "Candidate Response",
         "applications.formCard.emptyState":
           "No cover letter or screening answers were submitted for this application.",
@@ -94,11 +95,19 @@ describe("ApplicationFormCard", () => {
 
     render(<ApplicationFormCard application={emptyApp} showEmptyState />);
     expect(screen.getByText("Application Form")).toBeInTheDocument();
+    expect(screen.getByText("No data")).toBeInTheDocument();
     expect(
       screen.getByText(
         "No cover letter or screening answers were submitted for this application.",
       ),
     ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+    expect(
+      screen.queryByText(
+        "No cover letter or screening answers were submitted for this application.",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("renders collapsed by default and supports expand/collapse and file actions", () => {

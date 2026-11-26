@@ -857,6 +857,8 @@ export interface TranslationSchema {
     viewInPipeline: string;
     deleteApplication: string;
     documents: string;
+    documentsCount: string;
+    noDocumentsBadge: string;
     notePlaceholder: string;
     notesStream: {
       title: string;
@@ -867,6 +869,7 @@ export interface TranslationSchema {
       edited: string;
       empty: string;
       emptyCompact: string;
+      notesCount: string;
       save: string;
       keyboardHint: string;
     };
@@ -923,6 +926,7 @@ export interface TranslationSchema {
     formCard: {
       title: string;
       itemsCount: string;
+      emptyBadge: string;
       answerLabel: string;
       emptyState: string;
       types: {
@@ -2250,6 +2254,7 @@ export interface TranslationSchema {
   timeline: {
     title: string;
     subtitle: string;
+    eventsCount: string;
     allEvents: string;
     filterEmails: string;
     filterInterviews: string;

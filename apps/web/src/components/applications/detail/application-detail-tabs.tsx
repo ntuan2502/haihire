@@ -23,8 +23,8 @@ export interface ApplicationDetailTabsProps {
 }
 
 /**
- * Shared 5-tab navigation bar used identically in Application Detail and
- * the Pipeline Candidate Detail pane.
+ * Shared 7-tab navigation bar used identically across Application Detail,
+ * Pipeline Candidate Detail, and Applications Drawer.
  */
 export function ApplicationDetailTabs({
   activeTab,

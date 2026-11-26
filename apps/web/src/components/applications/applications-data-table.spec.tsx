@@ -118,7 +118,16 @@ const mockNotesList = [
   },
 ];
 
+vi.mock("@/hooks/use-email-queries", () => ({
+  useEmailFlows: () => ({ data: [], isLoading: false }),
+}));
+
 vi.mock("@/hooks/use-queries", () => ({
+  useApplication: () => ({ data: undefined }),
+  useEmailTemplates: () => ({ data: [], isLoading: false }),
+  useSendEmailMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useApplicationActivities: () => ({ data: { data: [] }, isLoading: false }),
+  useCandidateActivities: () => ({ data: { data: [] }, isLoading: false }),
   useUpdateStageMutation: () => ({
     mutateAsync: mockUpdateStage,
     isPending: false,
@@ -577,8 +586,15 @@ describe("ApplicationsDataTable Component", () => {
       const appFormTab = within(drawer).getByRole("button", {
         name: "Application Form",
       });
+      const notesTab = within(drawer).getByRole("button", {
+        name: /^Notes(\s*\(\d+\))?$/i,
+      });
       expect(aiEvalTab).toBeInTheDocument();
       expect(appFormTab).toBeInTheDocument();
+      expect(notesTab).toHaveTextContent("Notes (2)");
+      expect(
+        within(drawer).getByRole("button", { name: "Send Email" }),
+      ).toBeInTheDocument();
       expect(within(drawer).getByText("85")).toBeInTheDocument();
       expect(within(drawer).getByText("/100")).toBeInTheDocument();
 
@@ -597,7 +613,6 @@ describe("ApplicationsDataTable Component", () => {
       ).toBeInTheDocument();
 
       // Switch to notes tab
-      const notesTab = screen.getByRole("button", { name: /^notes$/i });
       fireEvent.click(notesTab);
       expect(screen.getByPlaceholderText("Type a note...")).toBeInTheDocument();
     });
@@ -629,7 +644,9 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      const notesTab = screen.getByRole("button", { name: /^notes$/i });
+      const notesTab = screen.getByRole("button", {
+        name: /^notes(\s*\(\d+\))?$/i,
+      });
       fireEvent.click(notesTab);
 
       const noteInput = screen.getByPlaceholderText("Type a note...");

@@ -26,6 +26,7 @@ import type { StageConfig } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { formatDate, getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { useApplicationNotes } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";
 import { useLocalization } from "@/components/providers";
 
@@ -98,6 +99,13 @@ export function PipelineCandidateDetail({
   const canUpdateApplication = useHasPermission("application:update");
   const effectiveCanEdit =
     canEdit || hasCreateInterview || hasUpdateInterview || hasDeleteInterview;
+  const { data: fetchedNotes = [] } = useApplicationNotes(
+    candidateNotesList === undefined ? (selectedCandidate?.id ?? null) : null,
+  );
+  const resolvedNotesCount =
+    candidateNotesList !== undefined
+      ? candidateNotesList.length
+      : fetchedNotes.length;
 
   if (!selectedCandidate) {
     return (
@@ -248,7 +256,11 @@ export function PipelineCandidateDetail({
               </button>
 
               <Link
-                href={`/applications/${selectedCandidate.id}`}
+                href={
+                  candidateTab && candidateTab !== "overview"
+                    ? `/applications/${selectedCandidate.id}?tab=${candidateTab}`
+                    : `/applications/${selectedCandidate.id}`
+                }
                 className="h-8 w-8 rounded-md border border-input bg-background flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                 title={t("applications.openFullPage")}
               >
@@ -264,7 +276,7 @@ export function PipelineCandidateDetail({
           onSelectTab={onSelectTab}
           interviewsCount={candidateInterviews.length}
           documentsCount={candidateDocuments.length}
-          notesCount={candidateNotesList?.length}
+          notesCount={resolvedNotesCount}
         />
 
         {/* Active Tab Body */}

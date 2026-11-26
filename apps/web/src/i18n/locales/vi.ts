@@ -981,6 +981,8 @@ export const vi: TranslationSchema = {
     viewInPipeline: "Xem trong quy trình",
     deleteApplication: "Xóa hồ sơ ứng tuyển",
     documents: "Tài liệu",
+    documentsCount: "{count} tài liệu",
+    noDocumentsBadge: "Chưa có tài liệu",
     notePlaceholder: "Nhập ghi chú tại đây...",
     notesStream: {
       title: "Ghi chú & Trao đổi",
@@ -992,6 +994,7 @@ export const vi: TranslationSchema = {
       empty:
         "Chưa có ghi chú nào. Hãy thêm ghi chú đầu tiên để bắt đầu trao đổi nội bộ.",
       emptyCompact: "Chưa có ghi chú nào",
+      notesCount: "{count} ghi chú",
       save: "Lưu ghi chú",
       keyboardHint: "Ctrl+Enter để lưu",
     },
@@ -1053,6 +1056,7 @@ export const vi: TranslationSchema = {
     formCard: {
       title: "Biểu mẫu ứng tuyển",
       itemsCount: "{count} nội dung",
+      emptyBadge: "Chưa có dữ liệu",
       answerLabel: "Nội dung trả lời",
       emptyState:
         "Ứng viên chưa điền thư xin việc hoặc câu hỏi sàng lọc cho hồ sơ này.",
@@ -2512,6 +2516,7 @@ export const vi: TranslationSchema = {
     title: "Dòng thời gian hoạt động",
     subtitle:
       "Toàn bộ lịch sử ứng tuyển, chuyển giai đoạn, các buổi phỏng vấn và trao đổi email của ứng viên.",
+    eventsCount: "{count} sự kiện",
     allEvents: "Tất cả sự kiện",
     filterEmails: "Email",
     filterInterviews: "Phỏng vấn",

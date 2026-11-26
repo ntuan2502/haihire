@@ -7,6 +7,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { useAiStatusQuery } from "@/hooks/use-ai-setting-queries";
 import { useBatchAiScoreMutation } from "@/hooks/use-application-queries";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { toast } from "@/lib/toast";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
@@ -31,6 +32,7 @@ function JobPipelinePageContent() {
 
   const pipeline = usePipelineKanban(jobId);
   const { data: aiStatus } = useAiStatusQuery();
+  const canUpdateApplication = useHasPermission("application:update");
   const batchAiMutation = useBatchAiScoreMutation();
 
   if (pipeline.jobLoading || pipeline.appsLoading) {
@@ -76,7 +78,9 @@ function JobPipelinePageContent() {
         onSelectStage={pipeline.handleSelectStage}
         onDropCandidate={pipeline.handleDropCandidate}
         extraActions={
-          pipeline.canEdit && aiStatus?.enabled && batchEligibleCount > 0 ? (
+          canUpdateApplication &&
+          aiStatus?.enabled &&
+          batchEligibleCount > 0 ? (
             <Button
               type="button"
               variant="outline"

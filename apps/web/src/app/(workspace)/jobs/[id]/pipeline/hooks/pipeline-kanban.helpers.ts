@@ -107,38 +107,21 @@ export function filterAndSortPipelineApplications(
 }
 
 /**
- * Collects de-duplicated candidate documents across all applications by email.
+ * Collects candidate documents belonging strictly to the selected application.
  */
 export function collectPipelineCandidateDocuments(
   selectedCandidate: Application | null,
-  jobApplications: Application[],
+  _jobApplications?: Application[],
 ): CandidateDocument[] {
   if (!selectedCandidate) return [];
-  const seenUrls = new Set<string>();
-  const allDocs: CandidateDocument[] = [];
-  const relatedApps = jobApplications.filter(
-    (a) =>
-      a.candidateEmail && a.candidateEmail === selectedCandidate.candidateEmail,
-  );
-  const appsToScan = relatedApps.length > 0 ? relatedApps : [selectedCandidate];
-
-  for (const a of appsToScan) {
-    const docs = parseCandidateDocuments({
-      id: a.id,
-      resumeUrl: a.resumeUrl,
-      resumeFileName: a.resumeFileName,
-      resumeFileSize: a.resumeFileSize,
-      resumeMimeType: a.resumeMimeType,
-      createdAt: a.createdAt,
-    });
-    for (const d of docs) {
-      if (d.url && !seenUrls.has(d.url)) {
-        seenUrls.add(d.url);
-        allDocs.push({ ...d, sourceApplicationId: a.id });
-      }
-    }
-  }
-  return allDocs;
+  return parseCandidateDocuments({
+    id: selectedCandidate.id,
+    resumeUrl: selectedCandidate.resumeUrl,
+    resumeFileName: selectedCandidate.resumeFileName,
+    resumeFileSize: selectedCandidate.resumeFileSize,
+    resumeMimeType: selectedCandidate.resumeMimeType,
+    createdAt: selectedCandidate.createdAt,
+  }).map((doc) => ({ ...doc, sourceApplicationId: selectedCandidate.id }));
 }
 
 /**

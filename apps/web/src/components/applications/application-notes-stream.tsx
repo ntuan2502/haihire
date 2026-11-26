@@ -22,6 +22,8 @@ import { getInitials, formatRelativeTime, formatDate } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { getOrgRoleBadgeClass, getOrgRoleLabel } from "@/lib/roles";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers";
+import { ApplicationSectionCard } from "@/components/applications/detail/application-section-card";
 import type { ApplicationNote } from "@/types";
 
 interface ApplicationNotesStreamProps {
@@ -56,6 +58,7 @@ export function ApplicationNotesStream({
   placeholder,
 }: ApplicationNotesStreamProps) {
   const { t, locale } = useI18n();
+  const { localization } = useLocalization();
   const { user } = useAuth();
   const canCreateNote = useHasPermission("application:update");
 
@@ -147,33 +150,15 @@ export function ApplicationNotesStream({
     return note.authorId === user.id;
   };
 
-  return (
+  const notesBody = (
     <div className="space-y-4">
-      {/* Header */}
-      {showHeader && (
-        <div className="flex items-center justify-between pb-1 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-6 w-6 rounded-md bg-primary/10 text-primary">
-              <MessageSquare className="h-3.5 w-3.5" />
-            </div>
-            <h3 className="text-xs font-bold text-foreground">
-              {t("applications.notesStream.title")}
-            </h3>
-            {notes.length > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-secondary-foreground">
-                {notes.length}
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground hidden sm:block">
-            {t("applications.notesStream.subtitle")}
-          </p>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">
+        {t("applications.notesStream.subtitle")}
+      </p>
 
       {/* Trello-Style Composer */}
       {canCreateNote && (
-        <div className="rounded-xl border border-border bg-muted/40 p-3 shadow-2xs transition-colors duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
+        <div className="rounded-xl border border-border bg-background/40 p-3 shadow-2xs transition-colors duration-200 focus-within:border-ring focus-within:bg-background focus-within:ring-2 focus-within:ring-ring/20">
           <div className="flex gap-2.5">
             <div
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold shadow-2xs ${getAvatarBg(
@@ -271,15 +256,10 @@ export function ApplicationNotesStream({
         )}
 
         {!isLoading && notes.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 px-4 text-center">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {compact
-                ? t("applications.notesStream.emptyCompact")
-                : t("applications.notesStream.empty")}
-            </p>
+          <div className="rounded-xl border border-border bg-background/40 px-4 py-3.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {compact
+              ? t("applications.notesStream.emptyCompact")
+              : t("applications.notesStream.empty")}
           </div>
         )}
 
@@ -294,7 +274,7 @@ export function ApplicationNotesStream({
             return (
               <div
                 key={note.id}
-                className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs transition-colors hover:border-ring/50"
+                className="group relative rounded-xl border border-border bg-background/40 text-card-foreground p-3.5 transition-colors hover:border-ring/50"
               >
                 <div className="flex items-start gap-2.5">
                   {/* Author Avatar */}
@@ -322,10 +302,14 @@ export function ApplicationNotesStream({
 
                         <span
                           className="text-[10px] text-muted-foreground cursor-default"
-                          title={formatDate(note.createdAt, "standard")}
+                          title={formatDate(note.createdAt, "standard", {
+                            ...localization,
+                            defaultLanguage: locale,
+                          })}
                         >
                           •{" "}
                           {formatRelativeTime(note.createdAt, {
+                            ...localization,
                             defaultLanguage: locale,
                           })}
                         </span>
@@ -456,5 +440,27 @@ export function ApplicationNotesStream({
           })}
       </div>
     </div>
+  );
+
+  if (!showHeader) {
+    return notesBody;
+  }
+
+  return (
+    <ApplicationSectionCard
+      icon={MessageSquare}
+      title={t("applications.notesStream.title")}
+      statusMeta={
+        <span className="text-xs text-muted-foreground">
+          {notes.length > 0
+            ? t("applications.notesStream.notesCount", { count: notes.length })
+            : t("applications.notesStream.emptyCompact")}
+        </span>
+      }
+      collapsible
+      testId="application-notes-section"
+    >
+      {notesBody}
+    </ApplicationSectionCard>
   );
 }

@@ -7,6 +7,7 @@ import { CandidateInterviewsList } from "@/components/interviews/candidate-inter
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { ActivityEvent } from "@/lib/email-templates";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
@@ -16,6 +17,7 @@ export interface ApplicationDetailTabContentProps {
   activeTab: string;
   app: Application | null | undefined;
   canEdit: boolean;
+  canScore?: boolean;
   candidateDocuments: CandidateDocument[];
   candidateName: string;
   candidateEmail: string;
@@ -36,6 +38,7 @@ export function ApplicationDetailTabContent({
   activeTab,
   app,
   canEdit,
+  canScore,
   candidateDocuments,
   candidateName,
   candidateEmail,
@@ -48,17 +51,15 @@ export function ApplicationDetailTabContent({
   timelineInitialEvents,
 }: ApplicationDetailTabContentProps) {
   const { t } = useI18n();
+  const hasUpdateApplication = useHasPermission("application:update");
+  const effectiveCanScore = canScore ?? hasUpdateApplication;
 
   const renderNotesSection = () => {
     if (customNotesContent !== undefined) {
       return customNotesContent;
     }
     if (!app?.id) return null;
-    return (
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
-        <ApplicationNotesStream applicationId={app.id} />
-      </div>
-    );
+    return <ApplicationNotesStream applicationId={app.id} />;
   };
 
   const renderInterviewsSection = () => (
@@ -78,7 +79,11 @@ export function ApplicationDetailTabContent({
       {activeTab === "overview" && (
         <>
           {app && (
-            <AiScoreCard application={app} canScore={canEdit} variant="full" />
+            <AiScoreCard
+              application={app}
+              canScore={effectiveCanScore}
+              variant="full"
+            />
           )}
 
           {app && (
@@ -103,7 +108,11 @@ export function ApplicationDetailTabContent({
       )}
 
       {activeTab === "ai-evaluation" && app && (
-        <AiScoreCard application={app} canScore={canEdit} variant="full" />
+        <AiScoreCard
+          application={app}
+          canScore={effectiveCanScore}
+          variant="full"
+        />
       )}
 
       {activeTab === "application-form" && app && (

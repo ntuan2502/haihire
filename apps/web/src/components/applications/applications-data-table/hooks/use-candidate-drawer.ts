@@ -8,6 +8,8 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { canTransition, getTransitionDisabledReason } from "@/lib/stages";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
+  useApplication,
+  useApplicationNotes,
   useUpdateStageMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
@@ -70,13 +72,30 @@ export function useCandidateDrawer({
     null,
   );
 
-  // Current selected application with fresh state from latest applications
-  const currentApp = useMemo(() => {
+  // Current selected application hydrated with full detail payload when available
+  const listApp = useMemo(() => {
     if (!selectedApp) return null;
     return (
       initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
     );
   }, [selectedApp, initialApplications]);
+
+  const { data: detailedApp } = useApplication(listApp?.id ?? null);
+
+  const currentApp = useMemo(() => {
+    if (!listApp) return null;
+    if (detailedApp && String(detailedApp.id) === String(listApp.id)) {
+      return {
+        ...listApp,
+        ...detailedApp,
+      };
+    }
+    return listApp;
+  }, [listApp, detailedApp]);
+
+  const { data: applicationNotes = [] } = useApplicationNotes(
+    currentApp?.id ?? null,
+  );
 
   const allScheduledInterviews = useMemo(() => {
     return getInterviewsFromApplication(currentApp);
@@ -230,31 +249,15 @@ export function useCandidateDrawer({
 
   const drawerCandidateDocuments = useMemo(() => {
     if (!currentApp) return [];
-    const seenUrls = new Set<string>();
-    const allDocs: CandidateDocument[] = [];
-    const relatedApps = initialApplications.filter(
-      (a) => a.candidateEmail && a.candidateEmail === currentApp.candidateEmail,
-    );
-    const appsToScan = relatedApps.length > 0 ? relatedApps : [currentApp];
-
-    for (const a of appsToScan) {
-      const docs = parseCandidateDocuments({
-        id: a.id,
-        resumeUrl: a.resumeUrl,
-        resumeFileName: a.resumeFileName,
-        resumeFileSize: a.resumeFileSize,
-        resumeMimeType: a.resumeMimeType,
-        createdAt: a.createdAt,
-      });
-      for (const d of docs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocs.push({ ...d, sourceApplicationId: a.id });
-        }
-      }
-    }
-    return allDocs;
-  }, [currentApp, initialApplications]);
+    return parseCandidateDocuments({
+      id: currentApp.id,
+      resumeUrl: currentApp.resumeUrl,
+      resumeFileName: currentApp.resumeFileName,
+      resumeFileSize: currentApp.resumeFileSize,
+      resumeMimeType: currentApp.resumeMimeType,
+      createdAt: currentApp.createdAt,
+    }).map((doc) => ({ ...doc, sourceApplicationId: currentApp.id }));
+  }, [currentApp]);
 
   const selectedJob = currentApp?.jobId ? jobMap.get(currentApp.jobId) : null;
   const selectedJobTitle = selectedJob
@@ -265,6 +268,7 @@ export function useCandidateDrawer({
 
   return {
     currentApp,
+    selectedJob,
     drawerTab,
     setDrawerTab,
     handleCancelInterview,
@@ -280,6 +284,7 @@ export function useCandidateDrawer({
     setDrawerPreviewDoc,
     allScheduledInterviews,
     drawerCandidateDocuments,
+    notesCount: applicationNotes.length,
     selectedJobTitle,
     isStageUpdatePending: updateStageMutation.isPending,
   };

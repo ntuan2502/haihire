@@ -981,6 +981,8 @@ export const en: TranslationSchema = {
     viewInPipeline: "View in pipeline",
     deleteApplication: "Delete Application",
     documents: "Documents",
+    documentsCount: "{count} files",
+    noDocumentsBadge: "No files",
     notePlaceholder: "Type a note...",
     notesStream: {
       title: "Notes & Comments",
@@ -992,6 +994,7 @@ export const en: TranslationSchema = {
       empty:
         "No notes yet. Add the first note to start collaborating with your team.",
       emptyCompact: "No notes yet",
+      notesCount: "{count} notes",
       save: "Save note",
       keyboardHint: "Ctrl+Enter to save",
     },
@@ -1055,6 +1058,7 @@ export const en: TranslationSchema = {
     formCard: {
       title: "Application Form",
       itemsCount: "{count} items",
+      emptyBadge: "No data",
       answerLabel: "Candidate Response",
       emptyState:
         "No cover letter or screening answers were submitted for this application.",
@@ -2515,6 +2519,7 @@ export const en: TranslationSchema = {
     title: "Activity Timeline",
     subtitle:
       "Complete chronological history of applications, stage transitions, scheduled interviews, and email communications.",
+    eventsCount: "{count} events",
     allEvents: "All Events",
     filterEmails: "Emails",
     filterInterviews: "Interviews",

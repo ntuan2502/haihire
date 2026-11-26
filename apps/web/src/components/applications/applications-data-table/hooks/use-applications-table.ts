@@ -46,11 +46,13 @@ export function useApplicationsTable({
   const canDeleteApplication = useHasPermission("application:delete");
   const canCreateInterview = useHasPermission("interview:create");
   const canUpdateInterview = useHasPermission("interview:update");
+  const canDeleteInterview = useHasPermission("interview:delete");
   const canEdit =
     authCanEdit ||
     canDeleteApplication ||
     canCreateInterview ||
-    canUpdateInterview;
+    canUpdateInterview ||
+    canDeleteInterview;
   const deleteAppMutation = useDeleteApplicationMutation();
 
   const isServerPaginated = Boolean(
@@ -77,6 +79,7 @@ export function useApplicationsTable({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   // Filter Drawer State & Secondary Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -353,5 +356,7 @@ export function useApplicationsTable({
     setIsScheduleModalOpen,
     editingInterview,
     setEditingInterview,
+    isSendEmailOpen,
+    setIsSendEmailOpen,
   };
 }

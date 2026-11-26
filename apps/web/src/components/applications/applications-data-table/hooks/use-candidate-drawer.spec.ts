@@ -30,6 +30,8 @@ vi.mock("@/i18n", () => ({
 }));
 
 vi.mock("@/hooks/use-queries", () => ({
+  useApplication: () => ({ data: undefined }),
+  useApplicationNotes: () => ({ data: [], isLoading: false }),
   useUpdateStageMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateCandidateMutation: () => ({
     mutateAsync: vi.fn(),

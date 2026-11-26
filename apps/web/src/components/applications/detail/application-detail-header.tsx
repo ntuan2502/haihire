@@ -19,6 +19,7 @@ export interface ApplicationDetailHeaderProps {
   appliedDate: string;
   onOpenSendEmail?: () => void;
   extraActions?: ReactNode;
+  headingLevel?: "h1" | "h2";
 }
 
 /**
@@ -36,6 +37,7 @@ export function ApplicationDetailHeader({
   appliedDate,
   onOpenSendEmail,
   extraActions,
+  headingLevel = "h1",
 }: ApplicationDetailHeaderProps) {
   const { t } = useI18n();
   const canSendEmail = useHasPermission("email:send");
@@ -49,9 +51,15 @@ export function ApplicationDetailHeader({
 
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate">
-              {candidateName}
-            </h1>
+            {headingLevel === "h2" ? (
+              <h2 className="text-xl font-bold text-foreground truncate">
+                {candidateName}
+              </h2>
+            ) : (
+              <h1 className="text-xl font-bold text-foreground truncate">
+                {candidateName}
+              </h1>
+            )}
             <StageBadge stage={stage} />
           </div>
 

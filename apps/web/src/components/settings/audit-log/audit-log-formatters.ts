@@ -30,6 +30,9 @@ const KNOWN_FIELD_LABELS = new Set([
   "previousLinkId",
   "overridesCount",
   "provider",
+  "modelId",
+  "baseUrl",
+  "autoScoreApplications",
   "fromName",
   "fromEmail",
   "smtpHost",
@@ -59,6 +62,8 @@ const KNOWN_FIELD_LABELS = new Set([
   "location",
   "workplace",
   "experienceLevel",
+  "applicationFormConfig",
+  "scoringConfig",
   "openings",
   "salaryRange",
   "salaryMin",
@@ -277,6 +282,30 @@ const ACTION_BADGE_CONFIG: Record<string, AuditActionMeta> = {
     labelKey: "settings.auditLog.actionEmailFlowUpdated",
     className:
       "bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-300 border-violet-200 dark:border-violet-800",
+  },
+  AI_SETTINGS_UPDATED: {
+    resource: "ORGANIZATION",
+    labelKey: "settings.auditLog.actionAiSettingsUpdated",
+    className:
+      "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+  },
+  AI_SETTINGS_DELETED: {
+    resource: "ORGANIZATION",
+    labelKey: "settings.auditLog.actionAiSettingsDeleted",
+    className:
+      "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+  },
+  DOWNLOAD_DOCUMENT: {
+    resource: "CANDIDATE",
+    labelKey: "settings.auditLog.actionDownloadDocument",
+    className:
+      "bg-slate-100 dark:bg-slate-900/40 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+  },
+  VIEW_PROFILE: {
+    resource: "CANDIDATE",
+    labelKey: "settings.auditLog.actionViewProfile",
+    className:
+      "bg-slate-100 dark:bg-slate-900/40 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
   },
   WEBHOOK_CREATED: {
     resource: "WEBHOOK",
@@ -579,6 +608,30 @@ export function formatAuditValue(
   if (typeof value === "number") {
     return String(value);
   }
+  if (field === "scoringConfig" && typeof value === "object") {
+    const obj = value as { criteria?: unknown; autoScore?: unknown };
+    const count = Array.isArray(obj.criteria) ? obj.criteria.length : 0;
+    const auto = obj.autoScore ? t("common.yes") : t("common.no");
+    return interpolate(
+      t("settings.auditLog.metadataLabels.scoringConfigSummary", {
+        count,
+        auto,
+      }),
+      { count, auto },
+    );
+  }
+  if (field === "applicationFormConfig" && typeof value === "object") {
+    const obj = value as { screeningQuestions?: unknown };
+    const count = Array.isArray(obj.screeningQuestions)
+      ? obj.screeningQuestions.length
+      : 0;
+    return interpolate(
+      t("settings.auditLog.metadataLabels.applicationFormSummary", {
+        count,
+      }),
+      { count },
+    );
+  }
   return JSON.stringify(value);
 }
 
@@ -818,6 +871,34 @@ export function formatAuditSummary(
     case "EMAIL_FLOW_UPDATED":
       return interpolate(
         t("settings.auditLog.metadataLabels.summaryEmailFlowUpdated", {
+          target,
+        }),
+        { target },
+      );
+    case "AI_SETTINGS_UPDATED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryAiSettingsUpdated", {
+          target,
+        }),
+        { target },
+      );
+    case "AI_SETTINGS_DELETED":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryAiSettingsDeleted", {
+          target,
+        }),
+        { target },
+      );
+    case "DOWNLOAD_DOCUMENT":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryDownloadDocument", {
+          target,
+        }),
+        { target },
+      );
+    case "VIEW_PROFILE":
+      return interpolate(
+        t("settings.auditLog.metadataLabels.summaryViewProfile", {
           target,
         }),
         { target },

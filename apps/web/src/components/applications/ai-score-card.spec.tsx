@@ -209,16 +209,19 @@ describe("AiScoreCard", () => {
     expect(screen.getByText("2 criteria")).toBeInTheDocument();
     expect(screen.getByText("Outdated")).toBeInTheDocument();
 
-    // First criterion expanded by default
+    // All criteria collapsed by default
     expect(
-      screen.getByText("Portfolio showcases 8 end-to-end case studies."),
-    ).toBeInTheDocument();
+      screen.queryByText("Portfolio showcases 8 end-to-end case studies."),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Consistent design system and accessibility focus."),
     ).not.toBeInTheDocument();
 
-    // Expand all reveals second criterion evidence & gaps
+    // Expand all reveals every criterion evidence & gaps
     fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    expect(
+      screen.getByText("Portfolio showcases 8 end-to-end case studies."),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Consistent design system and accessibility focus."),
     ).toBeInTheDocument();
@@ -292,6 +295,13 @@ describe("AiScoreCard", () => {
 
       expect(screen.getByText("48")).toBeInTheDocument();
       expect(screen.getByText("Backend Architecture")).toBeInTheDocument();
+      // Criterion stays collapsed by default until clicked
+      expect(
+        screen.queryByText("Built REST APIs with PostgreSQL."),
+      ).not.toBeInTheDocument();
+      fireEvent.click(
+        screen.getByRole("button", { name: /Backend Architecture/i }),
+      );
       expect(
         screen.getByText("Built REST APIs with PostgreSQL."),
       ).toBeInTheDocument();

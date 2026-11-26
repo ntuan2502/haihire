@@ -11,7 +11,18 @@ import {
   type NotificationKind,
   type Role,
 } from "@haihire/shared";
-import { SeedCvStorage } from "./seed-cv-pdf.util.ts";
+import {
+  SeedCvStorage,
+  type CandidateCvTemplateInput,
+} from "./seed-cv-pdf.util.ts";
+import {
+  buildApplicationFormSubmissionSeed,
+  buildJobBlueprintTemplates,
+  buildTailoredCvTemplateInput,
+  resolveAiTestScenarioForCandidate,
+  type AiTestScenarioKind,
+  type SeedJobBlueprintTemplates,
+} from "./seed-ai-profiles.util.ts";
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 export const prisma = new PrismaClient({ adapter });
@@ -1631,9 +1642,19 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records & snapshot schema...");
   console.log("==================================================");
 
+  const savedAiSettings = await prisma.organizationAiSetting.findMany({
+    include: {
+      organization: {
+        select: { slug: true },
+      },
+    },
+  });
+
   await prisma.$executeRawUnsafe(
     `DROP SCHEMA IF EXISTS "_haihire_test_snapshot" CASCADE;`,
   );
+  await prisma.applicationAiEvaluation.deleteMany();
+  await prisma.organizationAiSetting.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.notificationPreference.deleteMany();
   await prisma.outboxEvent.deleteMany();
@@ -1709,6 +1730,26 @@ export async function runSeed(): Promise<void> {
         name: bp.name,
         slug: bp.slug,
         ownerId: bp.ownerId,
+      },
+    });
+  }
+
+  for (const aiSetting of savedAiSettings) {
+    const matchedBp = ORG_BLUEPRINTS.find(
+      (b) => b.slug === aiSetting.organization?.slug,
+    );
+    if (!matchedBp) continue;
+    await prisma.organizationAiSetting.create({
+      data: {
+        id: aiSetting.id,
+        organizationId: matchedBp.id,
+        provider: aiSetting.provider,
+        modelId: aiSetting.modelId,
+        encryptedApiKey: aiSetting.encryptedApiKey,
+        apiKeyLast4: aiSetting.apiKeyLast4,
+        baseUrl: aiSetting.baseUrl,
+        isEnabled: aiSetting.isEnabled,
+        autoScoreApplications: aiSetting.autoScoreApplications,
       },
     });
   }
@@ -1908,9 +1949,18 @@ export async function runSeed(): Promise<void> {
     const jobStatuses = buildDeterministicJobStatuses(bp.jobStatusCounts);
     const createdJobIds: string[] = [];
     const jobsToInsert: Prisma.JobCreateManyInput[] = [];
+    const jobTemplatesById = new Map<
+      string,
+      { title: string } & SeedJobBlueprintTemplates
+    >();
 
     for (let i = 0; i < jobStatuses.length; i++) {
       const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
+      const jobTemplates = buildJobBlueprintTemplates(
+        i,
+        baseConfig.title,
+        baseConfig.department,
+      );
       const status = jobStatuses[i];
       const seedIdx = bp.orgIndex * 100 + i;
       const workplace = WORKPLACES[seedIdx % WORKPLACES.length];
@@ -1973,10 +2023,18 @@ export async function runSeed(): Promise<void> {
         salaryRange,
         description: richDescription,
         status,
+        applicationFormConfig:
+          jobTemplates.applicationFormConfig as unknown as Prisma.InputJsonValue,
+        scoringConfig:
+          jobTemplates.scoringConfig as unknown as Prisma.InputJsonValue,
         organizationId: bp.id,
         createdById: creatorId,
         createdAt: jobCreatedAt,
         updatedAt: jobCreatedAt,
+      });
+      jobTemplatesById.set(jobId, {
+        title: baseConfig.title,
+        ...jobTemplates,
       });
       createdJobIds.push(jobId);
     }
@@ -2116,6 +2174,19 @@ export async function runSeed(): Promise<void> {
     const jobCountsList: number[] =
       bp.orgIndex === 1 ? [1, 1, ...nonPinnedJobCounts] : nonPinnedJobCounts;
 
+    // Ensure Demo 1's 8 AI scenario candidates (indices 2..9) each have >= 1 application
+    if (bp.orgIndex === 1) {
+      for (let idx = 2; idx <= 9; idx++) {
+        if (jobCountsList[idx] === 0) {
+          const swapIdx = jobCountsList.findIndex((cnt, k) => k > 9 && cnt > 0);
+          if (swapIdx > 9) {
+            jobCountsList[idx] = jobCountsList[swapIdx];
+            jobCountsList[swapIdx] = 0;
+          }
+        }
+      }
+    }
+
     // Reserve exact stage counts minus Demo 1's 2 pinned E2E applications (1 APPLIED + 1 SCREENING)
     const stageEntries: Array<[StageName, number]> =
       bp.orgIndex === 1
@@ -2191,12 +2262,9 @@ export async function runSeed(): Promise<void> {
       candidateId: string;
       storedFileId: string;
       fileName: string;
-      fullName: string;
-      email: string;
-      phone: string;
-      gender: string;
-      targetRole: string;
+      cvInput: CandidateCvTemplateInput;
     }> = [];
+    const aiScenarioSummaryLines: string[] = [];
 
     const jobStageOrderCounter: Record<string, number> = {};
     const plannedApps: PlannedApp[] = [];
@@ -2271,12 +2339,24 @@ export async function runSeed(): Promise<void> {
         new Date(FIXED_SEED_EPOCH_MS - daysAgo * 86400000),
       );
 
+      const scenario: AiTestScenarioKind | null =
+        resolveAiTestScenarioForCandidate(bp.orgIndex, cIdx);
       const jobCount = jobCountsList[cIdx];
       const selectedJobIndices: number[] = [];
       if (isKanbanE2E || isTestApplicantE2E) {
         selectedJobIndices.push(1); // Senior Backend Engineer (PUBLISHED)
       } else {
-        for (let k = 0; k < jobCount; k++) {
+        if (bp.orgIndex === 1 && cIdx >= 2 && cIdx <= 5 && jobCount > 0) {
+          selectedJobIndices.push(0); // Senior Full-Stack Engineer (PUBLISHED)
+        } else if (
+          bp.orgIndex === 1 &&
+          cIdx >= 6 &&
+          cIdx <= 9 &&
+          jobCount > 0
+        ) {
+          selectedJobIndices.push(1); // Senior Backend Engineer (PUBLISHED)
+        }
+        for (let k = selectedJobIndices.length; k < jobCount; k++) {
           const picked =
             (cIdx * 5 + k * 3 + bp.orgIndex) % createdJobIds.length;
           if (!selectedJobIndices.includes(picked)) {
@@ -2291,22 +2371,36 @@ export async function runSeed(): Promise<void> {
         }
       }
 
-      const primaryJobIdx = selectedJobIndices[0] ?? -1;
+      const primaryJobIdx = selectedJobIndices[0] ?? 0;
       const targetRole =
-        primaryJobIdx >= 0
+        selectedJobIndices.length > 0
           ? BASE_JOB_CONFIGS[primaryJobIdx % BASE_JOB_CONFIGS.length].title
           : "Software & Product Specialist";
 
-      cvTemplates.push({
-        candidateId,
-        storedFileId,
-        fileName,
-        fullName,
-        email,
-        phone,
-        gender,
-        targetRole,
-      });
+      const hasResumeFile = scenario !== "no_cv";
+      if (hasResumeFile) {
+        cvTemplates.push({
+          candidateId,
+          storedFileId,
+          fileName,
+          cvInput: buildTailoredCvTemplateInput({
+            fullName,
+            email,
+            phone,
+            gender,
+            targetRole,
+            primaryJobIndex: primaryJobIdx,
+            candidateIdx: cIdx,
+            scenario,
+          }),
+        });
+      }
+
+      if (bp.orgIndex === 1 && scenario) {
+        aiScenarioSummaryLines.push(
+          `  • [${scenario.toUpperCase()}] ${fullName} <${email}> → ${targetRole}`,
+        );
+      }
 
       candidatesToInsert.push({
         id: candidateId,
@@ -2317,11 +2411,13 @@ export async function runSeed(): Promise<void> {
         dateOfBirth: toInstant(dateOfBirth),
         email,
         phone,
-        resumeUrl: `/haihire-resumes/tenants/${bp.id}/resumes/${fileName}`,
-        resumeFileName: fileName,
-        resumeFileSize: 2400,
-        resumeMimeType: "application/pdf",
-        resumeFileId: storedFileId,
+        resumeUrl: hasResumeFile
+          ? `/haihire-resumes/tenants/${bp.id}/resumes/${fileName}`
+          : null,
+        resumeFileName: hasResumeFile ? fileName : null,
+        resumeFileSize: hasResumeFile ? 2400 : null,
+        resumeMimeType: hasResumeFile ? "application/pdf" : null,
+        resumeFileId: hasResumeFile ? storedFileId : null,
         createdAt: candidateCreatedAt,
         updatedAt: candidateCreatedAt,
       });
@@ -2341,7 +2437,9 @@ export async function runSeed(): Promise<void> {
           ? "Ứng viên mẫu cho Kanban drag & drop test."
           : isTestApplicantE2E
             ? "Ứng viên mẫu phục vụ automated tests."
-            : "Ứng viên tiềm năng trong Talent Pool.",
+            : scenario
+              ? `Hồ sơ kiểm thử AI Scoring kịch bản [${scenario.toUpperCase()}].`
+              : "Ứng viên tiềm năng trong Talent Pool.",
         isEdited: false,
         createdAt: candidateCreatedAt,
         updatedAt: candidateCreatedAt,
@@ -2397,13 +2495,7 @@ export async function runSeed(): Promise<void> {
           const uploaded = await cvStorage.uploadCandidateCv(
             bp.id,
             tpl.fileName,
-            {
-              fullName: tpl.fullName,
-              email: tpl.email,
-              phone: tpl.phone,
-              gender: tpl.gender,
-              targetRole: tpl.targetRole,
-            },
+            tpl.cvInput,
           );
           storedFilesToInsert.push({
             id: tpl.storedFileId,
@@ -2567,8 +2659,30 @@ export async function runSeed(): Promise<void> {
           (pApp.candidateIdx + pApp.jobIdx) % 2 === 0 ? "google.com" : null;
       }
 
-      const fileMeta = uploadedByCandidateId.get(pApp.candidateId)!;
+      const fileMeta = uploadedByCandidateId.get(pApp.candidateId);
       const candRow = candidatesToInsert[pApp.candidateIdx];
+      const jt = jobTemplatesById.get(pApp.jobId);
+      const candScenario = resolveAiTestScenarioForCandidate(
+        bp.orgIndex,
+        pApp.candidateIdx,
+      );
+      const formSubmission = jt
+        ? buildApplicationFormSubmissionSeed({
+            candidateName: `${candRow.firstName} ${candRow.lastName}`,
+            jobTitle: jt.title,
+            formConfig: jt.applicationFormConfig,
+            scenario: candScenario,
+            candidateIdx: pApp.candidateIdx,
+          })
+        : { coverLetter: null, screeningAnswers: [] };
+
+      const finalMatchScore =
+        bp.orgIndex === 1 &&
+        pApp.candidateIdx >= 2 &&
+        pApp.candidateIdx <= 9 &&
+        !pApp.isPinnedE2E
+          ? null
+          : matchScore;
 
       applicationsToInsert.push({
         id: pApp.id,
@@ -2576,12 +2690,15 @@ export async function runSeed(): Promise<void> {
         candidateId: pApp.candidateId,
         jobId: pApp.jobId,
         stage,
-        matchScore,
-        resumeUrl: fileMeta.resumeUrl,
-        resumeFileName: fileMeta.fileName,
-        resumeFileSize: fileMeta.sizeBytes,
-        resumeMimeType: "application/pdf",
-        resumeFileId: candRow.resumeFileId!,
+        matchScore: finalMatchScore,
+        resumeUrl: fileMeta?.resumeUrl ?? null,
+        resumeFileName: fileMeta?.fileName ?? null,
+        resumeFileSize: fileMeta?.sizeBytes ?? null,
+        resumeMimeType: fileMeta ? "application/pdf" : null,
+        resumeFileId: fileMeta ? (candRow.resumeFileId ?? null) : null,
+        coverLetter: formSubmission.coverLetter,
+        screeningAnswers:
+          formSubmission.screeningAnswers as unknown as Prisma.InputJsonValue,
         orderIndex,
         trackingLinkId,
         sourceChannel,
@@ -2722,6 +2839,13 @@ export async function runSeed(): Promise<void> {
     }
 
     await prisma.notification.createMany({ data: notificationsToInsert });
+
+    if (aiScenarioSummaryLines.length > 0) {
+      console.log("\n🧪 AI Scoring Test Scenario Candidates in Demo 1:");
+      for (const line of aiScenarioSummaryLines) {
+        console.log(line);
+      }
+    }
 
     // 5. Seed 10 deterministic ActivityLog entries per org
     const appById = new Map(applicationsToInsert.map((a) => [a.id, a]));

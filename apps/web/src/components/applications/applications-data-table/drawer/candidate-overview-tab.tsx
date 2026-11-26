@@ -1,6 +1,7 @@
 "use client";
 
 import { AiScoreCard } from "@/components/applications/ai-score-card";
+import { ApplicationFormCard } from "@/components/applications/application-form-card";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
@@ -39,6 +40,14 @@ export function CandidateOverviewTab({
       <AiScoreCard
         application={currentApp}
         canScore={Boolean(canEdit)}
+        variant="compact"
+      />
+
+      {/* Application Form Card */}
+      <ApplicationFormCard
+        application={currentApp}
+        onPreviewDoc={onPreviewDoc}
+        onDownloadDoc={onDownloadDoc}
         variant="compact"
       />
 

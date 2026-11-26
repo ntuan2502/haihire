@@ -912,15 +912,32 @@ export interface TranslationSchema {
     appNotFoundDesc: string;
     tabs: {
       overview: string;
+      aiEvaluation: string;
       interviews: string;
       documents: string;
       notes: string;
       timeline: string;
     };
+    formCard: {
+      title: string;
+      itemsCount: string;
+      answerLabel: string;
+      types: {
+        cover_letter: string;
+        short_text: string;
+        long_text: string;
+        single_choice: string;
+        multiple_choice: string;
+        number: string;
+        date: string;
+        url: string;
+        yes_no: string;
+        file_upload: string;
+      };
+    };
     sections: {
       interviews: string;
       coverLetter: string;
-      screeningAnswers: string;
       noAnswerProvided: string;
     };
   };
@@ -1782,6 +1799,10 @@ export interface TranslationSchema {
       actionEmailTemplateUpdated: string;
       actionEmailTemplateDeleted: string;
       actionEmailFlowUpdated: string;
+      actionAiSettingsUpdated: string;
+      actionAiSettingsDeleted: string;
+      actionDownloadDocument: string;
+      actionViewProfile: string;
       actionWebhookCreated: string;
       actionWebhookUpdated: string;
       actionWebhookDeleted: string;
@@ -1829,6 +1850,9 @@ export interface TranslationSchema {
         previousLinkId: string;
         overridesCount: string;
         provider: string;
+        modelId: string;
+        baseUrl: string;
+        autoScoreApplications: string;
         fromName: string;
         fromEmail: string;
         smtpHost: string;
@@ -1858,6 +1882,8 @@ export interface TranslationSchema {
         location: string;
         workplace: string;
         experienceLevel: string;
+        applicationFormConfig: string;
+        scoringConfig: string;
         openings: string;
         salaryRange: string;
         salaryMin: string;
@@ -1920,6 +1946,12 @@ export interface TranslationSchema {
         summaryEmailTemplateUpdated: string;
         summaryEmailTemplateDeleted: string;
         summaryEmailFlowUpdated: string;
+        summaryAiSettingsUpdated: string;
+        summaryAiSettingsDeleted: string;
+        summaryDownloadDocument: string;
+        summaryViewProfile: string;
+        scoringConfigSummary: string;
+        applicationFormSummary: string;
         summaryWebhookCreated: string;
         summaryWebhookUpdated: string;
         summaryWebhookDeleted: string;

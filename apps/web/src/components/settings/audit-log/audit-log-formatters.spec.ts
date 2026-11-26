@@ -23,6 +23,22 @@ const mockT = (key: string, params?: Record<string, string | number>) => {
     "settings.auditLog.actionApplicationStageChanged":
       "Application Stage Changed",
     "settings.auditLog.actionInterviewUpdated": "Interview Updated",
+    "settings.auditLog.actionAiSettingsUpdated": "AI Settings Updated",
+    "settings.auditLog.actionAiSettingsDeleted": "AI Settings Deleted",
+    "settings.auditLog.fieldLabels.scoringConfig": "AI Scoring Criteria",
+    "settings.auditLog.fieldLabels.applicationFormConfig":
+      "Application Form Configuration",
+    "settings.auditLog.fieldLabels.autoScoreApplications":
+      "Auto-score Applications",
+    "settings.auditLog.fieldLabels.modelId": "AI Model",
+    "settings.auditLog.fieldLabels.baseUrl": "Custom Base URL",
+    "settings.auditLog.metadataLabels.summaryAiSettingsUpdated":
+      "Updated AI provider configuration ({target})",
+    "settings.auditLog.metadataLabels.scoringConfigSummary":
+      "{count} criteria · Auto-score: {auto}",
+    "settings.auditLog.metadataLabels.applicationFormSummary":
+      "{count} screening questions",
+    "settings.auditLog.resources.ORGANIZATION": "Organization",
     "settings.auditLog.resources.INVITATION": "Invitation",
     "settings.auditLog.resources.EMAIL": "Email",
     "settings.auditLog.resources.WEBHOOK": "Webhook",
@@ -202,5 +218,59 @@ describe("audit-log-formatters", () => {
     ).toBe(
       "Submitted interview scorecard for Le Van A — Senior Backend Engineer",
     );
+  });
+
+  it("formats AI settings and job scoring/form configuration audit diffs", () => {
+    expect(getAuditActionBadge("AI_SETTINGS_UPDATED", mockT).label).toBe(
+      "AI Settings Updated",
+    );
+    expect(getAuditActionBadge("AI_SETTINGS_DELETED", mockT).label).toBe(
+      "AI Settings Deleted",
+    );
+    expect(formatAuditFieldLabel("scoringConfig", mockT)).toBe(
+      "AI Scoring Criteria",
+    );
+    expect(formatAuditFieldLabel("applicationFormConfig", mockT)).toBe(
+      "Application Form Configuration",
+    );
+    expect(formatAuditFieldLabel("autoScoreApplications", mockT)).toBe(
+      "Auto-score Applications",
+    );
+    expect(formatAuditFieldLabel("modelId", mockT)).toBe("AI Model");
+    expect(formatAuditFieldLabel("baseUrl", mockT)).toBe("Custom Base URL");
+
+    expect(
+      formatAuditValue(
+        "scoringConfig",
+        { criteria: [{ id: "1" }, { id: "2" }], autoScore: true },
+        mockT,
+      ),
+    ).toBe("2 criteria · Auto-score: Yes");
+    expect(
+      formatAuditValue(
+        "applicationFormConfig",
+        { screeningQuestions: [{ id: "q1" }, { id: "q2" }, { id: "q3" }] },
+        mockT,
+      ),
+    ).toBe("3 screening questions");
+
+    expect(
+      formatAuditSummary(
+        {
+          id: "log-ai",
+          organizationId: "org-1",
+          actorId: "u-1",
+          action: "AI_SETTINGS_UPDATED",
+          resource: "ORGANIZATION",
+          targetId: "org-1",
+          targetLabel: "GEMINI",
+          changes: null,
+          metadata: { provider: "GEMINI" },
+          createdAt: "2026-11-26T10:00:00Z",
+          actor: null,
+        },
+        mockT,
+      ),
+    ).toBe("Updated AI provider configuration (GEMINI)");
   });
 });

@@ -255,7 +255,7 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     expect(screen.getByText("/100")).toBeInTheDocument();
   });
 
-  it("renders unified 5 tabs without placeholder tabs and opens SendEmailModal", () => {
+  it("renders unified 6 tabs including AI Evaluation before Interviews and opens SendEmailModal", () => {
     mockUseJobApplications.mockReturnValue({
       data: mockApplications,
       isLoading: false,
@@ -265,6 +265,9 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     expect(
       screen.getByRole("button", { name: "applications.tabs.overview" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "applications.tabs.aiEvaluation" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /applications\.tabs\.interviews/i }),
@@ -280,9 +283,6 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /applications\.tabs\.inbox/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /applications\.tabs\.ai/i }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /applications\.tabs\.responses/i }),

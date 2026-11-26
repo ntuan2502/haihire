@@ -4,6 +4,7 @@ import { useI18n } from "@/i18n";
 
 export const APPLICATION_DETAIL_TABS = [
   "overview",
+  "ai-evaluation",
   "interviews",
   "documents",
   "notes",
@@ -35,6 +36,7 @@ export function ApplicationDetailTabs({
 
   const tabs = [
     { id: "overview", label: t("applications.tabs.overview") },
+    { id: "ai-evaluation", label: t("applications.tabs.aiEvaluation") },
     {
       id: "interviews",
       label:

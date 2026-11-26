@@ -569,9 +569,11 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      // Overview active
+      // Overview active (tab button + card header both show "AI Evaluation")
       const drawer = screen.getByRole("dialog");
-      expect(within(drawer).getByText("AI Evaluation")).toBeInTheDocument();
+      expect(
+        within(drawer).getByRole("button", { name: "AI Evaluation" }),
+      ).toBeInTheDocument();
       expect(within(drawer).getByText("85")).toBeInTheDocument();
       expect(within(drawer).getByText("/100")).toBeInTheDocument();
 

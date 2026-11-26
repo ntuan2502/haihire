@@ -134,7 +134,6 @@ export function AiScoreCard({
   const isCompact = variant === "compact";
   const isAiEnabled = Boolean(aiStatus?.enabled);
   const criteriaResults = evaluation?.criteriaResults ?? null;
-  const firstCriterionKey = criteriaResults?.[0]?.key;
 
   useEffect(() => {
     setPollingActive(false);
@@ -164,12 +163,8 @@ export function AiScoreCard({
   }, [detailedApplication?.aiEvaluation, optimisticPending, pollingActive]);
 
   useEffect(() => {
-    if (firstCriterionKey) {
-      setExpandedKeys([firstCriterionKey]);
-    } else {
-      setExpandedKeys([]);
-    }
-  }, [evaluation?.id, evaluation?.scoredAt, firstCriterionKey]);
+    setExpandedKeys([]);
+  }, [application.id, evaluation?.id, evaluation?.scoredAt]);
 
   const handleRunScore = async () => {
     prevEvalUpdatedAtRef.current = evaluation?.updatedAt ?? null;

@@ -36,7 +36,7 @@ export function PipelineCandidatesSidebar({
 
   return (
     <aside
-      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-border bg-card text-card-foreground overflow-hidden transition-colors duration-200 ${
+      className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full md:border-r border-border bg-card text-card-foreground overflow-hidden transition-colors duration-200 ${
         mobileDetailOpen ? "hidden md:flex" : "flex"
       }`}
     >
@@ -74,13 +74,13 @@ export function PipelineCandidatesSidebar({
               { value: "name", label: t("candidates.candidateName") },
             ]}
             className="w-auto"
-            triggerClassName="h-7 text-xs py-1 px-2.5 font-semibold"
+            triggerClassName="h-8 sm:h-7 text-xs py-1 px-2.5 font-semibold"
           />
 
           <button
             type="button"
             disabled
-            className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground opacity-40 cursor-not-allowed transition-colors"
+            className="h-8 w-8 sm:h-6 sm:w-6 rounded-md flex items-center justify-center text-muted-foreground opacity-40 cursor-not-allowed transition-colors"
             title={t("pipeline.filterOptions")}
           >
             <Menu className="h-3 w-3" />

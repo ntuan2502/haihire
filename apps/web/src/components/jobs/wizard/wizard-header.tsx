@@ -43,10 +43,10 @@ export function WizardHeader({
   );
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-3 shrink-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+    <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur-md px-4 sm:px-6 py-2 sm:py-3 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4 w-full">
         {/* Left: Back Link & Stepper */}
-        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+        <div className="flex items-center gap-3 sm:gap-6 flex-wrap min-w-0">
           {mode === "create" ? (
             <Link
               href="/jobs"
@@ -59,10 +59,14 @@ export function WizardHeader({
             <button
               type="button"
               onClick={() => router.push(`/jobs/${initialJob?.id}/pipeline`)}
+              aria-label={t("jobs.wizard.backToPipeline")}
+              title={t("jobs.wizard.backToPipeline")}
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("jobs.wizard.backToPipeline")}</span>
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">
+                {t("jobs.wizard.backToPipeline")}
+              </span>
             </button>
           )}
 
@@ -136,7 +140,7 @@ export function WizardHeader({
         </div>
 
         {/* Right: Preview & Save Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-2.5">
           {mode === "create" && draftSavedAt && (
             <span className="text-[11px] text-muted-foreground hidden lg:flex items-center gap-1">
               <Check className="h-3 w-3 text-emerald-500" />
@@ -146,10 +150,12 @@ export function WizardHeader({
           <button
             type="button"
             onClick={onOpenPreview}
+            aria-label={t("jobs.wizard.candidatePreview")}
+            title={t("jobs.wizard.candidatePreview")}
             className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-2.5 py-1.5 rounded-md hover:bg-accent whitespace-nowrap shrink-0"
           >
-            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="whitespace-nowrap">
+            <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">
               {t("jobs.wizard.candidatePreview")}
             </span>
           </button>

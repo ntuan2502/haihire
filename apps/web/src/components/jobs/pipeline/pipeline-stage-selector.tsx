@@ -38,9 +38,9 @@ export function PipelineStageSelector({
   const { t } = useI18n();
 
   return (
-    <div className="shrink-0 border-b border-border bg-card/80 backdrop-blur-xs px-4 py-2 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
+    <div className="shrink-0 border-b border-border bg-card/80 backdrop-blur-xs px-4 py-2 sm:px-6 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4 z-10">
       {/* Stage Pills */}
-      <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto scrollbar-none">
         {stages.map((stage) => {
           const count = stageCounts[stage.id] || 0;
           const isSelected = selectedStage === stage.id;
@@ -90,7 +90,7 @@ export function PipelineStageSelector({
       </div>
 
       {(extraActions || (onToggleCollapse && onToggleFullscreen)) && (
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
           {extraActions}
           {onToggleCollapse && onToggleFullscreen && (
             <>

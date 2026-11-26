@@ -93,7 +93,7 @@ export function PipelineCandidateCard({
           ) : (
             matchScore !== undefined &&
             matchScore !== null && (
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
                 {matchScore}%
               </span>
             )
@@ -104,7 +104,7 @@ export function PipelineCandidateCard({
           {candidate.candidateEmail || t("pipeline.noEmail")}
         </p>
 
-        <div className="flex items-center gap-2 pt-1 text-[10px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-1 text-[10px] text-muted-foreground">
           <span suppressHydrationWarning>
             {formatRelativeTime(candidate.createdAt, {
               ...localization,

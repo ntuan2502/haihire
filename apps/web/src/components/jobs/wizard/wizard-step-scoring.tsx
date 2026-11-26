@@ -134,11 +134,11 @@ export function WizardStepScoring({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl font-semibold text-foreground">
               {t("jobs.wizard.scoringTitle")}
             </h1>
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground shrink-0">
               {mode === "create"
                 ? t("jobs.wizard.compensationOptional")
                 : t("jobs.wizard.scoringConfiguredBadge")}
@@ -192,7 +192,7 @@ export function WizardStepScoring({
       </div>
 
       {/* Sub-bar: Back, Count & Clear All */}
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
         <button
           type="button"
           onClick={onBack}
@@ -244,7 +244,7 @@ export function WizardStepScoring({
             return (
               <div
                 key={crit.id}
-                className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4 hover:border-ring/40 transition-colors"
+                className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-5 shadow-xs space-y-4 hover:border-ring/40 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -307,11 +307,11 @@ export function WizardStepScoring({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-[11px] text-muted-foreground pt-1 border-t border-border">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground pt-1 border-t border-border">
                   <span>
                     {t("jobs.wizard.maxScoreLabel")}: {crit.maxScore}
                   </span>
-                  <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px] text-foreground">
+                  <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px] text-foreground max-w-full break-all">
                     {t("jobs.wizard.keyLabel")}: {crit.key}
                   </span>
                 </div>
@@ -323,7 +323,7 @@ export function WizardStepScoring({
 
       {/* Add Criterion Inline Form */}
       {isAddingCriterion ? (
-        <div className="p-5 rounded-xl border border-border bg-muted/30 space-y-4">
+        <div className="p-4 sm:p-5 rounded-xl border border-border bg-muted/30 space-y-4">
           <h4 className="text-xs font-medium text-foreground">
             {t("jobs.wizard.addCustomCriterionTitle")}
           </h4>
@@ -431,7 +431,7 @@ export function WizardStepScoring({
       )}
 
       {/* Automatically Score Card */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-5 shadow-xs">
         <label
           htmlFor="auto-score-applicants-checkbox"
           className="flex items-start gap-3 cursor-pointer"
@@ -457,7 +457,7 @@ export function WizardStepScoring({
       </div>
 
       {/* Bottom Step 3 Actions */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2 pt-2">
         <Button
           type="button"
           variant="ghost"

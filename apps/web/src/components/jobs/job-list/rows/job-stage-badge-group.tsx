@@ -34,7 +34,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
       </div>
 
       {/* 6 Stage Metric Pills */}
-      <div className="grid grid-cols-6 gap-1">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-1">
         {pipelineStages.map((stage) => {
           const count = counts.byStage[stage.id] || 0;
           const displayLabel = stage.label;
@@ -47,7 +47,7 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
                 e.stopPropagation();
                 router.push(`/jobs/${jobId}/pipeline?stage=${stage.id}`);
               }}
-              className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
+              className={`flex items-center justify-between px-1.5 py-1.5 sm:py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
               title={`${stage.label}: ${count}`}
               aria-label={`${stage.label}: ${count}`}
             >

@@ -71,7 +71,7 @@ export function JobFiltersBar({
 
         {/* Right: Search Box + Columns Dropdown + Filters Button */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
+          <div className="w-full sm:w-64 md:w-72">
             <SearchInput
               placeholder={t("jobs.searchJobs")}
               aria-label={t("jobs.searchJobs")}

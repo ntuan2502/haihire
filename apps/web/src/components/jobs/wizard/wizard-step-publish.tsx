@@ -195,45 +195,45 @@ export function WizardStepPublish({
       </div>
 
       {/* Job Summary Card */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-xs space-y-4">
         <h3 className="text-xs font-semibold text-foreground">
           {t("jobs.wizard.jobSummaryTitle")}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <Briefcase className="h-3.5 w-3.5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <span className="text-muted-foreground block text-[10px]">
                 {t("jobs.wizard.titleSub")}
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-foreground break-words">
                 {jobTitle.trim() || t("jobs.wizard.untitledJob")}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <span className="text-muted-foreground block text-[10px]">
                 {t("jobs.wizard.locationSub")}
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-foreground break-words">
                 {location.trim() || t("jobs.workplace.remote")}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <FileUp className="h-3.5 w-3.5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <span className="text-muted-foreground block text-[10px]">
                 {t("jobs.wizard.resumeSub")}
               </span>
@@ -247,11 +247,11 @@ export function WizardStepPublish({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <Target className="h-3.5 w-3.5" />
             </span>
-            <div>
+            <div className="min-w-0">
               <span className="text-muted-foreground block text-[10px]">
                 {t("jobs.wizard.questionsSub")}
               </span>
@@ -265,7 +265,7 @@ export function WizardStepPublish({
 
       {/* Danger Zone (Edit mode only) */}
       {mode === "edit" && initialJob && (
-        <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-6 shadow-xs space-y-4">
+        <div className="rounded-xl border border-destructive/30 bg-card text-card-foreground p-4 sm:p-6 shadow-xs space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-destructive flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
@@ -300,7 +300,7 @@ export function WizardStepPublish({
       )}
 
       {/* Bottom Step 4 Actions */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2 pt-2">
         <Button
           type="button"
           variant="ghost"

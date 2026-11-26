@@ -324,6 +324,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onBackToStep1={() => setCurrentStep(1)}
         onStep2Continue={() => setCurrentStep(3)}
         onBackToStep2={() => setCurrentStep(2)}
+        onStep3Skip={() => setCurrentStep(4)}
         onStep3Continue={() => setCurrentStep(4)}
         onBackToStep3={() => setCurrentStep(3)}
         onSaveJob={submit.handleSaveJob}

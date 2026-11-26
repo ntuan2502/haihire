@@ -124,7 +124,7 @@ export function WizardPreviewModal({
                 ? "p-4 space-y-5"
                 : previewDevice === "tablet"
                   ? "p-6 sm:p-8 space-y-6 max-w-3xl mx-auto"
-                  : "p-6 sm:p-10 space-y-8 w-full",
+                  : "p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 w-full",
             )}
           >
             {/* Top Branding / Department Tag */}
@@ -239,15 +239,15 @@ export function WizardPreviewModal({
             {/* Two-Column or Stack Layout based on device preview */}
             <div
               className={cn(
-                "grid gap-8 items-start",
-                previewDevice === "desktop" ? "grid-cols-12" : "grid-cols-1",
+                "grid gap-6 sm:gap-8 items-start",
+                previewDevice === "desktop" ? "lg:grid-cols-12" : "grid-cols-1",
               )}
             >
               {/* Left Column in Preview: Unified Description */}
               <div
                 className={cn(
-                  "space-y-6",
-                  previewDevice === "desktop" ? "col-span-7" : "col-span-1",
+                  "space-y-6 min-w-0",
+                  previewDevice === "desktop" ? "lg:col-span-7" : "col-span-1",
                 )}
               >
                 {/* Job Description */}
@@ -282,12 +282,13 @@ export function WizardPreviewModal({
               {/* Right Column in Preview: Application Form Simulation */}
               <div
                 className={cn(
+                  "min-w-0",
                   previewDevice === "desktop"
-                    ? "col-span-5 sticky top-4"
+                    ? "lg:col-span-5 lg:sticky lg:top-4"
                     : "col-span-1",
                 )}
               >
-                <div className="p-5 sm:p-6 rounded-2xl border border-border bg-card text-card-foreground shadow-xs space-y-4">
+                <div className="p-4 sm:p-6 rounded-2xl border border-border bg-card text-card-foreground shadow-xs space-y-4">
                   <div>
                     <h3 className="text-base font-semibold text-foreground">
                       {t("careers.applicationFormTitle")}

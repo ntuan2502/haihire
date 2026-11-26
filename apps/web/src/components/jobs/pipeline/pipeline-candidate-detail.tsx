@@ -114,6 +114,16 @@ export function PipelineCandidateDetail({
           mobileDetailOpen ? "block" : "hidden md:block"
         }`}
       >
+        <div className="md:hidden pb-2">
+          <button
+            type="button"
+            onClick={onCloseMobileDetail}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border text-xs font-medium text-foreground shadow-2xs cursor-pointer hover:bg-accent transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{t("applications.backToApplications")}</span>
+          </button>
+        </div>
         <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-2">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground mb-2">
             <User className="h-6 w-6" />
@@ -241,7 +251,7 @@ export function PipelineCandidateDetail({
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
 
-              <span className="px-1 text-xs font-semibold text-foreground tabular-nums">
+              <span className="px-1 text-xs font-semibold text-foreground tabular-nums whitespace-nowrap shrink-0">
                 {currentIndex + 1} / {totalCandidates}
               </span>
 

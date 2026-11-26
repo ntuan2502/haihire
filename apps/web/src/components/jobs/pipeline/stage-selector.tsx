@@ -68,7 +68,7 @@ export function StageSelector({
     );
 
     return (
-      <div className={`relative inline-block ${className}`}>
+      <div className={`relative inline-block max-w-full ${className}`}>
         <select
           aria-label={t("pipeline.switchStageHint")}
           value=""
@@ -79,7 +79,7 @@ export function StageSelector({
               handleStageClick(next);
             }
           }}
-          className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-8 w-full max-w-full truncate px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="" disabled>
             {t("pipeline.switchStageHint")}

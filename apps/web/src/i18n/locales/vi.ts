@@ -904,12 +904,13 @@ export const vi: TranslationSchema = {
     score: "Điểm đánh giá",
     aiEvaluation: {
       title: "Đánh giá AI",
+      notRunYet: "Chưa chạy",
       scoreButton: "Chấm điểm AI",
       rescoreButton: "Chấm lại",
       scoringButton: "Đang xếp hàng...",
       retryButton: "Thử chấm lại",
       unscoredHint:
-        "Phân tích CV, thư ứng tuyển và câu trả lời sàng lọc theo JD.",
+        "Chạy phân tích để chấm điểm ứng viên này theo các tiêu chí của vị trí, kèm dẫn chứng và điểm thiếu hụt cho từng tiêu chí.",
       notConfiguredHint: "Chưa kết nối nhà cung cấp AI cho tổ chức.",
       configureAiLink: "Cấu hình AI",
       scoringInProgress: "AI đang phân tích CV và câu trả lời...",

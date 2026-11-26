@@ -70,6 +70,23 @@ function formatCategoryBadge(
   return t("jobs.wizard.categories.custom");
 }
 
+function getTriggerButtonVariant(icon: "run" | "rescore"): "default" | "ghost" {
+  return icon === "rescore" ? "ghost" : "default";
+}
+
+function getTriggerButtonClassName(icon: "run" | "rescore"): string {
+  return icon === "rescore"
+    ? "h-7 px-2.5 text-xs gap-1.5 cursor-pointer shrink-0 text-primary hover:text-primary"
+    : "h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shrink-0";
+}
+
+function getUnscoredBodyClassName(isCompact: boolean): string {
+  return cn(
+    "border-t border-border",
+    isCompact ? "-mx-4 px-4 pt-3" : "-mx-5 px-5 pt-3.5",
+  );
+}
+
 export function AiScoreCard({
   application,
   canScore,
@@ -131,6 +148,7 @@ export function AiScoreCard({
     effectiveStatus === "PENDING" || effectiveStatus === "PROCESSING";
   const isFailed = effectiveStatus === "FAILED";
   const hasScore = typeof effectiveScore === "number";
+  const isUnscored = !hasScore && !isInFlight && !isFailed;
   const isCompact = variant === "compact";
   const isAiEnabled = Boolean(aiStatus?.enabled);
   const criteriaResults = evaluation?.criteriaResults ?? null;
@@ -183,21 +201,18 @@ export function AiScoreCard({
     return (
       <Button
         type="button"
-        variant={icon === "rescore" ? "ghost" : "outline"}
+        variant={getTriggerButtonVariant(icon)}
         size="sm"
         onClick={handleRunScore}
         disabled={isPending || isInFlight}
-        className={cn(
-          "h-7 px-2.5 text-xs gap-1.5 cursor-pointer shrink-0",
-          icon === "rescore" && "text-primary hover:text-primary",
-        )}
+        className={getTriggerButtonClassName(icon)}
       >
         {isPending ? (
-          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
         ) : icon === "rescore" ? (
           <RefreshCw className="h-3 w-3" aria-hidden="true" />
         ) : (
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
+          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
         )}
         <span>
           {isPending ? t("applications.aiEvaluation.scoringButton") : label}
@@ -265,6 +280,12 @@ export function AiScoreCard({
           <span className="text-sm font-semibold text-foreground">
             {t("applications.aiEvaluation.title")}
           </span>
+
+          {isUnscored && (
+            <span className="text-xs text-muted-foreground">
+              {t("applications.aiEvaluation.notRunYet")}
+            </span>
+          )}
 
           {hasScore && (
             <>
@@ -339,7 +360,35 @@ export function AiScoreCard({
               "rescore",
             )}
 
-          {!isCompact && hasScore && (
+          {isUnscored &&
+            (aiStatus && !isAiEnabled ? (
+              canManageIntegrations ? (
+                <Link
+                  href="/settings/integrations/ai"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline shrink-0"
+                >
+                  <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t("applications.aiEvaluation.configureAiLink")}</span>
+                </Link>
+              ) : null
+            ) : (
+              <>
+                {!isCompact && aiStatus?.modelId && (
+                  <span
+                    title={aiStatus.modelId}
+                    className="hidden sm:inline-flex items-center rounded-md border border-border bg-muted/40 px-2.5 h-8 text-xs font-medium text-foreground/80 max-w-[180px] truncate"
+                  >
+                    {aiStatus.modelId}
+                  </span>
+                )}
+                {renderTriggerButton(
+                  t("applications.aiEvaluation.scoreButton"),
+                  "run",
+                )}
+              </>
+            ))}
+
+          {!isCompact && (hasScore || isUnscored) && (
             <button
               type="button"
               onClick={() => setIsCardCollapsed((prev) => !prev)}
@@ -400,34 +449,13 @@ export function AiScoreCard({
       )}
 
       {/* Unscored State */}
-      {!hasScore && !isInFlight && !isFailed && (
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          {aiStatus && !isAiEnabled ? (
-            <>
-              <p className="text-xs text-muted-foreground">
-                {t("applications.aiEvaluation.notConfiguredHint")}
-              </p>
-              {canManageIntegrations && (
-                <Link
-                  href="/settings/integrations/ai"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline shrink-0"
-                >
-                  <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{t("applications.aiEvaluation.configureAiLink")}</span>
-                </Link>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">
-                {t("applications.aiEvaluation.unscoredHint")}
-              </p>
-              {renderTriggerButton(
-                t("applications.aiEvaluation.scoreButton"),
-                "run",
-              )}
-            </>
-          )}
+      {isUnscored && !isCardCollapsed && (
+        <div className={getUnscoredBodyClassName(isCompact)}>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {aiStatus && !isAiEnabled
+              ? t("applications.aiEvaluation.notConfiguredHint")
+              : t("applications.aiEvaluation.unscoredHint")}
+          </p>
         </div>
       )}
 

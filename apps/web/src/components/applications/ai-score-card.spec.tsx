@@ -48,6 +48,7 @@ vi.mock("@/i18n", () => ({
     t: (key: string, params?: Record<string, string | number>) => {
       const dict: Record<string, string> = {
         "applications.aiEvaluation.title": "AI Evaluation",
+        "applications.aiEvaluation.notRunYet": "Not run yet",
         "applications.aiEvaluation.scoreButton": "Run AI Score",
         "applications.aiEvaluation.rescoreButton": "Re-score",
         "applications.aiEvaluation.scoringButton": "Queuing...",
@@ -119,6 +120,22 @@ describe("AiScoreCard", () => {
   it("triggers manual AI scoring when unscored and AI is enabled", async () => {
     render(<AiScoreCard application={baseApplication} canScore={true} />);
 
+    expect(screen.getByText("Not run yet")).toBeInTheDocument();
+    expect(screen.getByText("gemini-4-hydrogen")).toBeInTheDocument();
+    expect(
+      screen.getByText("Analyze CV and screening answers."),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+    expect(
+      screen.queryByText("Analyze CV and screening answers."),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    expect(
+      screen.getByText("Analyze CV and screening answers."),
+    ).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Run AI Score" }));
     await waitFor(() => {
       expect(mockTriggerMutateAsync).toHaveBeenCalledWith("app-1");
@@ -134,6 +151,7 @@ describe("AiScoreCard", () => {
 
     render(<AiScoreCard application={baseApplication} canScore={true} />);
 
+    expect(screen.getByText("Not run yet")).toBeInTheDocument();
     expect(
       screen.getByText("Configure AI provider first."),
     ).toBeInTheDocument();

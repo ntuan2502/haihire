@@ -904,12 +904,13 @@ export const en: TranslationSchema = {
     score: "Score",
     aiEvaluation: {
       title: "AI Evaluation",
+      notRunYet: "Not run yet",
       scoreButton: "Run AI Score",
       rescoreButton: "Re-score",
       scoringButton: "Queuing...",
       retryButton: "Retry scoring",
       unscoredHint:
-        "Analyze CV, cover letter, and screening answers against this job.",
+        "Run an analysis to score this candidate against the job's criteria, with evidence and gaps per criterion.",
       notConfiguredHint:
         "Configure an organization AI provider to enable candidate scoring.",
       configureAiLink: "Configure AI",

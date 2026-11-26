@@ -789,6 +789,7 @@ export interface TranslationSchema {
     score: string;
     aiEvaluation: {
       title: string;
+      notRunYet: string;
       scoreButton: string;
       rescoreButton: string;
       scoringButton: string;

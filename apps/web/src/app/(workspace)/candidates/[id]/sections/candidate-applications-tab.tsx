@@ -48,7 +48,7 @@ export function CandidateApplicationsTab({
   return (
     <div className="space-y-4">
       {/* Applications Action Row */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
         <CustomSelect
           value={stageFilter}
           onChange={(v) => setStageFilter(v)}
@@ -69,7 +69,7 @@ export function CandidateApplicationsTab({
           <button
             type="button"
             onClick={onOpenApplyModal}
-            className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>{t("candidates.applyToJob")}</span>
@@ -93,12 +93,12 @@ export function CandidateApplicationsTab({
             const allInterviews = getInterviewsFromApplication(app);
             return (
               <div key={app.id} className="py-4 space-y-3 text-xs">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="space-y-0.5">
-                    <h4 className="font-semibold text-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
+                  <div className="space-y-0.5 min-w-0">
+                    <h4 className="font-semibold text-foreground break-words">
                       {job?.title || t("common.positionFallback")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-2">
+                    <p className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span>
                         {t("candidates.stage")}: {getStageLabel(app.stage, t)}
                       </span>
@@ -109,7 +109,7 @@ export function CandidateApplicationsTab({
                       </span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <StageBadge stage={app.stage} />
                     {hasCreateInterview && allInterviews.length === 0 && (
                       <button

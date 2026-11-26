@@ -159,7 +159,7 @@ export function ApplyToJobModal({
           {t("common.close")}
         </Button>
       }
-      bodyClassName="p-5 bg-background text-foreground space-y-3"
+      bodyClassName="p-4 sm:p-5 bg-background text-foreground space-y-3"
     >
       {errorMessage && (
         <div

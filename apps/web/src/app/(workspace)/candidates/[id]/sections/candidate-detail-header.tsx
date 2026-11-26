@@ -46,16 +46,16 @@ export function CandidateDetailHeader({
 
       {/* Candidate Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground break-words">
             {candidateName}
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
             <a
               href={`mailto:${candidateEmail}`}
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1 hover:text-foreground transition-colors min-w-0 break-all"
             >
-              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span>{candidateEmail}</span>
             </a>
             {candidatePhone && (
@@ -63,7 +63,7 @@ export function CandidateDetailHeader({
                 href={`tel:${candidatePhone}`}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{candidatePhone}</span>
               </a>
             )}
@@ -71,7 +71,7 @@ export function CandidateDetailHeader({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {canUpdateCandidate && (
             <button
               type="button"

@@ -37,7 +37,16 @@ export function CandidateDrawerHeader({
         <span>{t("applications.backToTable")}</span>
       </button>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={t("common.close")}
+        className="h-8 w-8 inline-flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0 sm:order-last"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      <div className="flex items-center justify-end gap-2 flex-wrap w-full sm:w-auto sm:ml-auto">
         {onViewInPipeline && (
           <button
             type="button"
@@ -61,15 +70,6 @@ export function CandidateDrawerHeader({
         >
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
           <span>{t("applications.openFullPage")}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t("common.close")}
-          className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <X className="h-4 w-4" />
         </button>
       </div>
     </div>

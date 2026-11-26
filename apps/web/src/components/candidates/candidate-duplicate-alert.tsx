@@ -77,7 +77,7 @@ function DuplicateAlertBanner({
         </div>
       </div>
 
-      <ul className="space-y-1.5 pl-6">
+      <ul className="space-y-1.5 pl-0 sm:pl-6">
         {matches.map((match) => (
           <li
             key={match.id}
@@ -96,7 +96,7 @@ function DuplicateAlertBanner({
                 ))}
               </div>
               <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-                <span>{match.email}</span>
+                <span className="break-all">{match.email}</span>
                 {match.phone && <span>{match.phone}</span>}
               </div>
             </div>

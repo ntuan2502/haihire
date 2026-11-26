@@ -75,7 +75,7 @@ export function ApplicationsTableToolbar({
 
         {/* Right: Search Box + Columns Dropdown */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
+          <div className="w-full sm:w-64 md:w-72">
             <SearchInput
               placeholder={t("applications.searchApplications")}
               aria-label={t("applications.searchApplications")}
@@ -157,8 +157,8 @@ export function ApplicationsTableToolbar({
             {t("common.filter")}:
           </span>
           {!fixedJobId && currentJobFilter !== "ALL" && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium">
-              <span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium max-w-full">
+              <span className="truncate">
                 {jobs.find((j) => j.id === currentJobFilter)?.title ||
                   currentJobFilter}
               </span>

@@ -243,18 +243,18 @@ function AddCandidatePageContent() {
           />
 
           {selectedFile ? (
-            <div className="flex flex-col items-center justify-center space-y-2">
+            <div className="flex flex-col items-center justify-center space-y-2 max-w-full">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
                 <FileText className="h-5 w-5" />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-foreground">
+              <div className="flex items-center gap-2 max-w-full min-w-0">
+                <span className="text-xs font-semibold text-foreground truncate min-w-0">
                   {selectedFile.name}
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedFile(null)}
-                  className="text-muted-foreground hover:text-destructive cursor-pointer p-0.5"
+                  className="text-muted-foreground hover:text-destructive cursor-pointer p-1 shrink-0"
                   title={t("candidates.removeFile")}
                 >
                   <X className="h-3.5 w-3.5" />

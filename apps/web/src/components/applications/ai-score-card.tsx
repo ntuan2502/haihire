@@ -258,7 +258,7 @@ export function AiScoreCard({
       data-testid="ai-score-card"
       className={cn(
         "rounded-xl border border-border bg-card text-card-foreground shadow-xs",
-        isCompact ? "p-4 space-y-3" : "p-5 space-y-4",
+        isCompact ? "p-4 space-y-3" : "p-4 sm:p-5 space-y-4",
       )}
     >
       {/* Header Row */}
@@ -322,7 +322,7 @@ export function AiScoreCard({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 max-w-full">
           {!isCompact &&
             criteriaResults &&
             criteriaResults.length > 0 &&
@@ -418,7 +418,7 @@ export function AiScoreCard({
       {/* Failed State */}
       {isFailed && !isInFlight && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-          <span className="min-w-0 truncate">
+          <span className="min-w-0 break-words sm:truncate">
             {evaluation?.errorMessage || t("errors.GENERIC_ERROR")}
           </span>
           {renderTriggerButton(
@@ -535,7 +535,7 @@ export function AiScoreCard({
                         </div>
                         <span
                           className={cn(
-                            "text-xs font-bold font-mono tabular-nums w-10 text-right",
+                            "text-xs font-bold font-mono tabular-nums min-w-10 text-right",
                             getScoreTextColorClass(pct),
                           )}
                         >

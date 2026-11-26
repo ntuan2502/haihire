@@ -168,7 +168,7 @@ export function ApplicationNotesStream({
               {getInitials(user?.name || t("common.unknownUserFallback"))}
             </div>
 
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 min-w-0 space-y-2">
               <textarea
                 ref={composerTextareaRef}
                 rows={isFocused || composerContent ? 3 : compact ? 1 : 2}
@@ -186,8 +186,8 @@ export function ApplicationNotesStream({
               />
 
               {(isFocused || composerContent.trim().length > 0) && (
-                <div className="flex items-center justify-between pt-1 border-t border-border">
-                  <span className="text-[10px] text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-end sm:justify-between gap-2 pt-1 border-t border-border">
+                  <span className="hidden sm:inline text-[10px] text-muted-foreground">
                     {t("applications.notesStream.keyboardHint")}
                   </span>
 
@@ -198,7 +198,7 @@ export function ApplicationNotesStream({
                         setComposerContent("");
                         setIsFocused(false);
                       }}
-                      className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+                      className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       {t("common.cancel")}
                     </button>
@@ -209,7 +209,7 @@ export function ApplicationNotesStream({
                         !composerContent.trim() || addNoteMutation.isPending
                       }
                       onClick={handleAddNote}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       {addNoteMutation.isPending ? (
                         <>
@@ -328,7 +328,7 @@ export function ApplicationNotesStream({
                             type="button"
                             onClick={() => handleStartEdit(note)}
                             title={t("common.edit")}
-                            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
                           >
                             <Pencil className="h-3 w-3" />
                           </button>
@@ -337,7 +337,7 @@ export function ApplicationNotesStream({
                             type="button"
                             onClick={() => setDeletingNoteId(note.id)}
                             title={t("common.delete")}
-                            className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -394,15 +394,15 @@ export function ApplicationNotesStream({
                           }}
                           className="w-full text-xs p-2.5 rounded-md border border-ring bg-background focus:outline-hidden ring-2 ring-ring/20 resize-none text-foreground"
                         />
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">
+                        <div className="flex flex-wrap items-center justify-end sm:justify-between gap-2">
+                          <span className="hidden sm:inline text-[10px] text-muted-foreground">
                             {t("applications.notesStream.keyboardHint")}
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={handleCancelEdit}
-                              className="h-6 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                              className="h-6 px-2 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                             >
                               {t("common.cancel")}
                             </button>
@@ -413,7 +413,7 @@ export function ApplicationNotesStream({
                                 updateNoteMutation.isPending
                               }
                               onClick={() => handleSaveEdit(note.id)}
-                              className="inline-flex h-6 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
+                              className="inline-flex h-6 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-semibold text-primary-foreground shadow-2xs transition-colors hover:bg-primary/90 disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
                             >
                               {updateNoteMutation.isPending ? (
                                 <Loader2 className="h-2.5 w-2.5 animate-spin" />

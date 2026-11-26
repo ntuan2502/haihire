@@ -97,7 +97,7 @@ export function CandidatesFilterDrawer({
         <h4 className="text-xs font-semibold text-foreground">
           {t("jobs.sortByUpper")}
         </h4>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <CustomSelect
             value={sortField}
             onChange={(val) => onSortFieldChange(val as SortField)}

@@ -112,7 +112,7 @@ export function CandidateDrawerDocumentsTab({
                 <button
                   type="button"
                   onClick={() => onPreviewDoc(doc)}
-                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                  className="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
                   aria-label={t("common.preview")}
                   title={t("common.preview")}
                 >
@@ -125,7 +125,7 @@ export function CandidateDrawerDocumentsTab({
                     onClick={() =>
                       onDownloadDoc(doc.url, doc.name, doc.sourceApplicationId)
                     }
-                    className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    className="p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent transition-colors cursor-pointer"
                     title={t("common.download")}
                   >
                     <Download className="h-3.5 w-3.5" />
@@ -136,7 +136,7 @@ export function CandidateDrawerDocumentsTab({
                   <button
                     type="button"
                     onClick={() => onDeleteDoc(doc)}
-                    className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10 transition-colors cursor-pointer"
+                    className="p-2 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10 transition-colors cursor-pointer"
                     title={t("common.delete")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

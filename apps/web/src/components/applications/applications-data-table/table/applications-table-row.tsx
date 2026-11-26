@@ -49,7 +49,7 @@ export function ApplicationsTableRow({
     >
       {/* Candidate Name */}
       {visibleColumns.candidate && (
-        <td className="py-4 px-5 font-semibold text-foreground">
+        <td className="py-4 px-4 sm:px-5 font-semibold text-foreground whitespace-nowrap">
           <button
             type="button"
             onClick={(e) => {
@@ -65,7 +65,7 @@ export function ApplicationsTableRow({
 
       {/* Email */}
       {visibleColumns.email && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-4 sm:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
             <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>{application.candidateEmail}</span>
@@ -75,7 +75,7 @@ export function ApplicationsTableRow({
 
       {/* Job */}
       {visibleColumns.job && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-4 sm:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
             <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>
@@ -90,7 +90,7 @@ export function ApplicationsTableRow({
 
       {/* Status */}
       {visibleColumns.status && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-4 sm:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
             <span
               className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
@@ -102,7 +102,7 @@ export function ApplicationsTableRow({
 
       {/* Score */}
       {visibleColumns.score && (
-        <td className="py-4 px-5 text-muted-foreground">
+        <td className="py-4 px-4 sm:px-5 text-muted-foreground whitespace-nowrap">
           {application.aiScoreStatus === "PENDING" ||
           application.aiScoreStatus === "PROCESSING" ? (
             <span
@@ -126,7 +126,7 @@ export function ApplicationsTableRow({
 
       {/* Applied */}
       {visibleColumns.applied && (
-        <td className="py-4 px-5 text-muted-foreground">
+        <td className="py-4 px-4 sm:px-5 text-muted-foreground whitespace-nowrap">
           {formatRelativeTime(application.createdAt, {
             defaultLanguage: locale,
           })}
@@ -134,7 +134,7 @@ export function ApplicationsTableRow({
       )}
 
       {/* Actions */}
-      <td className="py-4 px-5 text-right whitespace-nowrap">
+      <td className="py-4 px-4 sm:px-5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           {/* Quick View */}
           <button

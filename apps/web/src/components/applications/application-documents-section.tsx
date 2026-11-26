@@ -31,7 +31,7 @@ export function ApplicationDocumentsSection({
         {documents.map((doc) => (
           <div
             key={doc.id || doc.url}
-            className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-accent/30 transition-colors"
+            className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-accent/30 transition-colors"
           >
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -51,7 +51,7 @@ export function ApplicationDocumentsSection({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => onPreview(doc)}

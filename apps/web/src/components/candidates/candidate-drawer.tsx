@@ -79,7 +79,7 @@ export function CandidateDrawer({
           />
 
           {/* Card 3: Tabs */}
-          <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4">
+          <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-5 shadow-xs space-y-4">
             {/* Tabs Header */}
             <div className="flex items-center justify-between border-b border-border overflow-x-auto scrollbar-none">
               <div className="flex items-center gap-6 text-xs font-semibold -mb-px whitespace-nowrap">

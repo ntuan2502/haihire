@@ -309,7 +309,7 @@ export function CandidateNotesStream({
                 className="group relative rounded-xl border border-border bg-card text-card-foreground p-3.5 shadow-2xs hover:shadow-xs transition-colors duration-150"
               >
                 {/* Note Header */}
-                <div className="flex items-center justify-between gap-2 pb-2 border-b border-border">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-border">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
                       className={`h-7 w-7 rounded-lg flex items-center justify-center text-[10px] font-semibold shrink-0 shadow-2xs ${avatarBg}`}
@@ -346,11 +346,11 @@ export function CandidateNotesStream({
 
                     {/* Quick action buttons on hover */}
                     {canManage && !isEditing && !isConfirmingDelete && (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                      <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity ml-1">
                         <button
                           type="button"
                           onClick={() => handleStartEdit(note)}
-                          className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                           title={t("common.edit")}
                         >
                           <Pencil className="h-3 w-3" />
@@ -361,7 +361,7 @@ export function CandidateNotesStream({
                             setDeleteConfirmId(note.id);
                             setEditingNoteId(null);
                           }}
-                          className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                           title={t("common.delete")}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -373,7 +373,7 @@ export function CandidateNotesStream({
 
                 {/* Inline Delete Confirmation */}
                 {isConfirmingDelete && (
-                  <div className="my-2.5 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 flex items-center justify-between gap-2">
+                  <div className="my-2.5 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <p className="text-[11px] font-medium text-rose-800 dark:text-rose-200">
                       {t("applications.notesStream.deleteConfirm")}
                     </p>
@@ -411,8 +411,8 @@ export function CandidateNotesStream({
                       onKeyDown={(e) => handleKeyDownEdit(e, note.id)}
                       className="w-full text-xs text-foreground bg-muted/40 border border-input rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-ring/20 leading-relaxed resize-none"
                     />
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-muted-foreground">
+                    <div className="flex flex-wrap items-center justify-end sm:justify-between gap-2">
+                      <span className="hidden sm:inline text-[10px] text-muted-foreground">
                         {t("applications.notesStream.keyboardHint")}
                       </span>
                       <div className="flex items-center gap-1.5">

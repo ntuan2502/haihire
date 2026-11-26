@@ -253,7 +253,7 @@ export function ApplicationFormCard({
                   </p>
 
                   {isScreeningFileAnswer(entry.rawAnswer) ? (
-                    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-md border border-border bg-card px-2.5 py-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <FileText
                           className="h-3.5 w-3.5 text-primary shrink-0"
@@ -269,7 +269,7 @@ export function ApplicationFormCard({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center justify-end gap-1.5 shrink-0">
                         {onPreviewDoc && (
                           <button
                             type="button"
@@ -349,7 +349,7 @@ export function ApplicationFormCard({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
                       {previewText}
                     </p>
                   )}

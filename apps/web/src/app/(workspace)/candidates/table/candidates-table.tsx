@@ -75,7 +75,7 @@ export function CandidatesTable({
                     key={col.id}
                     scope="col"
                     aria-sort={ariaSort}
-                    className="py-3.5 px-4 sm:px-5 select-none"
+                    className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                   >
                     <button
                       type="button"

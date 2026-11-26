@@ -289,9 +289,9 @@ export function CandidateTimeline({
                   </div>
 
                   {/* Event Card */}
-                  <div className="rounded-xl border border-border bg-background/40 text-card-foreground p-4 hover:border-ring/40 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
+                  <div className="rounded-xl border border-border bg-background/40 text-card-foreground p-3 sm:p-4 hover:border-ring/40 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${getBadgeClass(
@@ -311,7 +311,7 @@ export function CandidateTimeline({
                                 : "")}
                           </span>
                         </div>
-                        <p className="text-xs text-foreground/90 leading-relaxed">
+                        <p className="text-xs text-foreground/90 leading-relaxed break-words">
                           {description}
                         </p>
                       </div>
@@ -321,7 +321,7 @@ export function CandidateTimeline({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleExpand(event.id)}
-                          className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1"
+                          className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer inline-flex items-center gap-1 self-start sm:self-auto shrink-0"
                         >
                           <span>
                             {isExpanded
@@ -345,7 +345,7 @@ export function CandidateTimeline({
                             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                             <span>{t("timeline.deliveredViaProvider")}</span>
                           </div>
-                          <p className="text-xs text-foreground">
+                          <p className="text-xs text-foreground break-words">
                             {(event.metadata?.body as string) ||
                               (event.metadata?.subject as string) ||
                               event.description ||
@@ -357,7 +357,7 @@ export function CandidateTimeline({
 
                     {/* Actor Footer */}
                     <div className="mt-2.5 pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
                         <User className="h-3 w-3 text-muted-foreground" />
                         <span>{t("timeline.performedBy")}:</span>
                         <strong className="font-semibold text-foreground">

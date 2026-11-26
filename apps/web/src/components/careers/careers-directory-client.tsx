@@ -161,18 +161,18 @@ export function CareersDirectoryClient({
         {/* Filter and View Switcher Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
           {/* View Mode Toggle: Companies vs All Jobs */}
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg border border-border w-fit">
+          <div className="grid grid-cols-2 sm:inline-flex items-center gap-1 p-1 bg-muted rounded-lg border border-border w-full sm:w-fit">
             <button
               type="button"
               onClick={() => setViewMode("companies")}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0 ${
                 viewMode === "companies"
                   ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Building2 className="h-3.5 w-3.5" />
-              <span>
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
                 {t("careers.viewByCompanyWithCount", {
                   count: companiesList.length,
                 })}
@@ -182,14 +182,14 @@ export function CareersDirectoryClient({
             <button
               type="button"
               onClick={() => setViewMode("jobs")}
-              className={`px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0 ${
                 viewMode === "jobs"
                   ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Briefcase className="h-3.5 w-3.5" />
-              <span>
+              <Briefcase className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
                 {t("careers.viewAllJobsWithCount", {
                   count: publishedJobsCount,
                 })}
@@ -198,7 +198,7 @@ export function CareersDirectoryClient({
           </div>
 
           {/* Department Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <span className="text-xs font-semibold text-muted-foreground shrink-0">
               {t("careers.allDeptsLabel")}
             </span>
@@ -212,7 +212,7 @@ export function CareersDirectoryClient({
                   label: dept,
                 })),
               ]}
-              className="w-48"
+              className="flex-1 sm:w-48"
               triggerClassName="h-9 text-xs font-semibold"
             />
           </div>

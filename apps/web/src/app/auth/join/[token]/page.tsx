@@ -227,17 +227,17 @@ export default function JoinOrganizationPage() {
             </div>
 
             {/* Meta details */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
-              <div className="flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-2 border-t border-border">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="break-words">
                   {t("join.joinAs")}{" "}
                   <strong>{getOrgRoleLabel(inviteData.role, t)}</strong>
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="break-words">
                   {t("join.invitedBy")}{" "}
                   <strong>
                     {inviteData.createdByName ||
@@ -265,7 +265,7 @@ export default function JoinOrganizationPage() {
               <p className="text-xs text-muted-foreground">
                 {t("join.signInPrompt")}
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   type="button"
                   onClick={() =>
@@ -301,7 +301,7 @@ export default function JoinOrganizationPage() {
                 <h3 className="text-xs font-bold text-foreground">
                   {t("join.emailMismatchTitle")}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed break-words">
                   {t("join.emailMismatchDesc", {
                     currentEmail: user?.email || "",
                     invitedEmail: inviteData.maskedInvitedEmail || "",
@@ -353,17 +353,17 @@ export default function JoinOrganizationPage() {
                 type="button"
                 disabled={joining}
                 onClick={handleJoin}
-                className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-md shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full max-w-full overflow-hidden h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-md shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
                 {joining ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{t("join.joiningButton")}</span>
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    <span className="truncate">{t("join.joiningButton")}</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4" />
-                    <span>
+                    <UserPlus className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 truncate">
                       {t("join.joinOrgButton", {
                         org: inviteData.organization?.name || "",
                       })}

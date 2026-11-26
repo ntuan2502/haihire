@@ -351,7 +351,10 @@ export function JobPublicApplyForm({
   };
 
   return (
-    <div ref={formRef} className="lg:col-span-5 sticky top-24 space-y-6">
+    <div
+      ref={formRef}
+      className="lg:col-span-5 lg:sticky lg:top-24 min-w-0 space-y-6"
+    >
       <div className="p-6 sm:p-8 rounded-xl bg-card text-card-foreground border border-border space-y-6">
         <div>
           <h2 className="text-lg font-medium text-foreground">
@@ -534,13 +537,13 @@ export function JobPublicApplyForm({
                 />
 
                 {resumeFile ? (
-                  <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/10 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 truncate">
+                  <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/10 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <FileText
                         className="h-5 w-5 text-primary shrink-0"
                         aria-hidden="true"
                       />
-                      <div className="truncate">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold text-foreground truncate">
                           {resumeFile.name}
                         </p>
@@ -557,7 +560,7 @@ export function JobPublicApplyForm({
                           fileInputRef.current.value = "";
                       }}
                       aria-label={t("common.delete")}
-                      className="h-7 w-7 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-8 w-8 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -599,7 +602,7 @@ export function JobPublicApplyForm({
             {/* Cover Letter (Hidden / Optional / Required) */}
             {coverLetterMode !== "hidden" && (
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                   <label
                     htmlFor="career-cover-letter"
                     className="text-xs font-medium text-foreground"
@@ -613,7 +616,7 @@ export function JobPublicApplyForm({
                       </span>
                     )}
                   </label>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                  <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
                     {t("careers.coverLetterCharsCount", {
                       count: coverLetter.length,
                     })}
@@ -697,7 +700,7 @@ export function JobPublicApplyForm({
                           {(q.options ?? []).map((opt) => (
                             <label
                               key={opt}
-                              className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
+                              className="flex items-start py-1 gap-2 text-xs text-foreground cursor-pointer"
                             >
                               <input
                                 type="radio"
@@ -709,7 +712,7 @@ export function JobPublicApplyForm({
                                     [q.id]: opt,
                                   }))
                                 }
-                                className="h-3.5 w-3.5 accent-primary"
+                                className="h-4 w-4 shrink-0 mt-0.5 accent-primary"
                               />
                               <span>{opt}</span>
                             </label>
@@ -722,7 +725,7 @@ export function JobPublicApplyForm({
                             return (
                               <label
                                 key={opt}
-                                className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
+                                className="flex items-start py-1 gap-2 text-xs text-foreground cursor-pointer"
                               >
                                 <input
                                   type="checkbox"
@@ -730,7 +733,7 @@ export function JobPublicApplyForm({
                                   onChange={() =>
                                     handleToggleMultiOption(q.id, opt)
                                   }
-                                  className="h-3.5 w-3.5 accent-primary"
+                                  className="h-4 w-4 shrink-0 mt-0.5 accent-primary"
                                 />
                                 <span>{opt}</span>
                               </label>

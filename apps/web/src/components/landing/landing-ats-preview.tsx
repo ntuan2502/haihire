@@ -319,7 +319,7 @@ export const LandingAtsPreview: React.FC = () => {
           <aside
             className={`w-full ${
               isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-80"
-            } shrink-0 flex flex-col h-full border-r border-border bg-card overflow-hidden transition-colors duration-200 ${
+            } shrink-0 flex flex-col h-full md:border-r border-border bg-card overflow-hidden transition-colors duration-200 ${
               mobileDetailOpen ? "hidden md:flex" : "flex"
             }`}
           >

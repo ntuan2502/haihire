@@ -74,8 +74,8 @@ export function OnboardingCreateView({
           <label className="block text-xs font-semibold text-foreground mb-1.5">
             {t("onboarding.slugLabel")}
           </label>
-          <div className="flex items-center rounded-md border border-input bg-muted/50 overflow-hidden">
-            <span className="px-3 text-xs text-muted-foreground font-mono select-none">
+          <div className="flex flex-col sm:flex-row sm:items-center rounded-md border border-input bg-muted/50 overflow-hidden">
+            <span className="px-3 py-2 sm:py-0 text-xs text-muted-foreground font-mono select-none border-b sm:border-b-0 sm:border-r border-input sm:shrink-0 sm:max-w-[45%] truncate">
               {displayHost ? `${displayHost}/` : "workspace/"}
             </span>
             <input
@@ -84,7 +84,7 @@ export function OnboardingCreateView({
               placeholder={t("onboarding.slugPlaceholder")}
               value={slug}
               onChange={onSlugChange}
-              className="h-10 flex-1 bg-background px-3 text-sm font-mono border-l border-input outline-hidden"
+              className="h-10 w-full min-w-0 flex-1 bg-background px-3 text-sm font-mono outline-hidden"
             />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">

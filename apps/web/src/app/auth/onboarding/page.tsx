@@ -282,7 +282,7 @@ function OnboardingContent() {
                   e.preventDefault();
                   handleJoinOrg();
                 }}
-                className="flex items-center gap-2.5"
+                className="flex flex-col sm:flex-row sm:items-center gap-2.5"
               >
                 <Input
                   type="text"
@@ -297,7 +297,7 @@ function OnboardingContent() {
                 <Button
                   type="submit"
                   disabled={submitting || !inviteCodeOrSlug.trim()}
-                  className="h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-md shadow-xs cursor-pointer shrink-0"
+                  className="w-full sm:w-auto h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-md shadow-xs cursor-pointer shrink-0"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

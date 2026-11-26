@@ -117,7 +117,7 @@ export const LandingFooter: React.FC = () => {
             <span>{t("landing.footerSystemsNormal")}</span>
           </div>
 
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-center sm:text-right">
             {t("landing.footerRights", { brand: "HaiHire" })}
           </p>
         </div>

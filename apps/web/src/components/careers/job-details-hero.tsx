@@ -69,7 +69,7 @@ export function JobDetailsHero({
             )}
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-medium text-foreground tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-medium text-foreground tracking-tight leading-tight break-words">
             {job.title}
           </h1>
 
@@ -129,10 +129,10 @@ export function JobDetailsHero({
         </div>
 
         {/* Quick Action Button to scroll to apply form */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <Button
             onClick={onApplyClick}
-            className="h-11 px-6 rounded-lg text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+            className="w-full md:w-auto h-11 px-6 rounded-lg text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
           >
             {t("careers.applyNow")}
           </Button>

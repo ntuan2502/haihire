@@ -41,6 +41,10 @@ vi.mock("@/i18n", () => ({
         "settings.integrations.ai.title": "AI Provider Configuration",
         "settings.integrations.ai.description": "Connect your organization AI.",
         "settings.integrations.ai.enabledLabel": "Enable AI features",
+        "settings.integrations.ai.autoScoreLabel":
+          "Automatically score new applications",
+        "settings.integrations.ai.autoScoreDesc":
+          "Run AI scoring automatically",
         "settings.integrations.ai.providerTitle": "Provider",
         "settings.integrations.ai.providerDesc": "Choose provider",
         "settings.integrations.ai.modelTitle": "Model",
@@ -130,6 +134,7 @@ describe("AiSettingsTab", () => {
         apiKey: "sk-test-1234",
         baseUrl: null,
         isEnabled: true,
+        autoScoreApplications: false,
       });
     });
   });
@@ -144,6 +149,7 @@ describe("AiSettingsTab", () => {
       hasApiKey: true,
       apiKeyLast4: "9876",
       isEnabled: true,
+      autoScoreApplications: false,
       createdAt: "2026-11-25T00:00:00Z",
       updatedAt: "2026-11-25T00:00:00Z",
     };
@@ -164,6 +170,7 @@ describe("AiSettingsTab", () => {
         modelId: "gemini-2.5-pro",
         baseUrl: null,
         isEnabled: true,
+        autoScoreApplications: false,
       });
     });
   });

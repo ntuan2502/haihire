@@ -55,6 +55,7 @@ export function AiSettingsTab() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
+  const [autoScoreApplications, setAutoScoreApplications] = useState(false);
   const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
@@ -75,6 +76,7 @@ export function AiSettingsTab() {
       setModelId(setting.modelId);
       setBaseUrl(setting.baseUrl || "");
       setIsEnabled(setting.isEnabled);
+      setAutoScoreApplications(Boolean(setting.autoScoreApplications));
       setApiKey("");
     }
     setHydratedKey(syncKey);
@@ -218,6 +220,7 @@ export function AiSettingsTab() {
         ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
         baseUrl: isCustomProvider ? baseUrl.trim() : null,
         isEnabled,
+        autoScoreApplications,
       });
       setApiKey("");
       toast.success(t("settings.integrations.ai.saveSuccess"));
@@ -235,6 +238,7 @@ export function AiSettingsTab() {
       setApiKey("");
       setBaseUrl("");
       setIsEnabled(true);
+      setAutoScoreApplications(false);
       setTestResult(null);
       toast.success(t("settings.integrations.ai.deleteSuccess"));
     } catch (err: unknown) {
@@ -470,6 +474,35 @@ export function AiSettingsTab() {
               )}
             </button>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-background/60 px-3.5 py-2.5">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-foreground">
+              {t("settings.integrations.ai.autoScoreLabel")}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+              {t("settings.integrations.ai.autoScoreDesc")}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoScoreApplications}
+            aria-label={t("settings.integrations.ai.autoScoreLabel")}
+            onClick={() => setAutoScoreApplications((prev) => !prev)}
+            className={cn(
+              "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors cursor-pointer",
+              autoScoreApplications ? "bg-primary" : "bg-muted-foreground/30",
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-xs transition-transform",
+                autoScoreApplications ? "translate-x-4" : "translate-x-0",
+              )}
+            />
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">

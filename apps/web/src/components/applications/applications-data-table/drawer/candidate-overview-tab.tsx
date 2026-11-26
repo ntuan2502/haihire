@@ -1,5 +1,6 @@
 "use client";
 
+import { AiScoreCard } from "@/components/applications/ai-score-card";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
@@ -31,24 +32,15 @@ export function CandidateOverviewTab({
   canEdit,
 }: CandidateOverviewTabProps) {
   const { t } = useI18n();
-  const hasMatchScore =
-    currentApp.matchScore !== null && currentApp.matchScore !== undefined;
 
   return (
     <div className="space-y-4">
-      {/* Match Score Card */}
-      {hasMatchScore && (
-        <div className="flex items-center justify-between p-4 rounded-xl bg-card text-card-foreground border border-border shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {t("applications.matchScore")}:
-            </span>
-            <span className="font-semibold font-mono tabular-nums text-sm text-foreground">
-              {currentApp.matchScore}%
-            </span>
-          </div>
-        </div>
-      )}
+      {/* AI Score Card */}
+      <AiScoreCard
+        application={currentApp}
+        canScore={Boolean(canEdit)}
+        variant="compact"
+      />
 
       {/* Interviews Card */}
       <CandidateInterviewsList

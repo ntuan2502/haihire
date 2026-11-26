@@ -37,7 +37,11 @@ describe("AiSettingsService", () => {
 
   it("encrypts API keys with AES-256-GCM, masks key in responses, and preserves key when omitted on update", async () => {
     const initialStatus = await service.getStatus("org-1");
-    expect(initialStatus).toEqual({ configured: false, enabled: false });
+    expect(initialStatus).toEqual({
+      configured: false,
+      enabled: false,
+      autoScoreApplications: false,
+    });
 
     const created = await service.upsertSetting("org-1", "user-1", {
       provider: "GEMINI",
@@ -45,6 +49,7 @@ describe("AiSettingsService", () => {
       apiKey: "AIzaSy-secret-key-9876",
       baseUrl: null,
       isEnabled: true,
+      autoScoreApplications: false,
     });
 
     expect(created.hasApiKey).toBe(true);
@@ -67,10 +72,15 @@ describe("AiSettingsService", () => {
       modelId: "gemini-2.5-pro",
       baseUrl: null,
       isEnabled: true,
+      autoScoreApplications: true,
     });
     expect(updated.hasApiKey).toBe(true);
     expect(updated.apiKeyLast4).toBe("9876");
     expect(updated.modelId).toBe("gemini-2.5-pro");
+    expect(updated.autoScoreApplications).toBe(true);
+
+    const status = await service.getStatus("org-1");
+    expect(status.autoScoreApplications).toBe(true);
 
     const runtime = await service.getActiveRuntimeConfig("org-1");
     expect(runtime.apiKey).toBe("AIzaSy-secret-key-9876");
@@ -83,6 +93,7 @@ describe("AiSettingsService", () => {
       apiKey: "sk-org-a-1234",
       baseUrl: null,
       isEnabled: true,
+      autoScoreApplications: false,
     });
 
     expect(await service.getSetting("org-b")).toBeNull();
@@ -96,6 +107,7 @@ describe("AiSettingsService", () => {
         modelId: "llama3.1",
         baseUrl: "http://169.254.169.254/latest/meta-data",
         isEnabled: true,
+        autoScoreApplications: false,
       }),
     ).rejects.toMatchObject({
       code: APP_ERROR_CODES.VALIDATION_ERROR,
@@ -109,6 +121,7 @@ describe("AiSettingsService", () => {
       apiKey: "sk-live-test-4321",
       baseUrl: null,
       isEnabled: true,
+      autoScoreApplications: false,
     });
 
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

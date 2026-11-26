@@ -570,7 +570,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
       // Overview active
-      expect(screen.getByText("Match score:")).toBeInTheDocument();
+      const drawer = screen.getByRole("dialog");
+      expect(within(drawer).getByText("AI Evaluation")).toBeInTheDocument();
+      expect(within(drawer).getByText("85%")).toBeInTheDocument();
 
       // Switch to notes tab
       const notesTab = screen.getByRole("button", { name: /^notes$/i });

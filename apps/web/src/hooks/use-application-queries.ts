@@ -376,3 +376,32 @@ export function useDeleteApplicationNoteMutation() {
     },
   });
 }
+
+export function useTriggerAiScoreMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      applicationsApi.triggerAiScore(applicationId),
+    onSuccess: (_data, applicationId) => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["application", applicationId],
+      });
+    },
+  });
+}
+
+export function useBatchAiScoreMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ jobId, limit }: { jobId: string; limit?: number }) =>
+      applicationsApi.triggerJobBatchAiScore(jobId, limit),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+    },
+  });
+}

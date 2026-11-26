@@ -895,7 +895,44 @@ export const en: TranslationSchema = {
   applications: {
     title: "Applications",
     score: "Score",
-    matchScore: "Match score",
+    aiEvaluation: {
+      title: "AI Evaluation",
+      scoreButton: "Run AI Score",
+      rescoreButton: "Re-score",
+      scoringButton: "Queuing...",
+      retryButton: "Retry scoring",
+      unscoredHint:
+        "Analyze CV, cover letter, and screening answers against this job.",
+      notConfiguredHint:
+        "Configure an organization AI provider to enable candidate scoring.",
+      configureAiLink: "Configure AI",
+      scoringInProgress: "AI is analyzing CV and screening answers...",
+      staleBadge: "Outdated",
+      staleHint:
+        "Job requirements or candidate materials changed since this score was generated.",
+      summaryLabel: "Executive Summary",
+      strengthsLabel: "Key Strengths",
+      gapsLabel: "Gaps & Risks",
+      questionsLabel: "Suggested Interview Questions",
+      toggleQuestions: "Show interview questions ({count})",
+      scoredWith: "Evaluated by {model}",
+      batchButton: "AI Score ({count})",
+      batchSuccess: "Queued {count} applications for AI scoring.",
+      criteria: {
+        skills: "Technical & Core Skills (40%)",
+        experience: "Relevant Experience (30%)",
+        screening: "Screening Answers (20%)",
+        presentation: "Profile Completeness (10%)",
+      },
+      warnings: {
+        NO_CV:
+          "No CV PDF attached; score reflects cover letter and screening answers only.",
+        CV_UNREADABLE_SCANNED:
+          "CV appears to be an image scan without extractable text for this provider.",
+        CV_TRUNCATED:
+          "Long CV truncated to the first 12,000 characters for scoring.",
+      },
+    },
     rejectionReasonLabel: "Rejection reason",
     rejectModal: {
       title: "Reject Candidate",
@@ -1669,6 +1706,9 @@ export const en: TranslationSchema = {
         connectionDesc:
           "Connect your API key and verify connectivity before saving.",
         enabledLabel: "Enable AI features for this organization",
+        autoScoreLabel: "Automatically score new applications",
+        autoScoreDesc:
+          "Run AI scoring in the background when candidates apply. Leave off to score manually or in batches.",
         baseUrlLabel: "Endpoint Base URL",
         baseUrlPlaceholder: "e.g. http://localhost:11434/v1",
         apiKeyLabel: "API Key",

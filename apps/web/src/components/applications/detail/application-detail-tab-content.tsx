@@ -9,6 +9,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { isScreeningFileAnswer, isValidHttpUrl } from "@haihire/shared";
+import { AiScoreCard } from "@/components/applications/ai-score-card";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
@@ -55,8 +56,6 @@ export function ApplicationDetailTabContent({
 }: ApplicationDetailTabContentProps) {
   const { t } = useI18n();
 
-  const hasMatchScore =
-    app?.matchScore !== null && app?.matchScore !== undefined;
   const coverLetterText =
     typeof app?.coverLetter === "string" ? app.coverLetter.trim() : "";
   const screeningAnswers = Array.isArray(app?.screeningAnswers)
@@ -91,25 +90,8 @@ export function ApplicationDetailTabContent({
     <div className="space-y-4">
       {activeTab === "overview" && (
         <>
-          {hasMatchScore && (
-            <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-muted-foreground">
-                  <span>{t("applications.matchScore")}</span>
-                </div>
-                <span className="text-sm font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {app.matchScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-[width] duration-500"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, app.matchScore ?? 0))}%`,
-                  }}
-                />
-              </div>
-            </div>
+          {app && (
+            <AiScoreCard application={app} canScore={canEdit} variant="full" />
           )}
 
           {coverLetterText && (

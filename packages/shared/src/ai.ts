@@ -212,6 +212,7 @@ export const upsertAiSettingSchema = z
       .nullable()
       .transform((v) => (v && v.length > 0 ? v : null)),
     isEnabled: z.boolean().default(true),
+    autoScoreApplications: z.boolean().default(false),
   })
   .superRefine((val, ctx) => {
     if (val.provider === "OPENAI_COMPATIBLE") {
@@ -290,6 +291,7 @@ export interface OrganizationAiSettingResponse {
   hasApiKey: boolean;
   apiKeyLast4: string | null;
   isEnabled: boolean;
+  autoScoreApplications: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -297,6 +299,7 @@ export interface OrganizationAiSettingResponse {
 export interface OrganizationAiStatusResponse {
   configured: boolean;
   enabled: boolean;
+  autoScoreApplications: boolean;
   provider?: AiProvider;
   modelId?: string;
 }
@@ -311,6 +314,82 @@ export interface GenerateScreeningQuestionsResponse {
   questions: Array<Omit<ScreeningQuestion, "id">>;
   provider: AiProvider;
   modelId: string;
+}
+
+export const AI_SCORE_STATUSES = [
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "FAILED",
+] as const;
+
+export type AiScoreStatus = (typeof AI_SCORE_STATUSES)[number];
+
+export const AI_SCORE_WARNING_CODES = [
+  "NO_CV",
+  "CV_UNREADABLE_SCANNED",
+  "CV_TRUNCATED",
+] as const;
+
+export type AiScoreWarningCode = (typeof AI_SCORE_WARNING_CODES)[number];
+
+export const aiScoreCriterionSchema = z.object({
+  score: z.number().min(0).max(100),
+  note: z.string().trim().min(1).max(400),
+});
+
+export const aiScoreBreakdownSchema = z.object({
+  skills: aiScoreCriterionSchema,
+  experience: aiScoreCriterionSchema,
+  screening: aiScoreCriterionSchema,
+  presentation: aiScoreCriterionSchema,
+});
+
+export const aiScoreRawOutputSchema = z.object({
+  breakdown: aiScoreBreakdownSchema,
+  summary: z.string().trim().min(1).max(1500),
+  strengths: z.array(z.string().trim().min(1).max(400)).min(1).max(5),
+  gaps: z.array(z.string().trim().min(1).max(400)).max(5).default([]),
+  suggestedQuestions: z
+    .array(z.string().trim().min(1).max(400))
+    .max(4)
+    .default([]),
+});
+
+export const batchAiScoreSchema = z.object({
+  limit: z.number().int().min(1).max(20).default(20),
+});
+
+export type BatchAiScoreInput = z.infer<typeof batchAiScoreSchema>;
+export type AiScoreCriterion = z.infer<typeof aiScoreCriterionSchema>;
+export type AiScoreBreakdown = z.infer<typeof aiScoreBreakdownSchema>;
+export type AiScoreRawOutput = z.infer<typeof aiScoreRawOutputSchema>;
+
+export interface ApplicationAiEvaluation {
+  id: string;
+  applicationId: string;
+  status: AiScoreStatus;
+  overallScore: number | null;
+  breakdown: AiScoreBreakdown | null;
+  summary: string | null;
+  strengths: string[] | null;
+  gaps: string[] | null;
+  suggestedQuestions: string[] | null;
+  warningCode: AiScoreWarningCode | string | null;
+  cvExtractedChars: number | null;
+  provider: AiProvider | null;
+  modelId: string | null;
+  errorMessage: string | null;
+  isStale?: boolean;
+  scoredAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BatchAiScoreResponse {
+  enqueued: number;
+  skipped: number;
+  applicationIds: string[];
 }
 
 export { screeningQuestionSchema };

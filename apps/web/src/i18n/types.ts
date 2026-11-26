@@ -781,7 +781,38 @@ export interface TranslationSchema {
   applications: {
     title: string;
     score: string;
-    matchScore: string;
+    aiEvaluation: {
+      title: string;
+      scoreButton: string;
+      rescoreButton: string;
+      scoringButton: string;
+      retryButton: string;
+      unscoredHint: string;
+      notConfiguredHint: string;
+      configureAiLink: string;
+      scoringInProgress: string;
+      staleBadge: string;
+      staleHint: string;
+      summaryLabel: string;
+      strengthsLabel: string;
+      gapsLabel: string;
+      questionsLabel: string;
+      toggleQuestions: string;
+      scoredWith: string;
+      batchButton: string;
+      batchSuccess: string;
+      criteria: {
+        skills: string;
+        experience: string;
+        screening: string;
+        presentation: string;
+      };
+      warnings: {
+        NO_CV: string;
+        CV_UNREADABLE_SCANNED: string;
+        CV_TRUNCATED: string;
+      };
+    };
     rejectionReasonLabel: string;
     rejectModal: {
       title: string;
@@ -1484,6 +1515,8 @@ export interface TranslationSchema {
         connectionTitle: string;
         connectionDesc: string;
         enabledLabel: string;
+        autoScoreLabel: string;
+        autoScoreDesc: string;
         baseUrlLabel: string;
         baseUrlPlaceholder: string;
         apiKeyLabel: string;

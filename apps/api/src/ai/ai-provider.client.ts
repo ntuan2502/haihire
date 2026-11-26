@@ -3,6 +3,17 @@ import { AppBadRequestException } from "../common/app-exception";
 
 const AI_REQUEST_TIMEOUT_MS = 20_000;
 
+export interface AiPdfAttachment {
+  base64: string;
+  filename?: string;
+}
+
+export function providerSupportsPdfAttachment(provider: AiProvider): boolean {
+  return (
+    provider === "GEMINI" || provider === "ANTHROPIC" || provider === "OPENAI"
+  );
+}
+
 const BLOCKED_METADATA_HOSTS = new Set([
   "169.254.169.254",
   "169.254.170.2",
@@ -20,6 +31,9 @@ export interface AiCompletionRequest {
   userPrompt: string;
   maxTokens?: number;
   jsonMode?: boolean;
+  temperature?: number;
+  timeoutMs?: number;
+  pdfAttachment?: AiPdfAttachment;
 }
 
 export function assertSafeAiEndpointUrl(rawUrl: string): URL {
@@ -78,9 +92,10 @@ function resolveOpenAiCompatibleBaseUrl(
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
+  timeoutMs = AI_REQUEST_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (err: unknown) {
@@ -125,6 +140,8 @@ export async function callAiCompletion(
   req: AiCompletionRequest,
 ): Promise<string> {
   const maxTokens = req.maxTokens ?? 2048;
+  const temperature = req.temperature ?? 0.4;
+  const timeoutMs = req.timeoutMs ?? AI_REQUEST_TIMEOUT_MS;
 
   if (req.provider === "GEMINI") {
     const apiKey = req.apiKey?.trim();
@@ -135,26 +152,43 @@ export async function callAiCompletion(
       );
     }
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(req.modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const response = await fetchWithTimeout(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: req.systemPrompt }],
+    const userParts: Array<
+      { text: string } | { inlineData: { mimeType: string; data: string } }
+    > = [];
+    if (req.pdfAttachment?.base64) {
+      userParts.push({
+        inlineData: {
+          mimeType: "application/pdf",
+          data: req.pdfAttachment.base64,
         },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: req.userPrompt }],
+      });
+    }
+    userParts.push({ text: req.userPrompt });
+
+    const response = await fetchWithTimeout(
+      endpoint,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: req.systemPrompt }],
           },
-        ],
-        generationConfig: {
-          maxOutputTokens: maxTokens,
-          temperature: 0.4,
-          ...(req.jsonMode ? { responseMimeType: "application/json" } : {}),
-        },
-      }),
-    });
+          contents: [
+            {
+              role: "user",
+              parts: userParts,
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature,
+            ...(req.jsonMode ? { responseMimeType: "application/json" } : {}),
+          },
+        }),
+      },
+      timeoutMs,
+    );
 
     if (!response.ok) {
       const msg = await extractProviderError(response);
@@ -191,6 +225,20 @@ export async function callAiCompletion(
         "Anthropic API key is required.",
       );
     }
+    const anthropicUserContent = req.pdfAttachment?.base64
+      ? [
+          {
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: req.pdfAttachment.base64,
+            },
+          },
+          { type: "text", text: req.userPrompt },
+        ]
+      : req.userPrompt;
+
     const response = await fetchWithTimeout(
       "https://api.anthropic.com/v1/messages",
       {
@@ -203,11 +251,12 @@ export async function callAiCompletion(
         body: JSON.stringify({
           model: req.modelId,
           max_tokens: maxTokens,
-          temperature: 0.4,
+          temperature,
           system: req.systemPrompt,
-          messages: [{ role: "user", content: req.userPrompt }],
+          messages: [{ role: "user", content: anthropicUserContent }],
         }),
       },
+      timeoutMs,
     );
 
     if (!response.ok) {
@@ -253,22 +302,40 @@ export async function callAiCompletion(
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const response = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model: req.modelId,
-      max_tokens: maxTokens,
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: req.systemPrompt },
-        { role: "user", content: req.userPrompt },
-      ],
-      ...(req.jsonMode && req.provider === "OPENAI"
-        ? { response_format: { type: "json_object" } }
-        : {}),
-    }),
-  });
+  const openAiUserContent =
+    req.provider === "OPENAI" && req.pdfAttachment?.base64
+      ? [
+          {
+            type: "file",
+            file: {
+              filename: req.pdfAttachment.filename || "resume.pdf",
+              file_data: `data:application/pdf;base64,${req.pdfAttachment.base64}`,
+            },
+          },
+          { type: "text", text: req.userPrompt },
+        ]
+      : req.userPrompt;
+
+  const response = await fetchWithTimeout(
+    `${baseUrl}/chat/completions`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: req.modelId,
+        max_tokens: maxTokens,
+        temperature,
+        messages: [
+          { role: "system", content: req.systemPrompt },
+          { role: "user", content: openAiUserContent },
+        ],
+        ...(req.jsonMode && req.provider === "OPENAI"
+          ? { response_format: { type: "json_object" } }
+          : {}),
+      }),
+    },
+    timeoutMs,
+  );
 
   if (!response.ok) {
     const msg = await extractProviderError(response);

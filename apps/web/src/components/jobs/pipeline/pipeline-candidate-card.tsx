@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent } from "react";
-import { MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 import {
   formatRelativeTime,
   getInitials,
@@ -84,10 +84,19 @@ export function PipelineCandidateCard({
           <h4 className="text-xs font-semibold truncate text-foreground">
             {displayName}
           </h4>
-          {matchScore !== undefined && matchScore !== null && (
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-              {matchScore}%
-            </span>
+          {candidate.aiScoreStatus === "PENDING" ||
+          candidate.aiScoreStatus === "PROCESSING" ? (
+            <Loader2
+              className="h-3 w-3 animate-spin text-primary shrink-0"
+              aria-label={t("applications.aiEvaluation.scoringInProgress")}
+            />
+          ) : (
+            matchScore !== undefined &&
+            matchScore !== null && (
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                {matchScore}%
+              </span>
+            )
           )}
         </div>
 

@@ -49,6 +49,7 @@ import { toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
+import { AiScoringService } from "../../ai/ai-scoring.service";
 
 function isCandidateEmailUniqueViolation(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -114,6 +115,9 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
+    @Optional()
+    @Inject(AiScoringService)
+    private readonly aiScoringService?: AiScoringService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
@@ -1181,6 +1185,7 @@ export class ApplicationsSagaService {
         organizationId: orgId,
         data: { applicationId: result.id, jobId: result.jobId },
       });
+      await this.aiScoringService?.maybeAutoEnqueueOnApply(orgId, result.id);
       this.eventsService?.emit({
         type: "CANDIDATES_CHANGED",
         organizationId: orgId,

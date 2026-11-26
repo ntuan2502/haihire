@@ -164,6 +164,13 @@ enum AiProvider {
   OPENAI_COMPATIBLE
 }
 
+enum AiScoreStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Organization {
   id               String                       @id @default(uuid())
   name             String
@@ -197,6 +204,7 @@ model Organization {
   trackingLinks    TrackingLink[]
   webhookSettings  OrganizationWebhookSetting[]
   aiSetting        OrganizationAiSetting?
+  aiEvaluations    ApplicationAiEvaluation[]
   rolePermissions  OrganizationRolePermission[]
   auditLogs        OrganizationAuditLog[]
   applicationNotes ApplicationNote[]
@@ -420,6 +428,7 @@ model Application {
   emailLogs        EmailLog[]
   activityLogs     ActivityLog[]
   applicationNotes ApplicationNote[]
+  aiEvaluation     ApplicationAiEvaluation?
   version          Int               @default(1)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -882,17 +891,45 @@ model Notification {
 }
 
 model OrganizationAiSetting {
-  id              String       @id @default(uuid())
-  organizationId  String       @unique
-  provider        AiProvider
-  modelId         String
-  encryptedApiKey String?
-  apiKeyLast4     String?
-  baseUrl         String?
-  isEnabled       Boolean      @default(true)
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                    String       @id @default(uuid())
+  organizationId        String       @unique
+  provider              AiProvider
+  modelId               String
+  encryptedApiKey       String?
+  apiKeyLast4           String?
+  baseUrl               String?
+  isEnabled             Boolean      @default(true)
+  autoScoreApplications Boolean      @default(false)
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   @@map("organization_ai_setting")
+}
+
+model ApplicationAiEvaluation {
+  id                 String        @id @default(uuid())
+  organizationId     String
+  organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId      String        @unique
+  application        Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status             AiScoreStatus @default(PENDING)
+  overallScore       Int?
+  breakdown          Json?
+  summary            String?
+  strengths          Json?
+  gaps               Json?
+  suggestedQuestions Json?
+  warningCode        String?
+  cvExtractedChars   Int?
+  provider           AiProvider?
+  modelId            String?
+  inputHash          String?
+  errorMessage       String?
+  scoredAt           DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([organizationId, status])
+  @@map("application_ai_evaluation")
 }

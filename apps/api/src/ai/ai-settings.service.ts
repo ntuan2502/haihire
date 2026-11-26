@@ -61,6 +61,7 @@ export class AiSettingsService {
     apiKeyLast4: string | null;
     baseUrl: string | null;
     isEnabled: boolean;
+    autoScoreApplications?: boolean;
     createdAt: unknown;
     updatedAt: unknown;
   }): OrganizationAiSettingResponse {
@@ -73,6 +74,7 @@ export class AiSettingsService {
       hasApiKey: Boolean(row.encryptedApiKey),
       apiKeyLast4: row.apiKeyLast4 ?? null,
       isEnabled: Boolean(row.isEnabled),
+      autoScoreApplications: Boolean(row.autoScoreApplications),
       createdAt: new Date(toTimestamp(row.createdAt)).toISOString(),
       updatedAt: new Date(toTimestamp(row.updatedAt)).toISOString(),
     };
@@ -89,19 +91,26 @@ export class AiSettingsService {
         modelId: true,
         encryptedApiKey: true,
         isEnabled: true,
+        autoScoreApplications: true,
       },
     });
 
     if (!existing) {
-      return { configured: false, enabled: false };
+      return {
+        configured: false,
+        enabled: false,
+        autoScoreApplications: false,
+      };
     }
 
     const needsKey = existing.provider !== "OPENAI_COMPATIBLE";
     const configured = !needsKey || Boolean(existing.encryptedApiKey);
+    const enabled = Boolean(existing.isEnabled) && configured;
 
     return {
       configured,
-      enabled: Boolean(existing.isEnabled) && configured,
+      enabled,
+      autoScoreApplications: enabled && Boolean(existing.autoScoreApplications),
       provider: existing.provider as AiProvider,
       modelId: existing.modelId,
     };
@@ -160,6 +169,7 @@ export class AiSettingsService {
             apiKeyLast4,
             baseUrl: baseUrlValue,
             isEnabled: dto.isEnabled,
+            autoScoreApplications: Boolean(dto.autoScoreApplications),
           },
         })
       : await this.prisma.organizationAiSetting.create({
@@ -171,6 +181,7 @@ export class AiSettingsService {
             apiKeyLast4,
             baseUrl: baseUrlValue,
             isEnabled: dto.isEnabled,
+            autoScoreApplications: Boolean(dto.autoScoreApplications),
           },
         });
 
@@ -184,6 +195,7 @@ export class AiSettingsService {
           provider: dto.provider,
           modelId: dto.modelId.trim(),
           isEnabled: dto.isEnabled,
+          autoScoreApplications: Boolean(dto.autoScoreApplications),
         },
         undefined,
         {

@@ -895,7 +895,42 @@ export const vi: TranslationSchema = {
   applications: {
     title: "Hồ sơ ứng tuyển",
     score: "Điểm đánh giá",
-    matchScore: "Điểm tương thích",
+    aiEvaluation: {
+      title: "Đánh giá AI",
+      scoreButton: "Chấm điểm AI",
+      rescoreButton: "Chấm lại",
+      scoringButton: "Đang xếp hàng...",
+      retryButton: "Thử chấm lại",
+      unscoredHint:
+        "Phân tích CV, thư ứng tuyển và câu trả lời sàng lọc theo JD.",
+      notConfiguredHint: "Chưa kết nối nhà cung cấp AI cho tổ chức.",
+      configureAiLink: "Cấu hình AI",
+      scoringInProgress: "AI đang phân tích CV và câu trả lời...",
+      staleBadge: "Cần cập nhật",
+      staleHint: "JD hoặc hồ sơ ứng viên đã thay đổi so với lần chấm gần nhất.",
+      summaryLabel: "Tóm tắt đánh giá",
+      strengthsLabel: "Điểm mạnh nổi bật",
+      gapsLabel: "Điểm thiếu hụt & Rủi ro",
+      questionsLabel: "Gợi ý câu hỏi phỏng vấn",
+      toggleQuestions: "Xem gợi ý câu hỏi ({count})",
+      scoredWith: "Đánh giá bởi {model}",
+      batchButton: "Chấm AI ({count})",
+      batchSuccess: "Đã đưa {count} hồ sơ vào hàng đợi chấm điểm AI.",
+      criteria: {
+        skills: "Kỹ năng chuyên môn (40%)",
+        experience: "Kinh nghiệm liên quan (30%)",
+        screening: "Câu hỏi sàng lọc (20%)",
+        presentation: "Độ đầy đủ hồ sơ (10%)",
+      },
+      warnings: {
+        NO_CV:
+          "Hồ sơ không có file CV đính kèm; điểm số chỉ dựa trên thư ứng tuyển và câu hỏi sàng lọc.",
+        CV_UNREADABLE_SCANNED:
+          "File CV có thể là ảnh scan chưa nhận dạng được chữ với nhà cung cấp AI hiện tại.",
+        CV_TRUNCATED:
+          "CV dài hơn giới hạn nên hệ thống đã phân tích 12.000 ký tự đầu tiên.",
+      },
+    },
     rejectionReasonLabel: "Lý do từ chối",
     rejectModal: {
       title: "Từ chối ứng viên",
@@ -1674,6 +1709,9 @@ export const vi: TranslationSchema = {
         connectionDesc:
           "Nhập khóa API và kiểm tra kết nối trước khi lưu cấu hình.",
         enabledLabel: "Kích hoạt tính năng AI cho tổ chức này",
+        autoScoreLabel: "Tự động chấm điểm hồ sơ mới",
+        autoScoreDesc:
+          "Tự động đưa hồ sơ mới vào hàng đợi chấm điểm AI. Tắt để chủ động chấm thủ công hoặc theo lô.",
         baseUrlLabel: "Địa chỉ đường dẫn gốc",
         baseUrlPlaceholder: "Ví dụ: http://localhost:11434/v1",
         apiKeyLabel: "Khóa API",

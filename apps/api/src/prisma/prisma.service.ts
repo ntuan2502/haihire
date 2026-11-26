@@ -30,6 +30,7 @@ const PROXIED_PRISMA_DELEGATES = new Set<string>([
   "trackingClick",
   "organizationWebhookSetting",
   "organizationAiSetting",
+  "applicationAiEvaluation",
   "organizationAuditLog",
   "platformAuditLog",
   "applicationNote",

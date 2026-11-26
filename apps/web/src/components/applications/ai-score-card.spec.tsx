@@ -1,0 +1,183 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import type {
+  Application,
+  OrganizationAiStatusResponse,
+} from "@haihire/shared";
+import { AiScoreCard } from "./ai-score-card";
+
+let mockAiStatus: OrganizationAiStatusResponse = {
+  configured: true,
+  enabled: true,
+  autoScoreApplications: false,
+  provider: "GEMINI",
+  modelId: "gemini-4-hydrogen",
+};
+let mockCanManageIntegrations = true;
+const mockTriggerMutateAsync = vi.fn();
+
+vi.mock("@/hooks/use-ai-setting-queries", () => ({
+  useAiStatusQuery: () => ({ data: mockAiStatus }),
+}));
+
+vi.mock("@/hooks/use-application-queries", () => ({
+  useTriggerAiScoreMutation: () => ({
+    mutateAsync: mockTriggerMutateAsync,
+    isPending: false,
+  }),
+}));
+
+vi.mock("@/hooks/use-has-permission", () => ({
+  useHasPermission: () => mockCanManageIntegrations,
+}));
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock("@/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string, params?: Record<string, string | number>) => {
+      const dict: Record<string, string> = {
+        "applications.aiEvaluation.title": "AI Evaluation",
+        "applications.aiEvaluation.scoreButton": "Run AI Score",
+        "applications.aiEvaluation.rescoreButton": "Re-score",
+        "applications.aiEvaluation.scoringButton": "Queuing...",
+        "applications.aiEvaluation.retryButton": "Retry scoring",
+        "applications.aiEvaluation.unscoredHint":
+          "Analyze CV and screening answers.",
+        "applications.aiEvaluation.notConfiguredHint":
+          "Configure AI provider first.",
+        "applications.aiEvaluation.configureAiLink": "Configure AI",
+        "applications.aiEvaluation.scoringInProgress": "AI is analyzing CV...",
+        "applications.aiEvaluation.staleBadge": "Outdated",
+        "applications.aiEvaluation.staleHint": "Inputs changed.",
+        "applications.aiEvaluation.summaryLabel": "Executive Summary",
+        "applications.aiEvaluation.strengthsLabel": "Key Strengths",
+        "applications.aiEvaluation.gapsLabel": "Gaps & Risks",
+        "applications.aiEvaluation.questionsLabel":
+          "Suggested Interview Questions",
+        "applications.aiEvaluation.toggleQuestions": `Show interview questions (${params?.count ?? 0})`,
+        "applications.aiEvaluation.scoredWith": `Evaluated by ${params?.model ?? ""}`,
+        "applications.aiEvaluation.criteria.skills": "Technical Skills (40%)",
+        "applications.aiEvaluation.criteria.experience": "Experience (30%)",
+        "applications.aiEvaluation.criteria.screening": "Screening (20%)",
+        "applications.aiEvaluation.criteria.presentation": "Profile (10%)",
+        "applications.aiEvaluation.warnings.CV_UNREADABLE_SCANNED":
+          "Scanned PDF warning",
+        "errors.GENERIC_ERROR": "Error",
+      };
+      return dict[key] || key;
+    },
+  }),
+}));
+
+const baseApplication: Application = {
+  id: "app-1",
+  candidateId: "cand-1",
+  jobId: "job-1",
+  candidateName: "Nguyen Van A",
+  candidateEmail: "a@example.com",
+  stage: "APPLIED",
+  resumeUrl: "tenants/org-1/resumes/cv.pdf",
+  resumeFileName: "cv.pdf",
+  orderIndex: 0,
+  matchScore: null,
+  createdAt: "2026-11-26T00:00:00Z",
+  updatedAt: "2026-11-26T00:00:00Z",
+};
+
+describe("AiScoreCard", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAiStatus = {
+      configured: true,
+      enabled: true,
+      autoScoreApplications: false,
+      provider: "GEMINI",
+      modelId: "gemini-4-hydrogen",
+    };
+    mockCanManageIntegrations = true;
+    mockTriggerMutateAsync.mockResolvedValue({});
+  });
+
+  it("triggers manual AI scoring when unscored and AI is enabled", async () => {
+    render(<AiScoreCard application={baseApplication} canScore={true} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Run AI Score" }));
+    await waitFor(() => {
+      expect(mockTriggerMutateAsync).toHaveBeenCalledWith("app-1");
+    });
+  });
+
+  it("shows AI setup link when AI provider is not configured", () => {
+    mockAiStatus = {
+      configured: false,
+      enabled: false,
+      autoScoreApplications: false,
+    };
+
+    render(<AiScoreCard application={baseApplication} canScore={true} />);
+
+    expect(
+      screen.getByText("Configure AI provider first."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Configure AI" })).toHaveAttribute(
+      "href",
+      "/settings/integrations/ai",
+    );
+  });
+
+  it("renders calibrated score breakdown, stale badge, strengths/gaps, and expandable interview questions", () => {
+    render(
+      <AiScoreCard
+        canScore={true}
+        application={{
+          ...baseApplication,
+          matchScore: 88,
+          aiEvaluation: {
+            id: "eval-1",
+            applicationId: "app-1",
+            status: "COMPLETED",
+            overallScore: 88,
+            breakdown: {
+              skills: { score: 92, note: "Deep React expertise" },
+              experience: { score: 85, note: "5 years SaaS" },
+              screening: { score: 90, note: "Clear answers" },
+              presentation: { score: 80, note: "Well structured" },
+            },
+            summary: "Strong candidate for the senior role.",
+            strengths: ["Led React 19 migration"],
+            gaps: ["No GraphQL listed"],
+            suggestedQuestions: ["How did you structure state caching?"],
+            warningCode: null,
+            cvExtractedChars: 2400,
+            provider: "GEMINI",
+            modelId: "gemini-4-hydrogen",
+            errorMessage: null,
+            isStale: true,
+            scoredAt: "2026-11-26T02:00:00Z",
+            createdAt: "2026-11-26T02:00:00Z",
+            updatedAt: "2026-11-26T02:00:00Z",
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("88%")).toBeInTheDocument();
+    expect(screen.getByText("Outdated")).toBeInTheDocument();
+    expect(screen.getByText("Technical Skills (40%)")).toBeInTheDocument();
+    expect(screen.getByText("Led React 19 migration")).toBeInTheDocument();
+    expect(screen.getByText("No GraphQL listed")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show interview questions (1)" }),
+    );
+    expect(
+      screen.getByText("How did you structure state caching?"),
+    ).toBeInTheDocument();
+  });
+});

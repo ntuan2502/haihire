@@ -25,11 +25,37 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@tanstack/react-query", () => ({
-  useQueryClient: () => ({
-    invalidateQueries: vi.fn(),
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...actual,
+    useQueryClient: () => ({
+      invalidateQueries: vi.fn(),
+    }),
+  };
+});
+
+vi.mock("@/hooks/use-ai-setting-queries", () => ({
+  useAiStatusQuery: () => ({
+    data: { configured: false, enabled: false, autoScoreApplications: false },
   }),
 }));
+
+vi.mock("@/hooks/use-application-queries", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/hooks/use-application-queries")>();
+  return {
+    ...actual,
+    useTriggerAiScoreMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useBatchAiScoreMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+  };
+});
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -214,11 +240,16 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     expect(screen.queryByText("75%")).not.toBeInTheDocument();
     expect(
-      screen.queryByText("applications.matchScore"),
-    ).not.toBeInTheDocument();
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("applications.aiEvaluation.notConfiguredHint"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Zero Score Candidate"));
-    expect(screen.getByText("applications.matchScore")).toBeInTheDocument();
+    expect(
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
   });
 

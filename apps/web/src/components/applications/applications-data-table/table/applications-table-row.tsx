@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Mail, Building2, Trash2, Eye } from "lucide-react";
+import { Mail, Building2, Trash2, Eye, Loader2 } from "lucide-react";
 import {
   formatRelativeTime,
   getCandidateDisplayName,
@@ -103,9 +103,24 @@ export function ApplicationsTableRow({
       {/* Score */}
       {visibleColumns.score && (
         <td className="py-4 px-5 text-muted-foreground">
-          {typeof application.matchScore === "number"
-            ? `${application.matchScore}%`
-            : "—"}
+          {application.aiScoreStatus === "PENDING" ||
+          application.aiScoreStatus === "PROCESSING" ? (
+            <span
+              title={t("applications.aiEvaluation.scoringInProgress")}
+              className="inline-flex items-center gap-1 text-xs text-primary"
+            >
+              <Loader2
+                className="h-3.5 w-3.5 animate-spin"
+                aria-hidden="true"
+              />
+            </span>
+          ) : typeof application.matchScore === "number" ? (
+            <span className="font-mono tabular-nums font-medium text-foreground">
+              {application.matchScore}%
+            </span>
+          ) : (
+            "—"
+          )}
         </td>
       )}
 

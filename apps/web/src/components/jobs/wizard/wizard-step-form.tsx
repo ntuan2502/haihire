@@ -1147,7 +1147,7 @@ export function WizardStepForm({
             </div>
             {canManageIntegrations && (
               <Link
-                href="/settings/integrations?tab=ai"
+                href="/settings/integrations/ai"
                 className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 h-8 text-xs font-semibold hover:bg-primary/90 transition-colors"
               >
                 {t("jobs.wizard.aiOpenSettingsBtn")}

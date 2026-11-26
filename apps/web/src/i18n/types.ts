@@ -1478,8 +1478,8 @@ export interface TranslationSchema {
         providerDesc: string;
         modelTitle: string;
         modelDesc: string;
-        customModelToggle: string;
-        customModelPlaceholder: string;
+        otherModelsLabel: string;
+        otherModelsPlaceholder: string;
         connectionTitle: string;
         connectionDesc: string;
         enabledLabel: string;

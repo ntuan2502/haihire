@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import IntegrationsSettingsPage from "./page";
+import { render, screen } from "@testing-library/react";
+import IntegrationsLayout from "./layout";
+import WebhooksSettingsPage from "./webhooks/page";
+
+let mockPathname = "/settings/integrations/ai";
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+}));
 
 let mockCanManageIntegrations = true;
 vi.mock("@/hooks/use-has-permission", () => ({
@@ -45,10 +51,10 @@ vi.mock("@/i18n", () => ({
   useI18n: () => ({
     t: (key: string) => {
       const dict: Record<string, string> = {
-        "settings.integrations.title": "Integrations & Webhooks",
-        "settings.integrations.description": "Manage webhooks",
-        "settings.integrations.tabs.webhooks": "Webhooks",
+        "settings.integrations.title": "Integrations & AI",
+        "settings.integrations.description": "Manage AI & webhooks",
         "settings.integrations.tabs.ai": "AI Provider",
+        "settings.integrations.tabs.webhooks": "Webhooks",
         "settings.integrations.webhooks.addButton": "Add Webhook",
       };
       return dict[key] || key;
@@ -56,37 +62,57 @@ vi.mock("@/i18n", () => ({
   }),
 }));
 
-describe("IntegrationsSettingsPage RBAC Guard", () => {
+describe("IntegrationsLayout & WebhooksSettingsPage RBAC Guard", () => {
   beforeEach(() => {
+    mockPathname = "/settings/integrations/ai";
     mockCanManageIntegrations = true;
     capturedWebhookQueryOptions = undefined;
   });
 
-  it("blocks access and disables query when user lacks settings:manage_integrations", () => {
+  it("blocks access in IntegrationsLayout and disables webhook query when WebhooksSettingsPage mounts standalone while unauthorized", () => {
     mockCanManageIntegrations = false;
 
-    render(<IntegrationsSettingsPage />);
+    const { unmount } = render(
+      <IntegrationsLayout>
+        <WebhooksSettingsPage />
+      </IntegrationsLayout>,
+    );
 
-    expect(capturedWebhookQueryOptions).toEqual({ enabled: false });
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent(
       "You do not have permission to access this section. Please contact your administrator if you need access.",
     );
     expect(screen.queryByTestId("webhooks-table")).not.toBeInTheDocument();
+    unmount();
+
+    // Direct page render also keeps API query disabled
+    render(<WebhooksSettingsPage />);
+    expect(capturedWebhookQueryOptions).toEqual({ enabled: false });
+    expect(screen.queryByTestId("webhooks-table")).not.toBeInTheDocument();
   });
 
-  it("enables query and renders integrations workspace when authorized", () => {
+  it("renders AI Provider tab first and Webhooks second with dedicated links when authorized", () => {
+    mockPathname = "/settings/integrations/webhooks";
     mockCanManageIntegrations = true;
 
-    render(<IntegrationsSettingsPage />);
+    render(
+      <IntegrationsLayout>
+        <WebhooksSettingsPage />
+      </IntegrationsLayout>,
+    );
+
+    const links = screen.getAllByRole("link");
+    expect(links.map((el) => el.getAttribute("href"))).toEqual([
+      "/settings/integrations/ai",
+      "/settings/integrations/webhooks",
+    ]);
+    expect(links.map((el) => el.textContent?.trim())).toEqual([
+      "AI Provider",
+      "Webhooks",
+    ]);
 
     expect(capturedWebhookQueryOptions).toEqual({ enabled: true });
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByTestId("webhooks-table")).toBeInTheDocument();
     expect(screen.getByText("Add Webhook")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("tab", { name: "AI Provider" }));
-    expect(screen.getByTestId("ai-settings-tab")).toBeInTheDocument();
-    expect(screen.queryByText("Add Webhook")).not.toBeInTheDocument();
   });
 });

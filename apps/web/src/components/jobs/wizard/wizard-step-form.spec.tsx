@@ -386,6 +386,6 @@ describe("WizardStepForm Component", () => {
     ).toBeInTheDocument();
     expect(
       within(setupDialog).getByRole("link", { name: "Configure AI settings" }),
-    ).toHaveAttribute("href", "/settings/integrations?tab=ai");
+    ).toHaveAttribute("href", "/settings/integrations/ai");
   });
 });

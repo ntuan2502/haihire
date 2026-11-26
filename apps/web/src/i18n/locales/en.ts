@@ -1661,9 +1661,9 @@ export const en: TranslationSchema = {
           "Choose where your organization runs AI requests. Recommended models update automatically.",
         modelTitle: "Model",
         modelDesc:
-          "Pick a recommended model or specify any custom model identifier supported by your provider.",
-        customModelToggle: "Use a different model identifier",
-        customModelPlaceholder: "e.g. gpt-4o-mini or custom-model-id",
+          "Pick one of the latest recommended models or choose another model from the dropdown.",
+        otherModelsLabel: "Other models",
+        otherModelsPlaceholder: "Select another model...",
         connectionTitle: "Connection & API Key",
         connectionDesc:
           "Connect your API key and verify connectivity before saving.",

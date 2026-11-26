@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import {
   AI_PROVIDERS,
   AI_PROVIDER_PRESETS,
@@ -9,8 +9,6 @@ import {
 import {
   Brain,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   ExternalLink,
   Eye,
   EyeOff,
@@ -20,7 +18,11 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { ConfirmDestructiveModal, LoadingSpinner } from "@/components/shared";
+import {
+  ConfirmDestructiveModal,
+  CustomSelect,
+  LoadingSpinner,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +40,7 @@ export function AiSettingsTab() {
   const { t } = useI18n();
   const baseUrlInputId = useId();
   const apiKeyInputId = useId();
-  const customModelInputId = useId();
+  const otherModelsInputId = useId();
 
   const { data: setting, isLoading } = useAiSettingQuery();
   const upsertMutation = useUpsertAiSettingMutation();
@@ -49,7 +51,6 @@ export function AiSettingsTab() {
   const [modelId, setModelId] = useState<string>(
     AI_PROVIDER_PRESETS.GEMINI.defaultModelId,
   );
-  const [showCustomModel, setShowCustomModel] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
@@ -72,10 +73,6 @@ export function AiSettingsTab() {
     if (setting) {
       setProvider(setting.provider);
       setModelId(setting.modelId);
-      const isPreset = AI_PROVIDER_PRESETS[setting.provider].models.some(
-        (m) => m.id === setting.modelId,
-      );
-      setShowCustomModel(!isPreset);
       setBaseUrl(setting.baseUrl || "");
       setIsEnabled(setting.isEnabled);
       setApiKey("");
@@ -88,13 +85,34 @@ export function AiSettingsTab() {
     setting?.hasApiKey && setting.provider === provider,
   );
   const isCustomProvider = provider === "OPENAI_COMPATIBLE";
+  const isFeaturedModel = activePreset.models.some((m) => m.id === modelId);
+
+  const otherModelOptions = useMemo(() => {
+    const list = activePreset.otherModels.map((m) => ({
+      value: m.id,
+      label: `${m.label} (${m.id})`,
+      keywords: `${m.label} ${m.id}`,
+    }));
+    if (
+      setting?.provider === provider &&
+      setting.modelId &&
+      !activePreset.models.some((m) => m.id === setting.modelId) &&
+      !activePreset.otherModels.some((m) => m.id === setting.modelId)
+    ) {
+      list.unshift({
+        value: setting.modelId,
+        label: setting.modelId,
+        keywords: setting.modelId,
+      });
+    }
+    return list;
+  }, [activePreset, provider, setting]);
 
   const handleSelectProvider = (nextProvider: AiProvider) => {
     if (nextProvider === provider) return;
     setProvider(nextProvider);
     const nextPreset = AI_PROVIDER_PRESETS[nextProvider];
     setModelId(nextPreset.defaultModelId);
-    setShowCustomModel(false);
     setBaseUrl(
       nextProvider === "OPENAI_COMPATIBLE"
         ? nextPreset.defaultBaseUrl || ""
@@ -154,7 +172,6 @@ export function AiSettingsTab() {
       setIsDeleteModalOpen(false);
       setProvider("GEMINI");
       setModelId(AI_PROVIDER_PRESETS.GEMINI.defaultModelId);
-      setShowCustomModel(false);
       setApiKey("");
       setBaseUrl("");
       setIsEnabled(true);
@@ -292,14 +309,13 @@ export function AiSettingsTab() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {activePreset.models.map((presetModel) => {
-            const isSelected = modelId === presetModel.id && !showCustomModel;
+            const isSelected = modelId === presetModel.id;
             return (
               <button
                 key={presetModel.id}
                 type="button"
                 onClick={() => {
                   setModelId(presetModel.id);
-                  setShowCustomModel(false);
                 }}
                 className={cn(
                   "text-left p-3.5 rounded-xl border transition-colors flex items-center justify-between gap-3 cursor-pointer",
@@ -338,35 +354,27 @@ export function AiSettingsTab() {
           })}
         </div>
 
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={() => setShowCustomModel((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+        <div className="space-y-1.5 pt-1 max-w-md">
+          <label
+            htmlFor={otherModelsInputId}
+            className="block text-xs font-medium text-foreground"
           >
-            {showCustomModel ? (
-              <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("settings.integrations.ai.otherModelsLabel")}
+          </label>
+          <CustomSelect
+            id={otherModelsInputId}
+            searchable
+            value={isFeaturedModel ? "" : modelId}
+            onChange={(val) => {
+              if (val) setModelId(val);
+            }}
+            options={otherModelOptions}
+            placeholder={t("settings.integrations.ai.otherModelsPlaceholder")}
+            searchPlaceholder={t(
+              "settings.integrations.ai.otherModelsPlaceholder",
             )}
-            <span>{t("settings.integrations.ai.customModelToggle")}</span>
-          </button>
-
-          {showCustomModel && (
-            <div className="mt-2.5 max-w-md">
-              <Input
-                id={customModelInputId}
-                type="text"
-                value={modelId}
-                onChange={(e) => setModelId(e.target.value)}
-                placeholder={t(
-                  "settings.integrations.ai.customModelPlaceholder",
-                )}
-                aria-label={t("settings.integrations.ai.customModelToggle")}
-                className="h-9 text-xs font-mono bg-background"
-              />
-            </div>
-          )}
+            aria-label={t("settings.integrations.ai.otherModelsLabel")}
+          />
         </div>
       </div>
 

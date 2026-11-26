@@ -1666,9 +1666,9 @@ export const vi: TranslationSchema = {
           "Chọn nền tảng chạy mô hình AI. Danh sách mô hình đề xuất sẽ cập nhật tự động.",
         modelTitle: "Mô hình",
         modelDesc:
-          "Chọn mô hình được đề xuất hoặc nhập mã định danh mô hình tùy chỉnh.",
-        customModelToggle: "Sử dụng mã mô hình khác",
-        customModelPlaceholder: "Ví dụ: gpt-4o-mini hoặc mã mô hình tùy chỉnh",
+          "Chọn một trong các mô hình mới nhất được đề xuất hoặc chọn mô hình khác từ danh sách thả xuống.",
+        otherModelsLabel: "Các mô hình khác",
+        otherModelsPlaceholder: "Chọn mô hình khác...",
         connectionTitle: "Kết nối & Khóa API",
         connectionDesc:
           "Nhập khóa API và kiểm tra kết nối trước khi lưu cấu hình.",

@@ -44,10 +44,10 @@ vi.mock("@/i18n", () => ({
         "settings.integrations.ai.providerTitle": "Provider",
         "settings.integrations.ai.providerDesc": "Choose provider",
         "settings.integrations.ai.modelTitle": "Model",
-        "settings.integrations.ai.modelDesc": "Choose model",
-        "settings.integrations.ai.customModelToggle":
-          "Use a different model identifier",
-        "settings.integrations.ai.customModelPlaceholder": "Custom model id",
+        "settings.integrations.ai.modelDesc": "Choose latest model",
+        "settings.integrations.ai.otherModelsLabel": "Other models",
+        "settings.integrations.ai.otherModelsPlaceholder":
+          "Select another model...",
         "settings.integrations.ai.connectionTitle": "Connection & API Key",
         "settings.integrations.ai.connectionDesc": "Connect API key",
         "settings.integrations.ai.baseUrlLabel": "Endpoint Base URL",
@@ -97,11 +97,11 @@ describe("AiSettingsTab", () => {
     mockTestMutateAsync.mockResolvedValue({
       ok: true,
       latencyMs: 142,
-      model: "gpt-4o-mini",
+      model: "gpt-6.2-sol",
     });
   });
 
-  it("allows selecting provider, testing connection, and saving API key", async () => {
+  it("selects latest OpenAI model by default, tests connection, and saves API key", async () => {
     render(<AiSettingsTab />);
 
     fireEvent.click(screen.getByRole("radio", { name: /OpenAI GPT models/i }));
@@ -113,20 +113,20 @@ describe("AiSettingsTab", () => {
     await waitFor(() => {
       expect(mockTestMutateAsync).toHaveBeenCalledWith({
         provider: "OPENAI",
-        modelId: "gpt-4o-mini",
+        modelId: "gpt-6.2-sol",
         apiKey: "sk-test-1234",
         baseUrl: null,
       });
     });
     expect(
-      screen.getByText("Connected to gpt-4o-mini in 142 ms."),
+      screen.getByText("Connected to gpt-6.2-sol in 142 ms."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Save configuration" }));
     await waitFor(() => {
       expect(mockUpsertMutateAsync).toHaveBeenCalledWith({
         provider: "OPENAI",
-        modelId: "gpt-4o-mini",
+        modelId: "gpt-6.2-sol",
         apiKey: "sk-test-1234",
         baseUrl: null,
         isEnabled: true,
@@ -134,12 +134,12 @@ describe("AiSettingsTab", () => {
     });
   });
 
-  it("preserves stored encrypted key when updating custom model ID with blank apiKey", async () => {
+  it("selects other models from dropdown (no manual text input) and preserves stored key", async () => {
     mockSetting = {
       id: "ai-1",
       organizationId: "org-1",
       provider: "GEMINI",
-      modelId: "gemini-2.5-flash",
+      modelId: "gemini-4-hydrogen",
       baseUrl: null,
       hasApiKey: true,
       apiKeyLast4: "9876",
@@ -150,18 +150,17 @@ describe("AiSettingsTab", () => {
 
     render(<AiSettingsTab />);
 
+    // Open Other models searchable dropdown and select Gemini 2.5 Pro
+    fireEvent.click(screen.getByRole("button", { name: "Other models" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "Use a different model identifier" }),
+      screen.getByRole("option", { name: "Gemini 2.5 Pro (gemini-2.5-pro)" }),
     );
-    fireEvent.change(screen.getByPlaceholderText("Custom model id"), {
-      target: { value: "gemini-2.5-pro-exp" },
-    });
 
     fireEvent.click(screen.getByRole("button", { name: "Save configuration" }));
     await waitFor(() => {
       expect(mockUpsertMutateAsync).toHaveBeenCalledWith({
         provider: "GEMINI",
-        modelId: "gemini-2.5-pro-exp",
+        modelId: "gemini-2.5-pro",
         baseUrl: null,
         isEnabled: true,
       });

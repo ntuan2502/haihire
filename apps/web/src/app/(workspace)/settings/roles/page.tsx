@@ -216,18 +216,18 @@ export default function RolesPermissionsPage() {
       {dirtyCount > 0 && (
         <div
           role="status"
-          className="p-3.5 rounded-lg border border-border bg-muted/60 text-foreground text-sm flex items-center justify-between shadow-xs animate-in fade-in"
+          className="p-3.5 rounded-lg border border-border bg-muted/60 text-foreground text-sm flex items-center justify-between gap-3 shadow-xs animate-in fade-in"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <ShieldCheck
-              className="w-4 h-4 text-muted-foreground"
+              className="w-4 h-4 text-muted-foreground shrink-0"
               aria-hidden="true"
             />
             <span className="font-medium">
               {t("settings.rolesMatrix.unsavedChanges")}
             </span>
           </div>
-          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-semibold">
+          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-md font-semibold shrink-0">
             {dirtyCount}
           </span>
         </div>

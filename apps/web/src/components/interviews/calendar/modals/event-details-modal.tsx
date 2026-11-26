@@ -62,8 +62,8 @@ export function EventDetailsModal({
       }
       footer={
         selectedEvent ? (
-          <div className="w-full flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 shrink-0">
+          <div className="w-full flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Button
                 type="button"
                 variant="outline"
@@ -86,7 +86,7 @@ export function EventDetailsModal({
               </Link>
             </div>
 
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 ml-auto shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-1.5 w-full sm:w-auto sm:ml-auto">
               {onCancelInterview && (
                 <Button
                   type="button"

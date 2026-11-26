@@ -36,13 +36,13 @@ export function StartRecruiting({ onOpenCreateJob }: StartRecruitingProps) {
             <button
               type="button"
               onClick={onOpenCreateJob}
-              className="group flex w-full items-center justify-between rounded-xl bg-primary px-5 py-4 text-left text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors cursor-pointer"
+              className="group flex w-full items-center justify-between gap-3 rounded-xl bg-primary px-5 py-4 text-left text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-3.5 min-w-0">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15 text-primary-foreground">
                   <Plus className="h-5 w-5 stroke-[2.5]" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-sm font-bold text-primary-foreground">
                     {t("dashboard.createNewJob")}
                   </h3>
@@ -51,7 +51,7 @@ export function StartRecruiting({ onOpenCreateJob }: StartRecruitingProps) {
                   </p>
                 </div>
               </div>
-              <ArrowRight className="h-5 w-5 text-primary-foreground/80 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="h-5 w-5 text-primary-foreground/80 group-hover:translate-x-1 transition-transform shrink-0" />
             </button>
           </div>
         )}

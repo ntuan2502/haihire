@@ -34,7 +34,7 @@ export function CalendarWeekView({
             return (
               <div
                 key={day.dateStr}
-                className={`min-h-[340px] p-2.5 flex flex-col space-y-2.5 ${
+                className={`min-h-[96px] sm:min-h-[340px] p-2.5 flex flex-col space-y-2.5 ${
                   day.isToday ? "bg-primary/5" : "bg-card"
                 }`}
               >
@@ -65,7 +65,7 @@ export function CalendarWeekView({
                       size="sm"
                       variant="ghost"
                       onClick={() => onScheduleDate(day.dateStr)}
-                      className="h-7 w-7 p-0 rounded-md hover:bg-primary/10 text-primary cursor-pointer shrink-0"
+                      className="h-8 w-8 sm:h-7 sm:w-7 p-0 rounded-md hover:bg-primary/10 text-primary cursor-pointer shrink-0"
                       title={t("interviews.scheduleNew")}
                     >
                       <CalendarPlus
@@ -81,7 +81,7 @@ export function CalendarWeekView({
                   {events.length === 0 ? (
                     <p
                       aria-label={t("interviews.noScheduleForDay")}
-                      className="text-xs text-muted-foreground/50 text-center py-8 select-none"
+                      className="text-xs text-muted-foreground/50 text-center py-3 sm:py-8 select-none"
                     >
                       —
                     </p>

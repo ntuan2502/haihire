@@ -29,28 +29,49 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[540px] text-left text-xs">
             <thead>
               <tr className="border-b border-border text-[10px] font-bold text-muted-foreground">
-                <th scope="col" className="pb-3 pr-4 font-bold">
+                <th
+                  scope="col"
+                  className="pb-3 pr-4 font-bold whitespace-nowrap"
+                >
                   {t("sourcing.links.source")}
                 </th>
-                <th scope="col" className="pb-3 px-3 text-center">
+                <th
+                  scope="col"
+                  className="pb-3 px-3 text-center whitespace-nowrap"
+                >
                   {t("pipeline.stages.applied")}
                 </th>
-                <th scope="col" className="pb-3 px-3 text-center">
+                <th
+                  scope="col"
+                  className="pb-3 px-3 text-center whitespace-nowrap"
+                >
                   {t("pipeline.stages.screening")}
                 </th>
-                <th scope="col" className="pb-3 px-3 text-center">
+                <th
+                  scope="col"
+                  className="pb-3 px-3 text-center whitespace-nowrap"
+                >
                   {t("pipeline.stages.interview")}
                 </th>
-                <th scope="col" className="pb-3 px-3 text-center">
+                <th
+                  scope="col"
+                  className="pb-3 px-3 text-center whitespace-nowrap"
+                >
                   {t("pipeline.stages.offer")}
                 </th>
-                <th scope="col" className="pb-3 px-3 text-center">
+                <th
+                  scope="col"
+                  className="pb-3 px-3 text-center whitespace-nowrap"
+                >
                   {t("pipeline.stages.hired")}
                 </th>
-                <th scope="col" className="pb-3 pl-3 text-right">
+                <th
+                  scope="col"
+                  className="pb-3 pl-3 text-right whitespace-nowrap"
+                >
                   {t("sourcing.overview.hireRate")}
                 </th>
               </tr>
@@ -68,13 +89,15 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
                     key={item.source}
                     className="hover:bg-muted/50 transition-colors"
                   >
-                    <td className="py-3 pr-4 flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full shrink-0 ${dotColor}`}
-                      />
-                      <span className="font-semibold text-foreground">
-                        {channelName}
-                      </span>
+                    <td className="py-3 pr-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full shrink-0 ${dotColor}`}
+                        />
+                        <span className="font-semibold text-foreground">
+                          {channelName}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-center text-muted-foreground">
                       {item.new}

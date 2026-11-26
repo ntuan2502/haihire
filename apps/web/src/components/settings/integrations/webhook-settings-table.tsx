@@ -65,22 +65,25 @@ export function WebhookSettingsTable({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[620px] text-left text-xs">
             <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
               <tr>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("settings.integrations.webhooks.table.eventType")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("settings.integrations.webhooks.table.provider")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("common.status")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("settings.integrations.webhooks.table.lastUpdated")}
                 </th>
-                <th scope="col" className="py-3 px-4 text-right">
+                <th
+                  scope="col"
+                  className="py-3 px-4 text-right whitespace-nowrap"
+                >
                   {t("common.actions")}
                 </th>
               </tr>
@@ -103,14 +106,14 @@ export function WebhookSettingsTable({
                       </span>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground">
                       {t(
                         `settings.integrations.webhooks.providers.${item.provider}`,
                       )}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     {item.isEnabled ? (
                       <Badge
                         variant="outline"

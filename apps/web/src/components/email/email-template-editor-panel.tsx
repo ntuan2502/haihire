@@ -162,7 +162,7 @@ export function EmailTemplateEditorPanel({
       </div>
 
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label
             htmlFor="template-body-input"
             className="block text-xs font-medium text-foreground"
@@ -212,7 +212,7 @@ export function EmailTemplateEditorPanel({
       </div>
 
       <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {activeTemplate.isSystem && (
             <SettingsButton
               type="button"

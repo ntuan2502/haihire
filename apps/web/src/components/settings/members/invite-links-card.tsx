@@ -100,12 +100,12 @@ export function InviteLinksCard({
 
   return (
     <SettingsCard className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/60 text-foreground shrink-0">
             <Link2 className="h-4 w-4" aria-hidden="true" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-xs font-semibold text-foreground">
               {t("members.createLinkTitle")}
             </h3>
@@ -120,6 +120,7 @@ export function InviteLinksCard({
             type="button"
             onClick={() => setIsCreateLinkOpen(true)}
             icon={Plus}
+            className="self-start sm:self-auto shrink-0"
           >
             {t("members.createLinkButton")}
           </SettingsButton>
@@ -144,7 +145,7 @@ export function InviteLinksCard({
             </SettingsButton>
           </div>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3">
             <div>
               <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                 {t("members.roleLabel")}
@@ -153,7 +154,7 @@ export function InviteLinksCard({
                 value={linkRole}
                 onChange={(val) => setLinkRole(val)}
                 options={resolvedRoleOptions}
-                className="w-48"
+                className="w-full lg:w-48"
                 triggerClassName="h-9 text-xs font-medium"
               />
             </div>
@@ -171,7 +172,7 @@ export function InviteLinksCard({
                   { value: "30 days", label: t("members.expires30Days") },
                   { value: "Never", label: t("members.expiresNever") },
                 ]}
-                className="w-36"
+                className="w-full lg:w-36"
                 triggerClassName="h-9 text-xs font-medium"
               />
             </div>
@@ -189,7 +190,7 @@ export function InviteLinksCard({
                   { value: "10", label: t("members.uses10") },
                   { value: "Unlimited", label: t("members.usesUnlimited") },
                 ]}
-                className="w-36"
+                className="w-full lg:w-36"
                 triggerClassName="h-9 text-xs font-medium"
               />
             </div>
@@ -200,6 +201,7 @@ export function InviteLinksCard({
                 pending={createInviteMutation.isPending}
                 disabled={createInviteMutation.isPending}
                 onClick={handleCreateLink}
+                className="w-full lg:w-auto"
               >
                 {createInviteMutation.isPending
                   ? t("common.saving")

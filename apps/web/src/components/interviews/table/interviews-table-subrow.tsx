@@ -59,7 +59,7 @@ export function InterviewsTableSubrow({
                 key={prev.id || `${prev.scheduledAt}-${pIdx}`}
                 className="p-3 rounded-xl bg-card text-card-foreground border border-border shadow-2xs space-y-1.5"
               >
-                <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-foreground">
                   <span>
                     {prev.round
                       ? t("interviews.roundInterview", {
@@ -73,12 +73,12 @@ export function InterviewsTableSubrow({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3 text-muted-foreground" />
-                    <span>{prev.interviewer}</span>
+                <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <User className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{prev.interviewer}</span>
                   </div>
-                  <span>
+                  <span className="shrink-0">
                     {prev.format === "OFFICE"
                       ? t("interviews.atOffice")
                       : t("interviews.onlineMeeting")}

@@ -200,7 +200,7 @@ export function MembersListCard({
             return (
               <div
                 key={m.id || index}
-                className="py-3 flex items-center justify-between gap-4"
+                className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Avatar */}
@@ -244,7 +244,7 @@ export function MembersListCard({
                 </div>
 
                 {/* Right side role badge & actions */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0 pl-11 sm:pl-0">
                   {isMemberOwner && (
                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
                       <Crown
@@ -256,7 +256,7 @@ export function MembersListCard({
                   )}
 
                   {canManageMembers ? (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 sm:flex-none">
                       {actionLoadingId === m.id && (
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                       )}
@@ -271,7 +271,7 @@ export function MembersListCard({
                         disabled={isRoleLocked || actionLoadingId === m.id}
                         size="sm"
                         aria-label={t("members.roleLabel")}
-                        className="w-36"
+                        className="w-full sm:w-36"
                       />
                     </div>
                   ) : (

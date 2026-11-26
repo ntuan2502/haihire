@@ -143,7 +143,7 @@ export function InterviewsGridView({
                 {currentInterview ? (
                   <div className="rounded-xl bg-muted/50 border border-border p-3.5 space-y-2.5">
                     {/* Time & Round Badge */}
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 font-bold text-foreground text-xs whitespace-nowrap">
                         <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="whitespace-nowrap">
@@ -321,7 +321,7 @@ export function InterviewsGridView({
                             key={prev.id || `${prev.scheduledAt}-${pIdx}`}
                             className={`text-[11px] space-y-1 ${pIdx > 0 ? "pt-2" : ""}`}
                           >
-                            <div className="flex items-center justify-between text-foreground font-medium gap-2">
+                            <div className="flex flex-wrap items-center justify-between text-foreground font-medium gap-2">
                               <span className="whitespace-nowrap">
                                 {formatDate(
                                   prev.scheduledAt,
@@ -359,7 +359,7 @@ export function InterviewsGridView({
               </div>
 
               {/* Actions Row - Anchored to bottom with mt-auto */}
-              <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-border flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => {

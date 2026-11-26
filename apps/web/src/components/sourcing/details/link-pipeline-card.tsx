@@ -31,7 +31,7 @@ function PipelineStageRow({ item }: { item: PipelineStageBreakdown }) {
           <span className="text-muted-foreground font-medium">
             {item.percentage}%
           </span>
-          <span className="font-bold text-foreground w-6 text-right">
+          <span className="font-bold text-foreground min-w-6 text-right">
             {item.count}
           </span>
         </div>
@@ -59,7 +59,7 @@ export function LinkPipelineCard({
   return (
     <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs p-5 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <GitCommit className="h-4 w-4" />

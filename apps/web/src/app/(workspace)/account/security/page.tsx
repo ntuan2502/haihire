@@ -28,10 +28,10 @@ export default function AccountSecurityPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        <div className="xl:col-span-5 space-y-6">
+        <div className="xl:col-span-5 space-y-6 min-w-0">
           <AccountPasswordCard setSession={setSession} />
         </div>
-        <div className="xl:col-span-7 space-y-6">
+        <div className="xl:col-span-7 space-y-6 min-w-0">
           <AccountSessionsCard />
           <AccountSecurityLogCard />
         </div>

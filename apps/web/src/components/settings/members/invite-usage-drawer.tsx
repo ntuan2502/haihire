@@ -47,7 +47,7 @@ export function InviteUsageDrawer({
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
-        <SheetHeader className="border-b border-border pb-4">
+        <SheetHeader className="border-b border-border pb-4 pr-12">
           <div className="flex items-center gap-2 text-foreground">
             <Link2
               className="h-4 w-4 shrink-0 text-primary"

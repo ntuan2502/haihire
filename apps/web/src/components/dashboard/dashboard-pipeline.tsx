@@ -26,9 +26,9 @@ export function DashboardPipeline({
   const pipelineStages = usePipelineStages();
 
   return (
-    <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs">
+    <div className="flex flex-col h-auto max-h-[460px] lg:h-[600px] lg:max-h-none rounded-xl border border-border bg-card p-4 sm:p-5 text-card-foreground shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between shrink-0 pb-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 shrink-0 pb-3 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
           <h3 className="text-sm font-bold text-foreground truncate">
@@ -125,7 +125,7 @@ export function DashboardPipeline({
                 </div>
 
                 {/* 6 Stage Metric Cards (Streamlined Compact Pills) */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 pt-0.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 sm:gap-1 pt-0.5">
                   {pipelineStages.map((stage) => {
                     const count = stageCounts[stage.id] || 0;
                     const displayLabel = stage.label;
@@ -139,12 +139,12 @@ export function DashboardPipeline({
                             `/jobs/${job.id}/pipeline?stage=${stage.id}`,
                           )
                         }
-                        className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
+                        className={`flex items-center justify-between px-2 sm:px-1.5 py-1.5 sm:py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-left`}
                         title={`${stage.label}: ${count}`}
                         aria-label={`${stage.label}: ${count}`}
                       >
                         <span
-                          className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
+                          className={`text-[11px] sm:text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
                         >
                           {displayLabel}
                         </span>

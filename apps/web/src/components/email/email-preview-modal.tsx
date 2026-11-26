@@ -185,12 +185,12 @@ export function EmailPreviewModal({
               key={`email-preview-${previewDevice}`}
               className="flex-1 overflow-y-auto flex flex-col bg-card text-card-foreground"
             >
-              <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-border">
+              <div className="px-4 sm:px-8 pt-5 pb-4 border-b border-border">
                 <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight leading-snug">
                   {subject}
                 </h1>
 
-                <div className="flex items-start justify-between gap-4 mt-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mt-4">
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm shadow-xs shrink-0">
                       {senderInitials}
@@ -249,7 +249,7 @@ export function EmailPreviewModal({
 
               <div
                 className={cn(
-                  "flex-1 p-6 sm:p-10 w-full",
+                  "flex-1 p-4 sm:p-10 w-full",
                   previewDevice === "tablet" ? "max-w-3xl mx-auto" : "",
                 )}
               >

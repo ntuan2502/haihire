@@ -86,7 +86,7 @@ export function AuditLogStatsBar() {
                   size="sm"
                   icon={Settings2}
                   onClick={openModal}
-                  className="h-6 px-2 text-[11px]"
+                  className="h-8 sm:h-6 px-2 text-[11px]"
                 >
                   {t("settings.auditLog.retentionConfigureBtn")}
                 </SettingsButton>

@@ -230,13 +230,15 @@ export function CandidateInterviewsList({
               <span className="text-muted-foreground block">
                 {t("interviews.tableHeaders.interviewer")}
               </span>
-              <span className="font-bold text-foreground flex items-center gap-1.5">
+              <span className="font-bold text-foreground flex items-center gap-1.5 min-w-0 break-words">
                 <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                {scheduled.interviewer}
+                <span className="min-w-0 break-words">
+                  {scheduled.interviewer}
+                </span>
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <span className="text-muted-foreground block">
                 {scheduled.format === "OFFICE"
                   ? t("interviews.officeAddressLabel")
@@ -254,7 +256,7 @@ export function CandidateInterviewsList({
                   <span>{t("interviews.openMeetingShort")}</span>
                 </a>
               ) : (
-                <span className="font-semibold text-foreground">
+                <span className="font-semibold text-foreground break-words block">
                   {scheduled.linkOrLocation || "—"}
                 </span>
               )}
@@ -359,7 +361,7 @@ export function CandidateInterviewsList({
           )}
 
           {(canCancelSchedule || canUpdateSchedule) && (
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
               {idx === 0 && canCancelSchedule && onCancelInterview && (
                 <Button
                   size="sm"

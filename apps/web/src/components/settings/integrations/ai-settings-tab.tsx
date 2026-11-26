@@ -348,8 +348,8 @@ export function AiSettingsTab() {
       </div>
 
       {/* Card 2: Model */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
           <div>
             <h3 className="text-xs font-semibold text-foreground">
               {t("settings.integrations.ai.modelTitle")}
@@ -419,7 +419,7 @@ export function AiSettingsTab() {
         )}
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <label
               htmlFor={apiKeyInputId}
               className="text-xs font-medium text-foreground"
@@ -550,7 +550,7 @@ export function AiSettingsTab() {
           <span>{t("settings.integrations.ai.securityNote")}</span>
         </div>
 
-        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+        <div className="flex flex-wrap items-center justify-end gap-2.5 w-full sm:w-auto">
           {setting && (
             <SettingsButton
               type="button"

@@ -324,7 +324,7 @@ export function TrackingLinkModal({
 
       {/* Job Scope */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="text-xs font-bold text-foreground">
             {t("sourcing.modal.jobLabel")}
           </label>

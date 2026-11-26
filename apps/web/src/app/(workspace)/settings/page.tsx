@@ -215,10 +215,10 @@ export default function GeneralSettingsPage() {
               <label className="block text-xs font-medium text-foreground mb-1.5">
                 {t("settings.urlSlug")}
               </label>
-              <div className="flex items-center rounded-md border border-input bg-transparent dark:bg-input/30 overflow-hidden shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+              <div className="flex flex-col sm:flex-row sm:items-center rounded-md border border-input bg-transparent dark:bg-input/30 overflow-hidden shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
                 <span
                   suppressHydrationWarning
-                  className="px-3 h-9 inline-flex items-center bg-muted text-muted-foreground text-xs font-medium select-none border-r border-input shrink-0"
+                  className="px-3 py-2 sm:py-0 sm:h-9 inline-flex items-center bg-muted text-muted-foreground text-xs font-medium select-none border-b sm:border-b-0 sm:border-r border-input sm:shrink-0 sm:max-w-[55%] truncate"
                 >
                   {displayHost}/
                 </span>
@@ -234,7 +234,7 @@ export default function GeneralSettingsPage() {
                       e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
                     )
                   }
-                  className="flex-1 h-9 px-3 text-xs bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
+                  className="w-full min-w-0 flex-1 h-9 px-3 text-xs bg-transparent text-foreground placeholder:text-muted-foreground outline-none"
                   required
                   disabled={
                     !canEdit || isOrgLoading || updateOrgMutation.isPending

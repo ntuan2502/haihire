@@ -113,38 +113,59 @@ export function InterviewsTableView({
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xs overflow-hidden transition-colors">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full min-w-[760px] text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/50 text-muted-foreground text-xs font-medium">
-              <th scope="col" className="py-3.5 px-4 text-left">
+              <th
+                scope="col"
+                className="py-3.5 px-4 text-left whitespace-nowrap"
+              >
                 {t("interviews.tableHeaders.candidate")}
               </th>
               {visibleColumns?.job !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3.5 px-4 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.job")}
                 </th>
               )}
               {visibleColumns?.schedule !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3.5 px-4 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.schedule")}
                 </th>
               )}
               {visibleColumns?.interviewer !== false && (
-                <th scope="col" className="py-3.5 px-4 text-left">
+                <th
+                  scope="col"
+                  className="py-3.5 px-4 text-left whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.interviewer")}
                 </th>
               )}
               {visibleColumns?.status !== false && (
-                <th scope="col" className="py-3.5 px-3 text-center">
+                <th
+                  scope="col"
+                  className="py-3.5 px-3 text-center whitespace-nowrap"
+                >
                   {t("common.status")}
                 </th>
               )}
               {visibleColumns?.rating !== false && (
-                <th scope="col" className="py-3.5 px-3 text-center">
+                <th
+                  scope="col"
+                  className="py-3.5 px-3 text-center whitespace-nowrap"
+                >
                   {t("interviews.tableHeaders.rating")}
                 </th>
               )}
-              <th scope="col" className="py-3.5 px-4 text-right">
+              <th
+                scope="col"
+                className="py-3.5 px-4 text-right whitespace-nowrap"
+              >
                 {t("common.actions")}
               </th>
             </tr>

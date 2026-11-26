@@ -856,6 +856,11 @@ export const en: TranslationSchema = {
     previewUnsupportedFormat:
       "Inline preview is not supported for this file format. Please download the file to view it.",
     retryPreview: "Retry",
+    openInNewTab: "Open in new tab",
+    pdfPageCount: "{count} pages",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    resetZoom: "Fit to width",
     uploadDocHint:
       "Upload a resume, cover letter, or other document (PDF only — max 10 MB).",
     noApplicationsYet: "No applications yet.",

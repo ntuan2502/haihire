@@ -857,6 +857,11 @@ export const vi: TranslationSchema = {
     previewUnsupportedFormat:
       "Định dạng tệp này không hỗ trợ xem trực tiếp. Vui lòng tải xuống để xem.",
     retryPreview: "Thử lại",
+    openInNewTab: "Mở tab mới",
+    pdfPageCount: "Tổng {count} trang",
+    zoomIn: "Phóng to",
+    zoomOut: "Thu nhỏ",
+    resetZoom: "Vừa khung",
     uploadDocHint:
       "Tải lên CV, thư xin việc hoặc tài liệu khác (Chỉ định dạng PDF — tối đa 10 MB).",
     noApplicationsYet: "Chưa có hồ sơ ứng tuyển nào.",

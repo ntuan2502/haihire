@@ -10,9 +10,7 @@ function encodeCanvasToBlob(
   });
 }
 
-async function decodeImageSource(
-  file: File,
-): Promise<{
+async function decodeImageSource(file: File): Promise<{
   source: CanvasImageSource;
   width: number;
   height: number;
@@ -35,7 +33,8 @@ async function decodeImageSource(
   if (
     typeof Image === "undefined" ||
     typeof URL === "undefined" ||
-    typeof URL.createObjectURL !== "function"
+    typeof URL.createObjectURL !== "function" ||
+    (typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent))
   ) {
     return null;
   }

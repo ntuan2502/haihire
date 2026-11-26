@@ -748,6 +748,11 @@ export interface TranslationSchema {
     previewUnavailable: string;
     previewUnsupportedFormat: string;
     retryPreview: string;
+    openInNewTab: string;
+    pdfPageCount: string;
+    zoomIn: string;
+    zoomOut: string;
+    resetZoom: string;
     uploadDocHint: string;
     noApplicationsYet: string;
     noApplicationsMatchingStage: string;

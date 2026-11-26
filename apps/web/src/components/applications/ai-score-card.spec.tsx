@@ -121,7 +121,7 @@ describe("AiScoreCard", () => {
     render(<AiScoreCard application={baseApplication} canScore={true} />);
 
     expect(screen.getByText("Not run yet")).toBeInTheDocument();
-    expect(screen.getByText("gemini-4-hydrogen")).toBeInTheDocument();
+    expect(screen.queryByText("gemini-4-hydrogen")).not.toBeInTheDocument();
     expect(
       screen.getByText("Analyze CV and screening answers."),
     ).toBeInTheDocument();

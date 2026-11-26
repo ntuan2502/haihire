@@ -70,16 +70,6 @@ function formatCategoryBadge(
   return t("jobs.wizard.categories.custom");
 }
 
-function getTriggerButtonVariant(icon: "run" | "rescore"): "default" | "ghost" {
-  return icon === "rescore" ? "ghost" : "default";
-}
-
-function getTriggerButtonClassName(icon: "run" | "rescore"): string {
-  return icon === "rescore"
-    ? "h-7 px-2.5 text-xs gap-1.5 cursor-pointer shrink-0 text-primary hover:text-primary"
-    : "h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shrink-0";
-}
-
 function getUnscoredBodyClassName(isCompact: boolean): string {
   return cn(
     "border-t border-border",
@@ -201,16 +191,16 @@ export function AiScoreCard({
     return (
       <Button
         type="button"
-        variant={getTriggerButtonVariant(icon)}
+        variant="default"
         size="sm"
         onClick={handleRunScore}
         disabled={isPending || isInFlight}
-        className={getTriggerButtonClassName(icon)}
+        className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shrink-0"
       >
         {isPending ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
         ) : icon === "rescore" ? (
-          <RefreshCw className="h-3 w-3" aria-hidden="true" />
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
         ) : (
           <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
         )}
@@ -361,32 +351,22 @@ export function AiScoreCard({
             )}
 
           {isUnscored &&
-            (aiStatus && !isAiEnabled ? (
-              canManageIntegrations ? (
-                <Link
-                  href="/settings/integrations/ai"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline shrink-0"
-                >
-                  <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{t("applications.aiEvaluation.configureAiLink")}</span>
-                </Link>
-              ) : null
-            ) : (
-              <>
-                {!isCompact && aiStatus?.modelId && (
-                  <span
-                    title={aiStatus.modelId}
-                    className="hidden sm:inline-flex items-center rounded-md border border-border bg-muted/40 px-2.5 h-8 text-xs font-medium text-foreground/80 max-w-[180px] truncate"
+            (aiStatus && !isAiEnabled
+              ? canManageIntegrations && (
+                  <Link
+                    href="/settings/integrations/ai"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline shrink-0"
                   >
-                    {aiStatus.modelId}
-                  </span>
-                )}
-                {renderTriggerButton(
+                    <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>
+                      {t("applications.aiEvaluation.configureAiLink")}
+                    </span>
+                  </Link>
+                )
+              : renderTriggerButton(
                   t("applications.aiEvaluation.scoreButton"),
                   "run",
-                )}
-              </>
-            ))}
+                ))}
 
           {!isCompact && (hasScore || isUnscored) && (
             <button

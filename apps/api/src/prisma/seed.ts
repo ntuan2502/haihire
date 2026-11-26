@@ -2553,31 +2553,22 @@ export async function runSeed(): Promise<void> {
       }
 
       const interviewCount = exactInterviewCounts[appIdx];
-      let matchScore = 65 + ((pApp.candidateIdx * 5 + pApp.jobIdx * 7) % 31);
       let noteText = "";
 
       if (stage === "APPLIED" || stage === "SCREENING") {
-        matchScore = isKanban
-          ? 88
-          : isTestApp
-            ? 82
-            : 68 + ((pApp.candidateIdx + pApp.jobIdx * 5) % 25);
         noteText = isKanban
           ? "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test."
           : isTestApp
             ? "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test."
             : "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
       } else if (stage === "INTERVIEW") {
-        matchScore = 80 + ((pApp.candidateIdx + pApp.jobIdx) % 16);
         noteText =
           interviewCount === 0
             ? "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại."
             : "Đang trong quy trình phỏng vấn.";
       } else if (stage === "OFFER" || stage === "HIRED") {
-        matchScore = 90 + ((pApp.candidateIdx + pApp.jobIdx) % 9);
         noteText = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
       } else if (stage === "REJECTED") {
-        matchScore = 55 + ((pApp.candidateIdx + pApp.jobIdx) % 20);
         noteText =
           interviewCount === 0
             ? "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí."
@@ -2676,21 +2667,13 @@ export async function runSeed(): Promise<void> {
           })
         : { coverLetter: null, screeningAnswers: [] };
 
-      const finalMatchScore =
-        bp.orgIndex === 1 &&
-        pApp.candidateIdx >= 2 &&
-        pApp.candidateIdx <= 9 &&
-        !pApp.isPinnedE2E
-          ? null
-          : matchScore;
-
       applicationsToInsert.push({
         id: pApp.id,
         organizationId: bp.id,
         candidateId: pApp.candidateId,
         jobId: pApp.jobId,
         stage,
-        matchScore: finalMatchScore,
+        matchScore: null,
         resumeUrl: fileMeta?.resumeUrl ?? null,
         resumeFileName: fileMeta?.fileName ?? null,
         resumeFileSize: fileMeta?.sizeBytes ?? null,

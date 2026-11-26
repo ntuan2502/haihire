@@ -58,14 +58,16 @@ export function DevicePreviewSelector({
             key={opt.id}
             type="button"
             onClick={() => onChange(opt.id)}
+            aria-label={opt.label}
+            title={opt.label}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer",
+              "flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 text-xs font-medium rounded-md transition-colors cursor-pointer",
               isActive
                 ? "bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span className="hidden sm:inline">{opt.label}</span>
           </button>
         );

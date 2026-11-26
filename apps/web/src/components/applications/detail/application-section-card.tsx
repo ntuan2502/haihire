@@ -21,7 +21,9 @@ export interface ApplicationSectionCardProps {
 }
 
 function getSectionBodyClassName(bodyDivider: boolean): string {
-  return bodyDivider ? "-mx-5 px-5 pt-3.5 border-t border-border" : "";
+  return bodyDivider
+    ? "-mx-4 sm:-mx-5 px-4 sm:px-5 pt-3.5 border-t border-border"
+    : "";
 }
 
 /**
@@ -62,7 +64,7 @@ export function ApplicationSectionCard({
     <div
       data-testid={testId}
       className={cn(
-        "rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-4",
+        "rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-5 shadow-xs space-y-4",
         className,
       )}
     >
@@ -76,7 +78,7 @@ export function ApplicationSectionCard({
         </div>
 
         {(headerActions || collapsible) && (
-          <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 max-w-full min-w-0">
             {headerActions}
             {collapsible && (
               <button

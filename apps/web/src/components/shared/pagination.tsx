@@ -105,13 +105,13 @@ export function Pagination({
           {clampedTotalPages}
         </span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 sm:gap-1">
           {/* Previous Page Button */}
           <button
             type="button"
             disabled={clampedCurrentPage <= 1}
             onClick={() => onPageChange(Math.max(1, clampedCurrentPage - 1))}
-            className="h-7 w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
+            className="h-9 w-9 sm:h-7 sm:w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
             title={t("common.previous")}
             aria-label={t("common.previous")}
           >
@@ -156,7 +156,7 @@ export function Pagination({
             onClick={() =>
               onPageChange(Math.min(clampedTotalPages, clampedCurrentPage + 1))
             }
-            className="h-7 w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
+            className="h-9 w-9 sm:h-7 sm:w-7 rounded-md border border-input bg-background flex items-center justify-center text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
             title={t("common.next")}
             aria-label={t("common.next")}
           >

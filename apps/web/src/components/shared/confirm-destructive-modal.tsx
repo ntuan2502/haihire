@@ -119,7 +119,10 @@ export function ConfirmDestructiveModal({
         }
       }}
     >
-      <DialogContent disableClose={isLoading} className="sm:max-w-md p-6 gap-5">
+      <DialogContent
+        disableClose={isLoading}
+        className="sm:max-w-md p-4 sm:p-6 gap-5"
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader className="gap-3 pr-8 text-left">
             <div className="flex items-center gap-3">
@@ -211,7 +214,7 @@ export function ConfirmDestructiveModal({
             </div>
           )}
 
-          <DialogFooter className="pt-4 mt-1 border-t border-border flex-row justify-end gap-2.5 sm:justify-end">
+          <DialogFooter className="pt-4 mt-1 border-t border-border flex-col-reverse sm:flex-row sm:flex-wrap justify-end gap-2.5 sm:justify-end">
             <Button
               type="button"
               variant="outline"

@@ -82,7 +82,7 @@ export function PreviewModal({
       >
         <DialogHeader
           className={cn(
-            "px-4 sm:px-6 py-3.5 border-b border-border bg-card flex-row items-center justify-between gap-2 sm:gap-3 flex-wrap sm:flex-nowrap shrink-0",
+            "px-4 sm:px-6 py-3 sm:py-3.5 border-b border-border bg-card flex-row items-center justify-between gap-2 sm:gap-3 flex-wrap shrink-0",
             headerClassName,
           )}
         >
@@ -102,16 +102,12 @@ export function PreviewModal({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-            {typeof headerActions === "function"
-              ? headerActions({ isMaximized })
-              : headerActions}
-
+          <div className="flex items-center gap-1.5 shrink-0 sm:order-last">
             {allowMaximize && (
               <button
                 type="button"
                 onClick={() => setIsMaximized((prev) => !prev)}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+                className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
                 aria-label={
                   isMaximized ? t("common.restore") : t("common.maximize")
                 }
@@ -128,12 +124,20 @@ export function PreviewModal({
             <button
               type="button"
               onClick={() => handleOpenChange(false)}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer shrink-0"
               aria-label={t("common.close")}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
+
+          {headerActions && (
+            <div className="flex flex-wrap items-center justify-end gap-1.5 max-w-full w-full sm:w-auto sm:ml-auto">
+              {typeof headerActions === "function"
+                ? headerActions({ isMaximized })
+                : headerActions}
+            </div>
+          )}
         </DialogHeader>
 
         <div

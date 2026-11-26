@@ -95,16 +95,16 @@ export function MobileDrawer({
               !footer && "border-b border-border",
             )}
           >
-            <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-foreground">
-              <div className="flex items-center gap-3">
+            <div className="flex h-10 w-full items-center justify-between gap-2 rounded-lg px-3 text-xs font-semibold text-foreground">
+              <div className="flex items-center gap-3 min-w-0">
                 <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>
+                <span className="truncate">
                   {t("nav.theme")} / {t("nav.language")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <ThemeToggle size="sm" />
-                <LanguageDropdown size="sm" />
+                <ThemeToggle size="md" />
+                <LanguageDropdown size="md" />
               </div>
             </div>
           </div>

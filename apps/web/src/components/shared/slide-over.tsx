@@ -96,7 +96,7 @@ export function SlideOver({
         )}
       >
         {title ? (
-          <SheetHeader className="px-6 py-4 pr-12 border-b border-border shrink-0 text-left">
+          <SheetHeader className="px-4 sm:px-6 py-4 pr-12 border-b border-border shrink-0 text-left">
             <SheetTitle className="text-sm font-semibold text-foreground">
               {title}
             </SheetTitle>

@@ -68,16 +68,20 @@ export function DocumentPreviewModal({
                 href={previewSrc}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={t("candidates.openInNewTab")}
+                title={t("candidates.openInNewTab")}
                 className={cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
-                  "h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shadow-2xs",
+                  "h-8 px-2.5 sm:px-3 text-xs font-medium gap-1.5 cursor-pointer shadow-2xs",
                 )}
               >
                 <ExternalLink
-                  className="h-3.5 w-3.5 text-muted-foreground"
+                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                   aria-hidden="true"
                 />
-                <span>{t("candidates.openInNewTab")}</span>
+                <span className="hidden sm:inline">
+                  {t("candidates.openInNewTab")}
+                </span>
               </a>
             )}
             <Button
@@ -86,13 +90,15 @@ export function DocumentPreviewModal({
               size="sm"
               disabled={isDownloading}
               onClick={handleDownloadClick}
-              className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shadow-2xs"
+              aria-label={t("common.download")}
+              title={t("common.download")}
+              className="h-8 px-2.5 sm:px-3 text-xs font-medium gap-1.5 cursor-pointer shadow-2xs"
             >
               <Download
-                className="h-3.5 w-3.5 text-muted-foreground"
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                 aria-hidden="true"
               />
-              <span>{t("common.download")}</span>
+              <span className="hidden sm:inline">{t("common.download")}</span>
             </Button>
           </div>
         ) : undefined

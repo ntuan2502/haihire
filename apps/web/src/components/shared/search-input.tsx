@@ -141,7 +141,7 @@ export function SearchInput({
         autoFocus={autoFocus}
         aria-label={resolvedAriaLabel}
         className={cn(
-          "h-9 pl-9 pr-8 text-xs bg-background border-input rounded-md shadow-xs w-full transition-colors",
+          "h-9 pl-9 pr-9 text-xs bg-background border-input rounded-md shadow-xs w-full transition-colors",
           inputClassName,
         )}
       />
@@ -150,7 +150,7 @@ export function SearchInput({
           type="button"
           onClick={handleClear}
           aria-label={t("common.clearSearch")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5 rounded-sm hover:bg-accent transition-colors"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-1.5 rounded-sm hover:bg-accent transition-colors"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>

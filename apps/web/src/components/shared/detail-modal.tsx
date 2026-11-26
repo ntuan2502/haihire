@@ -72,7 +72,7 @@ export function DetailModal({
           panelClassName,
         )}
       >
-        <DialogHeader className="px-6 py-4 pr-12 border-b border-border bg-card flex-row items-center justify-between gap-3 flex-wrap shrink-0">
+        <DialogHeader className="px-4 sm:px-6 py-4 pr-12 border-b border-border bg-card flex-row items-center justify-between gap-3 flex-wrap shrink-0">
           <div className="space-y-0.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <DialogTitle className="text-base font-semibold text-foreground leading-snug">
@@ -89,7 +89,7 @@ export function DetailModal({
             )}
           </div>
           {headerActions && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 max-w-full shrink-0">
               {headerActions}
             </div>
           )}
@@ -97,7 +97,7 @@ export function DetailModal({
 
         <div
           className={cn(
-            "flex-1 min-h-0 overflow-y-auto px-6 py-5",
+            "flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5",
             bodyClassName,
           )}
         >
@@ -107,7 +107,7 @@ export function DetailModal({
         {footer && (
           <DialogFooter
             className={cn(
-              "px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex-row flex-wrap items-center justify-end gap-2",
+              "px-4 sm:px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex-row flex-wrap items-center justify-end gap-2",
               footerClassName,
             )}
           >

@@ -359,4 +359,98 @@ describe("AiScoringService", () => {
     expect(batch.enqueued).toBe(2);
     expect(mockQueue.add).toHaveBeenCalledTimes(2);
   });
+
+  it("executes external AI HTTP fetch outside active withTenantRls DB transactions", async () => {
+    const rlsPrisma = createMockPrismaService({
+      application: appTable,
+      applicationAiEvaluation: evalTable,
+      job: jobTable,
+      candidate: candidateTable,
+      organization: orgTable,
+      organizationAiSetting: aiSettingTable,
+    }) as unknown as PrismaService & {
+      withTenantRls: (
+        orgId: string,
+        fn: (tx: PrismaService) => Promise<unknown>,
+      ) => Promise<unknown>;
+    };
+
+    let activeRlsTxDepth = 0;
+    let txPhaseCount = 0;
+    let fetchDepthObserved = -1;
+
+    rlsPrisma.withTenantRls = vi.fn(async (_orgId, fn) => {
+      txPhaseCount += 1;
+      activeRlsTxDepth += 1;
+      try {
+        return await fn(rlsPrisma);
+      } finally {
+        activeRlsTxDepth -= 1;
+      }
+    });
+
+    const isolatedService = new AiScoringService(
+      rlsPrisma,
+      mockSettingsService as unknown as AiSettingsService,
+      mockMinio as unknown as MinioService,
+      mockEvents as never,
+      mockQueue as never,
+    );
+
+    mockExtractPdfTextFromBuffer.mockResolvedValueOnce({
+      text: "Senior TypeScript engineer. ".repeat(15),
+      truncated: false,
+      rawLength: 420,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
+      fetchDepthObserved = activeRlsTxDepth;
+      return new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      criteria: [
+                        {
+                          key: "react_ts",
+                          score: 9,
+                          confidence: 90,
+                          evidence: "5 years React & TS.",
+                          strengths: ["TypeScript"],
+                          gaps: [],
+                        },
+                        {
+                          key: "product_thinking",
+                          score: 8,
+                          confidence: 80,
+                          evidence: "Built SaaS dashboard.",
+                          strengths: ["Product focus"],
+                          gaps: [],
+                        },
+                      ],
+                      summary: "Strong candidate.",
+                      suggestedQuestions: ["Tell us about scaling React apps."],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+
+    const evaluation = await isolatedService.scoreApplicationNow(
+      "org-1",
+      "app-1",
+    );
+
+    expect(evaluation.status).toBe("COMPLETED");
+    expect(txPhaseCount).toBe(2);
+    expect(fetchDepthObserved).toBe(0);
+  });
 });

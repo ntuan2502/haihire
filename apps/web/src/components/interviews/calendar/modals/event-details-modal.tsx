@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Star, Trash2 } from "lucide-react";
+import { FileText, Pencil, Star, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DetailModal } from "@/components/shared";
 import { useLocalization } from "@/components/providers/localization-provider";
@@ -97,9 +97,9 @@ export function EventDetailsModal({
                     onClose();
                     onCancelInterview(evt.application, evt.interview);
                   }}
-                  className="h-8 px-2.5 rounded-md text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                  className="h-8 px-3 rounded-md text-xs font-medium text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                 >
-                  <Trash2 className="h-3 w-3" aria-hidden="true" />
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>{t("interviews.cancelThisSchedule")}</span>
                 </Button>
               )}
@@ -114,9 +114,10 @@ export function EventDetailsModal({
                     onClose();
                     onEditSchedule(evt.application, evt.interview);
                   }}
-                  className="h-8 px-2.5 rounded-md text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                  className="h-8 px-3 rounded-md text-xs font-medium gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  {t("interviews.editSchedule")}
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t("interviews.editSchedule")}</span>
                 </Button>
               )}
 
@@ -130,9 +131,9 @@ export function EventDetailsModal({
                     onClose();
                     onOpenScorecard(evt.application, evt.interview);
                   }}
-                  className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shadow-xs whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
+                  className="h-8 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium shadow-xs whitespace-nowrap shrink-0 cursor-pointer inline-flex items-center gap-1.5"
                 >
-                  <Star className="h-3 w-3" aria-hidden="true" />
+                  <Star className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>
                     {selectedEvent.interview.scorecard
                       ? t("interviews.viewEvaluation")

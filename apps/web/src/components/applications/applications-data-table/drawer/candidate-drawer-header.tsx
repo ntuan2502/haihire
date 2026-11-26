@@ -45,7 +45,7 @@ export function CandidateDrawerHeader({
               onViewInPipeline(currentApp.id, currentApp.stage);
               onClose();
             }}
-            className="h-8 px-2.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
             title={t("pipeline.focusCandidate")}
           >
             <Columns3 className="h-3.5 w-3.5" />
@@ -56,7 +56,7 @@ export function CandidateDrawerHeader({
         <button
           type="button"
           onClick={() => router.push(fullPageHref)}
-          className="h-8 px-2.5 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+          className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           title={t("applications.openFullPage")}
         >
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />

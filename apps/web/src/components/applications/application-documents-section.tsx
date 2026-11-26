@@ -55,9 +55,12 @@ export function ApplicationDocumentsSection({
               <button
                 type="button"
                 onClick={() => onPreview(doc)}
-                className="h-7 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                <Eye
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span>{t("common.preview")}</span>
               </button>
 
@@ -70,9 +73,12 @@ export function ApplicationDocumentsSection({
                     doc.sourceApplicationId || appId,
                   )
                 }
-                className="h-7 px-3 rounded-md border border-input bg-background text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                <Download
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span>{t("common.download")}</span>
               </button>
             </div>

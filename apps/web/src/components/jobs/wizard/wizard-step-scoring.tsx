@@ -157,7 +157,7 @@ export function WizardStepScoring({
               size="sm"
               onClick={handleGenerateWithAi}
               disabled={generateMutation.isPending}
-              className="h-9 px-3 text-xs font-medium gap-1.5 cursor-pointer"
+              className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer"
             >
               {generateMutation.isPending ? (
                 <Loader2
@@ -410,9 +410,10 @@ export function WizardStepScoring({
               size="sm"
               onClick={onAddCriterion}
               disabled={!newCriterionTitle.trim()}
-              className="h-8 text-xs cursor-pointer"
+              className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer"
             >
-              {t("jobs.wizard.addCriterionAction")}
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{t("jobs.wizard.addCriterionAction")}</span>
             </Button>
           </div>
         </div>
@@ -420,10 +421,11 @@ export function WizardStepScoring({
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={() => setIsAddingCriterion(true)}
-          className="h-10 text-xs font-medium gap-1.5 border-dashed w-full sm:w-auto cursor-pointer"
+          className="h-8 px-3 text-xs font-medium gap-1.5 border-dashed w-full sm:w-auto cursor-pointer"
         >
-          <Plus className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
           {t("jobs.wizard.addCriterionAction")}
         </Button>
       )}

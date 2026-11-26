@@ -439,7 +439,7 @@ function AddCandidatePageContent() {
             disabled={
               isSubmitting || Boolean(duplicateCheck?.hasBlockingDuplicate)
             }
-            className="px-5 font-semibold text-xs cursor-pointer"
+            className="h-9 px-4 text-xs font-semibold cursor-pointer"
           >
             {isSubmitting ? t("common.saving") : t("candidates.addCandidate")}
           </Button>
@@ -447,7 +447,7 @@ function AddCandidatePageContent() {
             type="button"
             variant="outline"
             onClick={() => router.push("/candidates")}
-            className="px-4 text-xs cursor-pointer"
+            className="h-9 px-4 text-xs font-medium cursor-pointer"
           >
             {t("common.cancel")}
           </Button>

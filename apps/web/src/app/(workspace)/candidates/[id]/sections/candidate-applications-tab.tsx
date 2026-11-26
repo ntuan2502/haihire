@@ -1,4 +1,4 @@
-import { Plus, Briefcase, Calendar, MessageSquare } from "lucide-react";
+import { Plus, Briefcase, CalendarPlus, MessageSquare } from "lucide-react";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
@@ -115,9 +115,12 @@ export function CandidateApplicationsTab({
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app, null)}
-                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
-                        <Calendar className="h-3 w-3" />
+                        <CalendarPlus
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                         <span>{t("interviews.scheduleInterview")}</span>
                       </button>
                     )}

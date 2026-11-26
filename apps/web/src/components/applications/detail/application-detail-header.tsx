@@ -116,7 +116,7 @@ export function ApplicationDetailHeader({
               type="button"
               size="sm"
               onClick={onOpenSendEmail}
-              className="h-8 px-3 rounded-md text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="h-8 px-3 rounded-md text-xs font-medium shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Mail className="h-3.5 w-3.5" />
               <span>{t("email.sendEmailAction")}</span>

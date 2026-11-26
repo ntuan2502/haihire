@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Edit2, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Pencil, Trash2 } from "lucide-react";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
@@ -78,7 +78,7 @@ export function CandidateDetailHeader({
               onClick={() => router.push(`/candidates/${candidateId}/edit`)}
               className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Edit2 className="h-3 w-3 text-muted-foreground" />
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{t("common.edit")}</span>
             </button>
           )}
@@ -89,7 +89,7 @@ export function CandidateDetailHeader({
               onClick={onOpenDeleteModal}
               className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-medium text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
               <span>{t("common.delete")}</span>
             </button>
           )}

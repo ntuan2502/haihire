@@ -15,7 +15,7 @@ import {
   KeyRound,
   Loader2,
   PlugZap,
-  Sparkles,
+  Save,
   Trash2,
 } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import {
   CustomSelect,
   LoadingSpinner,
 } from "@/components/shared";
+import { SettingsButton } from "@/components/settings/settings-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -551,34 +552,26 @@ export function AiSettingsTab() {
 
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
           {setting && (
-            <Button
+            <SettingsButton
               type="button"
               variant="outline"
-              size="sm"
+              icon={Trash2}
               onClick={() => setIsDeleteModalOpen(true)}
               disabled={deleteMutation.isPending}
-              className="h-9 text-xs gap-1.5 text-destructive hover:text-destructive cursor-pointer"
+              className="text-destructive hover:text-destructive cursor-pointer"
             >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               {t("settings.integrations.ai.deleteButton")}
-            </Button>
+            </SettingsButton>
           )}
-          <Button
+          <SettingsButton
             type="submit"
-            size="sm"
-            disabled={!canTestOrSave || upsertMutation.isPending}
-            className="h-9 px-5 text-xs font-semibold gap-1.5 cursor-pointer"
+            icon={Save}
+            pending={upsertMutation.isPending}
+            disabled={!canTestOrSave}
+            className="px-4 font-semibold cursor-pointer"
           >
-            {upsertMutation.isPending ? (
-              <Loader2
-                className="h-3.5 w-3.5 animate-spin"
-                aria-hidden="true"
-              />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
             {t("settings.integrations.ai.saveButton")}
-          </Button>
+          </SettingsButton>
         </div>
       </div>
 

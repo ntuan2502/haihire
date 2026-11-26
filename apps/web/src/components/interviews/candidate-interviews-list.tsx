@@ -2,12 +2,15 @@
 
 import {
   Calendar,
+  CalendarPlus,
   Clock,
   User,
   ExternalLink,
   MapPin,
+  Pencil,
   Video,
   Star,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplicationSectionCard } from "@/components/applications/detail/application-section-card";
@@ -100,7 +103,7 @@ export function CandidateInterviewsList({
         onClick={() => onSchedule?.()}
         className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer shrink-0"
       >
-        <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+        <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
         <span>{t("applications.scheduleInterview")}</span>
       </Button>
     ) : null;
@@ -362,9 +365,10 @@ export function CandidateInterviewsList({
                   size="sm"
                   variant="ghost"
                   onClick={() => setInterviewToCancel(scheduled)}
-                  className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
+                  className="h-8 px-3 text-xs font-medium gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                 >
-                  {t("interviews.cancelThisSchedule")}
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{t("interviews.cancelThisSchedule")}</span>
                 </Button>
               )}
               {canUpdateSchedule && onSchedule && (
@@ -372,11 +376,14 @@ export function CandidateInterviewsList({
                   size="sm"
                   variant="outline"
                   onClick={() => onSchedule(scheduled)}
-                  className="text-xs font-semibold cursor-pointer"
+                  className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer"
                 >
-                  {idx === 0
-                    ? t("interviews.editScheduleBtn")
-                    : t("interviews.updateBtn")}
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>
+                    {idx === 0
+                      ? t("interviews.editScheduleBtn")
+                      : t("interviews.updateBtn")}
+                  </span>
                 </Button>
               )}
             </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   Briefcase,
-  Calendar,
+  CalendarPlus,
   ExternalLink,
   MessageSquare,
   Plus,
@@ -134,9 +134,12 @@ export function CandidateDrawerApplicationsTab({
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app)}
-                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
-                        <Calendar className="h-3 w-3" />
+                        <CalendarPlus
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                         <span>{t("interviews.scheduleInterview")}</span>
                       </button>
                     )}

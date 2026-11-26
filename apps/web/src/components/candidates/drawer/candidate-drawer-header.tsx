@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Edit2, ExternalLink, X } from "lucide-react";
+import { Pencil, ExternalLink, X } from "lucide-react";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
@@ -28,17 +28,17 @@ export function CandidateDrawerHeader({
           <button
             type="button"
             onClick={() => router.push(`/candidates/${candidateId}/edit`)}
-            className="h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             title={t("common.edit")}
           >
-            <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{t("common.edit")}</span>
           </button>
         )}
         <button
           type="button"
           onClick={() => router.push(`/candidates/${candidateId}`)}
-          className="h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+          className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           title={t("candidates.openFullPage")}
         >
           <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />

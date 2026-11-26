@@ -123,11 +123,10 @@ function JobTrackingPageContent() {
 
         {canCreateLink && (
           <Button
-            size="sm"
             onClick={() => setIsCreateModalOpen(true)}
-            className="gap-1.5 cursor-pointer self-start sm:self-auto shrink-0"
+            className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 cursor-pointer self-start sm:self-auto shrink-0"
           >
-            <Plus className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+            <Plus className="h-4 w-4" aria-hidden="true" />
             <span>{t("sourcing.newLink")}</span>
           </Button>
         )}

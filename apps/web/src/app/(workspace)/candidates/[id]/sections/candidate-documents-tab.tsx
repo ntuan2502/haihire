@@ -1,12 +1,5 @@
 import type { ChangeEvent, RefObject } from "react";
-import {
-  FileText,
-  Eye,
-  Download,
-  Trash2,
-  Loader2,
-  UploadCloud,
-} from "lucide-react";
+import { FileText, Eye, Download, Trash2, Loader2, Upload } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { getDocumentTypeLabel } from "@/lib/roles";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -48,12 +41,12 @@ export function CandidateDocumentsTab({
               type="button"
               disabled={isUploadingDoc}
               onClick={() => docInputRef.current?.click()}
-              className="h-8 px-3.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               {isUploadingDoc ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <UploadCloud className="h-3.5 w-3.5 text-muted-foreground" />
+                <Upload className="h-3.5 w-3.5 text-muted-foreground" />
               )}
               <span>{t("candidates.uploadDoc")}</span>
             </button>

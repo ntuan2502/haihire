@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { CalendarWeekCard } from "./calendar-week-card";
@@ -68,7 +68,10 @@ export function CalendarWeekView({
                       className="h-7 w-7 p-0 rounded-md hover:bg-primary/10 text-primary cursor-pointer shrink-0"
                       title={t("interviews.scheduleNew")}
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <CalendarPlus
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
                     </Button>
                   )}
                 </div>

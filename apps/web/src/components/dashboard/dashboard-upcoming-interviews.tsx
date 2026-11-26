@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, ArrowRight, Video, MapPin, User } from "lucide-react";
+import {
+  Calendar,
+  CalendarPlus,
+  ArrowRight,
+  Video,
+  MapPin,
+  User,
+} from "lucide-react";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import {
   addDaysToYmd,
@@ -85,9 +92,10 @@ export function DashboardUpcomingInterviews({
           </p>
           <Link
             href="/interviews"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
           >
-            <span>+ {t("dashboard.scheduleNew")}</span>
+            <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{t("dashboard.scheduleNew")}</span>
           </Link>
         </div>
       ) : (

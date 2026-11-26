@@ -289,9 +289,12 @@ export function ApplicationFormCard({
                                 sourceApplicationId: application.id,
                               });
                             }}
-                            className="h-7 px-2.5 rounded-md border border-input bg-background text-[11px] font-medium text-foreground hover:bg-accent inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                           >
-                            <Eye className="h-3 w-3" aria-hidden="true" />
+                            <Eye
+                              className="h-3.5 w-3.5 text-muted-foreground"
+                              aria-hidden="true"
+                            />
                             <span>{t("common.preview")}</span>
                           </button>
                         )}
@@ -308,9 +311,12 @@ export function ApplicationFormCard({
                                 application.id,
                               );
                             }}
-                            className="h-7 px-2.5 rounded-md border border-input bg-background text-[11px] font-medium text-foreground hover:bg-accent inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                           >
-                            <Download className="h-3 w-3" aria-hidden="true" />
+                            <Download
+                              className="h-3.5 w-3.5 text-muted-foreground"
+                              aria-hidden="true"
+                            />
                             <span>{t("common.download")}</span>
                           </button>
                         )}

@@ -1011,9 +1011,9 @@ export function WizardStepForm({
             variant="outline"
             size="sm"
             onClick={openAddEditor}
-            className="h-9 text-xs font-medium gap-1.5 w-full sm:w-auto cursor-pointer"
+            className="h-8 px-3 text-xs font-medium gap-1.5 w-full sm:w-auto cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden="true" />
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             {t("jobs.wizard.addQuestionAction")}
           </Button>
         )}

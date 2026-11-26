@@ -1,14 +1,7 @@
 "use client";
 
 import { useRef, type ChangeEvent } from "react";
-import {
-  Download,
-  Eye,
-  FileText,
-  Loader2,
-  Trash2,
-  UploadCloud,
-} from "lucide-react";
+import { Download, Eye, FileText, Loader2, Trash2, Upload } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { getDocumentTypeLabel } from "@/lib/roles";
 import type { CandidateDocument } from "@/types";
@@ -69,12 +62,12 @@ export function CandidateDrawerDocumentsTab({
               type="button"
               disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className="h-7 px-2.5 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               {isUploading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <UploadCloud className="h-3 w-3 text-muted-foreground" />
+                <Upload className="h-3.5 w-3.5 text-muted-foreground" />
               )}
               <span>{t("candidates.uploadDoc")}</span>
             </button>

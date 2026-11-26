@@ -129,7 +129,7 @@ export function LinkHeader({
               variant="outline"
               size="sm"
               onClick={onOpenEdit}
-              className="h-8 px-3 rounded-md border-input text-foreground text-xs font-semibold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="h-8 px-3 rounded-md border-input text-foreground text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{t("common.edit")}</span>
@@ -142,7 +142,7 @@ export function LinkHeader({
             variant="outline"
             size="sm"
             onClick={onCopyUrl}
-            className="h-8 px-3 rounded-md border-input text-foreground text-xs font-semibold hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="h-8 px-3 rounded-md border-input text-foreground text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             {isCopied ? (
               <>

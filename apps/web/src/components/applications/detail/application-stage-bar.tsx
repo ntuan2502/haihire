@@ -48,7 +48,7 @@ export function ApplicationStageBar({
             type="button"
             disabled={isDeleting}
             onClick={onOpenDeleteModal}
-            className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-semibold text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-medium text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>{t("applications.deleteApplication")}</span>

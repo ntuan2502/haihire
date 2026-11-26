@@ -2,7 +2,7 @@
 
 import {
   Briefcase,
-  Calendar,
+  CalendarPlus,
   ChevronDown,
   Clock,
   ExternalLink,
@@ -351,7 +351,7 @@ export function InterviewsTableRow({
               {allInterviews.length > 0 ? (
                 <Pencil className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <CalendarPlus className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
           )}

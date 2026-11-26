@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { StatusState } from "@/components/shared/status-state";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { normalizeDateForInput, isValidUuid } from "@/lib/utils";
 import type { Gender } from "@/types";
 import { useLocalization } from "@/components/providers/localization-provider";
@@ -354,9 +354,16 @@ function EditCandidatePageContent() {
             disabled={
               isSubmitting || Boolean(duplicateCheck?.hasBlockingDuplicate)
             }
-            className="font-semibold h-10 px-5 text-xs cursor-pointer gap-2"
+            className="h-9 px-4 text-xs font-semibold cursor-pointer gap-1.5"
           >
-            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isSubmitting ? (
+              <Loader2
+                className="h-3.5 w-3.5 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Save className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
             <span>{isSubmitting ? t("common.saving") : t("common.save")}</span>
           </Button>
           <Button
@@ -368,7 +375,7 @@ function EditCandidatePageContent() {
                 candidate ? `/candidates/${candidate.id}` : "/candidates",
               )
             }
-            className="h-10 px-5 text-xs cursor-pointer"
+            className="h-9 px-4 text-xs font-medium cursor-pointer"
           >
             {t("common.cancel")}
           </Button>

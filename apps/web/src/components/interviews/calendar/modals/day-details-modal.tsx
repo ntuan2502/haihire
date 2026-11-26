@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import {
   Briefcase,
+  CalendarPlus,
   Clock,
   ExternalLink,
   MapPin,
-  Plus,
   Star,
   User,
   Video,
@@ -86,16 +86,16 @@ export function DayDetailsModal({
         canEdit && openDayDetails ? (
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => {
               const d = openDayDetails.dateStr;
               onClose();
               onScheduleDate(d);
             }}
-            className="h-7 px-2.5 text-xs font-semibold text-primary border-primary/20 hover:bg-primary/10 hover:text-primary gap-1 cursor-pointer shadow-2xs"
+            className="h-8 px-3 text-xs font-medium gap-1.5 cursor-pointer"
           >
-            <Plus className="h-3 w-3" aria-hidden="true" />
+            <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{t("interviews.scheduleNew")}</span>
           </Button>
         ) : undefined

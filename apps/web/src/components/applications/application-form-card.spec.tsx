@@ -11,6 +11,8 @@ vi.mock("@/i18n", () => ({
         "applications.formCard.title": "Application Form",
         "applications.formCard.itemsCount": `${params?.count ?? 0} items`,
         "applications.formCard.answerLabel": "Candidate Response",
+        "applications.formCard.emptyState":
+          "No cover letter or screening answers were submitted for this application.",
         "applications.formCard.types.cover_letter": "Cover Letter",
         "applications.formCard.types.short_text": "Short Text",
         "applications.formCard.types.long_text": "Long Text",
@@ -79,17 +81,24 @@ const baseApplication: Application = {
 };
 
 describe("ApplicationFormCard", () => {
-  it("returns null when application has neither cover letter nor screening answers", () => {
+  it("returns null when application has neither cover letter nor screening answers unless showEmptyState is true", () => {
+    const emptyApp = {
+      ...baseApplication,
+      coverLetter: "",
+      screeningAnswers: [],
+    };
     const { container } = render(
-      <ApplicationFormCard
-        application={{
-          ...baseApplication,
-          coverLetter: "",
-          screeningAnswers: [],
-        }}
-      />,
+      <ApplicationFormCard application={emptyApp} />,
     );
     expect(container.firstChild).toBeNull();
+
+    render(<ApplicationFormCard application={emptyApp} showEmptyState />);
+    expect(screen.getByText("Application Form")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "No cover letter or screening answers were submitted for this application.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("renders collapsed by default and supports expand/collapse and file actions", () => {

@@ -30,6 +30,7 @@ export interface ApplicationFormCardProps {
     targetAppId?: string,
   ) => void;
   variant?: "full" | "compact";
+  showEmptyState?: boolean;
 }
 
 interface FormAccordionEntry {
@@ -82,6 +83,7 @@ export function ApplicationFormCard({
   onPreviewDoc,
   onDownloadDoc,
   variant = "full",
+  showEmptyState = false,
 }: ApplicationFormCardProps) {
   const { t } = useI18n();
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
@@ -120,11 +122,35 @@ export function ApplicationFormCard({
     setExpandedKeys([]);
   }, [application.id]);
 
+  const isCompact = variant === "compact";
+
   if (entries.length === 0) {
-    return null;
+    if (!showEmptyState) {
+      return null;
+    }
+    return (
+      <div
+        data-testid="application-form-card"
+        className={cn(
+          "rounded-xl border border-border bg-card text-card-foreground shadow-xs",
+          isCompact ? "p-4 space-y-2" : "p-5 space-y-2.5",
+        )}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+            <ClipboardList className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <span className="text-sm font-semibold text-foreground">
+            {t("applications.formCard.title")}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {t("applications.formCard.emptyState")}
+        </p>
+      </div>
+    );
   }
 
-  const isCompact = variant === "compact";
   const allExpanded =
     entries.length > 0 &&
     entries.every((item) => expandedKeys.includes(item.key));

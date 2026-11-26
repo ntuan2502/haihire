@@ -913,6 +913,7 @@ export interface TranslationSchema {
     tabs: {
       overview: string;
       aiEvaluation: string;
+      applicationForm: string;
       interviews: string;
       documents: string;
       notes: string;
@@ -922,6 +923,7 @@ export interface TranslationSchema {
       title: string;
       itemsCount: string;
       answerLabel: string;
+      emptyState: string;
       types: {
         cover_letter: string;
         short_text: string;

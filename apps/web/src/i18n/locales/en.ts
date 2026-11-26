@@ -1045,6 +1045,7 @@ export const en: TranslationSchema = {
     tabs: {
       overview: "Overview",
       aiEvaluation: "AI Evaluation",
+      applicationForm: "Application Form",
       interviews: "Interviews",
       documents: "Documents",
       notes: "Notes",
@@ -1054,6 +1055,8 @@ export const en: TranslationSchema = {
       title: "Application Form",
       itemsCount: "{count} items",
       answerLabel: "Candidate Response",
+      emptyState:
+        "No cover letter or screening answers were submitted for this application.",
       types: {
         cover_letter: "Cover Letter",
         short_text: "Short Text",

@@ -255,7 +255,7 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     expect(screen.getByText("/100")).toBeInTheDocument();
   });
 
-  it("renders unified 6 tabs including AI Evaluation before Interviews and opens SendEmailModal", () => {
+  it("renders unified 7 tabs including AI Evaluation and Application Form before Interviews and switches tabs cleanly", () => {
     mockUseJobApplications.mockReturnValue({
       data: mockApplications,
       isLoading: false,
@@ -263,12 +263,19 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     render(<JobPipelinePage />);
 
-    expect(
-      screen.getByRole("button", { name: "applications.tabs.overview" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "applications.tabs.aiEvaluation" }),
-    ).toBeInTheDocument();
+    const overviewTab = screen.getByRole("button", {
+      name: "applications.tabs.overview",
+    });
+    const aiEvalTab = screen.getByRole("button", {
+      name: "applications.tabs.aiEvaluation",
+    });
+    const appFormTab = screen.getByRole("button", {
+      name: "applications.tabs.applicationForm",
+    });
+
+    expect(overviewTab).toBeInTheDocument();
+    expect(aiEvalTab).toBeInTheDocument();
+    expect(appFormTab).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /applications\.tabs\.interviews/i }),
     ).toBeInTheDocument();
@@ -287,6 +294,20 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     expect(
       screen.queryByRole("button", { name: /applications\.tabs\.responses/i }),
     ).not.toBeInTheDocument();
+
+    // Verify clicking AI Evaluation tab switches cleanly and does NOT get reset to Overview
+    fireEvent.click(aiEvalTab);
+    expect(aiEvalTab.className).toContain("border-primary");
+    expect(
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
+
+    // Verify clicking Application Form tab switches cleanly
+    fireEvent.click(appFormTab);
+    expect(appFormTab.className).toContain("border-primary");
+    expect(
+      screen.getByText("applications.formCard.emptyState"),
+    ).toBeInTheDocument();
 
     const sendEmailBtn = screen.getByRole("button", {
       name: /email\.sendEmailAction/i,

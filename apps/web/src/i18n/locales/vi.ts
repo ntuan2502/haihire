@@ -1043,6 +1043,7 @@ export const vi: TranslationSchema = {
     tabs: {
       overview: "Tổng quan",
       aiEvaluation: "Đánh giá AI",
+      applicationForm: "Biểu mẫu ứng tuyển",
       interviews: "Phỏng vấn",
       documents: "Tài liệu",
       notes: "Ghi chú",
@@ -1052,6 +1053,8 @@ export const vi: TranslationSchema = {
       title: "Biểu mẫu ứng tuyển",
       itemsCount: "{count} nội dung",
       answerLabel: "Nội dung trả lời",
+      emptyState:
+        "Ứng viên chưa điền thư xin việc hoặc câu hỏi sàng lọc cho hồ sơ này.",
       types: {
         cover_letter: "Thư xin việc",
         short_text: "Văn bản ngắn",

@@ -3,6 +3,7 @@
 import { SlideOver } from "@/components/shared/slide-over";
 import { getCandidateDisplayName } from "@/lib/utils";
 import { AiScoreCard } from "@/components/applications/ai-score-card";
+import { ApplicationFormCard } from "@/components/applications/application-form-card";
 import {
   CandidateDrawerHeader,
   CandidateDrawerSummary,
@@ -98,6 +99,10 @@ export function CandidateQuickDrawer({
               label: t("applications.tabs.aiEvaluation"),
             },
             {
+              id: "application-form",
+              label: t("applications.tabs.applicationForm"),
+            },
+            {
               id: "interviews",
               label:
                 allScheduledInterviews.length > 0
@@ -145,6 +150,15 @@ export function CandidateQuickDrawer({
               application={currentApp}
               canScore={Boolean(canEdit)}
               variant="full"
+            />
+          )}
+
+          {drawerTab === "application-form" && (
+            <ApplicationFormCard
+              application={currentApp}
+              onPreviewDoc={onPreviewDoc}
+              onDownloadDoc={onDownloadDoc}
+              showEmptyState
             />
           )}
 

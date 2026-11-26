@@ -26,6 +26,7 @@ import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";
 import { queryKeys } from "@/hooks/query-keys";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { APPLICATION_DETAIL_TABS } from "@/components/applications/detail/application-detail-tabs";
 import {
   collectPipelineCandidateDocuments,
   computePipelineStageCounts,
@@ -36,14 +37,6 @@ import {
 const VALID_SORT_BY = ["score", "newest", "oldest", "name"] as const;
 type PipelineSortBy = (typeof VALID_SORT_BY)[number];
 
-const VALID_CANDIDATE_TABS = [
-  "overview",
-  "interviews",
-  "documents",
-  "notes",
-  "timeline",
-] as const;
-
 function parseSortByParam(value: string | null): PipelineSortBy {
   return VALID_SORT_BY.includes(value as PipelineSortBy)
     ? (value as PipelineSortBy)
@@ -51,7 +44,7 @@ function parseSortByParam(value: string | null): PipelineSortBy {
 }
 
 function parseCandidateTabParam(value: string | null): string {
-  return value && (VALID_CANDIDATE_TABS as readonly string[]).includes(value)
+  return value && (APPLICATION_DETAIL_TABS as readonly string[]).includes(value)
     ? value
     : "overview";
 }

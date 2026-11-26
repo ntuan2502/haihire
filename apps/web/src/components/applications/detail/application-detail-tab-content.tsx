@@ -106,6 +106,15 @@ export function ApplicationDetailTabContent({
         <AiScoreCard application={app} canScore={canEdit} variant="full" />
       )}
 
+      {activeTab === "application-form" && app && (
+        <ApplicationFormCard
+          application={app}
+          onPreviewDoc={onPreviewDoc}
+          onDownloadDoc={onDownloadDoc}
+          showEmptyState
+        />
+      )}
+
       {activeTab === "interviews" && renderInterviewsSection()}
 
       {activeTab === "documents" && (

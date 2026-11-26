@@ -156,18 +156,18 @@ describe("AiSettingsTab", () => {
 
     render(<AiSettingsTab />);
 
-    // Open single grouped Model dropdown, verify group headers, and select Gemini 2.5 Pro
+    // Open single grouped Model dropdown, verify group headers, and select Gemini 3.6 Flash
     fireEvent.click(screen.getByRole("button", { name: "Model" }));
     expect(
       screen.getAllByRole("presentation").map((el) => el.textContent),
     ).toEqual(["Recommended", "Other models"]);
-    fireEvent.click(screen.getByRole("option", { name: /Gemini 2\.5 Pro/i }));
+    fireEvent.click(screen.getByRole("option", { name: /Gemini 3\.6 Flash/i }));
 
     fireEvent.click(screen.getByRole("button", { name: "Save configuration" }));
     await waitFor(() => {
       expect(mockUpsertMutateAsync).toHaveBeenCalledWith({
         provider: "GEMINI",
-        modelId: "gemini-2.5-pro",
+        modelId: "gemini-3.6-flash",
         baseUrl: null,
         isEnabled: true,
         autoScoreApplications: false,

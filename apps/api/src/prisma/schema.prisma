@@ -344,6 +344,7 @@ model Job {
   salaryCurrency  String?          @db.VarChar(10)
   status          JobStatus        @default(PUBLISHED)
   applicationFormConfig Json?
+  scoringConfig         Json?
   createdById     String?
   createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   organizationId  String

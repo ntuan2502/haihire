@@ -1,5 +1,7 @@
 import { api } from "./client";
 import type {
+  GenerateScoringCriteriaInput,
+  GenerateScoringCriteriaResponse,
   GenerateScreeningQuestionsInput,
   GenerateScreeningQuestionsResponse,
   Job,
@@ -84,6 +86,16 @@ export const jobsApi = {
   ): Promise<GenerateScreeningQuestionsResponse> => {
     const response = await api.post<GenerateScreeningQuestionsResponse>(
       "/jobs/screening-questions/generate",
+      data,
+    );
+    return response.data;
+  },
+
+  generateScoringCriteria: async (
+    data: GenerateScoringCriteriaInput,
+  ): Promise<GenerateScoringCriteriaResponse> => {
+    const response = await api.post<GenerateScoringCriteriaResponse>(
+      "/jobs/generate-scoring-criteria",
       data,
     );
     return response.data;

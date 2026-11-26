@@ -334,6 +334,77 @@ export const AI_SCORE_WARNING_CODES = [
 
 export type AiScoreWarningCode = (typeof AI_SCORE_WARNING_CODES)[number];
 
+export const JOB_SCORING_CATEGORIES = [
+  "Experience",
+  "Technical",
+  "Soft Skills",
+  "Custom",
+] as const;
+
+export type JobScoringCategory = (typeof JOB_SCORING_CATEGORIES)[number];
+
+export const jobScoringCriterionSchema = z.object({
+  id: z.string().trim().min(1).max(60),
+  title: z.string().trim().min(1).max(160),
+  category: z.enum(JOB_SCORING_CATEGORIES),
+  description: z.string().trim().min(1).max(600),
+  weight: z.number().int().min(0).max(100),
+  maxScore: z.number().int().min(1).max(100).default(10),
+  key: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .regex(/^[a-z0-9_]+$/),
+});
+
+export type JobScoringCriterion = z.infer<typeof jobScoringCriterionSchema>;
+
+export const jobScoringConfigSchema = z.object({
+  criteria: z.array(jobScoringCriterionSchema).max(12).default([]),
+  autoScore: z.boolean().default(false),
+});
+
+export type JobScoringConfig = z.infer<typeof jobScoringConfigSchema>;
+
+export const DEFAULT_JOB_SCORING_CONFIG: JobScoringConfig = {
+  criteria: [],
+  autoScore: false,
+};
+
+export function normalizeJobScoringConfig(raw: unknown): JobScoringConfig {
+  const parsed = jobScoringConfigSchema.safeParse(raw);
+  if (parsed.success) {
+    return parsed.data;
+  }
+  return { ...DEFAULT_JOB_SCORING_CONFIG, criteria: [] };
+}
+
+export const generateScoringCriteriaSchema = z.object({
+  title: z.string().trim().min(1, "Job title is required").max(200),
+  description: z
+    .string()
+    .trim()
+    .min(1, "Job description is required")
+    .max(15000),
+  department: z.string().trim().max(120).optional(),
+  experienceLevel: z.string().trim().max(60).optional(),
+  workplace: z.string().trim().max(60).optional(),
+  language: z.enum(["vi", "en"]).default("vi"),
+  count: z.number().int().min(3).max(8).default(5),
+  existingTitles: z.array(z.string().trim().max(200)).max(20).default([]),
+});
+
+export type GenerateScoringCriteriaInput = z.infer<
+  typeof generateScoringCriteriaSchema
+>;
+
+export interface GenerateScoringCriteriaResponse {
+  criteria: JobScoringCriterion[];
+  provider: AiProvider;
+  modelId: string;
+}
+
 export const aiScoreCriterionSchema = z.object({
   score: z.number().min(0).max(100),
   note: z.string().trim().min(1).max(400),
@@ -346,16 +417,38 @@ export const aiScoreBreakdownSchema = z.object({
   presentation: aiScoreCriterionSchema,
 });
 
-export const aiScoreRawOutputSchema = z.object({
-  breakdown: aiScoreBreakdownSchema,
-  summary: z.string().trim().min(1).max(1500),
-  strengths: z.array(z.string().trim().min(1).max(400)).min(1).max(5),
+export const aiCriterionRawOutputSchema = z.object({
+  key: z.string().trim().min(1).max(60),
+  score: z.number().min(0).max(10),
+  confidence: z.number().min(0).max(100),
+  evidence: z.string().trim().min(1).max(1200),
+  strengths: z.array(z.string().trim().min(1).max(400)).max(5).default([]),
   gaps: z.array(z.string().trim().min(1).max(400)).max(5).default([]),
+});
+
+export const aiScoreRawOutputSchema = z.object({
+  criteria: z.array(aiCriterionRawOutputSchema).min(1).max(12),
+  summary: z.string().trim().min(1).max(1500),
   suggestedQuestions: z
     .array(z.string().trim().min(1).max(400))
     .max(4)
     .default([]),
 });
+
+export interface AiCriterionEvaluation {
+  key: string;
+  title: string;
+  category: JobScoringCategory;
+  weight: number;
+  normalizedWeight: number;
+  score: number;
+  maxScore: number;
+  confidence: number;
+  confidenceLevel: "high" | "medium" | "low";
+  evidence: string;
+  strengths: string[];
+  gaps: string[];
+}
 
 export const batchAiScoreSchema = z.object({
   limit: z.number().int().min(1).max(20).default(20),
@@ -372,6 +465,7 @@ export interface ApplicationAiEvaluation {
   status: AiScoreStatus;
   overallScore: number | null;
   breakdown: AiScoreBreakdown | null;
+  criteriaResults?: AiCriterionEvaluation[] | null;
   summary: string | null;
   strengths: string[] | null;
   gaps: string[] | null;

@@ -13,6 +13,8 @@ interface WizardMobileFooterProps {
   onBackToStep1: () => void;
   onStep2Continue: () => void;
   onBackToStep2: () => void;
+  onStep3Continue: () => void;
+  onBackToStep3: () => void;
   onSaveJob: () => void;
 }
 
@@ -27,13 +29,11 @@ export function WizardMobileFooter({
   onBackToStep1,
   onStep2Continue,
   onBackToStep2,
+  onStep3Continue,
+  onBackToStep3,
   onSaveJob,
 }: WizardMobileFooterProps) {
   const { t } = useI18n();
-
-  if (currentStep !== 1 && currentStep !== 2 && currentStep !== 4) {
-    return null;
-  }
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/95 backdrop-blur-md border-t border-border px-4 py-2.5 shadow-lg flex items-center justify-between gap-3">
@@ -75,6 +75,26 @@ export function WizardMobileFooter({
             onClick={onStep2Continue}
             className="text-xs font-semibold px-4 cursor-pointer"
           >
+            {t("jobs.wizard.continueToScoring")}
+          </Button>
+        </>
+      ) : currentStep === 3 ? (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onBackToStep2}
+            className="text-xs cursor-pointer"
+          >
+            {t("common.back")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onStep3Continue}
+            className="text-xs font-semibold px-4 cursor-pointer"
+          >
             {t("jobs.wizard.continueToPublish")}
           </Button>
         </>
@@ -84,7 +104,7 @@ export function WizardMobileFooter({
             type="button"
             variant="outline"
             size="sm"
-            onClick={onBackToStep2}
+            onClick={onBackToStep3}
             className="text-xs cursor-pointer"
           >
             {t("common.back")}

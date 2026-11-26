@@ -17,6 +17,7 @@ import {
   WorkplaceType,
   ExperienceLevel,
   type JobApplicationFormConfig,
+  type JobScoringConfig,
 } from "@haihire/shared";
 
 export { JobType, JobStatus, WorkplaceType, ExperienceLevel };
@@ -102,6 +103,10 @@ export class CreateJobDto {
   @IsObject()
   @IsOptional()
   applicationFormConfig?: JobApplicationFormConfig | null;
+
+  @IsObject()
+  @IsOptional()
+  scoringConfig?: JobScoringConfig | null;
 
   @IsOptional()
   organizationId?: string | null;

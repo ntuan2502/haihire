@@ -80,6 +80,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       implemented: true,
     },
     {
+      id: 3 as StepId,
+      label: t("jobs.wizard.steps.scoring"),
+      implemented: true,
+    },
+    {
       id: 4 as StepId,
       label:
         mode === "create"
@@ -220,13 +225,18 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             onRemoveQuestion={form.handleRemoveQuestion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(1)}
-            onContinue={() => setCurrentStep(4)}
+            onContinue={() => setCurrentStep(3)}
           />
         )}
 
         {currentStep === 3 && (
           <WizardStepScoring
             mode={mode}
+            jobTitle={form.jobTitle}
+            department={form.department}
+            experienceLevel={form.experienceLevel}
+            workplace={form.workplace}
+            description={form.description}
             criteria={form.criteria}
             autoScoreApplicants={form.autoScoreApplicants}
             setAutoScoreApplicants={form.setAutoScoreApplicants}
@@ -240,6 +250,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             setNewCriterionCategory={form.setNewCriterionCategory}
             onUpdateWeight={form.handleUpdateWeight}
             onRemoveCriterion={form.handleRemoveCriterion}
+            onClearCriteria={form.handleClearCriteria}
+            onReplaceCriteria={form.handleReplaceCriteria}
             onAddCriterion={form.handleAddCriterion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(2)}
@@ -261,7 +273,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             isSaving={submit.isSaving}
             onOpenDeleteConfirm={() => setDeleteConfirmOpen(true)}
             onCancel={submit.handleCancel}
-            onBack={() => setCurrentStep(2)}
+            onBack={() => setCurrentStep(3)}
             onSaveJob={submit.handleSaveJob}
           />
         )}
@@ -310,8 +322,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onCancel={submit.handleCancel}
         onStep1Continue={handleStep1Continue}
         onBackToStep1={() => setCurrentStep(1)}
-        onStep2Continue={() => setCurrentStep(4)}
+        onStep2Continue={() => setCurrentStep(3)}
         onBackToStep2={() => setCurrentStep(2)}
+        onStep3Continue={() => setCurrentStep(4)}
+        onBackToStep3={() => setCurrentStep(3)}
         onSaveJob={submit.handleSaveJob}
       />
     </div>

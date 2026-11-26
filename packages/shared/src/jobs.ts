@@ -1,6 +1,7 @@
 import type { Organization } from "./organizations";
 import type { Application, ApplicationStage } from "./applications";
 import type { JobApplicationFormConfig } from "./application-form";
+import type { JobScoringConfig } from "./ai";
 
 export const JobType = {
   FULL_TIME: "FULL_TIME",
@@ -97,6 +98,7 @@ export interface Job {
   salaryCurrency?: string | null;
   status: JobStatus;
   applicationFormConfig?: JobApplicationFormConfig | null;
+  scoringConfig?: JobScoringConfig | null;
   createdById?: string | null;
   organizationId: string;
   organization?: Organization | null;
@@ -126,6 +128,7 @@ export interface CreateJobInput {
   salaryCurrency?: string | null;
   status?: JobStatus;
   applicationFormConfig?: JobApplicationFormConfig | null;
+  scoringConfig?: JobScoringConfig | null;
   organizationId?: string | null;
   createdById?: string | null;
 }

@@ -29,10 +29,12 @@ import {
   hasPermission,
   Role,
   createJobSchema,
+  generateScoringCriteriaSchema,
   generateScreeningQuestionsSchema,
   updateJobSchema,
   upsertPipelineStagesSchema,
   type CreateJobSchema,
+  type GenerateScoringCriteriaInput,
   type GenerateScreeningQuestionsInput,
   type UpdateJobSchema,
   type UpsertPipelineStagesSchema,
@@ -161,6 +163,31 @@ export class JobsController {
       );
     }
     return this.aiGenerationService.generateScreeningQuestions(orgId, dto);
+  }
+
+  @Post("generate-scoring-criteria")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @RequirePermission("job:create")
+  generateScoringCriteria(
+    @Body(DtoPipe(generateScoringCriteriaSchema))
+    dto: GenerateScoringCriteriaInput,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const orgId = req?.user?.organizationId;
+    if (!orgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Active organization context is required.",
+      );
+    }
+    if (!this.aiGenerationService) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.AI_NOT_CONFIGURED,
+        "AI generation service is unavailable.",
+      );
+    }
+    return this.aiGenerationService.generateScoringCriteria(orgId, dto);
   }
 
   @Post()

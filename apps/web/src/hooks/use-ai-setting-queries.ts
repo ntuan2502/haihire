@@ -8,6 +8,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import type {
+  GenerateScoringCriteriaInput,
   GenerateScreeningQuestionsInput,
   TestAiConnectionInput,
   UpsertAiSettingInput,
@@ -110,6 +111,18 @@ export function useGenerateScreeningQuestionsMutation() {
     {
       mutationFn: (data: GenerateScreeningQuestionsInput) =>
         jobsApi.generateScreeningQuestions(data),
+    },
+    queryClient,
+  );
+}
+
+export function useGenerateScoringCriteriaMutation() {
+  const queryClient = useSafeQueryClient();
+
+  return useMutation(
+    {
+      mutationFn: (data: GenerateScoringCriteriaInput) =>
+        jobsApi.generateScoringCriteria(data),
     },
     queryClient,
   );

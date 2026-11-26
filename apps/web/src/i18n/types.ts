@@ -463,6 +463,7 @@ export interface TranslationSchema {
       steps: {
         details: string;
         applicationForm: string;
+        scoring: string;
         publishDistribute: string;
         publishStatus: string;
       };
@@ -604,11 +605,16 @@ export interface TranslationSchema {
       aiMissingJobDetails: string;
       optionalBadge: string;
       continueToStep2: string;
+      continueToScoring: string;
       scoringTitle: string;
       scoringDesc: string;
       scoringConfiguredBadge: string;
       backToFormOptions: string;
-      writtenByAiBadge: string;
+      clearAllCriteria: string;
+      generateCriteriaAiBtn: string;
+      generatingCriteria: string;
+      noCriteriaTitle: string;
+      noCriteriaDesc: string;
       criteriaConfiguredCount: string;
       deleteCriterion: string;
       weightLabel: string;
@@ -799,6 +805,17 @@ export interface TranslationSchema {
       questionsLabel: string;
       toggleQuestions: string;
       scoredWith: string;
+      criteriaCount: string;
+      expandAll: string;
+      collapseAll: string;
+      confidenceLabel: string;
+      weightLabel: string;
+      evidenceLabel: string;
+      confidenceLevels: {
+        high: string;
+        medium: string;
+        low: string;
+      };
       batchButton: string;
       batchSuccess: string;
       criteria: {

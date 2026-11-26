@@ -3,6 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import {
   DEFAULT_JOB_APPLICATION_FORM_CONFIG,
   normalizeJobApplicationFormConfig,
+  normalizeJobScoringConfig,
   type ApplicationFormFieldMode,
   type Job,
   type JobType,
@@ -14,7 +15,6 @@ import { formatDateOnlyForInput } from "@/lib/jobs";
 import {
   type ScreeningQuestion,
   type ScoringCriterion,
-  DEFAULT_CRITERIA,
   parseSalaryRange,
 } from "../types";
 
@@ -98,9 +98,15 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   >(initialFormConfig.screeningQuestions);
 
   // STEP 3: Candidate Scoring State
-  const [criteria, setCriteria] =
-    useState<ScoringCriterion[]>(DEFAULT_CRITERIA);
-  const [autoScoreApplicants, setAutoScoreApplicants] = useState(true);
+  const initialScoringConfig = normalizeJobScoringConfig(
+    initialJob?.scoringConfig,
+  );
+  const [criteria, setCriteria] = useState<ScoringCriterion[]>(
+    initialScoringConfig.criteria,
+  );
+  const [autoScoreApplicants, setAutoScoreApplicants] = useState(
+    initialScoringConfig.autoScore,
+  );
   const [isAddingCriterion, setIsAddingCriterion] = useState(false);
   const [newCriterionTitle, setNewCriterionTitle] = useState("");
   const [newCriterionDesc, setNewCriterionDesc] = useState("");
@@ -181,6 +187,11 @@ export function useJobWizardFormState(initialJob?: Job | null) {
       setResumeSetting(nextFormConfig.resume);
       setCoverLetterSetting(nextFormConfig.coverLetter);
       setScreeningQuestions(nextFormConfig.screeningQuestions);
+      const nextScoringConfig = normalizeJobScoringConfig(
+        initialJob.scoringConfig,
+      );
+      setCriteria(nextScoringConfig.criteria);
+      setAutoScoreApplicants(nextScoringConfig.autoScore);
       return;
     }
 
@@ -302,6 +313,14 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setCriteria((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const handleClearCriteria = () => {
+    setCriteria([]);
+  };
+
+  const handleReplaceCriteria = (next: ScoringCriterion[]) => {
+    setCriteria(next.slice(0, 12));
+  };
+
   const resetForm = () => {
     setJobTitle("");
     setDepartment("");
@@ -325,6 +344,8 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setResumeSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.resume);
     setCoverLetterSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.coverLetter);
     setScreeningQuestions([]);
+    setCriteria([]);
+    setAutoScoreApplicants(false);
   };
 
   return {
@@ -394,6 +415,8 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     handleAddCriterion,
     handleUpdateWeight,
     handleRemoveCriterion,
+    handleClearCriteria,
+    handleReplaceCriteria,
     publishMode,
     setPublishMode,
     resetForm,

@@ -97,6 +97,10 @@ export function useJobWizardSubmit({
         coverLetter: form.coverLetterSetting,
         screeningQuestions: form.screeningQuestions,
       };
+      const scoringConfig = {
+        criteria: form.criteria,
+        autoScore: form.autoScoreApplicants,
+      };
 
       if (mode === "create") {
         await createJobMutation.mutateAsync({
@@ -117,6 +121,7 @@ export function useJobWizardSubmit({
           salaryRange: salaryRange || undefined,
           status: statusMapped,
           applicationFormConfig,
+          scoringConfig,
           organizationId: user?.organizationId ?? null,
         });
 
@@ -142,6 +147,7 @@ export function useJobWizardSubmit({
             salaryRange: salaryRange || null,
             status: statusMapped,
             applicationFormConfig,
+            scoringConfig,
           },
         });
 

@@ -758,6 +758,7 @@ export class ApplicationsQueryService {
           description: true,
           experienceLevel: true,
           workplace: true,
+          scoringConfig: true,
         },
       }),
       this.prisma.candidate.findFirst({
@@ -832,6 +833,7 @@ export class ApplicationsQueryService {
           jobDescription: job.description,
           experienceLevel: job.experienceLevel,
           workplace: job.workplace,
+          scoringConfig: (job as { scoringConfig?: unknown }).scoringConfig,
           resumeUrl: resolvedResumeUrl || null,
           resumeFileName: resolvedResumeName || null,
           coverLetter: app.coverLetter,
@@ -843,6 +845,7 @@ export class ApplicationsQueryService {
       description: _jobDescription,
       experienceLevel: _experienceLevel,
       workplace: _workplace,
+      scoringConfig: _scoringConfig,
       ...publicJobFields
     } = job;
 

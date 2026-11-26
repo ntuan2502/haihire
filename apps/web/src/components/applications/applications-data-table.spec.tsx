@@ -572,7 +572,8 @@ describe("ApplicationsDataTable Component", () => {
       // Overview active
       const drawer = screen.getByRole("dialog");
       expect(within(drawer).getByText("AI Evaluation")).toBeInTheDocument();
-      expect(within(drawer).getByText("85%")).toBeInTheDocument();
+      expect(within(drawer).getByText("85")).toBeInTheDocument();
+      expect(within(drawer).getByText("/100")).toBeInTheDocument();
 
       // Switch to notes tab
       const notesTab = screen.getByRole("button", { name: /^notes$/i });

@@ -250,7 +250,8 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
     expect(
       screen.getByText("applications.aiEvaluation.title"),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(screen.getByText("/100")).toBeInTheDocument();
   });
 
   it("renders unified 5 tabs without placeholder tabs and opens SendEmailModal", () => {

@@ -40,6 +40,7 @@ vi.mock("@/lib/toast", () => ({
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
+    locale: "en",
     t: (key: string, params?: Record<string, string | number>) => {
       const dict: Record<string, string> = {
         "applications.aiEvaluation.title": "AI Evaluation",
@@ -62,12 +63,19 @@ vi.mock("@/i18n", () => ({
           "Suggested Interview Questions",
         "applications.aiEvaluation.toggleQuestions": `Show interview questions (${params?.count ?? 0})`,
         "applications.aiEvaluation.scoredWith": `Evaluated by ${params?.model ?? ""}`,
-        "applications.aiEvaluation.criteria.skills": "Technical Skills (40%)",
-        "applications.aiEvaluation.criteria.experience": "Experience (30%)",
-        "applications.aiEvaluation.criteria.screening": "Screening (20%)",
-        "applications.aiEvaluation.criteria.presentation": "Profile (10%)",
-        "applications.aiEvaluation.warnings.CV_UNREADABLE_SCANNED":
-          "Scanned PDF warning",
+        "applications.aiEvaluation.criteriaCount": `${params?.count ?? 0} criteria`,
+        "applications.aiEvaluation.expandAll": "Expand all",
+        "applications.aiEvaluation.collapseAll": "Collapse all",
+        "applications.aiEvaluation.confidenceLabel": "Confidence:",
+        "applications.aiEvaluation.weightLabel": `Weight: ${params?.weight ?? 0}%`,
+        "applications.aiEvaluation.evidenceLabel": "Evidence",
+        "applications.aiEvaluation.confidenceLevels.high": "High",
+        "applications.aiEvaluation.confidenceLevels.medium": "Medium",
+        "applications.aiEvaluation.confidenceLevels.low": "Low",
+        "jobs.wizard.categories.experience": "Experience",
+        "jobs.wizard.categories.technical": "Technical",
+        "jobs.wizard.categories.softSkills": "Soft Skills",
+        "jobs.wizard.categories.custom": "Custom",
         "errors.GENERIC_ERROR": "Error",
       };
       return dict[key] || key;
@@ -131,28 +139,53 @@ describe("AiScoreCard", () => {
     );
   });
 
-  it("renders calibrated score breakdown, stale badge, strengths/gaps, and expandable interview questions", () => {
+  it("renders per-criterion accordion breakdown, evidence, confidence, strengths/gaps, and expand-all toggle", () => {
     render(
       <AiScoreCard
         canScore={true}
         application={{
           ...baseApplication,
-          matchScore: 88,
+          matchScore: 93,
           aiEvaluation: {
             id: "eval-1",
             applicationId: "app-1",
             status: "COMPLETED",
-            overallScore: 88,
-            breakdown: {
-              skills: { score: 92, note: "Deep React expertise" },
-              experience: { score: 85, note: "5 years SaaS" },
-              screening: { score: 90, note: "Clear answers" },
-              presentation: { score: 80, note: "Well structured" },
-            },
-            summary: "Strong candidate for the senior role.",
-            strengths: ["Led React 19 migration"],
-            gaps: ["No GraphQL listed"],
-            suggestedQuestions: ["How did you structure state caching?"],
+            overallScore: 93,
+            breakdown: null,
+            criteriaResults: [
+              {
+                key: "portfolio_quality",
+                title: "Portfolio Quality & Impact",
+                category: "Experience",
+                weight: 70,
+                normalizedWeight: 70,
+                score: 10,
+                maxScore: 10,
+                confidence: 95,
+                confidenceLevel: "high",
+                evidence: "Portfolio showcases 8 end-to-end case studies.",
+                strengths: ["8 complete case studies with business impact"],
+                gaps: [],
+              },
+              {
+                key: "ux_visual_craft",
+                title: "UX & Visual Craft",
+                category: "Technical",
+                weight: 30,
+                normalizedWeight: 30,
+                score: 8,
+                maxScore: 10,
+                confidence: 82,
+                confidenceLevel: "high",
+                evidence: "Consistent design system and accessibility focus.",
+                strengths: ["Strong hierarchy"],
+                gaps: ["Missing motion prototype links"],
+              },
+            ],
+            summary: "Strong match across design leadership criteria.",
+            strengths: ["8 complete case studies with business impact"],
+            gaps: ["Missing motion prototype links"],
+            suggestedQuestions: ["Walk through your design system governance."],
             warningCode: null,
             cvExtractedChars: 2400,
             provider: "GEMINI",
@@ -167,17 +200,33 @@ describe("AiScoreCard", () => {
       />,
     );
 
-    expect(screen.getByText("88%")).toBeInTheDocument();
+    expect(screen.getByText("93")).toBeInTheDocument();
+    expect(screen.getByText("/100")).toBeInTheDocument();
+    expect(screen.getByText("2 criteria")).toBeInTheDocument();
     expect(screen.getByText("Outdated")).toBeInTheDocument();
-    expect(screen.getByText("Technical Skills (40%)")).toBeInTheDocument();
-    expect(screen.getByText("Led React 19 migration")).toBeInTheDocument();
-    expect(screen.getByText("No GraphQL listed")).toBeInTheDocument();
+
+    // First criterion expanded by default
+    expect(
+      screen.getByText("Portfolio showcases 8 end-to-end case studies."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Consistent design system and accessibility focus."),
+    ).not.toBeInTheDocument();
+
+    // Expand all reveals second criterion evidence & gaps
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    expect(
+      screen.getByText("Consistent design system and accessibility focus."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Missing motion prototype links"),
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Show interview questions (1)" }),
     );
     expect(
-      screen.getByText("How did you structure state caching?"),
+      screen.getByText("Walk through your design system governance."),
     ).toBeInTheDocument();
   });
 });

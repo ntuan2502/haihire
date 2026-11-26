@@ -453,4 +453,59 @@ describe("AiScoringService", () => {
     expect(txPhaseCount).toBe(2);
     expect(fetchDepthObserved).toBe(0);
   });
+
+  it("keeps PROCESSING status across non-final BullMQ retries and marks FAILED only on the final attempt", async () => {
+    mockExtractPdfTextFromBuffer.mockResolvedValue({
+      text: "Senior TypeScript engineer. ".repeat(15),
+      truncated: false,
+      rawLength: 420,
+    });
+
+    const highDemandBody = JSON.stringify({
+      error: {
+        message:
+          "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+      },
+    });
+
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(highDemandBody, {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(highDemandBody, {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+    await expect(
+      service.scoreApplicationNow("org-1", "app-1", {
+        markFailedOnError: false,
+      }),
+    ).rejects.toThrow(/high demand/i);
+
+    const midRow = evalTable.store[0] as {
+      status: string;
+      errorMessage: string | null;
+    };
+    expect(midRow.status).toBe("PROCESSING");
+    expect(midRow.errorMessage).toBeNull();
+
+    await expect(
+      service.scoreApplicationNow("org-1", "app-1", {
+        markFailedOnError: true,
+      }),
+    ).rejects.toThrow(/high demand/i);
+
+    const finalRow = evalTable.store[0] as {
+      status: string;
+      errorMessage: string | null;
+    };
+    expect(finalRow.status).toBe("FAILED");
+    expect(finalRow.errorMessage).toMatch(/high demand/i);
+  });
 });

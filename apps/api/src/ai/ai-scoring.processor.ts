@@ -26,10 +26,17 @@ export class AiScoringProcessor extends WorkerHost {
       return { ok: false };
     }
 
+    const maxAttempts =
+      typeof job.opts?.attempts === "number" && job.opts.attempts > 0
+        ? job.opts.attempts
+        : 1;
+    const isFinalAttempt = (job.attemptsMade ?? 0) + 1 >= maxAttempts;
+
     try {
       await this.aiScoringService.scoreApplicationNow(
         organizationId,
         applicationId,
+        { markFailedOnError: isFinalAttempt },
       );
       return { ok: true };
     } catch (err: unknown) {

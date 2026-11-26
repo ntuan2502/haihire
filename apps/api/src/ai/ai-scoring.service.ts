@@ -351,7 +351,7 @@ export class AiScoringService {
       "score-application",
       { organizationId, applicationId },
       {
-        attempts: 2,
+        attempts: 3,
         backoff: { type: "exponential", delay: 3000 },
         removeOnComplete: 200,
         removeOnFail: 200,
@@ -555,6 +555,7 @@ export class AiScoringService {
   async scoreApplicationNow(
     organizationId: string,
     applicationId: string,
+    options?: { markFailedOnError?: boolean },
   ): Promise<SharedApplicationAiEvaluation> {
     try {
       // Phase 1: Short RLS transaction to mark PROCESSING and load scoring inputs.
@@ -933,6 +934,20 @@ export class AiScoringService {
 
       return result;
     } catch (err: unknown) {
+      const shouldMarkFailed =
+        (options?.markFailedOnError ?? true) ||
+        err instanceof AppNotFoundException;
+
+      if (!shouldMarkFailed) {
+        const retryMsg = (err instanceof Error ? err.message : String(err))
+          .replace(/[\r\n]+/g, " ")
+          .slice(0, 200);
+        this.logger.warn(
+          `[AiScoring] Transient failure scoring app=${applicationId}; keeping PROCESSING for retry: ${retryMsg}`,
+        );
+        throw err;
+      }
+
       let persistedErrorMessage: string | null = null;
       if (
         err instanceof AppBadRequestException ||

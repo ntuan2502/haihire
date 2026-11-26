@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -19,7 +19,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAiStatusQuery } from "@/hooks/use-ai-setting-queries";
-import { useTriggerAiScoreMutation } from "@/hooks/use-application-queries";
+import {
+  useApplication,
+  useTriggerAiScoreMutation,
+} from "@/hooks/use-application-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -76,6 +79,9 @@ export function AiScoreCard({
   const [showQuestions, setShowQuestions] = useState(false);
   const [isCardCollapsed, setIsCardCollapsed] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [pollingActive, setPollingActive] = useState(false);
+  const [optimisticPending, setOptimisticPending] = useState(false);
+  const prevEvalUpdatedAtRef = useRef<string | null>(null);
 
   const { data: aiStatus } = useAiStatusQuery();
   const canManageIntegrations = useHasPermission(
@@ -83,11 +89,44 @@ export function AiScoreCard({
   );
   const scoreMutation = useTriggerAiScoreMutation();
 
-  const evaluation = application.aiEvaluation ?? null;
-  const effectiveStatus =
-    evaluation?.status ?? application.aiScoreStatus ?? null;
+  const propEvaluation = application.aiEvaluation ?? null;
+  const propStatus =
+    propEvaluation?.status ?? application.aiScoreStatus ?? null;
+  const propScore =
+    propEvaluation?.overallScore ?? application.matchScore ?? null;
+  const propHasScore = typeof propScore === "number";
+
+  const shouldHydrateDetail =
+    Boolean(application.id) &&
+    (pollingActive ||
+      propStatus === "PENDING" ||
+      propStatus === "PROCESSING" ||
+      (!propEvaluation &&
+        (propHasScore ||
+          propStatus === "COMPLETED" ||
+          propStatus === "FAILED")));
+
+  const isStatusPolling =
+    pollingActive || propStatus === "PENDING" || propStatus === "PROCESSING";
+
+  const { data: detailedApplication } = useApplication(
+    shouldHydrateDetail ? application.id : null,
+    undefined,
+    { refetchInterval: isStatusPolling ? 2500 : false },
+  );
+
+  const evaluation = detailedApplication?.aiEvaluation ?? propEvaluation;
+  const effectiveStatus = optimisticPending
+    ? "PENDING"
+    : (evaluation?.status ??
+      detailedApplication?.aiScoreStatus ??
+      application.aiScoreStatus ??
+      null);
   const effectiveScore =
-    evaluation?.overallScore ?? application.matchScore ?? null;
+    evaluation?.overallScore ??
+    detailedApplication?.matchScore ??
+    application.matchScore ??
+    null;
   const isInFlight =
     effectiveStatus === "PENDING" || effectiveStatus === "PROCESSING";
   const isFailed = effectiveStatus === "FAILED";
@@ -95,18 +134,49 @@ export function AiScoreCard({
   const isCompact = variant === "compact";
   const isAiEnabled = Boolean(aiStatus?.enabled);
   const criteriaResults = evaluation?.criteriaResults ?? null;
+  const firstCriterionKey = criteriaResults?.[0]?.key;
 
   useEffect(() => {
-    if (criteriaResults && criteriaResults.length > 0) {
-      setExpandedKeys([criteriaResults[0].key]);
+    setPollingActive(false);
+    setOptimisticPending(false);
+    prevEvalUpdatedAtRef.current = null;
+  }, [application.id]);
+
+  useEffect(() => {
+    const detailEval = detailedApplication?.aiEvaluation;
+    if (!detailEval) return;
+
+    if (detailEval.status === "PENDING" || detailEval.status === "PROCESSING") {
+      if (optimisticPending) {
+        setOptimisticPending(false);
+      }
+      return;
+    }
+
+    if (
+      (pollingActive || optimisticPending) &&
+      (detailEval.status === "COMPLETED" || detailEval.status === "FAILED") &&
+      detailEval.updatedAt !== prevEvalUpdatedAtRef.current
+    ) {
+      setOptimisticPending(false);
+      setPollingActive(false);
+    }
+  }, [detailedApplication?.aiEvaluation, optimisticPending, pollingActive]);
+
+  useEffect(() => {
+    if (firstCriterionKey) {
+      setExpandedKeys([firstCriterionKey]);
     } else {
       setExpandedKeys([]);
     }
-  }, [evaluation?.id, evaluation?.scoredAt, criteriaResults]);
+  }, [evaluation?.id, evaluation?.scoredAt, firstCriterionKey]);
 
   const handleRunScore = async () => {
+    prevEvalUpdatedAtRef.current = evaluation?.updatedAt ?? null;
     try {
       await scoreMutation.mutateAsync(application.id);
+      setOptimisticPending(true);
+      setPollingActive(true);
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err, t, "errors.GENERIC_ERROR"));
     }

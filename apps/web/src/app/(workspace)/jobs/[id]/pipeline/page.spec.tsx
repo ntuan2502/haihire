@@ -46,6 +46,7 @@ vi.mock("@/hooks/use-application-queries", async (importOriginal) => {
     await importOriginal<typeof import("@/hooks/use-application-queries")>();
   return {
     ...actual,
+    useApplication: () => ({ data: undefined }),
     useTriggerAiScoreMutation: () => ({
       mutateAsync: vi.fn(),
       isPending: false,

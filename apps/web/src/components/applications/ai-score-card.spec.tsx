@@ -15,12 +15,16 @@ let mockAiStatus: OrganizationAiStatusResponse = {
 };
 let mockCanManageIntegrations = true;
 const mockTriggerMutateAsync = vi.fn();
+let mockDetailedApplication: Application | undefined;
 
 vi.mock("@/hooks/use-ai-setting-queries", () => ({
   useAiStatusQuery: () => ({ data: mockAiStatus }),
 }));
 
 vi.mock("@/hooks/use-application-queries", () => ({
+  useApplication: (id: string | null | undefined) => ({
+    data: id ? mockDetailedApplication : undefined,
+  }),
   useTriggerAiScoreMutation: () => ({
     mutateAsync: mockTriggerMutateAsync,
     isPending: false,
@@ -228,5 +232,71 @@ describe("AiScoreCard", () => {
     expect(
       screen.getByText("Walk through your design system governance."),
     ).toBeInTheDocument();
+  });
+
+  it("hydrates full criteriaResults from useApplication when list payload omits aiEvaluation", () => {
+    mockDetailedApplication = {
+      ...baseApplication,
+      matchScore: 48,
+      aiScoreStatus: "COMPLETED",
+      aiEvaluation: {
+        id: "eval-hydrated",
+        applicationId: "app-1",
+        status: "COMPLETED",
+        overallScore: 48,
+        breakdown: null,
+        criteriaResults: [
+          {
+            key: "backend_api",
+            title: "Backend Architecture",
+            category: "Technical",
+            weight: 100,
+            normalizedWeight: 100,
+            score: 5,
+            maxScore: 10,
+            confidence: 85,
+            confidenceLevel: "high",
+            evidence: "Built REST APIs with PostgreSQL.",
+            strengths: ["PostgreSQL experience"],
+            gaps: ["No Docker CI proof"],
+          },
+        ],
+        summary: "Partial backend match.",
+        strengths: ["PostgreSQL experience"],
+        gaps: ["No Docker CI proof"],
+        suggestedQuestions: ["Tell us about Docker workflows."],
+        warningCode: null,
+        cvExtractedChars: 1402,
+        provider: "GEMINI",
+        modelId: "gemini-3.5-flash-lite",
+        errorMessage: null,
+        isStale: false,
+        scoredAt: "2026-11-26T07:09:19.409Z",
+        createdAt: "2026-11-26T06:33:59.110Z",
+        updatedAt: "2026-11-26T07:11:38.138Z",
+      },
+    };
+
+    try {
+      render(
+        <AiScoreCard
+          canScore={true}
+          application={{
+            ...baseApplication,
+            matchScore: 44,
+            aiScoreStatus: "PROCESSING",
+            aiEvaluation: null,
+          }}
+        />,
+      );
+
+      expect(screen.getByText("48")).toBeInTheDocument();
+      expect(screen.getByText("Backend Architecture")).toBeInTheDocument();
+      expect(
+        screen.getByText("Built REST APIs with PostgreSQL."),
+      ).toBeInTheDocument();
+    } finally {
+      mockDetailedApplication = undefined;
+    }
   });
 });

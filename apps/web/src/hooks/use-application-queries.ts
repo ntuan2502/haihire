@@ -119,6 +119,7 @@ export function useJobApplications(
 export function useApplication(
   id: string | null | undefined,
   organizationId?: string | null,
+  options?: { refetchInterval?: number | false },
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -131,6 +132,7 @@ export function useApplication(
       return applicationsApi.getById(id);
     },
     enabled: Boolean(id),
+    refetchInterval: options?.refetchInterval ?? false,
   });
 }
 
@@ -387,7 +389,7 @@ export function useTriggerAiScoreMutation() {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({
-        queryKey: ["application", applicationId],
+        queryKey: queryKeys.application(applicationId),
       });
     },
   });

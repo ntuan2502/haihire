@@ -429,7 +429,9 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /grouped selection/i }));
+    const trigger = screen.getByRole("button", { name: /grouped selection/i });
+    expect(trigger.className).toContain("text-left");
+    fireEvent.click(trigger);
 
     expect(screen.getAllByText("Primary")).toHaveLength(1);
     expect(screen.getAllByText("Secondary")).toHaveLength(1);

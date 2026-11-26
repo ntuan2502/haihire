@@ -410,4 +410,32 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     expect(handleChange).toHaveBeenCalledWith("opt2");
     expect(onOpenChange).not.toHaveBeenCalled();
   });
+
+  it("renders group headers once per group without affecting option count or selection", () => {
+    const handleChange = vi.fn();
+    const groupedOptions = [
+      { value: "g1-a", label: "Group 1 A", group: "Primary" },
+      { value: "g1-b", label: "Group 1 B", group: "Primary" },
+      { value: "g2-a", label: "Group 2 A", group: "Secondary" },
+    ];
+
+    render(
+      <CustomSelect
+        id="grouped-select"
+        value="g1-a"
+        onChange={handleChange}
+        options={groupedOptions}
+        aria-label="Grouped selection"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /grouped selection/i }));
+
+    expect(screen.getAllByText("Primary")).toHaveLength(1);
+    expect(screen.getAllByText("Secondary")).toHaveLength(1);
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("option", { name: "Group 2 A" }));
+    expect(handleChange).toHaveBeenCalledWith("g2-a");
+  });
 });

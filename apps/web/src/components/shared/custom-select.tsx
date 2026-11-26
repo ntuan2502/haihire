@@ -264,7 +264,7 @@ export function CustomSelect<T extends string = string>({
                   aria-hidden="true"
                 />
               )}
-              <span className="truncate block">
+              <span className="truncate block flex-1 min-w-0">
                 {selectedOption ? selectedOption.label : placeholder || value}
               </span>
             </div>

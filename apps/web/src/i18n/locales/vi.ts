@@ -1666,9 +1666,10 @@ export const vi: TranslationSchema = {
           "Chọn nền tảng chạy mô hình AI. Danh sách mô hình đề xuất sẽ cập nhật tự động.",
         modelTitle: "Mô hình",
         modelDesc:
-          "Chọn một trong các mô hình mới nhất được đề xuất hoặc chọn mô hình khác từ danh sách thả xuống.",
-        otherModelsLabel: "Các mô hình khác",
-        otherModelsPlaceholder: "Chọn mô hình khác...",
+          "Chọn từ danh sách mô hình mới nhất được đề xuất hoặc tìm kiếm mô hình khác.",
+        modelGroupRecommended: "Đề xuất",
+        modelGroupOther: "Các mô hình khác",
+        modelSearchPlaceholder: "Tìm kiếm mô hình...",
         connectionTitle: "Kết nối & Khóa API",
         connectionDesc:
           "Nhập khóa API và kiểm tra kết nối trước khi lưu cấu hình.",

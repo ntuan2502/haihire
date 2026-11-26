@@ -1661,9 +1661,10 @@ export const en: TranslationSchema = {
           "Choose where your organization runs AI requests. Recommended models update automatically.",
         modelTitle: "Model",
         modelDesc:
-          "Pick one of the latest recommended models or choose another model from the dropdown.",
-        otherModelsLabel: "Other models",
-        otherModelsPlaceholder: "Select another model...",
+          "Choose from the latest recommended models or search other supported models.",
+        modelGroupRecommended: "Recommended",
+        modelGroupOther: "Other models",
+        modelSearchPlaceholder: "Search models...",
         connectionTitle: "Connection & API Key",
         connectionDesc:
           "Connect your API key and verify connectivity before saving.",

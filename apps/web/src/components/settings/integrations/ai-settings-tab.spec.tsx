@@ -45,9 +45,9 @@ vi.mock("@/i18n", () => ({
         "settings.integrations.ai.providerDesc": "Choose provider",
         "settings.integrations.ai.modelTitle": "Model",
         "settings.integrations.ai.modelDesc": "Choose latest model",
-        "settings.integrations.ai.otherModelsLabel": "Other models",
-        "settings.integrations.ai.otherModelsPlaceholder":
-          "Select another model...",
+        "settings.integrations.ai.modelGroupRecommended": "Recommended",
+        "settings.integrations.ai.modelGroupOther": "Other models",
+        "settings.integrations.ai.modelSearchPlaceholder": "Search models...",
         "settings.integrations.ai.connectionTitle": "Connection & API Key",
         "settings.integrations.ai.connectionDesc": "Connect API key",
         "settings.integrations.ai.baseUrlLabel": "Endpoint Base URL",
@@ -150,11 +150,12 @@ describe("AiSettingsTab", () => {
 
     render(<AiSettingsTab />);
 
-    // Open Other models searchable dropdown and select Gemini 2.5 Pro
-    fireEvent.click(screen.getByRole("button", { name: "Other models" }));
-    fireEvent.click(
-      screen.getByRole("option", { name: "Gemini 2.5 Pro (gemini-2.5-pro)" }),
-    );
+    // Open single grouped Model dropdown, verify group headers, and select Gemini 2.5 Pro
+    fireEvent.click(screen.getByRole("button", { name: "Model" }));
+    expect(
+      screen.getAllByRole("presentation").map((el) => el.textContent),
+    ).toEqual(["Recommended", "Other models"]);
+    fireEvent.click(screen.getByRole("option", { name: /Gemini 2\.5 Pro/i }));
 
     fireEvent.click(screen.getByRole("button", { name: "Save configuration" }));
     await waitFor(() => {

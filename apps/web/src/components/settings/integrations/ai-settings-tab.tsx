@@ -40,7 +40,7 @@ export function AiSettingsTab() {
   const { t } = useI18n();
   const baseUrlInputId = useId();
   const apiKeyInputId = useId();
-  const otherModelsInputId = useId();
+  const modelSelectId = useId();
 
   const { data: setting, isLoading } = useAiSettingQuery();
   const upsertMutation = useUpsertAiSettingMutation();
@@ -85,28 +85,88 @@ export function AiSettingsTab() {
     setting?.hasApiKey && setting.provider === provider,
   );
   const isCustomProvider = provider === "OPENAI_COMPATIBLE";
-  const isFeaturedModel = activePreset.models.some((m) => m.id === modelId);
 
-  const otherModelOptions = useMemo(() => {
-    const list = activePreset.otherModels.map((m) => ({
+  const modelOptions = useMemo(() => {
+    const recommendedGroup = t(
+      "settings.integrations.ai.modelGroupRecommended",
+    );
+    const otherGroup = t("settings.integrations.ai.modelGroupOther");
+
+    const featured = activePreset.models.map((m) => {
+      const badgeLabel = m.badge
+        ? t(`settings.integrations.ai.badges.${m.badge}`)
+        : "";
+      return {
+        value: m.id,
+        group: recommendedGroup,
+        keywords: `${m.label} ${m.id} ${badgeLabel}`.trim(),
+        label: (
+          <span className="flex items-center justify-between gap-2 w-full min-w-0">
+            <span className="flex items-center gap-1.5 min-w-0 truncate">
+              <span className="font-medium text-foreground truncate">
+                {m.label}
+              </span>
+              <span className="text-[11px] font-mono text-muted-foreground truncate">
+                {m.id}
+              </span>
+            </span>
+            {m.badge && (
+              <span
+                className={cn(
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0",
+                  m.badge === "recommended" && "bg-primary/10 text-primary",
+                  m.badge === "fast" &&
+                    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                  m.badge === "powerful" &&
+                    "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+                  m.badge === "low_cost" &&
+                    "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                )}
+              >
+                {badgeLabel}
+              </span>
+            )}
+          </span>
+        ),
+      };
+    });
+
+    const others = activePreset.otherModels.map((m) => ({
       value: m.id,
-      label: `${m.label} (${m.id})`,
+      group: otherGroup,
       keywords: `${m.label} ${m.id}`,
+      label: (
+        <span className="flex items-center gap-1.5 min-w-0 truncate">
+          <span className="font-medium text-foreground truncate">
+            {m.label}
+          </span>
+          <span className="text-[11px] font-mono text-muted-foreground truncate">
+            {m.id}
+          </span>
+        </span>
+      ),
     }));
+
     if (
       setting?.provider === provider &&
       setting.modelId &&
       !activePreset.models.some((m) => m.id === setting.modelId) &&
       !activePreset.otherModels.some((m) => m.id === setting.modelId)
     ) {
-      list.unshift({
+      others.unshift({
         value: setting.modelId,
-        label: setting.modelId,
+        group: otherGroup,
         keywords: setting.modelId,
+        label: (
+          <span className="font-mono text-foreground truncate">
+            {setting.modelId}
+          </span>
+        ),
       });
     }
-    return list;
-  }, [activePreset, provider, setting]);
+
+    return [...featured, ...others];
+  }, [activePreset, provider, setting, t]);
 
   const handleSelectProvider = (nextProvider: AiProvider) => {
     if (nextProvider === provider) return;
@@ -307,75 +367,20 @@ export function AiSettingsTab() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {activePreset.models.map((presetModel) => {
-            const isSelected = modelId === presetModel.id;
-            return (
-              <button
-                key={presetModel.id}
-                type="button"
-                onClick={() => {
-                  setModelId(presetModel.id);
-                }}
-                className={cn(
-                  "text-left p-3.5 rounded-xl border transition-colors flex items-center justify-between gap-3 cursor-pointer",
-                  isSelected
-                    ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                    : "border-border bg-background hover:border-foreground/30",
-                )}
-              >
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground truncate">
-                    {presetModel.label}
-                  </div>
-                  <div className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
-                    {presetModel.id}
-                  </div>
-                </div>
-                {presetModel.badge && (
-                  <span
-                    className={cn(
-                      "px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0",
-                      presetModel.badge === "recommended" &&
-                        "bg-primary/10 text-primary",
-                      presetModel.badge === "fast" &&
-                        "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-                      presetModel.badge === "powerful" &&
-                        "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-                      presetModel.badge === "low_cost" &&
-                        "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                    )}
-                  >
-                    {t(`settings.integrations.ai.badges.${presetModel.badge}`)}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="space-y-1.5 pt-1 max-w-md">
-          <label
-            htmlFor={otherModelsInputId}
-            className="block text-xs font-medium text-foreground"
-          >
-            {t("settings.integrations.ai.otherModelsLabel")}
-          </label>
-          <CustomSelect
-            id={otherModelsInputId}
-            searchable
-            value={isFeaturedModel ? "" : modelId}
-            onChange={(val) => {
-              if (val) setModelId(val);
-            }}
-            options={otherModelOptions}
-            placeholder={t("settings.integrations.ai.otherModelsPlaceholder")}
-            searchPlaceholder={t(
-              "settings.integrations.ai.otherModelsPlaceholder",
-            )}
-            aria-label={t("settings.integrations.ai.otherModelsLabel")}
-          />
-        </div>
+        <CustomSelect
+          id={modelSelectId}
+          searchable
+          value={modelId}
+          onChange={(val) => {
+            if (val) setModelId(val);
+          }}
+          options={modelOptions}
+          searchPlaceholder={t(
+            "settings.integrations.ai.modelSearchPlaceholder",
+          )}
+          aria-label={t("settings.integrations.ai.modelTitle")}
+          className="w-full max-w-xl"
+        />
       </div>
 
       {/* Card 3: Connection & API Key */}

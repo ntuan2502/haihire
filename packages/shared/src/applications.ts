@@ -1,6 +1,8 @@
 import type { Candidate } from "./candidates";
 import type { Job } from "./jobs";
 import type { Interview } from "./interviews";
+import type { ScreeningAnswerItem } from "./application-form";
+import type { AiScoreStatus, ApplicationAiEvaluation } from "./ai";
 
 export const ApplicationStage = {
   APPLIED: "APPLIED",
@@ -64,9 +66,13 @@ export interface Application {
   resumeFileName: string;
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
+  coverLetter?: string | null;
+  screeningAnswers?: ScreeningAnswerItem[] | null;
   applicationNotes?: ApplicationNote[];
   orderIndex: number;
   matchScore?: number | null;
+  aiScoreStatus?: AiScoreStatus | null;
+  aiEvaluation?: ApplicationAiEvaluation | null;
   interviews?: Interview[];
   createdAt: string;
   updatedAt: string;

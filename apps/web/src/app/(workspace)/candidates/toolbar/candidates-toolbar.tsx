@@ -66,7 +66,7 @@ export function CandidatesToolbar({
 
         {/* Right: Search Box + Columns Dropdown + Filter Button */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-          <div className="flex-1 min-w-[180px] sm:w-64 md:w-72 sm:flex-initial">
+          <div className="w-full sm:w-64 md:w-72">
             <SearchInput
               placeholder={t("candidates.searchCandidates")}
               aria-label={t("candidates.searchCandidates")}

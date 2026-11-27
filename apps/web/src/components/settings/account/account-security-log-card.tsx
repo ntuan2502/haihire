@@ -74,7 +74,7 @@ export function AccountSecurityLogCard() {
         <div
           role="group"
           aria-label={t("settings.accountSecurity.logsTitle")}
-          className="inline-flex items-center gap-1 rounded-lg bg-muted p-1 shrink-0"
+          className="inline-flex items-center gap-1 rounded-lg bg-muted p-1 shrink-0 self-start sm:self-auto"
         >
           {CATEGORY_TABS.map((tab) => {
             const isActive = category === tab.value;

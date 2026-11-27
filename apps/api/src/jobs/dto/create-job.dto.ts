@@ -2,6 +2,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -15,6 +16,8 @@ import {
   JobStatus,
   WorkplaceType,
   ExperienceLevel,
+  type JobApplicationFormConfig,
+  type JobScoringConfig,
 } from "@haihire/shared";
 
 export { JobType, JobStatus, WorkplaceType, ExperienceLevel };
@@ -96,6 +99,14 @@ export class CreateJobDto {
   @IsEnum(JobStatus)
   @IsOptional()
   status?: JobStatus;
+
+  @IsObject()
+  @IsOptional()
+  applicationFormConfig?: JobApplicationFormConfig | null;
+
+  @IsObject()
+  @IsOptional()
+  scoringConfig?: JobScoringConfig | null;
 
   @IsOptional()
   organizationId?: string | null;

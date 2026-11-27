@@ -1,13 +1,32 @@
 import { useState, useEffect, useRef } from "react";
-import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
+import { arrayMove } from "@dnd-kit/sortable";
+import {
+  DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+  normalizeJobApplicationFormConfig,
+  normalizeJobScoringConfig,
+  type ApplicationFormFieldMode,
+  type Job,
+  type JobType,
+  type WorkplaceType,
+  type ExperienceLevel,
+} from "@/types";
 import { getActiveDefaultCurrency } from "@/lib/utils";
 import { formatDateOnlyForInput } from "@/lib/jobs";
 import {
   type ScreeningQuestion,
   type ScoringCriterion,
-  DEFAULT_CRITERIA,
   parseSalaryRange,
 } from "../types";
+
+function generateQuestionId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return `q_${crypto.randomUUID().slice(0, 8)}`;
+  }
+  return `q_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 export function useJobWizardFormState(initialJob?: Job | null) {
   // STEP 1: Job Details State
@@ -63,25 +82,31 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   const [formError, setFormError] = useState<string | null>(null);
 
   // STEP 2: Application Form State
-  const [phoneSetting, setPhoneSetting] = useState<
-    "hidden" | "optional" | "required"
-  >("optional");
-  const [resumeSetting, setResumeSetting] = useState<"required" | "off">(
-    "required",
+  const initialFormConfig = normalizeJobApplicationFormConfig(
+    initialJob?.applicationFormConfig,
   );
-  const [coverLetterSetting, setCoverLetterSetting] = useState<
-    "required" | "off"
-  >("off");
+  const [phoneSetting, setPhoneSetting] = useState<ApplicationFormFieldMode>(
+    initialFormConfig.phone,
+  );
+  const [resumeSetting, setResumeSetting] = useState<ApplicationFormFieldMode>(
+    initialFormConfig.resume,
+  );
+  const [coverLetterSetting, setCoverLetterSetting] =
+    useState<ApplicationFormFieldMode>(initialFormConfig.coverLetter);
   const [screeningQuestions, setScreeningQuestions] = useState<
     ScreeningQuestion[]
-  >([]);
-  const [newQuestionText, setNewQuestionText] = useState("");
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  >(initialFormConfig.screeningQuestions);
 
   // STEP 3: Candidate Scoring State
-  const [criteria, setCriteria] =
-    useState<ScoringCriterion[]>(DEFAULT_CRITERIA);
-  const [autoScoreApplicants, setAutoScoreApplicants] = useState(true);
+  const initialScoringConfig = normalizeJobScoringConfig(
+    initialJob?.scoringConfig,
+  );
+  const [criteria, setCriteria] = useState<ScoringCriterion[]>(
+    initialScoringConfig.criteria,
+  );
+  const [autoScoreApplicants, setAutoScoreApplicants] = useState(
+    initialScoringConfig.autoScore,
+  );
   const [isAddingCriterion, setIsAddingCriterion] = useState(false);
   const [newCriterionTitle, setNewCriterionTitle] = useState("");
   const [newCriterionDesc, setNewCriterionDesc] = useState("");
@@ -155,6 +180,18 @@ export function useJobWizardFormState(initialJob?: Job | null) {
         setCurrency(null);
         setSalaryPer(null);
       }
+      const nextFormConfig = normalizeJobApplicationFormConfig(
+        initialJob.applicationFormConfig,
+      );
+      setPhoneSetting(nextFormConfig.phone);
+      setResumeSetting(nextFormConfig.resume);
+      setCoverLetterSetting(nextFormConfig.coverLetter);
+      setScreeningQuestions(nextFormConfig.screeningQuestions);
+      const nextScoringConfig = normalizeJobScoringConfig(
+        initialJob.scoringConfig,
+      );
+      setCriteria(nextScoringConfig.criteria);
+      setAutoScoreApplicants(nextScoringConfig.autoScore);
       return;
     }
 
@@ -170,17 +207,75 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     }
   }, [initialJob]);
 
-  const handleAddQuestion = () => {
-    if (!newQuestionText.trim()) return;
+  const handleAddScreeningQuestion = (
+    question: Omit<ScreeningQuestion, "id">,
+  ) => {
+    const trimmedText = question.text.trim();
+    if (!trimmedText) return;
     const newQ: ScreeningQuestion = {
-      id: Date.now().toString(),
-      text: newQuestionText.trim(),
-      type: "text",
-      required: true,
+      id: generateQuestionId(),
+      text: trimmedText,
+      type: question.type,
+      required: question.required,
+      ...(question.options && question.options.length > 0
+        ? { options: question.options }
+        : {}),
     };
-    setScreeningQuestions((prev) => [...prev, newQ]);
-    setNewQuestionText("");
-    setIsAddingQuestion(false);
+    setScreeningQuestions((prev) => [...prev, newQ].slice(0, 30));
+  };
+
+  const handleUpdateScreeningQuestion = (
+    id: string,
+    patch: Omit<ScreeningQuestion, "id">,
+  ) => {
+    const trimmedText = patch.text.trim();
+    if (!trimmedText) return;
+    setScreeningQuestions((prev) =>
+      prev.map((q) =>
+        q.id === id
+          ? {
+              id,
+              text: trimmedText,
+              type: patch.type,
+              required: patch.required,
+              ...(patch.options && patch.options.length > 0
+                ? { options: patch.options }
+                : {}),
+            }
+          : q,
+      ),
+    );
+  };
+
+  const handleBulkAddScreeningQuestions = (
+    items: Array<Omit<ScreeningQuestion, "id">>,
+  ) => {
+    const valid = items
+      .map((item) => ({
+        id: generateQuestionId(),
+        text: item.text.trim(),
+        type: item.type,
+        required: item.required,
+        ...(item.options && item.options.length > 0
+          ? { options: item.options }
+          : {}),
+      }))
+      .filter((item) => item.text.length > 0);
+    if (valid.length === 0) return;
+    setScreeningQuestions((prev) => [...prev, ...valid].slice(0, 30));
+  };
+
+  const handleReorderScreeningQuestions = (
+    activeId: string,
+    overId: string,
+  ) => {
+    if (activeId === overId) return;
+    setScreeningQuestions((prev) => {
+      const oldIndex = prev.findIndex((q) => q.id === activeId);
+      const newIndex = prev.findIndex((q) => q.id === overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   };
 
   const handleRemoveQuestion = (id: string) => {
@@ -218,6 +313,14 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setCriteria((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const handleClearCriteria = () => {
+    setCriteria([]);
+  };
+
+  const handleReplaceCriteria = (next: ScoringCriterion[]) => {
+    setCriteria(next.slice(0, 12));
+  };
+
   const resetForm = () => {
     setJobTitle("");
     setDepartment("");
@@ -237,6 +340,12 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setMaxSalary("");
     setCurrency(getActiveDefaultCurrency());
     setSalaryPer(null);
+    setPhoneSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.phone);
+    setResumeSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.resume);
+    setCoverLetterSetting(DEFAULT_JOB_APPLICATION_FORM_CONFIG.coverLetter);
+    setScreeningQuestions([]);
+    setCriteria([]);
+    setAutoScoreApplicants(false);
   };
 
   return {
@@ -286,11 +395,10 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setCoverLetterSetting,
     screeningQuestions,
     setScreeningQuestions,
-    newQuestionText,
-    setNewQuestionText,
-    isAddingQuestion,
-    setIsAddingQuestion,
-    handleAddQuestion,
+    handleAddScreeningQuestion,
+    handleUpdateScreeningQuestion,
+    handleBulkAddScreeningQuestions,
+    handleReorderScreeningQuestions,
     handleRemoveQuestion,
     criteria,
     setCriteria,
@@ -307,6 +415,8 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     handleAddCriterion,
     handleUpdateWeight,
     handleRemoveCriterion,
+    handleClearCriteria,
+    handleReplaceCriteria,
     publishMode,
     setPublishMode,
     resetForm,

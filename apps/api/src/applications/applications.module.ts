@@ -19,6 +19,7 @@ import {
 } from "./orphan-cleanup.processor";
 
 import { ActivitiesModule } from "../activities/activities.module";
+import { AiModule } from "../ai/ai.module";
 import { EmailModule } from "../email/email.module";
 import { CommonModule } from "../common/common.module";
 
@@ -29,6 +30,7 @@ import { CommonModule } from "../common/common.module";
     MinioModule,
     ActivitiesModule,
     EmailModule,
+    AiModule,
     BullModule.registerQueue(
       { name: ORPHAN_CLEANUP_QUEUE },
       { name: ORPHAN_CLEANUP_DLQ },

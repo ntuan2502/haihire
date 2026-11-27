@@ -92,6 +92,7 @@ export function ApplicationDetailView() {
         onSelectTab={state.setActiveTab}
         interviewsCount={state.app?.interviews?.length ?? 0}
         documentsCount={state.candidateDocuments.length}
+        notesCount={state.notesCount}
       />
 
       {/* Active Tab Body Content */}

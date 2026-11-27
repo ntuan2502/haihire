@@ -311,7 +311,7 @@ function AuditLogPageContent() {
                 ) : undefined
               }
             >
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full min-w-[740px] text-left text-xs border-collapse">
                 <thead className="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground">
                   <tr>
                     <th scope="col" className="py-3 px-4">
@@ -387,7 +387,7 @@ function AuditLogPageContent() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-xs text-foreground max-w-md">
+                        <td className="py-3.5 px-4 text-xs text-foreground min-w-52 max-w-md">
                           <div className="line-clamp-2 font-medium">
                             {formatAuditSummary(log, t)}
                           </div>

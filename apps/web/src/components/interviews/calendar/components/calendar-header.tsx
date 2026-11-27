@@ -60,7 +60,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="h-8 w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
+            className="h-9 w-9 sm:h-8 sm:w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
             title={t("interviews.prevPeriod")}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="h-8 w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
+            className="h-9 w-9 sm:h-8 sm:w-8 rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center transition-colors cursor-pointer"
             title={t("interviews.nextPeriod")}
           >
             <ChevronRight className="h-4 w-4" />
@@ -90,9 +90,9 @@ export function CalendarHeader({
       </div>
 
       {/* Right: Month/Year Selectors (Month mode) + Mode Switcher */}
-      <div className="flex flex-wrap items-center gap-2 self-end lg:self-auto">
+      <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 w-full lg:w-auto">
         {calendarMode === "month" && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-0">
             <CustomSelect
               size="sm"
               aria-label={t("interviews.selectMonth")}
@@ -101,7 +101,7 @@ export function CalendarHeader({
                 onSelectMonthYear(currentYear, Number.parseInt(val, 10))
               }
               options={monthOptions}
-              className="w-32"
+              className="flex-1 min-w-0 sm:flex-initial sm:w-32"
               triggerClassName="text-xs font-semibold h-8"
             />
             <CustomSelect
@@ -112,7 +112,7 @@ export function CalendarHeader({
                 onSelectMonthYear(Number.parseInt(val, 10), currentMonth)
               }
               options={yearOptions}
-              className="w-22"
+              className="w-20 sm:w-22 shrink-0"
               triggerClassName="text-xs font-semibold h-8 tabular-nums"
             />
           </div>

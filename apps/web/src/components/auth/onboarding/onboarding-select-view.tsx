@@ -58,33 +58,35 @@ export function OnboardingSelectView({
                 key={org.id}
                 onClick={() => onSelectOrg(org)}
                 className={cn(
-                  "w-full p-4 rounded-xl border bg-card text-card-foreground flex items-center justify-between cursor-pointer transition-colors group text-left",
+                  "w-full p-4 rounded-xl border bg-card text-card-foreground flex items-center justify-between gap-3 cursor-pointer transition-colors group text-left",
                   isActive
                     ? "border-primary/40 shadow-xs ring-1 ring-ring/20"
                     : "border-border hover:border-ring/40 hover:bg-accent/40",
                 )}
               >
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <OrganizationLogo
                     name={org.name}
                     logoUrl={org.logoUrl}
                     size="lg"
                     decorative
                   />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                       {org.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">{org.slug}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {org.slug}
+                    </p>
                   </div>
                 </div>
 
                 {isActive ? (
-                  <span className="text-[11px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
                     {t("onboarding.activeBadge")}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                  <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 shrink-0 whitespace-nowrap">
                     {t("onboarding.openWorkspace")}{" "}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </span>

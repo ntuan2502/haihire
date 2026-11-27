@@ -44,6 +44,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "sanitize-html": "^2.18.2",
+    "unpdf": "^2.2.2",
     "zod": "catalog:"
   },
   "devDependencies": {

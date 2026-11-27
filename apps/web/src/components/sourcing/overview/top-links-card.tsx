@@ -16,7 +16,7 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
   return (
     <div className="p-5 sm:p-6 rounded-xl bg-card text-card-foreground border border-border shadow-2xs space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Link2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-bold text-foreground">
@@ -61,7 +61,7 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
                 <ChannelBadge channel={link.source} size="sm" />
               </div>
 
-              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <MousePointerClick className="h-3 w-3 text-muted-foreground" />
                   <span>

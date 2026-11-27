@@ -29,8 +29,8 @@ export function CandidatesActiveFilters({
         {t("common.filter")}:
       </span>
       {selectedJobId !== "ALL" && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium">
-          <span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border text-xs font-medium max-w-full">
+          <span className="truncate">
             {jobs.find((j) => j.id === selectedJobId)?.title || selectedJobId}
           </span>
           <button

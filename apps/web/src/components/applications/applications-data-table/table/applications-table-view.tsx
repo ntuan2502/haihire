@@ -96,7 +96,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
@@ -136,7 +136,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
@@ -176,7 +176,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
@@ -216,7 +216,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
@@ -256,7 +256,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"
@@ -296,7 +296,7 @@ export function ApplicationsTableView({
                         : "descending"
                       : "none"
                   }
-                  className="py-3.5 px-4 sm:px-5 select-none"
+                  className="py-3.5 px-4 sm:px-5 select-none whitespace-nowrap"
                 >
                   <button
                     type="button"

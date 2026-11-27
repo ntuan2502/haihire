@@ -25,11 +25,38 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@tanstack/react-query", () => ({
-  useQueryClient: () => ({
-    invalidateQueries: vi.fn(),
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...actual,
+    useQueryClient: () => ({
+      invalidateQueries: vi.fn(),
+    }),
+  };
+});
+
+vi.mock("@/hooks/use-ai-setting-queries", () => ({
+  useAiStatusQuery: () => ({
+    data: { configured: false, enabled: false, autoScoreApplications: false },
   }),
 }));
+
+vi.mock("@/hooks/use-application-queries", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/hooks/use-application-queries")>();
+  return {
+    ...actual,
+    useApplication: () => ({ data: undefined }),
+    useTriggerAiScoreMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useBatchAiScoreMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+  };
+});
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -214,15 +241,21 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     expect(screen.queryByText("75%")).not.toBeInTheDocument();
     expect(
-      screen.queryByText("applications.matchScore"),
-    ).not.toBeInTheDocument();
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("applications.aiEvaluation.notConfiguredHint"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Zero Score Candidate"));
-    expect(screen.getByText("applications.matchScore")).toBeInTheDocument();
-    expect(screen.getAllByText("0%").length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(screen.getByText("/100")).toBeInTheDocument();
   });
 
-  it("renders unified 5 tabs without placeholder tabs and opens SendEmailModal", () => {
+  it("renders unified 7 tabs including AI Evaluation and Application Form before Interviews and switches tabs cleanly", () => {
     mockUseJobApplications.mockReturnValue({
       data: mockApplications,
       isLoading: false,
@@ -230,9 +263,19 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
 
     render(<JobPipelinePage />);
 
-    expect(
-      screen.getByRole("button", { name: "applications.tabs.overview" }),
-    ).toBeInTheDocument();
+    const overviewTab = screen.getByRole("button", {
+      name: "applications.tabs.overview",
+    });
+    const aiEvalTab = screen.getByRole("button", {
+      name: "applications.tabs.aiEvaluation",
+    });
+    const appFormTab = screen.getByRole("button", {
+      name: "applications.tabs.applicationForm",
+    });
+
+    expect(overviewTab).toBeInTheDocument();
+    expect(aiEvalTab).toBeInTheDocument();
+    expect(appFormTab).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /applications\.tabs\.interviews/i }),
     ).toBeInTheDocument();
@@ -249,11 +292,22 @@ describe("JobPipelinePage - handleDownloadDoc (Caller #4)", () => {
       screen.queryByRole("button", { name: /applications\.tabs\.inbox/i }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /applications\.tabs\.ai/i }),
-    ).not.toBeInTheDocument();
-    expect(
       screen.queryByRole("button", { name: /applications\.tabs\.responses/i }),
     ).not.toBeInTheDocument();
+
+    // Verify clicking AI Evaluation tab switches cleanly and does NOT get reset to Overview
+    fireEvent.click(aiEvalTab);
+    expect(aiEvalTab.className).toContain("border-primary");
+    expect(
+      screen.getByText("applications.aiEvaluation.title"),
+    ).toBeInTheDocument();
+
+    // Verify clicking Application Form tab switches cleanly
+    fireEvent.click(appFormTab);
+    expect(appFormTab.className).toContain("border-primary");
+    expect(
+      screen.getByText("applications.formCard.emptyState"),
+    ).toBeInTheDocument();
 
     const sendEmailBtn = screen.getByRole("button", {
       name: /email\.sendEmailAction/i,

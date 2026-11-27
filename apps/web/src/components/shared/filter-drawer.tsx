@@ -40,11 +40,11 @@ export function FilterDrawer({
       description={description}
       size="md"
     >
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
         {children}
       </div>
 
-      <div className="px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex items-center justify-between gap-3">
+      <div className="px-4 sm:px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex items-center justify-between gap-3">
         <Button
           type="button"
           variant="ghost"
@@ -101,7 +101,7 @@ export function FilterPillGroup<T extends string = string>({
           columns === 2
             ? "grid grid-cols-2 gap-2"
             : columns === 3
-              ? "grid grid-cols-3 gap-2"
+              ? "grid grid-cols-2 sm:grid-cols-3 gap-2"
               : "flex flex-wrap gap-2",
         )}
       >
@@ -114,7 +114,7 @@ export function FilterPillGroup<T extends string = string>({
               aria-pressed={active}
               onClick={() => onToggle(opt.value)}
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
+                "min-w-0 truncate px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
                 active
                   ? "bg-primary/10 text-primary border-primary/40 shadow-2xs"
                   : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/60",

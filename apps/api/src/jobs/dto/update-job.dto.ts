@@ -1,6 +1,7 @@
 import {
   IsEnum,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -14,6 +15,10 @@ import {
   WorkplaceType,
   ExperienceLevel,
 } from "./create-job.dto";
+import type {
+  JobApplicationFormConfig,
+  JobScoringConfig,
+} from "@haihire/shared";
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -92,4 +97,12 @@ export class UpdateJobDto {
   @IsEnum(JobStatus)
   @IsOptional()
   status?: JobStatus;
+
+  @IsObject()
+  @IsOptional()
+  applicationFormConfig?: JobApplicationFormConfig | null;
+
+  @IsObject()
+  @IsOptional()
+  scoringConfig?: JobScoringConfig | null;
 }

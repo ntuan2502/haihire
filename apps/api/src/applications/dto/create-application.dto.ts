@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from "class-validator";
+import { COVER_LETTER_MAX_LENGTH } from "@haihire/shared";
 
 export class CreateApplicationDto {
   @IsString()
@@ -32,6 +39,15 @@ export class CreateApplicationDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(COVER_LETTER_MAX_LENGTH)
+  coverLetter?: string;
+
+  @IsString()
+  @IsOptional()
+  screeningAnswers?: string;
 
   @IsString()
   @IsOptional()

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   Briefcase,
-  Calendar,
+  CalendarPlus,
   ExternalLink,
   MessageSquare,
   Plus,
@@ -58,7 +58,7 @@ export function CandidateDrawerApplicationsTab({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <CustomSelect
           value={stageFilter}
           onChange={onStageFilterChange}
@@ -79,7 +79,7 @@ export function CandidateDrawerApplicationsTab({
           <button
             type="button"
             onClick={() => onApplyToJob(candidate)}
-            className="h-7 px-2.5 rounded-md border border-input bg-background text-[11px] font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+            className="h-7 px-2.5 rounded-md border border-input bg-background text-[11px] font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1 whitespace-nowrap cursor-pointer transition-colors"
           >
             <Plus className="h-3 w-3" />
             <span>{t("candidates.applyToJob")}</span>
@@ -110,18 +110,18 @@ export function CandidateDrawerApplicationsTab({
             const allInterviews = getInterviewsFromApplication(app);
             return (
               <div key={app.id} className="py-4 space-y-3 text-xs">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                   <div className="space-y-0.5 min-w-0">
                     <h4 className="font-semibold text-foreground truncate">
                       {job?.title || t("common.positionFallback")}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                    <p className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                       {t("common.status")}: {getStageLabel(app.stage, t)} •{" "}
                       {t("applications.appliedBadge")}{" "}
                       {formatDate(app.createdAt, "short")}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <StageBadge stage={app.stage} />
                     <Link
                       href={`/applications/${app.id}`}
@@ -134,9 +134,12 @@ export function CandidateDrawerApplicationsTab({
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app)}
-                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        className="h-7 px-2.5 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
-                        <Calendar className="h-3 w-3" />
+                        <CalendarPlus
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                         <span>{t("interviews.scheduleInterview")}</span>
                       </button>
                     )}

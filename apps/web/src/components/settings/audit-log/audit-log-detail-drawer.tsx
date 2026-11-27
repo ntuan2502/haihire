@@ -99,7 +99,7 @@ export function AuditLogDetailDrawer({
       description={formatDateTime(log.createdAt, localization)}
       size="xl"
     >
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-6">
         {/* Header Summary Block */}
         <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -236,7 +236,7 @@ export function AuditLogDetailDrawer({
                     size="sm"
                     onClick={() => handleCopy("targetId", log.targetId!)}
                     aria-label={t("common.copy")}
-                    className="h-6 px-1.5 text-[11px] shrink-0"
+                    className="h-8 sm:h-6 min-w-8 sm:min-w-0 px-1.5 text-[11px] shrink-0"
                   >
                     {copiedKey === "targetId" ? (
                       <>
@@ -255,7 +255,7 @@ export function AuditLogDetailDrawer({
               <span className="text-muted-foreground shrink-0">
                 {t("settings.auditLog.labelIpAddress")}
               </span>
-              <span className="font-mono text-[11px] text-foreground">
+              <span className="font-mono text-[11px] text-foreground min-w-0 break-all text-right">
                 {log.ipAddress || t("settings.auditLog.valueEmpty")}
               </span>
             </div>
@@ -290,7 +290,7 @@ export function AuditLogDetailDrawer({
                     size="sm"
                     onClick={() => handleCopy("requestId", log.requestId!)}
                     aria-label={t("common.copy")}
-                    className="h-6 px-1.5 text-[11px] shrink-0"
+                    className="h-8 sm:h-6 min-w-8 sm:min-w-0 px-1.5 text-[11px] shrink-0"
                   >
                     {copiedKey === "requestId" ? (
                       <>

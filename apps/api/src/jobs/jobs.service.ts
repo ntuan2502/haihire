@@ -5,6 +5,12 @@ import {
   AUDIT_RESOURCES,
   extractPlainTextFromHtml,
   formatCandidateDisplayName,
+  jobApplicationFormConfigSchema,
+  jobScoringConfigSchema,
+  normalizeJobApplicationFormConfig,
+  normalizeJobScoringConfig,
+  type JobApplicationFormConfig,
+  type JobScoringConfig,
   type NameDisplayOrder,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
@@ -16,7 +22,7 @@ import {
   JobStatus,
   JobType,
   WorkplaceType,
-  type Prisma,
+  Prisma,
 } from "@prisma/client";
 import {
   AppNotFoundException,
@@ -218,6 +224,8 @@ export class JobsService {
         salaryMax: true,
         salaryCurrency: true,
         status: true,
+        applicationFormConfig: true,
+        scoringConfig: true,
         organizationId: true,
         createdById: true,
         createdAt: true,
@@ -331,6 +339,16 @@ export class JobsService {
     return {
       data: orderedPagedJobs.map((job) => ({
         ...job,
+        applicationFormConfig: normalizeJobApplicationFormConfig(
+          job.applicationFormConfig,
+        ),
+        ...(!isPublic
+          ? {
+              scoringConfig: normalizeJobScoringConfig(
+                (job as { scoringConfig?: unknown }).scoringConfig,
+              ),
+            }
+          : {}),
         organization: job.organizationId
           ? (orgMap.get(job.organizationId) ?? null)
           : null,
@@ -372,6 +390,8 @@ export class JobsService {
         salaryMax: true,
         salaryCurrency: true,
         status: true,
+        applicationFormConfig: true,
+        scoringConfig: true,
         createdById: true,
         createdAt: true,
         updatedAt: true,
@@ -439,8 +459,15 @@ export class JobsService {
     }
 
     if (isPublic) {
+      const { scoringConfig: _omitScoringConfig, ...publicJob } =
+        job as typeof job & {
+          scoringConfig?: unknown;
+        };
       return {
-        ...job,
+        ...publicJob,
+        applicationFormConfig: normalizeJobApplicationFormConfig(
+          job.applicationFormConfig,
+        ),
         organization,
         applications: [],
         applicationsCount: 0,
@@ -568,6 +595,12 @@ export class JobsService {
 
     return {
       ...job,
+      applicationFormConfig: normalizeJobApplicationFormConfig(
+        job.applicationFormConfig,
+      ),
+      scoringConfig: normalizeJobScoringConfig(
+        (job as { scoringConfig?: unknown }).scoringConfig,
+      ),
       organization,
       applications: populatedApps,
       applicationsCount: populatedApps.length,
@@ -709,6 +742,37 @@ export class JobsService {
     return sanitized;
   }
 
+  private parseApplicationFormConfigInput(
+    raw?: unknown,
+  ): JobApplicationFormConfig | null | undefined {
+    if (raw === undefined) return undefined;
+    if (raw === null) return null;
+    const parsed = jobApplicationFormConfigSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        parsed.error.issues[0]?.message ||
+          "Invalid application form configuration",
+      );
+    }
+    return parsed.data;
+  }
+
+  private parseScoringConfigInput(
+    raw?: unknown,
+  ): JobScoringConfig | null | undefined {
+    if (raw === undefined) return undefined;
+    if (raw === null) return null;
+    const parsed = jobScoringConfigSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        parsed.error.issues[0]?.message || "Invalid AI scoring configuration",
+      );
+    }
+    return parsed.data;
+  }
+
   async create(
     dto: CreateJobDto,
     tenantOrgId?: string | null,
@@ -743,6 +807,12 @@ export class JobsService {
       dto.startDate !== undefined
         ? this.parseDateOnly(dto.startDate, "startDate")
         : null;
+    const validatedFormConfig = this.parseApplicationFormConfigInput(
+      dto.applicationFormConfig,
+    );
+    const validatedScoringConfig = this.parseScoringConfigInput(
+      dto.scoringConfig,
+    );
 
     const created = await this.prisma.job.create({
       data: {
@@ -763,6 +833,22 @@ export class JobsService {
         salaryMax: dto.salaryMax ?? null,
         salaryCurrency: dto.salaryCurrency ?? null,
         status: dto.status ?? "PUBLISHED",
+        ...(validatedFormConfig !== undefined
+          ? {
+              applicationFormConfig:
+                validatedFormConfig === null
+                  ? Prisma.DbNull
+                  : (validatedFormConfig as unknown as Prisma.InputJsonValue),
+            }
+          : {}),
+        ...(validatedScoringConfig !== undefined
+          ? {
+              scoringConfig:
+                validatedScoringConfig === null
+                  ? Prisma.DbNull
+                  : (validatedScoringConfig as unknown as Prisma.InputJsonValue),
+            }
+          : {}),
         organizationId: targetOrgId,
         createdById: (userId || dto.createdById) ?? null,
         updatedAt: toInstant(),
@@ -797,7 +883,15 @@ export class JobsService {
       // Fail-open audit logging
     }
 
-    return created;
+    return {
+      ...created,
+      applicationFormConfig: normalizeJobApplicationFormConfig(
+        (created as { applicationFormConfig?: unknown }).applicationFormConfig,
+      ),
+      scoringConfig: normalizeJobScoringConfig(
+        (created as { scoringConfig?: unknown }).scoringConfig,
+      ),
+    };
   }
 
   async update(
@@ -835,6 +929,12 @@ export class JobsService {
       status: job.status,
       applicationDeadline: this.toDateKey(job.applicationDeadline),
       startDate: this.toDateKey(job.startDate),
+      applicationFormConfig: normalizeJobApplicationFormConfig(
+        job.applicationFormConfig,
+      ),
+      scoringConfig: normalizeJobScoringConfig(
+        (job as { scoringConfig?: unknown }).scoringConfig,
+      ),
     };
 
     const sanitizedDescription =
@@ -849,6 +949,12 @@ export class JobsService {
       dto.startDate !== undefined
         ? this.parseDateOnly(dto.startDate, "startDate")
         : undefined;
+    const validatedFormConfig = this.parseApplicationFormConfigInput(
+      dto.applicationFormConfig,
+    );
+    const validatedScoringConfig = this.parseScoringConfigInput(
+      dto.scoringConfig,
+    );
 
     const updated = await this.prisma.job.update({
       where: { id },
@@ -877,6 +983,22 @@ export class JobsService {
           ? { salaryCurrency: dto.salaryCurrency }
           : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
+        ...(validatedFormConfig !== undefined
+          ? {
+              applicationFormConfig:
+                validatedFormConfig === null
+                  ? Prisma.DbNull
+                  : (validatedFormConfig as unknown as Prisma.InputJsonValue),
+            }
+          : {}),
+        ...(validatedScoringConfig !== undefined
+          ? {
+              scoringConfig:
+                validatedScoringConfig === null
+                  ? Prisma.DbNull
+                  : (validatedScoringConfig as unknown as Prisma.InputJsonValue),
+            }
+          : {}),
       },
     });
 
@@ -903,6 +1025,13 @@ export class JobsService {
         status: updated.status,
         applicationDeadline: this.toDateKey(updated.applicationDeadline),
         startDate: this.toDateKey(updated.startDate),
+        applicationFormConfig: normalizeJobApplicationFormConfig(
+          (updated as { applicationFormConfig?: unknown })
+            .applicationFormConfig,
+        ),
+        scoringConfig: normalizeJobScoringConfig(
+          (updated as { scoringConfig?: unknown }).scoringConfig,
+        ),
       };
       const changes = computeAuditDiff(beforeSnapshot, afterSnapshot);
       if (changes.length > 0) {
@@ -939,7 +1068,15 @@ export class JobsService {
       }
     }
 
-    return updated;
+    return {
+      ...updated,
+      applicationFormConfig: normalizeJobApplicationFormConfig(
+        (updated as { applicationFormConfig?: unknown }).applicationFormConfig,
+      ),
+      scoringConfig: normalizeJobScoringConfig(
+        (updated as { scoringConfig?: unknown }).scoringConfig,
+      ),
+    };
   }
 
   async remove(

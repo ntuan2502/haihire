@@ -56,7 +56,7 @@ test.describe("Webhook Settings E2E Flow", () => {
       }
     });
 
-    await page.goto("/settings/integrations");
+    await page.goto("/settings/integrations/webhooks");
     await page.waitForLoadState("networkidle");
 
     const addBtn = page.locator("#add-webhook-btn");
@@ -121,7 +121,7 @@ test.describe("Webhook Settings E2E Flow", () => {
       });
     });
 
-    await page.goto("/settings/integrations");
+    await page.goto("/settings/integrations/webhooks");
     await page.waitForLoadState("networkidle");
 
     const testRowBtn = page.locator("button:has(svg.lucide-send)").first();
@@ -137,7 +137,7 @@ test.describe("Webhook Settings E2E Flow", () => {
   test("Case 3: Member cannot see Add Webhook button and sees admin-only warning", async ({
     memberPage: page,
   }) => {
-    await page.goto("/settings/integrations");
+    await page.goto("/settings/integrations/webhooks");
     await page.waitForLoadState("networkidle");
 
     const addBtn = page.locator("#add-webhook-btn");

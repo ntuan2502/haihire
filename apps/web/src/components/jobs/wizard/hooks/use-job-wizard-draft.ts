@@ -81,9 +81,23 @@ export function useJobWizardDraft({
               form.setSalaryPer(draft.salaryPer);
             if (draft.publishMode !== undefined)
               form.setPublishMode(draft.publishMode);
+            if (draft.phoneSetting !== undefined)
+              form.setPhoneSetting(draft.phoneSetting);
+            if (draft.resumeSetting !== undefined)
+              form.setResumeSetting(draft.resumeSetting);
+            if (draft.coverLetterSetting !== undefined)
+              form.setCoverLetterSetting(draft.coverLetterSetting);
+            if (Array.isArray(draft.screeningQuestions))
+              form.setScreeningQuestions(draft.screeningQuestions);
+            if (Array.isArray(draft.criteria)) form.setCriteria(draft.criteria);
+            if (draft.autoScoreApplicants !== undefined)
+              form.setAutoScoreApplicants(Boolean(draft.autoScoreApplicants));
             if (
               draft.currentStep !== undefined &&
-              (draft.currentStep === 1 || draft.currentStep === 4)
+              (draft.currentStep === 1 ||
+                draft.currentStep === 2 ||
+                draft.currentStep === 3 ||
+                draft.currentStep === 4)
             ) {
               setCurrentStep(draft.currentStep);
             }
@@ -132,6 +146,12 @@ export function useJobWizardDraft({
           salaryPer: form.salaryPer,
           description: form.description,
           publishMode: form.publishMode,
+          phoneSetting: form.phoneSetting,
+          resumeSetting: form.resumeSetting,
+          coverLetterSetting: form.coverLetterSetting,
+          screeningQuestions: form.screeningQuestions,
+          criteria: form.criteria,
+          autoScoreApplicants: form.autoScoreApplicants,
           currentStep,
           savedAt: Date.now(),
         };
@@ -165,6 +185,12 @@ export function useJobWizardDraft({
     form.salaryPer,
     form.description,
     form.publishMode,
+    form.phoneSetting,
+    form.resumeSetting,
+    form.coverLetterSetting,
+    form.screeningQuestions,
+    form.criteria,
+    form.autoScoreApplicants,
     currentStep,
   ]);
 

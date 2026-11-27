@@ -22,11 +22,9 @@ import { Throttle } from "@nestjs/throttler";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from "@nestjs/platform-express";
+import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
+import { AiScoringService } from "../ai/ai-scoring.service";
 import { PublicApplyDto } from "./dto/public-apply.dto";
 import { QueryApplicationsDto } from "./dto/query-applications.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
@@ -39,7 +37,14 @@ import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { AppBadRequestException } from "../common/app-exception";
-import { APP_ERROR_CODES, hasPermission, Role } from "@haihire/shared";
+import { env } from "../config/env";
+import {
+  APP_ERROR_CODES,
+  batchAiScoreSchema,
+  hasPermission,
+  Role,
+  type BatchAiScoreInput,
+} from "@haihire/shared";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("applications")
@@ -50,6 +55,9 @@ export class ApplicationsController {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(AiScoringService)
+    private readonly aiScoringService?: AiScoringService,
   ) {}
 
   private async resolveCandidateAccess(
@@ -157,6 +165,47 @@ export class ApplicationsController {
     );
   }
 
+  @Post("job/:jobId/ai-score-batch")
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:update")
+  async triggerJobBatchAiScore(
+    @Param("jobId", new ParseUUIDPipe()) jobId: string,
+    @Body(DtoPipe(batchAiScoreSchema)) dto: BatchAiScoreInput,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    const organizationId = req?.user?.organizationId;
+    if (!organizationId || !this.aiScoringService) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.AI_NOT_CONFIGURED,
+        "AI scoring is not available for this organization.",
+      );
+    }
+    return this.aiScoringService.enqueueJobPendingScores(
+      organizationId,
+      jobId,
+      dto.limit,
+    );
+  }
+
+  @Post(":id/ai-score")
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:update")
+  async triggerApplicationAiScore(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    const organizationId = req?.user?.organizationId;
+    if (!organizationId || !this.aiScoringService) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.AI_NOT_CONFIGURED,
+        "AI scoring is not available for this organization.",
+      );
+    }
+    return this.aiScoringService.enqueueApplicationScore(organizationId, id);
+  }
+
   @Get(":id")
   @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:view")
@@ -180,25 +229,21 @@ export class ApplicationsController {
     );
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({
+    default: { limit: env.NODE_ENV === "production" ? 10 : 100, ttl: 60000 },
+  })
   @Post("apply")
   @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(
-    FileFieldsInterceptor(
-      [
-        { name: "resume", maxCount: 1 },
-        { name: "file", maxCount: 1 },
-      ],
-      {
-        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-        fileFilter: resumeFileFilter,
-      },
-    ),
+    AnyFilesInterceptor({
+      limits: { fileSize: 10 * 1024 * 1024, files: 12 }, // 10MB per file, up to 12 attachments
+      fileFilter: resumeFileFilter,
+    }),
   )
   create(
     @Body(DtoPipe(PublicApplyDto)) dto: PublicApplyDto,
     @UploadedFiles()
-    files: { resume?: Express.Multer.File[]; file?: Express.Multer.File[] },
+    files: Express.Multer.File[],
     @Request()
     req?: {
       user?: {
@@ -218,8 +263,27 @@ export class ApplicationsController {
         "Administrative fields (candidateId, resumeUrl, resumeFileName) are not permitted for public applications.",
       );
     }
-    const uploaded = files?.resume?.[0] || files?.file?.[0];
-    return this.applicationsService.create(dto, uploaded, req?.user);
+    const uploadedFiles = Array.isArray(files) ? files : [];
+    const uploaded =
+      uploadedFiles.find((f) => f.fieldname === "resume") ||
+      uploadedFiles.find((f) => f.fieldname === "file");
+
+    const screeningFiles = new Map<string, Express.Multer.File>();
+    for (const f of uploadedFiles) {
+      if (f.fieldname?.startsWith("screeningFile:")) {
+        const qId = f.fieldname.slice("screeningFile:".length).trim();
+        if (qId && !screeningFiles.has(qId)) {
+          screeningFiles.set(qId, f);
+        }
+      }
+    }
+
+    return this.applicationsService.create(
+      dto,
+      uploaded,
+      req?.user,
+      screeningFiles.size > 0 ? screeningFiles : undefined,
+    );
   }
 
   @Patch(":id/stage")

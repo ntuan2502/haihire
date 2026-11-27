@@ -6,13 +6,16 @@ import type { ScheduledInterviewInfo } from "@/lib/interviews";
 // Mock i18n
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => {
+    t: (key: string, params?: Record<string, string | number>) => {
       const translations: Record<string, string> = {
         "applications.noInterviews": "Chưa có lịch phỏng vấn",
         "applications.noInterviewsDesc":
           "Lên lịch phỏng vấn đầu tiên cho ứng viên này.",
         "applications.scheduleInterview": "Lên lịch phỏng vấn",
         "applications.sections.interviews": "Phỏng vấn",
+        "applications.aiEvaluation.expandAll": "Mở rộng tất cả",
+        "applications.aiEvaluation.collapseAll": "Thu gọn tất cả",
+        "interviews.roundsCount": `${params?.count ?? 0} vòng`,
         "interviews.types.hrScreening": "HR Sơ loại",
         "interviews.types.technical": "Kỹ thuật",
         "interviews.latestUpcomingSchedule":

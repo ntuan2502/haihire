@@ -160,7 +160,7 @@ function LoginForm() {
                     type="button"
                     disabled={Boolean(demoLoadingEmail) || loading}
                     onClick={() => handleQuickLogin(account)}
-                    className="w-full p-2.5 rounded-xl border text-left transition-colors cursor-pointer flex items-center justify-between border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
+                    className="w-full p-2.5 rounded-xl border text-left transition-colors cursor-pointer flex items-center justify-between gap-2 border-border bg-card hover:bg-accent/50 hover:border-primary/40 shadow-2xs group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
@@ -266,7 +266,7 @@ function LoginForm() {
               onClick={() => setShowPassword(!showPassword)}
               aria-label={t("auth.passwordLabel")}
               aria-pressed={showPassword}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute right-1 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -294,7 +294,7 @@ function LoginForm() {
       </form>
 
       {/* Register Link */}
-      <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+      <div className="pt-2 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
         <span>{t("auth.noAccount")}</span>
         <Link
           href={registerHref}

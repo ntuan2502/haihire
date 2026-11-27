@@ -19,6 +19,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  OverlayCloseButton,
+  createOverlayDismissGuard,
+} from "@/components/shared/overlay-primitives";
 import { useI18n } from "@/i18n";
 
 export interface ConfirmDestructiveModalProps {
@@ -119,7 +123,11 @@ export function ConfirmDestructiveModal({
         }
       }}
     >
-      <DialogContent disableClose={isLoading} className="sm:max-w-md p-6 gap-5">
+      <DialogContent
+        showCloseButton={false}
+        {...createOverlayDismissGuard({ disableClose: isLoading })}
+        className="flex flex-col gap-5 max-h-[90dvh] overflow-y-auto rounded-xl bg-card text-card-foreground shadow-xl sm:max-w-md p-4 sm:p-6"
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader className="gap-3 pr-8 text-left">
             <div className="flex items-center gap-3">
@@ -211,7 +219,7 @@ export function ConfirmDestructiveModal({
             </div>
           )}
 
-          <DialogFooter className="pt-4 mt-1 border-t border-border flex-row justify-end gap-2.5 sm:justify-end">
+          <DialogFooter className="pt-4 mt-1 border-t border-border flex-col-reverse sm:flex-row sm:flex-wrap justify-end gap-2.5 sm:justify-end">
             <Button
               type="button"
               variant="outline"
@@ -247,6 +255,7 @@ export function ConfirmDestructiveModal({
             </Button>
           </DialogFooter>
         </form>
+        <OverlayCloseButton primitive="dialog" disabled={isLoading} />
       </DialogContent>
     </Dialog>
   );

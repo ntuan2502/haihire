@@ -121,11 +121,11 @@ export const LandingBentoGrid: React.FC = () => {
             </p>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/40 p-4 flex items-center justify-between">
-            <span className="text-xs font-mono text-muted-foreground">
+          <div className="rounded-lg border border-border bg-muted/40 p-4 flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-muted-foreground min-w-0 truncate">
               {t("landing.bentoCareersBadge")}
             </span>
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5]" />
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground stroke-[1.5] shrink-0" />
           </div>
         </div>
 

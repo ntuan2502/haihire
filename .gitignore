@@ -66,3 +66,6 @@ scratch/
 # Turborepo
 .turbo/
 **/.turbo/
+
+# Generated static PDF.js worker (synced from node_modules before dev/build)
+/apps/web/public/pdf.worker.min.mjs

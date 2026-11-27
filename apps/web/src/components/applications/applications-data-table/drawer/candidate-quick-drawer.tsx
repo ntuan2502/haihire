@@ -1,19 +1,18 @@
 "use client";
 
 import { SlideOver } from "@/components/shared/slide-over";
-import { getCandidateDisplayName } from "@/lib/utils";
 import {
-  CandidateDrawerHeader,
-  CandidateDrawerSummary,
-} from "./candidate-drawer-header";
-import { CandidateOverviewTab } from "./candidate-overview-tab";
-import { CandidateNotesTab } from "./candidate-notes-tab";
-import { CandidateInterviewsTab } from "./candidate-interviews-tab";
-import { CandidateDocumentsTab } from "./candidate-documents-tab";
-import { CandidateTimelineTab } from "./candidate-misc-tabs";
+  ApplicationStageBar,
+  ApplicationDetailHeader,
+  ApplicationDetailTabs,
+  ApplicationDetailTabContent,
+} from "@/components/applications/detail";
+import { useLocalization } from "@/components/providers";
+import { useI18n } from "@/i18n";
+import { formatDate, getCandidateDisplayName, getInitials } from "@/lib/utils";
+import { CandidateDrawerHeader } from "./candidate-drawer-header";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
-import { useI18n } from "@/i18n";
 
 interface CandidateQuickDrawerProps {
   selectedApp: Application | null;
@@ -25,6 +24,7 @@ interface CandidateQuickDrawerProps {
   onTabChange: (tab: string) => void;
   allScheduledInterviews: ScheduledInterviewInfo[];
   drawerCandidateDocuments: CandidateDocument[];
+  notesCount?: number;
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
   onPreviewDoc: (doc: CandidateDocument) => void;
@@ -33,6 +33,7 @@ interface CandidateQuickDrawerProps {
     filename?: string,
     targetAppId?: string,
   ) => Promise<void>;
+  onOpenSendEmail?: () => void;
   onStageChange: (newStage: ApplicationStage) => void;
   isStageUpdatePending: boolean;
   onOpenDeleteModal: (app: Application) => void;
@@ -50,117 +51,92 @@ export function CandidateQuickDrawer({
   onTabChange,
   allScheduledInterviews,
   drawerCandidateDocuments,
+  notesCount,
   onScheduleInterview,
   onCancelInterview,
   onPreviewDoc,
   onDownloadDoc,
+  onOpenSendEmail,
   onStageChange,
   isStageUpdatePending,
   onOpenDeleteModal,
   isDeleting,
   canEdit,
 }: CandidateQuickDrawerProps) {
-  const { t } = useI18n();
+  const { locale } = useI18n();
+  const { localization, isConfigured } = useLocalization();
 
   if (!selectedApp || !currentApp) return null;
+
+  const locOverrides = isConfigured
+    ? { ...localization, defaultLanguage: locale }
+    : { defaultLanguage: locale };
+  const displayName = getCandidateDisplayName(currentApp, localization);
+  const candidateEmail =
+    currentApp.candidateEmail || currentApp.candidate?.email || "";
+  const candidatePhone =
+    currentApp.candidatePhone || currentApp.candidate?.phone || undefined;
+  const appliedDate = formatDate(currentApp.createdAt, "numeric", locOverrides);
 
   return (
     <SlideOver
       isOpen={Boolean(selectedApp && currentApp)}
       onClose={onClose}
       size="2xl"
-      ariaLabel={getCandidateDisplayName(currentApp)}
+      ariaLabel={displayName}
     >
       {/* Drawer Top Navigation Bar (Pinned) */}
       <CandidateDrawerHeader
         currentApp={currentApp}
+        drawerTab={drawerTab}
         onClose={onClose}
         onViewInPipeline={onViewInPipeline}
       />
 
       {/* Drawer Content (Summary + Tabs Scroll Naturally) */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5">
-        <CandidateDrawerSummary
-          currentApp={currentApp}
-          selectedJobTitle={selectedJobTitle}
-          onStageChange={onStageChange}
-          isStageUpdatePending={isStageUpdatePending}
-          onOpenDeleteModal={onOpenDeleteModal}
+        <ApplicationStageBar
+          app={currentApp}
+          isUpdatingStage={isStageUpdatePending}
           isDeleting={isDeleting}
+          onSelectStage={onStageChange}
+          onOpenDeleteModal={() => onOpenDeleteModal(currentApp)}
         />
-        {/* Sub-Navigation Tabs */}
-        <div className="flex items-center gap-1 border-b border-border overflow-x-auto text-xs font-semibold scrollbar-none">
-          {[
-            { id: "overview", label: t("applications.tabs.overview") },
-            {
-              id: "interviews",
-              label:
-                allScheduledInterviews.length > 0
-                  ? `${t("applications.tabs.interviews")} (${allScheduledInterviews.length})`
-                  : t("applications.tabs.interviews"),
-            },
-            {
-              id: "documents",
-              label: `${t("applications.tabs.documents")} (${drawerCandidateDocuments.length})`,
-            },
-            { id: "notes", label: t("applications.tabs.notes") },
-            { id: "timeline", label: t("applications.tabs.timeline") },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onTabChange(tab.id)}
-              className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
-                drawerTab === tab.id
-                  ? "border-primary text-primary font-bold"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
 
-        {/* Tab Content Sections */}
-        <div className="space-y-4">
-          {drawerTab === "overview" && (
-            <CandidateOverviewTab
-              currentApp={currentApp}
-              drawerCandidateDocuments={drawerCandidateDocuments}
-              onScheduleInterview={onScheduleInterview}
-              onCancelInterview={onCancelInterview}
-              onPreviewDoc={onPreviewDoc}
-              onDownloadDoc={onDownloadDoc}
-              canEdit={canEdit}
-            />
-          )}
+        <ApplicationDetailHeader
+          initials={getInitials(displayName)}
+          candidateName={displayName}
+          stage={currentApp.stage}
+          rejectionReason={currentApp.rejectionReason}
+          candidateEmail={candidateEmail}
+          candidatePhone={candidatePhone}
+          jobTitle={selectedJobTitle}
+          appliedDate={appliedDate}
+          onOpenSendEmail={onOpenSendEmail}
+          headingLevel="h2"
+        />
 
-          {drawerTab === "documents" && (
-            <CandidateDocumentsTab
-              documents={drawerCandidateDocuments}
-              appId={currentApp.id}
-              onPreview={onPreviewDoc}
-              onDownload={onDownloadDoc}
-            />
-          )}
+        <ApplicationDetailTabs
+          activeTab={drawerTab}
+          onSelectTab={onTabChange}
+          interviewsCount={allScheduledInterviews.length}
+          documentsCount={drawerCandidateDocuments.length}
+          notesCount={notesCount}
+        />
 
-          {drawerTab === "interviews" && (
-            <CandidateInterviewsTab
-              application={currentApp}
-              onSchedule={onScheduleInterview}
-              onCancelInterview={onCancelInterview}
-              canEdit={canEdit}
-            />
-          )}
-
-          {drawerTab === "notes" && (
-            <CandidateNotesTab applicationId={currentApp.id} />
-          )}
-
-          {drawerTab === "timeline" && (
-            <CandidateTimelineTab currentApp={currentApp} />
-          )}
-        </div>
+        <ApplicationDetailTabContent
+          activeTab={drawerTab}
+          app={currentApp}
+          canEdit={Boolean(canEdit)}
+          candidateDocuments={drawerCandidateDocuments}
+          candidateName={displayName}
+          candidateEmail={candidateEmail}
+          candidateInterviews={currentApp.interviews}
+          onPreviewDoc={onPreviewDoc}
+          onDownloadDoc={onDownloadDoc}
+          onScheduleInterview={onScheduleInterview}
+          onCancelInterview={onCancelInterview}
+        />
       </div>
     </SlideOver>
   );

@@ -1,8 +1,10 @@
 import { api } from "./client";
 import type {
   Application,
+  ApplicationAiEvaluation,
   ApplicationNote,
   ApplicationStats,
+  BatchAiScoreResponse,
   PaginatedResult,
   UpdateApplicationStageInput,
 } from "@/types";
@@ -186,6 +188,26 @@ export const applicationsApi = {
   ): Promise<{ success: boolean; id: string }> => {
     const response = await api.delete<{ success: boolean; id: string }>(
       `/applications/${applicationId}/notes/${noteId}`,
+    );
+    return response.data;
+  },
+
+  triggerAiScore: async (
+    applicationId: string,
+  ): Promise<ApplicationAiEvaluation> => {
+    const response = await api.post<ApplicationAiEvaluation>(
+      `/applications/${applicationId}/ai-score`,
+    );
+    return response.data;
+  },
+
+  triggerJobBatchAiScore: async (
+    jobId: string,
+    limit = 20,
+  ): Promise<BatchAiScoreResponse> => {
+    const response = await api.post<BatchAiScoreResponse>(
+      `/applications/job/${jobId}/ai-score-batch`,
+      { limit },
     );
     return response.data;
   },

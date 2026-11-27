@@ -113,15 +113,18 @@ export function SendEmailPreviewPane({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-3.5 sm:p-6 shadow-xs space-y-4">
       <div className="border-b border-border pb-3 text-xs space-y-1 text-muted-foreground">
-        <div>
+        <div className="break-words">
           <strong className="text-foreground">{t("email.thSubject")}:</strong>{" "}
           {interpolateTemplate(subject, variablesMap)}
         </div>
-        <div>
+        <div className="break-words">
           <strong className="text-foreground">{t("email.thRecipient")}:</strong>{" "}
-          {candidateDisplayName} {hasEmail ? `<${normalizedEmail}>` : ""}
+          {candidateDisplayName}{" "}
+          {hasEmail && (
+            <span className="break-all">{`<${normalizedEmail}>`}</span>
+          )}
         </div>
       </div>
       <EmailHtmlPreview

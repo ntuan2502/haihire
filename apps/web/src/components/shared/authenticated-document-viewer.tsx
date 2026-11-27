@@ -17,6 +17,38 @@ import {
 } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/i18n";
+import { PdfCanvasViewer } from "./pdf-canvas-viewer";
+
+export function shouldUseCanvasPdfViewer(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
+
+  const ua = navigator.userAgent || "";
+  if (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+  ) {
+    return true;
+  }
+
+  // iPadOS 13+ reports Macintosh / MacIntel with touch points
+  if (
+    (navigator.platform === "MacIntel" || ua.includes("Macintosh")) &&
+    typeof navigator.maxTouchPoints === "number" &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+
+  if (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 767px) and (pointer: coarse)").matches
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export interface AuthenticatedDocumentViewerProps {
   document: CandidateDocument;
@@ -27,6 +59,8 @@ export interface AuthenticatedDocumentViewerProps {
     filename: string,
     appId?: string,
   ) => void | Promise<void>;
+  forceCanvasPdf?: boolean;
+  onPreviewSrcChange?: (src: string | null) => void;
   className?: string;
 }
 
@@ -50,14 +84,26 @@ export function AuthenticatedDocumentViewer({
   applicationId,
   candidateId,
   onDownload,
+  forceCanvasPdf = false,
+  onPreviewSrcChange,
   className = "w-full h-full",
 }: AuthenticatedDocumentViewerProps) {
   const { t } = useI18n();
   const [state, setState] = useState<ViewerState>({ status: "loading" });
   const [reloadToken, setReloadToken] = useState(0);
+  const [isMobilePdfEnv, setIsMobilePdfEnv] = useState(false);
   const activeBlobUrlRef = useRef<string | null>(null);
+  const onPreviewSrcChangeRef = useRef(onPreviewSrcChange);
 
   const effectiveAppId = document.sourceApplicationId || applicationId;
+
+  useEffect(() => {
+    onPreviewSrcChangeRef.current = onPreviewSrcChange;
+  }, [onPreviewSrcChange]);
+
+  useEffect(() => {
+    setIsMobilePdfEnv(shouldUseCanvasPdfViewer());
+  }, []);
 
   const revokeActiveBlob = useCallback(() => {
     if (activeBlobUrlRef.current) {
@@ -69,6 +115,7 @@ export function AuthenticatedDocumentViewer({
   useEffect(() => {
     let cancelled = false;
     revokeActiveBlob();
+    onPreviewSrcChangeRef.current?.(null);
 
     const downloadPath = buildDocumentDownloadPath({
       url: document.url,
@@ -92,6 +139,7 @@ export function AuthenticatedDocumentViewer({
         });
         return;
       }
+      onPreviewSrcChangeRef.current?.(fallbackUrl);
       setState({
         status: "ready",
         src: fallbackUrl,
@@ -120,6 +168,7 @@ export function AuthenticatedDocumentViewer({
           return;
         }
         activeBlobUrlRef.current = result.blobUrl;
+        onPreviewSrcChangeRef.current?.(result.blobUrl);
         setState({
           status: "ready",
           src: result.blobUrl,
@@ -138,6 +187,7 @@ export function AuthenticatedDocumentViewer({
 
     return () => {
       cancelled = true;
+      onPreviewSrcChangeRef.current?.(null);
       revokeActiveBlob();
     };
   }, [
@@ -250,6 +300,24 @@ export function AuthenticatedDocumentViewer({
           className="max-w-full max-h-full object-contain rounded-lg shadow-xs"
         />
       </div>
+    );
+  }
+
+  if (forceCanvasPdf || isMobilePdfEnv) {
+    return (
+      <PdfCanvasViewer
+        src={state.src}
+        title={document.name}
+        className={className}
+        onError={(err) => {
+          onPreviewSrcChangeRef.current?.(null);
+          setState({
+            status: "error",
+            error: err,
+            fallbackKey: "candidates.previewUnavailable",
+          });
+        }}
+      />
     );
   }
 

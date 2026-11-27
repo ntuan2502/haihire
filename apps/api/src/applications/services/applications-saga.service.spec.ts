@@ -774,5 +774,211 @@ describe("ApplicationsSagaService", () => {
       });
       expect(candidateTable.store[0].phone).toBe("0909888777");
     });
+
+    it("enforces job applicationFormConfig requirements and persists coverLetter + screeningAnswers snapshot", async () => {
+      await jobTable.create({
+        id: "job-configured",
+        title: "Frontend Architect",
+        status: "PUBLISHED",
+        organizationId: "org-1",
+        applicationFormConfig: {
+          phone: "required",
+          resume: "optional",
+          coverLetter: "required",
+          screeningQuestions: [
+            {
+              id: "q-react",
+              text: "Years of React experience?",
+              type: "short_text",
+              required: true,
+            },
+            {
+              id: "q-remote",
+              text: "Open to remote?",
+              type: "yes_no",
+              required: false,
+            },
+          ],
+        },
+      });
+
+      // Missing required phone -> rejected
+      await expect(
+        service.create({
+          jobId: "job-configured",
+          firstName: "Linh",
+          lastName: "Tran",
+          candidateEmail: "linh@example.com",
+          coverLetter: "Excited to join!",
+          screeningAnswers: JSON.stringify([
+            { questionId: "q-react", answer: "5 years" },
+          ]),
+        }),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Missing required screening question -> rejected
+      await expect(
+        service.create({
+          jobId: "job-configured",
+          firstName: "Linh",
+          lastName: "Tran",
+          candidateEmail: "linh@example.com",
+          candidatePhone: "0901234567",
+          coverLetter: "Excited to join!",
+        }),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Valid submission without CV when resume is optional
+      const created = await service.create({
+        jobId: "job-configured",
+        firstName: "Linh",
+        lastName: "Tran",
+        candidateEmail: "linh2@example.com",
+        candidatePhone: "0901234567",
+        coverLetter: "Excited to contribute!",
+        screeningAnswers: JSON.stringify([
+          { questionId: "q-react", answer: "5 years" },
+          { questionId: "q-remote", answer: true },
+        ]),
+      });
+
+      expect(created).toBeDefined();
+      const storedApp = applicationTable.store.find(
+        (a) => a.jobId === "job-configured",
+      );
+      expect(storedApp?.coverLetter).toBe("Excited to contribute!");
+      expect(storedApp?.screeningAnswers).toEqual([
+        {
+          questionId: "q-react",
+          questionText: "Years of React experience?",
+          questionType: "short_text",
+          answer: "5 years",
+        },
+        {
+          questionId: "q-remote",
+          questionText: "Open to remote?",
+          questionType: "yes_no",
+          answer: true,
+        },
+      ]);
+    });
+
+    it("validates number, date, url, and file_upload screening questions including PDF MinIO storage", async () => {
+      await jobTable.create({
+        id: "job-9types",
+        title: "Fullstack Engineer",
+        status: "PUBLISHED",
+        organizationId: "org-1",
+        applicationFormConfig: {
+          phone: "optional",
+          resume: "optional",
+          coverLetter: "hidden",
+          screeningQuestions: [
+            { id: "q-num", text: "Years", type: "number", required: true },
+            { id: "q-date", text: "Start date", type: "date", required: true },
+            { id: "q-url", text: "Portfolio", type: "url", required: false },
+            {
+              id: "q-file",
+              text: "Certificate PDF",
+              type: "file_upload",
+              required: true,
+            },
+          ],
+        },
+      });
+
+      const validPdf = {
+        originalname: "certificate.pdf",
+        mimetype: "application/pdf",
+        size: 512,
+        buffer: Buffer.from("%PDF-1.4\n%test\n%%EOF\n"),
+      } as Express.Multer.File;
+      const screeningFiles = new Map([["q-file", validPdf]]);
+
+      // Invalid URL rejected
+      await expect(
+        service.create(
+          {
+            jobId: "job-9types",
+            firstName: "Minh",
+            lastName: "Le",
+            candidateEmail: "minh1@example.com",
+            screeningAnswers: JSON.stringify([
+              { questionId: "q-num", answer: 4 },
+              { questionId: "q-date", answer: "2026-12-01" },
+              { questionId: "q-url", answer: "not-a-url" },
+            ]),
+          },
+          undefined,
+          null,
+          screeningFiles,
+        ),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Missing required file_upload rejected
+      await expect(
+        service.create({
+          jobId: "job-9types",
+          firstName: "Minh",
+          lastName: "Le",
+          candidateEmail: "minh2@example.com",
+          screeningAnswers: JSON.stringify([
+            { questionId: "q-num", answer: 4 },
+            { questionId: "q-date", answer: "2026-12-01" },
+          ]),
+        }),
+      ).rejects.toBeInstanceOf(AppBadRequestException);
+
+      // Valid submission with PDF file
+      await service.create(
+        {
+          jobId: "job-9types",
+          firstName: "Minh",
+          lastName: "Le",
+          candidateEmail: "minh3@example.com",
+          screeningAnswers: JSON.stringify([
+            { questionId: "q-num", answer: "4" },
+            { questionId: "q-date", answer: "2026-12-01" },
+            { questionId: "q-url", answer: "https://minh.dev" },
+          ]),
+        },
+        undefined,
+        null,
+        screeningFiles,
+      );
+
+      const stored = applicationTable.store.find(
+        (a) => a.jobId === "job-9types",
+      );
+      expect(stored?.screeningAnswers).toEqual([
+        {
+          questionId: "q-num",
+          questionText: "Years",
+          questionType: "number",
+          answer: 4,
+        },
+        {
+          questionId: "q-date",
+          questionText: "Start date",
+          questionType: "date",
+          answer: "2026-12-01",
+        },
+        {
+          questionId: "q-url",
+          questionText: "Portfolio",
+          questionType: "url",
+          answer: "https://minh.dev",
+        },
+        {
+          questionId: "q-file",
+          questionText: "Certificate PDF",
+          questionType: "file_upload",
+          answer: expect.objectContaining({
+            fileName: "certificate.pdf",
+            mimeType: "application/pdf",
+          }),
+        },
+      ]);
+    });
   });
 });

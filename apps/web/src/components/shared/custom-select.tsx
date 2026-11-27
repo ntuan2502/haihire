@@ -249,7 +249,7 @@ export function CustomSelect<T extends string = string>({
             }}
             onKeyDown={handleKeyDown}
             className={cn(
-              "w-full flex items-center justify-between gap-2 rounded-md font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
+              "w-full flex items-center justify-between gap-2 rounded-md text-left font-normal transition-colors cursor-pointer select-none min-w-0 max-w-full focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 border border-input bg-transparent dark:bg-input/30 hover:bg-accent/40 text-foreground shadow-xs",
               size === "sm"
                 ? "h-8 px-2.5 text-xs"
                 : "h-9 px-3 text-xs sm:text-sm",
@@ -264,7 +264,7 @@ export function CustomSelect<T extends string = string>({
                   aria-hidden="true"
                 />
               )}
-              <span className="truncate block">
+              <span className="truncate block flex-1 min-w-0 text-left">
                 {selectedOption ? selectedOption.label : placeholder || value}
               </span>
             </div>

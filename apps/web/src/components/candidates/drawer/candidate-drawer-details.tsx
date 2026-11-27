@@ -37,13 +37,13 @@ export function CandidateDrawerDetails({
           {candidateDisplayName}
         </h2>
         <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1">
-            <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="flex items-center gap-1 min-w-0 break-all">
+            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             {candidate.email}
           </span>
           {candidate.phone && (
             <span className="flex items-center gap-1">
-              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               {candidate.phone}
             </span>
           )}
@@ -51,12 +51,12 @@ export function CandidateDrawerDetails({
       </div>
 
       {/* Card 1: Details */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-5 shadow-xs space-y-3">
         <h3 className="text-xs font-semibold text-foreground">
           {t("common.details")}
         </h3>
 
-        <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
           <div>
             <span className="text-muted-foreground text-[11px] block">
               {t("candidates.firstName")}
@@ -75,7 +75,7 @@ export function CandidateDrawerDetails({
             </span>
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <span className="text-muted-foreground text-[11px] block">
               {t("candidates.displayName")}
             </span>

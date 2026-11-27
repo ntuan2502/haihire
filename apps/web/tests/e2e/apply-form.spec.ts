@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { PublicCareerPage } from "./pages/PublicCareerPage";
 
 const CAREER_PAGE_URL =
   "/careers/demo-1/senior-backend-engineer-nestjs-postgresql";
@@ -85,6 +86,8 @@ test.describe("Apply Form E2E Flow", () => {
     await expect(page.locator("text=tri-resume.pdf")).toBeVisible({
       timeout: 5000,
     });
+
+    await new PublicCareerPage(page).fillRequiredScreeningQuestions();
 
     // Intercept POST request to verify HTTP response
     const submitResponsePromise = page.waitForResponse(

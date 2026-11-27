@@ -1,4 +1,5 @@
 import type { Job, Application, ApplicationStage } from "@/types";
+import type { ApplicationDetailTab } from "@/components/applications/detail/application-detail-tabs";
 
 export type SortField =
   "candidate" | "email" | "job" | "status" | "score" | "applied";
@@ -34,5 +35,4 @@ export interface ApplicationsDataTableProps {
   onJobFilterChange?: (jobId?: string) => void;
 }
 
-export type DrawerTabId =
-  "overview" | "interviews" | "documents" | "notes" | "timeline";
+export type DrawerTabId = ApplicationDetailTab;

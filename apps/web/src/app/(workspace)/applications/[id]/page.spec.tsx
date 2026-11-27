@@ -9,6 +9,7 @@ const mockReplace = vi.fn();
 let currentAppId: string = VALID_APP_ID;
 let mockCanEdit = true;
 let mockIsLoading = false;
+let mockSearchParams = "";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -17,6 +18,7 @@ vi.mock("next/navigation", () => ({
   }),
   useParams: () => ({ id: currentAppId }),
   usePathname: () => `/applications/${currentAppId}`,
+  useSearchParams: () => new URLSearchParams(mockSearchParams),
 }));
 
 vi.mock("@/context/auth-context", () => ({
@@ -216,6 +218,8 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     currentAppId = VALID_APP_ID;
     mockCanEdit = true;
     mockIsLoading = false;
+    mockSearchParams = "";
+    window.history.replaceState(null, "", `/applications/${VALID_APP_ID}`);
     currentApp = JSON.parse(JSON.stringify(defaultApplicationData));
   });
 
@@ -363,8 +367,8 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     });
   });
 
-  // A.1.4: 5-tab switcher (4 tests)
-  describe("A.1.4: 5-tab switcher", () => {
+  // A.1.4: 7-tab switcher (6 tests)
+  describe("A.1.4: 7-tab switcher", () => {
     it("renders overview tab as active by default and hides removed placeholder tabs", () => {
       renderWithClient(<ApplicationDetailPage />);
 
@@ -381,28 +385,63 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("switches active tab between interviews and documents", () => {
+    it("switches active tab between interviews and documents and syncs tab query param to URL", () => {
       renderWithClient(<ApplicationDetailPage />);
+
+      const aiEvalTab = screen.getByRole("button", { name: "Đánh giá AI" });
+      fireEvent.click(aiEvalTab);
+      expect(window.location.search).toBe("?tab=ai-evaluation");
 
       const interviewsTab = screen.getByRole("button", {
         name: /^Phỏng vấn(\s*\(\d+\))?$/i,
       });
       fireEvent.click(interviewsTab);
-
+      expect(window.location.search).toBe("?tab=interviews");
       expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
 
       // Documents tab
       const docsTab = screen.getByRole("button", { name: /Tài liệu \(1\)/i });
       fireEvent.click(docsTab);
+      expect(window.location.search).toBe("?tab=documents");
       expect(screen.getByText("tran-van-b-cv.pdf")).toBeInTheDocument();
+
+      // Overview tab clears ?tab param
+      const overviewTab = screen.getByRole("button", { name: "Tổng quan" });
+      fireEvent.click(overviewTab);
+      expect(window.location.search).toBe("");
+    });
+
+    it("hydrates initial active tab from ?tab query parameter on mount", () => {
+      mockSearchParams = "tab=application-form";
+      window.history.replaceState(
+        null,
+        "",
+        `/applications/${VALID_APP_ID}?tab=application-form`,
+      );
+
+      renderWithClient(<ApplicationDetailPage />);
+
+      const appFormTab = screen.getByRole("button", {
+        name: "Biểu mẫu ứng tuyển",
+      });
+      expect(appFormTab.className).toContain("border-primary");
+      expect(
+        screen.getByText(
+          "Ứng viên chưa điền thư xin việc hoặc câu hỏi sàng lọc cho hồ sơ này.",
+        ),
+      ).toBeInTheDocument();
     });
 
     it("switches to notes and timeline tab panels", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       // Notes tab
-      const notesTab = screen.getByRole("button", { name: "Ghi chú" });
+      const notesTab = screen.getByRole("button", {
+        name: /^Ghi chú(\s*\(\d+\))?$/i,
+      });
+      expect(notesTab).toHaveTextContent("Ghi chú (2)");
       fireEvent.click(notesTab);
+      expect(window.location.search).toBe("?tab=notes");
       expect(
         screen.getByPlaceholderText("Nhập ghi chú tại đây..."),
       ).toBeInTheDocument();
@@ -412,6 +451,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
         name: "Dòng thời gian",
       });
       fireEvent.click(timelineTab);
+      expect(window.location.search).toBe("?tab=timeline");
       expect(document.querySelector(".space-y-4")).toBeInTheDocument();
     });
 
@@ -423,9 +463,9 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(
         screen.queryByText("Chưa có phân tích AI"),
       ).not.toBeInTheDocument();
-      expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Tài liệu").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Ghi chú").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Phỏng vấn/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Tài liệu/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Ghi chú/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -434,14 +474,14 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
     it("renders interviews section in overview tab", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getAllByText("Phỏng vấn").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Phỏng vấn/i).length).toBeGreaterThan(0);
     });
 
     it("renders documents and notes sections in overview tab", () => {
       renderWithClient(<ApplicationDetailPage />);
 
-      expect(screen.getAllByText("Tài liệu").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Ghi chú").length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Tài liệu/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Ghi chú/i).length).toBeGreaterThan(0);
     });
   });
 

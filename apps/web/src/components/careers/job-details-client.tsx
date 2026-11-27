@@ -144,7 +144,7 @@ export function JobDetailsClient({
 
         {/* Content & Apply Form Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-7 min-w-0 space-y-6">
             <JobDetailsContent job={job} />
           </div>
 

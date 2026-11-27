@@ -53,7 +53,7 @@ export function EmailTemplateLibrarySidebar({
   return (
     <div className="xl:col-span-4 rounded-xl border border-border bg-card text-card-foreground p-4 shadow-xs space-y-3.5">
       <div className="flex items-start justify-between gap-2 pb-3 border-b border-border">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">
             {t("email.libraryTitle")}
           </h2>
@@ -74,7 +74,7 @@ export function EmailTemplateLibrarySidebar({
         )}
       </div>
 
-      <div className="space-y-2 max-h-[620px] overflow-y-auto pr-0.5">
+      <div className="space-y-2 max-h-[260px] sm:max-h-[340px] xl:max-h-[620px] overflow-y-auto pr-0.5">
         {templates.map((tpl) => {
           const IconComp = TEMPLATE_ICONS[tpl.type] || Mail;
           const isSelected = activeTemplate?.id === tpl.id;

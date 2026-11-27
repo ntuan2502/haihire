@@ -7,14 +7,23 @@ import {
   APP_ERROR_CODES,
   AUDIT_ACTIONS,
   AUDIT_RESOURCES,
+  COVER_LETTER_MAX_LENGTH,
   Role,
   SourcingChannel,
   formatCandidateDisplayName,
   hasPermission,
   isJobApplicationDeadlinePassed,
+  isValidDateOnlyString,
+  isValidHttpUrl,
+  normalizeJobApplicationFormConfig,
   normalizeNameInput,
   resolveChannelFromDomain,
+  screeningAnswerSubmissionSchema,
+  type ScreeningAnswerItem,
+  type ScreeningAnswerValue,
+  type ScreeningFileAnswer,
 } from "@haihire/shared";
+import type { Prisma } from "@prisma/client";
 import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
@@ -40,6 +49,7 @@ import { toInstant } from "../../common/date.util";
 import { EventsService } from "../../events/events.service";
 import { ApplicationsQueryService } from "./applications-query.service";
 import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
+import { AiScoringService } from "../../ai/ai-scoring.service";
 
 function isCandidateEmailUniqueViolation(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
@@ -105,9 +115,63 @@ export class ApplicationsSagaService {
     @Optional()
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
+    @Optional()
+    @Inject(AiScoringService)
+    private readonly aiScoringService?: AiScoringService,
   ) {
     this.query =
       queryService || new ApplicationsQueryService(prisma, activitiesService);
+  }
+
+  private async compensateMinioObject(
+    objectToDelete: string,
+    organizationId?: string | null,
+  ): Promise<void> {
+    if (!objectToDelete) return;
+    try {
+      await this.minioService.deleteFile(objectToDelete);
+    } catch (compensationErr: unknown) {
+      const errMsg =
+        compensationErr instanceof Error
+          ? compensationErr.message
+          : String(compensationErr);
+      if (this.orphanCleanupQueue) {
+        try {
+          await this.orphanCleanupQueue.add(
+            "cleanup",
+            {
+              objectName: objectToDelete,
+              reason: "transaction-rollback-compensation-failed",
+              originalError: errMsg,
+              enqueuedAt: new Date().toISOString(),
+              organizationId: organizationId || undefined,
+            },
+            {
+              attempts: 5,
+              backoff: {
+                type: "exponential",
+                delay: 1000,
+              },
+              removeOnComplete: true,
+              removeOnFail: false,
+            },
+          );
+          console.warn(
+            `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
+          );
+        } catch (queueErr: unknown) {
+          console.error(
+            "Failed to enqueue orphan file to cleanup queue:",
+            queueErr,
+          );
+        }
+      } else {
+        console.warn(
+          "Failed to delete MinIO file during transaction compensation:",
+          compensationErr,
+        );
+      }
+    }
   }
 
   async create(
@@ -119,6 +183,7 @@ export class ApplicationsSagaService {
       organizationId?: string | null;
       isOwner?: boolean;
     } | null,
+    screeningFiles?: Map<string, Express.Multer.File>,
   ) {
     if (
       !this.permissionResolver &&
@@ -165,6 +230,7 @@ export class ApplicationsSagaService {
         title: true,
         status: true,
         applicationDeadline: true,
+        applicationFormConfig: true,
         organizationId: true,
         department: true,
         location: true,
@@ -226,6 +292,212 @@ export class ApplicationsSagaService {
         "The application deadline for this job has passed.",
       );
     }
+
+    const rawCoverLetter =
+      "coverLetter" in dto && typeof dto.coverLetter === "string"
+        ? dto.coverLetter.trim()
+        : "";
+    if (rawCoverLetter.length > COVER_LETTER_MAX_LENGTH) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `Cover letter must be ${COVER_LETTER_MAX_LENGTH} characters or fewer.`,
+      );
+    }
+
+    const parsedAnswersMap = new Map<string, ScreeningAnswerValue>();
+    const rawScreeningAnswersStr =
+      "screeningAnswers" in dto && typeof dto.screeningAnswers === "string"
+        ? dto.screeningAnswers.trim()
+        : "";
+    if (rawScreeningAnswersStr) {
+      let decoded: unknown;
+      try {
+        decoded = JSON.parse(rawScreeningAnswersStr);
+      } catch {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid screening answers JSON payload.",
+        );
+      }
+      if (!Array.isArray(decoded)) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Screening answers must be an array.",
+        );
+      }
+      for (const item of decoded) {
+        const parsedItem = screeningAnswerSubmissionSchema.safeParse(item);
+        if (!parsedItem.success) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.VALIDATION_ERROR,
+            parsedItem.error.issues[0]?.message ||
+              "Invalid screening answer entry.",
+          );
+        }
+        parsedAnswersMap.set(
+          parsedItem.data.questionId,
+          parsedItem.data.answer,
+        );
+      }
+    }
+
+    const rawJobFormConfig = (job as { applicationFormConfig?: unknown })
+      .applicationFormConfig;
+    const hasExplicitFormConfig =
+      rawJobFormConfig !== null && rawJobFormConfig !== undefined;
+    const formConfig = normalizeJobApplicationFormConfig(rawJobFormConfig);
+    const submittedPhone =
+      (
+        (dto as unknown as { phone?: string }).phone || dto.candidatePhone
+      )?.trim() || null;
+
+    if (!currentUser && hasExplicitFormConfig) {
+      if (formConfig.phone === "required" && !submittedPhone) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Phone number is required for this job application.",
+        );
+      }
+      if (formConfig.resume === "required" && !file && !rawResumeUrl) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Resume / CV file is required for this job application.",
+        );
+      }
+      if (formConfig.coverLetter === "required" && !rawCoverLetter) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Cover letter is required for this job application.",
+        );
+      }
+      for (const question of formConfig.screeningQuestions) {
+        const answer = parsedAnswersMap.get(question.id) ?? null;
+        if (question.type === "yes_no") {
+          if (answer !== null && typeof answer !== "boolean") {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid yes/no answer for "${question.text}".`,
+            );
+          }
+          if (question.required && typeof answer !== "boolean") {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "multiple_choice") {
+          const validOptions = new Set(question.options ?? []);
+          if (answer !== null && !Array.isArray(answer)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice list for "${question.text}".`,
+            );
+          }
+          const normalizedArr = Array.isArray(answer)
+            ? answer.filter((v) => typeof v === "string" && validOptions.has(v))
+            : [];
+          if (Array.isArray(answer) && normalizedArr.length !== answer.length) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice option selected for "${question.text}".`,
+            );
+          }
+          if (question.required && normalizedArr.length === 0) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "single_choice") {
+          const validOptions = new Set(question.options ?? []);
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (strVal && !validOptions.has(strVal)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid choice option selected for "${question.text}".`,
+            );
+          }
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "number") {
+          const rawStr =
+            typeof answer === "number"
+              ? String(answer)
+              : typeof answer === "string"
+                ? answer.trim()
+                : "";
+          if (rawStr) {
+            const parsedNum = Number(rawStr);
+            if (!Number.isFinite(parsedNum)) {
+              throw new AppBadRequestException(
+                APP_ERROR_CODES.VALIDATION_ERROR,
+                `Invalid number answer for "${question.text}".`,
+              );
+            }
+          } else if (question.required) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "date") {
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (strVal && !isValidDateOnlyString(strVal)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid date answer for "${question.text}".`,
+            );
+          }
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "url") {
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (strVal && !isValidHttpUrl(strVal)) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Invalid URL answer for "${question.text}".`,
+            );
+          }
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        } else if (question.type === "file_upload") {
+          const qFile = screeningFiles?.get(question.id);
+          if (qFile) {
+            validateUploadedFile(qFile);
+          } else if (question.required) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" requires a PDF upload.`,
+            );
+          }
+        } else {
+          const strVal = typeof answer === "string" ? answer.trim() : "";
+          if (question.required && !strVal) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.VALIDATION_ERROR,
+              `Screening question "${question.text}" is required.`,
+            );
+          }
+        }
+      }
+    }
+
+    const effectiveCoverLetter =
+      hasExplicitFormConfig && formConfig.coverLetter === "hidden"
+        ? null
+        : rawCoverLetter || null;
 
     // Fast pre-check for duplicate (candidate, job) before uploading CV to MinIO.
     // The in-transaction check + DB unique index remain the authoritative concurrency guard.
@@ -326,6 +598,73 @@ export class ApplicationsSagaService {
         mimeType: "application/pdf",
       };
     }
+
+    // Upload per-question PDF attachments to MinIO in the same SAGA upload phase
+    const uploadedScreeningObjects: string[] = [];
+    const uploadedScreeningAnswers = new Map<string, ScreeningFileAnswer>();
+    for (const q of formConfig.screeningQuestions) {
+      if (q.type !== "file_upload") continue;
+      const qFile = screeningFiles?.get(q.id);
+      if (!qFile) continue;
+      validateUploadedFile(qFile);
+      const uploadedScreening = await this.minioService.uploadFile(
+        qFile,
+        "screening-files",
+        job.organizationId,
+      );
+      const cleanName = sanitizeFilename(
+        fixUtf8String(qFile.originalname || "attachment.pdf"),
+      );
+      const objKey =
+        uploadedScreening.fileName ||
+        this.minioService.extractObjectName(uploadedScreening.url);
+      if (objKey) {
+        uploadedScreeningObjects.push(objKey);
+      }
+      uploadedScreeningAnswers.set(q.id, {
+        url: uploadedScreening.url,
+        fileName: cleanName,
+        mimeType: uploadedScreening.mimeType || "application/pdf",
+        size: uploadedScreening.size ?? qFile.size ?? 0,
+      });
+    }
+
+    const screeningAnswersSnapshot: ScreeningAnswerItem[] | null =
+      formConfig.screeningQuestions.length > 0
+        ? formConfig.screeningQuestions.map((q) => {
+            if (q.type === "file_upload") {
+              return {
+                questionId: q.id,
+                questionText: q.text,
+                questionType: q.type,
+                answer: uploadedScreeningAnswers.get(q.id) ?? null,
+              };
+            }
+            const rawVal = parsedAnswersMap.get(q.id);
+            let cleanVal: ScreeningAnswerValue = null;
+            if (q.type === "number") {
+              if (typeof rawVal === "number" && Number.isFinite(rawVal)) {
+                cleanVal = rawVal;
+              } else if (typeof rawVal === "string" && rawVal.trim()) {
+                const parsedNum = Number(rawVal.trim());
+                cleanVal = Number.isFinite(parsedNum) ? parsedNum : null;
+              }
+            } else if (typeof rawVal === "string") {
+              cleanVal = rawVal.trim() || null;
+            } else if (typeof rawVal === "boolean") {
+              cleanVal = rawVal;
+            } else if (Array.isArray(rawVal)) {
+              const items = rawVal.map((x) => x.trim()).filter(Boolean);
+              cleanVal = items.length > 0 ? items : null;
+            }
+            return {
+              questionId: q.id,
+              questionText: q.text,
+              questionType: q.type,
+              answer: cleanVal,
+            };
+          })
+        : null;
 
     // SAGA Step 2 & 3: Database writes inside atomic transaction with compensating action on failure
     let created!: {
@@ -675,6 +1014,13 @@ export class ApplicationsSagaService {
               resumeFileName: uploadResult.originalName || null,
               resumeFileSize: uploadResult.size || null,
               resumeMimeType: uploadResult.mimeType || "application/pdf",
+              coverLetter: effectiveCoverLetter,
+              ...(screeningAnswersSnapshot
+                ? {
+                    screeningAnswers:
+                      screeningAnswersSnapshot as unknown as Prisma.InputJsonValue,
+                  }
+                : {}),
               orderIndex: maxOrder + 1,
               trackingLinkId,
               sourceChannel,
@@ -713,7 +1059,7 @@ export class ApplicationsSagaService {
         ) {
           continue;
         }
-        // Step 3: Compensating action — rollback MinIO uploaded file
+        // Step 3: Compensating action — rollback MinIO uploaded files
         if (
           uploadedFileInMinio &&
           (uploadResult.fileName || uploadResult.url)
@@ -721,52 +1067,13 @@ export class ApplicationsSagaService {
           const objectToDelete =
             uploadResult.fileName ||
             this.minioService.extractObjectName(uploadResult.url);
-          if (objectToDelete) {
-            try {
-              await this.minioService.deleteFile(objectToDelete);
-            } catch (compensationErr: unknown) {
-              const errMsg =
-                compensationErr instanceof Error
-                  ? compensationErr.message
-                  : String(compensationErr);
-              if (this.orphanCleanupQueue) {
-                try {
-                  await this.orphanCleanupQueue.add(
-                    "cleanup",
-                    {
-                      objectName: objectToDelete,
-                      reason: "transaction-rollback-compensation-failed",
-                      originalError: errMsg,
-                      enqueuedAt: new Date().toISOString(),
-                      organizationId: job.organizationId || undefined,
-                    },
-                    {
-                      attempts: 5,
-                      backoff: {
-                        type: "exponential",
-                        delay: 1000,
-                      },
-                      removeOnComplete: true,
-                      removeOnFail: false,
-                    },
-                  );
-                  console.warn(
-                    `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
-                  );
-                } catch (queueErr: unknown) {
-                  console.error(
-                    "Failed to enqueue orphan file to cleanup queue:",
-                    queueErr,
-                  );
-                }
-              } else {
-                console.warn(
-                  "Failed to delete MinIO file during transaction compensation:",
-                  compensationErr,
-                );
-              }
-            }
-          }
+          await this.compensateMinioObject(objectToDelete, job.organizationId);
+        }
+        for (const screeningObjectKey of uploadedScreeningObjects) {
+          await this.compensateMinioObject(
+            screeningObjectKey,
+            job.organizationId,
+          );
         }
         if ((dbError as { code?: string })?.code === "P2002") {
           throw new AppConflictException(
@@ -878,6 +1185,7 @@ export class ApplicationsSagaService {
         organizationId: orgId,
         data: { applicationId: result.id, jobId: result.jobId },
       });
+      await this.aiScoringService?.maybeAutoEnqueueOnApply(orgId, result.id);
       this.eventsService?.emit({
         type: "CANDIDATES_CHANGED",
         organizationId: orgId,

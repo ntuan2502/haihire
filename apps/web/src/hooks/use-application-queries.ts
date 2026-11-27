@@ -119,6 +119,7 @@ export function useJobApplications(
 export function useApplication(
   id: string | null | undefined,
   organizationId?: string | null,
+  options?: { refetchInterval?: number | false },
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -131,6 +132,7 @@ export function useApplication(
       return applicationsApi.getById(id);
     },
     enabled: Boolean(id),
+    refetchInterval: options?.refetchInterval ?? false,
   });
 }
 
@@ -373,6 +375,35 @@ export function useDeleteApplicationNoteMutation() {
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useTriggerAiScoreMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      applicationsApi.triggerAiScore(applicationId),
+    onSuccess: (_data, applicationId) => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.application(applicationId),
+      });
+    },
+  });
+}
+
+export function useBatchAiScoreMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ jobId, limit }: { jobId: string; limit?: number }) =>
+      applicationsApi.triggerJobBatchAiScore(jobId, limit),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }

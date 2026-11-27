@@ -118,7 +118,16 @@ const mockNotesList = [
   },
 ];
 
+vi.mock("@/hooks/use-email-queries", () => ({
+  useEmailFlows: () => ({ data: [], isLoading: false }),
+}));
+
 vi.mock("@/hooks/use-queries", () => ({
+  useApplication: () => ({ data: undefined }),
+  useEmailTemplates: () => ({ data: [], isLoading: false }),
+  useSendEmailMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useApplicationActivities: () => ({ data: { data: [] }, isLoading: false }),
+  useCandidateActivities: () => ({ data: { data: [] }, isLoading: false }),
   useUpdateStageMutation: () => ({
     mutateAsync: mockUpdateStage,
     isPending: false,
@@ -565,15 +574,45 @@ describe("ApplicationsDataTable Component", () => {
       expect(within(drawer).getByText("Back to table")).toBeInTheDocument();
     });
 
-    it("switches drawer tabs between overview, notes, and documents", () => {
+    it("switches drawer tabs across overview, ai-evaluation, application-form, notes, and documents", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      // Overview active
-      expect(screen.getByText("Match score:")).toBeInTheDocument();
+      // Overview active (tab button + card header both show "AI Evaluation")
+      const drawer = screen.getByRole("dialog");
+      const aiEvalTab = within(drawer).getByRole("button", {
+        name: "AI Evaluation",
+      });
+      const appFormTab = within(drawer).getByRole("button", {
+        name: "Application Form",
+      });
+      const notesTab = within(drawer).getByRole("button", {
+        name: /^Notes(\s*\(\d+\))?$/i,
+      });
+      expect(aiEvalTab).toBeInTheDocument();
+      expect(appFormTab).toBeInTheDocument();
+      expect(notesTab).toHaveTextContent("Notes (2)");
+      expect(
+        within(drawer).getByRole("button", { name: "Send Email" }),
+      ).toBeInTheDocument();
+      expect(within(drawer).getByText("85")).toBeInTheDocument();
+      expect(within(drawer).getByText("/100")).toBeInTheDocument();
+
+      // Switch to AI Evaluation tab
+      fireEvent.click(aiEvalTab);
+      expect(aiEvalTab.className).toContain("border-primary");
+      expect(within(drawer).getByText("85")).toBeInTheDocument();
+
+      // Switch to Application Form tab
+      fireEvent.click(appFormTab);
+      expect(appFormTab.className).toContain("border-primary");
+      expect(
+        within(drawer).getByText(
+          "No cover letter or screening answers were submitted for this application.",
+        ),
+      ).toBeInTheDocument();
 
       // Switch to notes tab
-      const notesTab = screen.getByRole("button", { name: /^notes$/i });
       fireEvent.click(notesTab);
       expect(screen.getByPlaceholderText("Type a note...")).toBeInTheDocument();
     });
@@ -605,7 +644,9 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      const notesTab = screen.getByRole("button", { name: /^notes$/i });
+      const notesTab = screen.getByRole("button", {
+        name: /^notes(\s*\(\d+\))?$/i,
+      });
       fireEvent.click(notesTab);
 
       const noteInput = screen.getByPlaceholderText("Type a note...");

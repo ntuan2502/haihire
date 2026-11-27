@@ -13,9 +13,9 @@ export function LinkUrlBanner({ url, onCopy, isCopied }: LinkUrlBannerProps) {
   const { t } = useI18n();
 
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+    <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-3 rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="hidden sm:flex h-8 w-8 rounded-lg bg-muted items-center justify-center shrink-0 text-muted-foreground">
           <Link2 className="h-4 w-4" />
         </div>
         <p className="text-xs font-mono text-foreground truncate select-all">

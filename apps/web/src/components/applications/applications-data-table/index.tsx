@@ -8,6 +8,8 @@ import { DeleteApplicationModal } from "@/components/applications/delete-applica
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
 import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { SendEmailModal } from "@/components/email/send-email-modal";
+import { BRAND_CONFIG } from "@haihire/shared";
 import type { ApplicationsDataTableProps } from "./types";
 import { useApplicationsTable } from "./hooks/use-applications-table";
 import { useCandidateDrawer } from "./hooks/use-candidate-drawer";
@@ -90,6 +92,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         onTabChange={drawer.setDrawerTab}
         allScheduledInterviews={drawer.allScheduledInterviews}
         drawerCandidateDocuments={drawer.drawerCandidateDocuments}
+        notesCount={drawer.notesCount}
         onScheduleInterview={(intv) => {
           table.setEditingInterview(intv || null);
           table.setIsScheduleModalOpen(true);
@@ -97,6 +100,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         onCancelInterview={drawer.handleCancelInterview}
         onPreviewDoc={(doc) => drawer.setDrawerPreviewDoc(doc)}
         onDownloadDoc={drawer.handleDownloadDoc}
+        onOpenSendEmail={() => table.setIsSendEmailOpen(true)}
         onStageChange={drawer.handleStageChange}
         isStageUpdatePending={drawer.isStageUpdatePending}
         onOpenDeleteModal={(app) => table.setDeleteModalApp(app)}
@@ -189,6 +193,33 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
               prev ? { ...prev, stage: "INTERVIEW" } : null,
             );
           }}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {drawer.currentApp && (
+        <SendEmailModal
+          isOpen={table.isSendEmailOpen}
+          onClose={() => table.setIsSendEmailOpen(false)}
+          candidate={{
+            id: drawer.currentApp.candidateId,
+            name: getCandidateDisplayName(drawer.currentApp),
+            email: normalizeEmailAddress(
+              drawer.currentApp.candidateEmail ??
+                drawer.currentApp.candidate?.email,
+            ),
+            phone:
+              drawer.currentApp.candidatePhone ??
+              drawer.currentApp.candidate?.phone,
+          }}
+          jobTitle={drawer.selectedJob?.title || drawer.selectedJobTitle}
+          organizationName={
+            drawer.selectedJob?.department
+              ? t("common.departmentSuffix", {
+                  department: drawer.selectedJob.department,
+                })
+              : BRAND_CONFIG.name
+          }
         />
       )}
 

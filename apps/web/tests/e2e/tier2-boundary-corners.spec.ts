@@ -153,7 +153,7 @@ test.describe("Tier 2: Boundary & Corner Cases (E2E Web)", () => {
   test("T2-E2E-08 [F06]: Member account visiting admin webhook settings displays access barrier", async ({
     memberPage,
   }) => {
-    await memberPage.goto("/settings/integrations");
+    await memberPage.goto("/settings/integrations/webhooks");
     await expect(memberPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });

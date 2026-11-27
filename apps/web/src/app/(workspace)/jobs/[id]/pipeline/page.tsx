@@ -2,7 +2,14 @@
 
 import { Suspense } from "react";
 import { useParams } from "next/navigation";
+import { Loader2, Sparkles } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { Button } from "@/components/ui/button";
+import { useAiStatusQuery } from "@/hooks/use-ai-setting-queries";
+import { useBatchAiScoreMutation } from "@/hooks/use-application-queries";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { toast } from "@/lib/toast";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
 import { OfferApplicationModal } from "@/components/applications/offer-application-modal";
@@ -24,12 +31,42 @@ function JobPipelinePageContent() {
   const { t } = useI18n();
 
   const pipeline = usePipelineKanban(jobId);
+  const { data: aiStatus } = useAiStatusQuery();
+  const canUpdateApplication = useHasPermission("application:update");
+  const batchAiMutation = useBatchAiScoreMutation();
 
   if (pipeline.jobLoading || pipeline.appsLoading) {
     return <LoadingSpinner />;
   }
 
   if (!pipeline.job) return null;
+
+  const unscoredCount = pipeline.jobApplications.filter(
+    (app) =>
+      app.aiScoreStatus !== "PENDING" &&
+      app.aiScoreStatus !== "PROCESSING" &&
+      app.aiScoreStatus !== "FAILED" &&
+      app.aiScoreStatus !== "COMPLETED" &&
+      (app.matchScore === null || app.matchScore === undefined),
+  ).length;
+  const retryableFailedCount = pipeline.jobApplications.filter(
+    (app) => app.aiScoreStatus === "FAILED",
+  ).length;
+  const batchEligibleCount = Math.min(20, unscoredCount + retryableFailedCount);
+
+  const handleBatchAiScore = async () => {
+    try {
+      const res = await batchAiMutation.mutateAsync({
+        jobId: pipeline.job!.id,
+        limit: 20,
+      });
+      toast.success(
+        t("applications.aiEvaluation.batchSuccess", { count: res.enqueued }),
+      );
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, t, "errors.GENERIC_ERROR"));
+    }
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -40,6 +77,31 @@ function JobPipelinePageContent() {
         selectedStage={pipeline.selectedStage}
         onSelectStage={pipeline.handleSelectStage}
         onDropCandidate={pipeline.handleDropCandidate}
+        extraActions={
+          canUpdateApplication &&
+          aiStatus?.enabled &&
+          batchEligibleCount > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleBatchAiScore}
+              disabled={batchAiMutation.isPending}
+              className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer shrink-0"
+            >
+              {batchAiMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
+              )}
+              <span>
+                {t("applications.aiEvaluation.batchButton", {
+                  count: batchEligibleCount,
+                })}
+              </span>
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* 2. Main Master-Detail Workspace */}

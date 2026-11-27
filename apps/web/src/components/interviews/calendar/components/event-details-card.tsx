@@ -100,7 +100,7 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
         </div>
 
         {rawLocation && (
-          <div className="pt-2 border-t border-border flex items-start justify-between gap-4">
+          <div className="pt-2 border-t border-border flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <span className="text-muted-foreground shrink-0">
               {isOffice
                 ? t("interviews.addressLabel")

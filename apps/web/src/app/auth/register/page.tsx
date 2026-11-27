@@ -225,7 +225,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <label
               htmlFor="register-password"
               className="text-xs font-semibold text-foreground flex items-center gap-1.5"
@@ -253,7 +253,7 @@ function RegisterForm() {
               onClick={() => setShowPassword(!showPassword)}
               aria-label={t("auth.passwordLabel")}
               aria-pressed={showPassword}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute right-1 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -281,7 +281,7 @@ function RegisterForm() {
       </form>
 
       {/* Login Link */}
-      <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+      <div className="pt-2 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
         <span>{t("auth.hasAccount")}</span>
         <Link
           href={loginHref}

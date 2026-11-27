@@ -106,30 +106,36 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
       {/* 1. Job Workspace Header: Two-tier Navigation */}
       <header className="shrink-0 border-b border-border bg-card text-card-foreground z-20">
         {/* Tier 1: Context & Primary Actions */}
-        <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 border-b border-border/60">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 px-4 py-2 sm:px-6 border-b border-border/60">
           {/* Left: Back button & Job Title */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Link
               href="/jobs"
-              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              aria-label={t("jobs.allJobs")}
+              title={t("jobs.allJobs")}
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1 -ml-1 sm:p-0 sm:ml-0"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("jobs.allJobs")}</span>
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{t("jobs.allJobs")}</span>
             </Link>
 
-            <div className="h-4 w-px bg-border shrink-0" />
+            <div className="hidden sm:block h-4 w-px bg-border shrink-0" />
 
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-foreground border border-border/60 shrink-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="hidden sm:flex h-6 w-6 items-center justify-center rounded-md bg-muted text-foreground border border-border/60 shrink-0">
                 <Briefcase className="h-3.5 w-3.5" />
               </div>
-              <h1 className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
+              <h1 className="text-xs sm:text-sm font-semibold text-foreground truncate sm:max-w-md lg:max-w-xl">
                 {job.title}{" "}
                 <span className="font-normal text-muted-foreground">
                   ({jobTypeLabel})
                 </span>
               </h1>
-              <div className="shrink-0">
+              <div
+                className={
+                  canUpdateJob ? "hidden sm:block shrink-0" : "shrink-0"
+                }
+              >
                 <JobStatusBadge status={job.status} />
               </div>
             </div>

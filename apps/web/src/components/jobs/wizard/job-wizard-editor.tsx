@@ -75,6 +75,16 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       implemented: true,
     },
     {
+      id: 2 as StepId,
+      label: t("jobs.wizard.steps.applicationForm"),
+      implemented: true,
+    },
+    {
+      id: 3 as StepId,
+      label: t("jobs.wizard.steps.scoring"),
+      implemented: true,
+    },
+    {
       id: 4 as StepId,
       label:
         mode === "create"
@@ -87,8 +97,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const handleStepClick = (stepId: StepId) => {
     const targetStep = steps.find((s) => s.id === stepId);
     if (!targetStep?.implemented) return;
-    if (currentStep === 1 && !validation.isStep1Valid) {
+    if (stepId !== 1 && !validation.isStep1Valid) {
       validation.touchAllStep1();
+      setCurrentStep(1);
       return;
     }
     setCurrentStep(stepId);
@@ -100,7 +111,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       return;
     }
     form.setFormError(null);
-    setCurrentStep(4);
+    setCurrentStep(2);
   };
 
   return (
@@ -195,6 +206,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
         {currentStep === 2 && (
           <WizardStepForm
+            jobTitle={form.jobTitle}
+            department={form.department}
+            experienceLevel={form.experienceLevel}
+            workplace={form.workplace}
+            description={form.description}
             phoneSetting={form.phoneSetting}
             setPhoneSetting={form.setPhoneSetting}
             resumeSetting={form.resumeSetting}
@@ -202,11 +218,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             coverLetterSetting={form.coverLetterSetting}
             setCoverLetterSetting={form.setCoverLetterSetting}
             screeningQuestions={form.screeningQuestions}
-            isAddingQuestion={form.isAddingQuestion}
-            setIsAddingQuestion={form.setIsAddingQuestion}
-            newQuestionText={form.newQuestionText}
-            setNewQuestionText={form.setNewQuestionText}
-            onAddQuestion={form.handleAddQuestion}
+            onAddQuestion={form.handleAddScreeningQuestion}
+            onUpdateQuestion={form.handleUpdateScreeningQuestion}
+            onBulkAddQuestions={form.handleBulkAddScreeningQuestions}
+            onReorderQuestions={form.handleReorderScreeningQuestions}
             onRemoveQuestion={form.handleRemoveQuestion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(1)}
@@ -217,6 +232,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         {currentStep === 3 && (
           <WizardStepScoring
             mode={mode}
+            jobTitle={form.jobTitle}
+            department={form.department}
+            experienceLevel={form.experienceLevel}
+            workplace={form.workplace}
+            description={form.description}
             criteria={form.criteria}
             autoScoreApplicants={form.autoScoreApplicants}
             setAutoScoreApplicants={form.setAutoScoreApplicants}
@@ -230,6 +250,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             setNewCriterionCategory={form.setNewCriterionCategory}
             onUpdateWeight={form.handleUpdateWeight}
             onRemoveCriterion={form.handleRemoveCriterion}
+            onClearCriteria={form.handleClearCriteria}
+            onReplaceCriteria={form.handleReplaceCriteria}
             onAddCriterion={form.handleAddCriterion}
             onCancel={submit.handleCancel}
             onBack={() => setCurrentStep(2)}
@@ -251,7 +273,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             isSaving={submit.isSaving}
             onOpenDeleteConfirm={() => setDeleteConfirmOpen(true)}
             onCancel={submit.handleCancel}
-            onBack={() => setCurrentStep(1)}
+            onBack={() => setCurrentStep(3)}
             onSaveJob={submit.handleSaveJob}
           />
         )}
@@ -300,6 +322,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         onCancel={submit.handleCancel}
         onStep1Continue={handleStep1Continue}
         onBackToStep1={() => setCurrentStep(1)}
+        onStep2Continue={() => setCurrentStep(3)}
+        onBackToStep2={() => setCurrentStep(2)}
+        onStep3Skip={() => setCurrentStep(4)}
+        onStep3Continue={() => setCurrentStep(4)}
+        onBackToStep3={() => setCurrentStep(3)}
         onSaveJob={submit.handleSaveJob}
       />
     </div>

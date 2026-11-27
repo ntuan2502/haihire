@@ -55,21 +55,21 @@ export function CareersDirectoryCompanies({
             <div className="space-y-4">
               {/* Company Header */}
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <OrganizationLogo
                     name={company.name}
                     logoUrl={company.logoUrl}
                     size="xl"
                     decorative
                   />
-                  <div>
+                  <div className="min-w-0">
                     <Link
                       href={`/careers/${company.slug}`}
-                      className="text-base font-medium text-foreground group-hover:text-primary transition-colors block"
+                      className="text-base font-medium text-foreground group-hover:text-primary transition-colors block break-words"
                     >
                       {company.name}
                     </Link>
-                    <span className="text-xs text-muted-foreground font-mono">
+                    <span className="text-xs text-muted-foreground font-mono block truncate">
                       /careers/{company.slug}
                     </span>
                   </div>
@@ -131,7 +131,7 @@ export function CareersDirectoryCompanies({
                         {t("careers.applyArrow")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                       <span>{job.department}</span>
                       {job.salaryRange && (
                         <>

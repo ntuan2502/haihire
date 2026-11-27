@@ -148,7 +148,7 @@ export function WizardStepDetails({
         </p>
       </div>
 
-      <div className="space-y-5 bg-card text-card-foreground p-6 rounded-xl border border-border shadow-xs">
+      <div className="space-y-5 bg-card text-card-foreground p-4 sm:p-6 rounded-xl border border-border shadow-xs">
         {/* Field 1 & 1.5: Job Title & Department */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-8">
@@ -341,7 +341,7 @@ export function WizardStepDetails({
       </div>
 
       {/* Bottom Step 1 Actions */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-2 pt-2">
         <Button
           type="button"
           variant="ghost"
@@ -357,7 +357,7 @@ export function WizardStepDetails({
           disabled={!isStep1Valid}
           className="text-xs font-semibold px-6 cursor-pointer"
         >
-          {t("jobs.wizard.continueToPublish")}
+          {t("jobs.wizard.continueToStep2")}
         </Button>
       </div>
     </div>

@@ -53,25 +53,25 @@ export function CareersDirectoryJobs({ jobs }: CareersDirectoryJobsProps) {
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <div>
+                <div className="min-w-0 flex-1">
                   <Link
                     href={`/careers/${orgSlug}/${slugify(job.title)}`}
-                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                    className="text-sm font-medium text-foreground hover:text-primary transition-colors break-words block"
                   >
                     {job.title}
                   </Link>
-                  <div className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <div className="text-xs font-medium text-muted-foreground mt-0.5 flex items-center gap-1.5 min-w-0">
                     <OrganizationLogo
                       name={orgName}
                       logoUrl={job.organization?.logoUrl}
                       size="xs"
                       decorative
                     />
-                    <span>{orgName}</span>
+                    <span className="truncate">{orgName}</span>
                   </div>
                 </div>
 
-                <span className="rounded-md px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground shrink-0">
+                <span className="rounded-md px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground shrink-0 max-w-[45%] truncate">
                   {job.department}
                 </span>
               </div>

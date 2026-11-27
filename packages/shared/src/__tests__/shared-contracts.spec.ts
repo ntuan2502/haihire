@@ -8,6 +8,23 @@ import {
   hasPermission,
   Role,
   formatPersonDisplayName,
+  DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+  jobApplicationFormConfigSchema,
+  normalizeJobApplicationFormConfig,
+  screeningAnswerSubmissionSchema,
+  isValidDateOnlyString,
+  isValidHttpUrl,
+  isScreeningFileAnswer,
+  createAiConnectionSchema,
+  updateAiPolicySchema,
+  updateAiFeatureRoutesSchema,
+  testAiConnectionSchema,
+  generateScreeningQuestionsSchema,
+  AUDIT_ACTIONS,
+  AUDIT_ACTION_REGISTRY,
+  AUDIT_RESOURCES,
+  SENSITIVE_AUDIT_ACTIONS,
+  inferAuditVerb,
 } from "../index";
 
 describe("@haihire/shared Contracts", () => {
@@ -151,6 +168,214 @@ describe("@haihire/shared Contracts", () => {
           "FIRST_LAST",
         ),
       ).toBe("Jane Doe");
+    });
+  });
+
+  describe("jobApplicationFormConfigSchema & normalizeJobApplicationFormConfig", () => {
+    it("normalizes null, legacy values, and choice question options cleanly", () => {
+      expect(normalizeJobApplicationFormConfig(null)).toEqual(
+        DEFAULT_JOB_APPLICATION_FORM_CONFIG,
+      );
+
+      const legacy = normalizeJobApplicationFormConfig({
+        phone: "required",
+        resume: "off",
+        coverLetter: "optional",
+        screeningQuestions: [
+          {
+            id: "q1",
+            text: "Years of experience?",
+            type: "text",
+            required: true,
+          },
+          {
+            id: "q2",
+            text: "Broken choice",
+            type: "single_choice",
+            required: false,
+            options: ["OnlyOne"],
+          },
+        ],
+      });
+
+      expect(legacy.phone).toBe("required");
+      expect(legacy.resume).toBe("hidden");
+      expect(legacy.coverLetter).toBe("optional");
+      expect(legacy.screeningQuestions).toEqual([
+        {
+          id: "q1",
+          text: "Years of experience?",
+          type: "short_text",
+          required: true,
+        },
+      ]);
+    });
+
+    it("rejects single_choice questions with fewer than 2 options", () => {
+      const invalid = jobApplicationFormConfigSchema.safeParse({
+        phone: "optional",
+        resume: "required",
+        coverLetter: "hidden",
+        screeningQuestions: [
+          {
+            id: "q1",
+            text: "Work mode?",
+            type: "single_choice",
+            required: true,
+            options: ["Remote"],
+          },
+        ],
+      });
+      expect(invalid.success).toBe(false);
+    });
+
+    it("supports all 9 question types and validates date, url, number, and file answers", () => {
+      const config = normalizeJobApplicationFormConfig({
+        phone: "optional",
+        resume: "required",
+        coverLetter: "hidden",
+        screeningQuestions: [
+          { id: "q1", text: "Years?", type: "number", required: true },
+          { id: "q2", text: "Start date?", type: "date", required: true },
+          { id: "q3", text: "Portfolio?", type: "url", required: false },
+          {
+            id: "q4",
+            text: "Certification PDF",
+            type: "file_upload",
+            required: false,
+          },
+        ],
+      });
+      expect(config.screeningQuestions.map((q) => q.type)).toEqual([
+        "number",
+        "date",
+        "url",
+        "file_upload",
+      ]);
+
+      expect(isValidDateOnlyString("2026-02-28")).toBe(true);
+      expect(isValidDateOnlyString("2026-02-30")).toBe(false);
+      expect(isValidDateOnlyString("25-11-2026")).toBe(false);
+
+      expect(isValidHttpUrl("https://haihire.vn/portfolio")).toBe(true);
+      expect(isValidHttpUrl("javascript:alert(1)")).toBe(false);
+
+      expect(
+        isScreeningFileAnswer({
+          url: "tenants/org-1/screening-files/cert.pdf",
+          fileName: "cert.pdf",
+          mimeType: "application/pdf",
+          size: 1024,
+        }),
+      ).toBe(true);
+      expect(isScreeningFileAnswer("not-a-file")).toBe(false);
+
+      const numSubmission = screeningAnswerSubmissionSchema.safeParse({
+        questionId: "q1",
+        answer: 5,
+      });
+      expect(numSubmission.success).toBe(true);
+    });
+  });
+
+  describe("BYOK AI configuration & generation schemas", () => {
+    it("validates multi-connection, optional custom baseUrl, and proxy routing schemas", () => {
+      expect(
+        createAiConnectionSchema.safeParse({
+          name: "Primary Gemini",
+          provider: "GEMINI",
+          defaultModelId: "gemini-4-hydrogen",
+          apiKey: "AIza-test",
+        }).success,
+      ).toBe(true);
+
+      expect(
+        createAiConnectionSchema.safeParse({
+          name: "LiteLLM Proxy",
+          provider: "OPENAI",
+          defaultModelId: "gpt-6.2-sol",
+          baseUrl: "https://proxy.example.com/v1",
+          apiKey: "sk-proxy",
+        }).success,
+      ).toBe(true);
+
+      expect(
+        createAiConnectionSchema.safeParse({
+          name: "Invalid Local Ollama",
+          provider: "OPENAI_COMPATIBLE",
+          defaultModelId: "llama3.1",
+          baseUrl: "",
+        }).success,
+      ).toBe(false);
+
+      expect(
+        createAiConnectionSchema.safeParse({
+          name: "Valid Ollama",
+          provider: "OPENAI_COMPATIBLE",
+          defaultModelId: "llama3.1",
+          baseUrl: "http://localhost:11434/v1",
+        }).success,
+      ).toBe(true);
+
+      const connId = "11111111-1111-4111-8111-111111111111";
+      expect(
+        updateAiPolicySchema.safeParse({
+          isEnabled: true,
+          autoScoreApplications: true,
+          defaultRouteMode: "FAILOVER",
+          defaultRouteTargets: [
+            { connectionId: connId, modelId: "gpt-5-mini", weight: 2 },
+          ],
+        }).success,
+      ).toBe(true);
+
+      expect(
+        updateAiFeatureRoutesSchema.safeParse({
+          routes: [
+            {
+              feature: "APPLICATION_SCORING",
+              isEnabled: true,
+              mode: "LOAD_BALANCE",
+              targets: [{ connectionId: connId, weight: 3 }],
+            },
+          ],
+        }).success,
+      ).toBe(true);
+
+      expect(
+        testAiConnectionSchema.safeParse({
+          connectionId: connId,
+          provider: "OPENAI",
+          modelId: "gpt-4o-mini",
+        }).success,
+      ).toBe(true);
+
+      const genParsed = generateScreeningQuestionsSchema.safeParse({
+        title: "Senior Backend Engineer",
+        description: "<p>NestJS and Postgres</p>",
+        language: "en",
+      });
+      expect(genParsed.success).toBe(true);
+    });
+  });
+
+  describe("Audit Log SSOT Registry", () => {
+    it("registers every AUDIT_ACTIONS entry in AUDIT_ACTION_REGISTRY and derives sensitive actions", () => {
+      for (const action of Object.values(AUDIT_ACTIONS)) {
+        expect(AUDIT_ACTION_REGISTRY[action]).toBeDefined();
+      }
+      expect(AUDIT_ACTION_REGISTRY.AI_CONNECTION_CREATED.resource).toBe(
+        AUDIT_RESOURCES.AI,
+      );
+      expect(SENSITIVE_AUDIT_ACTIONS.has(AUDIT_ACTIONS.AI_POLICY_UPDATED)).toBe(
+        true,
+      );
+      expect(
+        SENSITIVE_AUDIT_ACTIONS.has(AUDIT_ACTIONS.ROLE_PERMISSIONS_UPDATED),
+      ).toBe(true);
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_CREATED")).toBe("CREATE");
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_DELETED")).toBe("DELETE");
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_UPDATED")).toBe("UPDATE");
     });
   });
 });

@@ -102,31 +102,46 @@ export function TrackingLinksTab({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[820px] text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-muted/50 text-[11px] font-semibold text-muted-foreground">
-                  <th scope="col" className="py-3.5 px-5">
+                  <th scope="col" className="py-3.5 px-5 whitespace-nowrap">
                     {t("sourcing.links.name")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4">
+                  <th scope="col" className="py-3.5 px-4 whitespace-nowrap">
                     {t("sourcing.links.source")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4">
+                  <th scope="col" className="py-3.5 px-4 whitespace-nowrap">
                     {t("sourcing.links.job")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4 text-center">
+                  <th
+                    scope="col"
+                    className="py-3.5 px-4 text-center whitespace-nowrap"
+                  >
                     {t("sourcing.links.clicks")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4 text-center">
+                  <th
+                    scope="col"
+                    className="py-3.5 px-4 text-center whitespace-nowrap"
+                  >
                     {t("sourcing.links.apps")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4 text-center">
+                  <th
+                    scope="col"
+                    className="py-3.5 px-4 text-center whitespace-nowrap"
+                  >
                     {t("sourcing.links.cvr")}
                   </th>
-                  <th scope="col" className="py-3.5 px-4 text-center">
+                  <th
+                    scope="col"
+                    className="py-3.5 px-4 text-center whitespace-nowrap"
+                  >
                     {t("common.status")}
                   </th>
-                  <th scope="col" className="py-3.5 px-5 text-right">
+                  <th
+                    scope="col"
+                    className="py-3.5 px-5 text-right whitespace-nowrap"
+                  >
                     {t("common.actions")}
                   </th>
                 </tr>

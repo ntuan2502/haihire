@@ -105,12 +105,13 @@ export function NotificationBell({
 
       <DropdownMenuContent
         align="end"
+        collisionPadding={12}
         className="w-88 sm:w-96 max-w-[calc(100vw-1.5rem)] p-0 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-3.5 py-2.5">
-          <DropdownMenuLabel className="p-0 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <span>{t("settings.tabs.notifications")}</span>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b border-border bg-muted/30 px-3.5 py-2.5">
+          <DropdownMenuLabel className="p-0 flex items-center gap-2 text-sm font-semibold text-foreground min-w-0">
+            <span className="truncate">{t("settings.tabs.notifications")}</span>
             {unread > 0 && (
               <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary tabular-nums">
                 {unread > 99 ? "99+" : unread}

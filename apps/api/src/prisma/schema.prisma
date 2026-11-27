@@ -156,6 +156,21 @@ enum WebhookProviderType {
   GENERIC
 }
 
+enum AiProvider {
+  OPENAI
+  ANTHROPIC
+  GEMINI
+  OPENROUTER
+  OPENAI_COMPATIBLE
+}
+
+enum AiScoreStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Organization {
   id               String                       @id @default(uuid())
   name             String
@@ -188,6 +203,10 @@ model Organization {
   documents        CandidateDocument[]
   trackingLinks    TrackingLink[]
   webhookSettings  OrganizationWebhookSetting[]
+  aiSetting        OrganizationAiSetting?
+  aiConnections    OrganizationAiConnection[]
+  aiFeatureRoutes  OrganizationAiFeatureRoute[]
+  aiEvaluations    ApplicationAiEvaluation[]
   rolePermissions  OrganizationRolePermission[]
   auditLogs        OrganizationAuditLog[]
   applicationNotes ApplicationNote[]
@@ -326,6 +345,8 @@ model Job {
   salaryMax       Int?
   salaryCurrency  String?          @db.VarChar(10)
   status          JobStatus        @default(PUBLISHED)
+  applicationFormConfig Json?
+  scoringConfig         Json?
   createdById     String?
   createdBy       User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   organizationId  String
@@ -393,6 +414,8 @@ model Application {
   resumeMimeType   String?           @default("application/pdf")
   resumeFileId     String?
   resumeFile       StoredFile?       @relation(fields: [resumeFileId], references: [id], onDelete: SetNull)
+  coverLetter      String?
+  screeningAnswers Json?
   orderIndex       Int               @default(0)
   trackingLinkId   String?
   trackingLink     TrackingLink?     @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
@@ -408,6 +431,7 @@ model Application {
   emailLogs        EmailLog[]
   activityLogs     ActivityLog[]
   applicationNotes ApplicationNote[]
+  aiEvaluation     ApplicationAiEvaluation?
   version          Int               @default(1)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -867,4 +891,109 @@ model Notification {
   @@index([organizationId, userId, createdAt])
   @@index([userId])
   @@map("notification")
+}
+
+enum AiFeatureKey {
+  APPLICATION_SCORING
+  SCREENING_QUESTIONS
+  SCORING_CRITERIA
+}
+
+enum AiProxyMode {
+  SINGLE
+  FAILOVER
+  LOAD_BALANCE
+}
+
+enum AiFeatureRouteMode {
+  INHERIT_DEFAULT
+  SINGLE
+  FAILOVER
+  LOAD_BALANCE
+}
+
+enum AiConnectionStatus {
+  UNTESTED
+  HEALTHY
+  ERROR
+}
+
+model OrganizationAiSetting {
+  id                    String       @id @default(uuid())
+  organizationId        String       @unique
+  isEnabled             Boolean      @default(true)
+  autoScoreApplications Boolean      @default(false)
+  defaultRouteMode      AiProxyMode  @default(SINGLE)
+  defaultRouteTargets   Json         @default("[]")
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@map("organization_ai_setting")
+}
+
+model OrganizationAiConnection {
+  id                  String             @id @default(uuid())
+  organizationId      String
+  name                String
+  provider            AiProvider
+  defaultModelId      String
+  encryptedApiKey     String?
+  apiKeyLast4         String?
+  baseUrl             String?
+  isEnabled           Boolean            @default(true)
+  lastStatus          AiConnectionStatus @default(UNTESTED)
+  lastError           String?
+  lastTestedAt        DateTime?
+  lastUsedAt          DateTime?
+  consecutiveFailures Int                @default(0)
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([organizationId, isEnabled])
+  @@map("organization_ai_connection")
+}
+
+model OrganizationAiFeatureRoute {
+  id             String             @id @default(uuid())
+  organizationId String
+  feature        AiFeatureKey
+  isEnabled      Boolean            @default(true)
+  mode           AiFeatureRouteMode @default(INHERIT_DEFAULT)
+  targets        Json               @default("[]")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, feature])
+  @@index([organizationId])
+  @@map("organization_ai_feature_route")
+}
+
+model ApplicationAiEvaluation {
+  id                 String        @id @default(uuid())
+  organizationId     String
+  organization       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId      String        @unique
+  application        Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status             AiScoreStatus @default(PENDING)
+  overallScore       Int?
+  breakdown          Json?
+  summary            String?
+  strengths          Json?
+  gaps               Json?
+  suggestedQuestions Json?
+  warningCode        String?
+  cvExtractedChars   Int?
+  provider           AiProvider?
+  modelId            String?
+  inputHash          String?
+  errorMessage       String?
+  scoredAt           DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([organizationId, status])
+  @@map("application_ai_evaluation")
 }

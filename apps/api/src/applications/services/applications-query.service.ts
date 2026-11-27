@@ -25,6 +25,10 @@ import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
 import { EventsService } from "../../events/events.service";
 import { OrganizationsAuditLogService } from "../../organizations/services/organizations-audit-log.service";
+import {
+  computeScoringInputHash,
+  mapAiEvaluationRecord,
+} from "../../ai/ai-scoring.service";
 
 function createEmptyStageCounts(): Record<ApplicationStage, number> {
   return APPLICATION_STAGES.reduce(
@@ -83,6 +87,8 @@ function maskApplicationFields<
     resumeFileSize: null as number | null,
     resumeMimeType: null as string | null,
     resumeFileId: null as string | null,
+    coverLetter: null as string | null,
+    screeningAnswers: null,
     interviews: [] as Array<Record<string, unknown>>,
   };
 }
@@ -228,9 +234,22 @@ export class ApplicationsQueryService {
       });
     }
 
-    const nameOrder = await resolveOrgNameDisplayOrder(
-      this.prisma,
-      job.organizationId,
+    const [nameOrder, evalRows] = await Promise.all([
+      resolveOrgNameDisplayOrder(this.prisma, job.organizationId),
+      applications.length > 0 &&
+      job.organizationId &&
+      typeof this.prisma.applicationAiEvaluation?.findMany === "function"
+        ? this.prisma.applicationAiEvaluation.findMany({
+            where: {
+              organizationId: job.organizationId,
+              applicationId: { in: applications.map((a) => a.id) },
+            },
+            select: { applicationId: true, status: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const evalStatusMap = new Map(
+      evalRows.map((row) => [row.applicationId, row.status]),
     );
 
     return applications.map((app) => {
@@ -277,6 +296,7 @@ export class ApplicationsQueryService {
           candidate?.resumeMimeType ??
           fallbackCand?.resumeMimeType ??
           "application/pdf",
+        aiScoreStatus: evalStatusMap.get(app.id) ?? null,
         interviews,
       };
     });
@@ -478,40 +498,55 @@ export class ApplicationsQueryService {
     const neededJobIds = [...new Set(pagedApps.map((a) => a.jobId))];
     const appIds = pagedApps.map((a) => a.id);
 
-    const [candidates, pagedJobs, allInterviews] = await Promise.all([
-      neededCandidateIds.length > 0
-        ? this.prisma.candidate.findMany({
-            where: {
-              id: { in: neededCandidateIds },
-              organizationId: targetOrgId,
-              deletedAt: null,
-            },
-          })
-        : Promise.resolve([]),
-      neededJobIds.length > 0
-        ? this.prisma.job.findMany({
-            where: {
-              id: { in: neededJobIds },
-              organizationId: targetOrgId,
-              deletedAt: null,
-            },
-            select: {
-              id: true,
-              title: true,
-              department: true,
-              location: true,
-            },
-          })
-        : Promise.resolve([]),
-      fullCandidateAccess && appIds.length > 0
-        ? this.prisma.interview.findMany({
-            where: { applicationId: { in: appIds } },
-          })
-        : Promise.resolve([]),
-    ]);
+    const [candidates, pagedJobs, allInterviews, evalStatusRows] =
+      await Promise.all([
+        neededCandidateIds.length > 0
+          ? this.prisma.candidate.findMany({
+              where: {
+                id: { in: neededCandidateIds },
+                organizationId: targetOrgId,
+                deletedAt: null,
+              },
+            })
+          : Promise.resolve([]),
+        neededJobIds.length > 0
+          ? this.prisma.job.findMany({
+              where: {
+                id: { in: neededJobIds },
+                organizationId: targetOrgId,
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                title: true,
+                department: true,
+                location: true,
+              },
+            })
+          : Promise.resolve([]),
+        fullCandidateAccess && appIds.length > 0
+          ? this.prisma.interview.findMany({
+              where: { applicationId: { in: appIds } },
+            })
+          : Promise.resolve([]),
+        fullCandidateAccess &&
+        appIds.length > 0 &&
+        typeof this.prisma.applicationAiEvaluation?.findMany === "function"
+          ? this.prisma.applicationAiEvaluation.findMany({
+              where: {
+                organizationId: targetOrgId,
+                applicationId: { in: appIds },
+              },
+              select: { applicationId: true, status: true },
+            })
+          : Promise.resolve([]),
+      ]);
 
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
     const jobMap = new Map(pagedJobs.map((j) => [j.id, j]));
+    const evalStatusMap = new Map(
+      evalStatusRows.map((row) => [row.applicationId, row.status]),
+    );
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
@@ -561,6 +596,7 @@ export class ApplicationsQueryService {
         resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
         resumeMimeType:
           app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        aiScoreStatus: evalStatusMap.get(app.id) ?? null,
         interviews: interviewsByApp.get(app.id) || [],
       };
     });
@@ -719,6 +755,10 @@ export class ApplicationsQueryService {
           department: true,
           location: true,
           organizationId: true,
+          description: true,
+          experienceLevel: true,
+          workplace: true,
+          scoringConfig: true,
         },
       }),
       this.prisma.candidate.findFirst({
@@ -754,24 +794,64 @@ export class ApplicationsQueryService {
       };
     }
 
-    const appInterviews = (
-      await this.prisma.interview.findMany({
+    const resolvedOrgId = appOrgId || tenantOrgId || app.organizationId;
+    const [appInterviewsRaw, nameOrder, aiEvalRow] = await Promise.all([
+      this.prisma.interview.findMany({
         where: { applicationId: id },
-      })
-    ).map((intv) => formatInterviewRecord(intv));
-
-    const nameOrder = await resolveOrgNameDisplayOrder(
-      this.prisma,
-      appOrgId || tenantOrgId,
+      }),
+      resolveOrgNameDisplayOrder(this.prisma, appOrgId || tenantOrgId),
+      resolvedOrgId &&
+      typeof this.prisma.applicationAiEvaluation?.findFirst === "function"
+        ? this.prisma.applicationAiEvaluation.findFirst({
+            where: {
+              applicationId: id,
+              organizationId: resolvedOrgId,
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+    const appInterviews = appInterviewsRaw.map((intv) =>
+      formatInterviewRecord(intv),
     );
 
     const resolvedCandidateName = candidate
       ? formatCandidateDisplayName(candidate, nameOrder) || "Unknown"
       : "Unknown";
 
+    const resolvedResumeUrl =
+      app.resumeUrl !== undefined
+        ? app.resumeUrl || ""
+        : candidate?.resumeUrl || "";
+    const resolvedResumeName =
+      app.resumeUrl === null
+        ? ""
+        : app.resumeFileName || candidate?.resumeFileName || "Resume.pdf";
+
+    const currentInputHash = aiEvalRow
+      ? computeScoringInputHash({
+          jobTitle: job.title,
+          jobDescription: job.description,
+          experienceLevel: job.experienceLevel,
+          workplace: job.workplace,
+          scoringConfig: (job as { scoringConfig?: unknown }).scoringConfig,
+          resumeUrl: resolvedResumeUrl || null,
+          resumeFileName: resolvedResumeName || null,
+          coverLetter: app.coverLetter,
+          screeningAnswers: app.screeningAnswers,
+        })
+      : null;
+
+    const {
+      description: _jobDescription,
+      experienceLevel: _experienceLevel,
+      workplace: _workplace,
+      scoringConfig: _scoringConfig,
+      ...publicJobFields
+    } = job;
+
     return {
       ...app,
-      job: job || null,
+      job: publicJobFields || null,
       candidate: candidate
         ? {
             ...candidate,
@@ -781,14 +861,8 @@ export class ApplicationsQueryService {
       candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
-      resumeUrl:
-        app.resumeUrl !== undefined
-          ? app.resumeUrl || ""
-          : candidate?.resumeUrl || "",
-      resumeFileName:
-        app.resumeUrl === null
-          ? ""
-          : app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      resumeUrl: resolvedResumeUrl,
+      resumeFileName: resolvedResumeName,
       resumeFileSize:
         app.resumeUrl === null
           ? null
@@ -799,6 +873,10 @@ export class ApplicationsQueryService {
           : (app.resumeMimeType ??
             candidate?.resumeMimeType ??
             "application/pdf"),
+      aiScoreStatus: aiEvalRow?.status ?? null,
+      aiEvaluation: aiEvalRow
+        ? mapAiEvaluationRecord(aiEvalRow, currentInputHash)
+        : null,
       interviews: appInterviews,
     };
   }

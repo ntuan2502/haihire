@@ -183,7 +183,7 @@ export function RichTextEditor({
 
   const toolbarBtnClass = (active: boolean) =>
     cn(
-      "inline-flex items-center justify-center h-7 w-7 rounded-md text-xs transition-colors cursor-pointer",
+      "inline-flex items-center justify-center h-8 w-8 sm:h-7 sm:w-7 rounded-md text-xs transition-colors cursor-pointer",
       active
         ? "bg-primary/15 text-primary font-semibold"
         : "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -289,7 +289,11 @@ export function RichTextEditor({
               <Link2 className="h-3.5 w-3.5" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-80 p-3 space-y-2.5">
+          <PopoverContent
+            align="start"
+            collisionPadding={12}
+            className="w-80 max-w-[calc(100vw-1.5rem)] p-3 space-y-2.5"
+          >
             <label
               htmlFor="rich-text-link-url"
               className="block text-xs font-medium text-foreground"

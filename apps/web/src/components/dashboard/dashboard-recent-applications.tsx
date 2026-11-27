@@ -26,9 +26,9 @@ export function DashboardRecentApplications({
   const badgeCount = totalCount ?? applications.length;
 
   return (
-    <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs">
+    <div className="flex flex-col h-auto max-h-[460px] lg:h-[600px] lg:max-h-none rounded-xl border border-border bg-card p-4 sm:p-5 text-card-foreground shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between shrink-0 pb-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 shrink-0 pb-3 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
           <h3 className="text-sm font-bold text-foreground truncate">

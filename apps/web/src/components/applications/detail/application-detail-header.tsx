@@ -19,6 +19,7 @@ export interface ApplicationDetailHeaderProps {
   appliedDate: string;
   onOpenSendEmail?: () => void;
   extraActions?: ReactNode;
+  headingLevel?: "h1" | "h2";
 }
 
 /**
@@ -36,22 +37,29 @@ export function ApplicationDetailHeader({
   appliedDate,
   onOpenSendEmail,
   extraActions,
+  headingLevel = "h1",
 }: ApplicationDetailHeaderProps) {
   const { t } = useI18n();
   const canSendEmail = useHasPermission("email:send");
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4 min-w-0">
         <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shadow-sm shrink-0">
           {initials}
         </div>
 
-        <div className="space-y-1 min-w-0">
+        <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate">
-              {candidateName}
-            </h1>
+            {headingLevel === "h2" ? (
+              <h2 className="text-xl font-bold text-foreground break-words">
+                {candidateName}
+              </h2>
+            ) : (
+              <h1 className="text-xl font-bold text-foreground break-words">
+                {candidateName}
+              </h1>
+            )}
             <StageBadge stage={stage} />
           </div>
 
@@ -59,7 +67,7 @@ export function ApplicationDetailHeader({
             {candidateEmail && (
               <a
                 href={`mailto:${candidateEmail}`}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
+                className="flex items-center gap-1 hover:text-primary transition-colors min-w-0 break-all"
               >
                 <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{candidateEmail}</span>
@@ -108,7 +116,7 @@ export function ApplicationDetailHeader({
               type="button"
               size="sm"
               onClick={onOpenSendEmail}
-              className="h-8 px-3 rounded-md text-xs font-semibold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="h-8 px-3 rounded-md text-xs font-medium shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Mail className="h-3.5 w-3.5" />
               <span>{t("email.sendEmailAction")}</span>

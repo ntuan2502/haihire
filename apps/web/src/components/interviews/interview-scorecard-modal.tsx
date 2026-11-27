@@ -247,7 +247,7 @@ export function InterviewScorecardModal({
       </div>
 
       {/* Modal Body */}
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
         {!canSubmitScorecard && (
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <AlertCircle

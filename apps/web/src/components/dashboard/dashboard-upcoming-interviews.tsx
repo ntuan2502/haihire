@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, ArrowRight, Video, MapPin, User } from "lucide-react";
+import {
+  Calendar,
+  CalendarPlus,
+  ArrowRight,
+  Video,
+  MapPin,
+  User,
+} from "lucide-react";
 import { extractDateTimeInTimezone } from "@haihire/shared";
 import {
   addDaysToYmd,
@@ -48,9 +55,9 @@ export function DashboardUpcomingInterviews({
   const tomorrowYmd = addDaysToYmd(todayYmd, 1);
 
   return (
-    <div className="flex flex-col h-[600px] rounded-xl border border-border bg-card p-5 text-card-foreground shadow-xs">
+    <div className="flex flex-col h-auto max-h-[460px] lg:h-[600px] lg:max-h-none rounded-xl border border-border bg-card p-4 sm:p-5 text-card-foreground shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between shrink-0 pb-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 shrink-0 pb-3 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
           <h3 className="text-sm font-bold text-foreground truncate">
@@ -85,9 +92,10 @@ export function DashboardUpcomingInterviews({
           </p>
           <Link
             href="/interviews"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline cursor-pointer"
           >
-            <span>+ {t("dashboard.scheduleNew")}</span>
+            <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{t("dashboard.scheduleNew")}</span>
           </Link>
         </div>
       ) : (
@@ -114,8 +122,8 @@ export function DashboardUpcomingInterviews({
                 key={intv.id || `${app.id}-${intv.scheduledAt}-${idx}`}
                 className="py-3 px-1 space-y-2 group hover:bg-accent/50 rounded-xl transition-colors"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
                       {getInitials(candidateDisplay)}
                     </div>
@@ -155,8 +163,8 @@ export function DashboardUpcomingInterviews({
                 </div>
 
                 {/* Bottom details row */}
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground pl-10.5">
-                  <div className="flex items-center gap-3 truncate">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground pl-0 sm:pl-10.5">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <span className="flex items-center gap-1 truncate max-w-[110px]">
                       <User className="h-3 w-3 text-muted-foreground shrink-0" />
                       <span className="truncate">{intv.interviewer}</span>
@@ -185,7 +193,7 @@ export function DashboardUpcomingInterviews({
                       href={intv.linkOrLocation}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors shrink-0"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors shrink-0"
                     >
                       <Video className="h-2.5 w-2.5" />
                       <span>{t("dashboard.joinMeeting")}</span>

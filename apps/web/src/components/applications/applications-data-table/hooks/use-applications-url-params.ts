@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useTableParams } from "@/hooks/use-table-params";
+import { APPLICATION_DETAIL_TABS } from "@/components/applications/detail/application-detail-tabs";
 import type { DrawerTabId, SortDirection, SortField } from "../types";
 
 const VALID_SORT_FIELDS: readonly SortField[] = [
@@ -11,14 +12,6 @@ const VALID_SORT_FIELDS: readonly SortField[] = [
   "status",
   "score",
   "applied",
-];
-
-const VALID_DRAWER_TABS: readonly DrawerTabId[] = [
-  "overview",
-  "interviews",
-  "documents",
-  "notes",
-  "timeline",
 ];
 
 export function buildStageCounts(
@@ -70,7 +63,7 @@ export function useApplicationsUrlParams(options?: { defaultLimit?: number }) {
 
   const selectedAppId = getParam("applicationId", "") || null;
   const rawTab = getParam("tab", "overview");
-  const drawerTab: DrawerTabId = VALID_DRAWER_TABS.includes(
+  const drawerTab: DrawerTabId = APPLICATION_DETAIL_TABS.includes(
     rawTab as DrawerTabId,
   )
     ? (rawTab as DrawerTabId)

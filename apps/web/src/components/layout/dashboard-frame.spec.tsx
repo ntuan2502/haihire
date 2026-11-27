@@ -166,4 +166,30 @@ describe("DashboardFrame", () => {
 
     expect(screen.getByTestId("draft-filter")).toHaveTextContent("initial");
   });
+
+  it("blocks Ctrl+B sidebar shortcut when typing in input or when a dialog is open", () => {
+    render(
+      <DashboardFrame defaultSidebarOpen={true}>
+        <input aria-label="Editor input" />
+      </DashboardFrame>,
+    );
+
+    const sidebar = document.querySelector('[data-slot="sidebar"]');
+    expect(sidebar).toHaveAttribute("data-state", "expanded");
+
+    const input = screen.getByLabelText("Editor input");
+    input.focus();
+    fireEvent.keyDown(input, { key: "b", ctrlKey: true });
+    expect(sidebar).toHaveAttribute("data-state", "expanded");
+
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.appendChild(dialog);
+    fireEvent.keyDown(document.body, { key: "b", ctrlKey: true });
+    expect(sidebar).toHaveAttribute("data-state", "expanded");
+    dialog.remove();
+
+    fireEvent.keyDown(document.body, { key: "b", ctrlKey: true });
+    expect(sidebar).toHaveAttribute("data-state", "collapsed");
+  });
 });

@@ -100,7 +100,7 @@ export function WizardStepCompensationAccordion({
           </label>
 
           {!payNegotiable && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                   {t("jobs.wizard.minSalary")}

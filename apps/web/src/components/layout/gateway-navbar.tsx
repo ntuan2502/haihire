@@ -64,7 +64,7 @@ export function GatewayNavbar({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-accent transition-colors cursor-pointer"
+              className="md:hidden flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-accent transition-colors cursor-pointer"
               aria-label={t("common.toggleNavigationMenu")}
             >
               {mobileMenuOpen ? (

@@ -21,7 +21,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
   return (
     <div className="rounded-xl bg-card text-card-foreground border border-border shadow-2xs overflow-hidden">
       {/* Header */}
-      <div className="p-5 flex items-center justify-between border-b border-border">
+      <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-2 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <Users className="h-4 w-4" />
@@ -44,25 +44,31 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[680px] text-left text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/50 text-[10px] font-bold text-muted-foreground">
-                <th scope="col" className="py-3 px-5">
+                <th scope="col" className="py-3 px-5 whitespace-nowrap">
                   {t("sourcing.details.colCandidate")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("sourcing.details.colJob")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("sourcing.details.colReferrer")}
                 </th>
-                <th scope="col" className="py-3 px-4">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">
                   {t("sourcing.details.colCampaign")}
                 </th>
-                <th scope="col" className="py-3 px-4 text-center">
+                <th
+                  scope="col"
+                  className="py-3 px-4 text-center whitespace-nowrap"
+                >
                   {t("common.status")}
                 </th>
-                <th scope="col" className="py-3 px-5 text-right">
+                <th
+                  scope="col"
+                  className="py-3 px-5 text-right whitespace-nowrap"
+                >
                   {t("sourcing.details.colApplied")}
                 </th>
               </tr>

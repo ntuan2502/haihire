@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { ApplicationStage } from "../applications";
+import { jobApplicationFormConfigSchema } from "../application-form";
+import { jobScoringConfigSchema } from "../ai";
 import {
   JobType,
   JobStatus,
@@ -40,6 +42,8 @@ export const createJobSchema = z.object({
   salaryMax: z.number().int().min(0).nullable().optional(),
   salaryCurrency: z.string().trim().max(10).nullable().optional(),
   status: z.nativeEnum(JobStatus).optional(),
+  applicationFormConfig: jobApplicationFormConfigSchema.nullable().optional(),
+  scoringConfig: jobScoringConfigSchema.nullable().optional(),
   organizationId: z.string().nullable().optional(),
   createdById: z.string().nullable().optional(),
 });

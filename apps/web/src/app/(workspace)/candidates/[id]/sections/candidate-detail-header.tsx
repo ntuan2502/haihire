@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Edit2, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Pencil, Trash2 } from "lucide-react";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
@@ -46,16 +46,16 @@ export function CandidateDetailHeader({
 
       {/* Candidate Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground break-words">
             {candidateName}
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
             <a
               href={`mailto:${candidateEmail}`}
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1 hover:text-foreground transition-colors min-w-0 break-all"
             >
-              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span>{candidateEmail}</span>
             </a>
             {candidatePhone && (
@@ -63,7 +63,7 @@ export function CandidateDetailHeader({
                 href={`tel:${candidatePhone}`}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>{candidatePhone}</span>
               </a>
             )}
@@ -71,14 +71,14 @@ export function CandidateDetailHeader({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {canUpdateCandidate && (
             <button
               type="button"
               onClick={() => router.push(`/candidates/${candidateId}/edit`)}
               className="h-8 px-3 rounded-md border border-input bg-background text-xs font-medium text-foreground hover:bg-accent shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Edit2 className="h-3 w-3 text-muted-foreground" />
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{t("common.edit")}</span>
             </button>
           )}
@@ -89,7 +89,7 @@ export function CandidateDetailHeader({
               onClick={onOpenDeleteModal}
               className="h-8 px-3 rounded-md border border-destructive/30 bg-background text-xs font-medium text-destructive hover:bg-destructive/10 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
               <span>{t("common.delete")}</span>
             </button>
           )}

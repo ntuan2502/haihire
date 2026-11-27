@@ -1,10 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { AiScoreCard } from "@/components/applications/ai-score-card";
+import { ApplicationFormCard } from "@/components/applications/application-form-card";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { ActivityEvent } from "@/lib/email-templates";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
@@ -14,6 +17,7 @@ export interface ApplicationDetailTabContentProps {
   activeTab: string;
   app: Application | null | undefined;
   canEdit: boolean;
+  canScore?: boolean;
   candidateDocuments: CandidateDocument[];
   candidateName: string;
   candidateEmail: string;
@@ -34,6 +38,7 @@ export function ApplicationDetailTabContent({
   activeTab,
   app,
   canEdit,
+  canScore,
   candidateDocuments,
   candidateName,
   candidateEmail,
@@ -46,20 +51,15 @@ export function ApplicationDetailTabContent({
   timelineInitialEvents,
 }: ApplicationDetailTabContentProps) {
   const { t } = useI18n();
-
-  const hasMatchScore =
-    app?.matchScore !== null && app?.matchScore !== undefined;
+  const hasUpdateApplication = useHasPermission("application:update");
+  const effectiveCanScore = canScore ?? hasUpdateApplication;
 
   const renderNotesSection = () => {
     if (customNotesContent !== undefined) {
       return customNotesContent;
     }
     if (!app?.id) return null;
-    return (
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs">
-        <ApplicationNotesStream applicationId={app.id} />
-      </div>
-    );
+    return <ApplicationNotesStream applicationId={app.id} />;
   };
 
   const renderInterviewsSection = () => (
@@ -78,25 +78,20 @@ export function ApplicationDetailTabContent({
     <div className="space-y-4">
       {activeTab === "overview" && (
         <>
-          {hasMatchScore && (
-            <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-medium text-muted-foreground">
-                  <span>{t("applications.matchScore")}</span>
-                </div>
-                <span className="text-sm font-semibold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {app.matchScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-[width] duration-500"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, app.matchScore ?? 0))}%`,
-                  }}
-                />
-              </div>
-            </div>
+          {app && (
+            <AiScoreCard
+              application={app}
+              canScore={effectiveCanScore}
+              variant="full"
+            />
+          )}
+
+          {app && (
+            <ApplicationFormCard
+              application={app}
+              onPreviewDoc={onPreviewDoc}
+              onDownloadDoc={onDownloadDoc}
+            />
           )}
 
           {renderInterviewsSection()}
@@ -110,6 +105,23 @@ export function ApplicationDetailTabContent({
 
           {renderNotesSection()}
         </>
+      )}
+
+      {activeTab === "ai-evaluation" && app && (
+        <AiScoreCard
+          application={app}
+          canScore={effectiveCanScore}
+          variant="full"
+        />
+      )}
+
+      {activeTab === "application-form" && app && (
+        <ApplicationFormCard
+          application={app}
+          onPreviewDoc={onPreviewDoc}
+          onDownloadDoc={onDownloadDoc}
+          showEmptyState
+        />
       )}
 
       {activeTab === "interviews" && renderInterviewsSection()}

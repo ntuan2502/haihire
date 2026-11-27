@@ -40,7 +40,7 @@ export function CandidateTableRow({
     >
       {/* Name */}
       {visibleColumns.name && (
-        <td className="py-4 px-5 font-semibold text-foreground">
+        <td className="py-4 px-4 sm:px-5 font-semibold text-foreground whitespace-nowrap">
           <button
             type="button"
             onClick={(e) => {
@@ -56,7 +56,7 @@ export function CandidateTableRow({
 
       {/* Email */}
       {visibleColumns.email && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-4 sm:px-5 whitespace-nowrap">
           <span className="inline-flex items-center gap-1.5 text-foreground/90">
             <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span>{candidate.email}</span>
@@ -66,7 +66,7 @@ export function CandidateTableRow({
 
       {/* Phone */}
       {visibleColumns.phone && (
-        <td className="py-4 px-5">
+        <td className="py-4 px-4 sm:px-5 whitespace-nowrap">
           {candidate.phone ? (
             <span className="inline-flex items-center gap-1.5 text-foreground/90">
               <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -80,21 +80,21 @@ export function CandidateTableRow({
 
       {/* Applications Count */}
       {visibleColumns.applications && (
-        <td className="py-4 px-5 text-muted-foreground">
+        <td className="py-4 px-4 sm:px-5 text-muted-foreground whitespace-nowrap">
           {candidate.applicationsCount}
         </td>
       )}
 
       {/* Added Date */}
       {visibleColumns.added && (
-        <td className="py-4 px-5 text-muted-foreground">
+        <td className="py-4 px-4 sm:px-5 text-muted-foreground whitespace-nowrap">
           {formatDate(candidate.createdAt)}
         </td>
       )}
 
       {/* Latest note */}
       {visibleColumns.quickNotes && (
-        <td className="py-4 px-5 max-w-xs">
+        <td className="py-4 px-4 sm:px-5 max-w-xs">
           {candidate.latestNote?.content ? (
             <div className="flex items-center gap-1.5">
               <span
@@ -116,7 +116,7 @@ export function CandidateTableRow({
       )}
 
       {/* Actions */}
-      <td className="py-4 px-5 text-right whitespace-nowrap">
+      <td className="py-4 px-4 sm:px-5 text-right whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5">
           {/* Quick View */}
           <button

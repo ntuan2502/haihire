@@ -39,22 +39,22 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
       {/* Main Configurations */}
       <div className="space-y-3 text-xs">
         {/* Channel */}
-        <div className="flex items-center justify-between py-1">
-          <span className="text-muted-foreground font-medium">
+        <div className="flex items-center justify-between gap-3 py-1">
+          <span className="text-muted-foreground font-medium shrink-0">
             {t("sourcing.details.configChannel")}
           </span>
-          <div className="flex items-center gap-1.5 font-bold text-foreground">
-            <span className={`h-2 w-2 rounded-full ${channelColor}`} />
-            <span>{channelName}</span>
+          <div className="flex items-center gap-1.5 font-bold text-foreground min-w-0 truncate">
+            <span className={`h-2 w-2 rounded-full shrink-0 ${channelColor}`} />
+            <span className="truncate">{channelName}</span>
           </div>
         </div>
 
         {/* Code */}
-        <div className="flex items-center justify-between py-1">
-          <span className="text-muted-foreground font-medium">
+        <div className="flex items-center justify-between gap-3 py-1">
+          <span className="text-muted-foreground font-medium shrink-0">
             {t("sourcing.details.configCode")}
           </span>
-          <span className="font-mono text-secondary-foreground font-semibold bg-secondary px-2 py-0.5 rounded-md">
+          <span className="font-mono text-secondary-foreground font-semibold bg-secondary px-2 py-0.5 rounded-md min-w-0 max-w-[60%] truncate">
             {link.token}
           </span>
         </div>
@@ -65,7 +65,7 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
             {t("sourcing.details.configJobScope")}
           </span>
           <span
-            className="font-semibold text-foreground text-right break-words max-w-[260px] leading-relaxed"
+            className="font-semibold text-foreground text-right min-w-0 break-words max-w-[260px] leading-relaxed"
             title={link.jobTitle || t("sourcing.details.allJobs")}
           >
             {link.jobTitle || t("sourcing.details.allJobs")}
@@ -81,28 +81,32 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
 
         <div className="space-y-2.5 text-xs">
           {/* UTM Source */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("sourcing.details.configSource")}
             </span>
-            <span className="font-mono text-foreground">{utmSource}</span>
+            <span className="font-mono text-foreground min-w-0 truncate text-right">
+              {utmSource}
+            </span>
           </div>
 
           {/* UTM Medium */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("sourcing.details.configMedium")}
             </span>
-            <span className="font-mono text-foreground">{utmMedium}</span>
+            <span className="font-mono text-foreground min-w-0 truncate text-right">
+              {utmMedium}
+            </span>
           </div>
 
           {/* UTM Campaign */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("sourcing.details.configCampaign")}
             </span>
             {utmCampaign ? (
-              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate max-w-[180px]">
+              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate min-w-0 max-w-[60%] sm:max-w-[180px]">
                 {utmCampaign}
               </span>
             ) : (
@@ -111,12 +115,12 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
           </div>
 
           {/* UTM Term */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("sourcing.details.configTerm")}
             </span>
             {utmTerm ? (
-              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate max-w-[180px]">
+              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate min-w-0 max-w-[60%] sm:max-w-[180px]">
                 {utmTerm}
               </span>
             ) : (
@@ -125,12 +129,12 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
           </div>
 
           {/* UTM Content */}
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground font-medium shrink-0">
               {t("sourcing.details.configContent")}
             </span>
             {utmContent ? (
-              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate max-w-[180px]">
+              <span className="font-mono text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-md truncate min-w-0 max-w-[60%] sm:max-w-[180px]">
                 {utmContent}
               </span>
             ) : (

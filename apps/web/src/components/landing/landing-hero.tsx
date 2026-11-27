@@ -36,16 +36,16 @@ export const LandingHero: React.FC = () => {
           {isAuthenticated ? (
             <Link
               href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 h-11 px-6 text-sm font-medium text-primary-foreground transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 min-h-11 max-w-full py-2.5 px-6 text-sm font-medium text-primary-foreground transition-colors cursor-pointer"
             >
-              <span>
+              <span className="truncate">
                 {user?.organization?.name
                   ? t("landing.goToWorkspace", { name: user.organization.name })
                   : user?.organizationId
                     ? t("landing.goToDashboard")
                     : t("landing.createWorkspace")}
               </span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 shrink-0" />
             </Link>
           ) : (
             <>

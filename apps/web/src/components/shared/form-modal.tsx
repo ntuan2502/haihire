@@ -12,6 +12,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  OverlayCloseButton,
+  createOverlayDismissGuard,
+} from "@/components/shared/overlay-primitives";
 import { useOptionalI18n } from "@/i18n/optional";
 
 export type FormModalSize = "sm" | "md" | "lg" | "xl";
@@ -90,11 +94,11 @@ export function FormModal({
       }}
     >
       <DialogContent
-        disableClose={isSubmitting}
-        showCloseButton={showCloseButton}
+        showCloseButton={false}
+        {...createOverlayDismissGuard({ disableClose: isSubmitting })}
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "p-0 overflow-hidden flex flex-col",
+          "flex flex-col gap-0 p-0 max-h-[90dvh] overflow-hidden rounded-xl bg-card text-card-foreground shadow-xl",
           FORM_MODAL_SIZES[size],
           panelClassName,
         )}
@@ -104,7 +108,7 @@ export function FormModal({
           noValidate={noValidate}
           className="flex flex-col flex-1 min-h-0"
         >
-          <DialogHeader className="px-6 py-4 pr-12 border-b border-border bg-card shrink-0">
+          <DialogHeader className="px-4 sm:px-6 py-4 pr-12 border-b border-border bg-card shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               {icon && <div className="shrink-0">{icon}</div>}
               <div className="space-y-0.5 min-w-0 flex-1">
@@ -129,7 +133,7 @@ export function FormModal({
 
           <div
             className={cn(
-              "flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5",
+              "flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5",
               bodyClassName,
             )}
           >
@@ -145,13 +149,17 @@ export function FormModal({
             {children}
           </div>
 
-          <DialogFooter className="px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex-row flex-wrap items-center justify-between gap-2.5 sm:justify-between">
+          <DialogFooter className="px-4 sm:px-6 py-3.5 border-t border-border bg-muted/30 shrink-0 flex-row flex-wrap items-center justify-between gap-2.5 sm:justify-between">
             {footer !== undefined ? (
               footer
             ) : (
               <>
-                <div className="flex items-center gap-2">{footerLeft}</div>
-                <div className="flex items-center gap-2.5 ml-auto">
+                {footerLeft && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {footerLeft}
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center justify-end gap-2.5 ml-auto w-full sm:w-auto">
                   <Button
                     type="button"
                     variant="outline"
@@ -192,6 +200,9 @@ export function FormModal({
             )}
           </DialogFooter>
         </form>
+        {showCloseButton && (
+          <OverlayCloseButton primitive="dialog" disabled={isSubmitting} />
+        )}
       </DialogContent>
     </Dialog>
   );

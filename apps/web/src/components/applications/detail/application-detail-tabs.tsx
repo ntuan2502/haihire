@@ -4,6 +4,8 @@ import { useI18n } from "@/i18n";
 
 export const APPLICATION_DETAIL_TABS = [
   "overview",
+  "ai-evaluation",
+  "application-form",
   "interviews",
   "documents",
   "notes",
@@ -21,8 +23,8 @@ export interface ApplicationDetailTabsProps {
 }
 
 /**
- * Shared 5-tab navigation bar used identically in Application Detail and
- * the Pipeline Candidate Detail pane.
+ * Shared 7-tab navigation bar used identically across Application Detail,
+ * Pipeline Candidate Detail, and Applications Drawer.
  */
 export function ApplicationDetailTabs({
   activeTab,
@@ -35,6 +37,8 @@ export function ApplicationDetailTabs({
 
   const tabs = [
     { id: "overview", label: t("applications.tabs.overview") },
+    { id: "ai-evaluation", label: t("applications.tabs.aiEvaluation") },
+    { id: "application-form", label: t("applications.tabs.applicationForm") },
     {
       id: "interviews",
       label:

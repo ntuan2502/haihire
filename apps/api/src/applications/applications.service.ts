@@ -104,8 +104,9 @@ export class ApplicationsService {
       organizationId?: string | null;
       isOwner?: boolean;
     } | null,
+    screeningFiles?: Map<string, Express.Multer.File>,
   ) {
-    return this.saga.create(dto, file, currentUser);
+    return this.saga.create(dto, file, currentUser, screeningFiles);
   }
 
   // ==========================================

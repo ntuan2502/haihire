@@ -164,13 +164,13 @@ export function CandidateDetailView() {
       />
 
       {/* Card 2: Tabs (Applications / Documents / Notes) */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-5">
-        <div className="flex items-center justify-between border-b border-border">
-          <div className="flex items-center gap-6 text-xs font-semibold -mb-px">
+      <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-xs space-y-5">
+        <div className="flex items-center justify-between border-b border-border overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-4 sm:gap-6 text-xs font-semibold whitespace-nowrap">
             <button
               type="button"
               onClick={() => state.setActiveTab("applications")}
-              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 state.activeTab === "applications"
                   ? "text-foreground border-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground border-transparent font-medium"
@@ -181,7 +181,7 @@ export function CandidateDetailView() {
             <button
               type="button"
               onClick={() => state.setActiveTab("documents")}
-              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 state.activeTab === "documents"
                   ? "text-foreground border-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground border-transparent font-medium"
@@ -192,7 +192,7 @@ export function CandidateDetailView() {
             <button
               type="button"
               onClick={() => state.setActiveTab("notes")}
-              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 state.activeTab === "notes"
                   ? "text-foreground border-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground border-transparent font-medium"
@@ -243,13 +243,11 @@ export function CandidateDetailView() {
       </div>
 
       {/* Card 5: Activity & Email Timeline */}
-      <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
-        <CandidateTimeline
-          candidateId={state.candidate?.id || state.candidateIdStr}
-          candidateName={state.candidateName}
-          candidateEmail={state.candidateEmail}
-        />
-      </div>
+      <CandidateTimeline
+        candidateId={state.candidate?.id || state.candidateIdStr}
+        candidateName={state.candidateName}
+        candidateEmail={state.candidateEmail}
+      />
 
       <CandidateDetailModals
         candidate={state.candidate}

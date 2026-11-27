@@ -36,17 +36,17 @@ export function DevicePreviewFrame({
   return (
     <div
       key={`device-canvas-${device}`}
-      className="flex-1 overflow-y-auto overflow-x-hidden bg-muted/60 p-4 sm:p-6 lg:p-8 flex items-center justify-center animate-in fade-in duration-150"
+      className="flex-1 overflow-y-auto overflow-x-hidden bg-muted/60 p-4 sm:p-6 lg:p-8 flex justify-center animate-in fade-in duration-150"
     >
       {/* ================= TABLET MOCKUP (Ultra-slim Modern iPad Pro) ================= */}
       {device === "tablet" && (
         <div
           key="mockup-tablet"
           className={cn(
-            "bg-zinc-950 dark:bg-black p-2 sm:p-2.5 rounded-[26px] sm:rounded-[30px] border border-zinc-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)_inset] ring-1 ring-black/40 flex flex-col relative shrink-0",
+            "my-auto bg-zinc-950 dark:bg-black p-2 sm:p-2.5 rounded-[26px] sm:rounded-[30px] border border-zinc-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)_inset] ring-1 ring-black/40 flex flex-col relative shrink-0",
             isMaximized
-              ? "w-[880px] max-w-full h-[84vh]"
-              : "w-[720px] sm:w-[760px] max-w-full h-[640px] max-h-[74vh]",
+              ? "w-[880px] max-w-full h-[84vh] max-h-full"
+              : "w-[720px] sm:w-[760px] max-w-full h-[640px] max-h-full",
             className,
           )}
         >
@@ -65,10 +65,10 @@ export function DevicePreviewFrame({
         <div
           key="mockup-mobile"
           className={cn(
-            "bg-zinc-950 dark:bg-black p-2 rounded-[46px] sm:rounded-[50px] border border-zinc-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)_inset] ring-1 ring-black/40 flex flex-col relative shrink-0",
+            "my-auto bg-zinc-950 dark:bg-black p-2 rounded-[46px] sm:rounded-[50px] border border-zinc-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.08)_inset] ring-1 ring-black/40 flex flex-col relative shrink-0",
             isMaximized
-              ? "w-[390px] max-w-full h-[84vh]"
-              : "w-[360px] sm:w-[375px] max-w-full h-[660px] max-h-[74vh]",
+              ? "w-[390px] max-w-full h-[84vh] max-h-full"
+              : "w-[360px] sm:w-[375px] max-w-full h-[660px] max-h-full",
             className,
           )}
         >

@@ -55,7 +55,7 @@ function SettingsSubTabContent({ item }: { item: SettingsSubTabItem }) {
 
 function getTabItemClassName(isActive: boolean): string {
   return cn(
-    "inline-flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer -mb-px whitespace-nowrap shrink-0",
+    "inline-flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0",
     isActive
       ? "border-primary text-foreground font-semibold"
       : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
@@ -72,7 +72,7 @@ export function SettingsSubTabs({
   className,
 }: SettingsSubTabsProps) {
   const containerClassName = cn(
-    "flex flex-wrap items-center gap-1 border-b border-border",
+    "flex flex-nowrap items-center gap-1 border-b border-border overflow-x-auto max-w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
     className,
   );
   const isLinkMode =

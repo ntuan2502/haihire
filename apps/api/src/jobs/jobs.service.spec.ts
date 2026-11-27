@@ -747,5 +747,66 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         }),
       );
     });
+
+    it("persists, validates, normalizes, and audits applicationFormConfig on create and update", async () => {
+      const created = await service.create({
+        title: "Product Designer",
+        department: "Design",
+        location: "Hanoi",
+        type: JobType.FULL_TIME,
+        description: "Lead design systems",
+        organizationId: "org-1",
+        applicationFormConfig: {
+          phone: "hidden",
+          resume: "optional",
+          coverLetter: "required",
+          screeningQuestions: [
+            {
+              id: "q-portfolio",
+              text: "Share your portfolio URL",
+              type: "short_text",
+              required: true,
+            },
+          ],
+        },
+      });
+
+      expect(created.applicationFormConfig).toEqual({
+        phone: "hidden",
+        resume: "optional",
+        coverLetter: "required",
+        screeningQuestions: [
+          {
+            id: "q-portfolio",
+            text: "Share your portfolio URL",
+            type: "short_text",
+            required: true,
+          },
+        ],
+      });
+
+      await expect(
+        service.update(
+          created.id,
+          {
+            applicationFormConfig: {
+              phone: "optional",
+              resume: "required",
+              coverLetter: "hidden",
+              screeningQuestions: [
+                {
+                  id: "q-bad",
+                  text: "Pick one",
+                  type: "single_choice",
+                  required: true,
+                  options: ["OnlyOne"],
+                },
+              ],
+            },
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow();
+    });
   });
 });

@@ -19,7 +19,7 @@ export function ApplicationsBySource({
   return (
     <div className="p-5 sm:p-6 rounded-xl bg-card text-card-foreground border border-border shadow-2xs space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="p-1 rounded-lg bg-primary/10 text-primary">
             <BarChart3 className="h-4 w-4" />

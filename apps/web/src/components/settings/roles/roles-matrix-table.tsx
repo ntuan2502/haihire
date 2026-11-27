@@ -31,7 +31,7 @@ export function RolesMatrixTable({
             <tr>
               <th
                 scope="col"
-                className="py-3.5 px-4 font-semibold text-foreground sticky left-0 z-10 w-1/3 min-w-36 bg-muted sm:min-w-[240px]"
+                className="py-3.5 px-4 font-semibold text-foreground sticky left-0 z-10 min-w-36 max-w-[148px] bg-muted border-r border-border sm:min-w-[240px] sm:max-w-none md:w-1/3"
               >
                 {t("settings.rolesMatrix.permissionColumn")}
               </th>
@@ -89,7 +89,7 @@ export function RolesMatrixTable({
                     >
                       <th
                         scope="row"
-                        className="sticky left-0 z-1 bg-card px-4 py-2.5 text-xs font-medium text-foreground"
+                        className="sticky left-0 z-1 bg-card px-4 py-2.5 text-xs font-medium text-foreground max-w-[148px] sm:max-w-none border-r border-border break-words"
                       >
                         {permissionLabel}
                       </th>

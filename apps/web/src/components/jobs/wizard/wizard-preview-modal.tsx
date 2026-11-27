@@ -30,7 +30,13 @@ import {
   getWorkplaceLabel,
   getExperienceLevelLabel,
 } from "@/lib/jobs";
-import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
+import type {
+  ApplicationFormFieldMode,
+  Job,
+  JobType,
+  WorkplaceType,
+  ExperienceLevel,
+} from "@/types";
 import type { ScreeningQuestion } from "./types";
 
 interface WizardPreviewModalProps {
@@ -51,9 +57,9 @@ interface WizardPreviewModalProps {
   startDate?: string;
   openings?: number;
   description: string;
-  phoneSetting: "hidden" | "optional" | "required";
-  resumeSetting: "required" | "off";
-  coverLetterSetting: "required" | "off";
+  phoneSetting: ApplicationFormFieldMode;
+  resumeSetting: ApplicationFormFieldMode;
+  coverLetterSetting: ApplicationFormFieldMode;
   screeningQuestions: ScreeningQuestion[];
   orgName?: string;
   orgLogoUrl?: string | null;
@@ -118,7 +124,7 @@ export function WizardPreviewModal({
                 ? "p-4 space-y-5"
                 : previewDevice === "tablet"
                   ? "p-6 sm:p-8 space-y-6 max-w-3xl mx-auto"
-                  : "p-6 sm:p-10 space-y-8 w-full",
+                  : "p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 w-full",
             )}
           >
             {/* Top Branding / Department Tag */}
@@ -233,15 +239,15 @@ export function WizardPreviewModal({
             {/* Two-Column or Stack Layout based on device preview */}
             <div
               className={cn(
-                "grid gap-8 items-start",
-                previewDevice === "desktop" ? "grid-cols-12" : "grid-cols-1",
+                "grid gap-6 sm:gap-8 items-start",
+                previewDevice === "desktop" ? "lg:grid-cols-12" : "grid-cols-1",
               )}
             >
               {/* Left Column in Preview: Unified Description */}
               <div
                 className={cn(
-                  "space-y-6",
-                  previewDevice === "desktop" ? "col-span-7" : "col-span-1",
+                  "space-y-6 min-w-0",
+                  previewDevice === "desktop" ? "lg:col-span-7" : "col-span-1",
                 )}
               >
                 {/* Job Description */}
@@ -276,12 +282,13 @@ export function WizardPreviewModal({
               {/* Right Column in Preview: Application Form Simulation */}
               <div
                 className={cn(
+                  "min-w-0",
                   previewDevice === "desktop"
-                    ? "col-span-5 sticky top-4"
+                    ? "lg:col-span-5 lg:sticky lg:top-4"
                     : "col-span-1",
                 )}
               >
-                <div className="p-5 sm:p-6 rounded-2xl border border-border bg-card text-card-foreground shadow-xs space-y-4">
+                <div className="p-4 sm:p-6 rounded-2xl border border-border bg-card text-card-foreground shadow-xs space-y-4">
                   <div>
                     <h3 className="text-base font-semibold text-foreground">
                       {t("careers.applicationFormTitle")}
@@ -378,15 +385,21 @@ export function WizardPreviewModal({
                       </div>
                     )}
 
-                    {/* Cover Letter / Notes */}
-                    {coverLetterSetting === "required" && (
+                    {/* Cover Letter */}
+                    {coverLetterSetting !== "hidden" && (
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground">
-                          {t("careers.notes")}{" "}
-                          <span className="text-destructive">*</span>
+                          {t("careers.coverLetterLabel")}{" "}
+                          {coverLetterSetting === "required" ? (
+                            <span className="text-destructive">*</span>
+                          ) : (
+                            <span className="text-muted-foreground font-normal">
+                              ({t("jobs.wizard.optionalOption")})
+                            </span>
+                          )}
                         </label>
                         <Textarea
-                          placeholder={t("careers.placeholders.notes")}
+                          placeholder={t("careers.coverLetterPlaceholder")}
                           disabled
                           rows={2}
                           className="text-xs cursor-not-allowed opacity-80 resize-none"
@@ -429,6 +442,64 @@ export function WizardPreviewModal({
                                   <span>{t("common.no")}</span>
                                 </label>
                               </div>
+                            ) : q.type === "single_choice" ||
+                              q.type === "multiple_choice" ? (
+                              <div className="space-y-1 pt-0.5">
+                                {(q.options ?? []).map((opt, optIdx) => (
+                                  <label
+                                    key={optIdx}
+                                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                                  >
+                                    <input
+                                      type={
+                                        q.type === "single_choice"
+                                          ? "radio"
+                                          : "checkbox"
+                                      }
+                                      disabled
+                                      className="h-3 w-3"
+                                    />
+                                    <span>{opt}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            ) : q.type === "long_text" ? (
+                              <Textarea
+                                placeholder={t("jobs.wizard.answerPlaceholder")}
+                                disabled
+                                rows={2}
+                                className="text-xs cursor-not-allowed opacity-80 resize-none"
+                              />
+                            ) : q.type === "number" ? (
+                              <Input
+                                type="number"
+                                placeholder={t(
+                                  "careers.numberAnswerPlaceholder",
+                                )}
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "date" ? (
+                              <Input
+                                type="date"
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "url" ? (
+                              <Input
+                                type="url"
+                                placeholder={t("careers.urlAnswerPlaceholder")}
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            ) : q.type === "file_upload" ? (
+                              <div className="border border-dashed border-border rounded-lg p-3 text-center text-[11px] text-muted-foreground flex items-center justify-center gap-2 bg-muted/25">
+                                <FileUp
+                                  className="h-4 w-4 shrink-0"
+                                  aria-hidden="true"
+                                />
+                                <span>{t("careers.uploadScreeningPdf")}</span>
+                              </div>
                             ) : (
                               <Input
                                 type="text"
@@ -443,11 +514,17 @@ export function WizardPreviewModal({
                     )}
 
                     {/* Resume / CV Upload Box */}
-                    {resumeSetting === "required" && (
+                    {resumeSetting !== "hidden" && (
                       <div className="space-y-1.5 pt-1">
                         <label className="text-xs font-medium text-foreground">
                           {t("careers.cvResume")}{" "}
-                          <span className="text-destructive">*</span>
+                          {resumeSetting === "required" ? (
+                            <span className="text-destructive">*</span>
+                          ) : (
+                            <span className="text-muted-foreground font-normal">
+                              ({t("jobs.wizard.optionalOption")})
+                            </span>
+                          )}
                         </label>
                         <div className="border-2 border-dashed border-border rounded-xl p-4 text-center space-y-1.5 bg-muted/30">
                           <FileUp className="h-5 w-5 text-muted-foreground mx-auto" />

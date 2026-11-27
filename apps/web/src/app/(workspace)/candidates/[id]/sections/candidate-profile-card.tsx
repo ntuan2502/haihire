@@ -26,7 +26,7 @@ export function CandidateProfileCard({
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground p-6 shadow-xs space-y-4">
+    <div className="rounded-xl border border-border bg-card text-card-foreground p-4 sm:p-6 shadow-xs space-y-4">
       <h3 className="text-xs font-semibold text-foreground">
         {t("candidates.overviewTab")}
       </h3>
@@ -67,7 +67,7 @@ export function CandidateProfileCard({
           <span className="text-muted-foreground text-[11px] block">
             {t("candidates.email")}
           </span>
-          <span className="font-semibold text-foreground mt-0.5 block">
+          <span className="font-semibold text-foreground mt-0.5 block break-all">
             {candidateEmail}
           </span>
         </div>

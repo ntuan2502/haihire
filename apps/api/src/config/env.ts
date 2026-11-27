@@ -2,6 +2,7 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
+import { resolveDatabaseUrlFromEnv } from "./database-url";
 
 // Load root .env regardless of CWD (works from root, apps/api/, or deeper)
 function findWorkspaceRoot(): string {
@@ -53,7 +54,10 @@ const backendEnvSchema = z
     MINIO_ACCESS_KEY: z.string().min(1, "MINIO_ACCESS_KEY is required"),
     MINIO_SECRET_KEY: z.string().min(1, "MINIO_SECRET_KEY is required"),
     MINIO_BUCKET_NAME: z.string().min(1, "MINIO_BUCKET_NAME is required"),
-    MINIO_PUBLIC_URL: z.string().min(1, "MINIO_PUBLIC_URL is required"),
+    MINIO_PUBLIC_URL: z
+      .string()
+      .min(1, "MINIO_PUBLIC_URL is required")
+      .default("http://localhost:9000"),
     // Redis / Valkey Configuration
     REDIS_HOST: z.string().default("localhost"),
     REDIS_PORT: z.coerce
@@ -74,14 +78,15 @@ const backendEnvSchema = z
     SYSTEM_EMAIL_FROM_EMAIL: z
       .string()
       .email("SYSTEM_EMAIL_FROM_EMAIL must be a valid email address"),
-    SYSTEM_EMAIL_SMTP_HOST: z.string(),
+    SYSTEM_EMAIL_SMTP_HOST: z.string().default(""),
     SYSTEM_EMAIL_SMTP_PORT: z.coerce
       .number()
-      .int("SYSTEM_EMAIL_SMTP_PORT must be an integer"),
-    SYSTEM_EMAIL_SMTP_USER: z.string(),
-    SYSTEM_EMAIL_SMTP_PASS: z.string(),
-    SYSTEM_EMAIL_RESEND_API_KEY: z.string(),
-    SYSTEM_EMAIL_SENDGRID_API_KEY: z.string(),
+      .int("SYSTEM_EMAIL_SMTP_PORT must be an integer")
+      .default(587),
+    SYSTEM_EMAIL_SMTP_USER: z.string().default(""),
+    SYSTEM_EMAIL_SMTP_PASS: z.string().default(""),
+    SYSTEM_EMAIL_RESEND_API_KEY: z.string().default(""),
+    SYSTEM_EMAIL_SENDGRID_API_KEY: z.string().default(""),
     // Multi-Channel Webhook Configuration (Optional Global Fallback)
     WEBHOOK_PROVIDER: z.preprocess(
       (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
@@ -201,22 +206,10 @@ export type BackendEnv = z.infer<typeof backendEnvSchema>;
 
 const rawPort = process.env.BACKEND_PORT || process.env.PORT || "3001";
 const rawPublicPort = process.env.GATEWAY_PORT || process.env.FRONTEND_PORT;
-const rawPostgresPort = process.env.POSTGRES_PORT;
 const rawMinioPort = process.env.MINIO_PORT;
 const rawRedisPort = process.env.REDIS_PORT;
 
-let databaseUrl = process.env.DATABASE_URL || "";
-if (rawPostgresPort && databaseUrl.includes("@localhost:")) {
-  databaseUrl = databaseUrl.replace(
-    /@localhost:\d+/,
-    `@localhost:${rawPostgresPort}`,
-  );
-} else if (rawPostgresPort && databaseUrl.includes("@127.0.0.1:")) {
-  databaseUrl = databaseUrl.replace(
-    /@127.0.0.1:\d+/,
-    `@127.0.0.1:${rawPostgresPort}`,
-  );
-}
+const databaseUrl = resolveDatabaseUrlFromEnv(process.env);
 
 let frontendUrl = process.env.FRONTEND_URL || "";
 if (rawPublicPort && frontendUrl.includes("localhost:")) {
@@ -231,8 +224,14 @@ if (rawPublicPort && frontendUrl.includes("localhost:")) {
   );
 }
 
-let minioPublicUrl = process.env.MINIO_PUBLIC_URL || "";
-if (rawMinioPort && minioPublicUrl.includes("localhost:")) {
+const rawMinioUseSsl =
+  process.env.MINIO_USE_SSL === "true" || process.env.MINIO_USE_SSL === "1";
+const minioEndpoint = process.env.MINIO_ENDPOINT?.trim() || "localhost";
+const minioPort = rawMinioPort || "9000";
+let minioPublicUrl = process.env.MINIO_PUBLIC_URL?.trim() || "";
+if (!minioPublicUrl) {
+  minioPublicUrl = `${rawMinioUseSsl ? "https" : "http"}://${minioEndpoint}:${minioPort}`;
+} else if (rawMinioPort && minioPublicUrl.includes("localhost:")) {
   minioPublicUrl = minioPublicUrl.replace(
     /localhost:\d+/,
     `localhost:${rawMinioPort}`,

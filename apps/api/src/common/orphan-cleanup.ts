@@ -1,6 +1,7 @@
 import * as Minio from "minio";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { resolveDatabaseUrlFromEnv } from "../config/database-url";
 
 export interface CleanupOptions {
   dryRun?: boolean;
@@ -92,7 +93,7 @@ export async function cleanupOrphans(
     new PrismaClient({
       adapter: new PrismaPg({
         connectionString:
-          process.env.DATABASE_URL ||
+          resolveDatabaseUrlFromEnv(process.env) ||
           "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev",
       }),
     });

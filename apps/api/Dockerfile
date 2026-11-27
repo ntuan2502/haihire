@@ -68,6 +68,7 @@ COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --chown=node:node --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 COPY --chown=node:node --from=builder /app/apps/api/src/prisma ./apps/api/src/prisma
 COPY --chown=node:node --from=builder /app/apps/api/src/common ./apps/api/src/common
+COPY --chown=node:node --from=builder /app/apps/api/src/config/database-url.ts ./apps/api/src/config/database-url.ts
 COPY --chown=node:node --from=builder /app/scripts ./scripts
 
 WORKDIR /app/apps/api

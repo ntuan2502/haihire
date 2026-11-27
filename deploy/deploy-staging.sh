@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # ==============================================================================
-# HaiHire Staging Deployment Script
+# HaiHire Local Staging Build & Launch Script
 # ==============================================================================
-# Pulls the staging images, runs automatic Prisma migrations (via `migrate`),
-# starts api/web/gateway cleanly, and verifies local Caddy gateway health.
+# Builds local api/web Docker images from workspace Dockerfiles, runs automatic
+# Prisma migrations (`migrate`), starts the stack on port 8081, and verifies
+# Caddy gateway + API health.
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,20 +25,17 @@ set -a
 source "${ENV_FILE}"
 set +a
 
-GATEWAY_PORT="${GATEWAY_PORT:-8080}"
+GATEWAY_PORT="${GATEWAY_PORT:-8081}"
 GATEWAY_URL="http://127.0.0.1:${GATEWAY_PORT}"
 
-echo "==> Pulling staging container images (tag: ${IMAGE_TAG:-staging})..."
-docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" pull api web gateway
-
-echo "==> Starting staging stack (automatic prisma migrate deploy -> api -> web -> gateway)..."
-docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" up -d --remove-orphans
+echo "==> Building and starting local staging stack (migrate -> api -> web -> gateway on :${GATEWAY_PORT})..."
+docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" up -d --build --remove-orphans
 
 echo "==> Verifying Caddy gateway & API health at ${GATEWAY_URL}..."
 for attempt in $(seq 1 30); do
   if curl -fsS "${GATEWAY_URL}/gateway-health" >/dev/null 2>&1 \
     && curl -fsS "${GATEWAY_URL}/api/health" >/dev/null 2>&1; then
-    echo "SUCCESS: Staging stack is healthy at ${GATEWAY_URL}"
+    echo "SUCCESS: Local staging stack is healthy at ${GATEWAY_URL}"
     docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" ps
     exit 0
   fi

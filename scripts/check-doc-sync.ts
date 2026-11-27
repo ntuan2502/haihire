@@ -1,7 +1,10 @@
 #!/usr/bin/env tsx
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve, join, extname } from "node:path";
-import { parseEnvKeys, scanCodebaseEnvVariables } from "./check-env-sync.ts";
+import {
+  parseDocumentedEnvKeys,
+  scanCodebaseEnvVariables,
+} from "./check-env-sync.ts";
 import {
   collectRepoStats,
   generateStatsMarkdown,
@@ -139,7 +142,8 @@ export function checkPathExistence(): CheckResult {
 export function checkEnvVarSync(): CheckResult {
   const root = process.cwd();
   const devExamplePath = resolve(root, ".env.example");
-  const devExampleKeys = parseEnvKeys(devExamplePath) || new Set<string>();
+  const devExampleKeys =
+    parseDocumentedEnvKeys(devExamplePath) || new Set<string>();
   const { usedVars } = scanCodebaseEnvVariables();
 
   const missingInExample = Array.from(usedVars).filter(

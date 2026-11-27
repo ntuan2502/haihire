@@ -1,16 +1,14 @@
 name: haihire-staging
 
 # ==============================================================================
-# HAIHIRE PLATFORM - STAGING DOCKER COMPOSE STACK
+# HAIHIRE PLATFORM - LOCAL STAGING DOCKER COMPOSE STACK
 # ==============================================================================
-# Two-layer reverse proxy architecture:
-#   VPS Host Nginx (TLS/Domain) -> Caddy App Gateway (127.0.0.1:8080) -> api / web
-#
-# Automated migrations run via the one-shot `migrate` service after `postgres`
-# is healthy and before `api` starts (`service_completed_successfully`).
+# Local production-like Docker verification stack (builds workspace images
+# locally, runs automatic Prisma migrations, and serves through Caddy on :8081
+# so it can run alongside host `pnpm dev` + Dev Caddy on :8080).
 #
 # Usage:
-#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build
 #   # Or run: ./deploy/deploy-staging.sh
 # ==============================================================================
 
@@ -110,7 +108,10 @@ services:
   # 4. One-Shot Prisma Database Migration (Runs before API starts)
   # ----------------------------------------------------------------------------
   migrate:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-staging}
+    image: haihire-api:staging
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: haihire-staging-migrate
     restart: "no"
     env_file:
@@ -131,7 +132,10 @@ services:
   # 5. NestJS Staging API Service (Internal Only via Gateway)
   # ----------------------------------------------------------------------------
   api:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-staging}
+    image: haihire-api:staging
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: haihire-staging-api
     init: true
     restart: unless-stopped
@@ -170,7 +174,13 @@ services:
   # 6. Next.js Staging Web Service (Internal Only via Gateway)
   # ----------------------------------------------------------------------------
   web:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-web:${IMAGE_TAG:-staging}
+    image: haihire-web:staging
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ""
+        INTERNAL_API_URL: http://api:3001
     container_name: haihire-staging-web
     init: true
     restart: unless-stopped
@@ -181,9 +191,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       INTERNAL_API_URL: http://api:3001
-      BACKEND_HOST: api
       BACKEND_PORT: 3001
-      MINIO_HOST: minio
       MINIO_PORT: 9000
     depends_on:
       api:
@@ -199,7 +207,7 @@ services:
       - haihire-staging-network
 
   # ----------------------------------------------------------------------------
-  # 7. Caddy Unified App Gateway (Bound to Loopback for Host Nginx)
+  # 7. Caddy Unified App Gateway (Local Staging on :8081)
   # ----------------------------------------------------------------------------
   gateway:
     image: caddy:2-alpine
@@ -209,7 +217,7 @@ services:
       API_UPSTREAM: api:3001
       WEB_UPSTREAM: web:3000
     ports:
-      - "127.0.0.1:${GATEWAY_PORT:-8080}:80"
+      - "${GATEWAY_PORT:-8081}:80"
     volumes:
       - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:

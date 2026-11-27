@@ -218,9 +218,7 @@ services:
       PORT: 3000
       # Docker network overrides (internal service discovery)
       INTERNAL_API_URL: http://api:3001
-      BACKEND_HOST: api
       BACKEND_PORT: 3001
-      MINIO_HOST: minio
       MINIO_PORT: 9000
     depends_on:
       api:

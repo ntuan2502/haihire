@@ -27,8 +27,18 @@ if (!process.env.PORT && process.env.FRONTEND_PORT) {
   process.env.PORT = process.env.FRONTEND_PORT;
 }
 
-const backendHost = process.env.BACKEND_HOST || "127.0.0.1";
-const backendPort = Number(process.env.BACKEND_PORT) || 3001;
+const defaultBackendPort = Number(process.env.BACKEND_PORT) || 3001;
+let backendHost = "127.0.0.1";
+let backendPort = defaultBackendPort;
+if (process.env.INTERNAL_API_URL?.trim()) {
+  try {
+    const parsed = new URL(process.env.INTERNAL_API_URL.trim());
+    backendHost = parsed.hostname || backendHost;
+    backendPort = Number(parsed.port) || backendPort;
+  } catch {
+    // Keep loopback fallback when INTERNAL_API_URL is non-standard
+  }
+}
 const frontendPort =
   Number(process.env.FRONTEND_PORT) || Number(process.env.PORT) || 3000;
 

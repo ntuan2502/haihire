@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { backendEnvSchema } from "./env";
+import { resolveDatabaseUrlFromEnv } from "./database-url";
 
 describe("backendEnvSchema production guards", () => {
   const baseProdEnv = {
@@ -15,16 +16,10 @@ describe("backendEnvSchema production guards", () => {
     MINIO_ACCESS_KEY: "minioadmin",
     MINIO_SECRET_KEY: "minioadmin",
     MINIO_BUCKET_NAME: "haihire-resumes",
-    MINIO_PUBLIC_URL: "https://s3.example.com",
     SYSTEM_EMAIL_PROVIDER: "RESEND",
     SYSTEM_EMAIL_FROM_NAME: "HaiHire",
     SYSTEM_EMAIL_FROM_EMAIL: "noreply@example.com",
-    SYSTEM_EMAIL_SMTP_HOST: "",
-    SYSTEM_EMAIL_SMTP_PORT: "587",
-    SYSTEM_EMAIL_SMTP_USER: "",
-    SYSTEM_EMAIL_SMTP_PASS: "",
     SYSTEM_EMAIL_RESEND_API_KEY: "re_test_123",
-    SYSTEM_EMAIL_SENDGRID_API_KEY: "",
     SEED_DEMO_ON_BOOT: "false",
   };
 
@@ -44,8 +39,43 @@ describe("backendEnvSchema production guards", () => {
     }
   });
 
-  it("accepts SYSTEM_EMAIL_PROVIDER=RESEND when NODE_ENV=production", () => {
+  it("accepts SYSTEM_EMAIL_PROVIDER=RESEND without empty SMTP/SendGrid/MINIO_PUBLIC_URL placeholders", () => {
     const result = backendEnvSchema.safeParse(baseProdEnv);
     expect(result.success).toBe(true);
+  });
+
+  it("accepts SYSTEM_EMAIL_PROVIDER=SIMULATED in development without SMTP/Resend/SendGrid keys", () => {
+    const result = backendEnvSchema.safeParse({
+      ...baseProdEnv,
+      NODE_ENV: "development",
+      SYSTEM_EMAIL_PROVIDER: "SIMULATED",
+      SYSTEM_EMAIL_RESEND_API_KEY: undefined,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("resolveDatabaseUrlFromEnv", () => {
+  it("derives DATABASE_URL from POSTGRES_* variables when DATABASE_URL is omitted", () => {
+    const resolved = resolveDatabaseUrlFromEnv({
+      POSTGRES_USER: "haihire_user",
+      POSTGRES_PASSWORD: "p@ss:word",
+      POSTGRES_DB: "haihire_db",
+      POSTGRES_PORT: "5433",
+    });
+    expect(resolved).toBe(
+      "postgresql://haihire_user:p%40ss%3Aword@localhost:5433/haihire_db?schema=public",
+    );
+  });
+
+  it("rewrites loopback port on explicit DATABASE_URL when POSTGRES_PORT is set", () => {
+    const resolved = resolveDatabaseUrlFromEnv({
+      DATABASE_URL:
+        "postgresql://user:pass@127.0.0.1:5432/haihire_db?schema=public",
+      POSTGRES_PORT: "5544",
+    });
+    expect(resolved).toBe(
+      "postgresql://user:pass@127.0.0.1:5544/haihire_db?schema=public",
+    );
   });
 });

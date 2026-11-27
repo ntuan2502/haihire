@@ -252,4 +252,15 @@ describe("AiGatewayService (Multi-Key Proxy, Failover & Load Balance)", () => {
       APP_ERROR_CODES.AI_ALL_PROVIDERS_FAILED,
     );
   });
+
+  it("skips decrypting stored API keys when resolveFeatureStatus inspects route readiness", async () => {
+    const decryptSpy = vi.spyOn(encryptionService, "decrypt");
+    const status = await gateway.resolveFeatureStatus(
+      "org-1",
+      "APPLICATION_SCORING",
+    );
+    expect(status.enabled).toBe(true);
+    expect(status.activeTargetCount).toBe(2);
+    expect(decryptSpy).not.toHaveBeenCalled();
+  });
 });

@@ -547,7 +547,7 @@ export class SourcingLinksService {
   async findLinkByToken(token: string) {
     if (!token) return null;
     return this.prisma.trackingLink.findFirst({
-      where: { token },
+      where: { token, deletedAt: null },
       select: {
         id: true,
         token: true,

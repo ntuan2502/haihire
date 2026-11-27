@@ -134,6 +134,21 @@ export class PrismaService
     if (!tenantOrgId) {
       throw new Error("withTenantRls requires a non-empty tenantOrgId.");
     }
+    const existing = this.als.getStore();
+    if (existing) {
+      const tenantCtx = this.tenantContextAls.getStore();
+      if (tenantCtx?.bypassRls) {
+        throw new Error(
+          "Cannot enter tenant RLS context inside an active system RLS bypass transaction.",
+        );
+      }
+      if (tenantCtx?.tenantOrgId && tenantCtx.tenantOrgId !== tenantOrgId) {
+        throw new Error(
+          "Cannot switch tenant RLS context inside an active tenant transaction.",
+        );
+      }
+      return fn(existing);
+    }
     return this.$transaction(async (txClient) => {
       await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantOrgId}, true), set_config('app.bypass_rls', 'off', true)`;
       await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
@@ -152,6 +167,16 @@ export class PrismaService
   async withSystemRlsBypass<T>(
     fn: (tx: PrismaService) => Promise<T>,
   ): Promise<T> {
+    const existing = this.als.getStore();
+    if (existing) {
+      const tenantCtx = this.tenantContextAls.getStore();
+      if (!tenantCtx?.bypassRls) {
+        throw new Error(
+          "Cannot enable system RLS bypass inside an active tenant-restricted transaction.",
+        );
+      }
+      return fn(existing);
+    }
     return this.$transaction(async (txClient) => {
       await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', '', true), set_config('app.bypass_rls', 'on', true)`;
       await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");

@@ -269,7 +269,6 @@ model OrganizationMember {
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, userId])
-  @@index([userId])
   @@index([userId, lastAccessedAt])
   @@map("organization_member")
 }
@@ -285,7 +284,6 @@ model OrganizationRolePermission {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, role, permission])
-  @@index([organizationId])
   @@map("organization_role_permission")
 }
 
@@ -391,6 +389,7 @@ model Candidate {
   updatedAt      DateTime            @updatedAt
 
   @@index([organizationId, deletedAt, createdAt])
+  @@index([organizationId, deletedAt, email])
   @@map("candidate")
 }
 
@@ -508,7 +507,6 @@ model EmailFlowConfig {
   updatedAt      DateTime       @updatedAt
 
   @@unique([organizationId, flowKey])
-  @@index([organizationId])
   @@map("email_flow_config")
 }
 
@@ -641,6 +639,7 @@ model TrackingLink {
   updatedAt      DateTime        @updatedAt
 
   @@index([organizationId, deletedAt, isActive])
+  @@index([token])
   @@index([jobId])
   @@index([createdById])
   @@index([organizationId, isActive])
@@ -662,6 +661,7 @@ model TrackingClick {
   @@index([organizationId, createdAt])
   @@index([trackingLinkId, createdAt])
   @@index([referrerDomain])
+  @@index([createdAt])
   @@map("tracking_click")
 }
 
@@ -682,7 +682,6 @@ model OrganizationWebhookSetting {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, eventType, provider])
-  @@index([organizationId])
   @@map("organization_webhook_setting")
 }
 
@@ -740,6 +739,7 @@ model UserSession {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
   @@map("user_session")
 }
 
@@ -758,6 +758,7 @@ model UserSecurityLog {
 
   @@index([userId, createdAt])
   @@index([userId, action])
+  @@index([createdAt])
   @@map("user_security_log")
 }
 
@@ -883,13 +884,16 @@ model Notification {
   userId         String
   kind           String
   resourceId     String
+  metadata       Json?        @db.JsonB
   createdAt      DateTime     @default(now())
   readAt         DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, userId, createdAt])
+  @@index([organizationId, userId, readAt, createdAt])
   @@index([userId])
+  @@index([createdAt])
   @@map("notification")
 }
 
@@ -967,7 +971,6 @@ model OrganizationAiFeatureRoute {
   updatedAt      DateTime           @updatedAt
 
   @@unique([organizationId, feature])
-  @@index([organizationId])
   @@map("organization_ai_feature_route")
 }
 

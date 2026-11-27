@@ -74,9 +74,11 @@ export interface AiGatewayExecuteResult {
 const DEFAULT_SYNC_BUDGET_MS = 25_000;
 const DEFAULT_ASYNC_BUDGET_MS = 60_000;
 const MAX_PROXY_ATTEMPTS = 3;
+const CIRCUIT_BREAKER_THRESHOLD = 5;
 const COOLDOWN_RATE_LIMIT_SEC = 60;
 const COOLDOWN_AUTH_OR_QUOTA_SEC = 300;
 const COOLDOWN_TRANSIENT_SEC = 30;
+const COOLDOWN_CIRCUIT_OPEN_SEC = 600;
 const ROUTE_TEST_TIMEOUT_MS = 12_000;
 
 @Injectable()
@@ -261,6 +263,7 @@ export class AiGatewayService {
   private resolveCandidatesFromTargets(
     targets: AiRouteTarget[],
     connections: ConnectionRecordRow[],
+    decryptKeys = true,
   ): ResolvedAiCandidate[] {
     const connMap = new Map(connections.map((c) => [c.id, c]));
     const resolved: ResolvedAiCandidate[] = [];
@@ -270,10 +273,14 @@ export class AiGatewayService {
       if (!conn || !conn.isEnabled) continue;
 
       const provider = conn.provider as AiProvider;
-      const decryptedKey = conn.encryptedApiKey
-        ? this.encryptionService.decrypt(conn.encryptedApiKey)
-        : null;
-      if (provider !== "OPENAI_COMPATIBLE" && !decryptedKey) continue;
+      const decryptedKey =
+        decryptKeys && conn.encryptedApiKey
+          ? this.encryptionService.decrypt(conn.encryptedApiKey)
+          : null;
+      const hasCredential = decryptKeys
+        ? Boolean(decryptedKey)
+        : Boolean(conn.encryptedApiKey);
+      if (provider !== "OPENAI_COMPATIBLE" && !hasCredential) continue;
 
       const effectiveModel =
         target.modelId?.trim() || conn.defaultModelId.trim();
@@ -297,6 +304,7 @@ export class AiGatewayService {
   async resolveExecutionPlan(
     organizationId: string,
     targetKey: AiRouteTestTarget,
+    options?: { decryptKeys?: boolean },
   ): Promise<{
     orgEnabled: boolean;
     featureEnabled: boolean;
@@ -304,6 +312,7 @@ export class AiGatewayService {
     effectiveMode: AiProxyMode;
     candidates: ResolvedAiCandidate[];
   }> {
+    const decryptKeys = options?.decryptKeys ?? true;
     const orgId = this.requireOrgId(organizationId);
 
     const [setting, featureRoute, connections] = await Promise.all([
@@ -361,6 +370,7 @@ export class AiGatewayService {
     const candidates = this.resolveCandidatesFromTargets(
       scopedTargets,
       connections as ConnectionRecordRow[],
+      decryptKeys,
     );
 
     return {
@@ -376,7 +386,9 @@ export class AiGatewayService {
     organizationId: string,
     feature: AiFeatureKey,
   ): Promise<OrganizationAiFeatureStatus> {
-    const plan = await this.resolveExecutionPlan(organizationId, feature);
+    const plan = await this.resolveExecutionPlan(organizationId, feature, {
+      decryptKeys: false,
+    });
     const enabled = plan.featureEnabled && plan.candidates.length > 0;
     const primary = plan.candidates[0];
     return {
@@ -394,7 +406,9 @@ export class AiGatewayService {
     organizationId: string,
     feature: AiFeatureKey,
   ): Promise<void> {
-    const plan = await this.resolveExecutionPlan(organizationId, feature);
+    const plan = await this.resolveExecutionPlan(organizationId, feature, {
+      decryptKeys: false,
+    });
     if (!plan.orgEnabled) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.AI_NOT_CONFIGURED,
@@ -453,6 +467,9 @@ export class AiGatewayService {
         cooldownSec = COOLDOWN_AUTH_OR_QUOTA_SEC;
       }
     }
+    if (Math.max(0, currentFailures) + 1 >= CIRCUIT_BREAKER_THRESHOLD) {
+      cooldownSec = Math.max(cooldownSec, COOLDOWN_CIRCUIT_OPEN_SEC);
+    }
     await this.setCooldown(organizationId, connectionId, cooldownSec);
 
     try {
@@ -461,7 +478,7 @@ export class AiGatewayService {
         data: {
           lastStatus: "ERROR",
           lastError: cleanMsg,
-          consecutiveFailures: Math.max(0, currentFailures) + 1,
+          consecutiveFailures: { increment: 1 },
         },
       });
     } catch {

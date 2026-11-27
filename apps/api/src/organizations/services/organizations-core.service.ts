@@ -133,14 +133,20 @@ export class OrganizationsCoreService {
       );
     }
 
-    const orgId = crypto.randomUUID();
+    const organizationId = crypto.randomUUID();
     const now = toInstant();
     let org;
     try {
-      org = await runInTransaction(this.prisma, async (tx) => {
+      const executeCreateTx =
+        typeof this.prisma.withTenantRls === "function"
+          ? <T>(fn: (tx: PrismaService) => Promise<T>) =>
+              this.prisma.withTenantRls(organizationId, fn)
+          : <T>(fn: (tx: PrismaService) => Promise<T>) =>
+              runInTransaction(this.prisma, fn);
+      org = await executeCreateTx(async (tx) => {
         const createdOrg = await tx.organization.create({
           data: {
-            id: orgId,
+            id: organizationId,
             name: dto.name.trim(),
             slug: normalizedSlug,
             ownerId: userId,

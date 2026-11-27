@@ -664,6 +664,7 @@ export class OrganizationsInvitesService {
             inviteLinkId: { in: string[] };
           };
           orderBy?: { usedAt: "desc" };
+          take?: number;
           select?: {
             id: boolean;
             inviteLinkId: boolean;
@@ -692,6 +693,7 @@ export class OrganizationsInvitesService {
               inviteLinkId: { in: linkIds },
             },
             orderBy: { usedAt: "desc" },
+            take: Math.min(Math.max(linkIds.length * 10, 50), 1000),
             select: {
               id: true,
               inviteLinkId: true,

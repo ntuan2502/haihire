@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import crypto from "node:crypto";
 import { EncryptionService } from "./encryption.service";
 import { env } from "../config/env";
@@ -69,5 +69,17 @@ describe("EncryptionService", () => {
     expect(service.mask("")).toBeNull();
     expect(service.mask(null)).toBeNull();
     expect(service.mask(undefined)).toBeNull();
+  });
+
+  it("caches derived keys across repeated decrypt calls for the same ciphertext", () => {
+    const scryptSpy = vi.spyOn(crypto, "scryptSync");
+    const cipher = service.encrypt("cached-secret");
+    expect(scryptSpy).toHaveBeenCalledTimes(1);
+
+    expect(service.decrypt(cipher)).toBe("cached-secret");
+    expect(service.decrypt(cipher)).toBe("cached-secret");
+    // Decrypt reuses the derived key generated during encrypt / first decrypt
+    expect(scryptSpy).toHaveBeenCalledTimes(1);
+    scryptSpy.mockRestore();
   });
 });

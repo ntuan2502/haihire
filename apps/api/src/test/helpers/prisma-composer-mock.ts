@@ -798,9 +798,10 @@ export function createMockTable<T = MockRecord>(
         where?: unknown;
         _count?: boolean | Record<string, boolean>;
       }): Promise<Array<Record<string, unknown>>> => {
+        const matchCtx = tableRelationMeta.get(table);
         const filtered = args.where
           ? store.filter((item) =>
-              matchPrismaWhere(item as MockRecord, args.where),
+              matchPrismaWhere(item as MockRecord, args.where, matchCtx),
             )
           : store;
         const groups = new Map<string, Record<string, unknown>>();

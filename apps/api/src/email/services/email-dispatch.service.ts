@@ -153,9 +153,16 @@ export class EmailDispatchService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
-    await this.verifyTargetEntities(dto, organizationId);
-    const settings =
-      await this.settingsService.requireDeliverySettings(organizationId);
+    const runWithRls =
+      typeof this.prisma.withTenantRls === "function"
+        ? <T>(fn: () => Promise<T>) =>
+            this.prisma.withTenantRls(organizationId, fn)
+        : <T>(fn: () => Promise<T>) => fn();
+
+    const settings = await runWithRls(async () => {
+      await this.verifyTargetEntities(dto, organizationId);
+      return this.settingsService.requireDeliverySettings(organizationId);
+    });
 
     const variables = dto.variables || {};
     const renderedSubject = interpolateEmailSubject(dto.subject, variables);
@@ -188,83 +195,95 @@ export class EmailDispatchService {
         ? "SYSTEM"
         : "ORGANIZATION";
 
-    const existingFailedLog =
-      typeof this.prisma.emailLog.findFirst === "function"
-        ? await this.prisma.emailLog.findFirst({
-            where: {
-              organizationId,
-              scope: logScope,
-              recipientEmail: dto.to,
-              subject: renderedSubject,
-              candidateId: dto.candidateId || null,
-              applicationId: dto.applicationId || null,
-              status: "FAILED",
-              sentAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
-            },
-            orderBy: { sentAt: "desc" },
-          })
-        : null;
+    const { log, logId, existingFailedLog } = await runWithRls(async () => {
+      const existingFailed =
+        typeof this.prisma.emailLog.findFirst === "function"
+          ? await this.prisma.emailLog.findFirst({
+              where: {
+                organizationId,
+                scope: logScope,
+                recipientEmail: dto.to,
+                subject: renderedSubject,
+                candidateId: dto.candidateId || null,
+                applicationId: dto.applicationId || null,
+                status: "FAILED",
+                sentAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+              },
+              orderBy: { sentAt: "desc" },
+            })
+          : null;
 
-    const now = toInstant();
-    const log =
-      existingFailedLog && typeof this.prisma.emailLog.update === "function"
-        ? await this.prisma.emailLog.update({
-            where: { id: existingFailedLog.id },
-            data: {
-              status: sendResult.status,
-              errorMessage: sendResult.error || null,
-              sentAt: now,
-              updatedAt: now,
-            },
-          })
-        : await this.prisma.emailLog.create({
-            data: {
-              id: crypto.randomUUID(),
-              scope: logScope,
-              organizationId,
-              candidateId: dto.candidateId || null,
-              applicationId: dto.applicationId || null,
-              senderId: senderUser?.id || null,
-              senderName: fromName,
-              senderEmail: fromEmail,
-              recipientEmail: dto.to,
-              recipientName: dto.recipientName,
-              templateId: dto.templateId || null,
-              templateName: dto.templateName || null,
-              templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-              subject: renderedSubject,
-              body: renderedBody,
-              status: sendResult.status,
-              errorMessage: sendResult.error || null,
-              sentAt: now,
-              updatedAt: now,
-            },
-          });
-    const logId = log?.id || existingFailedLog?.id || "";
+      const now = toInstant();
+      const savedLog =
+        existingFailed && typeof this.prisma.emailLog.update === "function"
+          ? await this.prisma.emailLog.update({
+              where: { id: existingFailed.id },
+              data: {
+                status: sendResult.status,
+                errorMessage: sendResult.error || null,
+                sentAt: now,
+                updatedAt: now,
+              },
+            })
+          : await this.prisma.emailLog.create({
+              data: {
+                id: crypto.randomUUID(),
+                scope: logScope,
+                organizationId,
+                candidateId: dto.candidateId || null,
+                applicationId: dto.applicationId || null,
+                senderId: senderUser?.id || null,
+                senderName: fromName,
+                senderEmail: fromEmail,
+                recipientEmail: dto.to,
+                recipientName: dto.recipientName,
+                templateId: dto.templateId || null,
+                templateName: dto.templateName || null,
+                templateType:
+                  (dto.templateType as EmailTemplateType) || "CUSTOM",
+                subject: renderedSubject,
+                body: renderedBody,
+                status: sendResult.status,
+                errorMessage: sendResult.error || null,
+                sentAt: now,
+                updatedAt: now,
+              },
+            });
+      const resolvedLogId = savedLog?.id || existingFailed?.id || "";
 
-    // Record candidate activity timeline event once per send attempt chain
+      // Record candidate activity timeline event once per send attempt chain
+      if (dto.candidateId && !existingFailed) {
+        await this.activitiesService.createActivity({
+          organizationId,
+          candidateId: dto.candidateId,
+          applicationId: dto.applicationId || null,
+          type: "EMAIL_SENT",
+          title: `Email Sent: ${renderedSubject}`,
+          description: `Sent to ${dto.recipientName} (${dto.to}) - Status: ${sendResult.status}`,
+          actorId: senderUser?.id || null,
+          actorName: fromName,
+          actorRole: "ADMIN",
+          metadata: {
+            emailLogId: resolvedLogId,
+            templateId: dto.templateId || null,
+            templateName: dto.templateName || null,
+            templateType: dto.templateType || "CUSTOM",
+            subject: renderedSubject,
+            status: sendResult.status,
+            recipientEmail: dto.to,
+            recipientName: dto.recipientName,
+          },
+        });
+      }
+
+      return {
+        log: savedLog,
+        logId: resolvedLogId,
+        existingFailedLog: existingFailed,
+      };
+    });
+
     if (dto.candidateId && !existingFailedLog) {
-      await this.activitiesService.createActivity({
-        organizationId,
-        candidateId: dto.candidateId,
-        applicationId: dto.applicationId || null,
-        type: "EMAIL_SENT",
-        title: `Email Sent: ${renderedSubject}`,
-        description: `Sent to ${dto.recipientName} (${dto.to}) - Status: ${sendResult.status}`,
-        actorId: senderUser?.id || null,
-        actorName: fromName,
-        actorRole: "ADMIN",
-        metadata: {
-          emailLogId: logId,
-          templateId: dto.templateId || null,
-          templateName: dto.templateName || null,
-          templateType: dto.templateType || "CUSTOM",
-          subject: renderedSubject,
-          status: sendResult.status,
-          recipientEmail: dto.to,
-          recipientName: dto.recipientName,
-        },
-      });
       this.eventsService?.emit({
         type: "ACTIVITIES_CHANGED",
         organizationId,

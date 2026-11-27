@@ -75,8 +75,13 @@ export class EmailProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>,
+    job:
+      | Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>
+      | undefined,
   ): Promise<unknown> {
+    if (!job) {
+      return { status: "SKIPPED" };
+    }
     this.logger.log(`Processing email job '${job.name}' (ID: ${job.id})`);
     try {
       if (job.name === "send-notification-email") {
@@ -142,9 +147,12 @@ export class EmailProcessor extends WorkerHost {
 
   @OnWorkerEvent("failed")
   async onFailed(
-    job: Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>,
+    job:
+      | Job<SendEmailJobData | SendSystemEmailJobData | NotificationEvent>
+      | undefined,
     err: Error,
   ): Promise<void> {
+    if (!job) return;
     const maxAttempts = job.opts?.attempts || 3;
     if (job.attemptsMade >= maxAttempts) {
       this.logger.error(

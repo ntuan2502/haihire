@@ -3,6 +3,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { OrganizationsController } from "./organizations.controller";
 import { OrganizationsService } from "./organizations.service";
 import {
+  AUDIT_LOG_RETENTION_DLQ,
   AUDIT_LOG_RETENTION_QUEUE,
   AuditLogRetentionProcessor,
 } from "./audit-log-retention.processor";
@@ -26,7 +27,10 @@ import { MinioModule } from "../minio/minio.module";
     EventsModule,
     EmailModule,
     MinioModule,
-    BullModule.registerQueue({ name: AUDIT_LOG_RETENTION_QUEUE }),
+    BullModule.registerQueue(
+      { name: AUDIT_LOG_RETENTION_QUEUE },
+      { name: AUDIT_LOG_RETENTION_DLQ },
+    ),
   ],
   controllers: [OrganizationsController],
   providers: [

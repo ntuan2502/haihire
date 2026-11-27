@@ -906,7 +906,7 @@ export class ApplicationsSagaService {
           // 5. Resolve Sourcing / Attribution
           if (trackingToken) {
             const link = await tx.trackingLink.findFirst({
-              where: { token: trackingToken as string },
+              where: { token: trackingToken as string, deletedAt: null },
               select: {
                 id: true,
                 organizationId: true,

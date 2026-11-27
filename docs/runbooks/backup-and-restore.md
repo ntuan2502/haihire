@@ -10,7 +10,7 @@ HaiHire persists authoritative relational state in **PostgreSQL 17.6** and uploa
 
 - `BACKUP_DIR` (default `./backups`)
 - `BACKUP_RETENTION_DAYS` (default `7`)
-- `POSTGRES_HOST` (`localhost`), `POSTGRES_PORT` (`15432` script fallback / `5432` in Compose), `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_CONTAINER` (`haihire-postgres`)
+- `POSTGRES_HOST` (`localhost`), `POSTGRES_PORT` (`5432`), `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_CONTAINER` (`haihire-postgres`)
 - `MINIO_CONTAINER` (`haihire-minio`)
 
 Concurrence safety uses a `.backup.lock` file inside `BACKUP_DIR` with automatic `30m` stale lock expiration.

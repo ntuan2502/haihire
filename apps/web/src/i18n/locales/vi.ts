@@ -30,7 +30,6 @@ export const vi: TranslationSchema = {
     uploading: "Đang tải lên...",
     optional: "không bắt buộc",
     required: "bắt buộc",
-    views: "Chế độ xem",
     columns: "Cột",
     toggleColumns: "HIỂN THỊ CỘT",
     showing: "Hiển thị",
@@ -293,10 +292,7 @@ export const vi: TranslationSchema = {
     heroBadge: "ATS thế hệ mới • Tuyển dụng bài bản",
     heroSubtitle:
       "Tự động hóa toàn diện từ bóc tách CV, tính điểm tương thích AI, xếp lịch phỏng vấn đồng bộ đến thiết lập trang tuyển dụng thương hiệu riêng trong 60 giây.",
-    heroExploreDemo: "Xem bảng mẫu trực quan",
     heroQuickSetup: "Thiết lập chỉ trong 60 giây",
-    mockupActiveCandidates: "12 ứng viên đang xử lý",
-    mockupAtsWindowTitle: "{brand} • Hệ thống Quản trị Tuyển dụng ATS",
     metricsEyebrow: "Hiệu suất vượt trội",
     metricsTitle:
       "Những con số chứng minh sức mạnh của quy trình tuyển dụng thông minh",
@@ -1769,7 +1765,7 @@ export const vi: TranslationSchema = {
         testSuccess: "Kết nối thành công tới {model} trong {latencyMs} ms.",
         deleteConfirmTitle: "Xóa kết nối AI",
         deleteConfirmMessage:
-          "Bạn có chắc chắn muốn xóa kết nối \"{name}\" cùng khóa API đã mã hóa không?",
+          'Bạn có chắc chắn muốn xóa kết nối "{name}" cùng khóa API đã mã hóa không?',
         deleteInUseWarning:
           "Đang được gắn trong: {routes}. Nếu xóa, khóa này sẽ tự động được gỡ khỏi các luồng trên.",
         createConnectionTitle: "Thêm khóa API AI mới",

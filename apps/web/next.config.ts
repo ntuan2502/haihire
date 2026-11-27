@@ -22,19 +22,19 @@ if (fs.existsSync(rootEnv)) {
 }
 
 const frontendPort = process.env.FRONTEND_PORT || process.env.PORT || "3000";
-const backendPort = process.env.BACKEND_PORT || "3001";
-const backendUrl = process.env.BACKEND_HOST
-  ? `http://${process.env.BACKEND_HOST}:${backendPort}`
-  : process.env.INTERNAL_API_URL || `http://127.0.0.1:${backendPort}`;
+const gatewayPort = process.env.GATEWAY_PORT || "8080";
 
 function getAllowedDevOrigins(): string[] {
   const origins = new Set<string>([
     "localhost",
     `localhost:${frontendPort}`,
+    `localhost:${gatewayPort}`,
     "127.0.0.1",
     `127.0.0.1:${frontendPort}`,
+    `127.0.0.1:${gatewayPort}`,
     "0.0.0.0",
     `0.0.0.0:${frontendPort}`,
+    `0.0.0.0:${gatewayPort}`,
     "*.local",
   ]);
 
@@ -48,6 +48,7 @@ function getAllowedDevOrigins(): string[] {
         const ip = iface.address;
         origins.add(ip);
         origins.add(`${ip}:${frontendPort}`);
+        origins.add(`${ip}:${gatewayPort}`);
 
         // Automatically allow entire /24 subnet of current network interface
         const parts = ip.split(".");
@@ -57,6 +58,7 @@ function getAllowedDevOrigins(): string[] {
             const subnetIp = `${prefix}.${i}`;
             origins.add(subnetIp);
             origins.add(`${subnetIp}:${frontendPort}`);
+            origins.add(`${subnetIp}:${gatewayPort}`);
           }
         }
       }
@@ -101,22 +103,6 @@ const nextConfig: NextConfig = {
         hostname: "www.gravatar.com",
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/:path*`,
-      },
-      {
-        source: "/organizations/:path*",
-        destination: `${backendUrl}/organizations/:path*`,
-      },
-      {
-        source: "/events/:path*",
-        destination: `${backendUrl}/events/:path*`,
-      },
-    ];
   },
 };
 

@@ -9,12 +9,13 @@ HaiHire is an enterprise multi-tenant Applicant Tracking System organized as a `
 ```text
 Browser / Candidate Portal
    │
-   ├── HTTP/SSE ──► Next.js 16 Frontend (apps/web, port 3000 dev/prod, 13000 E2E)
-   │                   ├── src/proxy.ts (JWT cookie check & /dashboard -> /auth/login redirect)
-   │                   ├── next.config.ts rewrites (/api/* -> API)
-   │                   ├── Shared Dashboard Layout (src/app/(workspace)/layout.tsx) & RSC pages
-   │                   ├── Lazy-Loaded i18n Dictionaries (zero-FOUC initial dictionary injection)
-   │                   └── TanStack Query v5 (orgId cache isolation) + Axios (URL Gatekeeper + 401 refresh queue)
+   ├── HTTP/SSE (port 8080) ──► Caddy App Gateway (deploy/caddy/Caddyfile)
+   │                             ├── /* ──► Next.js 16 Frontend (apps/web, port 3000)
+   │                             │             ├── src/proxy.ts (JWT cookie check & /dashboard -> /auth/login redirect)
+   │                             │             ├── Shared Dashboard Layout (src/app/(workspace)/layout.tsx) & RSC pages
+   │                             │             ├── Lazy-Loaded i18n Dictionaries (zero-FOUC initial dictionary injection)
+   │                             │             └── TanStack Query v5 (orgId cache isolation) + Axios (URL Gatekeeper + 401 refresh queue)
+   │                             └── /api/*, /organizations/*, /events/* ──► NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
    │
    ▼
 NestJS 12 ESM Backend (apps/api, port 3001, dist/server.mjs)
@@ -53,7 +54,7 @@ Compiled into a single ESM artifact (`dist/server.mjs`) via `esbuild`.
 
 ### `apps/web` (Next.js `16.4.5` Portal)
 
-- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` and proxy rewrites. Features shared dashboard shell (`src/app/(workspace)/layout.tsx`), React Server Components (RSC) for landing, auth layouts, and careers directories, and modular UI components under 500 LOC.
+- **App Router & `output: "standalone"`:** Configured in [apps/web/next.config.ts](../../apps/web/next.config.ts) with dynamic local network `allowedDevOrigins` (supporting `FRONTEND_PORT` and `GATEWAY_PORT`). Public HTTP routing is unified through Caddy App Gateway ([deploy/caddy/Caddyfile](../../deploy/caddy/Caddyfile)), while SSR uses `INTERNAL_API_URL`. Features shared dashboard shell (`src/app/(workspace)/layout.tsx`), React Server Components (RSC) for landing, auth layouts, and careers directories, and modular UI components under 500 LOC.
 - **Request Boundary (`src/proxy.ts`):** Uses Next.js 16 `proxy()` convention (with zero legacy `middleware.ts` files).
 - **UI Stack:** React `19.3.1`, Tailwind CSS `^4.3.5` CSS-first `@theme inline` + `oklch(...)` variables in [apps/web/src/app/globals.css](../../apps/web/src/app/globals.css), and Shadcn `new-york` built on `radix-ui` + standalone `cn` package. Shared overlay archetypes ([apps/web/src/components/shared/index.ts](../../apps/web/src/components/shared/index.ts)) standardize confirmation, form, preview, and detail dialogs, `Sheet` slide-over & filter drawers (`SlideOver`, `FilterDrawer`), `DropdownMenu` pickers (`ColumnPicker`), `Popover`-backed `CustomSelect` controls, and `<PageHeader>` + in-card `<Pagination>` workspace list views.
 - **Data & Real-Time Layer:** Axios interceptor chain in [apps/web/src/lib/api/client.ts](../../apps/web/src/lib/api/client.ts) prevents `[object Object]` URL leaks, queues concurrent `401` retries behind a cookie-authenticated refresh request with an empty body and credentials enabled, and routes resume previews through tenant-guarded API download routes. TanStack Query v5 keys are scoped by `orgId` for strict multi-tenant cache isolation. SSE events trigger debounced (`100ms`) query prefix invalidation via `createRealtimeInvalidator` ([apps/web/src/lib/realtime-sync.ts](../../apps/web/src/lib/realtime-sync.ts)).

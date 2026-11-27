@@ -1,6 +1,5 @@
 export * from "./landing-navbar";
 export * from "./landing-hero";
-export * from "./landing-ats-preview";
 export * from "./landing-metrics";
 export * from "./landing-bento-grid";
 export * from "./landing-workflow";

@@ -200,7 +200,7 @@ const backendEnvSchema = z
 export type BackendEnv = z.infer<typeof backendEnvSchema>;
 
 const rawPort = process.env.BACKEND_PORT || process.env.PORT || "3001";
-const rawFrontendPort = process.env.FRONTEND_PORT;
+const rawPublicPort = process.env.GATEWAY_PORT || process.env.FRONTEND_PORT;
 const rawPostgresPort = process.env.POSTGRES_PORT;
 const rawMinioPort = process.env.MINIO_PORT;
 const rawRedisPort = process.env.REDIS_PORT;
@@ -219,15 +219,15 @@ if (rawPostgresPort && databaseUrl.includes("@localhost:")) {
 }
 
 let frontendUrl = process.env.FRONTEND_URL || "";
-if (rawFrontendPort && frontendUrl.includes("localhost:")) {
+if (rawPublicPort && frontendUrl.includes("localhost:")) {
   frontendUrl = frontendUrl.replace(
     /localhost:\d+/,
-    `localhost:${rawFrontendPort}`,
+    `localhost:${rawPublicPort}`,
   );
-} else if (rawFrontendPort && frontendUrl.includes("127.0.0.1:")) {
+} else if (rawPublicPort && frontendUrl.includes("127.0.0.1:")) {
   frontendUrl = frontendUrl.replace(
     /127.0.0.1:\d+/,
-    `127.0.0.1:${rawFrontendPort}`,
+    `127.0.0.1:${rawPublicPort}`,
   );
 }
 

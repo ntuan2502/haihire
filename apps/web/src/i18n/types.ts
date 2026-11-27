@@ -28,7 +28,6 @@ export interface TranslationSchema {
     uploading: string;
     optional: string;
     required: string;
-    views: string;
     columns: string;
     toggleColumns: string;
     showing: string;
@@ -247,10 +246,7 @@ export interface TranslationSchema {
     navCareers: string;
     heroBadge: string;
     heroSubtitle: string;
-    heroExploreDemo: string;
     heroQuickSetup: string;
-    mockupActiveCandidates: string;
-    mockupAtsWindowTitle: string;
     metricsEyebrow: string;
     metricsTitle: string;
     metric1Value: string;

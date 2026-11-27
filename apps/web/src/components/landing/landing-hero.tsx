@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Eye } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
@@ -57,14 +57,6 @@ export const LandingHero: React.FC = () => {
                 <span>{t("landing.startFree")}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
-
-              <a
-                href="#demo"
-                className="inline-flex items-center gap-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border border-border h-11 px-6 text-sm font-medium transition-colors cursor-pointer"
-              >
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                <span>{t("landing.heroExploreDemo")}</span>
-              </a>
             </>
           )}
         </div>

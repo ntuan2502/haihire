@@ -51,13 +51,14 @@ pnpm dev:web   # Next.js 16 dev server (FRONTEND_PORT in .env, default 3000)
 
 Verify core infrastructure ports from [docker-compose.yml](../../docker-compose.yml) and [.env.example](../../.env.example):
 
-| Service            | Env Variable                        | Compose Default Host Port |    Typical Dev / E2E Override    |
-| :----------------- | :---------------------------------- | :-----------------------: | :------------------------------: |
-| Next.js Portal     | `FRONTEND_PORT`                     |          `3000`           | `13000` (`playwright.config.ts`) |
-| NestJS API         | `BACKEND_PORT`                      |          `3001`           |             `13001`              |
-| PostgreSQL 17      | `POSTGRES_PORT`                     |          `5432`           |             `15432`              |
-| Valkey / Redis     | `REDIS_PORT`                        |          `6379`           |             `16379`              |
-| MinIO S3 / Console | `MINIO_PORT` / `MINIO_CONSOLE_PORT` |      `9000` / `9001`      |        `19000` / `19001`         |
+| Service            | Env Variable                        | Standard Host Port | Role in Stack                                     |
+| :----------------- | :---------------------------------- | :----------------: | :------------------------------------------------ |
+| Caddy App Gateway  | `GATEWAY_PORT`                      |       `8080`       | Unified entry point (`/api/*`, `/events/*`, `/*`) |
+| Next.js Portal     | `FRONTEND_PORT`                     |       `3000`       | Upstream SSR/UI server behind Caddy               |
+| NestJS API         | `BACKEND_PORT`                      |       `3001`       | Upstream REST/SSE backend behind Caddy            |
+| PostgreSQL 17      | `POSTGRES_PORT`                     |       `5432`       | Primary relational database (`haihire_db`)        |
+| Valkey / Redis     | `REDIS_PORT`                        |       `6379`       | BullMQ queues, rate limiting, SSE pub/sub         |
+| MinIO S3 / Console | `MINIO_PORT` / `MINIO_CONSOLE_PORT` |  `9000` / `9001`   | Private S3 resume/logo object storage             |
 
 ---
 

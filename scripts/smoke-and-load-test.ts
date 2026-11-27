@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:13001";
+const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3001";
 
 interface HealthResponse {
   status: "ok" | "degraded";

@@ -9,7 +9,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { open: "never" }], ["list"]],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -23,7 +23,7 @@ export default defineConfig({
 
   webServer: {
     command: process.env.CI ? "pnpm start" : "pnpm dev",
-    url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
+    url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080",
     reuseExistingServer: true,
     timeout: process.env.CI ? 300000 : 120000,
     stdout: "pipe",

@@ -28,7 +28,7 @@ export const LandingFooter: React.FC = () => {
             <ul className="space-y-2 text-xs">
               <li>
                 <a
-                  href="#demo"
+                  href="#features"
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
                   {t("landing.footerPipeline")}

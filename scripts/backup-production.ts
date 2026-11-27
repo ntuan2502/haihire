@@ -27,7 +27,7 @@ function resolveConfig(): BackupConfig {
     backupDir: process.env.BACKUP_DIR || path.resolve(process.cwd(), "backups"),
     retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || "7", 10),
     dbHost: process.env.POSTGRES_HOST || "localhost",
-    dbPort: process.env.POSTGRES_PORT || "15432",
+    dbPort: process.env.POSTGRES_PORT || "5432",
     dbUser: process.env.POSTGRES_USER || "haihire_user",
     dbName: process.env.POSTGRES_DB || "haihire_db",
     postgresContainer: process.env.POSTGRES_CONTAINER || "haihire-postgres",

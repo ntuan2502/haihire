@@ -350,7 +350,8 @@ export function runEnvSyncAudit(): boolean {
 
   if (rootEnv.size > 0) {
     const backendPort = rootEnv.get("BACKEND_PORT");
-    const frontendPort = rootEnv.get("FRONTEND_PORT");
+    const publicPort =
+      rootEnv.get("GATEWAY_PORT") || rootEnv.get("FRONTEND_PORT");
     const internalApiUrl = rootEnv.get("INTERNAL_API_URL") || "";
     const frontendUrl = rootEnv.get("FRONTEND_URL") || "";
 
@@ -368,17 +369,13 @@ export function runEnvSyncAudit(): boolean {
       );
     }
 
-    if (
-      frontendPort &&
-      frontendUrl &&
-      !frontendUrl.includes(`:${frontendPort}`)
-    ) {
+    if (publicPort && frontendUrl && !frontendUrl.includes(`:${publicPort}`)) {
       console.warn(
-        `⚠️ Warning: FRONTEND_URL (${frontendUrl}) does not match FRONTEND_PORT (${frontendPort})`,
+        `⚠️ Warning: FRONTEND_URL (${frontendUrl}) does not match public port ${publicPort}`,
       );
     } else {
       console.log(
-        `✅ Frontend URL correctly targets frontend port ${frontendPort}`,
+        `✅ Frontend URL correctly targets public port ${publicPort}`,
       );
     }
   } else {

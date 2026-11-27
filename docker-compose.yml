@@ -169,6 +169,33 @@ services:
     networks:
       - haihire-network
 
+  # Unified Caddy App Gateway (Dev: proxies to host pnpm dev; Prod/Staging: proxies to Docker api & web)
+  gateway:
+    image: caddy:2-alpine
+    container_name: haihire-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      API_UPSTREAM: host.docker.internal:${BACKEND_PORT:-3001}
+      WEB_UPSTREAM: host.docker.internal:${FRONTEND_PORT:-3000}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:80/gateway-health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+    networks:
+      - haihire-network
+
 volumes:
   postgres_data:
     name: haihire_postgres_data

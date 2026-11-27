@@ -94,11 +94,11 @@ test.describe("Tier 1: Feature Coverage (E2E Web)", () => {
       consoleIssues.push(err.message);
     });
 
-    // Visit landing page as an authenticated user (triggers LocalizationProvider + LandingAtsPreview)
+    // Visit landing page as an authenticated user (triggers LocalizationProvider)
     await adminPage.goto("/", { waitUntil: "networkidle" });
-    await expect(
-      adminPage.locator('#demo [data-testid^="candidate-card-"]').first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(adminPage.locator("main h1").first()).toBeVisible({
+      timeout: 10000,
+    });
 
     const hydrationOrScriptIssues = consoleIssues.filter(
       (text) =>

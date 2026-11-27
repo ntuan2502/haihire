@@ -30,7 +30,6 @@ export const en: TranslationSchema = {
     uploading: "Uploading...",
     optional: "optional",
     required: "required",
-    views: "Views",
     columns: "Columns",
     toggleColumns: "TOGGLE COLUMNS",
     showing: "Showing",
@@ -293,10 +292,7 @@ export const en: TranslationSchema = {
     heroBadge: "Next-gen ATS • Structured hiring",
     heroSubtitle:
       "End-to-end recruitment intelligence: automated CV parsing, AI match scoring, synchronized interview scheduling, and instant branded career portals in 60 seconds.",
-    heroExploreDemo: "Explore Live ATS",
     heroQuickSetup: "Setup in 60 seconds",
-    mockupActiveCandidates: "12 active candidates",
-    mockupAtsWindowTitle: "{brand} • Applicant Tracking System",
     metricsEyebrow: "Proven performance",
     metricsTitle:
       "Tangible numbers proving the power of intelligent recruitment",

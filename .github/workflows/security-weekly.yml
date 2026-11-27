@@ -30,16 +30,26 @@ jobs:
           install-deps: "false"
 
       - name: Run Moderate & High Vulnerability Audit
+        id: audit
         run: |
-          pnpm audit --audit-level=moderate --json > audit-report.json || true
-          cat audit-report.json | head -n 30
+          AUDIT_EXIT=0
+          pnpm audit --audit-level=high --prod --json > audit-report.json || AUDIT_EXIT=$?
+          head -n 40 audit-report.json || true
+          echo "audit_exit=${AUDIT_EXIT}" >> "$GITHUB_OUTPUT"
 
       - name: Upload Audit Report Artifact
         uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: security-audit-report
           path: audit-report.json
           if-no-files-found: ignore
+
+      - name: Fail if High/Critical Vulnerabilities Found
+        if: steps.audit.outputs.audit_exit != '0'
+        run: |
+          echo "Production dependency audit failed with exit code ${{ steps.audit.outputs.audit_exit }}."
+          exit 1
 
   # ============================================================================
   # 2. TENANT SCOPING STATIC ANALYSIS SWEEP

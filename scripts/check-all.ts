@@ -109,6 +109,14 @@ const steps: Step[] = [
       "Assert 100% of Prisma queries in tenant-scoped modules are properly isolated",
   },
   {
+    id: "lint:permissions",
+    name: "CI Gate 9b: RBAC Permissions & Guards Audit",
+    command: "pnpm lint:permissions",
+    category: "gate",
+    description:
+      "Assert 100% of permission-guarded routes have JwtAuthGuard & RolesGuard",
+  },
+  {
     id: "lint:doc-links",
     name: "CI Gate 10: Documentation Markdown Link Integrity",
     command: "pnpm lint:doc-links",

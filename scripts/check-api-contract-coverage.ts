@@ -101,11 +101,8 @@ for (const file of controllerFiles) {
   }
 }
 
-// Read frontend files for API calls and error handling
+// Read frontend files for error handling checks
 const frontendFiles = getAllFiles(frontendDir, [".ts", ".tsx"]);
-const frontendContent = frontendFiles
-  .map((f) => fs.readFileSync(f, "utf8"))
-  .join("\n");
 
 console.log(
   "==================================================================",
@@ -128,6 +125,7 @@ console.log(
 // Verify every backend resource controller has frontend coverage
 const expectedControllers = [
   "activities.controller.ts",
+  "ai-settings.controller.ts",
   "applications.controller.ts",
   "auth.controller.ts",
   "candidates.controller.ts",

@@ -5,6 +5,8 @@ import {
   ORPHAN_CLEANUP_QUEUE,
   ORPHAN_CLEANUP_DLQ,
 } from "../applications/orphan-cleanup.processor";
+import { AI_SCORING_QUEUE } from "../ai/ai-scoring.service";
+import { AUDIT_LOG_RETENTION_QUEUE } from "../organizations/audit-log-retention.processor";
 import { PrismaService } from "../prisma/prisma.service";
 import { MinioService } from "../minio/minio.service";
 
@@ -73,6 +75,12 @@ export class MetricsService {
     @Optional()
     @Inject(MinioService)
     private readonly minio?: MinioService,
+    @Optional()
+    @InjectQueue(AI_SCORING_QUEUE)
+    private readonly aiScoringQueue?: Queue,
+    @Optional()
+    @InjectQueue(AUDIT_LOG_RETENTION_QUEUE)
+    private readonly auditRetentionQueue?: Queue,
   ) {}
 
   private static readonly MAX_CARDINALITY = 500;
@@ -123,6 +131,20 @@ export class MetricsService {
         name: EMAIL_DLQ_NAME,
         queue: this.emailDlqQueue,
         isDlq: true,
+      });
+    }
+    if (this.aiScoringQueue) {
+      queueDefs.push({
+        name: AI_SCORING_QUEUE,
+        queue: this.aiScoringQueue,
+        isDlq: false,
+      });
+    }
+    if (this.auditRetentionQueue) {
+      queueDefs.push({
+        name: AUDIT_LOG_RETENTION_QUEUE,
+        queue: this.auditRetentionQueue,
+        isDlq: false,
       });
     }
 
@@ -263,15 +285,35 @@ export class MetricsService {
     }
 
     let redisHealth = 1;
+    let redisUsedMemoryBytes: number | null = null;
+    let redisMaxMemoryBytes: number | null = null;
     try {
       const q = this.orphanQueue as unknown as {
-        client?: Promise<{ ping?: () => Promise<string> }>;
+        client?: Promise<{
+          ping?: () => Promise<string>;
+          info?: (section: string) => Promise<string>;
+        }>;
       };
       if (q && q.client) {
         const client = await q.client;
         if (client && typeof client.ping === "function") {
           const res = await client.ping();
           if (res !== "PONG") redisHealth = 0;
+        }
+        if (client && typeof client.info === "function") {
+          try {
+            const memInfo = await client.info("memory");
+            const usedMatch = memInfo.match(/^used_memory:(\d+)/m);
+            const maxMatch = memInfo.match(/^maxmemory:(\d+)/m);
+            if (usedMatch?.[1]) {
+              redisUsedMemoryBytes = Number(usedMatch[1]);
+            }
+            if (maxMatch?.[1]) {
+              redisMaxMemoryBytes = Number(maxMatch[1]);
+            }
+          } catch {
+            // Optional memory telemetry should not fail health scraping
+          }
         }
       }
     } catch {
@@ -294,6 +336,17 @@ export class MetricsService {
       `haihire_service_health{service="redis"} ${redisHealth}`,
       `haihire_service_health{service="minio"} ${minioHealth}`,
     );
+
+    if (redisUsedMemoryBytes !== null && redisMaxMemoryBytes !== null) {
+      lines.push(
+        "# HELP haihire_redis_used_memory_bytes Valkey/Redis used memory in bytes",
+        "# TYPE haihire_redis_used_memory_bytes gauge",
+        `haihire_redis_used_memory_bytes ${redisUsedMemoryBytes}`,
+        "# HELP haihire_redis_maxmemory_bytes Valkey/Redis configured maxmemory in bytes",
+        "# TYPE haihire_redis_maxmemory_bytes gauge",
+        `haihire_redis_maxmemory_bytes ${redisMaxMemoryBytes}`,
+      );
+    }
 
     const activeDb =
       this.prisma?.getPoolStats?.()?.activeCount ??

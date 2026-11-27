@@ -44,6 +44,20 @@ coverage
 **/coverage
 .vitest
 **/.vitest
+**/*.spec.ts
+**/*.spec.tsx
+**/*.test.ts
+**/*.test.tsx
+apps/web/tests
+playwright-report
+test-results
+
+# Deployment, Monitoring, Docs & Local Artifacts
+monitoring
+deploy
+backups
+Users
+*.md
 
 # IDEs & OS Files
 .idea

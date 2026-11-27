@@ -47,10 +47,15 @@ jobs:
         id: vars
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "TAG_NAME=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            TAG_NAME="${{ inputs.version }}"
           else
-            echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
           fi
+          if ! [[ "${TAG_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Invalid release tag format: '${TAG_NAME}'. Expected vX.Y.Z or vX.Y.Z-prerelease"
+            exit 1
+          fi
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
           SHORT_SHA=$(git rev-parse --short "${GITHUB_SHA}")
           echo "SHA_TAG=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
@@ -80,8 +85,8 @@ jobs:
           push: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
       - name: Extract Docker metadata for Web
         id: meta-web
@@ -99,8 +104,8 @@ jobs:
           push: true
           tags: ${{ steps.meta-web.outputs.tags }}
           labels: ${{ steps.meta-web.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
 
   # ============================================================================
   # 2. CONTAINER IMAGE VULNERABILITY SCAN (TRIVY GATE BEFORE PROMOTING RELEASE/LATEST)
@@ -258,6 +263,7 @@ jobs:
             IMAGE_TAG=${{ needs.publish-images.outputs.tag-name }} docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans
 
             # 3. Verify health
-            curl -i http://localhost:3001/health
+            curl -fsS http://127.0.0.1:8080/gateway-health
+            curl -fsS http://127.0.0.1:8080/api/health
             ```
             *Refer to `docs/runbooks/ci-cd.md` for operational deployment and rollback SOPs.*

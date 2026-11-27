@@ -1,5 +1,8 @@
 #!/usr/bin/env tsx
 
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 export interface ValidateEmailProviderOptions {
   nodeEnv?: string;
   provider?: string;
@@ -34,13 +37,55 @@ export function validateProdEmailProvider(
   };
 }
 
+export function validateEnvTemplateFiles(
+  rootDir = process.cwd(),
+): ValidationResult {
+  const templates = [".env.production.example", ".env.staging.example"];
+  for (const rel of templates) {
+    const fullPath = path.join(rootDir, rel);
+    if (!fs.existsSync(fullPath)) continue;
+    const raw = fs.readFileSync(fullPath, "utf-8");
+    let nodeEnv: string | undefined;
+    let provider: string | undefined;
+    for (const line of raw.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed
+        .slice(eqIdx + 1)
+        .trim()
+        .replace(/^["']|["']$/g, "");
+      if (key === "NODE_ENV") nodeEnv = val;
+      if (key === "SYSTEM_EMAIL_PROVIDER") provider = val;
+    }
+    const res = validateProdEmailProvider({ nodeEnv, provider });
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: `${rel}: ${res.message}`,
+      };
+    }
+  }
+  return {
+    ok: true,
+    message: "Environment template email provider check OK.",
+  };
+}
+
 export function runCli(): void {
-  const result = validateProdEmailProvider();
-  if (!result.ok) {
-    console.error(`[ERROR] ${result.message}`);
+  const envResult = validateProdEmailProvider();
+  if (!envResult.ok) {
+    console.error(`[ERROR] ${envResult.message}`);
     process.exit(1);
   }
-  console.log(`[PASS] ${result.message}`);
+  const tplResult = validateEnvTemplateFiles();
+  if (!tplResult.ok) {
+    console.error(`[ERROR] ${tplResult.message}`);
+    process.exit(1);
+  }
+  console.log(`[PASS] ${envResult.message} (${tplResult.message})`);
   process.exit(0);
 }
 

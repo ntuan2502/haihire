@@ -69,9 +69,9 @@ services:
     command: >
       /bin/sh -c "
         if [ -n \"$${REDIS_PASSWORD}\" ]; then
-          redis-server --requirepass \"$${REDIS_PASSWORD}\";
+          valkey-server --requirepass \"$${REDIS_PASSWORD}\";
         else
-          redis-server;
+          valkey-server;
         fi
       "
     environment:
@@ -87,7 +87,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'if [ -n "$${REDIS_PASSWORD}" ]; then redis-cli -a "$${REDIS_PASSWORD}" ping; else redis-cli ping; fi',
+          'if [ -n "$${REDIS_PASSWORD}" ]; then valkey-cli -a "$${REDIS_PASSWORD}" ping; else valkey-cli ping; fi',
         ]
       interval: 5s
       timeout: 5s
@@ -95,7 +95,7 @@ services:
 
   # Unified Caddy App Gateway (Dev: proxies host pnpm dev over port 8080)
   gateway:
-    image: caddy:2-alpine
+    image: caddy:2.11.9-alpine
     container_name: haihire-gateway
     restart: unless-stopped
     ports:

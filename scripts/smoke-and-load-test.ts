@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
-const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3001";
+const BASE_URL = (process.env.BASE_URL || "http://127.0.0.1:8080/api").replace(
+  /\/$/,
+  "",
+);
+const DIRECT_API_URL = process.env.DIRECT_API_URL?.replace(/\/$/, "");
+const METRICS_TOKEN = process.env.METRICS_TOKEN?.trim();
 
 interface HealthResponse {
   status: "ok" | "degraded";
@@ -43,7 +48,15 @@ interface ApplicationResponse {
   stage: string;
 }
 
-async function runSmokeTest(): Promise<void> {
+async function assertOkJson<T>(res: Response, stepName: string): Promise<T> {
+  if (!res.ok) {
+    const snippet = (await res.text()).slice(0, 300);
+    throw new Error(`${stepName} failed (HTTP ${res.status}): ${snippet}`);
+  }
+  return (await res.json()) as T;
+}
+
+async function runSmokeTest(): Promise<{ token: string }> {
   console.log(
     "==================================================================",
   );
@@ -63,21 +76,41 @@ async function runSmokeTest(): Promise<void> {
   // 1. Health check
   console.log("1. Checking /health endpoint...");
   const healthRes = await fetch(`${BASE_URL}/health`);
-  const healthData = (await healthRes.json()) as HealthResponse;
+  const healthData = await assertOkJson<HealthResponse>(
+    healthRes,
+    "Health check",
+  );
   console.log(`   /health status: HTTP ${healthRes.status}`, healthData);
-  if (healthRes.status !== 200 || healthData.status !== "ok") {
-    throw new Error("Health check failed");
+  if (healthData.status !== "ok") {
+    throw new Error(`Health check degraded: ${JSON.stringify(healthData)}`);
   }
 
-  // 2. Metrics check
+  // 2. Metrics check (protected by gateway external block & optional METRICS_TOKEN)
   console.log("\n2. Checking /metrics endpoint...");
-  const metricsRes = await fetch(`${BASE_URL}/metrics`);
-  const metricsText = await metricsRes.text();
-  console.log(
-    `   /metrics status: HTTP ${metricsRes.status}, lines: ${metricsText.split("\n").length}`,
-  );
-  if (!metricsText.includes("http_requests_total")) {
-    throw new Error("Metrics endpoint failed to return Prometheus headers");
+  const metricsTarget = DIRECT_API_URL
+    ? `${DIRECT_API_URL}/metrics`
+    : `${BASE_URL}/metrics`;
+  const metricsHeaders: Record<string, string> = METRICS_TOKEN
+    ? { Authorization: `Bearer ${METRICS_TOKEN}` }
+    : {};
+  const metricsRes = await fetch(metricsTarget, { headers: metricsHeaders });
+  if (
+    !DIRECT_API_URL &&
+    (metricsRes.status === 403 || metricsRes.status === 401)
+  ) {
+    console.log(
+      `   /metrics status: HTTP ${metricsRes.status} (Gateway/token guard active as expected; set DIRECT_API_URL & METRICS_TOKEN to scrape directly)`,
+    );
+  } else {
+    const metricsText = await metricsRes.text();
+    console.log(
+      `   /metrics status: HTTP ${metricsRes.status}, lines: ${metricsText.split("\n").length}`,
+    );
+    if (!metricsRes.ok || !metricsText.includes("http_requests_total")) {
+      throw new Error(
+        `Metrics endpoint check failed (HTTP ${metricsRes.status})`,
+      );
+    }
   }
 
   // 3. Register user
@@ -92,8 +125,14 @@ async function runSmokeTest(): Promise<void> {
       lastName: "Production",
     }),
   });
-  const regData = (await regRes.json()) as AuthRegisterResponse;
+  const regData = await assertOkJson<AuthRegisterResponse>(
+    regRes,
+    "User registration",
+  );
   const initToken = regData.accessToken;
+  if (!initToken) {
+    throw new Error("User registration did not return accessToken");
+  }
   console.log(
     `   Register: HTTP ${regRes.status}, User ID: ${regData.user?.id}`,
   );
@@ -108,8 +147,14 @@ async function runSmokeTest(): Promise<void> {
     },
     body: JSON.stringify({ name: orgName, slug: orgSlug }),
   });
-  const orgData = (await orgRes.json()) as OrgResponse;
+  const orgData = await assertOkJson<OrgResponse>(
+    orgRes,
+    "Create organization",
+  );
   const orgId = orgData.organization?.id || orgData.id;
+  if (!orgId) {
+    throw new Error("Create organization did not return organization ID");
+  }
   console.log(`   Org created: HTTP ${orgRes.status}, Org ID: ${orgId}`);
 
   // 5. Login to obtain tenant JWT
@@ -119,8 +164,11 @@ async function runSmokeTest(): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const loginData = (await loginRes.json()) as LoginResponse;
+  const loginData = await assertOkJson<LoginResponse>(loginRes, "Login");
   const token = loginData.accessToken;
+  if (!token) {
+    throw new Error("Login did not return tenant accessToken");
+  }
   console.log(`   Login: HTTP ${loginRes.status}, Token received`);
 
   // 6. Create Job
@@ -143,7 +191,10 @@ async function runSmokeTest(): Promise<void> {
       organizationId: orgId,
     }),
   });
-  const job = (await jobRes.json()) as JobResponse;
+  const job = await assertOkJson<JobResponse>(jobRes, "Create job");
+  if (!job.id) {
+    throw new Error("Create job did not return job.id");
+  }
   console.log(`   Job created: HTTP ${jobRes.status}, Job ID: ${job.id}`);
 
   // 7. Apply to Job
@@ -160,7 +211,13 @@ async function runSmokeTest(): Promise<void> {
     method: "POST",
     body: formData,
   });
-  const app = (await applyRes.json()) as ApplicationResponse;
+  const app = await assertOkJson<ApplicationResponse>(
+    applyRes,
+    "Candidate application",
+  );
+  if (!app.id) {
+    throw new Error("Candidate application did not return application ID");
+  }
   console.log(
     `   Application applied: HTTP ${applyRes.status}, App ID: ${app.id}, Stage: ${app.stage}`,
   );
@@ -170,16 +227,20 @@ async function runSmokeTest(): Promise<void> {
   const listRes = await fetch(`${BASE_URL}/applications?jobId=${job.id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const listData = (await listRes.json()) as {
-    data?: unknown[];
-    length?: number;
-  };
+  const listData = await assertOkJson<{ data?: unknown[] } | unknown[]>(
+    listRes,
+    "List applications",
+  );
   const count = Array.isArray(listData)
     ? listData.length
     : listData.data?.length || 0;
   console.log(`   List Applications: HTTP ${listRes.status}, Found: ${count}`);
+  if (count < 1) {
+    throw new Error("Expected at least 1 application in list result");
+  }
 
   console.log("\n✅ SMOKE TEST PASSED COMPLETELY!\n");
+  return { token };
 }
 
 interface BenchmarkResult {
@@ -196,9 +257,11 @@ interface BenchmarkResult {
   min: number;
   max: number;
   avg: number;
+  passedThreshold: boolean;
 }
 
 async function runLoadTest(
+  token: string,
   totalRequests = 500,
   concurrency = 50,
 ): Promise<BenchmarkResult> {
@@ -216,15 +279,19 @@ async function runLoadTest(
   let successCount = 0;
   let failCount = 0;
 
-  const endpoints = [
-    `${BASE_URL}/health`,
-    `${BASE_URL}/metrics`,
-    `${BASE_URL}/jobs`,
+  const targets: Array<{ url: string; headers?: Record<string, string> }> = [
+    { url: `${BASE_URL}/health` },
+    { url: `${BASE_URL}/jobs`, headers: { Authorization: `Bearer ${token}` } },
   ];
+  if (DIRECT_API_URL && METRICS_TOKEN) {
+    targets.push({
+      url: `${DIRECT_API_URL}/metrics`,
+      headers: { Authorization: `Bearer ${METRICS_TOKEN}` },
+    });
+  }
 
   let completed = 0;
   const startTime = Date.now();
-
   const statusCodes: Record<number, number> = {};
 
   async function worker(): Promise<void> {
@@ -232,10 +299,10 @@ async function runLoadTest(
       const idx = completed++;
       if (idx >= totalRequests) break;
 
-      const url = endpoints[idx % endpoints.length];
+      const target = targets[idx % targets.length];
       const reqStart = Date.now();
       try {
-        const res = await fetch(url);
+        const res = await fetch(target.url, { headers: target.headers });
         const reqDuration = Date.now() - reqStart;
         latencies.push(reqDuration);
         statusCodes[res.status] = (statusCodes[res.status] || 0) + 1;
@@ -252,8 +319,7 @@ async function runLoadTest(
     }
   }
 
-  const workers = Array.from({ length: concurrency }).map(() => worker());
-  await Promise.all(workers);
+  await Promise.all(Array.from({ length: concurrency }).map(() => worker()));
 
   const totalTime = Date.now() - startTime;
   latencies.sort((a, b) => a - b);
@@ -314,12 +380,37 @@ async function runLoadTest(
     min,
     max,
     avg,
+    passedThreshold,
   };
 }
 
+async function cleanupSmokeOrg(token: string | undefined): Promise<void> {
+  if (!token) return;
+  try {
+    const res = await fetch(`${BASE_URL}/organizations/me`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(`🧹 Cleanup smoke organization: HTTP ${res.status}`);
+  } catch (err: unknown) {
+    console.warn("Cleanup smoke organization skipped:", err);
+  }
+}
+
 async function main(): Promise<void> {
-  await runSmokeTest();
-  await runLoadTest(500, 50);
+  let token: string | undefined;
+  try {
+    const smoke = await runSmokeTest();
+    token = smoke.token;
+    const bench = await runLoadTest(token, 500, 50);
+    if (!bench.passedThreshold) {
+      throw new Error(
+        `Load test failed threshold: p95=${bench.p95}ms, failCount=${bench.failCount}`,
+      );
+    }
+  } finally {
+    await cleanupSmokeOrg(token);
+  }
 }
 
 main().catch((err: unknown) => {

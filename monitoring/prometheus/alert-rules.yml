@@ -192,3 +192,55 @@ groups:
             orphan files accumulate without being purged.
             Check if the orphan-cleanup container is running.
             See runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: HaiHireRedisMemoryHigh
+        expr: haihire_redis_maxmemory_bytes > 0 and (haihire_redis_used_memory_bytes / haihire_redis_maxmemory_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Valkey/Redis memory utilization exceeded 85%"
+          description: |
+            Valkey/Redis used memory has exceeded 85% of configured maxmemory for 5 minutes.
+            With noeviction policy, BullMQ enqueues will fail when memory reaches 100%.
+            See runbook: docs/runbooks/redis-recovery.md
+
+      - alert: HaiHireDbPoolSaturation
+        expr: haihire_db_pool_active_connections >= 18
+        for: 2m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "PostgreSQL connection pool near saturation ({{ $value }}/20)"
+          description: |
+            Active database connections reached >=18 out of 20 configured pool slots for 2 minutes.
+            Investigate slow queries or transaction locks immediately.
+            See runbook: docs/runbooks/alerts.md
+
+      - alert: HaiHireAiScoringQueueBacklog
+        expr: bullmq_queue_depth{queue="ai-scoring-queue",state="waiting"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "AI scoring queue backlog >100 jobs"
+          description: |
+            AI scoring queue has more than 100 waiting jobs for 5 minutes.
+            Check LLM provider latency, rate limits, and circuit breaker state.
+            See runbook: docs/runbooks/alerts.md
+
+      - alert: HaiHireBackupMissing
+        expr: time() - haihire_backup_last_success_timestamp_seconds > 93600
+        for: 10m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Production backup has not succeeded in over 26 hours"
+          description: |
+            Last successful production backup timestamp exceeds 26 hours (93600s).
+            Verify automated backup cron execution and disk capacity immediately.
+            See runbook: docs/runbooks/backup-and-restore.md

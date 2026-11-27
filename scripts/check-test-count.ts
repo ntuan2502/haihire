@@ -87,6 +87,23 @@ function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
 }
 
 const args = process.argv.slice(2);
-const base = args[0] || "HEAD~1";
+function resolveDefaultBaseRef(): string {
+  if (process.env.TEST_DIFF_BASE) {
+    return process.env.TEST_DIFF_BASE;
+  }
+  if (process.env.GITHUB_BASE_REF) {
+    try {
+      return execFileSync(
+        "git",
+        ["merge-base", `origin/${process.env.GITHUB_BASE_REF}`, "HEAD"],
+        { encoding: "utf-8" },
+      ).trim();
+    } catch {
+      // Fallback when remote base branch ref is not fetched
+    }
+  }
+  return "HEAD~1";
+}
+const base = args[0] || resolveDefaultBaseRef();
 const target = args[1] || "HEAD";
 analyzeTestChanges(base, target);

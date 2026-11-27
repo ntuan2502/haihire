@@ -1,7 +1,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { syncVersions } from "./sync-version.js";
+
+const VERSION_FILES = [
+  "package.json",
+  "apps/api/package.json",
+  "apps/web/package.json",
+  "packages/shared/package.json",
+];
 
 const rootDir = process.cwd();
 const rootPkgPath = path.join(rootDir, "package.json");
@@ -37,12 +44,23 @@ function bumpSemver(
 
 function checkTagExists(tag: string): boolean {
   try {
-    const existing = execSync(`git tag -l "${tag}"`, {
+    const existing = execFileSync("git", ["tag", "-l", tag], {
       encoding: "utf-8",
     }).trim();
     return existing.length > 0;
   } catch {
     return false;
+  }
+}
+
+function assertCleanWorkingTree(): void {
+  const dirty = execFileSync("git", ["status", "--porcelain"], {
+    encoding: "utf-8",
+  }).trim();
+  if (dirty.length > 0) {
+    throw new Error(
+      `Working tree is not clean. Commit or stash changes before running 'version:bump --tag':\n${dirty}`,
+    );
   }
 }
 
@@ -83,6 +101,10 @@ export function bumpVersion(
     );
   }
 
+  if (options.tag && !options.dryRun) {
+    assertCleanWorkingTree();
+  }
+
   console.log(
     "==================================================================",
   );
@@ -114,12 +136,38 @@ export function bumpVersion(
       console.log(
         "------------------------------------------------------------------",
       );
-      console.log(`Creating immutable Git tag: ${tagName}...`);
+      console.log(
+        `Committing version bump & creating immutable Git tag: ${tagName}...`,
+      );
       try {
+        const existingVersionFiles = VERSION_FILES.filter((f) =>
+          fs.existsSync(path.join(rootDir, f)),
+        );
+        if (existingVersionFiles.length > 0) {
+          execFileSync("git", ["add", ...existingVersionFiles], {
+            stdio: "inherit",
+          });
+          const stagedDiff = execFileSync(
+            "git",
+            ["diff", "--cached", "--name-only"],
+            { encoding: "utf-8" },
+          ).trim();
+          if (stagedDiff.length > 0) {
+            execFileSync(
+              "git",
+              ["commit", "-m", `chore(release): v${newVersion}`],
+              { stdio: "inherit" },
+            );
+          }
+        }
         // Enforce safe tag creation: never use -f or --force
-        execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, {
-          stdio: "inherit",
-        });
+        execFileSync(
+          "git",
+          ["tag", "-a", tagName, "-m", `Release ${tagName}`],
+          {
+            stdio: "inherit",
+          },
+        );
         console.log(`[SUCCESS] Git tag '${tagName}' created locally.`);
         console.log(`Tip: To publish tag, run: git push origin ${tagName}`);
       } catch (err: unknown) {

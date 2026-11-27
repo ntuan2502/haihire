@@ -1,0 +1,240 @@
+name: haihire-staging
+
+# ==============================================================================
+# HAIHIRE PLATFORM - STAGING DOCKER COMPOSE STACK
+# ==============================================================================
+# Two-layer reverse proxy architecture:
+#   VPS Host Nginx (TLS/Domain) -> Caddy App Gateway (127.0.0.1:8080) -> api / web
+#
+# Automated migrations run via the one-shot `migrate` service after `postgres`
+# is healthy and before `api` starts (`service_completed_successfully`).
+#
+# Usage:
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
+#   # Or run: ./deploy/deploy-staging.sh
+# ==============================================================================
+
+x-logging: &staging-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL Staging Database (Internal Only)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:17.6-alpine
+    container_name: haihire-staging-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-haihire_staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-haihire_staging}
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    logging: *staging-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-haihire_staging} -d ${POSTGRES_DB:-haihire_staging}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 2. Valkey / Redis Staging Cache & Queue (Internal Only)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: valkey/valkey:8.0.2-alpine
+    container_name: haihire-staging-redis
+    restart: unless-stopped
+    command: >
+      /bin/sh -c "
+        if [ -n \"$${REDIS_PASSWORD}\" ]; then
+          redis-server --requirepass \"$${REDIS_PASSWORD}\" --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes;
+        else
+          redis-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes;
+        fi
+      "
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - staging_redis_data:/data
+    logging: *staging-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$${REDIS_PASSWORD}" ]; then redis-cli -a "$${REDIS_PASSWORD}" ping; else redis-cli ping; fi',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 3. MinIO Staging Object Storage (Internal Only)
+  # ----------------------------------------------------------------------------
+  minio:
+    image: alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
+    container_name: haihire-staging-minio
+    user: "0:0"
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+    volumes:
+      - staging_minio_data:/data
+    logging: *staging-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 4. One-Shot Prisma Database Migration (Runs before API starts)
+  # ----------------------------------------------------------------------------
+  migrate:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-staging}
+    container_name: haihire-staging-migrate
+    restart: "no"
+    env_file:
+      - path: ./.env.staging
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_staging}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haihire_staging}?schema=public
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *staging-logging
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 5. NestJS Staging API Service (Internal Only via Gateway)
+  # ----------------------------------------------------------------------------
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-staging}
+    container_name: haihire-staging-api
+    init: true
+    restart: unless-stopped
+    env_file:
+      - path: ./.env.staging
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      BACKEND_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_staging}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haihire_staging}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    logging: *staging-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 6. Next.js Staging Web Service (Internal Only via Gateway)
+  # ----------------------------------------------------------------------------
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-web:${IMAGE_TAG:-staging}
+    container_name: haihire-staging-web
+    init: true
+    restart: unless-stopped
+    env_file:
+      - path: ./.env.staging
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      INTERNAL_API_URL: http://api:3001
+      BACKEND_HOST: api
+      BACKEND_PORT: 3001
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *staging-logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - haihire-staging-network
+
+  # ----------------------------------------------------------------------------
+  # 7. Caddy Unified App Gateway (Bound to Loopback for Host Nginx)
+  # ----------------------------------------------------------------------------
+  gateway:
+    image: caddy:2-alpine
+    container_name: haihire-staging-gateway
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: api:3001
+      WEB_UPSTREAM: web:3000
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    logging: *staging-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:80/gateway-health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - haihire-staging-network
+
+networks:
+  haihire-staging-network:
+    driver: bridge
+
+volumes:
+  staging_postgres_data:
+  staging_redis_data:
+  staging_minio_data:

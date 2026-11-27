@@ -1,0 +1,78 @@
+name: CD Staging (Build & Push GHCR)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Docker image tag to publish (default: staging)"
+        required: false
+        default: "staging"
+        type: string
+
+concurrency:
+  group: cd-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build & Push ${{ matrix.service }} (Staging)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api
+            context: .
+            dockerfile: apps/api/Dockerfile
+          - service: web
+            context: .
+            dockerfile: apps/web/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve staging tag
+        id: tag
+        run: |
+          TAG_VALUE="${{ github.event.inputs.tag || 'staging' }}"
+          echo "value=${TAG_VALUE}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/haihire-${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ steps.tag.outputs.value }}
+            type=sha,prefix=sha-
+
+      - name: Build and push staging image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          dockerfile: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=
+            NEXT_PUBLIC_ENABLE_DEMO_LOGIN=false
+          cache-from: type=gha,scope=staging-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=staging-${{ matrix.service }}

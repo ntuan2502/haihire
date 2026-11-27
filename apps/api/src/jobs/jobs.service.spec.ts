@@ -7,14 +7,12 @@ import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
 import {
-  JobStatus,
-  JobType,
-  ExperienceLevel,
-  WorkplaceType,
-} from "./dto/create-job.dto";
-import {
   AUDIT_ACTIONS,
   AUDIT_RESOURCES,
+  ExperienceLevel,
+  JobStatus,
+  JobType,
+  WorkplaceType,
   updateJobSchema,
 } from "@haihire/shared";
 

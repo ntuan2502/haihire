@@ -1,11 +1,10 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, organizationsApi } from "@/lib/api";
+import { jobsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type {
   Job,
-  Organization,
   PaginatedResult,
   PipelineStageItem,
   UpsertPipelineStagesSchema,
@@ -134,17 +133,6 @@ export function useJob(id: string | null) {
   });
 }
 
-export function usePublicOrg(slug: string | null) {
-  return useQuery<Organization>({
-    queryKey: ["organization", "public", slug],
-    queryFn: () => {
-      if (!slug) throw new Error("Organization slug is required");
-      return organizationsApi.getPublicOrg(slug);
-    },
-    enabled: Boolean(slug),
-  });
-}
-
 export function useAllPublicJobs(initialData?: Job[]) {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-all-published"],
@@ -159,34 +147,6 @@ export function useAllPublicJobs(initialData?: Job[]) {
         }
       : {}),
     staleTime: 120_000,
-  });
-}
-
-export function usePublicJobs(orgSlug: string | null) {
-  return useQuery<Job[]>({
-    queryKey: ["jobs", "public-list", orgSlug],
-    queryFn: async () => {
-      if (!orgSlug) return [];
-      const res = await jobsApi.getAll({
-        organizationSlug: orgSlug,
-        status: "PUBLISHED",
-        limit: 1000,
-      });
-      return res.data;
-    },
-    enabled: Boolean(orgSlug),
-  });
-}
-
-export function usePublicJob(orgSlug: string | null, jobSlug: string | null) {
-  return useQuery<Job>({
-    queryKey: ["jobs", "public-detail", orgSlug, jobSlug],
-    queryFn: () => {
-      if (!orgSlug || !jobSlug)
-        throw new Error("Org slug and Job slug are required");
-      return jobsApi.getBySlug(orgSlug, jobSlug);
-    },
-    enabled: Boolean(orgSlug && jobSlug),
   });
 }
 
@@ -236,7 +196,6 @@ export function useDeleteJobMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["sourcing"] });
     },

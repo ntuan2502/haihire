@@ -1,9 +1,11 @@
-import { createTestOrganizationsService } from "./helpers/service-factories";
-import { createTestApplicationsService } from "./helpers/service-factories";
+import {
+  createTestApplicationsService,
+  createTestCandidatesService,
+  createTestOrganizationsService,
+} from "./helpers/service-factories";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { JobsService } from "../jobs/jobs.service";
-import { CandidatesService } from "../candidates/candidates.service";
 import type { PrismaService } from "../prisma/prisma.service";
 import type { MinioService } from "../minio/minio.service";
 import type { ActivitiesService } from "../activities/activities.service";
@@ -395,12 +397,9 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       const res = await orgService.deleteMyOrg("user-owner");
       expect(res.success).toBe(true);
       expect(transactionCalls).toBe(1);
-      // Verify all 3 steps completed atomically
+      // Verify organization and memberships were deleted atomically
       expect(mockDbState.orgs.length).toBe(0);
       expect(mockDbState.members.length).toBe(0);
-      expect(mockDbState.users.every((u) => u.organizationId === null)).toBe(
-        true,
-      );
     });
   });
 
@@ -420,7 +419,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
         name: "Test Candidate",
         email: "cand@test.com",
       });
-      const candService = new CandidatesService(mockPrisma, mockMinio);
+      const candService = createTestCandidatesService(mockPrisma, mockMinio);
       const res = await candService.remove("cand-1", "org-1");
       expect(res.success).toBe(true);
       expect(transactionCalls).toBe(1);

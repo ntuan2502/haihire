@@ -29,6 +29,37 @@ import {
   ApplicationsDocumentsService,
   ApplicationsNotesService,
 } from "../../applications/services";
+import { CandidatesService } from "../../candidates/candidates.service";
+import {
+  CandidatesCrudService,
+  CandidatesDocumentsService,
+  CandidatesProfileService,
+  CandidatesNotesService,
+} from "../../candidates/services";
+
+export function createTestCandidatesService(
+  prisma: PrismaService,
+  minio: MinioService,
+  activities?: ActivitiesService,
+  auditLog?: OrganizationsAuditLogService,
+): CandidatesService {
+  const profile = new CandidatesProfileService(prisma, activities);
+  const docs = new CandidatesDocumentsService(
+    prisma,
+    minio,
+    profile,
+    activities,
+  );
+  const crud = new CandidatesCrudService(
+    prisma,
+    minio,
+    profile,
+    undefined,
+    auditLog,
+  );
+  const notes = new CandidatesNotesService(prisma, activities);
+  return new CandidatesService(crud, docs, profile, notes);
+}
 
 export function createTestApplicationsService(
   prisma: PrismaService,

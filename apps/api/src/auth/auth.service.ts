@@ -8,10 +8,8 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
-import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
@@ -29,6 +27,8 @@ import {
   Role,
   type NameDisplayOrder,
   type Permission,
+  type RegisterSchema,
+  type UpdateUserProfileSchema,
   PERMISSIONS,
   hasPermission,
 } from "@haihire/shared";
@@ -434,7 +434,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterSchema) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const firstName = normalizeNameInput(dto.firstName);
     const lastName = normalizeNameInput(dto.lastName);
@@ -992,7 +992,7 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    dto: UpdateUserProfileDto,
+    dto: UpdateUserProfileSchema,
     requestedOrgId?: string | null,
   ) {
     const firstName = normalizeNameInput(dto.firstName);

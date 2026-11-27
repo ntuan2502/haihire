@@ -61,7 +61,7 @@ describe("AuthProvider - Route-Aware 401 Session Interception (H-09)", () => {
     });
 
     expect(result.current.user).toBeNull();
-    expect(result.current.token).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
@@ -304,8 +304,6 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
   it("refreshes user, invalidates permission/org queries, and shows warning toast on self MEMBER_ROLE_UPDATED", async () => {
     window.history.pushState({}, "", "/settings/members");
     const warnSpy = vi.spyOn(toast, "warning");
-    const sseListener = vi.fn();
-    window.addEventListener("ats:sse_event", sseListener);
 
     const queryClient = new QueryClient();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -363,7 +361,6 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
     });
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(sseListener).toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["auth", "me", "permissions"],
     });
@@ -373,8 +370,6 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["organization", "my"],
     });
-
-    window.removeEventListener("ats:sse_event", sseListener);
   });
 
   it("warns and refreshes user on self MEMBER_REMOVED", async () => {
@@ -492,7 +487,7 @@ describe("AuthProvider - Real-Time SSE Sync", () => {
       queryKey: ["applications"],
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ["job-applications"],
+      queryKey: ["interviews"],
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["candidates"],

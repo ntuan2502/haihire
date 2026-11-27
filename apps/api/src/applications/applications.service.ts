@@ -12,8 +12,8 @@ import {
   ApplicationsStageService,
   ApplicationsDocumentsService,
   ApplicationsNotesService,
-  fixUtf8String,
 } from "./services";
+import { fixUtf8String } from "../common/doc-utils";
 
 import type { ApplicationListOptions } from "./services/applications-query.service";
 

@@ -9,6 +9,7 @@ import {
   ToastProvider,
 } from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
+import { SkipToContent } from "@/components/layout";
 import { env } from "@/lib/env";
 import {
   THEME_COOKIE_KEY,
@@ -255,14 +256,6 @@ export default async function RootLayout({
       }
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans transition-colors duration-200">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring font-semibold text-xs shadow-lg transition-colors"
-        >
-          {locale === "vi"
-            ? "Bỏ qua đến nội dung chính"
-            : "Skip to main content"}
-        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -275,6 +268,7 @@ export default async function RootLayout({
               initialLocale={locale}
               initialDictionary={initialDictionary}
             >
+              <SkipToContent />
               <AuthProvider
                 initialUser={initialUser}
                 initialPermissions={initialPermissions}

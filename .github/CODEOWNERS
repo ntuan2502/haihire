@@ -18,7 +18,9 @@
 # Infrastructure, CI/CD, Containerization
 /.github/ @ntuan2502
 /docker-compose*.yml @ntuan2502
-/Dockerfile @ntuan2502
+/apps/api/Dockerfile @ntuan2502
+/apps/web/Dockerfile @ntuan2502
+/deploy/ @ntuan2502
 
 # Documentation & Engineering Specs
 /docs/ @ntuan2502

@@ -31,52 +31,59 @@ describe("OrganizationsMembersService concurrency", () => {
     expect(deleteMany).not.toHaveBeenCalled();
   });
 
-  it("backfills each membership once across two concurrent startup snapshots", async () => {
-    const members = new Map<string, Record<string, unknown>>();
+  it("returns deterministically ordered members with owner first and does not mutate caller User row on remove", async () => {
     const prisma = {
       organization: {
-        findMany: vi.fn().mockResolvedValue([{ id: "org", ownerId: "owner" }]),
-      },
-      user: {
-        findMany: vi
-          .fn()
-          .mockResolvedValue([
-            { id: "user", organizationId: "org", role: "MEMBER" },
-          ]),
+        findFirst: vi.fn().mockResolvedValue({
+          id: "org-1",
+          ownerId: "owner-1",
+          nameDisplayOrder: "FIRST_LAST",
+        }),
       },
       organizationMember: {
-        findMany: vi.fn().mockResolvedValue([]),
-        upsert: vi.fn(
-          async (args: {
-            where: {
-              organizationId_userId?: {
-                organizationId: string;
-                userId: string;
-              };
-            };
-            create: Record<string, unknown>;
-          }) => {
-            const pair = args.where.organizationId_userId;
-            if (!pair)
-              throw new Error(
-                "Backfill must resolve conflicts on the membership pair",
-              );
-            const key = `${pair.organizationId}:${pair.userId}`;
-            if (!members.has(key)) members.set(key, args.create);
-            return members.get(key);
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "m-2",
+            userId: "user-b",
+            role: "MEMBER",
+            createdAt: new Date("2026-02-01T00:00:00Z"),
           },
-        ),
+          {
+            id: "m-1",
+            userId: "owner-1",
+            role: "ADMIN",
+            createdAt: new Date("2026-03-01T00:00:00Z"),
+          },
+        ]),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "user-b",
+            firstName: "B",
+            lastName: "User",
+            email: "b@haihire.vn",
+            avatarUrl: null,
+            createdAt: new Date("2026-01-01T00:00:00Z"),
+          },
+          {
+            id: "owner-1",
+            firstName: "Owner",
+            lastName: "One",
+            email: "owner@haihire.vn",
+            avatarUrl: null,
+            createdAt: new Date("2026-01-02T00:00:00Z"),
+          },
+        ]),
       },
     };
     const service = new OrganizationsMembersService(
       prisma as unknown as PrismaService,
     );
-    await Promise.all([
-      service.initializeMemberships(),
-      service.initializeMemberships(),
-    ]);
-    expect([...members.keys()].sort()).toEqual(["org:owner", "org:user"]);
-    expect(prisma.organizationMember.upsert).toHaveBeenCalledTimes(4);
+    const result = await service.getMembers("user-b", "org-1");
+    expect(result.map((m) => m.id)).toEqual(["owner-1", "user-b"]);
+    expect(result[0].isOwner).toBe(true);
+    expect(result[1].isOwner).toBe(false);
   });
 
   it("blocks non-ADMIN with custom org:manage_members from promoting a member to ADMIN or removing an ADMIN", async () => {

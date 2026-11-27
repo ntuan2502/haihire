@@ -21,19 +21,6 @@ import {
 } from "../organization-logo.util";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
-type MockUserTableCompat = {
-  store?: Array<Record<string, unknown>>;
-  update?: (args: {
-    where: { id: string };
-    data: Record<string, unknown>;
-  }) => Promise<unknown>;
-  updateMany?: (args: {
-    where: Record<string, unknown>;
-    data: Record<string, unknown>;
-  }) => Promise<unknown>;
-  findMany?: (args?: unknown) => Promise<Array<Record<string, unknown>>>;
-};
-
 @Injectable()
 export class OrganizationsMembersService {
   constructor(
@@ -46,91 +33,6 @@ export class OrganizationsMembersService {
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
-
-  async initializeMemberships() {
-    try {
-      await this.backfillMemberships();
-    } catch (e) {
-      console.warn("Failed to backfill memberships on startup:", e);
-    }
-  }
-
-  private async backfillMemberships() {
-    const prismaUserCompat = this.prisma.user as unknown as MockUserTableCompat;
-    const [allOrgs, allUsers, allMembers] = await Promise.all([
-      this.prisma.organization.findMany({
-        select: { id: true, ownerId: true },
-      }),
-      prismaUserCompat?.findMany
-        ? prismaUserCompat.findMany()
-        : Promise.resolve([]),
-      this.prisma.organizationMember.findMany({
-        select: {
-          id: true,
-          organizationId: true,
-          userId: true,
-        },
-      }),
-    ]);
-
-    const memberPairSet = new Set<string>(
-      allMembers.map((m) => `${m.organizationId}:${m.userId}`),
-    );
-
-    for (const org of allOrgs) {
-      if (org.ownerId) {
-        const pairKey = `${org.id}:${org.ownerId}`;
-        if (!memberPairSet.has(pairKey)) {
-          await this.prisma.organizationMember.upsert({
-            where: {
-              organizationId_userId: {
-                organizationId: org.id,
-                userId: org.ownerId,
-              },
-            },
-            create: {
-              id: crypto.randomUUID(),
-              organizationId: org.id,
-              userId: org.ownerId,
-              role: Role.ADMIN,
-              updatedAt: toInstant(),
-            },
-            update: {},
-          });
-          memberPairSet.add(pairKey);
-        }
-      }
-    }
-
-    for (const user of allUsers as Array<{
-      id: string;
-      organizationId?: string | null;
-      role?: string | null;
-    }>) {
-      if (user.organizationId) {
-        const pairKey = `${user.organizationId}:${user.id}`;
-        if (!memberPairSet.has(pairKey)) {
-          await this.prisma.organizationMember.upsert({
-            where: {
-              organizationId_userId: {
-                organizationId: user.organizationId,
-                userId: user.id,
-              },
-            },
-            create: {
-              id: crypto.randomUUID(),
-              organizationId: user.organizationId,
-              userId: user.id,
-              role: user.role === "ADMIN" ? Role.ADMIN : Role.MEMBER,
-              updatedAt: toInstant(),
-            },
-            update: {},
-          });
-          memberPairSet.add(pairKey);
-        }
-      }
-    }
-  }
 
   async getInterviewers(userId: string, activeOrgId?: string | null) {
     const members = await this.getMembers(userId, activeOrgId);
@@ -212,14 +114,7 @@ export class OrganizationsMembersService {
         return { orgId: ownedOrg.id, legacyRole: "ADMIN" };
       }
     }
-    const callerRecord = await client.user.findFirst({
-      where: { id: userId },
-    });
-    const compatOrgId = (
-      callerRecord as unknown as { organizationId?: string | null }
-    )?.organizationId;
-    const compatRole = (callerRecord as unknown as { role?: string })?.role;
-    return { orgId: compatOrgId ?? null, legacyRole: compatRole };
+    return { orgId: null };
   }
 
   async getMembers(userId: string, activeOrgId?: string | null) {
@@ -459,14 +354,6 @@ export class OrganizationsMembersService {
           },
         });
       }
-
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      if (txUserCompat?.store) {
-        await txUserCompat.update?.({
-          where: { id: targetMemberId },
-          data: { role: newRole },
-        });
-      }
     });
 
     // Broadcast SSE event
@@ -642,14 +529,6 @@ export class OrganizationsMembersService {
         },
       });
 
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      if (txUserCompat?.store) {
-        await txUserCompat.updateMany?.({
-          where: { id: targetMemberId, organizationId: targetOrgId },
-          data: { organizationId: null, role: "MEMBER" },
-        });
-      }
-
       await this.auditLog?.logOrg(
         targetOrgId,
         caller.id,
@@ -791,14 +670,6 @@ export class OrganizationsMembersService {
             organizationId: targetOrgId,
             userId: callerId,
           },
-        });
-      }
-
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      if (txUserCompat?.store) {
-        await txUserCompat.updateMany?.({
-          where: { id: callerId, organizationId: targetOrgId },
-          data: { organizationId: null, role: "MEMBER" },
         });
       }
 

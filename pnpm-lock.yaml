@@ -432,9 +432,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.108.1
         version: 5.108.1(@types/react@19.3.0)(react@19.3.1)
-      '@tiptap/extension-link':
-        specifier: ^3.35.0
-        version: 3.35.0(@tiptap/core@3.35.0(@tiptap/pm@3.35.0))(@tiptap/pm@3.35.0)
       '@tiptap/extension-placeholder':
         specifier: ^3.35.0
         version: 3.35.0(@tiptap/extensions@3.35.0(@tiptap/core@3.35.0(@tiptap/pm@3.35.0))(@tiptap/pm@3.35.0))
@@ -11068,6 +11065,7 @@ snapshots:
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
+    optional: true
 
   jsesc@3.1.0: {}
 

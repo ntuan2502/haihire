@@ -53,12 +53,6 @@ export function useAuthSse({
           return;
         }
 
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(
-            new CustomEvent("ats:sse_event", { detail: parsed }),
-          );
-        }
-
         if (!isAppEventType(parsed.type)) {
           return;
         }

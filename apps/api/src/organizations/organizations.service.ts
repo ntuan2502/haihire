@@ -1,4 +1,4 @@
-import { Inject, Injectable, type OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
@@ -18,7 +18,7 @@ import type { RolePermissionItemDto } from "./dto/role-permissions.dto";
 export type { InviteLinkRecord };
 
 @Injectable()
-export class OrganizationsService implements OnModuleInit {
+export class OrganizationsService {
   constructor(
     @Inject(OrganizationsCoreService)
     private readonly core: OrganizationsCoreService,
@@ -31,10 +31,6 @@ export class OrganizationsService implements OnModuleInit {
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog: OrganizationsAuditLogService,
   ) {}
-
-  async onModuleInit() {
-    await this.members.initializeMemberships();
-  }
 
   // ==========================================
   // 1. ORGANIZATION CORE LIFECYCLE

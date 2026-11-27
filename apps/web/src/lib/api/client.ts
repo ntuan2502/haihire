@@ -255,7 +255,6 @@ function hasClientSessionState(): boolean {
   }
   return Boolean(
     document.cookie.includes("haihire_has_org=") ||
-    document.cookie.includes("haihire_token=") ||
     document.cookie.includes("haihire_refresh_token=") ||
     localStorage.getItem("haihire_recruiter_user"),
   );

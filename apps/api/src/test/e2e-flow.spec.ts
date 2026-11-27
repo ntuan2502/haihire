@@ -1,4 +1,7 @@
-import { createTestApplicationsService } from "./helpers/service-factories";
+import {
+  createTestApplicationsService,
+  createTestCandidatesService,
+} from "./helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import { createMockPrismaService } from "./helpers/prisma-composer-mock";
@@ -111,7 +114,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
 
     authService = new AuthService(mockPrisma as never, mockJwtService as never);
     jobsService = new JobsService(mockPrisma as never);
-    candidatesService = new CandidatesService(
+    candidatesService = createTestCandidatesService(
       mockPrisma as never,
       mockMinioService as never,
     );

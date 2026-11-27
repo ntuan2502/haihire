@@ -9,9 +9,11 @@ import {
   jobScoringConfigSchema,
   normalizeJobApplicationFormConfig,
   normalizeJobScoringConfig,
+  type CreateJobSchema,
   type JobApplicationFormConfig,
   type JobScoringConfig,
   type NameDisplayOrder,
+  type UpdateJobSchema,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
 import { sanitizeRichTextHtml } from "../common/html-sanitizer";
@@ -30,8 +32,6 @@ import {
   AppBadRequestException,
 } from "../common/app-exception";
 import { PrismaService, runInTransaction } from "../prisma/prisma.service";
-import { CreateJobDto } from "./dto/create-job.dto";
-import { UpdateJobDto } from "./dto/update-job.dto";
 import crypto from "node:crypto";
 import { toInstant } from "../common/date.util";
 import { formatInterviewRecord } from "../interviews/constants";
@@ -774,7 +774,7 @@ export class JobsService {
   }
 
   async create(
-    dto: CreateJobDto,
+    dto: CreateJobSchema,
     tenantOrgId?: string | null,
     userId?: string | null,
   ) {
@@ -896,7 +896,7 @@ export class JobsService {
 
   async update(
     id: string,
-    dto: UpdateJobDto,
+    dto: UpdateJobSchema,
     tenantOrgId?: string | null,
     actorId?: string | null,
   ) {

@@ -5,7 +5,7 @@ HaiHire uses **PostgreSQL 17.6** managed through **Prisma `7.10.1`** with the na
 - **Models:** `34`
 - **Enums:** `24`
 - **Soft-Delete Models (`deletedAt`):** `Job`, `Candidate`, `TrackingLink` (`3` models)
-- **PostgreSQL RLS:** `28` tenant-scoped tables enforced via `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`) and `AsyncLocalStorage` transaction context
+- **PostgreSQL RLS:** `30` tenant-scoped tables enforced via `FORCE ROW LEVEL SECURITY` (`haihire_rls_user`, including `organization_member` and `platform_audit_log`) and `AsyncLocalStorage` transaction context
 - **Transaction Engine:** `AsyncLocalStorage`-backed `runInTransaction` / `PrismaService.transaction` (`apps/api/src/prisma/prisma.service.ts`)
 
 ---
@@ -22,7 +22,7 @@ Organization (tenant root, ownerId -> User)
  ├── StoredFile (organizationId, objectKey, bucket, mimeType, sizeBytes)
  ├── OutboxEvent (organizationId, eventType, aggregateType, aggregateId, status)
  ├── NotificationPreference (organizationId, userId, applicationWebsite, interviewWebsite, ...)
- ├── Notification (organizationId, userId, kind, resourceId, readAt?)
+ ├── Notification (organizationId, userId, kind, resourceId, metadata?, readAt?)
  ├── OrganizationAiSetting (organizationId unique, isEnabled, autoScoreApplications, defaultRouteMode)
  ├── OrganizationAiConnection (organizationId, provider, defaultModelId, encryptedApiKey, lastStatus)
  ├── OrganizationAiFeatureRoute (organizationId, feature, isEnabled, mode, targets)
@@ -131,4 +131,5 @@ User (email unique, tokenVersion, avatarSource, preferredLanguage?, preferredTim
 - **PostgreSQL Datasource Configuration:** Since Prisma `7.10.1`, `datasource db` in `schema.prisma` omits inline `url`; database connections resolve from `apps/api/prisma.config.ts` (`env("DATABASE_URL")`) and `PrismaPg` at runtime.
 - **Schema Synchronization:** Versioned SQL migrations live in `apps/api/src/prisma/migrations/` and apply via `pnpm db:migrate` (`prisma migrate deploy`) + `pnpm db:generate`.
 - **Unique Email + Soft Delete:** `Candidate` and `TrackingLink` use partial unique indexes (`WHERE "deletedAt" IS NULL`), allowing soft-deleted records to be re-applied cleanly without violating uniqueness.
-- **Strict Tenant Column Isolation & RLS:** `30` of `34` models carry `organizationId` (only `Organization`, `User`, `UserSession`, and `UserSecurityLog` omit it), and `28` tenant-scoped tables enforce PostgreSQL `FORCE ROW LEVEL SECURITY` via `haihire_rls_user` (`SET LOCAL ROLE haihire_rls_user` inside `PrismaService.transaction()`).
+- **Strict Tenant Column Isolation & RLS:** `30` of `34` models carry `organizationId` (only `Organization`, `User`, `UserSession`, and `UserSecurityLog` omit it), and all `30` tenant-scoped tables enforce PostgreSQL `FORCE ROW LEVEL SECURITY` via `haihire_rls_user` (`SET LOCAL ROLE haihire_rls_user` inside `PrismaService.transaction()`).
+- **Operational Data Retention Sweep:** Daily BullMQ retention job (`audit-log-retention-queue`, `03:00`) purges expired org audit logs (under per-org `auditLogRetentionDays`) and cleans expired/revoked `UserSession`, old `UserSecurityLog`, aged `Notification`, and processed `OutboxEvent` rows inside `withSystemRlsBypass`.

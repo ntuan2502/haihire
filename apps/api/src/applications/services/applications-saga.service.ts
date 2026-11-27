@@ -1,5 +1,5 @@
 import { NotificationsService } from "../../notifications/notifications.service";
-import { Inject, Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import crypto from "node:crypto";
@@ -86,6 +86,7 @@ function isCandidateEmailUniqueViolation(err: unknown): boolean {
 
 @Injectable()
 export class ApplicationsSagaService {
+  private readonly logger = new Logger(ApplicationsSagaService.name);
   private readonly query: ApplicationsQueryService;
 
   constructor(
@@ -156,19 +157,17 @@ export class ApplicationsSagaService {
               removeOnFail: false,
             },
           );
-          console.warn(
+          this.logger.warn(
             `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
           );
         } catch (queueErr: unknown) {
-          console.error(
-            "Failed to enqueue orphan file to cleanup queue:",
-            queueErr,
+          this.logger.error(
+            `Failed to enqueue orphan file to cleanup queue: ${queueErr instanceof Error ? queueErr.message : String(queueErr)}`,
           );
         }
       } else {
-        console.warn(
-          "Failed to delete MinIO file during transaction compensation:",
-          compensationErr,
+        this.logger.warn(
+          `Failed to delete MinIO file during transaction compensation: ${compensationErr instanceof Error ? compensationErr.message : String(compensationErr)}`,
         );
       }
     }
@@ -1168,7 +1167,9 @@ export class ApplicationsSagaService {
             );
           }
         } catch (emailErr) {
-          console.warn("Failed to send confirmation email:", emailErr);
+          this.logger.warn(
+            `Failed to send confirmation email: ${emailErr instanceof Error ? emailErr.message : String(emailErr)}`,
+          );
         }
       }
     }

@@ -169,7 +169,13 @@ export function useAuthSse({
       source.onmessage = handleMessage;
       source.onerror = (err) => {
         console.warn("[SSE Auth] Connection dropped or reconnecting...", err);
-        if (disposed || errorRefreshTimer) return;
+        if (
+          disposed ||
+          errorRefreshTimer ||
+          (typeof navigator !== "undefined" && navigator.onLine === false)
+        ) {
+          return;
+        }
         errorRefreshTimer = setTimeout(() => {
           errorRefreshTimer = null;
           if (!disposed) {
@@ -205,7 +211,7 @@ export function useAuthSse({
       const now = Date.now();
       if (now - lastWakeupRefreshAt < 5000) return;
       lastWakeupRefreshAt = now;
-      refreshUser();
+      void refreshUser();
     };
 
     const handleFocus = () => {

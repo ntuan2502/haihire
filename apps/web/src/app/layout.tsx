@@ -108,6 +108,7 @@ async function resolveInitialAuthSession(
   const customPublicApiUrl = env.NEXT_PUBLIC_API_URL;
   const isSameOriginCookieAuth =
     !customPublicApiUrl ||
+    customPublicApiUrl.startsWith("/") ||
     customPublicApiUrl.includes("localhost") ||
     customPublicApiUrl.includes("127.0.0.1");
 

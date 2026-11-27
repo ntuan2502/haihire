@@ -1,5 +1,6 @@
-import type { PrismaService } from "../../prisma/prisma.service";
 import Redis from "ioredis";
+import type { PrismaService } from "../../prisma/prisma.service";
+import { assertValidPgIdentifier, isSafeTestDatabaseName } from "./test-db-url";
 
 let redisClient: Redis | null = null;
 function getRedisClient(): Redis {
@@ -16,141 +17,65 @@ function getRedisClient(): Redis {
   return redisClient;
 }
 
-const SNAPSHOT_SCHEMA = "_haihire_test_snapshot";
+/**
+ * Hard safety guard: verifies the connected PostgreSQL database name contains "test"
+ * so integration test cleanup can never wipe the development or production database.
+ */
+export async function assertSafeTestDatabase(
+  prisma: PrismaService,
+): Promise<string> {
+  const rows = (await prisma.$queryRawUnsafe(
+    "SELECT current_database() AS db;",
+  )) as Array<{ db?: string }>;
+  const dbName = rows?.[0]?.db ?? "";
 
-const ALL_TABLES_CHILD_TO_PARENT = [
-  "notification",
-  "notification_preference",
-  "activity_log",
-  "application_note",
-  "candidate_note",
-  "candidate_document",
-  "interview",
-  "email_log",
-  "email_flow_config",
-  "email_template",
-  "email_setting",
-  "tracking_click",
-  "application",
-  "pipeline_stage",
-  "tracking_link",
-  "candidate",
-  "job",
-  "stored_file",
-  "organization_role_permission",
-  "organization_webhook_setting",
-  "organization_audit_log",
-  "platform_audit_log",
-  "invite_link",
-  "outbox_event",
-  "organization_member",
-  "organization",
-  "user",
-] as const;
-
-async function hasSnapshot(prisma: PrismaService): Promise<boolean> {
-  try {
-    const rows = (await prisma.$queryRawUnsafe(
-      `SELECT to_regclass('"${SNAPSHOT_SCHEMA}"."user"')::text AS reg;`,
-    )) as Array<{ reg: string | null }>;
-    return Boolean(rows?.[0]?.reg);
-  } catch {
-    return false;
+  if (!dbName || !isSafeTestDatabaseName(dbName)) {
+    throw new Error(
+      `REFUSING TO CLEAN NON-TEST DATABASE "${dbName}". Integration tests must run against a dedicated test database (e.g. haihire_test_db), never the development database.`,
+    );
   }
+  return dbName;
 }
 
-/**
- * Snapshots all public tables into a temporary backup schema before tests wipe
- * the database so development seed data can be restored automatically on close.
- */
 export async function ensureDatabaseSnapshot(
-  prisma: PrismaService,
+  _prisma: PrismaService,
 ): Promise<void> {
-  if (await hasSnapshot(prisma)) {
-    return;
-  }
-
-  let hasExistingData = false;
-  try {
-    const userCount = await prisma.user.count();
-    hasExistingData = userCount > 0;
-  } catch {
-    return;
-  }
-
-  if (!hasExistingData) {
-    return;
-  }
-
-  await prisma.$transaction(
-    async (tx) => {
-      await tx.$executeRawUnsafe(
-        `SELECT set_config('app.bypass_rls', 'on', true);`,
-      );
-      await tx.$executeRawUnsafe(
-        `CREATE SCHEMA IF NOT EXISTS "${SNAPSHOT_SCHEMA}";`,
-      );
-      for (const table of ALL_TABLES_CHILD_TO_PARENT) {
-        await tx.$executeRawUnsafe(
-          `DROP TABLE IF EXISTS "${SNAPSHOT_SCHEMA}"."${table}";`,
-        );
-        await tx.$executeRawUnsafe(
-          `CREATE TABLE "${SNAPSHOT_SCHEMA}"."${table}" AS TABLE public."${table}";`,
-        );
-      }
-    },
-    { timeout: 30000 },
-  );
+  // No-op: integration tests now run in an isolated haihire_test_db database.
 }
 
-/**
- * Restores all tables from the temporary snapshot schema created before tests
- * and drops the backup schema afterwards.
- */
 export async function restoreDatabaseSnapshot(
-  prisma: PrismaService,
+  _prisma: PrismaService,
 ): Promise<void> {
-  if (!(await hasSnapshot(prisma))) {
-    return;
-  }
-
-  const parentToChild = [...ALL_TABLES_CHILD_TO_PARENT].reverse();
-
-  await prisma.$transaction(
-    async (tx) => {
-      await tx.$executeRawUnsafe(
-        `SELECT set_config('app.bypass_rls', 'on', true);`,
-      );
-      for (const table of ALL_TABLES_CHILD_TO_PARENT) {
-        await tx.$executeRawUnsafe(`DELETE FROM public."${table}";`);
-      }
-      for (const table of parentToChild) {
-        await tx.$executeRawUnsafe(
-          `INSERT INTO public."${table}" SELECT * FROM "${SNAPSHOT_SCHEMA}"."${table}";`,
-        );
-      }
-      await tx.$executeRawUnsafe(
-        `DROP SCHEMA IF EXISTS "${SNAPSHOT_SCHEMA}" CASCADE;`,
-      );
-    },
-    { timeout: 30000 },
-  );
+  // No-op: integration tests now run in an isolated haihire_test_db database.
 }
 
 /**
- * Cleans database tables in cascade-safe order for test cleanup using DELETE FROM
- * to avoid table-level ACCESS EXCLUSIVE locks and concurrency deadlocks,
- * and clears Redis throttler keys so rate limits do not leak across test cases.
+ * Truncates all tables in public schema (except _prisma_migrations) inside the verified
+ * isolated test database and clears Redis throttler keys between integration tests.
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
-  await ensureDatabaseSnapshot(prisma);
+  await assertSafeTestDatabase(prisma);
 
-  for (const table of ALL_TABLES_CHILD_TO_PARENT) {
-    try {
-      await prisma.$executeRawUnsafe(`DELETE FROM "${table}";`);
-    } catch {
-      // Safe ignore if table doesn't exist
-    }
+  const tableRows = (await prisma.$queryRawUnsafe(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations' ORDER BY tablename;`,
+  )) as Array<{ tablename: string }>;
+
+  const quotedTables = tableRows
+    .map((row) => `"public"."${assertValidPgIdentifier(row.tablename)}"`)
+    .join(", ");
+
+  if (quotedTables) {
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRawUnsafe(
+          `SELECT set_config('app.bypass_rls', 'on', true);`,
+        );
+        await tx.$executeRawUnsafe(
+          `TRUNCATE TABLE ${quotedTables} RESTART IDENTITY CASCADE;`,
+        );
+      },
+      { timeout: 30000 },
+    );
   }
 
   try {

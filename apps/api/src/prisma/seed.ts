@@ -1639,7 +1639,7 @@ export async function runSeed(): Promise<void> {
   }
 
   console.log("==================================================");
-  console.log("🧹 1. Cleaning old database records & snapshot schema...");
+  console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
   const [savedAiSettings, savedAiConnections, savedAiFeatureRoutes] =
@@ -1667,9 +1667,6 @@ export async function runSeed(): Promise<void> {
       }),
     ]);
 
-  await prisma.$executeRawUnsafe(
-    `DROP SCHEMA IF EXISTS "_haihire_test_snapshot" CASCADE;`,
-  );
   await prisma.applicationAiEvaluation.deleteMany();
   await prisma.organizationAiFeatureRoute.deleteMany();
   await prisma.organizationAiConnection.deleteMany();
@@ -1696,10 +1693,13 @@ export async function runSeed(): Promise<void> {
   await prisma.organizationWebhookSetting.deleteMany();
   await prisma.organizationAuditLog.deleteMany();
   await prisma.platformAuditLog.deleteMany();
+  await prisma.inviteLinkUsage.deleteMany();
   await prisma.inviteLink.deleteMany();
   await prisma.organizationMember.deleteMany();
   await prisma.job.deleteMany();
   await prisma.organization.deleteMany();
+  await prisma.userSecurityLog.deleteMany();
+  await prisma.userSession.deleteMany();
   await prisma.user.deleteMany();
 
   const cvStorage = new SeedCvStorage();
@@ -1770,6 +1770,9 @@ export async function runSeed(): Promise<void> {
         baseUrl: conn.baseUrl,
         isEnabled: conn.isEnabled,
         lastStatus: conn.lastStatus,
+        lastError: conn.lastError,
+        lastTestedAt: conn.lastTestedAt,
+        lastUsedAt: conn.lastUsedAt,
       },
     });
   }
@@ -1951,6 +1954,21 @@ export async function runSeed(): Promise<void> {
           actorId: GLOBAL_ADMIN_ID,
           action: "ORG_LOCALIZATION_UPDATED",
           resource: "ORGANIZATION",
+          targetId: bp.id,
+          targetLabel: bp.name,
+          changes: [
+            { field: "defaultLanguage", before: "en", after: "vi" },
+            {
+              field: "timezone",
+              before: "UTC",
+              after: "Asia/Ho_Chi_Minh",
+            },
+            {
+              field: "nameDisplayOrder",
+              before: "FIRST_LAST",
+              after: "LAST_FIRST",
+            },
+          ] as unknown as Prisma.InputJsonValue,
           metadata: {
             defaultLanguage: "vi",
             timezone: "Asia/Ho_Chi_Minh",
@@ -1964,9 +1982,18 @@ export async function runSeed(): Promise<void> {
           actorId: ownerUser.id,
           action: "MEMBER_ROLE_CHANGED",
           resource: "MEMBER",
+          targetId: orgUsers[5].id,
+          targetLabel: orgUsers[5].displayName,
+          changes: [
+            {
+              field: "role",
+              before: "INTERVIEWER",
+              after: orgUsers[5].role,
+            },
+          ] as unknown as Prisma.InputJsonValue,
           metadata: {
             targetEmail: orgUsers[5].email,
-            previousRole: "INTERVIEWER",
+            oldRole: "INTERVIEWER",
             newRole: orgUsers[5].role,
           },
           createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 4 * 86400000)),
@@ -1977,9 +2004,18 @@ export async function runSeed(): Promise<void> {
           actorId: secondaryAdmin.id,
           action: "MEMBER_ROLE_CHANGED",
           resource: "MEMBER",
+          targetId: orgUsers[6].id,
+          targetLabel: orgUsers[6].displayName,
+          changes: [
+            {
+              field: "role",
+              before: "MEMBER",
+              after: orgUsers[6].role,
+            },
+          ] as unknown as Prisma.InputJsonValue,
           metadata: {
             targetEmail: orgUsers[6].email,
-            previousRole: "MEMBER",
+            oldRole: "MEMBER",
             newRole: orgUsers[6].role,
           },
           createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 2 * 86400000)),
@@ -1990,9 +2026,18 @@ export async function runSeed(): Promise<void> {
           actorId: ownerUser.id,
           action: "ROLE_PERMISSIONS_UPDATED",
           resource: "ROLE_PERMISSIONS",
+          targetId: "INTERVIEWER",
+          targetLabel: "INTERVIEWER",
+          changes: [
+            {
+              field: "interview:submit_scorecard",
+              before: false,
+              after: true,
+            },
+          ] as unknown as Prisma.InputJsonValue,
           metadata: {
             role: "INTERVIEWER",
-            updatedPermissionsCount: 1,
+            changesCount: 1,
           },
           createdAt: toInstant(new Date(FIXED_SEED_EPOCH_MS - 1 * 86400000)),
         },

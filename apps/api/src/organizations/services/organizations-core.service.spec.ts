@@ -335,6 +335,44 @@ describe("OrganizationsCoreService", () => {
         userTable.store.find((u) => u.id === "user-member")?.organizationId,
       ).toBeNull();
     });
+
+    it("deletes ON DELETE RESTRICT logs (emailLog, activityLog, organizationAuditLog) inside deleteMyOrg tx and purges tenant MinIO prefix", async () => {
+      const emailLogDeleteMany = vi.fn().mockResolvedValue({ count: 2 });
+      const activityLogDeleteMany = vi.fn().mockResolvedValue({ count: 3 });
+      const orgAuditDeleteMany = vi.fn().mockResolvedValue({ count: 4 });
+      const deleteTenantPrefix = vi.fn().mockResolvedValue(5);
+
+      const dbWithLogs = createMockPrismaService({
+        user: userTable,
+        organization: organizationTable,
+        organizationMember: organizationMemberTable,
+      }) as unknown as PrismaService;
+      Object.assign(dbWithLogs as unknown as Record<string, unknown>, {
+        emailLog: { deleteMany: emailLogDeleteMany },
+        activityLog: { deleteMany: activityLogDeleteMany },
+        organizationAuditLog: { deleteMany: orgAuditDeleteMany },
+      });
+
+      const logCleanupService = new OrganizationsCoreService(
+        dbWithLogs,
+        undefined,
+        undefined,
+        { deleteTenantPrefix, deleteFile: vi.fn() } as unknown as MinioService,
+      );
+
+      const res = await logCleanupService.deleteMyOrg("user-owner");
+      expect(res.success).toBe(true);
+      expect(emailLogDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(activityLogDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(orgAuditDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(deleteTenantPrefix).toHaveBeenCalledWith("org-1");
+    });
   });
 
   describe("Group 4: switchOrg", () => {

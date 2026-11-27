@@ -1050,6 +1050,13 @@ export class OrganizationsCoreService {
         });
       }
 
+      // Delete log tables constrained by ON DELETE RESTRICT before deleting org
+      await tx.emailLog?.deleteMany?.({ where: { organizationId: orgId } });
+      await tx.activityLog?.deleteMany?.({ where: { organizationId: orgId } });
+      await tx.organizationAuditLog?.deleteMany?.({
+        where: { organizationId: orgId },
+      });
+
       // Clean up all memberships in this org
       await tx.organizationMember.deleteMany({
         where: { organizationId: orgId },
@@ -1061,7 +1068,9 @@ export class OrganizationsCoreService {
       });
     });
 
-    if (currentOrg.logoObjectKey) {
+    if (typeof this.minioService?.deleteTenantPrefix === "function") {
+      await this.minioService.deleteTenantPrefix(orgId).catch(() => {});
+    } else if (currentOrg.logoObjectKey) {
       await this.minioService
         ?.deleteFile(currentOrg.logoObjectKey)
         .catch(() => {});

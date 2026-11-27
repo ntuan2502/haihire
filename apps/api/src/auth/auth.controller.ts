@@ -202,6 +202,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("change-password")
   @HttpCode(HttpStatus.OK)
   async changePassword(

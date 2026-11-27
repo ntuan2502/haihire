@@ -2,6 +2,7 @@ import {
   Catch,
   HttpException,
   HttpStatus,
+  Logger,
   type ExceptionFilter,
   type ArgumentsHost,
 } from "@nestjs/common";
@@ -18,6 +19,8 @@ function isNestValidationPayload(body: Record<string, unknown>): boolean {
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -73,9 +76,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // 3. Unhandled exceptions
-    console.error("Unhandled Exception in GlobalExceptionFilter:", exception);
+    this.logger.error(
+      "Unhandled Exception in GlobalExceptionFilter",
+      exception instanceof Error ? exception.stack : String(exception),
+    );
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      code: APP_ERROR_CODES.GENERIC_ERROR,
       message: "Internal server error",
     });
   }

@@ -1,7 +1,6 @@
 import {
   Controller,
   Sse,
-  Query,
   Req,
   Inject,
   type MessageEvent,
@@ -18,12 +17,8 @@ export class EventsController {
   ) {}
 
   @Sse("sse")
-  sse(
-    @Query("token") queryToken?: string,
-    @Req() req?: Request,
-  ): Observable<MessageEvent> {
+  sse(@Req() req?: Request): Observable<MessageEvent> {
     const token =
-      queryToken ||
       req?.cookies?.["haihire_token"] ||
       (req?.headers?.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.slice(7)

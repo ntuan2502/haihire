@@ -102,6 +102,14 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
       );
       const report = await cleanupOrphans({
         dbClient: this.prisma,
+        minioClient:
+          typeof this.minioService.getClient === "function"
+            ? this.minioService.getClient()
+            : undefined,
+        bucketName:
+          typeof this.minioService.getBucketName === "function"
+            ? this.minioService.getBucketName()
+            : undefined,
         dryRun: false,
       });
       this.logger.log(
@@ -129,6 +137,7 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
               method: "POST",
               headers: { "Content-Type": "text/plain" },
               body,
+              signal: AbortSignal.timeout(5000),
             },
           );
           this.logger.log(
@@ -170,8 +179,12 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
   }
 
   @OnWorkerEvent("failed")
-  async onFailed(job: Job<OrphanCleanupJobData>, err: Error): Promise<void> {
-    const maxAttempts = job.opts.attempts || 5;
+  async onFailed(
+    job: Job<OrphanCleanupJobData> | undefined,
+    err: Error,
+  ): Promise<void> {
+    if (!job) return;
+    const maxAttempts = job.opts?.attempts || 5;
     if (job.attemptsMade >= maxAttempts) {
       this.logger.error(
         `[CRITICAL ALERT - DLQ] MinIO orphan cleanup failed permanently for object '${job.data.objectName}' after ${job.attemptsMade} attempts: ${err.message}. Moving to DLQ.`,

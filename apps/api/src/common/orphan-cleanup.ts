@@ -44,6 +44,44 @@ export function extractObjectNameFromUrl(
   return clean;
 }
 
+/**
+ * Recursively collects MinIO object keys referenced inside `Application.screeningAnswers`
+ * JSON payloads so uploaded screening PDFs are never treated as orphans.
+ */
+export function extractScreeningFileReferences(
+  value: unknown,
+  bucketName: string,
+  out: Set<string>,
+): void {
+  if (!value) return;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (
+      trimmed.startsWith("tenants/") ||
+      trimmed.startsWith("/tenants/") ||
+      trimmed.includes(`/${bucketName}/tenants/`) ||
+      trimmed.includes("/screening-files/")
+    ) {
+      const objName = extractObjectNameFromUrl(trimmed, bucketName);
+      if (objName.startsWith("tenants/") || objName.startsWith("users/")) {
+        out.add(objName);
+      }
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      extractScreeningFileReferences(item, bucketName, out);
+    }
+    return;
+  }
+  if (typeof value === "object") {
+    for (const entry of Object.values(value as Record<string, unknown>)) {
+      extractScreeningFileReferences(entry, bucketName, out);
+    }
+  }
+}
+
 export async function cleanupOrphans(
   options: CleanupOptions = {},
 ): Promise<CleanupReport> {
@@ -52,22 +90,34 @@ export async function cleanupOrphans(
   const bucketName =
     options.bucketName || process.env.MINIO_BUCKET_NAME || "haihire-resumes";
 
-  const minioClient =
-    options.minioClient ||
-    new Minio.Client({
+  let minioClient = options.minioClient;
+  if (!minioClient) {
+    const accessKey = process.env.MINIO_ACCESS_KEY?.trim();
+    const secretKey = process.env.MINIO_SECRET_KEY?.trim();
+    if (!accessKey || !secretKey) {
+      throw new Error(
+        "MinIO Orphan Cleanup aborted: MINIO_ACCESS_KEY and MINIO_SECRET_KEY are required when minioClient is omitted.",
+      );
+    }
+    minioClient = new Minio.Client({
       endPoint: process.env.MINIO_ENDPOINT || "localhost",
-      port: Number(process.env.MINIO_PORT || "19000"),
+      port: Number(process.env.MINIO_PORT || "9000"),
       useSSL: process.env.MINIO_USE_SSL === "true",
-      accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
-      secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
+      accessKey,
+      secretKey,
     });
+  }
 
   interface DbQueryable {
     candidateDocument?: {
       findMany(args?: unknown): Promise<Array<{ url?: string | null }>>;
     };
     application?: {
-      findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
+      findMany(
+        args?: unknown,
+      ): Promise<
+        Array<{ resumeUrl?: string | null; screeningAnswers?: unknown }>
+      >;
     };
     candidate?: {
       findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
@@ -88,17 +138,22 @@ export async function cleanupOrphans(
     $disconnect?: () => Promise<void>;
   }
   const createdOwnDbClient = !options.dbClient;
-  const rootDb: DbQueryable =
-    options.dbClient ||
-    new PrismaClient({
-      adapter: new PrismaPg({
-        connectionString:
-          resolveDatabaseUrlFromEnv(process.env) ||
-          "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev",
-      }),
+  let rootDb: DbQueryable;
+  if (options.dbClient) {
+    rootDb = options.dbClient as DbQueryable;
+  } else {
+    const connectionString = resolveDatabaseUrlFromEnv(process.env);
+    if (!connectionString) {
+      throw new Error(
+        "MinIO Orphan Cleanup aborted: DATABASE_URL or POSTGRES_* configuration is required.",
+      );
+    }
+    rootDb = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
     });
+  }
 
-  // 1. Gather all active DB references for resume files
+  // 1. Gather all active DB references for resume, screening, logo, and avatar files
   const activeReferencedObjectNames = new Set<string>();
 
   const collectReferences = async (activeDb: DbQueryable) => {
@@ -122,13 +177,20 @@ export async function cleanupOrphans(
 
     try {
       const apps = activeDb.application
-        ? await activeDb.application.findMany({ select: { resumeUrl: true } })
+        ? await activeDb.application.findMany({
+            select: { resumeUrl: true, screeningAnswers: true },
+          })
         : [];
       for (const app of apps) {
         if (app.resumeUrl) {
           const objName = extractObjectNameFromUrl(app.resumeUrl, bucketName);
           if (objName) activeReferencedObjectNames.add(objName);
         }
+        extractScreeningFileReferences(
+          app.screeningAnswers,
+          bucketName,
+          activeReferencedObjectNames,
+        );
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -217,19 +279,23 @@ export async function cleanupOrphans(
     }
   }
 
-  // 2. Stream all objects from the bucket
-  const scannedObjects: Array<{
-    name: string;
-    size: number;
-    lastModified: Date;
-  }> = [];
+  // 2. Stream managed objects across both tenant prefixes (`tenants/`) and user avatars (`users/`)
+  const scannedByName = new Map<
+    string,
+    { name: string; size: number; lastModified: Date }
+  >();
 
   await new Promise<void>((resolve, reject) => {
     try {
-      const stream = minioClient.listObjects(bucketName, "tenants/", true);
+      const stream = minioClient.listObjects(bucketName, "", true);
       stream.on("data", (obj: Minio.BucketItem) => {
-        if (obj.name && !obj.name.endsWith("/")) {
-          scannedObjects.push({
+        if (
+          obj.name &&
+          !obj.name.endsWith("/") &&
+          (obj.name.startsWith("tenants/") || obj.name.startsWith("users/")) &&
+          !scannedByName.has(obj.name)
+        ) {
+          scannedByName.set(obj.name, {
             name: obj.name,
             size: obj.size || 0,
             lastModified: obj.lastModified
@@ -245,6 +311,7 @@ export async function cleanupOrphans(
     }
   });
 
+  const scannedObjects = Array.from(scannedByName.values());
   const now = Date.now();
   const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
 
@@ -260,9 +327,7 @@ export async function cleanupOrphans(
   };
 
   for (const obj of scannedObjects) {
-    const isReferenced = activeReferencedObjectNames.has(obj.name);
-
-    if (isReferenced) {
+    if (activeReferencedObjectNames.has(obj.name)) {
       continue;
     }
 
@@ -275,16 +340,20 @@ export async function cleanupOrphans(
       continue;
     }
 
-    report.deletedCount++;
-    report.bytesFreed += obj.size;
-    report.deletedFiles.push(obj.name);
+    if (dryRun) {
+      report.deletedCount++;
+      report.bytesFreed += obj.size;
+      report.deletedFiles.push(obj.name);
+      continue;
+    }
 
-    if (!dryRun) {
-      try {
-        await minioClient.removeObject(bucketName, obj.name);
-      } catch (delErr) {
-        console.error(`Failed to remove orphan object ${obj.name}:`, delErr);
-      }
+    try {
+      await minioClient.removeObject(bucketName, obj.name);
+      report.deletedCount++;
+      report.bytesFreed += obj.size;
+      report.deletedFiles.push(obj.name);
+    } catch (delErr) {
+      console.error(`Failed to remove orphan object ${obj.name}:`, delErr);
     }
   }
 

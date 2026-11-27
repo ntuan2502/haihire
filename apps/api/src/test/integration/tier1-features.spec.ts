@@ -620,19 +620,19 @@ describe("Vitest Integration: Tier 1 Feature Coverage (16 Core Features)", () =>
     }
   });
 
-  it("T1-INT-F08-B [F08]: SSE Stream - token passed via query parameter initiates stream", async () => {
+  it("T1-INT-F08-B [F08]: SSE Stream - token passed via cookie initiates stream", async () => {
     const user = await createTestUser(ctx.prisma);
     const org = await createTestOrg(ctx.prisma, user.id);
 
     const tokenCookie = generateTestAuthCookie(jwtService, user, org.id);
-    const token = tokenCookie.replace("haihire_token=", "");
     const abortController = new AbortController();
 
     try {
-      const res = await ctx.fetch(`/events/sse?token=${token}`, {
+      const res = await ctx.fetch("/events/sse", {
         signal: abortController.signal,
         headers: {
           Accept: "text/event-stream",
+          Cookie: tokenCookie,
         },
       });
 

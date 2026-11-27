@@ -478,5 +478,39 @@ describe("EventsService - SSE Streaming", () => {
 
       sub.unsubscribe();
     });
+
+    it("rejects SSE connection when UserSession referenced by sid is revoked", async () => {
+      const mockJwt = {
+        verify: vi.fn().mockReturnValue({
+          sub: "user-1",
+          type: "access",
+          tokenVersion: 0,
+          sid: "session-revoked",
+        }),
+      };
+      const mockPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ id: "user-1", tokenVersion: 0 }),
+        },
+        userSession: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        organizationMember: {
+          findMany: vi.fn().mockResolvedValue([{ organizationId: "org-1" }]),
+        },
+      };
+
+      const s = new EventsService(mockJwt as never, mockPrisma as never);
+      await expect(
+        new Promise((resolve, reject) => {
+          s.subscribeWithToken("jwt-revoked").subscribe({
+            next: resolve,
+            error: reject,
+          });
+        }),
+      ).rejects.toThrow("User session revoked");
+    });
   });
 });

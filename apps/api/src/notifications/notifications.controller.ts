@@ -31,7 +31,7 @@ import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { PrismaService } from "../prisma/prisma.service";
 
 type NotificationRequest = {
-  user: { id: string; organizationId: string; role: Role };
+  user: { id: string; organizationId: string; role: Role; isOwner?: boolean };
 };
 
 const preferencesSelect = {
@@ -59,18 +59,20 @@ export class NotificationsController {
     @Query(DtoPipe(listNotificationsQuerySchema))
     query: ListNotificationsQuery = {},
   ) {
-    const [applications, interviews] = await Promise.all([
-      this.permissions.resolvePermission(
-        user.organizationId,
-        user.role,
-        "application:view",
-      ),
-      this.permissions.resolvePermission(
-        user.organizationId,
-        user.role,
-        "interview:view",
-      ),
-    ]);
+    const [applications, interviews] = user.isOwner
+      ? [true, true]
+      : await Promise.all([
+          this.permissions.resolvePermission(
+            user.organizationId,
+            user.role,
+            "application:view",
+          ),
+          this.permissions.resolvePermission(
+            user.organizationId,
+            user.role,
+            "interview:view",
+          ),
+        ]);
     const allowedKinds = notificationKinds.filter((kind) =>
       kind === "applicationReceived" ? applications : interviews,
     );

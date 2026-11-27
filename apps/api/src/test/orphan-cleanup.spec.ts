@@ -531,5 +531,92 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       expect(deletedFromMinio.length).toBe(0);
       expect(mockMinioClient.removeObject).not.toHaveBeenCalled();
     });
+
+    it("Test 7: Preserves screeningAnswers PDFs, sweeps orphaned user avatars, and excludes failed deletions from report counts", async () => {
+      const now = Date.now();
+      const DAY_MS = 24 * 60 * 60 * 1000;
+
+      const tenantObjects = [
+        {
+          name: "tenants/org-1/screening-files/q1.pdf",
+          size: 2048,
+          lastModified: new Date(now - 60 * DAY_MS),
+        },
+        {
+          name: "tenants/org-1/resumes/fail-delete.pdf",
+          size: 4096,
+          lastModified: new Date(now - 60 * DAY_MS),
+        },
+      ];
+      const userObjects = [
+        {
+          name: "users/user-1/avatars/old-avatar.png",
+          size: 1024,
+          lastModified: new Date(now - 60 * DAY_MS),
+        },
+      ];
+
+      const mockMinioClient = {
+        listObjects: vi.fn().mockImplementation(() => {
+          const listeners: Record<string, (arg?: unknown) => void> = {};
+          const stream = {
+            on: (event: string, handler: (arg?: unknown) => void) => {
+              listeners[event] = handler;
+              return stream;
+            },
+          };
+          setTimeout(() => {
+            for (const obj of [...tenantObjects, ...userObjects]) {
+              listeners["data"]?.(obj);
+            }
+            listeners["end"]?.();
+          }, 5);
+          return stream;
+        }),
+        removeObject: vi
+          .fn()
+          .mockImplementation(async (_bucket: string, objectName: string) => {
+            if (objectName.endsWith("fail-delete.pdf")) {
+              throw new Error("MinIO delete failed");
+            }
+          }),
+      } as unknown as Minio.Client;
+
+      const mockDb = {
+        candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },
+        application: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              resumeUrl: null,
+              screeningAnswers: [
+                {
+                  questionId: "q1",
+                  value:
+                    "/haihire-resumes/tenants/org-1/screening-files/q1.pdf",
+                },
+              ],
+            },
+          ]),
+        },
+        candidate: { findMany: vi.fn().mockResolvedValue([]) },
+        organization: { findMany: vi.fn().mockResolvedValue([]) },
+        user: { findMany: vi.fn().mockResolvedValue([]) },
+      } as unknown as CleanupOptions["dbClient"];
+
+      const report = await cleanupOrphans({
+        dryRun: false,
+        thresholdDays: 30,
+        minioClient: mockMinioClient,
+        dbClient: mockDb,
+      });
+
+      expect(report.scannedCount).toBe(3);
+      expect(report.orphanCount).toBe(2);
+      expect(report.deletedFiles).toEqual([
+        "users/user-1/avatars/old-avatar.png",
+      ]);
+      expect(report.deletedCount).toBe(1);
+      expect(report.bytesFreed).toBe(1024);
+    });
   });
 });

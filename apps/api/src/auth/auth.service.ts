@@ -54,6 +54,9 @@ import {
 } from "../organizations/organization-logo.util";
 import { UserSecurityService } from "./user-security.service";
 
+const DUMMY_BCRYPT_HASH =
+  "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
 const USER_PROFILE_SELECT = {
   id: true,
   email: true,
@@ -128,6 +131,7 @@ export class AuthService {
     }
 
     if (!user || !user.password) {
+      await bcrypt.compare(dto.password, DUMMY_BCRYPT_HASH);
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.INVALID_CREDENTIALS,
         "Invalid email or password",
@@ -599,11 +603,14 @@ export class AuthService {
     if (this.redis && decoded.jti) {
       try {
         const rtKey = `revoked_rt:${decoded.jti}`;
-        const isRevoked = await this.redis.get(rtKey);
-        const setResult = isRevoked
-          ? null
-          : await this.redis.set(rtKey, "1", "EX", 7 * 24 * 3600, "NX");
-        if (isRevoked || setResult === null) {
+        const setResult = await this.redis.set(
+          rtKey,
+          "1",
+          "EX",
+          7 * 24 * 3600,
+          "NX",
+        );
+        if (setResult === null) {
           // Token reuse detected! Invalidate all sessions for this user.
           await this.prisma.user.update({
             where: { id: user.id },
@@ -617,6 +624,9 @@ export class AuthService {
         }
       } catch (err) {
         if (err instanceof AppUnauthorizedException) throw err;
+        this.logger.warn(
+          `Redis RTR check failed for token '${decoded.jti}': ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 

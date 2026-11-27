@@ -180,5 +180,14 @@ describe("MinioService Security", () => {
         "Access denied: file does not belong to this organization",
       );
     });
+
+    it("should fail closed in assertTenantAccess when tenantOrgId is missing or blank", () => {
+      expect(() =>
+        service.assertTenantAccess("tenants/org-1/resumes/cv.pdf", undefined),
+      ).toThrow("Access denied: missing organization context");
+      expect(() =>
+        service.assertTenantAccess("tenants/org-1/resumes/cv.pdf", "   "),
+      ).toThrow("Access denied: missing organization context");
+    });
   });
 });

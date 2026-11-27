@@ -10,6 +10,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  OverlayCloseButton,
+  createOverlayDismissGuard,
+} from "@/components/shared/overlay-primitives";
 
 export type DetailModalSize = "sm" | "md" | "lg" | "xl";
 
@@ -63,11 +67,11 @@ export function DetailModal({
       }}
     >
       <DialogContent
-        disableClose={disableClose}
-        showCloseButton={showCloseButton}
+        showCloseButton={false}
+        {...createOverlayDismissGuard({ disableClose })}
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "p-0 overflow-hidden flex flex-col",
+          "flex flex-col gap-0 p-0 max-h-[90dvh] overflow-hidden rounded-xl bg-card text-card-foreground shadow-xl",
           DETAIL_MODAL_SIZES[size],
           panelClassName,
         )}
@@ -113,6 +117,10 @@ export function DetailModal({
           >
             {footer}
           </DialogFooter>
+        )}
+
+        {showCloseButton && (
+          <OverlayCloseButton primitive="dialog" disabled={disableClose} />
         )}
       </DialogContent>
     </Dialog>

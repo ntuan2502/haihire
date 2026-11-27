@@ -208,7 +208,7 @@ export function DashboardHeader() {
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
       <div className="flex min-w-0 items-center gap-2">
-        <SidebarTrigger className="-ml-1 shrink-0" />
+        <SidebarTrigger className="-ml-1 size-9 sm:size-7 shrink-0" />
         <Separator
           orientation="vertical"
           className="mr-2 data-[orientation=vertical]:h-4"

@@ -36,6 +36,14 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // Stock upstream shadcn/ui SidebarMenuSkeleton uses Math.random() inside useMemo;
+    // keep upstream src/components/ui untouched so `shadcn add --overwrite` works cleanly.
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/purity": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

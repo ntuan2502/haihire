@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { createOverlayDismissGuard } from "@/components/shared/overlay-primitives";
 import { useOptionalI18n } from "@/i18n/optional";
 
 export type PreviewModalSize = "lg" | "xl" | "full";
@@ -69,9 +70,10 @@ export function PreviewModal({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
+        {...createOverlayDismissGuard()}
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "p-0 overflow-hidden flex flex-col",
+          "flex flex-col gap-0 p-0 max-h-[90dvh] overflow-hidden rounded-xl bg-card text-card-foreground shadow-xl",
           PREVIEW_MODAL_SIZES[size],
           height,
           panelClassName,

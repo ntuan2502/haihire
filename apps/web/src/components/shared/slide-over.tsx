@@ -9,6 +9,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  OverlayCloseButton,
+  createOverlayDismissGuard,
+} from "@/components/shared/overlay-primitives";
 import { useOptionalI18n } from "@/i18n/optional";
 
 export type DetailDrawerSize = "sm" | "md" | "lg" | "xl" | "2xl";
@@ -85,8 +89,8 @@ export function SlideOver({
     >
       <SheetContent
         side="right"
-        disableClose={disableClose}
-        showCloseButton={Boolean(title)}
+        showCloseButton={false}
+        {...createOverlayDismissGuard({ disableClose })}
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
           "w-full p-0 gap-0 bg-card text-card-foreground border-l border-border shadow-2xl flex flex-col h-full overflow-hidden",
@@ -114,6 +118,9 @@ export function SlideOver({
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {children}
         </div>
+        {Boolean(title) && (
+          <OverlayCloseButton primitive="sheet" disabled={disableClose} />
+        )}
       </SheetContent>
     </Sheet>
   );

@@ -10,6 +10,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  OverlayCloseButton,
+  createOverlayDismissGuard,
+} from "@/components/shared/overlay-primitives";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
 
@@ -71,7 +75,8 @@ export function MobileDrawer({
     >
       <SheetContent
         side="right"
-        showCloseButton={true}
+        showCloseButton={false}
+        {...createOverlayDismissGuard()}
         aria-describedby={undefined}
         className={cn(
           "w-[min(85vw,20rem)] h-dvh p-0 flex flex-col",
@@ -116,6 +121,7 @@ export function MobileDrawer({
             {footer}
           </div>
         )}
+        <OverlayCloseButton primitive="sheet" />
       </SheetContent>
     </Sheet>
   );

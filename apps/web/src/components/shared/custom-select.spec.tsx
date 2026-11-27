@@ -1,19 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { DetailModal } from "./detail-modal";
+import { SlideOver } from "./slide-over";
 import { CustomSelect } from "./custom-select";
 
 describe("CustomSelect Accessibility (ARIA Listbox)", () => {
@@ -266,24 +254,23 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     expect(screen.getByText("No timezone match")).toBeInTheDocument();
   });
 
-  it("closes only CustomSelect on Escape without closing enclosing Radix Dialog", () => {
-    const onOpenChange = vi.fn();
+  it("closes only CustomSelect on Escape without closing enclosing DetailModal", () => {
+    const onClose = vi.fn();
     render(
-      <Dialog open={true} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modal Title</DialogTitle>
-            <DialogDescription>Description</DialogDescription>
-          </DialogHeader>
-          <CustomSelect
-            id="modal-select"
-            value="opt1"
-            onChange={vi.fn()}
-            options={options}
-            aria-label="Modal selection"
-          />
-        </DialogContent>
-      </Dialog>,
+      <DetailModal
+        isOpen={true}
+        onClose={onClose}
+        title="Modal Title"
+        description="Description"
+      >
+        <CustomSelect
+          id="modal-select"
+          value="opt1"
+          onChange={vi.fn()}
+          options={options}
+          aria-label="Modal selection"
+        />
+      </DetailModal>,
     );
 
     const trigger = screen.getByRole("button", { name: /modal selection/i });
@@ -292,31 +279,30 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
-    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
 
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("selects a portaled option inside Radix Dialog without triggering outside-dismiss", () => {
-    const onOpenChange = vi.fn();
+  it("selects a portaled option inside DetailModal without triggering outside-dismiss", () => {
+    const onClose = vi.fn();
     const handleChange = vi.fn();
     render(
-      <Dialog open={true} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modal Title</DialogTitle>
-            <DialogDescription>Description</DialogDescription>
-          </DialogHeader>
-          <CustomSelect
-            id="modal-select-click"
-            value="opt1"
-            onChange={handleChange}
-            options={options}
-            aria-label="Modal click selection"
-          />
-        </DialogContent>
-      </Dialog>,
+      <DetailModal
+        isOpen={true}
+        onClose={onClose}
+        title="Modal Title"
+        description="Description"
+      >
+        <CustomSelect
+          id="modal-select-click"
+          value="opt1"
+          onChange={handleChange}
+          options={options}
+          aria-label="Modal click selection"
+        />
+      </DetailModal>,
     );
 
     expect(document.body.style.pointerEvents).toBe("none");
@@ -333,11 +319,11 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     fireEvent.click(opt2);
 
     expect(handleChange).toHaveBeenCalledWith("opt2");
-    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("allows focusing and typing in searchable CustomSelect inside modal Radix Dialog", () => {
-    const onOpenChange = vi.fn();
+  it("allows focusing and typing in searchable CustomSelect inside modal DetailModal", () => {
+    const onClose = vi.fn();
     const handleChange = vi.fn();
     const timezoneOptions = [
       { value: "Asia/Ho_Chi_Minh", label: "Ho Chi Minh" },
@@ -345,23 +331,22 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     ];
 
     render(
-      <Dialog open={true} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modal Searchable Select</DialogTitle>
-            <DialogDescription>Description</DialogDescription>
-          </DialogHeader>
-          <CustomSelect
-            id="modal-searchable-select"
-            value="Asia/Ho_Chi_Minh"
-            onChange={handleChange}
-            options={timezoneOptions}
-            searchable
-            searchPlaceholder="Search timezone..."
-            aria-label="Timezone in modal"
-          />
-        </DialogContent>
-      </Dialog>,
+      <DetailModal
+        isOpen={true}
+        onClose={onClose}
+        title="Modal Searchable Select"
+        description="Description"
+      >
+        <CustomSelect
+          id="modal-searchable-select"
+          value="Asia/Ho_Chi_Minh"
+          onChange={handleChange}
+          options={timezoneOptions}
+          searchable
+          searchPlaceholder="Search timezone..."
+          aria-label="Timezone in modal"
+        />
+      </DetailModal>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /timezone in modal/i }));
@@ -373,29 +358,28 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
     fireEvent.click(screen.getByRole("option", { name: "Tokyo" }));
 
     expect(handleChange).toHaveBeenCalledWith("Asia/Tokyo");
-    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("allows selecting options inside Radix Sheet with pointer-events enabled", () => {
-    const onOpenChange = vi.fn();
+  it("allows selecting options inside SlideOver with pointer-events enabled", () => {
+    const onClose = vi.fn();
     const handleChange = vi.fn();
 
     render(
-      <Sheet open={true} onOpenChange={onOpenChange}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Sheet Title</SheetTitle>
-            <SheetDescription>Description</SheetDescription>
-          </SheetHeader>
-          <CustomSelect
-            id="sheet-select-click"
-            value="opt1"
-            onChange={handleChange}
-            options={options}
-            aria-label="Sheet click selection"
-          />
-        </SheetContent>
-      </Sheet>,
+      <SlideOver
+        isOpen={true}
+        onClose={onClose}
+        title="Sheet Title"
+        description="Description"
+      >
+        <CustomSelect
+          id="sheet-select-click"
+          value="opt1"
+          onChange={handleChange}
+          options={options}
+          aria-label="Sheet click selection"
+        />
+      </SlideOver>,
     );
 
     expect(document.body.style.pointerEvents).toBe("none");
@@ -408,7 +392,7 @@ describe("CustomSelect Accessibility (ARIA Listbox)", () => {
 
     fireEvent.click(screen.getByRole("option", { name: "Option 2" }));
     expect(handleChange).toHaveBeenCalledWith("opt2");
-    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("renders group headers once per group without affecting option count or selection", () => {

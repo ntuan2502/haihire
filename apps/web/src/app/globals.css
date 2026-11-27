@@ -129,3 +129,21 @@
     @apply font-sans;
   }
 }
+
+/* HaiHire overlay stacking & backdrop overrides for stock shadcn/ui primitives */
+[data-slot="dialog-overlay"],
+[data-slot="sheet-overlay"] {
+  backdrop-filter: blur(4px);
+}
+
+.dark [data-slot="dialog-overlay"],
+.dark [data-slot="sheet-overlay"] {
+  background-color: rgb(0 0 0 / 0.7);
+}
+
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"],
+[data-slot="popover-content"],
+[data-slot="tooltip-content"] {
+  z-index: 60;
+}

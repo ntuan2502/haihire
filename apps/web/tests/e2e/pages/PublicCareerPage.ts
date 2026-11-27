@@ -47,6 +47,51 @@ export class PublicCareerPage {
       await expect(phoneInput).toBeVisible();
       await phoneInput.fill(candidate.phone);
     }
+
+    await this.fillRequiredScreeningQuestions();
+  }
+
+  async fillRequiredScreeningQuestions() {
+    const questionBlocks = this.page.locator(
+      "form div:has(> label[for^='career-q-'])",
+    );
+    const count = await questionBlocks.count();
+    for (let i = 0; i < count; i++) {
+      const block = questionBlocks.nth(i);
+      const numInput = block.locator("input[type='number']");
+      if ((await numInput.count()) > 0) {
+        await numInput.first().fill("5");
+        continue;
+      }
+      const dateInput = block.locator("input[type='date']");
+      if ((await dateInput.count()) > 0) {
+        await dateInput.first().fill("2026-06-01");
+        continue;
+      }
+      const textarea = block.locator("textarea");
+      if ((await textarea.count()) > 0) {
+        await textarea
+          .first()
+          .fill(
+            "Experienced with zero-downtime PostgreSQL migrations and BullMQ dead-letter queues.",
+          );
+        continue;
+      }
+      const radioInput = block.locator("input[type='radio']");
+      if ((await radioInput.count()) > 0) {
+        await radioInput.first().check();
+        continue;
+      }
+      const checkboxInput = block.locator("input[type='checkbox']");
+      if ((await checkboxInput.count()) > 0) {
+        await checkboxInput.first().check();
+        continue;
+      }
+      const textInput = block.locator("input");
+      if ((await textInput.count()) > 0) {
+        await textInput.first().fill("Sample screening answer");
+      }
+    }
   }
 
   async uploadResume(

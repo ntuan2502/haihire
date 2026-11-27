@@ -281,7 +281,7 @@ test.describe("Tier 4: Real-World Recruitment Lifecycle Workloads (E2E Web)", ()
     memberPage,
   }) => {
     // Member account lacks administrative permissions (e.g. webhook settings creation)
-    await memberPage.goto("/settings/integrations");
+    await memberPage.goto("/settings/integrations/webhooks");
     await expect(memberPage.locator("main, h1").first()).toBeVisible({
       timeout: 10000,
     });

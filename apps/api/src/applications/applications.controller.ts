@@ -37,6 +37,7 @@ import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { AppBadRequestException } from "../common/app-exception";
+import { env } from "../config/env";
 import {
   APP_ERROR_CODES,
   batchAiScoreSchema,
@@ -228,7 +229,9 @@ export class ApplicationsController {
     );
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({
+    default: { limit: env.NODE_ENV === "production" ? 10 : 100, ttl: 60000 },
+  })
   @Post("apply")
   @UseGuards(OptionalJwtAuthGuard)
   @UseInterceptors(

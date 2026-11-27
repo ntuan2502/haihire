@@ -29,7 +29,6 @@ export interface ApplicationFormCardProps {
     filename?: string,
     targetAppId?: string,
   ) => void;
-  variant?: "full" | "compact";
   showEmptyState?: boolean;
 }
 
@@ -82,7 +81,6 @@ export function ApplicationFormCard({
   application,
   onPreviewDoc,
   onDownloadDoc,
-  variant = "full",
   showEmptyState = false,
 }: ApplicationFormCardProps) {
   const { t } = useI18n();

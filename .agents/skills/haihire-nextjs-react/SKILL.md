@@ -19,7 +19,7 @@ Stack baselines verified in `apps/web/package.json` and `apps/web/components.jso
 Per Next.js 16 official documentation and `scripts/check-nextjs-conventions.ts` (`pnpm lint:nextjs-conventions`):
 - **Never create `middleware.ts` or `src/middleware.ts`.** Next.js 16 replaces `middleware` with `src/proxy.ts` exporting `export async function proxy(request: NextRequest)`.
 - Keep `middleware.ts` absent so CI Gate 14 and standalone tracing (`ƒ Proxy`) succeed without conflict errors.
-- `apps/web/next.config.ts` sets `output: "standalone"`, `outputFileTracingRoot: repoRoot`, dynamic LAN `allowedDevOrigins`, and rewrites `/api/*` -> backend (`BACKEND_HOST`:`BACKEND_PORT` or `INTERNAL_API_URL`) and `/haihire-resumes/*` -> MinIO.
+- `apps/web/next.config.ts` sets `output: "standalone"`, `outputFileTracingRoot: repoRoot`, and dynamic LAN `allowedDevOrigins` (supporting both `FRONTEND_PORT` and `GATEWAY_PORT`); HTTP API/SSE routing lives in `deploy/caddy/Caddyfile` rather than Next.js `rewrites()`.
 - Server vs. Client boundary in `apps/web/src/app/`:
   - Keep landing and careers shells, root layouts, and the shared dashboard layout on the server where possible. Use Client Components for browser state, interactive controls, and client-side data hooks.
   - Keep root `layout.tsx` and server careers pages free of browser-only globals.

@@ -1,6 +1,8 @@
 # Production Deployment Plan
 
 > Step-by-step release, Docker Compose topology, verification, and rollback procedures for HaiHire production.
+>
+> **3-Tier Deployment Model:** **Dev** runs `pnpm dev` behind Dev Caddy ([docker-compose.yml](../../docker-compose.yml) on `:8080`); **Local Staging** builds production Docker images locally ([docker-compose.staging.yml](../../docker-compose.staging.yml) + [deploy/deploy-staging.sh](../../deploy/deploy-staging.sh) on `:8081`); **Production** pulls immutable GHCR images ([cd-release.yml](../../.github/workflows/cd-release.yml)) onto the VPS behind Host Nginx ([deploy/nginx/host-edge.conf](../../deploy/nginx/host-edge.conf)) -> Caddy (`127.0.0.1:8080`).
 
 ---
 
@@ -47,7 +49,7 @@ pnpm db:backup
 Update `IMAGE_TAG` in `.env.production`, then pull signed images from GHCR:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml pull api web
+docker compose --env-file .env.production -f docker-compose.prod.yml pull api web gateway
 ```
 
 ### Step 2: Database Schema & Automatic Migrations (`migrate`)
@@ -94,8 +96,9 @@ Run [scripts/smoke-and-load-test.ts](../../scripts/smoke-and-load-test.ts) again
 
 Also confirm:
 
-- Web SSR root loads cleanly (`http://localhost:${FRONTEND_PORT:-3000}`).
-- `GET /health` returns `200`.
+- Caddy gateway health returns `200 ok` (`http://127.0.0.1:${GATEWAY_PORT:-8080}/gateway-health`).
+- Web SSR root loads cleanly through Caddy (`http://127.0.0.1:${GATEWAY_PORT:-8080}/`) and Host Nginx TLS domain (`FRONTEND_URL`).
+- `GET /api/health` through Caddy returns `200`.
 - Active Prometheus alert dashboard shows zero firing critical alerts ([Alerts Runbook](alerts.md)).
 
 ---

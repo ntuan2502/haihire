@@ -14,9 +14,9 @@ This document defines mandatory code, validation, security, localization, UI, an
 
 ## 2. Centralized Fail-Fast Environment Configuration
 
-- All environment variables are declared in [.env.example](../../.env.example) (`57` keys) and validated via Zod at startup in [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) (`backendEnvSchema`) and [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts).
-- Required core security and infrastructure keys include `DATABASE_URL`, `JWT_SECRET` (min `16` chars), `ENCRYPTION_SECRET` (min `32` chars for AES-256), `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `MINIO_ENDPOINT`, and `FRONTEND_URL` (backend CORS origin whitelist).
-- Never bypass fail-fast schemas with scattered ad-hoc fallbacks for secrets; keep `.env.example`, `.env.production.example`, and TypeScript env schemas 100% synchronized (`pnpm lint:env-sync`).
+- Core environment variables (`24` active keys + documented `# OPTIONAL OVERRIDES`) are declared in [.env.example](../../.env.example) and validated via Zod at startup in [apps/api/src/config/env.ts](../../apps/api/src/config/env.ts) (`backendEnvSchema`), [apps/api/src/config/database-url.ts](../../apps/api/src/config/database-url.ts) (auto-deriving `DATABASE_URL` from `POSTGRES_*`), and [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts).
+- Required core security and infrastructure keys include `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (or explicit `DATABASE_URL`), `JWT_SECRET` (min `16` chars), `ENCRYPTION_SECRET` (min `32` chars for AES-256), `REDIS_HOST`, `REDIS_PORT`, `MINIO_ENDPOINT`, and `FRONTEND_URL` (backend CORS origin whitelist).
+- Never bypass fail-fast schemas with scattered ad-hoc fallbacks for secrets; keep `.env.example`, `.env.staging.example`, `.env.production.example`, Compose templates, and TypeScript env schemas synchronized (`pnpm lint:env-sync`).
 
 ---
 
@@ -56,7 +56,7 @@ This document defines mandatory code, validation, security, localization, UI, an
 ## 5. Two-Way Localization (`pnpm lint:i18n`)
 
 - Keep `apps/web/src/i18n/types.ts` (`TranslationSchema`), `apps/web/src/i18n/locales/en.ts`, and `apps/web/src/i18n/locales/vi.ts` 100% synchronized.
-- Zero hardcoded user-facing strings in UI JSX and zero unlocalized error codes (`64` codes tested via `pnpm lint:error-i18n`).
+- Zero hardcoded user-facing strings in UI JSX and zero unlocalized error codes (`72` codes tested via `pnpm lint:error-i18n`).
 - Dictionaries are loaded dynamically with zero FOUC: `RootLayout` passes the active server-resolved dictionary to `I18nProvider`, and alternate language chunks load on-demand.
 - Follow 2-tier precedence (`user.preferredLanguage` -> cookie/storage -> `organization.defaultLanguage`, and `user.preferredTimezone` -> `organization.timezone`).
 

@@ -10,7 +10,7 @@ See [Project Metrics](docs/PROJECT_METRICS.md) for the source-derived inventory.
 
 ## Architecture Highlights
 
-- **Multi-Tenant Isolation:** Row-level `organizationId` filtering enforced at API guards (`TenantGuard`), controller/service boundaries, and static CI analysis ([scripts/check-tenant-scoping.ts](scripts/check-tenant-scoping.ts) inspecting 8 scoped backend modules).
+- **Multi-Tenant Isolation:** Row-level `organizationId` filtering enforced at API guards (`TenantGuard`), controller/service boundaries, and static CI analysis ([scripts/check-tenant-scoping.ts](scripts/check-tenant-scoping.ts) inspecting 10 scoped backend modules).
 - **Dynamic Owner + 5-Role / 41-Permission RBAC:** Mutable per-organization permission overrides (`OrganizationRolePermission`) with `ADMIN` immutability, dynamic `Organization.ownerId` ownership transfer, and `@haihire/shared` defaults.
 - **Atomic Application Saga & Private Resume Storage:** `AsyncLocalStorage`-backed interactive Prisma transactions paired with private MinIO object prefixes (`tenants/<orgId>/...`), authenticated document downloads, and BullMQ dead-letter orphan cleanup (`orphan-cleanup-queue` / `orphan-cleanup-dlq`).
 - **Real-Time Collaborative Workspace:** Redis/Valkey-backed Server-Sent Events (`GET /events/sse`) dispatching 17 `AppEventType`s into a debounced `createRealtimeInvalidator` over TanStack Query v5 caches.
@@ -26,7 +26,7 @@ haihire/
 │   ├── api/                 # NestJS 12 REST + SSE API, Prisma 7 schema, BullMQ workers
 │   └── web/                 # Next.js 16 App Router portal, Tailwind CSS v4, Shadcn new-york UI
 ├── packages/
-│   └── shared/              # Pure TS schemas (Zod), RBAC matrix (5 roles / 41 perms), 64 error codes
+│   └── shared/              # Pure TS schemas (Zod), RBAC matrix (5 roles / 41 perms), 72 error codes
 ├── monitoring/prometheus/   # Prometheus alert rules + rule unit specs
 ├── scripts/                 # 18 CI architecture gates, backup, orphan cleanup, stats sync
 └── docs/                    # Architecture, API contracts, guides, decisions, and SRE runbooks
@@ -51,27 +51,23 @@ pnpm install
 # 2. Configure root environment template
 cp .env.example .env
 
-# 3. Start PostgreSQL, Valkey/Redis, and MinIO containers
-docker compose up -d postgres minio redis
+# 3. Start PostgreSQL, Valkey/Redis, MinIO, and Caddy App Gateway (:8080)
+docker compose up -d
 
 # 4. Generate Prisma client, push schema, and seed sample workspace
 pnpm db:generate
 pnpm db:update
 pnpm db:seed
 
-# 5. Start API + Web development servers
+# 5. Start API + Web development servers (visit http://localhost:8080 via Caddy)
 pnpm dev
 ```
 
-Default endpoints (configurable via root `.env`):
+Standardized endpoints & 3-tier workflow:
 
-| Service                 | Default Port (`docker-compose.yml` / `.env.example`) | Typical Dev Override         |
-| :---------------------- | :--------------------------------------------------- | :--------------------------- |
-| **Next.js Web Portal**  | `3000` (`FRONTEND_PORT`)                             | `13000` (Playwright default) |
-| **NestJS Backend API**  | `3001` (`BACKEND_PORT`)                              | `13001`                      |
-| **PostgreSQL 17**       | `5432` (`POSTGRES_PORT`)                             | `15432`                      |
-| **Valkey / Redis 8**    | `6379` (`REDIS_PORT`)                                | `16379`                      |
-| **MinIO API / Console** | `9000` / `9001`                                      | `19000` / `19001`            |
+- **Dev (`pnpm dev` + [docker-compose.yml](docker-compose.yml)):** `http://localhost:8080` via Caddy Gateway (`GATEWAY_PORT=8080`) routing `/api/*`, `/organizations/*`, and `/events/*` to NestJS (`BACKEND_PORT=3001`) and all UI routes to Next.js (`FRONTEND_PORT=3000`); Postgres `5432`, Valkey/Redis `6379`, MinIO `9000` / `9001`.
+- **Local Docker Staging ([docker-compose.staging.yml](docker-compose.staging.yml)):** `http://localhost:8081` (`GATEWAY_PORT=8081`) builds local production Docker images, runs `prisma migrate deploy` automatically, and runs side-by-side with Dev.
+- **Production ([docker-compose.prod.yml](docker-compose.prod.yml)):** GitHub Actions ([cd-release.yml](.github/workflows/cd-release.yml)) builds GHCR release images, VPS Host Nginx ([deploy/nginx/host-edge.conf](deploy/nginx/host-edge.conf)) terminates TLS and proxies to Caddy Gateway (`127.0.0.1:8080`).
 
 ---
 
@@ -94,7 +90,7 @@ pnpm check:all       # Full 18-gate CI architecture, security, i18n, doc, and bu
 - **Database Schema (`27` Models / `18` Enums):** [docs/architecture/data-model.md](docs/architecture/data-model.md)
 - **Security & RBAC:** [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)
 - **Engineering Conventions:** [docs/architecture/conventions.md](docs/architecture/conventions.md)
-- **REST & SSE API (`13` Controllers / `118` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
+- **REST & SSE API (`14` Controllers / `145` Endpoints):** [docs/api/overview.md](docs/api/overview.md)
 - **Decisions Log:** [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)
 - **Onboarding & QA:** [docs/guides/onboarding.md](docs/guides/onboarding.md)
 - **SRE Runbooks:** [docs/runbooks/alerts.md](docs/runbooks/alerts.md)

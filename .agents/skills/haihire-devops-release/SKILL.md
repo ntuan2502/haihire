@@ -41,9 +41,10 @@ Never consider a non-trivial task complete until the applicable gates (and befor
 
 - **Shared Dependency Versions:** Reference `catalog:` in workspace `package.json` for shared tools (`typescript`, `vitest`, `eslint`, `zod`, `@types/node`, `tsx`).
 - **Release Age Quarantine:** `pnpm-workspace.yaml` enforces `minimumReleaseAge: 1440` (24 hours). When upgrading exempted packages in `minimumReleaseAgeExclude`, keep exact versions aligned with `apps/api/package.json` and `apps/web/package.json`.
-- **Lean Node 26 Dockerfiles:**
-  - `apps/api/Dockerfile` compiles `dist/server.mjs` and copies `packages/shared/src`, `apps/api/dist`, `apps/api/src/prisma`, `apps/api/src/common`, and `scripts`. Note port `3001` inside container (`13001` host mapping in Compose).
-  - `apps/web/Dockerfile` builds `output: "standalone"` with build-time `BACKEND_HOST=api` / `MINIO_HOST=minio` and starts `node server.js` on internal port `3000` (`13000` host mapping in Compose).
+- **Lean Node 26 Dockerfiles & 3-Tier Gateway Model:**
+  - `apps/api/Dockerfile` compiles `dist/server.mjs`, includes `prisma` runtime dependency for automated `migrate` init-containers, and copies `packages/shared/src`, `apps/api/dist`, `apps/api/prisma.config.ts`, `apps/api/src/prisma`, `apps/api/src/common`, `apps/api/src/config/database-url.ts`, and `scripts` (internal port `3001`).
+  - `apps/web/Dockerfile` builds `output: "standalone"` (`NEXT_PUBLIC_API_URL=""` same-origin via Caddy) and starts `node server.js` on internal port `3000`.
+  - Unified Caddy App Gateway (`deploy/caddy/Caddyfile`): Dev host `pnpm dev` on `:8080` (`docker-compose.yml`), Local Docker Staging build on `:8081` (`docker-compose.staging.yml`), Production GHCR stack behind Host Nginx (`deploy/nginx/host-edge.conf`) on `127.0.0.1:8080` (`docker-compose.prod.yml`).
 - **CI/CD Container Scanning:** `.github/workflows/cd-release.yml` produces and archives `trivy-api-results.sarif` and `trivy-web-results.sarif`—ensure Trivy output filenames and `upload-artifact` paths stay aligned.
 
 ---

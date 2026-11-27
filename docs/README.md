@@ -12,7 +12,7 @@ Central index for **HaiHire Platform** architecture, API contracts, engineering 
 | [Data Model & Schema](architecture/data-model.md)      | Prisma schema, cascading deletes, `deletedAt` soft deletes, RLS                             |
 | [Security & RBAC](architecture/security-rbac.md)       | Cookie JWT + `tokenVersion`, `TenantGuard`, dynamic `ownerId`, `5` roles / `41` permissions |
 | [Engineering Conventions](architecture/conventions.md) | TypeScript strictness, Zod env, `DtoPipe`, 2-way i18n, Shadcn `new-york` + `"cn"`           |
-| [REST & SSE API Overview](api/overview.md)             | `13` controllers, `125` endpoints, `GlobalExceptionFilter`, `67` `APP_ERROR_CODES`          |
+| [REST & SSE API Overview](api/overview.md)             | `14` controllers, `145` endpoints, `GlobalExceptionFilter`, `72` `APP_ERROR_CODES`          |
 | [Architectural Decisions](decisions/DECISIONS.md)      | Decisions `D-001` through `D-018` (including Prisma `7.10.1` Stable GA)                     |
 | [Project Metrics](PROJECT_METRICS.md)                  | Verified codebase inventory, test totals, env keys, and CI gates                            |
 
@@ -32,17 +32,17 @@ Central index for **HaiHire Platform** architecture, API contracts, engineering 
 
 ## Site Reliability & Operations Runbooks
 
-| Runbook                                                              | Operational Scope                                                                                      |
-| :------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| [Alerts & Incident Triage](runbooks/alerts.md)                       | Response SOPs for Prometheus alert rules in `monitoring/prometheus/alert-rules.yml`                    |
-| [Backup & Restore](runbooks/backup-and-restore.md)                   | PostgreSQL + MinIO backup locks, retention, and verification drills                                    |
-| [Dead-Letter Queue Recovery](runbooks/dlq-recovery.md)               | Inspecting and replaying `email-dlq-queue` and `orphan-cleanup-dlq`                                    |
-| [Email Queue Operations](runbooks/email-queue.md)                    | BullMQ `email-queue` delivery, SMTP/Resend/SendGrid transporters, backlog handling                     |
-| [Orphan MinIO Cleanup](runbooks/orphan-cleanup.md)                   | Manual CLI sweep ([scripts/cleanup-orphan-minio.ts](../scripts/cleanup-orphan-minio.ts)) & Pushgateway |
-| [Valkey / Redis Recovery](runbooks/redis-recovery.md)                | Handling `noeviction` memory pressure, AOF persistence, and BullMQ recovery                            |
-| [Environment Management](runbooks/env-management.md)                 | `.env.example` / `.env.production.example` sync and rotation (`56` keys)                               |
-| [CI/CD Pipelines](runbooks/ci-cd.md)                                 | GitHub Actions `dev`/`main` gates, composite actions, and Trivy SARIF release flow                     |
-| [Branch Protection](runbooks/branch-protection.md)                   | Rules across `feature/*`, `dev`, and `main`                                                            |
-| [Prisma Version Policy](runbooks/prisma-version-policy.md)           | Prisma `7.10.1` GA lock, `@prisma/adapter-pg`, and `pnpm` catalog policy                               |
-| [Production Deployment Plan](runbooks/production-deployment-plan.md) | `docker-compose.prod.yml` rollout, TLS/proxy checklist, and smoke tests                                |
-| [Versioning & Release Policy](runbooks/versioning.md)                | SemVer tags (`v0.1.0` baseline), `CHANGELOG.md`, and version sync scripts                              |
+| Runbook                                                              | Operational Scope                                                                                            |
+| :------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| [Alerts & Incident Triage](runbooks/alerts.md)                       | Response SOPs for Prometheus alert rules in `monitoring/prometheus/alert-rules.yml`                          |
+| [Backup & Restore](runbooks/backup-and-restore.md)                   | PostgreSQL + MinIO backup locks, retention, and verification drills                                          |
+| [Dead-Letter Queue Recovery](runbooks/dlq-recovery.md)               | Inspecting and replaying `email-dlq-queue` and `orphan-cleanup-dlq`                                          |
+| [Email Queue Operations](runbooks/email-queue.md)                    | BullMQ `email-queue` delivery, SMTP/Resend/SendGrid transporters, backlog handling                           |
+| [Orphan MinIO Cleanup](runbooks/orphan-cleanup.md)                   | Manual CLI sweep ([scripts/cleanup-orphan-minio.ts](../scripts/cleanup-orphan-minio.ts)) & Pushgateway       |
+| [Valkey / Redis Recovery](runbooks/redis-recovery.md)                | Handling `noeviction` memory pressure, AOF persistence, and BullMQ recovery                                  |
+| [Environment Management](runbooks/env-management.md)                 | `.env.example` (`24` core keys + optional overrides), `.env.staging.example`, `.env.production.example` sync |
+| [CI/CD Pipelines](runbooks/ci-cd.md)                                 | GitHub Actions `dev`/`main` gates, composite actions, and Trivy SARIF release flow                           |
+| [Branch Protection](runbooks/branch-protection.md)                   | Rules across `feature/*`, `dev`, and `main`                                                                  |
+| [Prisma Version Policy](runbooks/prisma-version-policy.md)           | Prisma `7.10.1` GA lock, `@prisma/adapter-pg`, and `pnpm` catalog policy                                     |
+| [Production Deployment Plan](runbooks/production-deployment-plan.md) | `docker-compose.prod.yml` rollout, TLS/proxy checklist, and smoke tests                                      |
+| [Versioning & Release Policy](runbooks/versioning.md)                | SemVer tags (`v0.1.0` baseline), `CHANGELOG.md`, and version sync scripts                                    |

@@ -21,8 +21,8 @@ pnpm install
 # 2. Copy root environment template (Single Source of Truth)
 cp .env.example .env
 
-# 3. Start infrastructure services (PostgreSQL 17.6, MinIO, Valkey 8.0.2)
-docker compose up -d postgres minio redis
+# 3. Start infrastructure services (PostgreSQL 17.6, MinIO, Valkey 8.0.2, Caddy Gateway :8080)
+docker compose up -d
 
 # 4. Generate Prisma 7 client and push schema
 pnpm db:generate
@@ -45,9 +45,11 @@ pnpm dev
 Or run them independently:
 
 ```bash
-pnpm dev:api   # NestJS watch server via tsx (PORT in .env, default 3001)
+pnpm dev:api   # NestJS watch server via tsx (BACKEND_PORT in .env, default 3001)
 pnpm dev:web   # Next.js 16 dev server (FRONTEND_PORT in .env, default 3000)
 ```
+
+> **Local Docker Staging (`:8081`):** To test full production Docker images (`NODE_ENV=production`, standalone Next.js, automatic `prisma migrate deploy`) locally alongside Dev (`:8080`), copy `.env.staging.example` to `.env.staging` (configuring SMTP credentials) and run `docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build`.
 
 Verify core infrastructure ports from [docker-compose.yml](../../docker-compose.yml) and [.env.example](../../.env.example):
 

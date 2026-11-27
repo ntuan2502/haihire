@@ -27,10 +27,10 @@ import { EventsService } from "../events/events.service";
 import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
 import {
-  callAiCompletion,
   providerSupportsPdfAttachment,
   type AiPdfAttachment,
 } from "./ai-provider.client";
+import { AiGatewayService } from "./ai-gateway.service";
 import { AiSettingsService } from "./ai-settings.service";
 import { parseJsonPayload, stripHtmlTags } from "./ai-text.util";
 import { extractPdfTextFromBuffer, streamToBuffer } from "./pdf-text.util";
@@ -291,6 +291,8 @@ export class AiScoringService {
     private readonly prisma: PrismaService,
     @Inject(AiSettingsService)
     private readonly aiSettingsService: AiSettingsService,
+    @Inject(AiGatewayService)
+    private readonly aiGatewayService: AiGatewayService,
     @Inject(MinioService)
     private readonly minioService: MinioService,
     @Optional()
@@ -363,7 +365,10 @@ export class AiScoringService {
     organizationId: string,
     applicationId: string,
   ): Promise<SharedApplicationAiEvaluation> {
-    await this.aiSettingsService.getActiveRuntimeConfig(organizationId);
+    await this.aiGatewayService.assertFeatureReady(
+      organizationId,
+      "APPLICATION_SCORING",
+    );
 
     const app = await this.prisma.application.findFirst({
       where: { id: applicationId, organizationId },
@@ -397,7 +402,10 @@ export class AiScoringService {
     jobId: string,
     limit = MAX_BATCH_AI_SCORE_LIMIT,
   ): Promise<BatchAiScoreResponse> {
-    await this.aiSettingsService.getActiveRuntimeConfig(organizationId);
+    await this.aiGatewayService.assertFeatureReady(
+      organizationId,
+      "APPLICATION_SCORING",
+    );
 
     const job = await this.prisma.job.findFirst({
       where: { id: jobId, organizationId, deletedAt: null },
@@ -476,26 +484,12 @@ export class AiScoringService {
     applicationId: string,
   ): Promise<void> {
     try {
-      const setting = await this.prisma.organizationAiSetting.findFirst({
-        where: { organizationId },
-        select: {
-          isEnabled: true,
-          autoScoreApplications: true,
-          provider: true,
-          encryptedApiKey: true,
-        },
-      });
-      if (!setting?.isEnabled) {
-        return;
-      }
-      if (
-        setting.provider !== "OPENAI_COMPATIBLE" &&
-        !setting.encryptedApiKey
-      ) {
+      const status = await this.aiSettingsService.getStatus(organizationId);
+      if (!status.features?.APPLICATION_SCORING?.enabled) {
         return;
       }
 
-      let shouldAutoScore = Boolean(setting.autoScoreApplications);
+      let shouldAutoScore = Boolean(status.autoScoreApplications);
       if (!shouldAutoScore) {
         const app = await this.prisma.application.findFirst({
           where: { id: applicationId, organizationId },
@@ -560,9 +554,8 @@ export class AiScoringService {
     try {
       // Phase 1: Short RLS transaction to mark PROCESSING and load scoring inputs.
       // Keep external I/O (MinIO + LLM HTTP) strictly outside Prisma's 5s interactive tx window.
-      const { app, job, candidate, org, config } = await this.runWithTenantDb(
-        organizationId,
-        async (db) => {
+      const { app, job, candidate, org, canUseNativePdf } =
+        await this.runWithTenantDb(organizationId, async (db) => {
           await this.markStatus(
             db,
             organizationId,
@@ -589,8 +582,8 @@ export class AiScoringService {
             );
           }
 
-          const [jobRow, candidateRow, orgRow, activeConfig] =
-            await Promise.all([
+          const [jobRow, candidateRow, orgRow, featurePlan] = await Promise.all(
+            [
               db.job.findFirst({
                 where: { id: appRow.jobId, organizationId, deletedAt: null },
                 select: {
@@ -616,8 +609,12 @@ export class AiScoringService {
                 where: { id: organizationId },
                 select: { defaultLanguage: true },
               }),
-              this.aiSettingsService.getActiveRuntimeConfig(organizationId),
-            ]);
+              this.aiGatewayService.resolveExecutionPlan(
+                organizationId,
+                "APPLICATION_SCORING",
+              ),
+            ],
+          );
 
           if (!jobRow) {
             throw new AppNotFoundException(
@@ -626,15 +623,27 @@ export class AiScoringService {
             );
           }
 
+          if (
+            !featurePlan.orgEnabled ||
+            !featurePlan.featureEnabled ||
+            featurePlan.candidates.length === 0
+          ) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.AI_NOT_CONFIGURED,
+              "AI provider is not configured or is disabled for application scoring.",
+            );
+          }
+
           return {
             app: appRow,
             job: jobRow,
             candidate: candidateRow,
             org: orgRow,
-            config: activeConfig,
+            canUseNativePdf: featurePlan.candidates.some((c) =>
+              providerSupportsPdfAttachment(c.provider),
+            ),
           };
-        },
-      );
+        });
 
       // Phase 2: External MinIO PDF extraction + LLM API call outside any DB transaction.
       const resolvedResumeUrl = app.resumeUrl || candidate?.resumeUrl || null;
@@ -674,16 +683,16 @@ export class AiScoringService {
           cvExtractedChars = extracted.rawLength;
 
           if (extracted.rawLength < MIN_READABLE_CV_CHARS) {
+            cvText = extracted.text;
             if (
               buffer.length <= MAX_NATIVE_PDF_ATTACHMENT_BYTES &&
-              providerSupportsPdfAttachment(config.provider)
+              canUseNativePdf
             ) {
               pdfAttachment = {
                 base64: buffer.toString("base64"),
                 filename: resolvedResumeName,
               };
             } else {
-              cvText = extracted.text;
               warningCode = "CV_UNREADABLE_SCANNED";
             }
           } else {
@@ -776,43 +785,46 @@ export class AiScoringService {
         "- NEVER score or judge based on age, gender, race, religion, marital status, or personal protected traits.",
       ].join("\n");
 
-      const userPrompt = [
-        `=== JOB DESCRIPTION ===`,
-        `Title: ${job.title}`,
-        `Department: ${job.department}`,
-        job.experienceLevel ? `Experience Level: ${job.experienceLevel}` : "",
-        job.workplace ? `Workplace: ${job.workplace}` : "",
-        `Location: ${job.location}`,
-        `Description:\n${plainJobDesc}`,
-        "",
-        "<candidate_data>",
-        pdfAttachment
-          ? `[CV PDF attached visually (${resolvedResumeName}) — inspect the attached document directly.]`
-          : cvText
-            ? `=== CV TEXT (${resolvedResumeName}) ===\n${cvText}`
-            : `=== CV TEXT ===\n[Unavailable: ${warningCode || "NO_CV"}]`,
-        coverLetterText ? `\n=== COVER LETTER ===\n${coverLetterText}` : "",
-        hasScreeningAnswers
-          ? `\n=== SCREENING ANSWERS ===\n${formattedScreeningLines.join("\n")}`
-          : "",
-        "</candidate_data>",
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const buildUserPrompt = (supportsPdf: boolean) =>
+        [
+          `=== JOB DESCRIPTION ===`,
+          `Title: ${job.title}`,
+          `Department: ${job.department}`,
+          job.experienceLevel ? `Experience Level: ${job.experienceLevel}` : "",
+          job.workplace ? `Workplace: ${job.workplace}` : "",
+          `Location: ${job.location}`,
+          `Description:\n${plainJobDesc}`,
+          "",
+          "<candidate_data>",
+          supportsPdf && pdfAttachment
+            ? `[CV PDF attached visually (${resolvedResumeName}) — inspect the attached document directly.]`
+            : cvText
+              ? `=== CV TEXT (${resolvedResumeName}) ===\n${cvText}`
+              : `=== CV TEXT ===\n[Unavailable: ${warningCode || "NO_CV"}]`,
+          coverLetterText ? `\n=== COVER LETTER ===\n${coverLetterText}` : "",
+          hasScreeningAnswers
+            ? `\n=== SCREENING ANSWERS ===\n${formattedScreeningLines.join("\n")}`
+            : "",
+          "</candidate_data>",
+        ]
+          .filter(Boolean)
+          .join("\n");
 
-      const rawResponse = await callAiCompletion({
-        provider: config.provider,
-        modelId: config.modelId,
-        apiKey: config.apiKey,
-        baseUrl: config.baseUrl,
-        systemPrompt,
-        userPrompt,
-        maxTokens: 3072,
-        jsonMode: true,
-        temperature: 0.1,
-        timeoutMs: AI_SCORING_TIMEOUT_MS,
-        pdfAttachment,
-      });
+      const gatewayResult = await this.aiGatewayService.execute(
+        organizationId,
+        "APPLICATION_SCORING",
+        {
+          systemPrompt,
+          buildUserPrompt,
+          maxTokens: 3072,
+          jsonMode: true,
+          temperature: 0.1,
+          timeoutMs: AI_SCORING_TIMEOUT_MS,
+          totalTimeoutMs: 75_000,
+          pdfAttachment,
+        },
+      );
+      const rawResponse = gatewayResult.text;
 
       let decoded: unknown;
       try {
@@ -898,8 +910,8 @@ export class AiScoringService {
             .suggestedQuestions as unknown as Prisma.InputJsonValue,
           warningCode,
           cvExtractedChars,
-          provider: config.provider,
-          modelId: config.modelId,
+          provider: gatewayResult.provider,
+          modelId: gatewayResult.modelId,
           inputHash,
           errorMessage: null,
           scoredAt: new Date(),

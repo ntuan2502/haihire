@@ -13,24 +13,20 @@ import {
   type ScreeningQuestion,
 } from "@haihire/shared";
 import { AppBadRequestException } from "../common/app-exception";
-import { callAiCompletion } from "./ai-provider.client";
-import { AiSettingsService } from "./ai-settings.service";
+import { AiGatewayService } from "./ai-gateway.service";
 import { parseJsonPayload, stripHtmlTags } from "./ai-text.util";
 
 @Injectable()
 export class AiGenerationService {
   constructor(
-    @Inject(AiSettingsService)
-    private readonly aiSettingsService: AiSettingsService,
+    @Inject(AiGatewayService)
+    private readonly aiGatewayService: AiGatewayService,
   ) {}
 
   async generateScreeningQuestions(
     organizationId: string,
     dto: GenerateScreeningQuestionsInput,
   ): Promise<GenerateScreeningQuestionsResponse> {
-    const config =
-      await this.aiSettingsService.getActiveRuntimeConfig(organizationId);
-
     const plainDesc = stripHtmlTags(dto.description).slice(0, 6000);
     const languageLabel =
       dto.language === "en" ? "English" : "Vietnamese (Tiếng Việt)";
@@ -61,20 +57,20 @@ export class AiGenerationService {
       .filter(Boolean)
       .join("\n\n");
 
-    const rawText = await callAiCompletion({
-      provider: config.provider,
-      modelId: config.modelId,
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      systemPrompt,
-      userPrompt,
-      maxTokens: 2048,
-      jsonMode: true,
-    });
+    const gatewayResult = await this.aiGatewayService.execute(
+      organizationId,
+      "SCREENING_QUESTIONS",
+      {
+        systemPrompt,
+        userPrompt,
+        maxTokens: 2048,
+        jsonMode: true,
+      },
+    );
 
     let decoded: unknown;
     try {
-      decoded = parseJsonPayload(rawText);
+      decoded = parseJsonPayload(gatewayResult.text);
     } catch {
       throw new AppBadRequestException(
         APP_ERROR_CODES.AI_GENERATION_FAILED,
@@ -149,8 +145,8 @@ export class AiGenerationService {
 
     return {
       questions: validQuestions,
-      provider: config.provider,
-      modelId: config.modelId,
+      provider: gatewayResult.provider,
+      modelId: gatewayResult.modelId,
     };
   }
 
@@ -158,9 +154,6 @@ export class AiGenerationService {
     organizationId: string,
     dto: GenerateScoringCriteriaInput,
   ): Promise<GenerateScoringCriteriaResponse> {
-    const config =
-      await this.aiSettingsService.getActiveRuntimeConfig(organizationId);
-
     const plainDesc = stripHtmlTags(dto.description).slice(0, 6000);
     const languageLabel =
       dto.language === "en" ? "English" : "Vietnamese (Tiếng Việt)";
@@ -193,20 +186,20 @@ export class AiGenerationService {
       .filter(Boolean)
       .join("\n\n");
 
-    const rawText = await callAiCompletion({
-      provider: config.provider,
-      modelId: config.modelId,
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      systemPrompt,
-      userPrompt,
-      maxTokens: 2048,
-      jsonMode: true,
-    });
+    const gatewayResult = await this.aiGatewayService.execute(
+      organizationId,
+      "SCORING_CRITERIA",
+      {
+        systemPrompt,
+        userPrompt,
+        maxTokens: 2048,
+        jsonMode: true,
+      },
+    );
 
     let decoded: unknown;
     try {
-      decoded = parseJsonPayload(rawText);
+      decoded = parseJsonPayload(gatewayResult.text);
     } catch {
       throw new AppBadRequestException(
         APP_ERROR_CODES.AI_GENERATION_FAILED,
@@ -284,8 +277,8 @@ export class AiGenerationService {
 
     return {
       criteria: validCriteria,
-      provider: config.provider,
-      modelId: config.modelId,
+      provider: gatewayResult.provider,
+      modelId: gatewayResult.modelId,
     };
   }
 }

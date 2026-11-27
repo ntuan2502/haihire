@@ -1,17 +1,19 @@
 import { Readable } from "node:stream";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { EncryptionService } from "../common/encryption.service";
 import type { MinioService } from "../minio/minio.service";
 import type { PrismaService } from "../prisma/prisma.service";
 import {
   createMockPrismaService,
   createMockTable,
 } from "../test/helpers/prisma-composer-mock";
+import { AiGatewayService } from "./ai-gateway.service";
 import {
   AiScoringService,
   computeScoringInputHash,
   computeWeightedCriteriaScore,
 } from "./ai-scoring.service";
-import type { AiSettingsService } from "./ai-settings.service";
+import { AiSettingsService } from "./ai-settings.service";
 
 const { mockExtractPdfTextFromBuffer } = vi.hoisted(() => ({
   mockExtractPdfTextFromBuffer: vi.fn(),
@@ -33,9 +35,11 @@ describe("AiScoringService", () => {
   let candidateTable: ReturnType<typeof createMockTable>;
   let orgTable: ReturnType<typeof createMockTable>;
   let aiSettingTable: ReturnType<typeof createMockTable>;
-  let mockSettingsService: {
-    getActiveRuntimeConfig: ReturnType<typeof vi.fn>;
-  };
+  let aiConnectionTable: ReturnType<typeof createMockTable>;
+  let aiRouteTable: ReturnType<typeof createMockTable>;
+  let encryptionService: EncryptionService;
+  let gatewayService: AiGatewayService;
+  let settingsService: AiSettingsService;
   let mockMinio: {
     getObjectStream: ReturnType<typeof vi.fn>;
   };
@@ -134,17 +138,37 @@ describe("AiScoringService", () => {
         defaultLanguage: "en",
       },
     ]);
+    encryptionService = new EncryptionService();
+    const connId = "11111111-1111-4111-8111-111111111111";
+
     aiSettingTable = createMockTable([
       {
         id: "ai-set-1",
         organizationId: "org-1",
-        provider: "GEMINI",
-        modelId: "gemini-4-hydrogen",
-        encryptedApiKey: "enc-key",
         isEnabled: true,
         autoScoreApplications: false,
+        defaultRouteMode: "SINGLE",
+        defaultRouteTargets: [
+          { connectionId: connId, modelId: null, weight: 1 },
+        ],
       },
     ]);
+    aiConnectionTable = createMockTable([
+      {
+        id: connId,
+        organizationId: "org-1",
+        name: "Primary Gemini",
+        provider: "GEMINI",
+        defaultModelId: "gemini-4-hydrogen",
+        encryptedApiKey: encryptionService.encrypt("AIza-test-key"),
+        apiKeyLast4: "-key",
+        baseUrl: null,
+        isEnabled: true,
+        lastStatus: "HEALTHY",
+        consecutiveFailures: 0,
+      },
+    ]);
+    aiRouteTable = createMockTable([]);
 
     const mockPrisma = createMockPrismaService({
       application: appTable,
@@ -153,16 +177,16 @@ describe("AiScoringService", () => {
       candidate: candidateTable,
       organization: orgTable,
       organizationAiSetting: aiSettingTable,
+      organizationAiConnection: aiConnectionTable,
+      organizationAiFeatureRoute: aiRouteTable,
     }) as unknown as PrismaService;
 
-    mockSettingsService = {
-      getActiveRuntimeConfig: vi.fn().mockResolvedValue({
-        provider: "GEMINI",
-        modelId: "gemini-4-hydrogen",
-        apiKey: "AIza-test-key",
-        baseUrl: null,
-      }),
-    };
+    gatewayService = new AiGatewayService(mockPrisma, encryptionService);
+    settingsService = new AiSettingsService(
+      mockPrisma,
+      encryptionService,
+      gatewayService,
+    );
 
     mockMinio = {
       getObjectStream: vi
@@ -174,7 +198,8 @@ describe("AiScoringService", () => {
 
     service = new AiScoringService(
       mockPrisma,
-      mockSettingsService as unknown as AiSettingsService,
+      settingsService,
+      gatewayService,
       mockMinio as unknown as MinioService,
       mockEvents as never,
       mockQueue as never,
@@ -368,6 +393,8 @@ describe("AiScoringService", () => {
       candidate: candidateTable,
       organization: orgTable,
       organizationAiSetting: aiSettingTable,
+      organizationAiConnection: aiConnectionTable,
+      organizationAiFeatureRoute: aiRouteTable,
     }) as unknown as PrismaService & {
       withTenantRls: (
         orgId: string,
@@ -389,9 +416,16 @@ describe("AiScoringService", () => {
       }
     });
 
+    const isolatedGateway = new AiGatewayService(rlsPrisma, encryptionService);
+    const isolatedSettings = new AiSettingsService(
+      rlsPrisma,
+      encryptionService,
+      isolatedGateway,
+    );
     const isolatedService = new AiScoringService(
       rlsPrisma,
-      mockSettingsService as unknown as AiSettingsService,
+      isolatedSettings,
+      isolatedGateway,
       mockMinio as unknown as MinioService,
       mockEvents as never,
       mockQueue as never,

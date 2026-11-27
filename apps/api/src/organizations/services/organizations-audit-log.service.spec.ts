@@ -385,4 +385,40 @@ describe("OrganizationsAuditLogService", () => {
       ]);
     });
   });
+
+  describe("logOrgChange", () => {
+    it("auto-infers resource from registry and computes redacted diffs", async () => {
+      const result = await service.logOrgChange({
+        organizationId: "org-1",
+        actorId: "user-1",
+        action: "AI_CONNECTION_UPDATED",
+        targetId: "conn-1",
+        targetLabel: "Gemini Primary",
+        before: {
+          defaultModelId: "gemini-4-hydrogen",
+          apiKey: "old-secret-1111",
+        },
+        after: {
+          defaultModelId: "gemini-4-carbon",
+          apiKey: "new-secret-2222",
+        },
+      });
+
+      expect(result.resource).toBe("AI");
+      expect(result.targetId).toBe("conn-1");
+      expect(result.targetLabel).toBe("Gemini Primary");
+      expect(result.changes).toEqual([
+        {
+          field: "defaultModelId",
+          before: "gemini-4-hydrogen",
+          after: "gemini-4-carbon",
+        },
+        {
+          field: "apiKey",
+          before: "[REDACTED]",
+          after: "[REDACTED]",
+        },
+      ]);
+    });
+  });
 });

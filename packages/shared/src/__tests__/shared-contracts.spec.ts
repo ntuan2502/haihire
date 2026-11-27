@@ -15,9 +15,16 @@ import {
   isValidDateOnlyString,
   isValidHttpUrl,
   isScreeningFileAnswer,
-  upsertAiSettingSchema,
+  createAiConnectionSchema,
+  updateAiPolicySchema,
+  updateAiFeatureRoutesSchema,
   testAiConnectionSchema,
   generateScreeningQuestionsSchema,
+  AUDIT_ACTIONS,
+  AUDIT_ACTION_REGISTRY,
+  AUDIT_RESOURCES,
+  SENSITIVE_AUDIT_ACTIONS,
+  inferAuditVerb,
 } from "../index";
 
 describe("@haihire/shared Contracts", () => {
@@ -272,33 +279,72 @@ describe("@haihire/shared Contracts", () => {
   });
 
   describe("BYOK AI configuration & generation schemas", () => {
-    it("validates upsertAiSettingSchema and requires baseUrl for OPENAI_COMPATIBLE", () => {
+    it("validates multi-connection, optional custom baseUrl, and proxy routing schemas", () => {
       expect(
-        upsertAiSettingSchema.safeParse({
+        createAiConnectionSchema.safeParse({
+          name: "Primary Gemini",
           provider: "GEMINI",
-          modelId: "gemini-2.5-flash",
+          defaultModelId: "gemini-4-hydrogen",
           apiKey: "AIza-test",
         }).success,
       ).toBe(true);
 
       expect(
-        upsertAiSettingSchema.safeParse({
+        createAiConnectionSchema.safeParse({
+          name: "LiteLLM Proxy",
+          provider: "OPENAI",
+          defaultModelId: "gpt-6.2-sol",
+          baseUrl: "https://proxy.example.com/v1",
+          apiKey: "sk-proxy",
+        }).success,
+      ).toBe(true);
+
+      expect(
+        createAiConnectionSchema.safeParse({
+          name: "Invalid Local Ollama",
           provider: "OPENAI_COMPATIBLE",
-          modelId: "llama3.1",
+          defaultModelId: "llama3.1",
           baseUrl: "",
         }).success,
       ).toBe(false);
 
       expect(
-        upsertAiSettingSchema.safeParse({
+        createAiConnectionSchema.safeParse({
+          name: "Valid Ollama",
           provider: "OPENAI_COMPATIBLE",
-          modelId: "llama3.1",
+          defaultModelId: "llama3.1",
           baseUrl: "http://localhost:11434/v1",
+        }).success,
+      ).toBe(true);
+
+      const connId = "11111111-1111-4111-8111-111111111111";
+      expect(
+        updateAiPolicySchema.safeParse({
+          isEnabled: true,
+          autoScoreApplications: true,
+          defaultRouteMode: "FAILOVER",
+          defaultRouteTargets: [
+            { connectionId: connId, modelId: "gpt-5-mini", weight: 2 },
+          ],
+        }).success,
+      ).toBe(true);
+
+      expect(
+        updateAiFeatureRoutesSchema.safeParse({
+          routes: [
+            {
+              feature: "APPLICATION_SCORING",
+              isEnabled: true,
+              mode: "LOAD_BALANCE",
+              targets: [{ connectionId: connId, weight: 3 }],
+            },
+          ],
         }).success,
       ).toBe(true);
 
       expect(
         testAiConnectionSchema.safeParse({
+          connectionId: connId,
           provider: "OPENAI",
           modelId: "gpt-4o-mini",
         }).success,
@@ -310,6 +356,26 @@ describe("@haihire/shared Contracts", () => {
         language: "en",
       });
       expect(genParsed.success).toBe(true);
+    });
+  });
+
+  describe("Audit Log SSOT Registry", () => {
+    it("registers every AUDIT_ACTIONS entry in AUDIT_ACTION_REGISTRY and derives sensitive actions", () => {
+      for (const action of Object.values(AUDIT_ACTIONS)) {
+        expect(AUDIT_ACTION_REGISTRY[action]).toBeDefined();
+      }
+      expect(AUDIT_ACTION_REGISTRY.AI_CONNECTION_CREATED.resource).toBe(
+        AUDIT_RESOURCES.AI,
+      );
+      expect(SENSITIVE_AUDIT_ACTIONS.has(AUDIT_ACTIONS.AI_POLICY_UPDATED)).toBe(
+        true,
+      );
+      expect(
+        SENSITIVE_AUDIT_ACTIONS.has(AUDIT_ACTIONS.ROLE_PERMISSIONS_UPDATED),
+      ).toBe(true);
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_CREATED")).toBe("CREATE");
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_DELETED")).toBe("DELETE");
+      expect(inferAuditVerb("CUSTOM_WORKFLOW_UPDATED")).toBe("UPDATE");
     });
   });
 });

@@ -1,4 +1,8 @@
-import { APP_ERROR_CODES, type AiProvider } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  type AiProvider,
+  type AppErrorCode,
+} from "@haihire/shared";
 import { AppBadRequestException } from "../common/app-exception";
 
 const AI_REQUEST_TIMEOUT_MS = 20_000;
@@ -6,6 +10,23 @@ const AI_REQUEST_TIMEOUT_MS = 20_000;
 export interface AiPdfAttachment {
   base64: string;
   filename?: string;
+}
+
+export interface AiProviderErrorMeta {
+  httpStatus?: number;
+  retryable: boolean;
+  isAuthError: boolean;
+  isRateLimited: boolean;
+}
+
+export class AiProviderCallError extends AppBadRequestException {
+  constructor(
+    code: AppErrorCode,
+    message: string,
+    public readonly meta: AiProviderErrorMeta,
+  ) {
+    super(code, message);
+  }
 }
 
 export function providerSupportsPdfAttachment(provider: AiProvider): boolean {
@@ -69,24 +90,71 @@ export function assertSafeAiEndpointUrl(rawUrl: string): URL {
   return parsed;
 }
 
+function normalizeCustomBaseUrl(rawUrl: string): string {
+  return assertSafeAiEndpointUrl(rawUrl).toString().replace(/\/+$/, "");
+}
+
 function resolveOpenAiCompatibleBaseUrl(
   provider: AiProvider,
   customBaseUrl?: string | null,
 ): string {
+  const trimmed = customBaseUrl?.trim();
+  if (trimmed) {
+    return normalizeCustomBaseUrl(trimmed);
+  }
   if (provider === "OPENAI") {
     return "https://api.openai.com/v1";
   }
   if (provider === "OPENROUTER") {
     return "https://openrouter.ai/api/v1";
   }
-  if (!customBaseUrl) {
-    throw new AppBadRequestException(
-      APP_ERROR_CODES.VALIDATION_ERROR,
-      "Base URL is required for OpenAI-Compatible providers.",
-    );
+  throw new AppBadRequestException(
+    APP_ERROR_CODES.VALIDATION_ERROR,
+    "Base URL is required for OpenAI-Compatible providers.",
+  );
+}
+
+function resolveGeminiGenerateUrl(
+  modelId: string,
+  apiKey: string,
+  customBaseUrl?: string | null,
+): string {
+  const trimmed = customBaseUrl?.trim();
+  let root = "https://generativelanguage.googleapis.com/v1beta";
+  if (trimmed) {
+    const clean = normalizeCustomBaseUrl(trimmed);
+    root = /\/v1(?:beta)?$/i.test(clean) ? clean : `${clean}/v1beta`;
   }
-  const safe = assertSafeAiEndpointUrl(customBaseUrl);
-  return safe.toString().replace(/\/+$/, "");
+  return `${root}/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+}
+
+function resolveAnthropicMessagesUrl(customBaseUrl?: string | null): string {
+  const trimmed = customBaseUrl?.trim();
+  if (!trimmed) {
+    return "https://api.anthropic.com/v1/messages";
+  }
+  const clean = normalizeCustomBaseUrl(trimmed);
+  if (/\/v1\/messages$/i.test(clean)) {
+    return clean;
+  }
+  return /\/v1$/i.test(clean) ? `${clean}/messages` : `${clean}/v1/messages`;
+}
+
+function classifyHttpStatus(status: number): AiProviderErrorMeta {
+  const isRateLimited = status === 429;
+  const isAuthError = status === 401 || status === 403;
+  const retryable =
+    isRateLimited ||
+    isAuthError ||
+    status === 402 ||
+    status === 408 ||
+    status >= 500;
+  return {
+    httpStatus: status,
+    retryable,
+    isAuthError,
+    isRateLimited,
+  };
 }
 
 async function fetchWithTimeout(
@@ -100,14 +168,16 @@ async function fetchWithTimeout(
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (err: unknown) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_CONNECTION_FAILED,
         "AI provider request timed out.",
+        { retryable: true, isAuthError: false, isRateLimited: false },
       );
     }
-    throw new AppBadRequestException(
+    throw new AiProviderCallError(
       APP_ERROR_CODES.AI_CONNECTION_FAILED,
       err instanceof Error ? err.message : "Failed to reach AI provider.",
+      { retryable: true, isAuthError: false, isRateLimited: false },
     );
   } finally {
     clearTimeout(timeout);
@@ -146,12 +216,13 @@ export async function callAiCompletion(
   if (req.provider === "GEMINI") {
     const apiKey = req.apiKey?.trim();
     if (!apiKey) {
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_NOT_CONFIGURED,
         "Gemini API key is required.",
+        { retryable: false, isAuthError: true, isRateLimited: false },
       );
     }
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(req.modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const endpoint = resolveGeminiGenerateUrl(req.modelId, apiKey, req.baseUrl);
     const userParts: Array<
       { text: string } | { inlineData: { mimeType: string; data: string } }
     > = [];
@@ -192,9 +263,10 @@ export async function callAiCompletion(
 
     if (!response.ok) {
       const msg = await extractProviderError(response);
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_CONNECTION_FAILED,
         msg,
+        classifyHttpStatus(response.status),
       );
     }
 
@@ -209,9 +281,10 @@ export async function callAiCompletion(
         .join("")
         .trim() ?? "";
     if (!text) {
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_GENERATION_FAILED,
         "Gemini returned an empty response.",
+        { retryable: true, isAuthError: false, isRateLimited: false },
       );
     }
     return text;
@@ -220,11 +293,13 @@ export async function callAiCompletion(
   if (req.provider === "ANTHROPIC") {
     const apiKey = req.apiKey?.trim();
     if (!apiKey) {
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_NOT_CONFIGURED,
         "Anthropic API key is required.",
+        { retryable: false, isAuthError: true, isRateLimited: false },
       );
     }
+    const endpoint = resolveAnthropicMessagesUrl(req.baseUrl);
     const anthropicUserContent = req.pdfAttachment?.base64
       ? [
           {
@@ -240,7 +315,7 @@ export async function callAiCompletion(
       : req.userPrompt;
 
     const response = await fetchWithTimeout(
-      "https://api.anthropic.com/v1/messages",
+      endpoint,
       {
         method: "POST",
         headers: {
@@ -261,9 +336,10 @@ export async function callAiCompletion(
 
     if (!response.ok) {
       const msg = await extractProviderError(response);
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_CONNECTION_FAILED,
         msg,
+        classifyHttpStatus(response.status),
       );
     }
 
@@ -277,9 +353,10 @@ export async function callAiCompletion(
         .join("")
         .trim() ?? "";
     if (!text) {
-      throw new AppBadRequestException(
+      throw new AiProviderCallError(
         APP_ERROR_CODES.AI_GENERATION_FAILED,
         "Anthropic returned an empty response.",
+        { retryable: true, isAuthError: false, isRateLimited: false },
       );
     }
     return text;
@@ -289,9 +366,10 @@ export async function callAiCompletion(
   const baseUrl = resolveOpenAiCompatibleBaseUrl(req.provider, req.baseUrl);
   const apiKey = req.apiKey?.trim();
   if (req.provider !== "OPENAI_COMPATIBLE" && !apiKey) {
-    throw new AppBadRequestException(
+    throw new AiProviderCallError(
       APP_ERROR_CODES.AI_NOT_CONFIGURED,
       `API key is required for ${req.provider}.`,
+      { retryable: false, isAuthError: true, isRateLimited: false },
     );
   }
 
@@ -339,7 +417,11 @@ export async function callAiCompletion(
 
   if (!response.ok) {
     const msg = await extractProviderError(response);
-    throw new AppBadRequestException(APP_ERROR_CODES.AI_CONNECTION_FAILED, msg);
+    throw new AiProviderCallError(
+      APP_ERROR_CODES.AI_CONNECTION_FAILED,
+      msg,
+      classifyHttpStatus(response.status),
+    );
   }
 
   const payload = (await response.json()) as {
@@ -347,9 +429,10 @@ export async function callAiCompletion(
   };
   const text = payload.choices?.[0]?.message?.content?.trim() ?? "";
   if (!text) {
-    throw new AppBadRequestException(
+    throw new AiProviderCallError(
       APP_ERROR_CODES.AI_GENERATION_FAILED,
       "AI provider returned an empty response.",
+      { retryable: true, isAuthError: false, isRateLimited: false },
     );
   }
   return text;

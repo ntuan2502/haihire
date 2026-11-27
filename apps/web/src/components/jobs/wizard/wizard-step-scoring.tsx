@@ -86,6 +86,9 @@ export function WizardStepScoring({
 }: WizardStepScoringProps) {
   const { t, locale } = useI18n();
   const { data: aiStatus } = useAiStatusQuery();
+  const isCriteriaAiEnabled = Boolean(
+    aiStatus?.features?.SCORING_CRITERIA?.enabled ?? aiStatus?.enabled,
+  );
   const canManageIntegrations = useHasPermission(
     "settings:manage_integrations",
   );
@@ -150,7 +153,7 @@ export function WizardStepScoring({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {aiStatus?.enabled ? (
+          {isCriteriaAiEnabled ? (
             <Button
               type="button"
               variant="outline"

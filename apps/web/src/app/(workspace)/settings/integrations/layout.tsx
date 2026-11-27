@@ -43,7 +43,11 @@ export default function IntegrationsLayout({
     <div className="w-full space-y-6 animate-in fade-in duration-200">
       <PageHeader
         title={t("settings.integrations.title")}
-        subtitle={t("settings.integrations.description")}
+        subtitle={
+          isWebhooks
+            ? t("settings.integrations.description")
+            : t("settings.integrations.aiDescription")
+        }
         icon={Plug}
         bordered
       />

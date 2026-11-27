@@ -559,9 +559,13 @@ export function WizardStepForm({
     }
   };
 
+  const isQuestionsAiEnabled = Boolean(
+    aiStatus?.features?.SCREENING_QUESTIONS?.enabled ?? aiStatus?.enabled,
+  );
+
   const handleOpenAiModal = () => {
     setIsAiModalOpen(true);
-    if (aiStatus?.enabled) {
+    if (isQuestionsAiEnabled) {
       void runAiGeneration();
     }
   };
@@ -1083,7 +1087,7 @@ export function WizardStepForm({
         icon={<Sparkles className="h-4 w-4 text-primary" />}
         size="md"
         footer={
-          aiStatus?.enabled && aiSuggestions.length > 0 ? (
+          isQuestionsAiEnabled && aiSuggestions.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-2 w-full">
               <Button
                 type="button"
@@ -1132,7 +1136,7 @@ export function WizardStepForm({
           )
         }
       >
-        {!aiStatus?.enabled ? (
+        {!isQuestionsAiEnabled ? (
           <div className="py-4 text-center space-y-3">
             <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-primary">
               <Brain className="h-5 w-5" aria-hidden="true" />

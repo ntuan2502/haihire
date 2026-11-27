@@ -204,6 +204,8 @@ model Organization {
   trackingLinks    TrackingLink[]
   webhookSettings  OrganizationWebhookSetting[]
   aiSetting        OrganizationAiSetting?
+  aiConnections    OrganizationAiConnection[]
+  aiFeatureRoutes  OrganizationAiFeatureRoute[]
   aiEvaluations    ApplicationAiEvaluation[]
   rolePermissions  OrganizationRolePermission[]
   auditLogs        OrganizationAuditLog[]
@@ -891,21 +893,82 @@ model Notification {
   @@map("notification")
 }
 
+enum AiFeatureKey {
+  APPLICATION_SCORING
+  SCREENING_QUESTIONS
+  SCORING_CRITERIA
+}
+
+enum AiProxyMode {
+  SINGLE
+  FAILOVER
+  LOAD_BALANCE
+}
+
+enum AiFeatureRouteMode {
+  INHERIT_DEFAULT
+  SINGLE
+  FAILOVER
+  LOAD_BALANCE
+}
+
+enum AiConnectionStatus {
+  UNTESTED
+  HEALTHY
+  ERROR
+}
+
 model OrganizationAiSetting {
   id                    String       @id @default(uuid())
   organizationId        String       @unique
-  provider              AiProvider
-  modelId               String
-  encryptedApiKey       String?
-  apiKeyLast4           String?
-  baseUrl               String?
   isEnabled             Boolean      @default(true)
   autoScoreApplications Boolean      @default(false)
+  defaultRouteMode      AiProxyMode  @default(SINGLE)
+  defaultRouteTargets   Json         @default("[]")
   organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
   @@map("organization_ai_setting")
+}
+
+model OrganizationAiConnection {
+  id                  String             @id @default(uuid())
+  organizationId      String
+  name                String
+  provider            AiProvider
+  defaultModelId      String
+  encryptedApiKey     String?
+  apiKeyLast4         String?
+  baseUrl             String?
+  isEnabled           Boolean            @default(true)
+  lastStatus          AiConnectionStatus @default(UNTESTED)
+  lastError           String?
+  lastTestedAt        DateTime?
+  lastUsedAt          DateTime?
+  consecutiveFailures Int                @default(0)
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([organizationId, isEnabled])
+  @@map("organization_ai_connection")
+}
+
+model OrganizationAiFeatureRoute {
+  id             String             @id @default(uuid())
+  organizationId String
+  feature        AiFeatureKey
+  isEnabled      Boolean            @default(true)
+  mode           AiFeatureRouteMode @default(INHERIT_DEFAULT)
+  targets        Json               @default("[]")
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([organizationId, feature])
+  @@index([organizationId])
+  @@map("organization_ai_feature_route")
 }
 
 model ApplicationAiEvaluation {

@@ -200,69 +200,194 @@ function isValidHttpEndpointUrl(raw: string): boolean {
   }
 }
 
-export const upsertAiSettingSchema = z
-  .object({
-    provider: z.enum(AI_PROVIDERS),
-    modelId: z.string().trim().min(1, "Model ID is required").max(150),
-    apiKey: z.string().trim().max(500).optional(),
-    baseUrl: z
-      .string()
-      .trim()
-      .max(500)
-      .optional()
-      .nullable()
-      .transform((v) => (v && v.length > 0 ? v : null)),
-    isEnabled: z.boolean().default(true),
-    autoScoreApplications: z.boolean().default(false),
-  })
-  .superRefine((val, ctx) => {
-    if (val.provider === "OPENAI_COMPATIBLE") {
-      if (!val.baseUrl || !isValidHttpEndpointUrl(val.baseUrl)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["baseUrl"],
-          message:
-            "Valid HTTP(S) base URL is required for OpenAI-Compatible providers",
-        });
-      }
-    } else if (val.baseUrl && !isValidHttpEndpointUrl(val.baseUrl)) {
+export const AI_FEATURE_KEYS = [
+  "APPLICATION_SCORING",
+  "SCREENING_QUESTIONS",
+  "SCORING_CRITERIA",
+] as const;
+
+export type AiFeatureKey = (typeof AI_FEATURE_KEYS)[number];
+
+export const AI_PROXY_MODES = ["SINGLE", "FAILOVER", "LOAD_BALANCE"] as const;
+
+export type AiProxyMode = (typeof AI_PROXY_MODES)[number];
+
+export const AI_FEATURE_ROUTE_MODES = [
+  "INHERIT_DEFAULT",
+  "SINGLE",
+  "FAILOVER",
+  "LOAD_BALANCE",
+] as const;
+
+export type AiFeatureRouteMode = (typeof AI_FEATURE_ROUTE_MODES)[number];
+
+export const AI_CONNECTION_STATUSES = ["UNTESTED", "HEALTHY", "ERROR"] as const;
+
+export type AiConnectionStatus = (typeof AI_CONNECTION_STATUSES)[number];
+
+export const AI_ROUTE_TEST_TARGETS = [
+  ...AI_FEATURE_KEYS,
+  "GLOBAL_DEFAULT",
+] as const;
+
+export type AiRouteTestTarget = (typeof AI_ROUTE_TEST_TARGETS)[number];
+
+export const MAX_AI_CONNECTIONS_PER_ORG = 20;
+
+const optionalBaseUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .optional()
+  .nullable()
+  .transform((v) => (v && v.length > 0 ? v : null));
+
+const patchBaseUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .nullable()
+  .transform((v) => (v && v.length > 0 ? v : null))
+  .optional();
+
+function validateProviderBaseUrl(
+  provider: AiProvider | undefined,
+  baseUrl: string | null | undefined,
+  ctx: z.RefinementCtx,
+  requireOpenAiCompatibleBaseUrl: boolean,
+): void {
+  if (provider === "OPENAI_COMPATIBLE" && requireOpenAiCompatibleBaseUrl) {
+    if (!baseUrl || !isValidHttpEndpointUrl(baseUrl)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["baseUrl"],
-        message: "Base URL must be a valid HTTP(S) URL",
+        message:
+          "Valid HTTP(S) base URL is required for OpenAI-Compatible providers",
       });
     }
+    return;
+  }
+
+  if (baseUrl && !isValidHttpEndpointUrl(baseUrl)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["baseUrl"],
+      message: "Base URL must be a valid HTTP(S) URL",
+    });
+  }
+}
+
+export const createAiConnectionSchema = z
+  .object({
+    name: z.string().trim().min(1, "Connection name is required").max(80),
+    provider: z.enum(AI_PROVIDERS),
+    defaultModelId: z.string().trim().min(1, "Model ID is required").max(150),
+    apiKey: z.string().trim().max(500).optional(),
+    baseUrl: optionalBaseUrlSchema,
+    isEnabled: z.boolean().default(true),
+  })
+  .superRefine((val, ctx) => {
+    validateProviderBaseUrl(val.provider, val.baseUrl, ctx, true);
   });
 
-export type UpsertAiSettingInput = z.infer<typeof upsertAiSettingSchema>;
+export type CreateAiConnectionInput = z.infer<typeof createAiConnectionSchema>;
+
+export const updateAiConnectionSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Connection name is required")
+      .max(80)
+      .optional(),
+    provider: z.enum(AI_PROVIDERS).optional(),
+    defaultModelId: z
+      .string()
+      .trim()
+      .min(1, "Model ID is required")
+      .max(150)
+      .optional(),
+    apiKey: z.string().trim().max(500).optional(),
+    baseUrl: patchBaseUrlSchema,
+    isEnabled: z.boolean().optional(),
+  })
+  .superRefine((val, ctx) => {
+    validateProviderBaseUrl(
+      val.provider,
+      val.baseUrl,
+      ctx,
+      val.baseUrl !== undefined,
+    );
+  });
+
+export type UpdateAiConnectionInput = z.infer<typeof updateAiConnectionSchema>;
+
+export const aiRouteTargetSchema = z.object({
+  connectionId: z.string().uuid(),
+  modelId: z
+    .string()
+    .trim()
+    .max(150)
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  weight: z.number().int().min(1).max(100).default(1),
+});
+
+export type AiRouteTarget = z.infer<typeof aiRouteTargetSchema>;
+
+export function normalizeAiRouteTargets(raw: unknown): AiRouteTarget[] {
+  if (!Array.isArray(raw)) return [];
+  const parsed: AiRouteTarget[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const res = aiRouteTargetSchema.safeParse(item);
+    if (!res.success || seen.has(res.data.connectionId)) continue;
+    seen.add(res.data.connectionId);
+    parsed.push(res.data);
+  }
+  return parsed;
+}
+
+export const updateAiPolicySchema = z.object({
+  isEnabled: z.boolean(),
+  autoScoreApplications: z.boolean(),
+  defaultRouteMode: z.enum(AI_PROXY_MODES),
+  defaultRouteTargets: z.array(aiRouteTargetSchema).max(20),
+});
+
+export type UpdateAiPolicyInput = z.infer<typeof updateAiPolicySchema>;
+
+export const featureRouteConfigInputSchema = z.object({
+  feature: z.enum(AI_FEATURE_KEYS),
+  isEnabled: z.boolean(),
+  mode: z.enum(AI_FEATURE_ROUTE_MODES),
+  targets: z.array(aiRouteTargetSchema).max(20),
+});
+
+export const updateAiFeatureRoutesSchema = z.object({
+  routes: z.array(featureRouteConfigInputSchema).min(1).max(10),
+});
+
+export type UpdateAiFeatureRoutesInput = z.infer<
+  typeof updateAiFeatureRoutesSchema
+>;
 
 export const testAiConnectionSchema = z
   .object({
+    connectionId: z.string().uuid().optional(),
     provider: z.enum(AI_PROVIDERS),
     modelId: z.string().trim().min(1, "Model ID is required").max(150),
     apiKey: z.string().trim().max(500).optional(),
-    baseUrl: z
-      .string()
-      .trim()
-      .max(500)
-      .optional()
-      .nullable()
-      .transform((v) => (v && v.length > 0 ? v : null)),
+    baseUrl: optionalBaseUrlSchema,
   })
   .superRefine((val, ctx) => {
-    if (val.provider === "OPENAI_COMPATIBLE") {
-      if (!val.baseUrl || !isValidHttpEndpointUrl(val.baseUrl)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["baseUrl"],
-          message:
-            "Valid HTTP(S) base URL is required for OpenAI-Compatible providers",
-        });
-      }
-    }
+    validateProviderBaseUrl(val.provider, val.baseUrl, ctx, true);
   });
 
 export type TestAiConnectionInput = z.infer<typeof testAiConnectionSchema>;
+
+export const testAiRouteTargetSchema = z.enum(AI_ROUTE_TEST_TARGETS);
 
 export const generateScreeningQuestionsSchema = z.object({
   title: z.string().trim().min(1, "Job title is required").max(200),
@@ -283,18 +408,56 @@ export type GenerateScreeningQuestionsInput = z.infer<
   typeof generateScreeningQuestionsSchema
 >;
 
-export interface OrganizationAiSettingResponse {
+export interface AiConnectionResponse {
   id: string;
   organizationId: string;
+  name: string;
   provider: AiProvider;
-  modelId: string;
+  defaultModelId: string;
   baseUrl: string | null;
   hasApiKey: boolean;
   apiKeyLast4: string | null;
   isEnabled: boolean;
-  autoScoreApplications: boolean;
+  lastStatus: AiConnectionStatus;
+  lastError: string | null;
+  lastTestedAt: string | null;
+  lastUsedAt: string | null;
+  consecutiveFailures: number;
+  cooldownRemainingSec: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AiPolicyResponse {
+  id: string | null;
+  organizationId: string;
+  isEnabled: boolean;
+  autoScoreApplications: boolean;
+  defaultRouteMode: AiProxyMode;
+  defaultRouteTargets: AiRouteTarget[];
+  updatedAt: string | null;
+}
+
+export interface AiFeatureRouteResponse {
+  feature: AiFeatureKey;
+  isEnabled: boolean;
+  mode: AiFeatureRouteMode;
+  targets: AiRouteTarget[];
+}
+
+export interface OrganizationAiOverviewResponse {
+  policy: AiPolicyResponse;
+  connections: AiConnectionResponse[];
+  routes: AiFeatureRouteResponse[];
+}
+
+export interface OrganizationAiFeatureStatus {
+  enabled: boolean;
+  mode: AiFeatureRouteMode;
+  effectiveMode: AiProxyMode;
+  activeTargetCount: number;
+  primaryProvider?: AiProvider;
+  primaryModelId?: string;
 }
 
 export interface OrganizationAiStatusResponse {
@@ -303,12 +466,34 @@ export interface OrganizationAiStatusResponse {
   autoScoreApplications: boolean;
   provider?: AiProvider;
   modelId?: string;
+  activeConnectionsCount?: number;
+  features?: Record<AiFeatureKey, OrganizationAiFeatureStatus>;
 }
 
 export interface TestAiConnectionResponse {
   ok: boolean;
   latencyMs: number;
   model: string;
+}
+
+export interface TestAiRouteAttemptResult {
+  connectionId: string;
+  connectionName: string;
+  provider: AiProvider;
+  modelId: string;
+  ok: boolean;
+  latencyMs: number;
+  error?: string;
+  skippedReason?: string;
+}
+
+export interface TestAiRouteResponse {
+  feature: AiRouteTestTarget;
+  mode: AiProxyMode;
+  ok: boolean;
+  totalLatencyMs: number;
+  succeededConnectionId?: string;
+  attempts: TestAiRouteAttemptResult[];
 }
 
 export interface GenerateScreeningQuestionsResponse {

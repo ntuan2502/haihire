@@ -4,10 +4,15 @@ import { Prisma } from "@prisma/client";
 import {
   AUDIT_ACTIONS,
   AUDIT_RESOURCES,
+  SENSITIVE_AUDIT_ACTIONS,
   formatUserDisplayName,
+  getAuditActionMeta,
+  type AuditAction,
   type AuditChangeEntry,
   type AuditLogEnvelopeInput,
+  type AuditResource,
 } from "@haihire/shared";
+import { computeAuditDiff } from "../../common/audit-diff.util";
 import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { toInstant } from "../../common/date.util";
@@ -33,23 +38,25 @@ export interface PlatformAuditLogFilter {
   offset?: number;
 }
 
+export interface LogOrgChangeInput {
+  organizationId: string;
+  actorId?: string | null;
+  action: AuditAction | string;
+  resource?: AuditResource | string;
+  targetId?: string | null;
+  targetLabel?: string | null;
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
+  fields?: string[];
+  redactFields?: string[];
+  changes?: AuditChangeEntry[] | null;
+  metadata?: Record<string, unknown> | null;
+  tx?: PrismaService;
+}
+
 const EXPORT_MAX_ROWS = 1000;
 const CSV_FORMULA_PREFIX_REGEX = /^[=+\-@\t\r]/;
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const SENSITIVE_AUDIT_ACTIONS = new Set<string>([
-  AUDIT_ACTIONS.OWNERSHIP_TRANSFERRED,
-  AUDIT_ACTIONS.ROLE_PERMISSIONS_UPDATED,
-  AUDIT_ACTIONS.ROLE_PERMISSIONS_RESET,
-  AUDIT_ACTIONS.MEMBER_REMOVED,
-  AUDIT_ACTIONS.ORG_DELETED,
-  AUDIT_ACTIONS.ORG_AUDIT_RETENTION_UPDATED,
-  AUDIT_ACTIONS.JOB_DELETED,
-  AUDIT_ACTIONS.CANDIDATE_DELETED,
-  AUDIT_ACTIONS.APPLICATION_DELETED,
-  AUDIT_ACTIONS.WEBHOOK_DELETED,
-  AUDIT_ACTIONS.EMAIL_SETTINGS_UPDATED,
-]);
 
 function sanitizeCsvCell(value: unknown): string {
   const raw =
@@ -270,6 +277,41 @@ export class OrganizationsAuditLogService {
         createdAt: toInstant(),
       },
     });
+  }
+
+  /**
+   * High-level audit helper that resolves resource metadata from AUDIT_ACTION_REGISTRY
+   * and computes normalized Before -> After diffs (with secret redaction) automatically.
+   */
+  async logOrgChange(input: LogOrgChangeInput) {
+    const resource =
+      input.resource ??
+      getAuditActionMeta(input.action)?.resource ??
+      AUDIT_RESOURCES.ORGANIZATION;
+
+    const changes =
+      input.changes !== undefined
+        ? input.changes
+        : input.before !== undefined || input.after !== undefined
+          ? computeAuditDiff(input.before, input.after, {
+              fields: input.fields,
+              redactFields: input.redactFields,
+            })
+          : null;
+
+    return this.logOrg(
+      input.organizationId,
+      input.actorId ?? null,
+      input.action,
+      resource,
+      input.metadata ?? null,
+      input.tx,
+      {
+        targetId: input.targetId ?? null,
+        targetLabel: input.targetLabel ?? null,
+        changes,
+      },
+    );
   }
 
   async logPlatform(

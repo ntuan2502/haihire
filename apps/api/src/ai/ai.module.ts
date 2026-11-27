@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { CommonModule } from "../common/common.module";
 import { EventsModule } from "../events/events.module";
 import { MinioModule } from "../minio/minio.module";
+import { AiGatewayService } from "./ai-gateway.service";
 import { AiGenerationService } from "./ai-generation.service";
 import { AiScoringProcessor } from "./ai-scoring.processor";
 import { AI_SCORING_QUEUE, AiScoringService } from "./ai-scoring.service";
@@ -18,12 +19,14 @@ import { AiSettingsService } from "./ai-settings.service";
   ],
   controllers: [AiSettingsController],
   providers: [
+    AiGatewayService,
     AiSettingsService,
     AiGenerationService,
     AiScoringService,
     AiScoringProcessor,
   ],
   exports: [
+    AiGatewayService,
     AiSettingsService,
     AiGenerationService,
     AiScoringService,

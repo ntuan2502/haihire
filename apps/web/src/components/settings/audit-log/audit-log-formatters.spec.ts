@@ -15,16 +15,34 @@ import type { OrganizationAuditLogRecord } from "@/lib/api/organizations";
 const mockT = (key: string, params?: Record<string, string | number>) => {
   const dict: Record<string, string> = {
     "settings.auditLog.filterAllActions": "All Actions",
-    "settings.auditLog.actionInviteCreated": "Invitation Created",
-    "settings.auditLog.actionEmailSettingsUpdated": "Email Settings Updated",
-    "settings.auditLog.actionWebhookUpdated": "Webhook Updated",
-    "settings.auditLog.actionMemberRoleChanged": "Member Role Changed",
-    "settings.auditLog.actionJobStatusChanged": "Job Status Changed",
-    "settings.auditLog.actionApplicationStageChanged":
+    "settings.auditLog.actions.INVITE_CREATED": "Invitation Created",
+    "settings.auditLog.actions.INVITE_RESENT": "Invitation Resent",
+    "settings.auditLog.actions.INVITE_REVOKED": "Invitation Revoked",
+    "settings.auditLog.actions.EMAIL_SETTINGS_UPDATED":
+      "Email Settings Updated",
+    "settings.auditLog.actions.WEBHOOK_UPDATED": "Webhook Updated",
+    "settings.auditLog.actions.MEMBER_ROLE_CHANGED": "Member Role Changed",
+    "settings.auditLog.actions.JOB_STATUS_CHANGED": "Job Status Changed",
+    "settings.auditLog.actions.APPLICATION_STAGE_CHANGED":
       "Application Stage Changed",
-    "settings.auditLog.actionInterviewUpdated": "Interview Updated",
-    "settings.auditLog.actionAiSettingsUpdated": "AI Settings Updated",
-    "settings.auditLog.actionAiSettingsDeleted": "AI Settings Deleted",
+    "settings.auditLog.actions.INTERVIEW_UPDATED": "Interview Updated",
+    "settings.auditLog.actions.AI_CONNECTION_CREATED": "AI Key Added",
+    "settings.auditLog.actions.AI_ROUTES_UPDATED": "AI Routing Updated",
+    "settings.auditLog.actions.AI_SETTINGS_UPDATED": "AI Settings Updated",
+    "settings.auditLog.actions.AI_SETTINGS_DELETED": "AI Settings Deleted",
+    "settings.auditLog.verbLabels.CREATE": "Created {resource}",
+    "settings.auditLog.verbLabels.UPDATE": "Updated {resource}",
+    "settings.auditLog.verbLabels.DELETE": "Deleted {resource}",
+    "settings.auditLog.verbLabels.STATE": "Changed {resource}",
+    "settings.auditLog.verbLabels.SECURITY": "Security: {resource}",
+    "settings.auditLog.verbLabels.VIEW": "Viewed {resource}",
+    "settings.auditLog.verbSummaries.CREATE": "Created {resource}: {target}",
+    "settings.auditLog.verbSummaries.UPDATE": "Updated {resource}: {target}",
+    "settings.auditLog.verbSummaries.DELETE": "Deleted {resource}: {target}",
+    "settings.auditLog.verbSummaries.STATE": "Changed {resource}: {target}",
+    "settings.auditLog.verbSummaries.SECURITY":
+      "Updated security for {resource}: {target}",
+    "settings.auditLog.verbSummaries.VIEW": "Viewed {resource}: {target}",
     "settings.auditLog.fieldLabels.scoringConfig": "AI Scoring Criteria",
     "settings.auditLog.fieldLabels.applicationFormConfig":
       "Application Form Configuration",
@@ -32,8 +50,6 @@ const mockT = (key: string, params?: Record<string, string | number>) => {
       "Auto-score Applications",
     "settings.auditLog.fieldLabels.modelId": "AI Model",
     "settings.auditLog.fieldLabels.baseUrl": "Custom Base URL",
-    "settings.auditLog.metadataLabels.summaryAiSettingsUpdated":
-      "Updated AI provider configuration ({target})",
     "settings.auditLog.metadataLabels.scoringConfigSummary":
       "{count} criteria · Auto-score: {auto}",
     "settings.auditLog.metadataLabels.applicationFormSummary":
@@ -42,6 +58,7 @@ const mockT = (key: string, params?: Record<string, string | number>) => {
     "settings.auditLog.resources.INVITATION": "Invitation",
     "settings.auditLog.resources.EMAIL": "Email",
     "settings.auditLog.resources.WEBHOOK": "Webhook",
+    "settings.auditLog.resources.AI": "AI Provider",
     "settings.auditLog.resources.JOB": "Job Opening",
     "settings.auditLog.resources.APPLICATION": "Application",
     "settings.auditLog.resources.OTHER": "Other",
@@ -84,11 +101,12 @@ const mockT = (key: string, params?: Record<string, string | number>) => {
 };
 
 describe("audit-log-formatters", () => {
-  it("resolves Phase 1 action badges, resource labels, and filtered action options", () => {
+  it("resolves SSOT action badges, resource labels, and filtered action options", () => {
     expect(getAuditActionBadge("INVITE_CREATED", mockT).label).toBe(
       "Invitation Created",
     );
     expect(getAuditResourceLabel("WEBHOOK", mockT)).toBe("Webhook");
+    expect(getAuditResourceLabel("AI", mockT)).toBe("AI Provider");
     expect(getAuditResourceLabel("UNKNOWN", mockT)).toBe("Other");
 
     const inviteOptions = getAuditActionOptions("INVITATION", mockT);
@@ -97,6 +115,18 @@ describe("audit-log-formatters", () => {
       "INVITE_CREATED",
       "INVITE_RESENT",
       "INVITE_REVOKED",
+    ]);
+
+    const aiOptions = getAuditActionOptions("AI", mockT);
+    expect(aiOptions.map((o) => o.value)).toEqual([
+      "",
+      "AI_POLICY_UPDATED",
+      "AI_CONNECTION_CREATED",
+      "AI_CONNECTION_UPDATED",
+      "AI_CONNECTION_DELETED",
+      "AI_ROUTES_UPDATED",
+      "AI_SETTINGS_UPDATED",
+      "AI_SETTINGS_DELETED",
     ]);
   });
 
@@ -143,7 +173,7 @@ describe("audit-log-formatters", () => {
     expect(formatAuditMetadataLines(roleLog, mockT).length).toBeGreaterThan(0);
   });
 
-  it("formats Phase 2 ATS statuses, stages, summaries, and resolves deep-link URLs", () => {
+  it("formats ATS statuses, stages, summaries, and resolves deep-link URLs", () => {
     expect(getAuditActionBadge("JOB_STATUS_CHANGED", mockT).label).toBe(
       "Job Status Changed",
     );
@@ -220,13 +250,20 @@ describe("audit-log-formatters", () => {
     );
   });
 
-  it("formats AI settings and job scoring/form configuration audit diffs", () => {
+  it("formats AI settings, new AI multi-key actions, and auto-humanizes unregistered future actions/fields", () => {
     expect(getAuditActionBadge("AI_SETTINGS_UPDATED", mockT).label).toBe(
       "AI Settings Updated",
     );
     expect(getAuditActionBadge("AI_SETTINGS_DELETED", mockT).label).toBe(
       "AI Settings Deleted",
     );
+    expect(getAuditActionBadge("AI_CONNECTION_CREATED", mockT).label).toBe(
+      "AI Key Added",
+    );
+    expect(
+      getAuditActionBadge("AI_CONNECTION_CREATED", mockT).className,
+    ).toContain("bg-emerald-100");
+
     expect(formatAuditFieldLabel("scoringConfig", mockT)).toBe(
       "AI Scoring Criteria",
     );
@@ -238,6 +275,10 @@ describe("audit-log-formatters", () => {
     );
     expect(formatAuditFieldLabel("modelId", mockT)).toBe("AI Model");
     expect(formatAuditFieldLabel("baseUrl", mockT)).toBe("Custom Base URL");
+    // Unmapped field auto-humanizes without maintaining a hardcoded allowlist
+    expect(formatAuditFieldLabel("customWebhookTimeout", mockT)).toBe(
+      "Custom webhook timeout",
+    );
 
     expect(
       formatAuditValue(
@@ -260,10 +301,10 @@ describe("audit-log-formatters", () => {
           id: "log-ai",
           organizationId: "org-1",
           actorId: "u-1",
-          action: "AI_SETTINGS_UPDATED",
-          resource: "ORGANIZATION",
-          targetId: "org-1",
-          targetLabel: "GEMINI",
+          action: "AI_CONNECTION_CREATED",
+          resource: "AI",
+          targetId: "conn-1",
+          targetLabel: "Gemini Primary (GEMINI)",
           changes: null,
           metadata: { provider: "GEMINI" },
           createdAt: "2026-11-26T10:00:00Z",
@@ -271,6 +312,29 @@ describe("audit-log-formatters", () => {
         },
         mockT,
       ),
-    ).toBe("Updated AI provider configuration (GEMINI)");
+    ).toBe("Created AI Provider: Gemini Primary (GEMINI)");
+
+    // Brand-new unregistered action degrades gracefully with inferred verb styling & summary
+    const futureBadge = getAuditActionBadge("CUSTOM_WORKFLOW_CREATED", mockT);
+    expect(futureBadge.label).toBe("Custom workflow created");
+    expect(futureBadge.className).toContain("bg-emerald-100");
+    expect(
+      formatAuditSummary(
+        {
+          id: "log-future",
+          organizationId: "org-1",
+          actorId: "u-1",
+          action: "CUSTOM_WORKFLOW_CREATED",
+          resource: "ORGANIZATION",
+          targetId: "wf-1",
+          targetLabel: "Screening Auto-Assign",
+          changes: null,
+          metadata: null,
+          createdAt: "2026-11-27T10:00:00Z",
+          actor: null,
+        },
+        mockT,
+      ),
+    ).toBe("Created Organization: Screening Auto-Assign");
   });
 });

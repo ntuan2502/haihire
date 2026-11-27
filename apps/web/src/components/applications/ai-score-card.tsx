@@ -140,7 +140,9 @@ export function AiScoreCard({
   const hasScore = typeof effectiveScore === "number";
   const isUnscored = !hasScore && !isInFlight && !isFailed;
   const isCompact = variant === "compact";
-  const isAiEnabled = Boolean(aiStatus?.enabled);
+  const isAiEnabled = Boolean(
+    aiStatus?.features?.APPLICATION_SCORING?.enabled ?? aiStatus?.enabled,
+  );
   const criteriaResults = evaluation?.criteriaResults ?? null;
 
   useEffect(() => {

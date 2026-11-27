@@ -1,9 +1,17 @@
 import type {
-  OrganizationAiSettingResponse,
+  AiConnectionResponse,
+  AiFeatureRouteResponse,
+  AiPolicyResponse,
+  AiRouteTestTarget,
+  CreateAiConnectionInput,
+  OrganizationAiOverviewResponse,
   OrganizationAiStatusResponse,
   TestAiConnectionInput,
   TestAiConnectionResponse,
-  UpsertAiSettingInput,
+  TestAiRouteResponse,
+  UpdateAiConnectionInput,
+  UpdateAiFeatureRoutesInput,
+  UpdateAiPolicyInput,
 } from "@haihire/shared";
 import { api } from "./client";
 
@@ -15,25 +23,47 @@ export const aiSettingsApi = {
     return response.data;
   },
 
-  getSetting: async (): Promise<OrganizationAiSettingResponse | null> => {
-    const response = await api.get<OrganizationAiSettingResponse | null>(
-      "/ai-settings",
-    );
+  getOverview: async (): Promise<OrganizationAiOverviewResponse> => {
+    const response =
+      await api.get<OrganizationAiOverviewResponse>("/ai-settings");
     return response.data;
   },
 
-  upsertSetting: async (
-    data: UpsertAiSettingInput,
-  ): Promise<OrganizationAiSettingResponse> => {
-    const response = await api.put<OrganizationAiSettingResponse>(
-      "/ai-settings",
+  updatePolicy: async (
+    data: UpdateAiPolicyInput,
+  ): Promise<AiPolicyResponse> => {
+    const response = await api.put<AiPolicyResponse>(
+      "/ai-settings/policy",
       data,
     );
     return response.data;
   },
 
-  deleteSetting: async (): Promise<{ deleted: boolean }> => {
-    const response = await api.delete<{ deleted: boolean }>("/ai-settings");
+  createConnection: async (
+    data: CreateAiConnectionInput,
+  ): Promise<AiConnectionResponse> => {
+    const response = await api.post<AiConnectionResponse>(
+      "/ai-settings/connections",
+      data,
+    );
+    return response.data;
+  },
+
+  updateConnection: async (
+    id: string,
+    data: UpdateAiConnectionInput,
+  ): Promise<AiConnectionResponse> => {
+    const response = await api.patch<AiConnectionResponse>(
+      `/ai-settings/connections/${encodeURIComponent(id)}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteConnection: async (id: string): Promise<{ deleted: boolean }> => {
+    const response = await api.delete<{ deleted: boolean }>(
+      `/ai-settings/connections/${encodeURIComponent(id)}`,
+    );
     return response.data;
   },
 
@@ -41,8 +71,27 @@ export const aiSettingsApi = {
     data: TestAiConnectionInput,
   ): Promise<TestAiConnectionResponse> => {
     const response = await api.post<TestAiConnectionResponse>(
-      "/ai-settings/test",
+      "/ai-settings/connections/test",
       data,
+    );
+    return response.data;
+  },
+
+  updateRoutes: async (
+    data: UpdateAiFeatureRoutesInput,
+  ): Promise<AiFeatureRouteResponse[]> => {
+    const response = await api.put<AiFeatureRouteResponse[]>(
+      "/ai-settings/routes",
+      data,
+    );
+    return response.data;
+  },
+
+  testRoute: async (
+    feature: AiRouteTestTarget,
+  ): Promise<TestAiRouteResponse> => {
+    const response = await api.post<TestAiRouteResponse>(
+      `/ai-settings/routes/${encodeURIComponent(feature)}/test`,
     );
     return response.data;
   },

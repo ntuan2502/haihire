@@ -1642,18 +1642,37 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records & snapshot schema...");
   console.log("==================================================");
 
-  const savedAiSettings = await prisma.organizationAiSetting.findMany({
-    include: {
-      organization: {
-        select: { slug: true },
-      },
-    },
-  });
+  const [savedAiSettings, savedAiConnections, savedAiFeatureRoutes] =
+    await Promise.all([
+      prisma.organizationAiSetting.findMany({
+        include: {
+          organization: {
+            select: { slug: true },
+          },
+        },
+      }),
+      prisma.organizationAiConnection.findMany({
+        include: {
+          organization: {
+            select: { slug: true },
+          },
+        },
+      }),
+      prisma.organizationAiFeatureRoute.findMany({
+        include: {
+          organization: {
+            select: { slug: true },
+          },
+        },
+      }),
+    ]);
 
   await prisma.$executeRawUnsafe(
     `DROP SCHEMA IF EXISTS "_haihire_test_snapshot" CASCADE;`,
   );
   await prisma.applicationAiEvaluation.deleteMany();
+  await prisma.organizationAiFeatureRoute.deleteMany();
+  await prisma.organizationAiConnection.deleteMany();
   await prisma.organizationAiSetting.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.notificationPreference.deleteMany();
@@ -1734,6 +1753,27 @@ export async function runSeed(): Promise<void> {
     });
   }
 
+  for (const conn of savedAiConnections) {
+    const matchedBp = ORG_BLUEPRINTS.find(
+      (b) => b.slug === conn.organization?.slug,
+    );
+    if (!matchedBp) continue;
+    await prisma.organizationAiConnection.create({
+      data: {
+        id: conn.id,
+        organizationId: matchedBp.id,
+        name: conn.name,
+        provider: conn.provider,
+        defaultModelId: conn.defaultModelId,
+        encryptedApiKey: conn.encryptedApiKey,
+        apiKeyLast4: conn.apiKeyLast4,
+        baseUrl: conn.baseUrl,
+        isEnabled: conn.isEnabled,
+        lastStatus: conn.lastStatus,
+      },
+    });
+  }
+
   for (const aiSetting of savedAiSettings) {
     const matchedBp = ORG_BLUEPRINTS.find(
       (b) => b.slug === aiSetting.organization?.slug,
@@ -1743,13 +1783,27 @@ export async function runSeed(): Promise<void> {
       data: {
         id: aiSetting.id,
         organizationId: matchedBp.id,
-        provider: aiSetting.provider,
-        modelId: aiSetting.modelId,
-        encryptedApiKey: aiSetting.encryptedApiKey,
-        apiKeyLast4: aiSetting.apiKeyLast4,
-        baseUrl: aiSetting.baseUrl,
         isEnabled: aiSetting.isEnabled,
         autoScoreApplications: aiSetting.autoScoreApplications,
+        defaultRouteMode: aiSetting.defaultRouteMode,
+        defaultRouteTargets: (aiSetting.defaultRouteTargets ?? []) as object,
+      },
+    });
+  }
+
+  for (const route of savedAiFeatureRoutes) {
+    const matchedBp = ORG_BLUEPRINTS.find(
+      (b) => b.slug === route.organization?.slug,
+    );
+    if (!matchedBp) continue;
+    await prisma.organizationAiFeatureRoute.create({
+      data: {
+        id: route.id,
+        organizationId: matchedBp.id,
+        feature: route.feature,
+        isEnabled: route.isEnabled,
+        mode: route.mode,
+        targets: (route.targets ?? []) as object,
       },
     });
   }

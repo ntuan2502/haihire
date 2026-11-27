@@ -158,8 +158,8 @@ export const queryKeys = {
     ["webhook-settings", { orgId }] as const,
   aiStatus: (orgId?: string | null) =>
     ["ai-settings", "status", { orgId }] as const,
-  aiSetting: (orgId?: string | null) =>
-    ["ai-settings", "config", { orgId }] as const,
+  aiOverview: (orgId?: string | null) =>
+    ["ai-settings", "overview", { orgId }] as const,
   webhookSetting: (id?: string | null, orgId?: string | null) =>
     orgId !== undefined
       ? (["webhook-settings", "detail", id, { orgId }] as const)

@@ -2,7 +2,7 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
-import { resolveDatabaseUrlFromEnv } from "./database-url";
+import { resolveDatabaseUrlFromEnv } from "./database-url.ts";
 
 // Load root .env regardless of CWD (works from root, apps/api/, or deeper)
 function findWorkspaceRoot(): string {

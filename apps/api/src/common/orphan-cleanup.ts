@@ -1,7 +1,10 @@
 import * as Minio from "minio";
+import { Logger } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { resolveDatabaseUrlFromEnv } from "../config/database-url";
+
+const logger = new Logger("OrphanCleanup");
 
 export interface CleanupOptions {
   dryRun?: boolean;
@@ -353,7 +356,9 @@ export async function cleanupOrphans(
       report.bytesFreed += obj.size;
       report.deletedFiles.push(obj.name);
     } catch (delErr) {
-      console.error(`Failed to remove orphan object ${obj.name}:`, delErr);
+      logger.error(
+        `Failed to remove orphan object ${obj.name}: ${delErr instanceof Error ? delErr.message : String(delErr)}`,
+      );
     }
   }
 

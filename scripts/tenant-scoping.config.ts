@@ -11,6 +11,8 @@
 export const MODELS_WITHOUT_ORG_COLUMN = new Set([
   "Organization", // Primary key is `id`, queried by id or slug
   "User", // Decoupled from single-tenant state in Milestone 2 (no organizationId column)
+  "UserSession", // User-scoped session rows without organizationId column
+  "UserSecurityLog", // User-scoped security audit logs without organizationId column
 ]);
 
 // 2. Non-tenant-scoped or infrastructure service files excluded from tenant audit
@@ -58,4 +60,7 @@ export const SAFE_QUERY_PATTERNS: RegExp[] = [
   /where:\s*\{\s*token\b/,
   // User-scoped default membership lookup when no active organization is selected yet
   /where:\s*\{\s*userId\s*\}/,
+  // Scheduled cross-org system maintenance retention sweeps guarded by withSystemRlsBypass
+  /purgeExpiredOrgLogs/,
+  /purgeExpiredOperationalData/,
 ];

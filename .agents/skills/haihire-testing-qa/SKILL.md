@@ -9,7 +9,7 @@ Stack baselines verified in `apps/api/vitest.config.ts`, `apps/web/vitest.config
 - **Unit & Integration**: `vitest@5.1.0` + `@vitest/coverage-v8@5.1.0`
   - **Backend Workspace (`pnpm test:api`)**: runs `apps/api` (`src/**/*.spec.ts`, `test/**/*.spec.ts`, `test/e2e/cross-tenant-isolation.e2e-spec.ts`), `scripts/__tests__/*.spec.ts`, and `monitoring/**/*.spec.ts` in `node` environment (coverage thresholds: lines `83`, functions `82`, branches `66`, statements `83`).
   - **Frontend Workspace (`pnpm test:web`)**: runs `apps/web/src/**/*.{spec,test}.{ts,tsx}` in `jsdom` with `@testing-library/react@^16.3.3` and `@testing-library/jest-dom@^7.0.1` on `vmThreads` pool (coverage thresholds: lines `65`, functions `56`, branches `59`, statements `65`).
-- **E2E Suite**: `@playwright/test@^1.65.0` (`apps/web/tests/e2e/`) targeting `http://localhost:13000`. See `docs/PROJECT_METRICS.md` for the static inventory and runner output for execution results.
+- **E2E Suite**: `@playwright/test@^1.65.0` (`apps/web/tests/e2e/`) targeting `http://localhost:8080`. See `docs/PROJECT_METRICS.md` for the static inventory and runner output for execution results.
 
 ---
 

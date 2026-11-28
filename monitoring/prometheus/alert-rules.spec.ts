@@ -38,7 +38,7 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(parsed).toBeDefined();
     expect(parsed.groups).toBeInstanceOf(Array);
     expect(parsed.groups.length).toBeGreaterThan(0);
-    expect(allRules.length).toBe(16);
+    expect(allRules.length).toBe(20);
   });
 
   it("Case 2: Every rule has all mandatory top-level fields (alert, expr, for, labels, annotations)", () => {
@@ -203,5 +203,42 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(http5xx?.expr.trim()).toBe(
       'sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1e-9) * 100 > 5',
     );
+  });
+
+  it("Case 12: 4 SRE capacity and backup alerts match specified PromQL expressions, durations and severities", () => {
+    const ruleMap = new Map(allRules.map((r) => [r.alert, r]));
+
+    const redisMem = ruleMap.get("HaiHireRedisMemoryHigh");
+    expect(redisMem).toBeDefined();
+    expect(redisMem?.expr.trim()).toBe(
+      "haihire_redis_maxmemory_bytes > 0 and (haihire_redis_used_memory_bytes / haihire_redis_maxmemory_bytes) > 0.85",
+    );
+    expect(redisMem?.for).toBe("5m");
+    expect(redisMem?.labels.severity).toBe("warning");
+    expect(redisMem?.labels.team).toBe("sre");
+
+    const dbPool = ruleMap.get("HaiHireDbPoolSaturation");
+    expect(dbPool).toBeDefined();
+    expect(dbPool?.expr.trim()).toBe(
+      "haihire_db_pool_active_connections >= 18",
+    );
+    expect(dbPool?.for).toBe("2m");
+    expect(dbPool?.labels.severity).toBe("warning");
+
+    const aiBacklog = ruleMap.get("HaiHireAiScoringQueueBacklog");
+    expect(aiBacklog).toBeDefined();
+    expect(aiBacklog?.expr.trim()).toBe(
+      'bullmq_queue_depth{queue="ai-scoring-queue",state="waiting"} > 100',
+    );
+    expect(aiBacklog?.for).toBe("5m");
+    expect(aiBacklog?.labels.severity).toBe("warning");
+
+    const backupMissing = ruleMap.get("HaiHireBackupMissing");
+    expect(backupMissing).toBeDefined();
+    expect(backupMissing?.expr.trim()).toBe(
+      "time() - haihire_backup_last_success_timestamp_seconds > 93600",
+    );
+    expect(backupMissing?.for).toBe("10m");
+    expect(backupMissing?.labels.severity).toBe("critical");
   });
 });

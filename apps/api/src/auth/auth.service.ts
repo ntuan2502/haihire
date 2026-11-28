@@ -8,10 +8,8 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
-import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
-import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
@@ -29,6 +27,8 @@ import {
   Role,
   type NameDisplayOrder,
   type Permission,
+  type RegisterSchema,
+  type UpdateUserProfileSchema,
   PERMISSIONS,
   hasPermission,
 } from "@haihire/shared";
@@ -53,6 +53,9 @@ import {
   serializeOrganizationSummary,
 } from "../organizations/organization-logo.util";
 import { UserSecurityService } from "./user-security.service";
+
+const DUMMY_BCRYPT_HASH =
+  "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
 const USER_PROFILE_SELECT = {
   id: true,
@@ -128,6 +131,7 @@ export class AuthService {
     }
 
     if (!user || !user.password) {
+      await bcrypt.compare(dto.password, DUMMY_BCRYPT_HASH);
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.INVALID_CREDENTIALS,
         "Invalid email or password",
@@ -430,7 +434,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterSchema) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const firstName = normalizeNameInput(dto.firstName);
     const lastName = normalizeNameInput(dto.lastName);
@@ -599,11 +603,14 @@ export class AuthService {
     if (this.redis && decoded.jti) {
       try {
         const rtKey = `revoked_rt:${decoded.jti}`;
-        const isRevoked = await this.redis.get(rtKey);
-        const setResult = isRevoked
-          ? null
-          : await this.redis.set(rtKey, "1", "EX", 7 * 24 * 3600, "NX");
-        if (isRevoked || setResult === null) {
+        const setResult = await this.redis.set(
+          rtKey,
+          "1",
+          "EX",
+          7 * 24 * 3600,
+          "NX",
+        );
+        if (setResult === null) {
           // Token reuse detected! Invalidate all sessions for this user.
           await this.prisma.user.update({
             where: { id: user.id },
@@ -617,6 +624,9 @@ export class AuthService {
         }
       } catch (err) {
         if (err instanceof AppUnauthorizedException) throw err;
+        this.logger.warn(
+          `Redis RTR check failed for token '${decoded.jti}': ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 
@@ -982,7 +992,7 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    dto: UpdateUserProfileDto,
+    dto: UpdateUserProfileSchema,
     requestedOrgId?: string | null,
   ) {
     const firstName = normalizeNameInput(dto.firstName);

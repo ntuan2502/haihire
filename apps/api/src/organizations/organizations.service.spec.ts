@@ -148,8 +148,11 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.organization.name).toBe("Stark Industries");
       expect(result.organization.slug).toBe("stark-industries");
 
-      const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user?.organizationId).toBe(result.organization.id);
+      const membership = mockMembers.find(
+        (m) =>
+          m.organizationId === result.organization.id && m.userId === "usr-1",
+      );
+      expect(membership?.role).toBe("ADMIN");
     });
 
     it("2. Should throw ConflictException when creating organization with existing slug", async () => {
@@ -168,8 +171,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       });
 
       expect(result.organization.name).toBe("Acme Corp");
-      const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user?.organizationId).toBe("org-1");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-1",
+      );
+      expect(membership?.organizationId).toBe("org-1");
     });
 
     it("4. Should throw NotFoundException when invite link is invalid", async () => {
@@ -235,9 +240,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const result = await service.switchOrg("usr-1", "org-1");
       expect(result.success).toBe(true);
       expect(result.organization.name).toBe("Acme Corp");
-
-      const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user?.organizationId).toBe("org-1");
+      expect(result.user.organizationId).toBe("org-1");
     });
   });
 
@@ -389,8 +392,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const joinResult = await service.joinByToken("usr-1", link.token);
       expect(joinResult.success).toBe(true);
 
-      const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user?.organizationId).toBe("org-1");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-1",
+      );
+      expect(membership?.organizationId).toBe("org-1");
     });
 
     it("12. Should REJECT when user is already a member of the organization", async () => {
@@ -474,7 +479,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         recruiterLink.token,
       );
       expect(joinByTokenResult.role).toBe("RECRUITER");
-      expect(mockUsers.find((u) => u.id === "usr-1")?.role).toBe("RECRUITER");
       expect(
         mockMembers.find(
           (m) => m.organizationId === "org-1" && m.userId === "usr-1",
@@ -494,9 +498,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         inviteCodeOrSlug: hmLink.token,
       });
       expect(joinResult.role).toBe("HIRING_MANAGER");
-      expect(mockUsers.find((u) => u.id === "usr-hm")?.role).toBe(
-        "HIRING_MANAGER",
-      );
       expect(
         mockMembers.find(
           (m) => m.organizationId === "org-1" && m.userId === "usr-hm",
@@ -590,8 +591,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.success).toBe(true);
       expect(result.role).toBe("ADMIN");
 
-      const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3?.role).toBe("ADMIN");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-3",
+      );
+      expect(membership?.role).toBe("ADMIN");
     });
 
     it("14. Should REJECT updating organization owner's role", async () => {
@@ -610,8 +613,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.success).toBe(true);
       expect(result.role).toBe("RECRUITER");
 
-      const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3?.role).toBe("RECRUITER");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-3",
+      );
+      expect(membership?.role).toBe("RECRUITER");
     });
 
     it("14b. Should allow updating member role from RECRUITER to HIRING_MANAGER", async () => {
@@ -624,8 +629,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.success).toBe(true);
       expect(result.role).toBe("HIRING_MANAGER");
 
-      const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3?.role).toBe("HIRING_MANAGER");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-3",
+      );
+      expect(membership?.role).toBe("HIRING_MANAGER");
     });
 
     it("14c. Should allow updating member role from HIRING_MANAGER to INTERVIEWER", async () => {
@@ -638,8 +645,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.success).toBe(true);
       expect(result.role).toBe("INTERVIEWER");
 
-      const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3?.role).toBe("INTERVIEWER");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-3",
+      );
+      expect(membership?.role).toBe("INTERVIEWER");
     });
 
     it("14d. Should REJECT updating own role with 400 (ORG_CANNOT_CHANGE_SELF_ROLE)", async () => {
@@ -680,9 +689,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const result = await service.removeMember("usr-2", "usr-3");
       expect(result.success).toBe(true);
 
-      const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3?.organizationId).toBeNull();
-      expect(usr3?.role).toBe("MEMBER");
+      const membership = mockMembers.find(
+        (m) => m.organizationId === "org-1" && m.userId === "usr-3",
+      );
+      expect(membership).toBeUndefined();
     });
 
     it("16. Should REJECT removing organization owner or self", async () => {
@@ -725,8 +735,11 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const joinRes = await service.joinByToken("usr-1", "token-for-org-2");
       expect(joinRes.success).toBe(true);
 
-      const usr1 = mockUsers.find((u) => u.id === "usr-1");
-      expect(usr1?.organizationId).toBe("org-2");
+      expect(
+        mockMembers.some(
+          (m) => m.organizationId === "org-2" && m.userId === "usr-1",
+        ),
+      ).toBe(true);
 
       // 5. getMyOrgs for usr-1 must include BOTH org-1 and org-2
       let orgs = await service.getMyOrgs("usr-1");
@@ -736,7 +749,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       // 6. usr-1 switches back to org-1
       const switchRes = await service.switchOrg("usr-1", "org-1");
       expect(switchRes.success).toBe(true);
-      expect(usr1?.organizationId).toBe("org-1");
+      expect(switchRes.user.organizationId).toBe("org-1");
 
       // 7. Critical: org-2 must NOT disappear from getMyOrgs!
       orgs = await service.getMyOrgs("usr-1");
@@ -746,75 +759,16 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       // 8. usr-1 can switch back to org-2 seamlessly
       const switchBack = await service.switchOrg("usr-1", "org-2");
       expect(switchBack.success).toBe(true);
-      expect(usr1?.organizationId).toBe("org-2");
+      expect(switchBack.user.organizationId).toBe("org-2");
     });
   });
 
-  describe("Startup Membership Backfill (Task #14B)", () => {
-    it("should backfill memberships using only 3 batched queries for 100 orgs and 100 users without N+1 query storms", async () => {
-      // 1. Seed 100 orgs without members
-      for (let i = 10; i < 110; i++) {
-        mockOrgs.push({
-          id: `org-${i}`,
-          name: `Org ${i}`,
-          slug: `org-${i}`,
-          ownerId: `owner-${i}`,
-          createdAt: new Date(),
-        });
-      }
-
-      // 2. Seed 100 users without members
-      for (let i = 10; i < 110; i++) {
-        mockUsers.push({
-          id: `owner-${i}`,
-          email: `owner-${i}@test.com`,
-          firstName: "Owner",
-          lastName: `${i}`,
-          role: "ADMIN",
-          organizationId: `org-${i}`,
-        });
-      }
-
-      const orgSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as unknown as {
-            organization: { findMany: (...args: unknown[]) => unknown };
-          }
-        ).organization,
-        "findMany",
-      );
-      const userSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as unknown as {
-            user: { findMany: (...args: unknown[]) => unknown };
-          }
-        ).user,
-        "findMany",
-      );
-      const memberSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as unknown as {
-            organizationMember: { findMany: (...args: unknown[]) => unknown };
-          }
-        ).organizationMember,
-        "findMany",
-      );
-
-      // 3. Execute startup backfill
-      await service.onModuleInit();
-
-      // 4. Assert exactly 1 batched query per table (3 total SELECT queries)
-      expect(orgSelectSpy).toHaveBeenCalledTimes(1);
-      expect(userSelectSpy).toHaveBeenCalledTimes(1);
-      expect(memberSelectSpy).toHaveBeenCalledTimes(1);
-
-      // Verify members were upserted for the owners
-      const upsertSpy = (
-        mockPrismaService as unknown as {
-          organizationMember: { upsert: unknown };
-        }
-      ).organizationMember.upsert;
-      expect(upsertSpy).toHaveBeenCalled();
+  describe("Multi-Org Member Listing Verification", () => {
+    it("resolves organization members strictly from OrganizationMember and ownerId without startup backfill", async () => {
+      const members = await service.getMembers("usr-2", "org-1");
+      expect(members.map((m) => m.id)).toEqual(["usr-1", "usr-2", "usr-3"]);
+      expect(members[0].isOwner).toBe(true);
+      expect(members[0].role).toBe("ADMIN");
     });
   });
 

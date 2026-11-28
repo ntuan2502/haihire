@@ -25,22 +25,10 @@ const EVENT_QUERY_KEY_PREFIXES: Record<AppEventType, readonly QueryKey[]> = {
     ["notifications"],
   ],
   AUDIT_LOGS_CHANGED: [["organization", "audit-logs"]],
-  JOBS_CHANGED: [
-    ["jobs"],
-    ["applications"],
-    ["job-applications"],
-    ["interviews"],
-    ["sourcing"],
-  ],
-  CANDIDATES_CHANGED: [
-    ["candidates"],
-    ["applications"],
-    ["job-applications"],
-    ["interviews"],
-  ],
+  JOBS_CHANGED: [["jobs"], ["applications"], ["interviews"], ["sourcing"]],
+  CANDIDATES_CHANGED: [["candidates"], ["applications"], ["interviews"]],
   APPLICATIONS_CHANGED: [
     ["applications"],
-    ["job-applications"],
     ["jobs"],
     ["interviews"],
     ["sourcing"],
@@ -49,7 +37,6 @@ const EVENT_QUERY_KEY_PREFIXES: Record<AppEventType, readonly QueryKey[]> = {
   INTERVIEWS_CHANGED: [
     ["interviews"],
     ["applications"],
-    ["job-applications"],
     ["activities"],
     ["notifications"],
   ],

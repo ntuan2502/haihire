@@ -9,10 +9,9 @@
         "DATABASE_URL",
         "DIRECT_URL",
         "INTERNAL_API_URL",
-        "BACKEND_HOST",
         "BACKEND_PORT",
         "FRONTEND_PORT",
-        "MINIO_HOST",
+        "GATEWAY_PORT",
         "MINIO_PORT",
         "PORT",
         "NEXT_PUBLIC_*"

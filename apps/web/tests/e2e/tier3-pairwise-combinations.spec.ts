@@ -39,7 +39,7 @@ test.describe("Tier 3: Pairwise Combinations (E2E Web)", () => {
     playwright,
     baseURL,
   }) => {
-    const resolvedBase = baseURL || "http://localhost:13000";
+    const resolvedBase = baseURL || "http://localhost:8080";
     const apiCtx = await playwright.request.newContext({
       baseURL: resolvedBase,
     });

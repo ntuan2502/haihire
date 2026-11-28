@@ -361,5 +361,34 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
       );
       expect(findManyFn).toHaveBeenCalledTimes(2);
     });
+
+    it("13. resolveAllPermissions batches lookup with a single getOverrides DB query and invalidateCache scans Redis", async () => {
+      const scanRedis = {
+        ...mockRedis,
+        scan: vi
+          .fn()
+          .mockResolvedValueOnce(["1", ["haihire:permissions:org-a"]])
+          .mockResolvedValueOnce(["0", ["haihire:permissions:org-b"]]),
+      };
+      const scanService = new PermissionResolverService(
+        {
+          organizationRolePermission: { findMany: findManyFn },
+        } as unknown as PrismaService,
+        scanRedis as unknown as Redis,
+      );
+
+      const perms = await scanService.resolveAllPermissions(
+        "org-batch",
+        Role.RECRUITER,
+      );
+      expect(perms.length).toBeGreaterThan(0);
+      expect(findManyFn).toHaveBeenCalledTimes(1);
+
+      scanService.invalidateCache();
+      await new Promise((r) => setTimeout(r, 10));
+      expect(scanRedis.scan).toHaveBeenCalledTimes(2);
+      expect(scanRedis.keys).not.toHaveBeenCalled();
+      expect(scanRedis.del).toHaveBeenCalledTimes(2);
+    });
   });
 });

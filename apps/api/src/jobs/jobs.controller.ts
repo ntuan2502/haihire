@@ -42,7 +42,6 @@ import {
 import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("jobs")
-@UseGuards(TenantGuard)
 export class JobsController {
   constructor(
     @Inject(JobsService)
@@ -109,7 +108,7 @@ export class JobsController {
   }
 
   @Get(":id")
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard, TenantGuard)
   async findOne(
     @Param("id", new ParseUUIDPipe()) id: string,
     @Request()
@@ -141,7 +140,7 @@ export class JobsController {
   }
 
   @Post("screening-questions/generate")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @RequirePermission("job:create")
   generateScreeningQuestions(
@@ -166,7 +165,7 @@ export class JobsController {
   }
 
   @Post("generate-scoring-criteria")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @RequirePermission("job:create")
   generateScoringCriteria(
@@ -191,7 +190,7 @@ export class JobsController {
   }
 
   @Post()
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:create")
   create(
     @Body(DtoPipe(createJobSchema)) dto: CreateJobSchema,
@@ -205,7 +204,7 @@ export class JobsController {
   }
 
   @Patch(":id")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:update")
   update(
     @Param("id", new ParseUUIDPipe()) id: string,
@@ -221,7 +220,7 @@ export class JobsController {
   }
 
   @Delete(":id")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:delete")
   remove(
     @Param("id", new ParseUUIDPipe()) id: string,
@@ -235,7 +234,7 @@ export class JobsController {
   }
 
   @Get(":id/stages")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:view")
   getPipelineStages(
     @Param("id", new ParseUUIDPipe()) id: string,
@@ -245,7 +244,7 @@ export class JobsController {
   }
 
   @Patch(":id/stages")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @UseGuards(AuthGuard("jwt"), TenantGuard, ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:update")
   updatePipelineStages(
     @Param("id", new ParseUUIDPipe()) id: string,

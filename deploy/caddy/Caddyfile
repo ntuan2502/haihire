@@ -1,0 +1,35 @@
+{
+	auto_https off
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	request_body {
+		max_size 15MB
+	}
+
+	handle /gateway-health {
+		respond "ok" 200
+	}
+
+	handle_path /api/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	handle /organizations/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	handle /events/* {
+		reverse_proxy {$API_UPSTREAM} {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy {$WEB_UPSTREAM}
+	}
+}

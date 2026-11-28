@@ -133,18 +133,17 @@ export class PermissionResolverService
       return allPermissions;
     }
 
-    const granted: Permission[] = [];
-    for (const permission of allPermissions) {
-      const allowed = await this.resolvePermission(
-        organizationId,
-        role,
-        permission,
-      );
-      if (allowed) {
-        granted.push(permission);
+    const overrides = organizationId
+      ? await this.getOverrides(organizationId)
+      : null;
+
+    return allPermissions.filter((permission) => {
+      const key = `${role}:${permission}`;
+      if (overrides?.has(key)) {
+        return Boolean(overrides.get(key));
       }
-    }
-    return granted;
+      return hasPermission(role, permission);
+    });
   }
 
   /**
@@ -245,16 +244,9 @@ export class PermissionResolverService
             this.logger.warn(`Failed to delete Redis permission key: ${err}`),
           );
       } else {
-        this.redisClient
-          .keys(`${PERMISSIONS_CACHE_PREFIX}*`)
-          .then((keys) => {
-            if (keys && keys.length > 0) {
-              return this.redisClient!.del(...keys);
-            }
-          })
-          .catch((err) =>
-            this.logger.warn(`Failed to clear Redis permission keys: ${err}`),
-          );
+        void this.clearAllRedisPermissionKeys().catch((err) =>
+          this.logger.warn(`Failed to clear Redis permission keys: ${err}`),
+        );
       }
 
       this.redisClient
@@ -264,6 +256,35 @@ export class PermissionResolverService
             `Failed to publish permission cache invalidation: ${err}`,
           ),
         );
+    }
+  }
+
+  private async clearAllRedisPermissionKeys(): Promise<void> {
+    if (!this.redisClient) return;
+
+    if (typeof this.redisClient.scan === "function") {
+      let cursor = "0";
+      do {
+        const [nextCursor, keys] = await this.redisClient.scan(
+          cursor,
+          "MATCH",
+          `${PERMISSIONS_CACHE_PREFIX}*`,
+          "COUNT",
+          100,
+        );
+        if (keys && keys.length > 0) {
+          await this.redisClient.del(...keys);
+        }
+        cursor = nextCursor;
+      } while (cursor !== "0");
+      return;
+    }
+
+    if (typeof this.redisClient.keys === "function") {
+      const keys = await this.redisClient.keys(`${PERMISSIONS_CACHE_PREFIX}*`);
+      if (keys && keys.length > 0) {
+        await this.redisClient.del(...keys);
+      }
     }
   }
 }

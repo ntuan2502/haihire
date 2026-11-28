@@ -1,19 +1,23 @@
 # Production Deployment Plan
 
 > Step-by-step release, Docker Compose topology, verification, and rollback procedures for HaiHire production.
+>
+> **3-Tier Deployment Model:** **Dev** runs `pnpm dev` behind Dev Caddy ([docker-compose.yml](../../docker-compose.yml) on `:8080`); **Local Staging** builds production Docker images locally ([docker-compose.staging.yml](../../docker-compose.staging.yml) + [deploy/deploy-staging.sh](../../deploy/deploy-staging.sh) on `:8081`); **Production** pulls immutable GHCR images ([cd-release.yml](../../.github/workflows/cd-release.yml)) onto the VPS behind Host Nginx ([deploy/nginx/host-edge.conf](../../deploy/nginx/host-edge.conf)) -> Caddy (`127.0.0.1:8080`).
 
 ---
 
 ## 1. Production Stack Topology (`docker-compose.prod.yml`)
 
-| Service       | Container Name             | Image / Baseline                                                           | Port / Network                           | Healthcheck                |
-| :------------ | :------------------------- | :------------------------------------------------------------------------- | :--------------------------------------- | :------------------------- |
-| `postgres`    | `haihire-prod-postgres`    | `postgres:17.6-alpine`                                                     | `haihire-prod-network` (internal `5432`) | `pg_isready`               |
-| `redis`       | `haihire-prod-redis`       | `valkey/valkey:8.0.2-alpine` (`noeviction`, AOF `everysec`, `384mb` limit) | `haihire-prod-network` (internal `6379`) | `redis-cli ping`           |
-| `minio`       | `haihire-prod-minio`       | `alpine/minio`                                                             | `haihire-prod-network` (internal `9000`) | HTTP `/minio/health/live`  |
-| `api`         | `haihire-prod-api`         | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `${BACKEND_PORT:-3001}:3001`             | HTTP `GET /health`         |
-| `web`         | `haihire-prod-web`         | `ghcr.io/<owner>/haihire-web:<IMAGE_TAG>`                                  | `${FRONTEND_PORT:-3000}:3000`            | Starts after healthy `api` |
-| `pushgateway` | `haihire-prod-pushgateway` | `prom/pushgateway:v1.10.0`                                                 | `${PUSHGATEWAY_PORT:-9091}:9091`         | HTTP `/-/healthy`          |
+| Service       | Container Name             | Image / Baseline                                                           | Port / Network                             | Healthcheck                                    |
+| :------------ | :------------------------- | :------------------------------------------------------------------------- | :----------------------------------------- | :--------------------------------------------- |
+| `postgres`    | `haihire-prod-postgres`    | `postgres:17.6-alpine`                                                     | `haihire-prod-network` (internal `5432`)   | `pg_isready`                                   |
+| `redis`       | `haihire-prod-redis`       | `valkey/valkey:8.0.2-alpine` (`noeviction`, AOF `everysec`, `384mb` limit) | `haihire-prod-network` (internal `6379`)   | `redis-cli ping`                               |
+| `minio`       | `haihire-prod-minio`       | `alpine/minio`                                                             | `haihire-prod-network` (internal `9000`)   | HTTP `/minio/health/live`                      |
+| `migrate`     | `haihire-prod-migrate`     | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `haihire-prod-network` (one-shot init)     | Exits `0` (`service_completed_successfully`)   |
+| `api`         | `haihire-prod-api`         | `ghcr.io/<owner>/haihire-api:<IMAGE_TAG>`                                  | `haihire-prod-network` (internal `3001`)   | HTTP `GET /health` (starts after `migrate`)    |
+| `web`         | `haihire-prod-web`         | `ghcr.io/<owner>/haihire-web:<IMAGE_TAG>`                                  | `haihire-prod-network` (internal `3000`)   | HTTP `GET /` (starts after healthy `api`)      |
+| `gateway`     | `haihire-prod-gateway`     | `caddy:2-alpine` (`deploy/caddy/Caddyfile`)                                | `127.0.0.1:${GATEWAY_PORT:-8080}:80`       | HTTP `GET /gateway-health` (Host Nginx target) |
+| `pushgateway` | `haihire-prod-pushgateway` | `prom/pushgateway:v1.10.0`                                                 | `127.0.0.1:${PUSHGATEWAY_PORT:-9091}:9091` | HTTP `/-/healthy`                              |
 
 Persistent named volumes in [docker-compose.prod.yml](../../docker-compose.prod.yml): `haihire_prod_postgres_data`, `haihire_prod_redis_data`, `haihire_prod_minio_data`.
 
@@ -45,21 +49,23 @@ pnpm db:backup
 Update `IMAGE_TAG` in `.env.production`, then pull signed images from GHCR:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml pull api web
+docker compose --env-file .env.production -f docker-compose.prod.yml pull api web gateway
 ```
 
-### Step 2: Apply Database Schema / Migrations (When Required)
+### Step 2: Database Schema & Automatic Migrations (`migrate`)
 
-Inspect migration status before applying:
+`docker-compose.prod.yml` runs a one-shot `migrate` init service (`pnpm exec prisma migrate deploy`) automatically after `postgres` is healthy and before `api` starts (`depends_on: migrate: condition: service_completed_successfully`).
+
+To inspect migration status manually or verify pending migrations before rolling out:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml run --rm api npx prisma migrate status
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm migrate pnpm exec prisma migrate status
 ```
 
-Apply pending migrations if clean:
+To re-run migrations manually if needed:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm migrate pnpm exec prisma migrate deploy
 ```
 
 > **Note on Milestone 2 Database Redesign (`20261115000000_r2_database_redesign`):**
@@ -90,8 +96,9 @@ Run [scripts/smoke-and-load-test.ts](../../scripts/smoke-and-load-test.ts) again
 
 Also confirm:
 
-- Web SSR root loads cleanly (`http://localhost:${FRONTEND_PORT:-3000}`).
-- `GET /health` returns `200`.
+- Caddy gateway health returns `200 ok` (`http://127.0.0.1:${GATEWAY_PORT:-8080}/gateway-health`).
+- Web SSR root loads cleanly through Caddy (`http://127.0.0.1:${GATEWAY_PORT:-8080}/`) and Host Nginx TLS domain (`FRONTEND_URL`).
+- `GET /api/health` through Caddy returns `200`.
 - Active Prometheus alert dashboard shows zero firing critical alerts ([Alerts Runbook](alerts.md)).
 
 ---

@@ -554,27 +554,102 @@ export class OrganizationsAuditLogService {
       return { scannedOrgs: 0, deletedCount: 0 };
     }
 
-    const orgs = await this.prisma.organization.findMany({
-      where: { auditLogRetentionDays: { not: null } },
-      select: { id: true, auditLogRetentionDays: true },
+    const runWithBypass =
+      typeof this.prisma.withSystemRlsBypass === "function"
+        ? <T>(fn: (db: PrismaService) => Promise<T>) =>
+            this.prisma.withSystemRlsBypass(fn)
+        : <T>(fn: (db: PrismaService) => Promise<T>) => fn(this.prisma);
+
+    return runWithBypass(async (db) => {
+      const orgs = await db.organization.findMany({
+        where: { auditLogRetentionDays: { not: null } },
+        select: { id: true, auditLogRetentionDays: true },
+      });
+
+      const nowMs = toInstant().getTime();
+      let deletedCount = 0;
+
+      for (const org of orgs) {
+        const days = org.auditLogRetentionDays;
+        if (!days || days <= 0) continue;
+        const cutoff = new Date(nowMs - days * DAY_MS);
+        const res = await db.organizationAuditLog.deleteMany({
+          where: {
+            organizationId: org.id,
+            createdAt: { lt: cutoff },
+          },
+        });
+        deletedCount += res?.count ?? 0;
+      }
+
+      return { scannedOrgs: orgs.length, deletedCount };
     });
+  }
+
+  async purgeExpiredOperationalData(): Promise<{
+    expiredSessions: number;
+    oldSecurityLogs: number;
+    oldNotifications: number;
+    processedOutboxEvents: number;
+  }> {
+    const runWithBypass =
+      typeof this.prisma.withSystemRlsBypass === "function"
+        ? <T>(fn: (db: PrismaService) => Promise<T>) =>
+            this.prisma.withSystemRlsBypass(fn)
+        : <T>(fn: (db: PrismaService) => Promise<T>) => fn(this.prisma);
 
     const nowMs = toInstant().getTime();
-    let deletedCount = 0;
+    const sessionGraceCutoff = new Date(nowMs - 30 * DAY_MS);
+    const securityLogCutoff = new Date(nowMs - 180 * DAY_MS);
+    const notificationReadCutoff = new Date(nowMs - 90 * DAY_MS);
+    const notificationUnreadCutoff = new Date(nowMs - 180 * DAY_MS);
+    const outboxCutoff = new Date(nowMs - 30 * DAY_MS);
 
-    for (const org of orgs) {
-      const days = org.auditLogRetentionDays;
-      if (!days || days <= 0) continue;
-      const cutoff = new Date(nowMs - days * DAY_MS);
-      const res = await this.prisma.organizationAuditLog.deleteMany({
-        where: {
-          organizationId: org.id,
-          createdAt: { lt: cutoff },
-        },
-      });
-      deletedCount += res?.count ?? 0;
-    }
+    return runWithBypass(async (db) => {
+      const [sessionsRes, secLogsRes, notifsRes, outboxRes] = await Promise.all(
+        [
+          typeof db.userSession?.deleteMany === "function"
+            ? db.userSession.deleteMany({
+                where: {
+                  OR: [
+                    { expiresAt: { lt: sessionGraceCutoff } },
+                    { revokedAt: { lt: sessionGraceCutoff } },
+                  ],
+                },
+              })
+            : Promise.resolve({ count: 0 }),
+          typeof db.userSecurityLog?.deleteMany === "function"
+            ? db.userSecurityLog.deleteMany({
+                where: { createdAt: { lt: securityLogCutoff } },
+              })
+            : Promise.resolve({ count: 0 }),
+          typeof db.notification?.deleteMany === "function"
+            ? db.notification.deleteMany({
+                where: {
+                  OR: [
+                    { readAt: { lt: notificationReadCutoff } },
+                    { createdAt: { lt: notificationUnreadCutoff } },
+                  ],
+                },
+              })
+            : Promise.resolve({ count: 0 }),
+          typeof db.outboxEvent?.deleteMany === "function"
+            ? db.outboxEvent.deleteMany({
+                where: {
+                  status: "PROCESSED",
+                  processedAt: { lt: outboxCutoff },
+                },
+              })
+            : Promise.resolve({ count: 0 }),
+        ],
+      );
 
-    return { scannedOrgs: orgs.length, deletedCount };
+      return {
+        expiredSessions: sessionsRes?.count ?? 0,
+        oldSecurityLogs: secLogsRes?.count ?? 0,
+        oldNotifications: notifsRes?.count ?? 0,
+        processedOutboxEvents: outboxRes?.count ?? 0,
+      };
+    });
   }
 }

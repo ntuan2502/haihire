@@ -17,7 +17,7 @@ export interface TestFixtures {
 }
 
 const DEFAULT_BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000";
+  process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080";
 
 function defaultDemoPassword(): string {
   return (

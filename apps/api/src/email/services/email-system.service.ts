@@ -118,26 +118,31 @@ export class EmailSystemService {
     });
 
     const logId = crypto.randomUUID();
-    const log = await this.prisma.emailLog.create({
-      data: {
-        id: logId,
-        scope: "SYSTEM",
-        organizationId: dto.organizationId || null,
-        candidateId: null,
-        applicationId: null,
-        senderId: null,
-        senderName: config.fromName,
-        senderEmail: config.fromEmail,
-        recipientEmail: dto.to,
-        recipientName: dto.recipientName || dto.to,
-        templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-        subject: renderedSubject,
-        body: renderedBody,
-        status: sendResult.status,
-        errorMessage: sendResult.error || null,
-        updatedAt: toInstant(),
-      },
-    });
+    const persistSystemLog = () =>
+      this.prisma.emailLog.create({
+        data: {
+          id: logId,
+          scope: "SYSTEM",
+          organizationId: dto.organizationId || null,
+          candidateId: null,
+          applicationId: null,
+          senderId: null,
+          senderName: config.fromName,
+          senderEmail: config.fromEmail,
+          recipientEmail: dto.to,
+          recipientName: dto.recipientName || dto.to,
+          templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
+          subject: renderedSubject,
+          body: renderedBody,
+          status: sendResult.status,
+          errorMessage: sendResult.error || null,
+          updatedAt: toInstant(),
+        },
+      });
+    const log =
+      typeof this.prisma.withSystemRlsBypass === "function"
+        ? await this.prisma.withSystemRlsBypass(() => persistSystemLog())
+        : await persistSystemLog();
 
     return {
       success: sendResult.success,

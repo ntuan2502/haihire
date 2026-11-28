@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { Logger } from "@nestjs/common";
 import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import { ApplicationsSagaService } from "./applications-saga.service";
 import { PublicApplyDto } from "../dto/public-apply.dto";
@@ -616,8 +617,8 @@ describe("ApplicationsSagaService", () => {
         new Error("Redis connection refused on queue"),
       );
 
-      const consoleErrorSpy = vi
-        .spyOn(console, "error")
+      const loggerErrorSpy = vi
+        .spyOn(Logger.prototype, "error")
         .mockImplementation(() => {});
 
       await expect(
@@ -632,19 +633,20 @@ describe("ApplicationsSagaService", () => {
         ),
       ).rejects.toThrow("Database transaction aborted");
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to enqueue orphan file to cleanup queue:",
-        expect.any(Error),
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to enqueue orphan file to cleanup queue:",
+        ),
       );
-      consoleErrorSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
 
     it("dispatches application confirmation email and catches transient email error safely", async () => {
       (mockEmail.sendEmail as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
         new Error("SMTP server connection timeout"),
       );
-      const consoleWarnSpy = vi
-        .spyOn(console, "warn")
+      const loggerWarnSpy = vi
+        .spyOn(Logger.prototype, "warn")
         .mockImplementation(() => {});
 
       const result = await service.create({
@@ -662,11 +664,10 @@ describe("ApplicationsSagaService", () => {
         }),
         "org-1",
       );
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Failed to send confirmation email:",
-        expect.any(Error),
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to send confirmation email:"),
       );
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
 
     it("preserves organic referrer attribution for PublicApplyDto and allows authenticated Recruiter candidateId apply while stripping anonymous candidateId", async () => {

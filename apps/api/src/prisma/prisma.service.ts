@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import type { OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { PrismaClient } from "@prisma/client";
@@ -61,6 +61,7 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private readonly logger = new Logger(PrismaService.name);
   private readonly pool: Pool;
   private readonly als = new AsyncLocalStorage<PrismaService>();
   private readonly tenantContextAls = new AsyncLocalStorage<TenantRlsContext>();
@@ -134,6 +135,21 @@ export class PrismaService
     if (!tenantOrgId) {
       throw new Error("withTenantRls requires a non-empty tenantOrgId.");
     }
+    const existing = this.als.getStore();
+    if (existing) {
+      const tenantCtx = this.tenantContextAls.getStore();
+      if (tenantCtx?.bypassRls) {
+        throw new Error(
+          "Cannot enter tenant RLS context inside an active system RLS bypass transaction.",
+        );
+      }
+      if (tenantCtx?.tenantOrgId && tenantCtx.tenantOrgId !== tenantOrgId) {
+        throw new Error(
+          "Cannot switch tenant RLS context inside an active tenant transaction.",
+        );
+      }
+      return fn(existing);
+    }
     return this.$transaction(async (txClient) => {
       await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantOrgId}, true), set_config('app.bypass_rls', 'off', true)`;
       await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
@@ -152,6 +168,16 @@ export class PrismaService
   async withSystemRlsBypass<T>(
     fn: (tx: PrismaService) => Promise<T>,
   ): Promise<T> {
+    const existing = this.als.getStore();
+    if (existing) {
+      const tenantCtx = this.tenantContextAls.getStore();
+      if (!tenantCtx?.bypassRls) {
+        throw new Error(
+          "Cannot enable system RLS bypass inside an active tenant-restricted transaction.",
+        );
+      }
+      return fn(existing);
+    }
     return this.$transaction(async (txClient) => {
       await txClient.$executeRaw`SELECT set_config('app.current_tenant_id', '', true), set_config('app.bypass_rls', 'on', true)`;
       await txClient.$executeRawUnsafe("SET LOCAL ROLE haihire_rls_user;");
@@ -218,14 +244,14 @@ export class PrismaService
         });
         if (!existingUser) {
           await ensureDefaultDemoAccounts(this);
-          console.log(
+          this.logger.log(
             `Initialized default demo account: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - demo-1)`,
           );
         }
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.warn("Database connection pending or initializing...", msg);
+      this.logger.warn(`Database connection pending or initializing: ${msg}`);
     }
   }
 

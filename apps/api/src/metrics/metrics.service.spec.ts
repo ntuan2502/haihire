@@ -407,4 +407,59 @@ describe("MetricsService", () => {
       );
     });
   });
+
+  it("Case 15: exports optional ai-scoring-queue, audit-log-retention-queue, and Redis memory metrics when provided", async () => {
+    const orphanWithMemInfo = {
+      getJobCounts: mockOrphanQueue.getJobCounts,
+      client: Promise.resolve({
+        ping: vi.fn().mockResolvedValue("PONG"),
+        info: vi
+          .fn()
+          .mockResolvedValue(
+            "# Memory\r\nused_memory:104857600\r\nmaxmemory:402653184\r\n",
+          ),
+      }),
+    };
+    const mockAiQueue: Partial<Queue> = {
+      getJobCounts: vi.fn().mockResolvedValue({
+        waiting: 7,
+        active: 1,
+        completed: 42,
+        failed: 2,
+        delayed: 0,
+        paused: 0,
+      }),
+    };
+    const mockRetentionQueue: Partial<Queue> = {
+      getJobCounts: vi.fn().mockResolvedValue({
+        waiting: 0,
+        active: 0,
+        completed: 10,
+        failed: 0,
+        delayed: 1,
+        paused: 0,
+      }),
+    };
+
+    const fullService = new MetricsService(
+      orphanWithMemInfo as unknown as Queue,
+      mockDlqQueue as Queue,
+      mockEmailQueue as Queue,
+      undefined,
+      undefined,
+      undefined,
+      mockAiQueue as Queue,
+      mockRetentionQueue as Queue,
+    );
+
+    const metrics = await fullService.getMetrics();
+    expect(metrics).toContain(
+      'bullmq_queue_depth{queue="ai-scoring-queue",state="waiting"} 7',
+    );
+    expect(metrics).toContain(
+      'bullmq_queue_depth{queue="audit-log-retention-queue",state="completed"} 10',
+    );
+    expect(metrics).toContain("haihire_redis_used_memory_bytes 104857600");
+    expect(metrics).toContain("haihire_redis_maxmemory_bytes 402653184");
+  });
 });

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   AUDIT_ACTIONS,
@@ -27,6 +27,7 @@ import { OrganizationsAuditLogService } from "../../organizations/services/organ
 
 @Injectable()
 export class ApplicationsStageService {
+  private readonly logger = new Logger(ApplicationsStageService.name);
   private readonly query: ApplicationsQueryService;
 
   constructor(
@@ -493,7 +494,9 @@ export class ApplicationsStageService {
         await this.emailService.sendEmail(payload, orgId);
       }
     } catch (emailErr) {
-      console.warn(`Failed to send ${flowKey} email:`, emailErr);
+      this.logger.warn(
+        `Failed to send ${flowKey} email: ${emailErr instanceof Error ? emailErr.message : String(emailErr)}`,
+      );
     }
   }
 }

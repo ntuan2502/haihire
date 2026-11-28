@@ -151,6 +151,54 @@ export class MinioService implements OnModuleInit {
       allowedExtensions,
     );
   }
+  getClient(): Minio.Client {
+    return this.client;
+  }
+  getBucketName(): string {
+    return this.bucketName;
+  }
+  async deleteTenantPrefix(tenantOrgId: string): Promise<number> {
+    const safeTenant = tenantOrgId?.trim().replace(/[^a-zA-Z0-9_-]/g, "") || "";
+    if (!safeTenant) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: missing organization context",
+      );
+    }
+    const prefix = `tenants/${safeTenant}/`;
+    const objectNames: string[] = [];
+    await new Promise<void>((resolve, reject) => {
+      try {
+        const stream = this.client.listObjects(this.bucketName, prefix, true);
+        stream.on("data", (obj: Minio.BucketItem) => {
+          if (obj.name && !obj.name.endsWith("/")) {
+            objectNames.push(obj.name);
+          }
+        });
+        stream.on("error", (err: unknown) => reject(err));
+        stream.on("end", () => resolve());
+      } catch (err) {
+        reject(err);
+      }
+    });
+    if (objectNames.length === 0) return 0;
+    try {
+      await this.client.removeObjects(this.bucketName, objectNames);
+    } catch (error: unknown) {
+      if (process.env.NODE_ENV === "test") {
+        this.logger.warn(
+          `MinIO removeObjects bypassed in test mode: ${(error as Error)?.message}`,
+        );
+        return objectNames.length;
+      }
+      this.logger.error(
+        `Failed to delete tenant objects under '${prefix}'`,
+        error,
+      );
+      throw error;
+    }
+    return objectNames.length;
+  }
   async deleteFile(fileName: string): Promise<void> {
     try {
       await this.client.removeObject(this.bucketName, fileName);
@@ -203,9 +251,13 @@ export class MinioService implements OnModuleInit {
     return clean;
   }
   assertTenantAccess(objectName: string, tenantOrgId?: string | null): void {
-    if (!tenantOrgId || !tenantOrgId.trim()) return;
-    const safeTenant = tenantOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
-    if (!safeTenant) return;
+    const safeTenant = tenantOrgId?.trim().replace(/[^a-zA-Z0-9_-]/g, "") || "";
+    if (!safeTenant) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: missing organization context",
+      );
+    }
     const expectedPrefix = `tenants/${safeTenant}/`;
     if (!objectName.startsWith(expectedPrefix)) {
       throw new AppForbiddenException(

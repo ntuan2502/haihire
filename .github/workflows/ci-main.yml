@@ -111,7 +111,7 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: 1
       CI: "true"
-      PLAYWRIGHT_BASE_URL: "http://localhost:13000"
+      PLAYWRIGHT_BASE_URL: "http://localhost:8080"
 
     services:
       postgres:
@@ -121,7 +121,7 @@ jobs:
           POSTGRES_PASSWORD: haihire_test_password
           POSTGRES_DB: haihire_test_db
         ports:
-          - 15432:5432
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
           --health-interval 5s
@@ -131,7 +131,7 @@ jobs:
       redis:
         image: valkey/valkey:8.0.2-alpine
         ports:
-          - 16379:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
@@ -182,8 +182,8 @@ jobs:
           load: true
           push: false
           tags: test-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
       - name: Verify Backend Image Prisma Client & Bundle Import
         run: |
@@ -196,5 +196,5 @@ jobs:
           file: apps/web/Dockerfile
           push: false
           tags: test-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web

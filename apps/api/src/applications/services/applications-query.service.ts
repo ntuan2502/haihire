@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 import {
   APP_ERROR_CODES,
@@ -106,6 +106,7 @@ export interface ApplicationListOptions {
 
 @Injectable()
 export class ApplicationsQueryService {
+  private readonly logger = new Logger(ApplicationsQueryService.name);
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -1047,9 +1048,8 @@ export class ApplicationsQueryService {
           });
         }
       } catch (err) {
-        console.warn(
-          "Failed to create audit activity log on application deletion:",
-          err,
+        this.logger.warn(
+          `Failed to create audit activity log on application deletion: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }

@@ -353,9 +353,10 @@ export class AiScoringService {
       "score-application",
       { organizationId, applicationId },
       {
+        jobId: `ai-score-${applicationId}`,
         attempts: 3,
         backoff: { type: "exponential", delay: 3000 },
-        removeOnComplete: 200,
+        removeOnComplete: true,
         removeOnFail: 200,
       },
     );
@@ -553,9 +554,10 @@ export class AiScoringService {
   ): Promise<SharedApplicationAiEvaluation> {
     try {
       // Phase 1: Short RLS transaction to mark PROCESSING and load scoring inputs.
-      // Keep external I/O (MinIO + LLM HTTP) strictly outside Prisma's 5s interactive tx window.
-      const { app, job, candidate, org, canUseNativePdf } =
-        await this.runWithTenantDb(organizationId, async (db) => {
+      // Keep external I/O (MinIO + LLM HTTP) and AI route lookup outside the interactive tx window.
+      const { app, job, candidate, org } = await this.runWithTenantDb(
+        organizationId,
+        async (db) => {
           await this.markStatus(
             db,
             organizationId,
@@ -582,39 +584,33 @@ export class AiScoringService {
             );
           }
 
-          const [jobRow, candidateRow, orgRow, featurePlan] = await Promise.all(
-            [
-              db.job.findFirst({
-                where: { id: appRow.jobId, organizationId, deletedAt: null },
-                select: {
-                  id: true,
-                  title: true,
-                  department: true,
-                  location: true,
-                  experienceLevel: true,
-                  workplace: true,
-                  description: true,
-                  scoringConfig: true,
-                },
-              }),
-              db.candidate.findFirst({
-                where: {
-                  id: appRow.candidateId,
-                  organizationId,
-                  deletedAt: null,
-                },
-                select: { resumeUrl: true, resumeFileName: true },
-              }),
-              db.organization.findFirst({
-                where: { id: organizationId },
-                select: { defaultLanguage: true },
-              }),
-              this.aiGatewayService.resolveExecutionPlan(
+          const [jobRow, candidateRow, orgRow] = await Promise.all([
+            db.job.findFirst({
+              where: { id: appRow.jobId, organizationId, deletedAt: null },
+              select: {
+                id: true,
+                title: true,
+                department: true,
+                location: true,
+                experienceLevel: true,
+                workplace: true,
+                description: true,
+                scoringConfig: true,
+              },
+            }),
+            db.candidate.findFirst({
+              where: {
+                id: appRow.candidateId,
                 organizationId,
-                "APPLICATION_SCORING",
-              ),
-            ],
-          );
+                deletedAt: null,
+              },
+              select: { resumeUrl: true, resumeFileName: true },
+            }),
+            db.organization.findFirst({
+              where: { id: organizationId },
+              select: { defaultLanguage: true },
+            }),
+          ]);
 
           if (!jobRow) {
             throw new AppNotFoundException(
@@ -623,27 +619,35 @@ export class AiScoringService {
             );
           }
 
-          if (
-            !featurePlan.orgEnabled ||
-            !featurePlan.featureEnabled ||
-            featurePlan.candidates.length === 0
-          ) {
-            throw new AppBadRequestException(
-              APP_ERROR_CODES.AI_NOT_CONFIGURED,
-              "AI provider is not configured or is disabled for application scoring.",
-            );
-          }
-
           return {
             app: appRow,
             job: jobRow,
             candidate: candidateRow,
             org: orgRow,
-            canUseNativePdf: featurePlan.candidates.some((c) =>
-              providerSupportsPdfAttachment(c.provider),
-            ),
           };
-        });
+        },
+      );
+
+      const featurePlan = await this.aiGatewayService.resolveExecutionPlan(
+        organizationId,
+        "APPLICATION_SCORING",
+        { decryptKeys: false },
+      );
+
+      if (
+        !featurePlan.orgEnabled ||
+        !featurePlan.featureEnabled ||
+        featurePlan.candidates.length === 0
+      ) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.AI_NOT_CONFIGURED,
+          "AI provider is not configured or is disabled for application scoring.",
+        );
+      }
+
+      const canUseNativePdf = featurePlan.candidates.some((c) =>
+        providerSupportsPdfAttachment(c.provider),
+      );
 
       // Phase 2: External MinIO PDF extraction + LLM API call outside any DB transaction.
       const resolvedResumeUrl = app.resumeUrl || candidate?.resumeUrl || null;

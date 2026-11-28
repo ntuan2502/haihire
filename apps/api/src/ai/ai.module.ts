@@ -5,7 +5,10 @@ import { EventsModule } from "../events/events.module";
 import { MinioModule } from "../minio/minio.module";
 import { AiGatewayService } from "./ai-gateway.service";
 import { AiGenerationService } from "./ai-generation.service";
-import { AiScoringProcessor } from "./ai-scoring.processor";
+import {
+  AI_SCORING_DLQ_NAME,
+  AiScoringProcessor,
+} from "./ai-scoring.processor";
 import { AI_SCORING_QUEUE, AiScoringService } from "./ai-scoring.service";
 import { AiSettingsController } from "./ai-settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
@@ -15,7 +18,10 @@ import { AiSettingsService } from "./ai-settings.service";
     CommonModule,
     MinioModule,
     EventsModule,
-    BullModule.registerQueue({ name: AI_SCORING_QUEUE }),
+    BullModule.registerQueue(
+      { name: AI_SCORING_QUEUE },
+      { name: AI_SCORING_DLQ_NAME },
+    ),
   ],
   controllers: [AiSettingsController],
   providers: [

@@ -7,14 +7,12 @@ import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
 import {
-  JobStatus,
-  JobType,
-  ExperienceLevel,
-  WorkplaceType,
-} from "./dto/create-job.dto";
-import {
   AUDIT_ACTIONS,
   AUDIT_RESOURCES,
+  ExperienceLevel,
+  JobStatus,
+  JobType,
+  WorkplaceType,
   updateJobSchema,
 } from "@haihire/shared";
 
@@ -43,6 +41,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
   interface MockApp {
     id: string;
+    organizationId: string;
     jobId: string;
     candidateId?: string;
     stage: string;
@@ -100,16 +99,19 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     mockApps = [
       {
         id: "app-1",
+        organizationId: "org-1",
         jobId: "job-1",
         stage: "APPLIED",
       },
       {
         id: "app-2",
+        organizationId: "org-1",
         jobId: "job-1",
         stage: "INTERVIEW",
       },
       {
         id: "app-3",
+        organizationId: "org-2",
         jobId: "job-3", // App for org-2's job
         stage: "APPLIED",
       },

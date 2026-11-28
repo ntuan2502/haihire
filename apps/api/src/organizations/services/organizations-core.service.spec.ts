@@ -5,7 +5,6 @@ import {
   createMockTable,
   createMockPrismaService,
   type MockTable,
-  type ProxyRecord,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
 import type { MinioService } from "../../minio/minio.service";
@@ -79,6 +78,12 @@ describe("OrganizationsCoreService", () => {
         role: "ADMIN",
       },
       {
+        id: "mem-admin",
+        organizationId: "org-1",
+        userId: "user-admin",
+        role: "ADMIN",
+      },
+      {
         id: "mem-2",
         organizationId: "org-1",
         userId: "user-member",
@@ -120,7 +125,7 @@ describe("OrganizationsCoreService", () => {
     await expect(
       service.create("user-owner", { name: "New Org", slug: "new-org" }),
     ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS });
-    expect(organizationMemberTable.store).toHaveLength(3);
+    expect(organizationMemberTable.store).toHaveLength(4);
     expect(organizationTable.store[0].ownerId).toBe("user-owner");
   });
 
@@ -133,8 +138,10 @@ describe("OrganizationsCoreService", () => {
       code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
     });
     expect(deleteOrg).not.toHaveBeenCalled();
-    expect(organizationMemberTable.store).toHaveLength(3);
-    expect(userTable.store[0].organizationId).toBe("org-1");
+    expect(organizationMemberTable.store).toHaveLength(4);
+    expect(organizationTable.store.find((o) => o.id === "org-1")?.ownerId).toBe(
+      "user-owner",
+    );
   });
 
   describe("Group 1: updateMyOrg", () => {
@@ -299,12 +306,11 @@ describe("OrganizationsCoreService", () => {
       });
     });
 
-    it("atomically unlinks all users (owner + members), deletes memberships, and deletes organization on owner request", async () => {
-      // org-1 has 1 owner (user-owner), 1 admin (user-admin), 1 member (user-member) = 3 users
-      const usersBefore = userTable.store.filter(
-        (u) => u.organizationId === "org-1",
+    it("atomically deletes memberships and organization on owner request", async () => {
+      const membersBefore = organizationMemberTable.store.filter(
+        (m) => m.organizationId === "org-1",
       );
-      expect(usersBefore).toHaveLength(3);
+      expect(membersBefore).toHaveLength(3);
 
       const res = await service.deleteMyOrg("user-owner");
       expect(res.success).toBe(true);
@@ -318,22 +324,44 @@ describe("OrganizationsCoreService", () => {
         (m) => m.organizationId === "org-1",
       );
       expect(remainingMembers).toHaveLength(0);
+    });
 
-      // Verify ALL 3 users belonging to org-1 have organizationId set to null
-      const usersAfter = userTable.store.filter(
-        (u) => u.organizationId === "org-1",
+    it("deletes ON DELETE RESTRICT logs (emailLog, activityLog, organizationAuditLog) inside deleteMyOrg tx and purges tenant MinIO prefix", async () => {
+      const emailLogDeleteMany = vi.fn().mockResolvedValue({ count: 2 });
+      const activityLogDeleteMany = vi.fn().mockResolvedValue({ count: 3 });
+      const orgAuditDeleteMany = vi.fn().mockResolvedValue({ count: 4 });
+      const deleteTenantPrefix = vi.fn().mockResolvedValue(5);
+
+      const dbWithLogs = createMockPrismaService({
+        user: userTable,
+        organization: organizationTable,
+        organizationMember: organizationMemberTable,
+      }) as unknown as PrismaService;
+      Object.assign(dbWithLogs as unknown as Record<string, unknown>, {
+        emailLog: { deleteMany: emailLogDeleteMany },
+        activityLog: { deleteMany: activityLogDeleteMany },
+        organizationAuditLog: { deleteMany: orgAuditDeleteMany },
+      });
+
+      const logCleanupService = new OrganizationsCoreService(
+        dbWithLogs,
+        undefined,
+        undefined,
+        { deleteTenantPrefix, deleteFile: vi.fn() } as unknown as MinioService,
       );
-      expect(usersAfter).toHaveLength(0);
 
-      expect(
-        userTable.store.find((u) => u.id === "user-owner")?.organizationId,
-      ).toBeNull();
-      expect(
-        userTable.store.find((u) => u.id === "user-admin")?.organizationId,
-      ).toBeNull();
-      expect(
-        userTable.store.find((u) => u.id === "user-member")?.organizationId,
-      ).toBeNull();
+      const res = await logCleanupService.deleteMyOrg("user-owner");
+      expect(res.success).toBe(true);
+      expect(emailLogDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(activityLogDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(orgAuditDeleteMany).toHaveBeenCalledWith({
+        where: { organizationId: "org-1" },
+      });
+      expect(deleteTenantPrefix).toHaveBeenCalledWith("org-1");
     });
   });
 
@@ -371,8 +399,7 @@ describe("OrganizationsCoreService", () => {
       const res = await service.switchOrg("user-owner", "org-2");
       expect(res.success).toBe(true);
       expect(res.organization.id).toBe("org-2");
-      const updatedUser = userTable.store.find((u) => u.id === "user-owner");
-      expect(updatedUser?.organizationId).toBe("org-2");
+      expect(res.user.organizationId).toBe("org-2");
 
       const targetAfter = organizationMemberTable.store.find(
         (m) => m.userId === "user-owner" && m.organizationId === "org-2",
@@ -404,14 +431,10 @@ describe("OrganizationsCoreService", () => {
       expect(org?.ownerId).toBe("user-admin");
     });
 
-    it("promotes target member to ADMIN in both User and OrganizationMember on ownership transfer", async () => {
-      const memberUserBefore = userTable.store.find(
-        (u) => u.id === "user-member",
-      );
+    it("promotes target member to ADMIN in OrganizationMember on ownership transfer", async () => {
       const memberEntryBefore = organizationMemberTable.store.find(
         (m) => m.organizationId === "org-1" && m.userId === "user-member",
       );
-      expect(memberUserBefore?.role).toBe("MEMBER");
       expect(memberEntryBefore?.role).toBe("MEMBER");
 
       const res = await service.transferOwnership("user-owner", "user-member");
@@ -421,21 +444,18 @@ describe("OrganizationsCoreService", () => {
       const org = organizationTable.store.find((o) => o.id === "org-1");
       expect(org?.ownerId).toBe("user-member");
 
-      const memberUserAfter = userTable.store.find(
-        (u) => u.id === "user-member",
-      );
-      expect(memberUserAfter?.role).toBe("ADMIN");
-
       const memberEntryAfter = organizationMemberTable.store.find(
         (m) => m.organizationId === "org-1" && m.userId === "user-member",
       );
       expect(memberEntryAfter?.role).toBe("ADMIN");
     });
-    it("creates a new OrganizationMember row with role ADMIN when target user has no existing membership entry", async () => {
-      const memberEntryBefore = organizationMemberTable.store.find(
+    it("promotes an existing MEMBER row for user-admin to ADMIN on ownership transfer", async () => {
+      const existingAdminRow = organizationMemberTable.store.find(
         (m) => m.organizationId === "org-1" && m.userId === "user-admin",
       );
-      expect(memberEntryBefore).toBeUndefined();
+      if (existingAdminRow) {
+        existingAdminRow.role = "MEMBER";
+      }
 
       const res = await service.transferOwnership("user-owner", "user-admin");
       expect(res.success).toBe(true);
@@ -448,12 +468,13 @@ describe("OrganizationsCoreService", () => {
       expect(memberEntryAfter?.role).toBe("ADMIN");
     });
 
-    it("promotes membership in the transferred organization while keeping the target's role in the active organization", async () => {
-      await userTable
-        .where((u: ProxyRecord) => u.id.eq("user-member"))
-        .update({
-          organizationId: "org-2",
-        });
+    it("promotes membership in the transferred organization while preserving roles in other organizations", async () => {
+      organizationMemberTable.store.push({
+        id: "mem-4",
+        organizationId: "org-2",
+        userId: "user-member",
+        role: "MEMBER",
+      });
 
       await service.transferOwnership("user-owner", "user-member");
 
@@ -463,15 +484,18 @@ describe("OrganizationsCoreService", () => {
       expect(
         organizationMemberTable.store.find((m) => m.id === "mem-2")?.role,
       ).toBe("ADMIN");
-      expect(userTable.store.find((u) => u.id === "user-member")).toMatchObject(
-        { organizationId: "org-2", role: "MEMBER" },
-      );
+      expect(
+        organizationMemberTable.store.find((m) => m.id === "mem-4")?.role,
+      ).toBe("MEMBER");
     });
 
     it("allows only one of two competing transfers by the same owner", async () => {
-      await userTable
-        .where((u: ProxyRecord) => u.id.eq("user-admin"))
-        .update({ role: "MEMBER" });
+      const existingAdminRow = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-admin",
+      );
+      if (existingAdminRow) {
+        existingAdminRow.role = "MEMBER";
+      }
 
       const transfers = await Promise.allSettled([
         service.transferOwnership("user-owner", "user-member"),
@@ -493,9 +517,11 @@ describe("OrganizationsCoreService", () => {
         (org) => org.id === "org-1",
       )?.ownerId;
       const loserId = ownerId === "user-member" ? "user-admin" : "user-member";
-      expect(userTable.store.find((u) => u.id === loserId)?.role).toBe(
-        "MEMBER",
-      );
+      expect(
+        organizationMemberTable.store.find(
+          (m) => m.organizationId === "org-1" && m.userId === loserId,
+        )?.role,
+      ).toBe("MEMBER");
     });
 
     it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {

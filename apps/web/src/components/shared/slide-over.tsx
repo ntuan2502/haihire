@@ -59,8 +59,6 @@ export interface SlideOverProps {
   panelClassName?: string;
 }
 
-export type DetailDrawerProps = SlideOverProps;
-
 export function SlideOver({
   isOpen,
   onClose,
@@ -125,5 +123,3 @@ export function SlideOver({
     </Sheet>
   );
 }
-
-export { SlideOver as DetailDrawer };

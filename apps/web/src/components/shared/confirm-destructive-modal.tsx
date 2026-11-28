@@ -45,8 +45,6 @@ export interface ConfirmDestructiveModalProps {
   notice?: ReactNode;
 }
 
-export type ConfirmModalProps = ConfirmDestructiveModalProps;
-
 export function ConfirmDestructiveModal({
   isOpen,
   onClose,
@@ -260,5 +258,3 @@ export function ConfirmDestructiveModal({
     </Dialog>
   );
 }
-
-export { ConfirmDestructiveModal as ConfirmModal };

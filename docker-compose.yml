@@ -69,9 +69,9 @@ services:
     command: >
       /bin/sh -c "
         if [ -n \"$${REDIS_PASSWORD}\" ]; then
-          redis-server --requirepass \"$${REDIS_PASSWORD}\";
+          valkey-server --requirepass \"$${REDIS_PASSWORD}\";
         else
-          redis-server;
+          valkey-server;
         fi
       "
     environment:
@@ -87,84 +87,35 @@ services:
       test:
         [
           "CMD-SHELL",
-          'if [ -n "$${REDIS_PASSWORD}" ]; then redis-cli -a "$${REDIS_PASSWORD}" ping; else redis-cli ping; fi',
+          'if [ -n "$${REDIS_PASSWORD}" ]; then valkey-cli -a "$${REDIS_PASSWORD}" ping; else valkey-cli ping; fi',
         ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # NestJS API Service
-  api:
-    profiles: ["app"]
-    init: true
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    container_name: haihire-api
+  # Unified Caddy App Gateway (Dev: proxies host pnpm dev over port 8080)
+  gateway:
+    image: caddy:2.11.9-alpine
+    container_name: haihire-gateway
     restart: unless-stopped
-    env_file:
-      - path: ./.env
-        required: false
-    environment:
-      PORT: 3001
-      BACKEND_PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_PUBLIC_URL: http://localhost:${MINIO_PORT:-9000}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "${GATEWAY_PORT:-8080}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      API_UPSTREAM: host.docker.internal:${BACKEND_PORT:-3001}
+      WEB_UPSTREAM: host.docker.internal:${FRONTEND_PORT:-3000}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget -q -O - http://127.0.0.1:$${PORT:-3001}/health || exit 1",
+          "wget -q -O - http://127.0.0.1:80/gateway-health || exit 1",
         ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging: *default-logging
-    networks:
-      - haihire-network
-
-  # Next.js Web Service
-  web:
-    profiles: ["app"]
-    init: true
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    container_name: haihire-web
-    restart: unless-stopped
-    env_file:
-      - path: ./.env
-        required: false
-    environment:
-      PORT: 3000
-      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
-      INTERNAL_API_URL: http://api:3001
-      BACKEND_HOST: api
-      BACKEND_PORT: 3001
-      MINIO_HOST: minio
-      MINIO_PORT: 9000
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    depends_on:
-      api:
-        condition: service_healthy
     logging: *default-logging
     networks:
       - haihire-network

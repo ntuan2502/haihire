@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve, join, extname } from "node:path";
 
 export interface EnvPairCheck {
@@ -9,6 +9,13 @@ export interface EnvPairCheck {
   requiredTarget?: boolean;
 }
 
+export interface ComposeVarUsage {
+  required: Set<string>;
+  defaulted: Set<string>;
+  all: Set<string>;
+}
+
+/** Parses active (uncommented) `KEY=...` declarations in a `.env` file. */
 export function parseEnvKeys(filePath: string): Set<string> | null {
   if (!existsSync(filePath)) {
     return null;
@@ -21,6 +28,33 @@ export function parseEnvKeys(filePath: string): Set<string> | null {
     const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/);
     if (match && match[1]) {
       keys.add(match[1]);
+    }
+  }
+  return keys;
+}
+
+/**
+ * Parses both active `KEY=...` lines and commented optional `# KEY=...` lines
+ * in a template file so valid optional overrides remain whitelisted without
+ * bloating `.env` with empty `=""` placeholders.
+ */
+export function parseDocumentedEnvKeys(filePath: string): Set<string> | null {
+  if (!existsSync(filePath)) {
+    return null;
+  }
+  const content = readFileSync(filePath, "utf-8");
+  const keys = new Set<string>();
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const activeMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/);
+    if (activeMatch?.[1]) {
+      keys.add(activeMatch[1]);
+      continue;
+    }
+    const optionalMatch = line.match(/^#\s*([A-Z][A-Z0-9_]*)\s*=/);
+    if (optionalMatch?.[1]) {
+      keys.add(optionalMatch[1]);
     }
   }
   return keys;
@@ -48,18 +82,38 @@ export function parseEnvKeyValueMap(filePath: string): Map<string, string> {
   return map;
 }
 
-export function extractComposeVariables(filePath: string): Set<string> {
-  if (!existsSync(filePath)) return new Set();
+/** Extracts `${VAR}` references, separating required vs defaulted variables. */
+export function extractComposeVariableDetails(
+  filePath: string,
+): ComposeVarUsage {
+  const required = new Set<string>();
+  const defaulted = new Set<string>();
+  const all = new Set<string>();
+  if (!existsSync(filePath)) {
+    return { required, defaulted, all };
+  }
+
   const content = readFileSync(filePath, "utf-8");
-  const vars = new Set<string>();
-  const regex = /(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-[^}]*)?\}/g;
+  const regex =
+    /(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)(?:(:-|:\?|\?|-|=|:=)([^}]*))?\}/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(content)) !== null) {
-    if (match[1]) {
-      vars.add(match[1]);
+    const varName = match[1];
+    const operator = match[2];
+    if (!varName) continue;
+    all.add(varName);
+    if (!operator || operator === ":?" || operator === "?") {
+      required.add(varName);
+      defaulted.delete(varName);
+    } else if (!required.has(varName)) {
+      defaulted.add(varName);
     }
   }
-  return vars;
+  return { required, defaulted, all };
+}
+
+export function extractComposeVariables(filePath: string): Set<string> {
+  return extractComposeVariableDetails(filePath).all;
 }
 
 const OS_PLATFORM_VARS = new Set([
@@ -69,6 +123,7 @@ const OS_PLATFORM_VARS = new Set([
   "GITHUB_ACTOR",
   "GITHUB_REPOSITORY",
   "GITHUB_REF",
+  "GITHUB_BASE_REF",
   "GITHUB_SHA",
   "PLAYWRIGHT_BASE_URL",
   "BASE_URL",
@@ -204,6 +259,7 @@ export function scanCodebaseEnvVariables(): {
   // Scan compose and infra files as valid usage
   const composeFiles = [
     join(root, "docker-compose.yml"),
+    join(root, "docker-compose.staging.yml"),
     join(root, "docker-compose.prod.yml"),
     join(root, "docker-compose.dev.yml"),
   ];
@@ -222,6 +278,54 @@ export function scanCodebaseEnvVariables(): {
   return { usedVars, varLocations };
 }
 
+function auditComposeTemplateCoverage(
+  composeFile: string,
+  templateFile: string,
+): boolean {
+  const composePath = resolve(process.cwd(), composeFile);
+  const templatePath = resolve(process.cwd(), templateFile);
+  if (!existsSync(composePath)) return true;
+
+  const { required, defaulted, all } =
+    extractComposeVariableDetails(composePath);
+  const activeKeys = parseEnvKeys(templatePath) || new Set<string>();
+  const documentedKeys =
+    parseDocumentedEnvKeys(templatePath) || new Set<string>();
+
+  const missingRequired = Array.from(required).filter(
+    (v) => !activeKeys.has(v),
+  );
+  const missingDocumented = Array.from(defaulted).filter(
+    (v) => !documentedKeys.has(v),
+  );
+
+  let ok = true;
+  if (missingRequired.length > 0) {
+    console.error(
+      `❌ Required variables in ${composeFile} are missing (active) in ${templateFile}:`,
+    );
+    for (const v of missingRequired) {
+      console.error(`   - \${${v}}`);
+    }
+    ok = false;
+  }
+  if (missingDocumented.length > 0) {
+    console.error(
+      `❌ Defaulted variables in ${composeFile} are undocumented in ${templateFile}:`,
+    );
+    for (const v of missingDocumented) {
+      console.error(`   - \${${v}}`);
+    }
+    ok = false;
+  }
+  if (ok) {
+    console.log(
+      `✅ All ${all.size} variables in ${composeFile} are covered by ${templateFile} (${required.size} required active, ${defaulted.size} defaulted documented)`,
+    );
+  }
+  return ok;
+}
+
 export function runEnvSyncAudit(): boolean {
   console.log(
     "==================================================================",
@@ -233,12 +337,18 @@ export function runEnvSyncAudit(): boolean {
 
   let hasError = false;
 
-  // 1. Audit pairwise parity (.env vs .env.example, .env.production vs .env.production.example)
+  // 1. Audit pairwise parity (.env vs .env.example, .env.staging vs .env.staging.example, .env.production vs .env.production.example)
   const envPairs: EnvPairCheck[] = [
     {
       name: "Development Environment Single Source of Truth",
       exampleFile: ".env.example",
       targetFile: ".env",
+      requiredTarget: false,
+    },
+    {
+      name: "Staging Environment Template Parity",
+      exampleFile: ".env.staging.example",
+      targetFile: ".env.staging",
       requiredTarget: false,
     },
     {
@@ -253,8 +363,9 @@ export function runEnvSyncAudit(): boolean {
     const examplePath = resolve(process.cwd(), pair.exampleFile);
     const targetPath = resolve(process.cwd(), pair.targetFile);
 
-    const exampleKeys = parseEnvKeys(examplePath);
-    if (!exampleKeys) {
+    const activeExampleKeys = parseEnvKeys(examplePath);
+    const documentedExampleKeys = parseDocumentedEnvKeys(examplePath);
+    if (!activeExampleKeys || !documentedExampleKeys) {
       console.error(
         `❌ [${pair.name}] Missing example template file: ${pair.exampleFile}`,
       );
@@ -270,16 +381,16 @@ export function runEnvSyncAudit(): boolean {
       continue;
     }
 
-    const missingInTarget = Array.from(exampleKeys).filter(
+    const missingInTarget = Array.from(activeExampleKeys).filter(
       (k) => !targetKeys.has(k),
     );
     const extraInTarget = Array.from(targetKeys).filter(
-      (k) => !exampleKeys.has(k),
+      (k) => !documentedExampleKeys.has(k),
     );
 
     if (missingInTarget.length > 0) {
       console.error(
-        `❌ [${pair.name}] Missing keys in ${pair.targetFile} compared to ${pair.exampleFile}:`,
+        `❌ [${pair.name}] Missing required keys in ${pair.targetFile} compared to ${pair.exampleFile}:`,
       );
       for (const key of missingInTarget) {
         console.error(`   - ${key}`);
@@ -289,7 +400,7 @@ export function runEnvSyncAudit(): boolean {
 
     if (extraInTarget.length > 0) {
       console.error(
-        `❌ [${pair.name}] Undocumented keys in ${pair.targetFile} not present in ${pair.exampleFile}:`,
+        `❌ [${pair.name}] Undocumented keys in ${pair.targetFile} not documented in ${pair.exampleFile}:`,
       );
       for (const key of extraInTarget) {
         console.error(`   + ${key}`);
@@ -298,43 +409,43 @@ export function runEnvSyncAudit(): boolean {
     }
 
     if (missingInTarget.length === 0 && extraInTarget.length === 0) {
+      const optionalOverrideCount = Array.from(targetKeys).filter(
+        (k) => !activeExampleKeys.has(k),
+      ).length;
+      const suffix =
+        optionalOverrideCount > 0
+          ? ` + ${optionalOverrideCount} documented optional overrides`
+          : "";
       console.log(
-        `✅ [${pair.name}] 100% key parity verified (${exampleKeys.size}/${exampleKeys.size} keys match)`,
+        `✅ [${pair.name}] Sync verified (${activeExampleKeys.size}/${activeExampleKeys.size} core keys${suffix})`,
       );
     }
   }
 
-  // 2. Audit docker-compose.prod.yml variables against .env.production.example
+  // 2. Audit Docker Compose variables against Staging & Production templates
   console.log(
     "\n------------------------------------------------------------------",
   );
-  console.log("🐳 Verifying Production Docker Compose Variable Coverage");
+  console.log("🐳 Verifying Staging & Production Docker Compose Coverage");
   console.log(
     "------------------------------------------------------------------",
   );
 
-  const prodComposePath = resolve(process.cwd(), "docker-compose.prod.yml");
-  const prodExamplePath = resolve(process.cwd(), ".env.production.example");
-
-  const prodComposeVars = extractComposeVariables(prodComposePath);
-  const prodExampleKeys = parseEnvKeys(prodExamplePath) || new Set<string>();
-
-  const unprovidedComposeVars = Array.from(prodComposeVars).filter(
-    (v) => !prodExampleKeys.has(v),
-  );
-
-  if (unprovidedComposeVars.length > 0) {
-    console.error(
-      "❌ The following variables are referenced in docker-compose.prod.yml but missing in .env.production.example:",
-    );
-    for (const v of unprovidedComposeVars) {
-      console.error(`   - \${${v}}`);
-    }
+  if (
+    !auditComposeTemplateCoverage(
+      "docker-compose.staging.yml",
+      ".env.staging.example",
+    )
+  ) {
     hasError = true;
-  } else {
-    console.log(
-      `✅ All ${prodComposeVars.size} variables in docker-compose.prod.yml are documented in .env.production.example`,
-    );
+  }
+  if (
+    !auditComposeTemplateCoverage(
+      "docker-compose.prod.yml",
+      ".env.production.example",
+    )
+  ) {
+    hasError = true;
   }
 
   // 3. Local .env Internal Coherence Check
@@ -349,36 +460,35 @@ export function runEnvSyncAudit(): boolean {
   const rootEnv = parseEnvKeyValueMap(resolve(process.cwd(), ".env"));
 
   if (rootEnv.size > 0) {
-    const backendPort = rootEnv.get("BACKEND_PORT");
-    const frontendPort = rootEnv.get("FRONTEND_PORT");
+    const backendPort = rootEnv.get("BACKEND_PORT") || "3001";
+    const publicPort =
+      rootEnv.get("GATEWAY_PORT") || rootEnv.get("FRONTEND_PORT");
     const internalApiUrl = rootEnv.get("INTERNAL_API_URL") || "";
     const frontendUrl = rootEnv.get("FRONTEND_URL") || "";
 
-    if (
-      backendPort &&
-      internalApiUrl &&
-      !internalApiUrl.includes(`:${backendPort}`)
-    ) {
-      console.warn(
-        `⚠️ Warning: INTERNAL_API_URL (${internalApiUrl}) does not match BACKEND_PORT (${backendPort})`,
-      );
+    if (internalApiUrl) {
+      if (!internalApiUrl.includes(`:${backendPort}`)) {
+        console.warn(
+          `⚠️ Warning: INTERNAL_API_URL (${internalApiUrl}) does not match BACKEND_PORT (${backendPort})`,
+        );
+      } else {
+        console.log(
+          `✅ Internal API URL correctly targets backend port ${backendPort}`,
+        );
+      }
     } else {
       console.log(
-        `✅ Internal API URL correctly targets backend port ${backendPort}`,
+        `✅ Internal API URL defaults automatically to http://127.0.0.1:${backendPort}`,
       );
     }
 
-    if (
-      frontendPort &&
-      frontendUrl &&
-      !frontendUrl.includes(`:${frontendPort}`)
-    ) {
+    if (publicPort && frontendUrl && !frontendUrl.includes(`:${publicPort}`)) {
       console.warn(
-        `⚠️ Warning: FRONTEND_URL (${frontendUrl}) does not match FRONTEND_PORT (${frontendPort})`,
+        `⚠️ Warning: FRONTEND_URL (${frontendUrl}) does not match public port ${publicPort}`,
       );
     } else {
       console.log(
-        `✅ Frontend URL correctly targets frontend port ${frontendPort}`,
+        `✅ Frontend URL correctly targets public port ${publicPort}`,
       );
     }
   } else {
@@ -395,12 +505,14 @@ export function runEnvSyncAudit(): boolean {
   );
 
   const devExamplePath = resolve(process.cwd(), ".env.example");
-  const devExampleKeys = parseEnvKeys(devExamplePath) || new Set<string>();
+  const devActiveKeys = parseEnvKeys(devExamplePath) || new Set<string>();
+  const devDocumentedKeys =
+    parseDocumentedEnvKeys(devExamplePath) || new Set<string>();
   const { usedVars } = scanCodebaseEnvVariables();
 
-  // (a) Missing in .env.example: Variables used in code but not documented in .env.example
+  // (a) Missing in .env.example: Variables used in code/infra must be documented (active or optional override)
   const missingInExample = Array.from(usedVars).filter(
-    (v) => !devExampleKeys.has(v),
+    (v) => !devDocumentedKeys.has(v),
   );
   if (missingInExample.length > 0) {
     console.error(
@@ -416,20 +528,20 @@ export function runEnvSyncAudit(): boolean {
     );
   }
 
-  // (b) Unused in code: Variables declared in .env.example but never referenced in code/docker/infra
-  const unusedInCode = Array.from(devExampleKeys).filter(
+  // (b) Unused active keys: Every active key in .env.example should be actively used
+  const unusedActiveInCode = Array.from(devActiveKeys).filter(
     (k) => !usedVars.has(k),
   );
-  if (unusedInCode.length > 0) {
+  if (unusedActiveInCode.length > 0) {
     console.log(
-      `ℹ️ [Notice] ${unusedInCode.length} variables declared in .env.example are reserved or documentation-only:`,
+      `ℹ️ [Notice] ${unusedActiveInCode.length} active keys in .env.example are not referenced directly in code/compose:`,
     );
-    for (const k of unusedInCode) {
+    for (const k of unusedActiveInCode) {
       console.log(`   • ${k}`);
     }
   } else {
     console.log(
-      "✅ Zero unused environment variables in .env.example (100% active utilization).",
+      `✅ Zero unused active variables in .env.example (${devActiveKeys.size}/${devActiveKeys.size} actively utilized).`,
     );
   }
 

@@ -14,7 +14,7 @@ This inventory is generated from the Prisma schema, API controllers, AppModule, 
 | Playwright spec files                            |                     14 |
 | Playwright test declarations                     |                     68 |
 | CI gates defined in check-all                    |                     18 |
-| Keys in the local environment template           |                     56 |
+| Keys in the local environment template           |                     24 |
 | Pre-release dependency declarations              |                      0 |
 
 <!-- STATS:END -->

@@ -143,14 +143,12 @@ export function useCreateApplicationMutation() {
     mutationFn: (formData: FormData) => applicationsApi.apply(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["sourcing"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }
@@ -190,7 +188,6 @@ export function useUpdateStageMutation() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["applications"] }),
-        queryClient.invalidateQueries({ queryKey: ["job-applications"] }),
         queryClient.invalidateQueries({ queryKey: ["jobs"] }),
         queryClient.invalidateQueries({ queryKey: ["sourcing"] }),
         queryClient.invalidateQueries({ queryKey: ["activities"] }),
@@ -200,7 +197,6 @@ export function useUpdateStageMutation() {
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }
@@ -256,7 +252,6 @@ export function useDeleteApplicationMutation() {
     mutationFn: (id: string) => applicationsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -265,7 +260,6 @@ export function useDeleteApplicationMutation() {
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
@@ -387,7 +381,6 @@ export function useTriggerAiScoreMutation() {
       applicationsApi.triggerAiScore(applicationId),
     onSuccess: (_data, applicationId) => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
       queryClient.invalidateQueries({
         queryKey: queryKeys.application(applicationId),
       });
@@ -403,7 +396,6 @@ export function useBatchAiScoreMutation() {
       applicationsApi.triggerJobBatchAiScore(jobId, limit),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      queryClient.invalidateQueries({ queryKey: ["job-applications"] });
     },
   });
 }

@@ -45,7 +45,12 @@ RUN npm install -g pnpm@12.18.0 && npm cache clean --force
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    HOME=/home/node
+
+RUN mkdir -p /app /home/node/.local/share/pnpm/store && chown -R node:node /app /home/node
+
+USER node
 
 # Copy root package manifests
 COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
@@ -53,14 +58,14 @@ COPY --chown=node:node packages/shared/package.json ./packages/shared/
 COPY --chown=node:node apps/api/package.json ./apps/api/
 
 # Install production dependencies with cache mount (instantaneous from cache)
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,id=pnpm-node,uid=1000,gid=1000,target=/home/node/.local/share/pnpm/store \
     pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile
 
 # Copy pre-generated Prisma Client into the production @prisma/client virtual store entry
-COPY --from=builder /app/.prisma-generated /tmp/.prisma-generated
+COPY --chown=node:node --from=builder /app/.prisma-generated /tmp/.prisma-generated
 RUN for dir in /app/node_modules/.pnpm/@prisma+client*/node_modules; do \
       mkdir -p "$dir/.prisma" && cp -r /tmp/.prisma-generated/* "$dir/.prisma/"; \
-    done && rm -rf /tmp/.prisma-generated && chown -R node:node /app/node_modules
+    done && rm -rf /tmp/.prisma-generated
 
 # Copy compiled code and Prisma schema with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
@@ -68,11 +73,10 @@ COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --chown=node:node --from=builder /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 COPY --chown=node:node --from=builder /app/apps/api/src/prisma ./apps/api/src/prisma
 COPY --chown=node:node --from=builder /app/apps/api/src/common ./apps/api/src/common
-COPY --chown=node:node --from=builder /app/scripts ./scripts
+COPY --chown=node:node --from=builder /app/apps/api/src/config/database-url.ts ./apps/api/src/config/database-url.ts
+COPY --chown=node:node --from=builder /app/scripts/cleanup-orphan-minio.ts ./scripts/cleanup-orphan-minio.ts
 
 WORKDIR /app/apps/api
-
-USER node
 
 EXPOSE 3001
 

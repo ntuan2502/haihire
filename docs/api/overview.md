@@ -1,6 +1,6 @@
 # REST & SSE API Overview (`14` Controllers / `145` Endpoints)
 
-HaiHire exposes a REST API plus one Server-Sent Events (SSE) stream from `apps/api` (`PORT=3001` default, proxied by Next.js `/api/*` rewrites in `apps/web/next.config.ts`).
+HaiHire exposes a REST API plus one Server-Sent Events (SSE) stream from `apps/api` (`PORT=3001` default, routed by Caddy App Gateway in [deploy/caddy/Caddyfile](../../deploy/caddy/Caddyfile)).
 
 ---
 

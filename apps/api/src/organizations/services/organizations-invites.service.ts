@@ -33,14 +33,6 @@ import {
   getPreferredOwnedOrgOrderBy,
 } from "../organization-logo.util";
 
-type MockUserTableCompat = {
-  store?: Array<Record<string, unknown>>;
-  update?: (args: {
-    where: { id: string };
-    data: Record<string, unknown>;
-  }) => Promise<unknown>;
-};
-
 export interface InviteLinkRecord {
   id: string;
   token: string;
@@ -672,6 +664,7 @@ export class OrganizationsInvitesService {
             inviteLinkId: { in: string[] };
           };
           orderBy?: { usedAt: "desc" };
+          take?: number;
           select?: {
             id: boolean;
             inviteLinkId: boolean;
@@ -700,6 +693,7 @@ export class OrganizationsInvitesService {
               inviteLinkId: { in: linkIds },
             },
             orderBy: { usedAt: "desc" },
+            take: Math.min(Math.max(linkIds.length * 10, 50), 1000),
             select: {
               id: true,
               inviteLinkId: true,
@@ -1257,14 +1251,7 @@ export class OrganizationsInvitesService {
         },
       });
 
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      const legacyMatchesOrg = Boolean(
-        txUserCompat?.store &&
-        user &&
-        (user as unknown as { organizationId?: string | null })
-          .organizationId === link.organizationId,
-      );
-      const isAlreadyMember = userMemberships.length > 0 || legacyMatchesOrg;
+      const isAlreadyMember = userMemberships.length > 0;
 
       if (isAlreadyMember) {
         throw new AppBadRequestException(
@@ -1324,16 +1311,6 @@ export class OrganizationsInvitesService {
         userEmailSnapshot: user?.email ?? link.invitedEmail ?? "",
         usedAt: nowTimestamp,
       });
-
-      if (txUserCompat?.store) {
-        await txUserCompat.update?.({
-          where: { id: userId },
-          data: {
-            organizationId: link.organizationId,
-            role: assignedRole,
-          },
-        });
-      }
 
       // Update status to EXPIRED if maxUses reached
       const nextUses = link.usesCount + 1;
@@ -1516,23 +1493,12 @@ export class OrganizationsInvitesService {
         },
       });
 
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-
       if (existingMembership) {
         // User is already a member - switch active organization to this org
         if (typeof tx.organizationMember?.updateMany === "function") {
           await tx.organizationMember.updateMany({
             where: { userId, organizationId: org.id },
             data: { lastAccessedAt: toInstant() },
-          });
-        }
-        if (txUserCompat?.store) {
-          await txUserCompat.update?.({
-            where: { id: userId },
-            data: {
-              organizationId: org.id,
-              role: existingMembership.role,
-            },
           });
         }
 
@@ -1593,16 +1559,6 @@ export class OrganizationsInvitesService {
         userEmailSnapshot: callerUser?.email ?? inviteLink.invitedEmail ?? "",
         usedAt: memberTimestamp,
       });
-
-      if (txUserCompat?.store) {
-        await txUserCompat.update?.({
-          where: { id: userId },
-          data: {
-            organizationId: org.id,
-            role: assignedRole,
-          },
-        });
-      }
 
       // Update status to EXPIRED if maxUses reached
       const nextUses = inviteLink.usesCount + 1;

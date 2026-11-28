@@ -137,7 +137,7 @@ export class SourcingLockService {
 
         await runInTransaction(this.prisma, async (tx) => {
           const link = await tx.trackingLink.findFirst({
-            where: { token },
+            where: { token, deletedAt: null },
             select: {
               id: true,
               organizationId: true,

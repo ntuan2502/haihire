@@ -78,7 +78,10 @@ export function findTenantServiceFiles(baseDir?: string): string[] {
       const stat = fs.statSync(fullPath);
       if (stat.isDirectory()) {
         walk(fullPath);
-      } else if (entry.endsWith(".service.ts")) {
+      } else if (
+        entry.endsWith(".service.ts") ||
+        entry.endsWith(".processor.ts")
+      ) {
         const normRel = normalizeRelativePath(fullPath);
 
         // Skip files present in NON_TENANT_SCOPED_FILES

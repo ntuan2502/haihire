@@ -10,36 +10,80 @@ describe("EventsService - SSE Streaming", () => {
     service = new EventsService();
   });
 
+  const createAuthenticatedService = (
+    userId: string,
+    orgIds: string[] = [],
+    redisClient?: unknown,
+  ) => {
+    const mockJwt = {
+      verify: vi
+        .fn()
+        .mockReturnValue({ sub: userId, type: "access", tokenVersion: 0 }),
+    };
+    const mockPrisma = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ id: userId, tokenVersion: 0 }),
+      },
+      organizationMember: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue(
+            orgIds.map((organizationId) => ({ organizationId })),
+          ),
+      },
+    };
+    return new EventsService(
+      mockJwt as unknown as JwtService,
+      mockPrisma as unknown as PrismaService,
+      redisClient as never,
+    );
+  };
+
   it("should stream events targeted directly to a specific user", async () => {
+    const authService = createAuthenticatedService("usr-target");
     const received: Array<{
       type?: string;
       targetUserId?: string;
       organizationId?: string;
       role?: string;
     }> = [];
-    const sub = service.subscribe("usr-target").subscribe((msg) => {
-      if (msg.data && typeof msg.data === "object") {
-        received.push(
-          msg.data as {
-            type?: string;
-            targetUserId?: string;
-            organizationId?: string;
-            role?: string;
-          },
-        );
-      }
-    });
+    const sub = authService
+      .subscribeWithToken("token-target")
+      .subscribe((msg) => {
+        if (msg.data && typeof msg.data === "object") {
+          received.push(
+            msg.data as {
+              type?: string;
+              targetUserId?: string;
+              organizationId?: string;
+              role?: string;
+            },
+          );
+        }
+      });
 
-    service.emit({
+    await vi.waitFor(() =>
+      expect(received.some((e) => e.type === "CONNECTED")).toBe(true),
+    );
+
+    authService.emit({
       type: "MEMBER_REMOVED",
       targetUserId: "usr-other",
     });
 
-    service.emit({
+    authService.emit({
       type: "MEMBER_REMOVED",
       targetUserId: "usr-target",
       organizationId: "org-1",
     });
+
+    await vi.waitFor(() =>
+      expect(
+        received.filter(
+          (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+        ),
+      ).toHaveLength(1),
+    );
 
     const appEvents = received.filter(
       (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
@@ -52,6 +96,8 @@ describe("EventsService - SSE Streaming", () => {
   });
 
   it("should stream org broadcast events only to confirmed members of that org", async () => {
+    const serviceA = createAuthenticatedService("usr-admin-a", ["org-A"]);
+    const serviceB = createAuthenticatedService("usr-admin-b", ["org-B"]);
     const receivedOrgA: Array<{
       type?: string;
       organizationId?: string;
@@ -63,9 +109,8 @@ describe("EventsService - SSE Streaming", () => {
       role?: string;
     }> = [];
 
-    // User A in Org A, User B in Org B
-    const subA = service
-      .subscribe("usr-admin-a", ["org-A"])
+    const subA = serviceA
+      .subscribeWithToken("token-admin-a")
       .subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           receivedOrgA.push(
@@ -78,8 +123,8 @@ describe("EventsService - SSE Streaming", () => {
         }
       });
 
-    const subB = service
-      .subscribe("usr-admin-b", ["org-B"])
+    const subB = serviceB
+      .subscribeWithToken("token-admin-b")
       .subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           receivedOrgB.push(
@@ -92,20 +137,44 @@ describe("EventsService - SSE Streaming", () => {
         }
       });
 
-    // 1. Emit event for Org A
-    service.emit({
+    await vi.waitFor(() => {
+      expect(receivedOrgA.some((e) => e.type === "CONNECTED")).toBe(true);
+      expect(receivedOrgB.some((e) => e.type === "CONNECTED")).toBe(true);
+    });
+
+    serviceA.emit({
+      type: "MEMBER_ROLE_UPDATED",
+      organizationId: "org-A",
+      role: "ADMIN",
+    });
+    serviceB.emit({
       type: "MEMBER_ROLE_UPDATED",
       organizationId: "org-A",
       role: "ADMIN",
     });
 
-    // 2. Emit event for Org B
-    service.emit({
+    serviceA.emit({
+      type: "ORG_UPDATED",
+      organizationId: "org-B",
+    });
+    serviceB.emit({
       type: "ORG_UPDATED",
       organizationId: "org-B",
     });
 
-    // Filter out HEARTBEAT / CONNECTED
+    await vi.waitFor(() => {
+      expect(
+        receivedOrgA.filter(
+          (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+        ),
+      ).toHaveLength(1);
+      expect(
+        receivedOrgB.filter(
+          (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+        ),
+      ).toHaveLength(1);
+    });
+
     const eventsA = receivedOrgA.filter(
       (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
     );
@@ -113,12 +182,10 @@ describe("EventsService - SSE Streaming", () => {
       (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
     );
 
-    // Org A receives ONLY Org A event
     expect(eventsA.length).toBe(1);
     expect(eventsA[0].type).toBe("MEMBER_ROLE_UPDATED");
     expect(eventsA[0].organizationId).toBe("org-A");
 
-    // Org B receives ONLY Org B event
     expect(eventsB.length).toBe(1);
     expect(eventsB[0].type).toBe("ORG_UPDATED");
     expect(eventsB[0].organizationId).toBe("org-B");
@@ -311,18 +378,22 @@ describe("EventsService - SSE Streaming", () => {
         duplicate: vi.fn().mockReturnValue(mockSubscriber),
       };
 
-      const s = new EventsService(undefined, undefined, mockRedis as never);
+      const s = createAuthenticatedService("user-1", ["org-1"], mockRedis);
       await s.onModuleInit();
 
       expect(mockRedis.duplicate).toHaveBeenCalled();
       expect(mockSubscriber.subscribe).toHaveBeenCalledWith("haihire:events");
 
       const received: Array<{ type?: string; organizationId?: string }> = [];
-      const sub = s.subscribe("user-1", ["org-1"]).subscribe((msg) => {
+      const sub = s.subscribeWithToken("token-1").subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           received.push(msg.data as { type?: string; organizationId?: string });
         }
       });
+
+      await vi.waitFor(() =>
+        expect(received.some((e) => e.type === "CONNECTED")).toBe(true),
+      );
 
       // Simulate incoming message from Redis pub/sub
       expect(messageHandler).toBeDefined();
@@ -332,6 +403,14 @@ describe("EventsService - SSE Streaming", () => {
           type: "ORG_UPDATED",
           organizationId: "org-1",
         }),
+      );
+
+      await vi.waitFor(() =>
+        expect(
+          received.filter(
+            (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+          ),
+        ).toHaveLength(1),
       );
 
       const events = received.filter(
@@ -355,21 +434,30 @@ describe("EventsService - SSE Streaming", () => {
         duplicate: vi.fn(),
       };
 
-      const s = new EventsService(undefined, undefined, mockRedis as never);
+      const s = createAuthenticatedService("user-1", ["org-1"], mockRedis);
       const received: Array<{ type?: string }> = [];
-      const sub = s.subscribe("user-1", ["org-1"]).subscribe((msg) => {
+      const sub = s.subscribeWithToken("token-1").subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           received.push(msg.data as { type?: string });
         }
       });
+
+      await vi.waitFor(() =>
+        expect(received.some((e) => e.type === "CONNECTED")).toBe(true),
+      );
 
       s.emit({
         type: "ORG_UPDATED",
         organizationId: "org-1",
       });
 
-      // Allow microtask to process catch handler
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await vi.waitFor(() =>
+        expect(
+          received.filter(
+            (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+          ),
+        ).toHaveLength(1),
+      );
 
       const events = received.filter(
         (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
@@ -380,7 +468,8 @@ describe("EventsService - SSE Streaming", () => {
       sub.unsubscribe();
     });
 
-    it("broadcasts domain change events to all connected members in the organization", () => {
+    it("broadcasts domain change events to all connected members in the organization", async () => {
+      const s = createAuthenticatedService("user-1", ["org-1"]);
       const receivedUser1: Array<{
         type?: string;
         organizationId?: string | null;
@@ -390,14 +479,14 @@ describe("EventsService - SSE Streaming", () => {
         organizationId?: string | null;
       }> = [];
 
-      const sub1 = service.subscribe("user-1", ["org-1"]).subscribe((msg) => {
+      const sub1 = s.subscribeWithToken("token-user-1").subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           receivedUser1.push(
             msg.data as { type?: string; organizationId?: string | null },
           );
         }
       });
-      const sub2 = service.subscribe("user-2", ["org-1"]).subscribe((msg) => {
+      const sub2 = s.subscribeWithToken("token-user-2").subscribe((msg) => {
         if (msg.data && typeof msg.data === "object") {
           receivedUser2.push(
             msg.data as { type?: string; organizationId?: string | null },
@@ -405,15 +494,33 @@ describe("EventsService - SSE Streaming", () => {
         }
       });
 
-      service.emit({
+      await vi.waitFor(() => {
+        expect(receivedUser1.some((e) => e.type === "CONNECTED")).toBe(true);
+        expect(receivedUser2.some((e) => e.type === "CONNECTED")).toBe(true);
+      });
+
+      s.emit({
         type: "APPLICATIONS_CHANGED",
         organizationId: "org-1",
         data: { applicationId: "app-1" },
       });
-      service.emit({
+      s.emit({
         type: "MEMBERS_CHANGED",
         organizationId: "org-1",
         data: { memberId: "mem-1" },
+      });
+
+      await vi.waitFor(() => {
+        expect(
+          receivedUser1.filter(
+            (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+          ),
+        ).toHaveLength(2);
+        expect(
+          receivedUser2.filter(
+            (e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT",
+          ),
+        ).toHaveLength(2);
       });
 
       const user1Events = receivedUser1.filter(
@@ -477,6 +584,40 @@ describe("EventsService - SSE Streaming", () => {
       expect(findUnique.mock.calls.length).toBeGreaterThan(beforeEvictCalls);
 
       sub.unsubscribe();
+    });
+
+    it("rejects SSE connection when UserSession referenced by sid is revoked", async () => {
+      const mockJwt = {
+        verify: vi.fn().mockReturnValue({
+          sub: "user-1",
+          type: "access",
+          tokenVersion: 0,
+          sid: "session-revoked",
+        }),
+      };
+      const mockPrisma = {
+        user: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ id: "user-1", tokenVersion: 0 }),
+        },
+        userSession: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        organizationMember: {
+          findMany: vi.fn().mockResolvedValue([{ organizationId: "org-1" }]),
+        },
+      };
+
+      const s = new EventsService(mockJwt as never, mockPrisma as never);
+      await expect(
+        new Promise((resolve, reject) => {
+          s.subscribeWithToken("jwt-revoked").subscribe({
+            next: resolve,
+            error: reject,
+          });
+        }),
+      ).rejects.toThrow("User session revoked");
     });
   });
 });

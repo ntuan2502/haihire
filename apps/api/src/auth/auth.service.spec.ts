@@ -403,8 +403,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
     it("14. Should detect refresh token reuse with Redis and invalidate all sessions", async () => {
       const mockRedis = {
-        get: vi.fn().mockResolvedValue("1"), // already revoked
-        set: vi.fn().mockResolvedValue("OK"),
+        get: vi.fn().mockResolvedValue("1"),
+        set: vi.fn().mockResolvedValue(null), // NX fails -> key already exists (token reuse)
       };
       const authServiceWithRedis = new AuthService(
         mockPrismaService as never,

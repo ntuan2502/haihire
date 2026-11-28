@@ -72,12 +72,23 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
       },
     ]);
 
-    // Note: seedTargetUserId initially has NO row in organizationMemberTable to verify upsert logic
     organizationMemberTable = createMockTable([
       {
         id: "mem-owner",
         organizationId: orgId,
         userId: seedOwnerUserId,
+        role: "ADMIN",
+      },
+      {
+        id: "mem-target",
+        organizationId: orgId,
+        userId: seedTargetUserId,
+        role: "MEMBER",
+      },
+      {
+        id: "mem-other",
+        organizationId: orgId,
+        userId: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99",
         role: "ADMIN",
       },
     ]);
@@ -217,12 +228,11 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
   });
 
   describe("2. Service & Database Flow (Upsert & RBAC Promotion)", () => {
-    it("executes transferOwnership successfully when target member has no existing membership entry", async () => {
-      // Pre-condition: target member has no explicit OrganizationMember record
+    it("executes transferOwnership successfully and promotes target member role to ADMIN", async () => {
       const preMembership = organizationMemberTable.store.find(
         (m) => m.organizationId === orgId && m.userId === seedTargetUserId,
       );
-      expect(preMembership).toBeUndefined();
+      expect(preMembership?.role).toBe("MEMBER");
 
       const result = await coreService.transferOwnership(
         seedOwnerUserId,
@@ -235,12 +245,6 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
       // Verify Organization ownerId updated
       const org = organizationTable.store.find((o) => o.id === orgId);
       expect(org?.ownerId).toBe(seedTargetUserId);
-
-      // Verify User table role updated to ADMIN
-      const updatedUser = userTable.store.find(
-        (u) => u.id === seedTargetUserId,
-      );
-      expect(updatedUser?.role).toBe("ADMIN");
 
       // Verify OrganizationMember table row was created / upserted with role ADMIN
       const postMembership = organizationMemberTable.store.find(
@@ -371,17 +375,19 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
       expect(hop2.success).toBe(true);
       expect(hop2.newOwnerId).toBe(userCId);
 
-      // Verify final ownership and role invariants
+      // Verify final ownership and membership invariants
       const org = organizationTable.store.find((o) => o.id === orgId);
       expect(org?.ownerId).toBe(userCId);
 
-      const userA = userTable.store.find((u) => u.id === seedOwnerUserId);
-      const userB = userTable.store.find((u) => u.id === seedTargetUserId);
-      const userC = userTable.store.find((u) => u.id === userCId);
+      const memberB = organizationMemberTable.store.find(
+        (m) => m.organizationId === orgId && m.userId === seedTargetUserId,
+      );
+      const memberC = organizationMemberTable.store.find(
+        (m) => m.organizationId === orgId && m.userId === userCId,
+      );
 
-      expect(userA?.role).toBe("ADMIN");
-      expect(userB?.role).toBe("ADMIN");
-      expect(userC?.role).toBe("ADMIN");
+      expect(memberB?.role).toBe("ADMIN");
+      expect(memberC?.role).toBe("ADMIN");
     });
   });
 });

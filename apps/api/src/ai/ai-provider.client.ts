@@ -1,9 +1,12 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import {
   APP_ERROR_CODES,
   type AiProvider,
   type AppErrorCode,
 } from "@haihire/shared";
 import { AppBadRequestException } from "../common/app-exception";
+import { isPublicAddress, validatePublicHost } from "../common/network.util";
 
 const AI_REQUEST_TIMEOUT_MS = 20_000;
 
@@ -57,6 +60,48 @@ export interface AiCompletionRequest {
   pdfAttachment?: AiPdfAttachment;
 }
 
+function getAllowedInternalAiHosts(): Set<string> {
+  const raw = process.env.AI_ALLOWED_INTERNAL_HOSTS || "";
+  return new Set(
+    raw
+      .split(",")
+      .map((entry) =>
+        entry
+          .trim()
+          .toLowerCase()
+          .replace(/^\[|\]$|\.$/g, ""),
+      )
+      .filter(Boolean),
+  );
+}
+
+function normalizeAiHostname(rawHostname: string): string {
+  return rawHostname
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$|\.$/g, "");
+}
+
+function isMetadataOrUnspecifiedHost(hostname: string): boolean {
+  if (
+    BLOCKED_METADATA_HOSTS.has(hostname) ||
+    hostname.startsWith("169.254.") ||
+    hostname === "0.0.0.0" ||
+    hostname === "::"
+  ) {
+    return true;
+  }
+  if (hostname.startsWith("::ffff:")) {
+    const mappedIpv4 = hostname.slice("::ffff:".length);
+    return (
+      BLOCKED_METADATA_HOSTS.has(mappedIpv4) ||
+      mappedIpv4.startsWith("169.254.") ||
+      mappedIpv4 === "0.0.0.0"
+    );
+  }
+  return false;
+}
+
 export function assertSafeAiEndpointUrl(rawUrl: string): URL {
   let parsed: URL;
   try {
@@ -75,12 +120,33 @@ export function assertSafeAiEndpointUrl(rawUrl: string): URL {
     );
   }
 
-  const hostname = parsed.hostname.toLowerCase();
-  if (
-    BLOCKED_METADATA_HOSTS.has(hostname) ||
-    hostname.startsWith("169.254.") ||
-    hostname === "0.0.0.0"
-  ) {
+  if (parsed.username || parsed.password) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "AI provider base URL must not contain embedded credentials.",
+    );
+  }
+
+  const hostname = normalizeAiHostname(parsed.hostname);
+  if (!hostname || isMetadataOrUnspecifiedHost(hostname)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "Target AI endpoint host is not permitted.",
+    );
+  }
+
+  if (getAllowedInternalAiHosts().has(hostname)) {
+    return parsed;
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "AI provider base URL must use HTTPS.",
+    );
+  }
+
+  if (validatePublicHost(hostname) !== null) {
     throw new AppBadRequestException(
       APP_ERROR_CODES.VALIDATION_ERROR,
       "Target AI endpoint host is not permitted.",
@@ -88,6 +154,44 @@ export function assertSafeAiEndpointUrl(rawUrl: string): URL {
   }
 
   return parsed;
+}
+
+export async function assertResolvedPublicAiHost(
+  rawHostname: string,
+): Promise<void> {
+  const hostname = normalizeAiHostname(rawHostname);
+  if (!hostname || getAllowedInternalAiHosts().has(hostname)) {
+    return;
+  }
+  if (isIP(hostname)) {
+    if (!isPublicAddress(hostname)) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Target AI endpoint host is not permitted.",
+      );
+    }
+    return;
+  }
+
+  let addresses: Array<{ address: string }>;
+  try {
+    addresses = await lookup(hostname, { all: true });
+  } catch {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "Target AI endpoint host could not be resolved.",
+    );
+  }
+
+  if (
+    addresses.length === 0 ||
+    addresses.some(({ address }) => !isPublicAddress(address))
+  ) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      "Target AI endpoint host resolves to a non-public address.",
+    );
+  }
 }
 
 function normalizeCustomBaseUrl(rawUrl: string): string {
@@ -162,11 +266,23 @@ async function fetchWithTimeout(
   init: RequestInit,
   timeoutMs = AI_REQUEST_TIMEOUT_MS,
 ): Promise<Response> {
+  const parsed = assertSafeAiEndpointUrl(url);
+  if (process.env.NODE_ENV !== "test") {
+    await assertResolvedPublicAiHost(parsed.hostname);
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await fetch(url, {
+      ...init,
+      redirect: "error",
+      signal: controller.signal,
+    });
   } catch (err: unknown) {
+    if (err instanceof AppBadRequestException) {
+      throw err;
+    }
     if (err instanceof Error && err.name === "AbortError") {
       throw new AiProviderCallError(
         APP_ERROR_CODES.AI_CONNECTION_FAILED,

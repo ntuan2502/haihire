@@ -1,5 +1,5 @@
 import { NotificationsService } from "../../notifications/notifications.service";
-import { Inject, Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import {
@@ -49,6 +49,7 @@ export interface InterviewUpdatePayload {
 
 @Injectable()
 export class InterviewsScheduleService {
+  private readonly logger = new Logger(InterviewsScheduleService.name);
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -404,9 +405,8 @@ export class InterviewsScheduleService {
             );
           }
         } catch (emailErr) {
-          console.warn(
-            "Failed to send auto interview invitation email:",
-            emailErr,
+          this.logger.warn(
+            `Failed to send auto interview invitation email: ${emailErr instanceof Error ? emailErr.message : String(emailErr)}`,
           );
         }
       }

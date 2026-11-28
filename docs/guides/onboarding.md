@@ -21,8 +21,8 @@ pnpm install
 # 2. Copy root environment template (Single Source of Truth)
 cp .env.example .env
 
-# 3. Start infrastructure services (PostgreSQL 17.6, MinIO, Valkey 8.0.2)
-docker compose up -d postgres minio redis
+# 3. Start infrastructure services (PostgreSQL 17.6, MinIO, Valkey 8.0.2, Caddy Gateway :8080)
+docker compose up -d
 
 # 4. Generate Prisma 7 client and push schema
 pnpm db:generate
@@ -45,19 +45,22 @@ pnpm dev
 Or run them independently:
 
 ```bash
-pnpm dev:api   # NestJS watch server via tsx (PORT in .env, default 3001)
+pnpm dev:api   # NestJS watch server via tsx (BACKEND_PORT in .env, default 3001)
 pnpm dev:web   # Next.js 16 dev server (FRONTEND_PORT in .env, default 3000)
 ```
 
+> **Local Docker Staging (`:8081`):** To test full production Docker images (`NODE_ENV=production`, standalone Next.js, automatic `prisma migrate deploy`) locally alongside Dev (`:8080`), copy `.env.staging.example` to `.env.staging` (configuring SMTP credentials) and run `docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build`.
+
 Verify core infrastructure ports from [docker-compose.yml](../../docker-compose.yml) and [.env.example](../../.env.example):
 
-| Service            | Env Variable                        | Compose Default Host Port |    Typical Dev / E2E Override    |
-| :----------------- | :---------------------------------- | :-----------------------: | :------------------------------: |
-| Next.js Portal     | `FRONTEND_PORT`                     |          `3000`           | `13000` (`playwright.config.ts`) |
-| NestJS API         | `BACKEND_PORT`                      |          `3001`           |             `13001`              |
-| PostgreSQL 17      | `POSTGRES_PORT`                     |          `5432`           |             `15432`              |
-| Valkey / Redis     | `REDIS_PORT`                        |          `6379`           |             `16379`              |
-| MinIO S3 / Console | `MINIO_PORT` / `MINIO_CONSOLE_PORT` |      `9000` / `9001`      |        `19000` / `19001`         |
+| Service            | Env Variable                        | Standard Host Port | Role in Stack                                     |
+| :----------------- | :---------------------------------- | :----------------: | :------------------------------------------------ |
+| Caddy App Gateway  | `GATEWAY_PORT`                      |       `8080`       | Unified entry point (`/api/*`, `/events/*`, `/*`) |
+| Next.js Portal     | `FRONTEND_PORT`                     |       `3000`       | Upstream SSR/UI server behind Caddy               |
+| NestJS API         | `BACKEND_PORT`                      |       `3001`       | Upstream REST/SSE backend behind Caddy            |
+| PostgreSQL 17      | `POSTGRES_PORT`                     |       `5432`       | Primary relational database (`haihire_db`)        |
+| Valkey / Redis     | `REDIS_PORT`                        |       `6379`       | BullMQ queues, rate limiting, SSE pub/sub         |
+| MinIO S3 / Console | `MINIO_PORT` / `MINIO_CONSOLE_PORT` |  `9000` / `9001`   | Private S3 resume/logo object storage             |
 
 ---
 

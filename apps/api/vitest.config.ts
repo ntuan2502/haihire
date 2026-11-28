@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
 import { defineConfig } from "vitest/config";
+import { resolveDatabaseUrlFromEnv } from "./src/config/database-url.ts";
 import { resolveTestDatabaseUrl } from "./src/test/helpers/test-db-url.ts";
 
 function findWorkspaceRoot(startDir: string): string {
@@ -19,9 +20,12 @@ const repoRoot = findWorkspaceRoot(process.cwd());
 dotenv.config({ path: path.resolve(repoRoot, ".env") });
 dotenv.config();
 
-const testDatabaseUrl = resolveTestDatabaseUrl(process.env.DATABASE_URL || "", {
-  postgresPort: process.env.POSTGRES_PORT,
-});
+const testDatabaseUrl = resolveTestDatabaseUrl(
+  resolveDatabaseUrlFromEnv(process.env),
+  {
+    postgresPort: process.env.POSTGRES_PORT,
+  },
+);
 
 process.env.NODE_ENV = "test";
 if (testDatabaseUrl) {

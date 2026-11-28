@@ -51,6 +51,7 @@ const UUID_NS = {
   EMAIL_SETTING: "1002",
   AUDIT_LOG: "1003",
   JOB: "2001",
+  PIPELINE_STAGE: "2002",
   TRACKING_LINK: "3001",
   TRACKING_CLICK: "3002",
   CANDIDATE: "4001",
@@ -62,6 +63,80 @@ const UUID_NS = {
   NOTIFICATION: "7001",
   ACTIVITY_LOG: "8001",
 } as const;
+
+const SEED_PIPELINE_STAGES: ReadonlyArray<{
+  name: string;
+  category: StageName;
+  orderIndex: number;
+  color: string;
+  isTerminal: boolean;
+}> = [
+  {
+    name: "Applied",
+    category: "APPLIED",
+    orderIndex: 0,
+    color: "#64748b",
+    isTerminal: false,
+  },
+  {
+    name: "Screening",
+    category: "SCREENING",
+    orderIndex: 1,
+    color: "#0284c7",
+    isTerminal: false,
+  },
+  {
+    name: "Interview",
+    category: "INTERVIEW",
+    orderIndex: 2,
+    color: "#d97706",
+    isTerminal: false,
+  },
+  {
+    name: "Offer",
+    category: "OFFER",
+    orderIndex: 3,
+    color: "#7c3aed",
+    isTerminal: false,
+  },
+  {
+    name: "Hired",
+    category: "HIRED",
+    orderIndex: 4,
+    color: "#16a34a",
+    isTerminal: true,
+  },
+  {
+    name: "Rejected",
+    category: "REJECTED",
+    orderIndex: 5,
+    color: "#dc2626",
+    isTerminal: true,
+  },
+];
+
+function parseSalaryRangeSeed(salaryRange: string): {
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+} {
+  const nums = Array.from(salaryRange.matchAll(/[\d,]+/g))
+    .map((m) => Number.parseInt(m[0].replace(/,/g, ""), 10))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (nums.length === 0) {
+    return { salaryMin: null, salaryMax: null, salaryCurrency: null };
+  }
+  const currency = salaryRange.includes("VND")
+    ? "VND"
+    : salaryRange.includes("$")
+      ? "USD"
+      : null;
+  return {
+    salaryMin: nums[0],
+    salaryMax: nums[1] ?? nums[0],
+    salaryCurrency: currency,
+  };
+}
 
 // Fixed UUIDs preserved for E2E & cross-test consistency in Demo 1
 const GLOBAL_ADMIN_ID = "00000000-0000-4000-8000-000000000001";
@@ -2108,6 +2183,9 @@ export async function runSeed(): Promise<void> {
           ? GLOBAL_ADMIN_ID
           : jobCreatorPool[i % jobCreatorPool.length].id;
 
+      const jobCreatorIdx = i;
+      const salaryParsed = parseSalaryRangeSeed(salaryRange);
+
       jobsToInsert.push({
         id: jobId,
         title: baseConfig.title,
@@ -2120,6 +2198,9 @@ export async function runSeed(): Promise<void> {
         startDate,
         openings,
         salaryRange,
+        salaryMin: salaryParsed.salaryMin,
+        salaryMax: salaryParsed.salaryMax,
+        salaryCurrency: salaryParsed.salaryCurrency,
         description: richDescription,
         status,
         applicationFormConfig:
@@ -2136,9 +2217,34 @@ export async function runSeed(): Promise<void> {
         ...jobTemplates,
       });
       createdJobIds.push(jobId);
+      void jobCreatorIdx;
     }
 
+    const pipelineStagesToInsert: Prisma.PipelineStageCreateManyInput[] = [];
+    const stageIdByJobAndCategory = new Map<string, string>();
+    createdJobIds.forEach((jobId, jobIdx) => {
+      SEED_PIPELINE_STAGES.forEach((stageDef, stageIdx) => {
+        const stageId = detUuid(
+          UUID_NS.PIPELINE_STAGE,
+          bp.orgIndex,
+          jobIdx * 10 + stageIdx + 1,
+        );
+        pipelineStagesToInsert.push({
+          id: stageId,
+          organizationId: bp.id,
+          jobId,
+          name: stageDef.name,
+          category: stageDef.category,
+          orderIndex: stageDef.orderIndex,
+          color: stageDef.color,
+          isTerminal: stageDef.isTerminal,
+        });
+        stageIdByJobAndCategory.set(`${jobId}:${stageDef.category}`, stageId);
+      });
+    });
+
     await prisma.job.createMany({ data: jobsToInsert });
+    await prisma.pipelineStage.createMany({ data: pipelineStagesToInsert });
 
     // 2. Seed Deterministic Tracking Links & Exact Click Counts
     const selectedLinkTemplates = SEED_TRACKING_LINKS.slice(
@@ -2772,6 +2878,7 @@ export async function runSeed(): Promise<void> {
         candidateId: pApp.candidateId,
         jobId: pApp.jobId,
         stage,
+        stageId: stageIdByJobAndCategory.get(`${pApp.jobId}:${stage}`) ?? null,
         matchScore: null,
         resumeUrl: fileMeta?.resumeUrl ?? null,
         resumeFileName: fileMeta?.fileName ?? null,

@@ -60,7 +60,7 @@ export function extractAuthCookies(
 
 export function toPlaywrightCookies(
   parsed: ParsedAuthCookies,
-  baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
+  baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080",
   forceHasOrg = true,
 ): Cookie[] {
   const { hostname } = new URL(baseURL);

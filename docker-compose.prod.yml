@@ -83,7 +83,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" ping; else redis-cli ping; fi',
+          'if [ -n "$$REDIS_PASSWORD" ]; then valkey-cli -a "$$REDIS_PASSWORD" ping; else valkey-cli ping; fi',
         ]
       interval: 10s
       timeout: 5s
@@ -95,6 +95,7 @@ services:
   minio:
     image: alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
     container_name: haihire-prod-minio
+    user: "0:0"
     restart: unless-stopped
     env_file:
       - path: ./.env.production
@@ -127,7 +128,28 @@ services:
       retries: 5
 
   # ------------------------------------------------------------------------------
-  # 4. NestJS Production API Service
+  # 4. One-Shot Prisma Database Migration (Runs before API starts)
+  # ------------------------------------------------------------------------------
+  migrate:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
+    container_name: haihire-prod-migrate
+    restart: "no"
+    env_file:
+      - path: ./.env.production
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *prod-logging
+    networks:
+      - haihire-prod-network
+
+  # ------------------------------------------------------------------------------
+  # 5. NestJS Production API Service (Internal Only via Gateway)
   # ------------------------------------------------------------------------------
   api:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
@@ -135,8 +157,6 @@ services:
     init: true
     restart: unless-stopped
     env_file:
-      - path: ./.env
-        required: false
       - path: ./.env.production
         required: false
     environment:
@@ -150,8 +170,6 @@ services:
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       PUSHGATEWAY_URL: ${PUSHGATEWAY_URL:-http://pushgateway:9091}
-    ports:
-      - "${BACKEND_PORT:-3001}:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,6 +177,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     logging: *prod-logging
     deploy:
       resources:
@@ -178,7 +198,7 @@ services:
       - haihire-prod-network
 
   # ------------------------------------------------------------------------------
-  # 5. Next.js Production Web Service
+  # 6. Next.js Production Web Service (Internal Only via Gateway)
   # ------------------------------------------------------------------------------
   web:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-web:${IMAGE_TAG:-v1.0.0}
@@ -186,8 +206,6 @@ services:
     init: true
     restart: unless-stopped
     env_file:
-      - path: ./.env
-        required: false
       - path: ./.env.production
         required: false
     environment:
@@ -195,12 +213,8 @@ services:
       PORT: 3000
       # Docker network overrides (internal service discovery)
       INTERNAL_API_URL: http://api:3001
-      BACKEND_HOST: api
       BACKEND_PORT: 3001
-      MINIO_HOST: minio
       MINIO_PORT: 9000
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -223,7 +237,39 @@ services:
       - haihire-prod-network
 
   # ------------------------------------------------------------------------------
-  # 6. Prometheus Pushgateway Service (Metrics for Batch & Cron Jobs)
+  # 7. Caddy Unified App Gateway (Bound to Loopback for Host Nginx)
+  # ------------------------------------------------------------------------------
+  gateway:
+    image: caddy:2.11.9-alpine
+    container_name: haihire-prod-gateway
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: api:3001
+      WEB_UPSTREAM: web:3000
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:80"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:80/gateway-health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *prod-logging
+    networks:
+      - haihire-prod-network
+
+  # ------------------------------------------------------------------------------
+  # 8. Prometheus Pushgateway Service (Metrics for Batch & Cron Jobs)
   # ------------------------------------------------------------------------------
   pushgateway:
     image: prom/pushgateway:v1.10.0

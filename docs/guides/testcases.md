@@ -22,7 +22,7 @@ HaiHire verifies application correctness across **unit**, **integration**, **sta
 
 ## 2. Playwright E2E Suite (`apps/web/tests/e2e/` — `13` Files / `67` Tests)
 
-Configured in [playwright.config.ts](../../playwright.config.ts) (`baseURL`: `http://localhost:13000`, Chromium Desktop, `trace: "on-first-retry"`, `retries: 2` on CI, `workers: 1` on CI):
+Configured in [playwright.config.ts](../../playwright.config.ts) (`baseURL`: `http://localhost:8080`, Chromium Desktop, `trace: "on-first-retry"`, `retries: 2` on CI, `workers: 1` on CI):
 
 | Spec File                                                                                           | Covered End-to-End Flow                                        |
 | :-------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |

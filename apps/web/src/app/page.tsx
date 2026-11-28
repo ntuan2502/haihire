@@ -1,7 +1,6 @@
 import {
   LandingNavbar,
   LandingHero,
-  LandingAtsPreview,
   LandingMetrics,
   LandingBentoGrid,
   LandingWorkflow,
@@ -24,10 +23,7 @@ export default function HomePage() {
         {/* 1. Hero Section */}
         <LandingHero />
 
-        {/* 2. Tangible ATS Live Interactive Window (Matching Real Internal Pipeline) */}
-        <LandingAtsPreview />
-
-        {/* 3. Performance Metrics Strip */}
+        {/* 2. Performance Metrics Strip */}
         <LandingMetrics />
 
         {/* 4. Bento Grid Feature Ecosystem */}

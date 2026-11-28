@@ -100,53 +100,93 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
       this.logger.log(
         "[OrphanCleanup] Running scheduled MinIO orphan cleanup sweep...",
       );
-      const report = await cleanupOrphans({
-        dbClient: this.prisma,
-        dryRun: false,
-      });
-      this.logger.log(
-        `[OrphanCleanup] Scheduled sweep complete: scanned=${report.scannedCount}, orphans=${report.orphanCount}, deleted=${report.deletedCount}, preserved=${report.preservedGraceCount}`,
-      );
+      const pushgatewayUrl = process.env.PUSHGATEWAY_URL?.replace(/\/$/, "");
+      try {
+        const report = await cleanupOrphans({
+          dbClient: this.prisma,
+          minioClient:
+            typeof this.minioService.getClient === "function"
+              ? this.minioService.getClient()
+              : undefined,
+          bucketName:
+            typeof this.minioService.getBucketName === "function"
+              ? this.minioService.getBucketName()
+              : undefined,
+          dryRun: false,
+        });
+        this.logger.log(
+          `[OrphanCleanup] Scheduled sweep complete: scanned=${report.scannedCount}, orphans=${report.orphanCount}, deleted=${report.deletedCount}, preserved=${report.preservedGraceCount}`,
+        );
 
-      const pushgatewayUrl = process.env.PUSHGATEWAY_URL;
-      if (pushgatewayUrl) {
-        try {
-          const body =
-            [
-              "# HELP haihire_orphan_cleanup_last_timestamp_seconds Timestamp of last orphan sweep",
-              "# TYPE haihire_orphan_cleanup_last_timestamp_seconds gauge",
-              `haihire_orphan_cleanup_last_timestamp_seconds ${Math.floor(Date.now() / 1000)}`,
-              "# HELP haihire_orphan_cleanup_deleted_total Number of deleted orphan files",
-              "# TYPE haihire_orphan_cleanup_deleted_total gauge",
-              `haihire_orphan_cleanup_deleted_total ${report.deletedCount}`,
-              "# HELP haihire_orphan_cleanup_scanned_total Number of scanned files in MinIO",
-              "# TYPE haihire_orphan_cleanup_scanned_total gauge",
-              `haihire_orphan_cleanup_scanned_total ${report.scannedCount}`,
-            ].join("\n") + "\n";
-          await fetch(
-            `${pushgatewayUrl.replace(/\/$/, "")}/metrics/job/orphan_cleanup`,
-            {
+        if (pushgatewayUrl) {
+          try {
+            const body =
+              [
+                "# HELP minio_orphan_cleanup_scanned_total Number of scanned objects in MinIO",
+                "# TYPE minio_orphan_cleanup_scanned_total gauge",
+                `minio_orphan_cleanup_scanned_total ${report.scannedCount}`,
+                "# HELP minio_orphan_cleanup_orphans_found_total Number of orphan objects detected",
+                "# TYPE minio_orphan_cleanup_orphans_found_total gauge",
+                `minio_orphan_cleanup_orphans_found_total ${report.orphanCount}`,
+                "# HELP minio_orphan_cleanup_preserved_total Number of orphan objects preserved within grace period",
+                "# TYPE minio_orphan_cleanup_preserved_total gauge",
+                `minio_orphan_cleanup_preserved_total ${report.preservedGraceCount}`,
+                "# HELP minio_orphan_cleanup_deleted_total Number of deleted orphan files",
+                "# TYPE minio_orphan_cleanup_deleted_total gauge",
+                `minio_orphan_cleanup_deleted_total ${report.deletedCount}`,
+                "# HELP minio_orphan_cleanup_bytes_freed_total Total bytes freed by orphan cleanup",
+                "# TYPE minio_orphan_cleanup_bytes_freed_total gauge",
+                `minio_orphan_cleanup_bytes_freed_total ${report.bytesFreed ?? 0}`,
+                "# HELP minio_orphan_cleanup_last_run_timestamp_seconds Timestamp of last orphan sweep",
+                "# TYPE minio_orphan_cleanup_last_run_timestamp_seconds gauge",
+                `minio_orphan_cleanup_last_run_timestamp_seconds ${Math.floor(Date.now() / 1000)}`,
+                "# HELP minio_orphan_cleanup_success Whether the last orphan cleanup sweep succeeded (1=yes, 0=no)",
+                "# TYPE minio_orphan_cleanup_success gauge",
+                "minio_orphan_cleanup_success 1",
+              ].join("\n") + "\n";
+            await fetch(`${pushgatewayUrl}/metrics/job/minio_orphan_cleanup`, {
               method: "POST",
               headers: { "Content-Type": "text/plain" },
               body,
-            },
-          );
-          this.logger.log(
-            "[OrphanCleanup] Successfully pushed sweep metrics to Prometheus Pushgateway",
-          );
-        } catch (pushErr: unknown) {
-          const pushMsg =
-            pushErr instanceof Error ? pushErr.message : String(pushErr);
-          this.logger.warn(
-            `[OrphanCleanup] Skipped Pushgateway metric push: ${pushMsg}`,
-          );
+              signal: AbortSignal.timeout(5000),
+            });
+            this.logger.log(
+              "[OrphanCleanup] Successfully pushed sweep metrics to Prometheus Pushgateway",
+            );
+          } catch (pushErr: unknown) {
+            const pushMsg =
+              pushErr instanceof Error ? pushErr.message : String(pushErr);
+            this.logger.warn(
+              `[OrphanCleanup] Skipped Pushgateway metric push: ${pushMsg}`,
+            );
+          }
         }
-      }
 
-      return {
-        success: true,
-        objectName: job.data?.objectName || "__scheduled_sweep__",
-      };
+        return {
+          success: true,
+          objectName: job.data?.objectName || "__scheduled_sweep__",
+        };
+      } catch (sweepErr: unknown) {
+        if (pushgatewayUrl) {
+          try {
+            const failBody =
+              [
+                "# HELP minio_orphan_cleanup_success Whether the last orphan cleanup sweep succeeded (1=yes, 0=no)",
+                "# TYPE minio_orphan_cleanup_success gauge",
+                "minio_orphan_cleanup_success 0",
+              ].join("\n") + "\n";
+            await fetch(`${pushgatewayUrl}/metrics/job/minio_orphan_cleanup`, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: failBody,
+              signal: AbortSignal.timeout(5000),
+            });
+          } catch {
+            // Best-effort metric push on sweep failure
+          }
+        }
+        throw sweepErr;
+      }
     }
 
     const { objectName } = job.data;
@@ -170,8 +210,12 @@ export class OrphanCleanupProcessor extends WorkerHost implements OnModuleInit {
   }
 
   @OnWorkerEvent("failed")
-  async onFailed(job: Job<OrphanCleanupJobData>, err: Error): Promise<void> {
-    const maxAttempts = job.opts.attempts || 5;
+  async onFailed(
+    job: Job<OrphanCleanupJobData> | undefined,
+    err: Error,
+  ): Promise<void> {
+    if (!job) return;
+    const maxAttempts = job.opts?.attempts || 5;
     if (job.attemptsMade >= maxAttempts) {
       this.logger.error(
         `[CRITICAL ALERT - DLQ] MinIO orphan cleanup failed permanently for object '${job.data.objectName}' after ${job.attemptsMade} attempts: ${err.message}. Moving to DLQ.`,

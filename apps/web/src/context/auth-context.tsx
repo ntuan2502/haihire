@@ -21,7 +21,6 @@ import type { User, Organization } from "@/types";
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   initialPermissions?: Permission[] | null;
   login: (email: string, password: string) => Promise<User>;
@@ -60,7 +59,7 @@ function setHasOrgCookie(hasOrg: boolean) {
   document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
-function setAuthCookies(_token: string | null | undefined, hasOrg: boolean) {
+function setAuthCookies(hasOrg: boolean) {
   if (typeof document === "undefined") return;
   // Always sync org membership cookie; haihire_token is managed as an HttpOnly cookie by the backend
   setHasOrgCookie(hasOrg);
@@ -97,7 +96,6 @@ export function AuthProvider({
   const queryClient = useContext(QueryClientContext) ?? null;
   const { t } = useOptionalI18n();
   const [user, setUser] = useState<User | null>(() => initialUser ?? null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(() =>
     initialUser ? false : initialHasSessionHint === false ? false : true,
   );
@@ -125,18 +123,21 @@ export function AuthProvider({
   }, [router, user, t]);
 
   const setSession = useCallback(
-    (newAccessToken: string, _newRefreshToken?: string, newUserData?: User) => {
+    (
+      _newAccessToken: string,
+      _newRefreshToken?: string,
+      newUserData?: User,
+    ) => {
       sessionEpochRef.current += 1;
-      setToken(newAccessToken);
       if (newUserData) {
         userRef.current = newUserData;
         setUser(newUserData);
         localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
-        setAuthCookies(newAccessToken, Boolean(newUserData.organizationId));
+        setAuthCookies(Boolean(newUserData.organizationId));
       } else if (user) {
-        setAuthCookies(newAccessToken, Boolean(user.organizationId));
+        setAuthCookies(Boolean(user.organizationId));
       } else {
-        setAuthCookies(newAccessToken, false);
+        setAuthCookies(false);
       }
     },
     [user],
@@ -154,7 +155,6 @@ export function AuthProvider({
           : "/auth/login";
       sessionEpochRef.current += 1;
       userRef.current = null;
-      setToken(null);
       setUser(null);
       setSsrPermissions(null);
       localStorage.removeItem(USER_KEY);
@@ -184,7 +184,7 @@ export function AuthProvider({
       userRef.current = latestUser;
       setUser(latestUser);
       localStorage.setItem(USER_KEY, JSON.stringify(latestUser));
-      setAuthCookies(null, Boolean(latestUser.organizationId));
+      setAuthCookies(Boolean(latestUser.organizationId));
 
       // If member was removed from org and is currently in workspace, kick out immediately!
       if (!latestUser.organizationId) {
@@ -206,7 +206,6 @@ export function AuthProvider({
         const hadClientSession = Boolean(
           typeof document !== "undefined" &&
           (document.cookie.includes("haihire_has_org=") ||
-            document.cookie.includes("haihire_token=") ||
             localStorage.getItem(USER_KEY)),
         );
         const onSessionRoute =
@@ -215,7 +214,6 @@ export function AuthProvider({
 
         sessionEpochRef.current += 1;
         userRef.current = null;
-        setToken(null);
         setUser(null);
         setSsrPermissions(null);
         localStorage.removeItem(USER_KEY);
@@ -249,7 +247,7 @@ export function AuthProvider({
       userRef.current = initialUser;
       setUser(initialUser);
       localStorage.setItem(USER_KEY, JSON.stringify(initialUser));
-      setAuthCookies(null, Boolean(initialUser.organizationId));
+      setAuthCookies(Boolean(initialUser.organizationId));
       if (initialUser.organization) {
         queryClient?.setQueryData(
           queryKeys.myOrg(initialUser.organization.id),
@@ -284,7 +282,7 @@ export function AuthProvider({
         const parsedUser: User = JSON.parse(savedUser);
         userRef.current = parsedUser;
         setUser(parsedUser);
-        setAuthCookies(null, Boolean(parsedUser.organizationId));
+        setAuthCookies(Boolean(parsedUser.organizationId));
         hasOptimisticSession = true;
       }
     } catch (err) {
@@ -312,7 +310,6 @@ export function AuthProvider({
     const handleAuthExpired = () => {
       sessionEpochRef.current += 1;
       userRef.current = null;
-      setToken(null);
       setUser(null);
       setSsrPermissions(null);
       localStorage.removeItem(USER_KEY);
@@ -348,15 +345,14 @@ export function AuthProvider({
       password,
     });
 
-    const { accessToken, user: userData } = response.data;
+    const { user: userData } = response.data;
 
     sessionEpochRef.current += 1;
     userRef.current = userData;
-    setToken(accessToken);
     setUser(userData);
     setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setAuthCookies(accessToken, Boolean(userData.organizationId));
+    setAuthCookies(Boolean(userData.organizationId));
 
     return userData;
   };
@@ -378,15 +374,14 @@ export function AuthProvider({
       password,
     });
 
-    const { accessToken, user: userData } = response.data;
+    const { user: userData } = response.data;
 
     sessionEpochRef.current += 1;
     userRef.current = userData;
-    setToken(accessToken);
     setUser(userData);
     setSsrPermissions(null);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setAuthCookies(accessToken, Boolean(userData.organizationId));
+    setAuthCookies(Boolean(userData.organizationId));
 
     return userData;
   };
@@ -420,14 +415,14 @@ export function AuthProvider({
       userRef.current = updated;
       setUser(updated);
       localStorage.setItem(USER_KEY, JSON.stringify(updated));
-      setAuthCookies(token, true);
+      setAuthCookies(true);
       queryClient?.setQueryData(queryKeys.myOrg(org.id), org);
       queryClient?.setQueryData(queryKeys.myOrg(), org);
       if (isOrgSwitch && typeof window !== "undefined") {
         window.dispatchEvent(new Event("haihire:auth-refreshed"));
       }
     },
-    [queryClient, token, user],
+    [queryClient, user],
   );
 
   const updateUser = useCallback((updatedFields: Partial<User>) => {
@@ -462,7 +457,6 @@ export function AuthProvider({
     <AuthContext.Provider
       value={{
         user,
-        token,
         loading,
         initialPermissions: activeInitialPermissions,
         login,
@@ -490,7 +484,6 @@ export function useAuth(): AuthContextType {
     // Graceful fallback when rendered outside AuthProvider (e.g. isolated component unit tests)
     return {
       user: null,
-      token: null,
       loading: false,
       initialPermissions: null,
       login: async () => {

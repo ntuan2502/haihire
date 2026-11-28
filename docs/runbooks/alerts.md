@@ -15,7 +15,7 @@ curl -fsS http://127.0.0.1:3001/health
 
 ---
 
-## 2. Production Alert Rules Matrix (`16` Rules)
+## 2. Production Alert Rules Matrix (`20` Rules)
 
 | Alert Rule                          | Expression Trigger                                | `for` |  Severity  | Linked SOP                                                                            |
 | :---------------------------------- | :------------------------------------------------ | :---: | :--------: | :------------------------------------------------------------------------------------ |
@@ -35,6 +35,10 @@ curl -fsS http://127.0.0.1:3001/health
 | `HaiHireOrphanCleanupSpikeWarning`  | `minio_orphan_cleanup_orphans_found_total > 50`   | `0m`  | `warning`  | [Orphan Cleanup](orphan-cleanup.md)                                                   |
 | `HaiHireOrphanCleanupSpikeCritical` | `minio_orphan_cleanup_orphans_found_total > 500`  | `0m`  | `critical` | [Orphan Cleanup](orphan-cleanup.md) & halt upload regressions                         |
 | `HaiHireOrphanCleanupCronMissing`   | `time() - last_run > 90000` (`>25h`)              | `5m`  | `critical` | [Orphan Cleanup](orphan-cleanup.md) (verify scheduled job)                            |
+| `HaiHireRedisMemoryHigh`            | `used_memory / maxmemory > 0.85`                  | `5m`  | `warning`  | [Valkey / Redis Recovery](redis-recovery.md)                                          |
+| `HaiHireDbPoolSaturation`           | `haihire_db_pool_active_connections >= 18`        | `2m`  | `warning`  | Inspect slow queries, pool locks, and long transactions                               |
+| `HaiHireAiScoringQueueBacklog`      | `ai-scoring-queue` waiting > `100`                | `5m`  | `warning`  | Check LLM provider latency, rate limits, and gateway circuit breaker state            |
+| `HaiHireBackupMissing`              | `time() - last_backup > 93600` (`>26h`)           | `10m` | `critical` | [Backup & Restore](backup-and-restore.md)                                             |
 
 ---
 

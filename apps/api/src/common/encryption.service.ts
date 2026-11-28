@@ -4,11 +4,29 @@ import { env } from "../config/env";
 
 @Injectable()
 export class EncryptionService {
+  private static readonly MAX_KEY_CACHE_SIZE = 1024;
   private readonly algorithm = "aes-256-gcm";
   private readonly legacySalt = "haihire-salt-vector";
+  private readonly derivedKeyCache = new Map<string, Buffer>();
 
   private deriveKey(salt: Buffer | string): Buffer {
-    return crypto.scryptSync(env.ENCRYPTION_SECRET, salt, 32);
+    const saltId =
+      typeof salt === "string" ? `str:${salt}` : `hex:${salt.toString("hex")}`;
+    const cacheKey = `${env.ENCRYPTION_SECRET}:${saltId}`;
+    const cached = this.derivedKeyCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const key = crypto.scryptSync(env.ENCRYPTION_SECRET, salt, 32);
+    if (this.derivedKeyCache.size >= EncryptionService.MAX_KEY_CACHE_SIZE) {
+      const oldestKey = this.derivedKeyCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.derivedKeyCache.delete(oldestKey);
+      }
+    }
+    this.derivedKeyCache.set(cacheKey, key);
+    return key;
   }
 
   encrypt(plainText?: string | null): string | null {

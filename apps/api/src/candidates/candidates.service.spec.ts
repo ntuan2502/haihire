@@ -11,7 +11,9 @@ import {
   CandidatesCrudService,
   CandidatesDocumentsService,
   CandidatesProfileService,
+  CandidatesNotesService,
 } from "./services";
+import { createTestCandidatesService } from "../test/helpers/service-factories";
 import {
   createMockTable,
   createMockPrismaService,
@@ -243,7 +245,11 @@ describe("CandidatesService (Characterization Tests)", () => {
       createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
     } as unknown as ActivitiesService;
 
-    service = new CandidatesService(mockPrisma, mockMinio, mockActivities);
+    service = createTestCandidatesService(
+      mockPrisma,
+      mockMinio,
+      mockActivities,
+    );
   });
 
   describe("A.1.1: listPaginated", () => {
@@ -745,8 +751,9 @@ describe("CandidatesService (Characterization Tests)", () => {
         mockActivities,
       );
       const crud = new CandidatesCrudService(mockPrisma, mockMinio, profile);
+      const notes = new CandidatesNotesService(mockPrisma, mockActivities);
 
-      const diService = new CandidatesService(crud, docs, profile);
+      const diService = new CandidatesService(crud, docs, profile, notes);
       expect(diService).toBeDefined();
 
       const list = await diService.listPaginated("org-1");
@@ -1005,12 +1012,10 @@ describe("CandidatesService (Characterization Tests)", () => {
 
     it("records event-envelope audit logs on candidate create, update diff, and delete", async () => {
       const mockAuditLog = { logOrg: vi.fn().mockResolvedValue({}) };
-      const auditedService = new CandidatesService(
+      const auditedService = createTestCandidatesService(
         mockPrisma,
         mockMinio,
         mockActivities,
-        undefined,
-        undefined,
         mockAuditLog as never,
       );
 

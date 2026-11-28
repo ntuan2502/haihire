@@ -26,7 +26,7 @@ Per TanStack Query v5 official guidelines:
 
 ## 2. Axios API Client, URL Gatekeeper & Document Previews (`src/lib/api/client.ts`)
 
-- **Base URL Routing:** Browser requests route through relative `/api` (proxied by Next.js `next.config.ts` rewrites to backend) unless an external non-localhost `NEXT_PUBLIC_API_URL` is configured; SSR/server actions talk directly to `env.INTERNAL_API_URL`.
+- **Base URL Routing:** Browser requests route through relative `/api` (proxied by Caddy App Gateway `deploy/caddy/Caddyfile` to backend) unless an external non-localhost `NEXT_PUBLIC_API_URL` is configured; SSR/server actions talk directly to `env.INTERNAL_API_URL` (auto-defaulting locally to `http://127.0.0.1:${BACKEND_PORT}`).
 - **URL Gatekeeper:** Request interceptor rejects any URL containing `[object` or `%5Bobject` (`[HaiHire API Gatekeeper]`) so accidentally stringified objects never reach the backend.
 - **401 Silent Refresh Queue:**
   - For eligible HTTP `401` responses, the interceptor queues concurrent retries behind a single `POST /auth/refresh` with an empty body and `withCredentials: true`. The server manages the HttpOnly JWT cookies. The client updates the workspace hint when returned and releases the queued requests.
@@ -49,7 +49,7 @@ Per TanStack Query v5 official guidelines:
 - **Notifications:** Always import `{ toast } from "@/lib/toast"`, never `sonner` directly.
 - **API Error Localization (`apps/web/src/lib/api-error.ts`):**
   - Use `getApiErrorMessage(error, t)` everywhere errors are shown to users.
-  - It maps backend `payload.code` (`64` `APP_ERROR_CODES` in `@haihire/shared`) -> `t("errors.<CODE>", payload.params)`, falling back cleanly to `payload.message`, status-code fallback (`401`, `403`, `404`, `429`, `500`), or `errors.generic`.
+  - It maps backend `payload.code` (`72` `APP_ERROR_CODES` in `@haihire/shared`) -> `t("errors.<CODE>", payload.params)`, falling back cleanly to `payload.message`, status-code fallback (`401`, `403`, `404`, `429`, `500`), or `errors.generic`.
 - **Two-Way Dictionary Parity (`pnpm lint:i18n` & `pnpm lint:error-i18n`):**
   - Keep `apps/web/src/i18n/types.ts` (`TranslationSchema`), `apps/web/src/i18n/locales/en.ts`, and `apps/web/src/i18n/locales/vi.ts` 100% synchronized—zero missing keys and zero hardcoded user-facing strings in UI JSX.
   - Every `APP_ERROR_CODES` entry in `packages/shared/src/errors.ts` must have matching keys in `en.ts` and `vi.ts`.

@@ -13,7 +13,8 @@ scrape_configs:
       - targets: ["api:3001"]
     authorization:
       type: "Bearer"
-      credentials: "${METRICS_TOKEN}"
+      # Mount a file containing the raw METRICS_TOKEN string into Prometheus at this path
+      credentials_file: "/etc/prometheus/metrics_token"
 
   - job_name: "pushgateway"
     honor_labels: true

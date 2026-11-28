@@ -9,9 +9,11 @@ import {
   jobScoringConfigSchema,
   normalizeJobApplicationFormConfig,
   normalizeJobScoringConfig,
+  type CreateJobSchema,
   type JobApplicationFormConfig,
   type JobScoringConfig,
   type NameDisplayOrder,
+  type UpdateJobSchema,
   type UpsertPipelineStagesSchema,
 } from "@haihire/shared";
 import { sanitizeRichTextHtml } from "../common/html-sanitizer";
@@ -30,8 +32,6 @@ import {
   AppBadRequestException,
 } from "../common/app-exception";
 import { PrismaService, runInTransaction } from "../prisma/prisma.service";
-import { CreateJobDto } from "./dto/create-job.dto";
-import { UpdateJobDto } from "./dto/update-job.dto";
 import crypto from "node:crypto";
 import { toInstant } from "../common/date.util";
 import { formatInterviewRecord } from "../interviews/constants";
@@ -241,53 +241,65 @@ export class JobsService {
     const jobIds = [...new Set(pagedJobs.map((j) => j.id))];
     const jobIdSet = new Set(jobIds);
 
-    // Fetch applications only relevant to these paged jobs
-    const allApps =
-      !isPublic && jobIds.length > 0
-        ? await this.prisma.application.findMany({
-            where: {
-              jobId: { in: jobIds },
-              candidate: { deletedAt: null },
-            },
-            select: {
-              id: true,
-              jobId: true,
-              stage: true,
-              candidateId: true,
-            },
-          })
-        : [];
-
-    const appCandidateIds = [
-      ...new Set(allApps.map((a) => a.candidateId).filter(Boolean)),
-    ];
-    const cands =
-      appCandidateIds.length > 0
-        ? await this.prisma.candidate.findMany({
-            where: {
-              id: { in: appCandidateIds },
-              ...(targetOrg ? { organizationId: targetOrg.id } : {}),
-            },
-            select: { id: true, deletedAt: true },
-          })
-        : [];
-    const deletedCandidateIds = new Set(
-      cands.filter((c) => Boolean(c.deletedAt)).map((c) => c.id),
-    );
-
     const appCountMap = new Map<
       string,
       { total: number; byStage: Record<string, number> }
     >();
-    for (const app of allApps) {
-      if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
-      if (app.candidateId && deletedCandidateIds.has(app.candidateId)) continue;
-      if (!appCountMap.has(app.jobId)) {
-        appCountMap.set(app.jobId, { total: 0, byStage: {} });
+
+    const scopedAppWhere = {
+      jobId: { in: jobIds },
+      ...(targetOrg
+        ? { organizationId: targetOrg.id }
+        : userOrgId
+          ? { organizationId: userOrgId }
+          : {}),
+      candidate: { deletedAt: null },
+    };
+
+    // Use SQL GROUP BY aggregation instead of loading all application & candidate rows
+    if (
+      !isPublic &&
+      jobIds.length > 0 &&
+      typeof this.prisma.application.groupBy === "function"
+    ) {
+      const grouped = await this.prisma.application.groupBy({
+        by: ["jobId", "stage"],
+        where: scopedAppWhere,
+        _count: { _all: true },
+      });
+      for (const row of grouped) {
+        if (!row.jobId || !jobIdSet.has(row.jobId)) continue;
+        const count =
+          typeof row._count === "object" && row._count !== null
+            ? (row._count._all ?? 0)
+            : 0;
+        if (count <= 0) continue;
+        if (!appCountMap.has(row.jobId)) {
+          appCountMap.set(row.jobId, { total: 0, byStage: {} });
+        }
+        const item = appCountMap.get(row.jobId)!;
+        item.total += count;
+        item.byStage[row.stage] = (item.byStage[row.stage] || 0) + count;
       }
-      const item = appCountMap.get(app.jobId)!;
-      item.total += 1;
-      item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
+    } else if (!isPublic && jobIds.length > 0) {
+      const allApps = await this.prisma.application.findMany({
+        where: scopedAppWhere,
+        select: {
+          id: true,
+          jobId: true,
+          stage: true,
+          candidateId: true,
+        },
+      });
+      for (const app of allApps) {
+        if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
+        if (!appCountMap.has(app.jobId)) {
+          appCountMap.set(app.jobId, { total: 0, byStage: {} });
+        }
+        const item = appCountMap.get(app.jobId)!;
+        item.total += 1;
+        item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
+      }
     }
 
     const orderedPagedJobs = sortByApplicants
@@ -774,7 +786,7 @@ export class JobsService {
   }
 
   async create(
-    dto: CreateJobDto,
+    dto: CreateJobSchema,
     tenantOrgId?: string | null,
     userId?: string | null,
   ) {
@@ -896,7 +908,7 @@ export class JobsService {
 
   async update(
     id: string,
-    dto: UpdateJobDto,
+    dto: UpdateJobSchema,
     tenantOrgId?: string | null,
     actorId?: string | null,
   ) {
@@ -1084,7 +1096,41 @@ export class JobsService {
     tenantOrgId?: string | null,
     actorId?: string | null,
   ) {
-    const job = await this.findOne(id, tenantOrgId);
+    const job = await this.prisma.job.findFirst({
+      where: tenantOrgId ? { id, organizationId: tenantOrgId } : { id },
+      select: {
+        id: true,
+        organizationId: true,
+        title: true,
+        department: true,
+        status: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!job || job.deletedAt) {
+      if (tenantOrgId) {
+        const otherOrgJob = await this.prisma.job.findFirst({
+          where: { id, deletedAt: null },
+          select: { id: true, organizationId: true },
+        });
+        if (
+          otherOrgJob?.organizationId &&
+          otherOrgJob.organizationId !== tenantOrgId
+        ) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+            "Access denied: job belongs to another organization.",
+            { id },
+          );
+        }
+      }
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${id} not found`,
+        { id },
+      );
+    }
 
     if (
       tenantOrgId &&

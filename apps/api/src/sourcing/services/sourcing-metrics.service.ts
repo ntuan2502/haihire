@@ -212,23 +212,24 @@ export class SourcingMetricsService {
       jobId ? l.jobId === jobId : true,
     );
     const targetLinkIds = filteredLinks.map((l) => l.id);
-    const clicks = await this.queryService.getClicksForLinks(targetLinkIds, {
-      minTimestamp,
-      organizationId,
-    });
+    const clickAggregates = await this.queryService.getClickAggregatesForLinks(
+      targetLinkIds,
+      {
+        minTimestamp,
+        organizationId,
+      },
+    );
     const linkClickCountMap = new Map<string, number>();
-    for (const clk of clicks) {
-      if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp)
-        continue;
-      if (clk.trackingLinkId) {
+    for (const agg of clickAggregates) {
+      if (agg.trackingLinkId) {
         linkClickCountMap.set(
-          clk.trackingLinkId,
-          (linkClickCountMap.get(clk.trackingLinkId) || 0) + 1,
+          agg.trackingLinkId,
+          (linkClickCountMap.get(agg.trackingLinkId) || 0) + agg.count,
         );
       }
-      if (clk.referrerDomain) {
-        referrerCounts[clk.referrerDomain] =
-          (referrerCounts[clk.referrerDomain] || 0) + 1;
+      if (agg.referrerDomain) {
+        referrerCounts[agg.referrerDomain] =
+          (referrerCounts[agg.referrerDomain] || 0) + agg.count;
       }
     }
 
@@ -370,6 +371,7 @@ export class SourcingMetricsService {
     const allClicks = await this.queryService.getClicksForLink(
       link.id,
       organizationId,
+      timeRange !== "all" ? { minTimestamp } : undefined,
     );
     const filteredClicks = allClicks.filter((c) => {
       if (minTimestamp !== null)

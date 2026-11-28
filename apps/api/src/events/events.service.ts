@@ -105,38 +105,73 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
   private evictValidationCacheForEvent(event: AppEvent) {
     if (MEMBERSHIP_INVALIDATION_EVENTS.has(event.type)) {
       if (event.targetUserId) {
-        this.validationCache.delete(event.targetUserId);
+        for (const key of this.validationCache.keys()) {
+          if (
+            key === event.targetUserId ||
+            key.startsWith(`${event.targetUserId}:`)
+          ) {
+            this.validationCache.delete(key);
+          }
+        }
       } else {
         this.validationCache.clear();
       }
     }
   }
 
+  private async isUserSessionActive(
+    userId: string,
+    sid?: string,
+  ): Promise<boolean> {
+    if (
+      !sid ||
+      !this.prisma?.userSession ||
+      typeof this.prisma.userSession.findFirst !== "function"
+    ) {
+      return true;
+    }
+    const activeSession = await this.prisma.userSession.findFirst({
+      where: {
+        id: sid,
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true },
+    });
+    return Boolean(activeSession);
+  }
+
   private async getValidatedUserState(
     userId: string,
+    sid?: string,
   ): Promise<{ tokenVersion: number; orgIds: Set<string> }> {
-    const cached = this.validationCache.get(userId);
+    const cacheKey = sid ? `${userId}:${sid}` : userId;
+    const cached = this.validationCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return { tokenVersion: cached.tokenVersion, orgIds: cached.orgIds };
     }
 
-    const existingPromise = this.inFlightValidations.get(userId);
+    const existingPromise = this.inFlightValidations.get(cacheKey);
     if (existingPromise) {
       return existingPromise;
     }
 
     const validationPromise = (async () => {
       if (!this.prisma) throw new Error("PrismaService not available");
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, tokenVersion: true },
-      });
-      if (!user) {
-        throw new Error("User session deleted");
+      const [user, sessionValid] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, tokenVersion: true },
+        }),
+        this.isUserSessionActive(userId, sid),
+      ]);
+      if (!user || !sessionValid) {
+        throw new Error("User session revoked");
       }
       const orgIds = await this.resolveUserOrgIds(userId);
       const tokenVersion = user.tokenVersion ?? 0;
-      this.validationCache.set(userId, {
+      this.validationCache.set(cacheKey, {
         expiresAt: Date.now() + VALIDATION_CACHE_TTL_MS,
         tokenVersion,
         orgIds,
@@ -144,11 +179,11 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       return { tokenVersion, orgIds };
     })();
 
-    this.inFlightValidations.set(userId, validationPromise);
+    this.inFlightValidations.set(cacheKey, validationPromise);
     try {
       return await validationPromise;
     } finally {
-      this.inFlightValidations.delete(userId);
+      this.inFlightValidations.delete(cacheKey);
     }
   }
 
@@ -189,7 +224,12 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       throw new Error("JwtService not available");
     }
 
-    let payload: { sub?: string; type?: string; tokenVersion?: number };
+    let payload: {
+      sub?: string;
+      type?: string;
+      tokenVersion?: number;
+      sid?: string;
+    };
     try {
       payload = this.jwtService.verify(token);
     } catch {
@@ -200,6 +240,7 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
     }
 
     const userId = payload.sub;
+    const sid = payload.sid;
     if (!userId || (payload.type !== undefined && payload.type !== "access")) {
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.SSE_UNAUTHORIZED,
@@ -209,11 +250,18 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
 
     return defer(async () => {
       if (!this.prisma) throw new Error("PrismaService not available");
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, tokenVersion: true },
-      });
-      if (!user || (user.tokenVersion ?? 0) !== (payload.tokenVersion ?? 0)) {
+      const [user, sessionValid] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, tokenVersion: true },
+        }),
+        this.isUserSessionActive(userId, sid),
+      ]);
+      if (
+        !user ||
+        !sessionValid ||
+        (user.tokenVersion ?? 0) !== (payload.tokenVersion ?? 0)
+      ) {
         throw new AppUnauthorizedException(
           APP_ERROR_CODES.SSE_UNAUTHORIZED,
           "User session revoked",
@@ -250,7 +298,7 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
               const currentPayload =
                 this.jwtService!.verify<typeof payload>(token);
               const { tokenVersion, orgIds: currentOrgIds } =
-                await this.getValidatedUserState(userId);
+                await this.getValidatedUserState(userId, currentPayload.sid);
               if (tokenVersion !== (currentPayload.tokenVersion ?? 0)) {
                 throw new Error("User session revoked");
               }
@@ -273,53 +321,5 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
         return merge(initial$, heartbeat$, domainEvents$);
       }),
     );
-  }
-
-  subscribe(
-    userId: string,
-    allowedOrgIds?: Set<string> | string[],
-  ): Observable<MessageEvent> {
-    const orgSet =
-      allowedOrgIds instanceof Set
-        ? allowedOrgIds
-        : new Set(allowedOrgIds || []);
-
-    const userEvents$ = this.events$.asObservable().pipe(
-      filter((event) => {
-        const isTargetedToUser = Boolean(
-          event.targetUserId && event.targetUserId === userId,
-        );
-        const isTargetedToOrg = Boolean(
-          event.organizationId && orgSet.has(event.organizationId),
-        );
-
-        if (event.targetUserId || event.organizationId) {
-          return isTargetedToUser || isTargetedToOrg;
-        }
-        // Global / system events with no tenant or user target
-        return true;
-      }),
-      map(
-        (event) =>
-          ({
-            data: event,
-          }) as MessageEvent,
-      ),
-    );
-
-    const initial$ = of({
-      data: { type: "CONNECTED" },
-    } as MessageEvent);
-
-    const heartbeat$ = interval(15000).pipe(
-      map(
-        () =>
-          ({
-            data: { type: "HEARTBEAT" },
-          }) as MessageEvent,
-      ),
-    );
-
-    return merge(initial$, heartbeat$, userEvents$);
   }
 }

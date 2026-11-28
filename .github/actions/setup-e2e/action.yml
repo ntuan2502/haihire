@@ -8,19 +8,10 @@ runs:
       shell: bash
       run: |
         cp .env.example .env
-        sed -i 's/BACKEND_PORT=3001/BACKEND_PORT=13001/g' .env
-        sed -i 's/FRONTEND_PORT=3000/FRONTEND_PORT=13000/g' .env
-        sed -i 's/POSTGRES_PORT=5432/POSTGRES_PORT=15432/g' .env
         sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
         sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
         sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
-        sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:15432\/haihire_test_db/g' .env
-        sed -i 's/REDIS_PORT=6379/REDIS_PORT=16379/g' .env
-        sed -i 's/MINIO_PORT=9000/MINIO_PORT=19000/g' .env
-        sed -i 's/MINIO_CONSOLE_PORT=9001/MINIO_CONSOLE_PORT=19001/g' .env
-        sed -i 's/http:\/\/localhost:9000/http:\/\/localhost:19000/g' .env
-        sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
-        sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
+        sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
         sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
         pnpm db:generate
 
@@ -30,14 +21,14 @@ runs:
         docker run -d --name minio \
           --user 0:0 \
           -v minio_data:/data \
-          -p 19000:9000 -p 19001:9001 \
+          -p 9000:9000 -p 9001:9001 \
           -e MINIO_ROOT_USER=minioadmin \
           -e MINIO_ROOT_PASSWORD=minioadmin \
           alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 \
           server /data --console-address ":9001"
 
         timeout 60s bash -c '
-          until curl -sf http://localhost:19000/minio/health/live > /dev/null; do
+          until curl -sf http://localhost:9000/minio/health/live > /dev/null; do
             if ! docker ps | grep -q minio; then
               echo "❌ MinIO container stopped unexpectedly!"
               docker logs minio
@@ -46,13 +37,13 @@ runs:
             sleep 2
           done
         '
-        echo "MinIO ready on port 19000!"
+        echo "MinIO ready on port 9000!"
 
     - name: Wait for Redis/Valkey Readiness
       shell: bash
       run: |
-        timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/16379) 2>/dev/null; do sleep 1; done'
-        echo "Redis ready on port 16379!"
+        timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/6379) 2>/dev/null; do sleep 1; done'
+        echo "Redis ready on port 6379!"
 
     - name: Run Database Migrations & Seed
       shell: bash
@@ -60,7 +51,7 @@ runs:
         pnpm db:migrate
         pnpm --filter api run db:seed
       env:
-        DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
+        DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
         DEMO_SEED_PASSWORD: dev-seed-password-2026
 
     - name: Cache Playwright browsers
@@ -87,13 +78,21 @@ runs:
       shell: bash
       run: pnpm build
 
-    - name: Pre-start services in background & wait for healthcheck
+    - name: Start Caddy App Gateway & Backend/Frontend Services
       shell: bash
       run: |
+        docker run -d --name gateway \
+          -p 8080:80 \
+          --add-host host.docker.internal:host-gateway \
+          -e API_UPSTREAM=host.docker.internal:3001 \
+          -e WEB_UPSTREAM=host.docker.internal:3000 \
+          -v "${{ github.workspace }}/deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+          caddy:2-alpine
+
         nohup pnpm start > /tmp/haihire-e2e.log 2>&1 &
         timeout 180s bash -c '
-          until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
+          until curl -sf http://localhost:8080/gateway-health > /dev/null && curl -sf http://localhost:8080/api/health > /dev/null && curl -sf http://localhost:8080/auth/login > /dev/null; do
             sleep 3
           done
         '
-        echo "Services ready!"
+        echo "Services & Caddy gateway ready on port 8080!"

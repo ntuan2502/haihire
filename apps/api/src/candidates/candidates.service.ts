@@ -1,7 +1,4 @@
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { MinioService } from "../minio/minio.service";
-import { ActivitiesService } from "../activities/activities.service";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   CandidatesCrudService,
   CandidatesDocumentsService,
@@ -16,70 +13,19 @@ import type { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
 import type { AuthenticatedUser } from "./services/candidates-notes.service";
 
 import type { CandidateListOptions } from "./services/candidates-crud.service";
-import { OrganizationsAuditLogService } from "../organizations/services/organizations-audit-log.service";
 
 @Injectable()
 export class CandidatesService {
-  private readonly crud: CandidatesCrudService;
-  private readonly documents: CandidatesDocumentsService;
-  private readonly profile: CandidatesProfileService;
-  private readonly notes: CandidatesNotesService;
-
   constructor(
-    @Optional()
     @Inject(CandidatesCrudService)
-    crudOrPrisma?: CandidatesCrudService | PrismaService,
-    @Optional()
+    private readonly crud: CandidatesCrudService,
     @Inject(CandidatesDocumentsService)
-    docsOrMinio?: CandidatesDocumentsService | MinioService,
-    @Optional()
+    private readonly documents: CandidatesDocumentsService,
     @Inject(CandidatesProfileService)
-    profileOrActivities?: CandidatesProfileService | ActivitiesService,
-    @Optional()
-    @Inject(ActivitiesService)
-    legacyActivities?: ActivitiesService,
-    @Optional()
+    private readonly profile: CandidatesProfileService,
     @Inject(CandidatesNotesService)
-    notesService?: CandidatesNotesService,
-    @Optional()
-    @Inject(OrganizationsAuditLogService)
-    auditLog?: OrganizationsAuditLogService,
-  ) {
-    if (
-      crudOrPrisma &&
-      "listPaginated" in crudOrPrisma &&
-      typeof (crudOrPrisma as CandidatesCrudService).listPaginated ===
-        "function"
-    ) {
-      // NestJS DI path
-      this.crud = crudOrPrisma as CandidatesCrudService;
-      this.documents = docsOrMinio as CandidatesDocumentsService;
-      this.profile = profileOrActivities as CandidatesProfileService;
-      this.notes = notesService as CandidatesNotesService;
-    } else {
-      // Direct instantiation path (legacy tests & standalone usage)
-      const prisma = crudOrPrisma as PrismaService;
-      const minio = docsOrMinio as MinioService;
-      const activities =
-        (profileOrActivities as ActivitiesService) || legacyActivities;
-
-      this.profile = new CandidatesProfileService(prisma, activities);
-      this.documents = new CandidatesDocumentsService(
-        prisma,
-        minio,
-        this.profile,
-        activities,
-      );
-      this.crud = new CandidatesCrudService(
-        prisma,
-        minio,
-        this.profile,
-        undefined,
-        auditLog,
-      );
-      this.notes = new CandidatesNotesService(prisma, activities);
-    }
-  }
+    private readonly notes: CandidatesNotesService,
+  ) {}
 
   async listPaginated(
     organizationId?: string,

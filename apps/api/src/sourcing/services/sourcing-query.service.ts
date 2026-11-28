@@ -157,11 +157,79 @@ export class SourcingQueryService {
     });
   }
 
-  async getClicksForLink(linkId: string, organizationId?: string) {
+  async getClickAggregatesForLinks(
+    linkIds: string[],
+    options?: { minTimestamp?: number | null; organizationId?: string },
+  ): Promise<
+    Array<{
+      trackingLinkId: string | null;
+      referrerDomain: string | null;
+      count: number;
+    }>
+  > {
+    if (linkIds.length === 0) return [];
+
+    if (typeof this.prisma.trackingClick.groupBy === "function") {
+      const grouped = await this.prisma.trackingClick.groupBy({
+        by: ["trackingLinkId", "referrerDomain"],
+        where: {
+          trackingLinkId: { in: linkIds },
+          ...(options?.organizationId
+            ? { organizationId: options.organizationId }
+            : {}),
+          ...(options?.minTimestamp != null
+            ? { createdAt: { gte: new Date(options.minTimestamp) } }
+            : {}),
+        },
+        _count: { _all: true },
+      });
+      return grouped.map((row) => ({
+        trackingLinkId: row.trackingLinkId,
+        referrerDomain: row.referrerDomain,
+        count:
+          typeof row._count === "object" && row._count !== null
+            ? (row._count._all ?? 0)
+            : 0,
+      }));
+    }
+
+    const rawClicks = await this.getClicksForLinks(linkIds, options);
+    const aggMap = new Map<
+      string,
+      {
+        trackingLinkId: string | null;
+        referrerDomain: string | null;
+        count: number;
+      }
+    >();
+    for (const clk of rawClicks) {
+      const key = `${clk.trackingLinkId ?? ""}\u0000${clk.referrerDomain ?? ""}`;
+      const existing = aggMap.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        aggMap.set(key, {
+          trackingLinkId: clk.trackingLinkId,
+          referrerDomain: clk.referrerDomain,
+          count: 1,
+        });
+      }
+    }
+    return Array.from(aggMap.values());
+  }
+
+  async getClicksForLink(
+    linkId: string,
+    organizationId?: string,
+    options?: { minTimestamp?: number | null },
+  ) {
     return this.prisma.trackingClick.findMany({
       where: {
         trackingLinkId: linkId,
         ...(organizationId ? { organizationId } : {}),
+        ...(options?.minTimestamp != null
+          ? { createdAt: { gte: new Date(options.minTimestamp) } }
+          : {}),
       },
       select: {
         organizationId: true,

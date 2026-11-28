@@ -38,19 +38,6 @@ import {
   getPreferredOwnedOrgOrderBy,
 } from "../organization-logo.util";
 
-type MockUserTableCompat = {
-  store?: Array<Record<string, unknown>>;
-  update?: (args: {
-    where: { id: string };
-    data: Record<string, unknown>;
-  }) => Promise<unknown>;
-  updateMany?: (args: {
-    where: Record<string, unknown>;
-    data: Record<string, unknown>;
-  }) => Promise<unknown>;
-  findMany?: (args?: unknown) => Promise<Array<Record<string, unknown>>>;
-};
-
 const ORG_CORE_SELECT = {
   id: true,
   name: true,
@@ -146,14 +133,20 @@ export class OrganizationsCoreService {
       );
     }
 
-    const orgId = crypto.randomUUID();
+    const organizationId = crypto.randomUUID();
     const now = toInstant();
     let org;
     try {
-      org = await runInTransaction(this.prisma, async (tx) => {
+      const executeCreateTx =
+        typeof this.prisma.withTenantRls === "function"
+          ? <T>(fn: (tx: PrismaService) => Promise<T>) =>
+              this.prisma.withTenantRls(organizationId, fn)
+          : <T>(fn: (tx: PrismaService) => Promise<T>) =>
+              runInTransaction(this.prisma, fn);
+      org = await executeCreateTx(async (tx) => {
         const createdOrg = await tx.organization.create({
           data: {
-            id: orgId,
+            id: organizationId,
             name: dto.name.trim(),
             slug: normalizedSlug,
             ownerId: userId,
@@ -184,14 +177,6 @@ export class OrganizationsCoreService {
             updatedAt: now,
           },
         });
-
-        const userTableCompat = tx.user as unknown as MockUserTableCompat;
-        if (userTableCompat?.store) {
-          await userTableCompat.update?.({
-            where: { id: userId },
-            data: { organizationId: createdOrg.id, role: "ADMIN" },
-          });
-        }
 
         return createdOrg;
       });
@@ -398,18 +383,6 @@ export class OrganizationsCoreService {
       await this.prisma.organizationMember.updateMany({
         where: { organizationId: targetOrgId, userId },
         data: { lastAccessedAt: now },
-      });
-    }
-
-    if (user && "organizationId" in user) {
-      (user as unknown as { organizationId: string }).organizationId =
-        targetOrgId;
-    }
-    const prismaUserCompat = this.prisma.user as unknown as MockUserTableCompat;
-    if (prismaUserCompat?.store) {
-      await prismaUserCompat.update?.({
-        where: { id: userId },
-        data: { organizationId: targetOrgId },
       });
     }
 
@@ -1011,13 +984,6 @@ export class OrganizationsCoreService {
       { organizationName: currentOrg.name },
     );
 
-    const prismaUserCompat = this.prisma.user as unknown as MockUserTableCompat;
-    const orgUsers = prismaUserCompat?.store
-      ? ((await prismaUserCompat.findMany?.({
-          where: { organizationId: orgId },
-          select: { id: true },
-        })) ?? [])
-      : [];
     const orgMembers =
       (await this.prisma.organizationMember?.findMany?.({
         where: { organizationId: orgId },
@@ -1025,7 +991,6 @@ export class OrganizationsCoreService {
       })) ?? [];
     const affectedUserIds = new Set<string>([
       userId,
-      ...orgUsers.map((u) => String(u.id || "")).filter(Boolean),
       ...orgMembers.map((m) => m.userId),
     ]);
 
@@ -1042,13 +1007,12 @@ export class OrganizationsCoreService {
         );
       }
 
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      if (txUserCompat?.store) {
-        await txUserCompat.updateMany?.({
-          where: { organizationId: orgId },
-          data: { organizationId: null },
-        });
-      }
+      // Delete log tables constrained by ON DELETE RESTRICT before deleting org
+      await tx.emailLog?.deleteMany?.({ where: { organizationId: orgId } });
+      await tx.activityLog?.deleteMany?.({ where: { organizationId: orgId } });
+      await tx.organizationAuditLog?.deleteMany?.({
+        where: { organizationId: orgId },
+      });
 
       // Clean up all memberships in this org
       await tx.organizationMember.deleteMany({
@@ -1061,7 +1025,9 @@ export class OrganizationsCoreService {
       });
     });
 
-    if (currentOrg.logoObjectKey) {
+    if (typeof this.minioService?.deleteTenantPrefix === "function") {
+      await this.minioService.deleteTenantPrefix(orgId).catch(() => {});
+    } else if (currentOrg.logoObjectKey) {
       await this.minioService
         ?.deleteFile(currentOrg.logoObjectKey)
         .catch(() => {});
@@ -1126,13 +1092,7 @@ export class OrganizationsCoreService {
           where: { userId },
           select: { organizationId: true },
         });
-        const callerUser = await tx.user.findFirst({
-          where: { id: userId },
-        });
-        const legacyCallerOrg = (
-          callerUser as unknown as { organizationId?: string }
-        )?.organizationId;
-        if (member || legacyCallerOrg) {
+        if (member) {
           throw ownerRequired();
         }
         throw new AppNotFoundException(
@@ -1142,32 +1102,13 @@ export class OrganizationsCoreService {
       }
       const organizationId = ownedOrg.id;
 
-      let targetMembership = await tx.organizationMember.findFirst({
+      const targetMembership = await tx.organizationMember.findFirst({
         where: { organizationId, userId: newOwnerUserId },
         select: { id: true },
       });
 
-      const targetUser = await tx.user.findFirst({
-        where: { id: newOwnerUserId },
-      });
-      const legacyTargetOrg = (
-        targetUser as unknown as { organizationId?: string }
-      )?.organizationId;
-
       if (!targetMembership) {
-        if (legacyTargetOrg === organizationId) {
-          targetMembership = await tx.organizationMember.create({
-            data: {
-              id: crypto.randomUUID(),
-              organizationId,
-              userId: newOwnerUserId,
-              role: "ADMIN",
-              updatedAt: toInstant(),
-            },
-          });
-        } else {
-          throw memberRequired();
-        }
+        throw memberRequired();
       }
 
       const now = toInstant();
@@ -1183,14 +1124,6 @@ export class OrganizationsCoreService {
         where: { id: targetMembership.id, organizationId },
         data: { role: "ADMIN", updatedAt: now },
       });
-
-      const txUserCompat = tx.user as unknown as MockUserTableCompat;
-      if (txUserCompat?.store && legacyTargetOrg === organizationId) {
-        await txUserCompat.update?.({
-          where: { id: newOwnerUserId },
-          data: { role: "ADMIN" },
-        });
-      }
 
       await this.auditLog?.logOrg(
         organizationId,

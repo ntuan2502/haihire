@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -11,6 +11,8 @@ export interface BackupConfig {
   dbName: string;
   postgresContainer: string;
   minioContainer: string;
+  restoreDrill: boolean;
+  pushgatewayUrl?: string;
 }
 
 export interface BackupResult {
@@ -22,17 +24,92 @@ export interface BackupResult {
   error?: string;
 }
 
+function loadEnvFileIfExists(filePath: string): void {
+  if (!fs.existsSync(filePath)) return;
+  const raw = fs.readFileSync(filePath, "utf-8");
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const val = trimmed
+      .slice(eqIdx + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
+    if (key && process.env[key] === undefined) {
+      process.env[key] = val;
+    }
+  }
+}
+
 function resolveConfig(): BackupConfig {
+  const prodEnvPath = path.resolve(process.cwd(), ".env.production");
+  loadEnvFileIfExists(prodEnvPath);
+  const isProd =
+    process.env.NODE_ENV === "production" || fs.existsSync(prodEnvPath);
+
   return {
     backupDir: process.env.BACKUP_DIR || path.resolve(process.cwd(), "backups"),
     retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || "7", 10),
     dbHost: process.env.POSTGRES_HOST || "localhost",
-    dbPort: process.env.POSTGRES_PORT || "15432",
-    dbUser: process.env.POSTGRES_USER || "haihire_user",
-    dbName: process.env.POSTGRES_DB || "haihire_db",
-    postgresContainer: process.env.POSTGRES_CONTAINER || "haihire-postgres",
-    minioContainer: process.env.MINIO_CONTAINER || "haihire-minio",
+    dbPort: process.env.POSTGRES_PORT || "5432",
+    dbUser:
+      process.env.POSTGRES_USER || (isProd ? "haihire_prod" : "haihire_user"),
+    dbName:
+      process.env.POSTGRES_DB || (isProd ? "haihire_production" : "haihire_db"),
+    postgresContainer:
+      process.env.POSTGRES_CONTAINER ||
+      (isProd ? "haihire-prod-postgres" : "haihire-postgres"),
+    minioContainer:
+      process.env.MINIO_CONTAINER ||
+      (isProd ? "haihire-prod-minio" : "haihire-minio"),
+    restoreDrill: process.env.BACKUP_RESTORE_DRILL !== "false",
+    pushgatewayUrl: process.env.PUSHGATEWAY_URL?.replace(/\/$/, ""),
   };
+}
+
+function dockerExecFile(
+  args: string[],
+  options: {
+    stdio?: "pipe" | "inherit";
+    encoding?: "utf-8";
+    input?: string;
+  } = { stdio: "pipe" },
+): string {
+  const out = execFileSync("docker", args, options);
+  return typeof out === "string" ? out : "";
+}
+
+async function pushBackupMetrics(
+  pushgatewayUrl: string | undefined,
+  success: boolean,
+): Promise<void> {
+  if (!pushgatewayUrl) return;
+  try {
+    const lines = [
+      "# HELP haihire_backup_success Whether the latest backup completed successfully (1=yes, 0=no)",
+      "# TYPE haihire_backup_success gauge",
+      `haihire_backup_success ${success ? 1 : 0}`,
+    ];
+    if (success) {
+      lines.push(
+        "# HELP haihire_backup_last_success_timestamp_seconds Unix timestamp of the last successful backup",
+        "# TYPE haihire_backup_last_success_timestamp_seconds gauge",
+        `haihire_backup_last_success_timestamp_seconds ${Math.floor(Date.now() / 1000)}`,
+      );
+    }
+    await fetch(`${pushgatewayUrl}/metrics/job/haihire_backup`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: lines.join("\n") + "\n",
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (err: unknown) {
+    console.warn(
+      `[Backup] Skipped Pushgateway metric push: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 export async function runBackup(): Promise<BackupResult> {
@@ -47,6 +124,7 @@ export async function runBackup(): Promise<BackupResult> {
   } catch (err: unknown) {
     const dirErr = `Failed to create or access backup directory '${config.backupDir}': ${err instanceof Error ? err.message : String(err)}`;
     console.error(`[Backup Error] ${dirErr}`);
+    await pushBackupMetrics(config.pushgatewayUrl, false);
     return { success: false, error: dirErr };
   }
 
@@ -54,10 +132,10 @@ export async function runBackup(): Promise<BackupResult> {
   if (fs.existsSync(lockFilePath)) {
     try {
       const lockStat = fs.statSync(lockFilePath);
-      // Stale lock check (> 30 minutes old)
       if (Date.now() - lockStat.mtimeMs < 30 * 60 * 1000) {
         const lockErr = `Another backup operation is currently in progress (lock file: ${lockFilePath})`;
         console.error(`[Backup Error] ${lockErr}`);
+        await pushBackupMetrics(config.pushgatewayUrl, false);
         return { success: false, error: lockErr };
       } else {
         console.warn(`[Backup Warning] Stale lock detected, removing...`);
@@ -75,6 +153,7 @@ export async function runBackup(): Promise<BackupResult> {
   } catch (e: unknown) {
     const lockErr = `Failed to acquire backup lock: ${e instanceof Error ? e.message : String(e)}`;
     console.error(`[Backup Error] ${lockErr}`);
+    await pushBackupMetrics(config.pushgatewayUrl, false);
     return { success: false, error: lockErr };
   }
 
@@ -99,21 +178,24 @@ export async function runBackup(): Promise<BackupResult> {
   );
 
   try {
-    // -------------------------------------------------------------
     // Step 1: Health / Pre-flight check on containers
-    // -------------------------------------------------------------
     console.log(
       `[Backup:Pre-flight] Verifying PostgreSQL container '${config.postgresContainer}'...`,
     );
     try {
-      const psOutput = execSync(
-        `docker ps --filter "name=${config.postgresContainer}" --filter "status=running" --format "{{.Names}}"`,
-        {
-          stdio: "pipe",
-          encoding: "utf-8",
-        },
+      const psOutput = dockerExecFile(
+        [
+          "ps",
+          "--filter",
+          `name=^/${config.postgresContainer}$`,
+          "--filter",
+          "status=running",
+          "--format",
+          "{{.Names}}",
+        ],
+        { stdio: "pipe", encoding: "utf-8" },
       ).trim();
-      if (!psOutput || !psOutput.includes(config.postgresContainer)) {
+      if (!psOutput || psOutput !== config.postgresContainer) {
         throw new Error(
           `Container '${config.postgresContainer}' is not running.`,
         );
@@ -128,14 +210,19 @@ export async function runBackup(): Promise<BackupResult> {
       `[Backup:Pre-flight] Verifying MinIO container '${config.minioContainer}'...`,
     );
     try {
-      const minioPsOutput = execSync(
-        `docker ps --filter "name=${config.minioContainer}" --filter "status=running" --format "{{.Names}}"`,
-        {
-          stdio: "pipe",
-          encoding: "utf-8",
-        },
+      const minioPsOutput = dockerExecFile(
+        [
+          "ps",
+          "--filter",
+          `name=^/${config.minioContainer}$`,
+          "--filter",
+          "status=running",
+          "--format",
+          "{{.Names}}",
+        ],
+        { stdio: "pipe", encoding: "utf-8" },
       ).trim();
-      if (!minioPsOutput || !minioPsOutput.includes(config.minioContainer)) {
+      if (!minioPsOutput || minioPsOutput !== config.minioContainer) {
         throw new Error(`Container '${config.minioContainer}' is not running.`);
       }
     } catch (err: unknown) {
@@ -144,46 +231,71 @@ export async function runBackup(): Promise<BackupResult> {
       );
     }
 
-    // -------------------------------------------------------------
-    // Step 2: PostgreSQL Dump (Without -t, Without PowerShell > redirect)
-    // -------------------------------------------------------------
+    // Step 2: PostgreSQL Dump
     console.log(
       `[Backup:Postgres] Dumping PostgreSQL custom archive (-F c) inside container...`,
     );
     const containerTmpDump = `/tmp/${dumpFilename}`;
     const containerTmpSql = `/tmp/${sqlFilename}`;
 
-    // Dump Custom Archive format (optimized for pg_restore and integrity checks)
-    execSync(
-      `docker exec -i ${config.postgresContainer} pg_dump -U ${config.dbUser} -d ${config.dbName} -F c -f ${containerTmpDump}`,
+    dockerExecFile(
+      [
+        "exec",
+        "-i",
+        config.postgresContainer,
+        "pg_dump",
+        "-U",
+        config.dbUser,
+        "-d",
+        config.dbName,
+        "-F",
+        "c",
+        "-f",
+        containerTmpDump,
+      ],
       { stdio: "inherit" },
     );
 
-    // Dump Plain Text SQL format (for direct human inspection & text diffing)
     console.log(
       `[Backup:Postgres] Dumping PostgreSQL plain text SQL (-F p) inside container...`,
     );
-    execSync(
-      `docker exec -i ${config.postgresContainer} pg_dump -U ${config.dbUser} -d ${config.dbName} -f ${containerTmpSql}`,
+    dockerExecFile(
+      [
+        "exec",
+        "-i",
+        config.postgresContainer,
+        "pg_dump",
+        "-U",
+        config.dbUser,
+        "-d",
+        config.dbName,
+        "-f",
+        containerTmpSql,
+      ],
       { stdio: "inherit" },
     );
 
-    // Copy dump files out using docker cp (avoids any shell pipe/redirect encoding issues)
     console.log(
       `[Backup:Postgres] Copying database dumps from container to host...`,
     );
-    execSync(
-      `docker cp ${config.postgresContainer}:${containerTmpDump} "${targetDumpPath}"`,
+    dockerExecFile(
+      ["cp", `${config.postgresContainer}:${containerTmpDump}`, targetDumpPath],
       { stdio: "pipe" },
     );
-    execSync(
-      `docker cp ${config.postgresContainer}:${containerTmpSql} "${targetSqlPath}"`,
+    dockerExecFile(
+      ["cp", `${config.postgresContainer}:${containerTmpSql}`, targetSqlPath],
       { stdio: "pipe" },
     );
-
-    // Cleanup temp files in container
-    execSync(
-      `docker exec -i ${config.postgresContainer} rm -f ${containerTmpDump} ${containerTmpSql}`,
+    dockerExecFile(
+      [
+        "exec",
+        "-i",
+        config.postgresContainer,
+        "rm",
+        "-f",
+        containerTmpDump,
+        containerTmpSql,
+      ],
       { stdio: "pipe" },
     );
 
@@ -196,23 +308,30 @@ export async function runBackup(): Promise<BackupResult> {
       `[Backup:Postgres] Plain SQL dump: ${sqlFilename} (${(sqlStats.size / 1024).toFixed(2)} KB)`,
     );
 
-    // -------------------------------------------------------------
     // Step 3: MinIO Object Storage Backup
-    // -------------------------------------------------------------
     console.log(`[Backup:MinIO] Archiving MinIO object storage (/data)...`);
     const containerTmpMinio = `/tmp/${minioFilename}`;
 
-    // Archive /data directory within MinIO container
-    execSync(
-      `docker exec -i ${config.minioContainer} tar -czf ${containerTmpMinio} -C /data .`,
+    dockerExecFile(
+      [
+        "exec",
+        "-i",
+        config.minioContainer,
+        "tar",
+        "-czf",
+        containerTmpMinio,
+        "-C",
+        "/data",
+        ".",
+      ],
       { stdio: "inherit" },
     );
-    execSync(
-      `docker cp ${config.minioContainer}:${containerTmpMinio} "${targetMinioPath}"`,
+    dockerExecFile(
+      ["cp", `${config.minioContainer}:${containerTmpMinio}`, targetMinioPath],
       { stdio: "pipe" },
     );
-    execSync(
-      `docker exec -i ${config.minioContainer} rm -f ${containerTmpMinio}`,
+    dockerExecFile(
+      ["exec", "-i", config.minioContainer, "rm", "-f", containerTmpMinio],
       { stdio: "pipe" },
     );
 
@@ -221,25 +340,31 @@ export async function runBackup(): Promise<BackupResult> {
       `[Backup:MinIO] Storage archive: ${minioFilename} (${(minioStats.size / 1024).toFixed(2)} KB)`,
     );
 
-    // -------------------------------------------------------------
     // Step 4: Verify Integrity via pg_restore -l
-    // -------------------------------------------------------------
     console.log(
       `[Backup:Integrity] Verifying dump TOC integrity via pg_restore -l...`,
     );
     const tempContainerVerifyFile = `/tmp/verify_${dumpFilename}`;
-    execSync(
-      `docker cp "${targetDumpPath}" ${config.postgresContainer}:${tempContainerVerifyFile}`,
+    dockerExecFile(
+      [
+        "cp",
+        targetDumpPath,
+        `${config.postgresContainer}:${tempContainerVerifyFile}`,
+      ],
       { stdio: "pipe" },
     );
 
-    let tocOutput = "";
     try {
-      tocOutput = execSync(
-        `docker exec -i ${config.postgresContainer} pg_restore -l ${tempContainerVerifyFile}`,
-        {
-          encoding: "utf-8",
-        },
+      const tocOutput = dockerExecFile(
+        [
+          "exec",
+          "-i",
+          config.postgresContainer,
+          "pg_restore",
+          "-l",
+          tempContainerVerifyFile,
+        ],
+        { encoding: "utf-8" },
       );
       if (!tocOutput || !tocOutput.includes("TOC Entries")) {
         throw new Error("pg_restore -l output missing valid TOC entries.");
@@ -248,96 +373,167 @@ export async function runBackup(): Promise<BackupResult> {
         `[Backup:Integrity] pg_restore -l validation PASSED. TOC validated.`,
       );
     } finally {
-      execSync(
-        `docker exec -i ${config.postgresContainer} rm -f ${tempContainerVerifyFile}`,
+      dockerExecFile(
+        [
+          "exec",
+          "-i",
+          config.postgresContainer,
+          "rm",
+          "-f",
+          tempContainerVerifyFile,
+        ],
         { stdio: "pipe" },
       );
     }
 
-    // -------------------------------------------------------------
-    // Step 5: Live Automated Restore Drill
-    // -------------------------------------------------------------
-    console.log(
-      `[Backup:RestoreDrill] Executing live restore drill into test database 'haihire_restore_drill'...`,
-    );
-    const drillDb = "haihire_restore_drill";
-    const drillContainerFile = `/tmp/drill_${dumpFilename}`;
-    execSync(
-      `docker cp "${targetDumpPath}" ${config.postgresContainer}:${drillContainerFile}`,
-      { stdio: "pipe" },
-    );
-
-    let restoreDrillPassed = false;
-    try {
-      // 5.1 Re-create drill database cleanly
-      execSync(
-        `docker exec -i ${config.postgresContainer} psql -U ${config.dbUser} -d postgres -c "DROP DATABASE IF EXISTS ${drillDb}"`,
-        {
-          stdio: "pipe",
-        },
+    // Step 5: Optional Live Automated Restore Drill
+    let restoreDrillPassed: boolean | undefined;
+    if (config.restoreDrill) {
+      console.log(
+        `[Backup:RestoreDrill] Executing live restore drill into test database 'haihire_restore_drill'...`,
       );
-      execSync(
-        `docker exec -i ${config.postgresContainer} psql -U ${config.dbUser} -d postgres -c "CREATE DATABASE ${drillDb} OWNER ${config.dbUser}"`,
-        {
-          stdio: "pipe",
-        },
+      const drillDb = "haihire_restore_drill";
+      const drillContainerFile = `/tmp/drill_${dumpFilename}`;
+      dockerExecFile(
+        [
+          "cp",
+          targetDumpPath,
+          `${config.postgresContainer}:${drillContainerFile}`,
+        ],
+        { stdio: "pipe" },
       );
 
-      // 5.2 Restore custom dump into drill database
-      execSync(
-        `docker exec -i ${config.postgresContainer} pg_restore -U ${config.dbUser} -d ${drillDb} --no-owner --no-acl ${drillContainerFile}`,
-        { stdio: "inherit" },
-      );
-
-      // 5.3 Validate restored data by querying User and Job tables
-      const userCountOut = execSync(
-        `docker exec -i ${config.postgresContainer} psql -U ${config.dbUser} -d ${drillDb} -t`,
-        { input: 'SELECT count(*) FROM "user";\n', encoding: "utf-8" },
-      ).trim();
-
-      const userCount = parseInt(userCountOut, 10);
-      if (isNaN(userCount) || userCount < 0) {
-        throw new Error(
-          `Data validation failed: unexpected user count '${userCountOut}'`,
+      try {
+        dockerExecFile(
+          [
+            "exec",
+            "-i",
+            config.postgresContainer,
+            "psql",
+            "-U",
+            config.dbUser,
+            "-d",
+            "postgres",
+            "-c",
+            `DROP DATABASE IF EXISTS ${drillDb}`,
+          ],
+          { stdio: "pipe" },
         );
-      }
-      console.log(
-        `[Backup:RestoreDrill] Validation query successful: Restored User count = ${userCount}`,
-      );
-      restoreDrillPassed = true;
+        dockerExecFile(
+          [
+            "exec",
+            "-i",
+            config.postgresContainer,
+            "psql",
+            "-U",
+            config.dbUser,
+            "-d",
+            "postgres",
+            "-c",
+            `CREATE DATABASE ${drillDb} OWNER ${config.dbUser}`,
+          ],
+          { stdio: "pipe" },
+        );
 
-      // 5.4 Drop temporary restore drill database
-      execSync(
-        `docker exec -i ${config.postgresContainer} psql -U ${config.dbUser} -d postgres -c "DROP DATABASE ${drillDb}"`,
-        {
-          stdio: "pipe",
-        },
-      );
+        dockerExecFile(
+          [
+            "exec",
+            "-i",
+            config.postgresContainer,
+            "pg_restore",
+            "-U",
+            config.dbUser,
+            "-d",
+            drillDb,
+            "--no-owner",
+            "--no-acl",
+            drillContainerFile,
+          ],
+          { stdio: "inherit" },
+        );
+
+        const userCountOut = dockerExecFile(
+          [
+            "exec",
+            "-i",
+            config.postgresContainer,
+            "psql",
+            "-U",
+            config.dbUser,
+            "-d",
+            drillDb,
+            "-t",
+          ],
+          { input: 'SELECT count(*) FROM "user";\n', encoding: "utf-8" },
+        ).trim();
+
+        const userCount = parseInt(userCountOut, 10);
+        if (isNaN(userCount) || userCount < 0) {
+          throw new Error(
+            `Data validation failed: unexpected user count '${userCountOut}'`,
+          );
+        }
+        console.log(
+          `[Backup:RestoreDrill] Validation query successful: Restored User count = ${userCount}`,
+        );
+        restoreDrillPassed = true;
+      } catch (drillErr: unknown) {
+        console.error(
+          `[Backup:RestoreDrill ERROR] Live restore drill FAILED! Keeping dump files for forensic review:`,
+          drillErr,
+        );
+        throw drillErr;
+      } finally {
+        try {
+          dockerExecFile(
+            [
+              "exec",
+              "-i",
+              config.postgresContainer,
+              "psql",
+              "-U",
+              config.dbUser,
+              "-d",
+              "postgres",
+              "-c",
+              `DROP DATABASE IF EXISTS ${drillDb}`,
+            ],
+            { stdio: "pipe" },
+          );
+        } catch {
+          // Best-effort cleanup of drill database
+        }
+        try {
+          dockerExecFile(
+            [
+              "exec",
+              "-i",
+              config.postgresContainer,
+              "rm",
+              "-f",
+              drillContainerFile,
+            ],
+            { stdio: "pipe" },
+          );
+        } catch {
+          // Best-effort cleanup of temp dump
+        }
+      }
+    } else {
       console.log(
-        `[Backup:RestoreDrill] Restore drill database '${drillDb}' cleaned up successfully.`,
-      );
-    } catch (drillErr: unknown) {
-      console.error(
-        `[Backup:RestoreDrill ERROR] Live restore drill FAILED! Keeping dump files for forensic review:`,
-        drillErr,
-      );
-      throw drillErr;
-    } finally {
-      execSync(
-        `docker exec -i ${config.postgresContainer} rm -f ${drillContainerFile}`,
-        { stdio: "pipe" },
+        `[Backup:RestoreDrill] Skipped (BACKUP_RESTORE_DRILL=false).`,
       );
     }
 
-    // -------------------------------------------------------------
     // Step 6: Prune Old Backups
-    // -------------------------------------------------------------
     pruneOldBackups(config.backupDir, config.retentionDays);
+
+    await pushBackupMetrics(config.pushgatewayUrl, true);
 
     console.log(
       `[Backup] ========================================================`,
     );
-    console.log(`[Backup] Backup & Restore Drill Completed Successfully!`);
+    console.log(`[Backup] Backup Completed Successfully!`);
     console.log(`[Backup] PostgreSQL Dump: ${targetDumpPath}`);
     console.log(`[Backup] PostgreSQL SQL:  ${targetSqlPath}`);
     console.log(`[Backup] MinIO Archive:   ${targetMinioPath}`);
@@ -355,6 +551,7 @@ export async function runBackup(): Promise<BackupResult> {
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`[Backup] Backup pipeline terminated with error:`, errorMsg);
+    await pushBackupMetrics(config.pushgatewayUrl, false);
     return { success: false, error: errorMsg };
   } finally {
     if (fs.existsSync(lockFilePath)) {
@@ -396,7 +593,6 @@ function pruneOldBackups(backupDir: string, retentionDays: number) {
   }
 }
 
-// Execute standalone if directly invoked
 if (process.argv[1]?.endsWith("backup-production.ts")) {
   runBackup().then((res) => {
     if (!res.success) process.exit(1);

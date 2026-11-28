@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { AppForbiddenException } from "../common/app-exception";
 import { CandidatesService } from "../candidates/candidates.service";
+import { createTestCandidatesService } from "./helpers/service-factories";
 import { createMockPrismaService } from "./helpers/prisma-composer-mock";
 import type { ExecutionContext } from "@nestjs/common";
 import type { PrismaService } from "../prisma/prisma.service";
@@ -46,7 +47,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
       application: [],
     });
     guard = new TenantGuard(prisma as unknown as PrismaService);
-    candidates = new CandidatesService(
+    candidates = createTestCandidatesService(
       prisma as unknown as PrismaService,
       {} as never,
     );

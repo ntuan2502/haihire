@@ -19,7 +19,7 @@ overrides:
   ip-address: "^10.7.6"
   "minimatch@>=7.0.0 <11.0.1": ">=11.0.1" # GHSA-g3hv-75wg-m249 (via shadcn/ts-morph)
   source-map-js: ">=1.2.2"
-  stream-json: ">=3.6.0" # GHSA-528h-pc64-c93x, GHSA-hqr4-qq8f-hg3x, GHSA-mjw6-4jj6-33hc (via minio)
+  # NOTE: stream-json is kept on ^1.8.0 because minio@8.0.7 imports stream-json/jsonl/Parser.js (capital P, missing in 3.x ESM on Linux).
   decode-uri-component: ">=0.5.1"
   systeminformation: ">=5.33.16"
   undici: ">=7.30.1"

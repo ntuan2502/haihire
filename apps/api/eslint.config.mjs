@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       "eslint.config.mjs",
       "dist/**",
+      "coverage/**",
       "node_modules/**",
       "migrations/**",
     ],

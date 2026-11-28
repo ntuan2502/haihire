@@ -108,4 +108,18 @@ describe("wrapSerializedTransaction", () => {
       "end:commit",
     ]);
   });
+
+  it("forwards extra properties and custom methods bound to the underlying transaction", () => {
+    const fake = createFakeTransaction();
+    const extendedTx = Object.assign(fake.tx, {
+      customLabel: "pg-tx-meta",
+      readLabel(this: { customLabel: string }) {
+        return this.customLabel;
+      },
+    });
+    const wrapped = wrapSerializedTransaction(extendedTx);
+
+    expect(wrapped.customLabel).toBe("pg-tx-meta");
+    expect(wrapped.readLabel()).toBe("pg-tx-meta");
+  });
 });

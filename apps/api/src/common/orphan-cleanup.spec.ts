@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Logger } from "@nestjs/common";
 import { cleanupOrphans, extractObjectNameFromUrl } from "./orphan-cleanup";
 import { EventEmitter } from "node:events";
 import type * as Minio from "minio";
@@ -355,6 +356,54 @@ describe("orphan-cleanup", () => {
 
       expect(withSystemRlsBypass).toHaveBeenCalledTimes(1);
       expect(txDb.candidateDocument.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("logs via Nest Logger and continues deleting remaining orphans when removeObject fails once", async () => {
+      const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000);
+      const mockDb = {
+        candidateDocument: { findMany: vi.fn().mockResolvedValue([]) },
+        application: { findMany: vi.fn().mockResolvedValue([]) },
+        candidate: { findMany: vi.fn().mockResolvedValue([]) },
+        organization: { findMany: vi.fn().mockResolvedValue([]) },
+      };
+
+      const items = [
+        {
+          name: "tenants/org-1/resumes/fail.pdf",
+          size: 1024,
+          lastModified: fortyDaysAgo,
+        },
+        {
+          name: "tenants/org-1/resumes/ok.pdf",
+          size: 2048,
+          lastModified: fortyDaysAgo,
+        },
+      ];
+
+      mockMinioClient.listObjects.mockReturnValue(createMockStream(items));
+      mockMinioClient.removeObject
+        .mockRejectedValueOnce(new Error("MinIO busy"))
+        .mockResolvedValueOnce(undefined);
+
+      const loggerErrorSpy = vi
+        .spyOn(Logger.prototype, "error")
+        .mockImplementation(() => {});
+
+      const report = await cleanupOrphans({
+        dryRun: false,
+        thresholdDays: 30,
+        dbClient: mockDb,
+        minioClient: mockMinioClient as unknown as Minio.Client,
+      });
+
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to remove orphan object tenants/org-1/resumes/fail.pdf: MinIO busy",
+        ),
+      );
+      expect(report.deletedFiles).toEqual(["tenants/org-1/resumes/ok.pdf"]);
+      expect(report.deletedCount).toBe(1);
+      loggerErrorSpy.mockRestore();
     });
   });
 });

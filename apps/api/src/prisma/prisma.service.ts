@@ -2,11 +2,11 @@ import { Injectable, Logger } from "@nestjs/common";
 import type { OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { DEMO_ACCOUNTS } from "../auth/constants";
 import { backendEnv } from "../config/env";
 import { ensureDefaultDemoAccounts } from "./demo-seed.util";
+import { createSerializedPgAdapter } from "./pg-serialized-adapter";
 
 const connectionString = backendEnv.DATABASE_URL;
 
@@ -74,7 +74,7 @@ export class PrismaService
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
-    const adapter = new PrismaPg(pool);
+    const adapter = createSerializedPgAdapter(pool);
     super({ adapter });
     this.pool = pool;
     const proxied = new Proxy(this, {
